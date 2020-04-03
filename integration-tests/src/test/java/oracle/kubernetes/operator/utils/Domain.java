@@ -229,6 +229,23 @@ public class Domain {
   }
 
   /**
+   * Verify the SSL listeners in the domain are active by making an SSL connection to each one
+   * @throws Exception
+   */
+  public void verifySSLListeners() throws Exception {
+    // Check admin server's SSL port
+    verifyWebLogicSSLListener(domainUid + "-" + adminServerName, "$ADMIN_SERVER_SSL_PORT");
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
+      // check managed server's SSL port
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        LoggerHelper.getLocal().log(Level.INFO,
+                "Checking if managed server's SSL port (" + managedServerNameBase + i + ") is active.");
+        verifyWebLogicSSLListener(domainUid + "-" + managedServerNameBase + i, "$MANAGED_SERVER_SSL_PORT");
+      }
+    }
+  }
+
+  /**
    * verify servers are ready.
    *
    * @throws Exception exception
@@ -237,7 +254,6 @@ public class Domain {
     // check admin pod
     LoggerHelper.getLocal().log(Level.INFO, "Checking if admin server is Running and Ready");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
-    verifyWebLogicSSLListener(adminServerName, "$ADMIN_SERVER_SSL_PORT");
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
@@ -245,7 +261,6 @@ public class Domain {
         LoggerHelper.getLocal().log(Level.INFO,
             "Checking if managed server (" + managedServerNameBase + i + ") is Running and Ready");
         TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
-        verifyWebLogicSSLListener(managedServerNameBase + i, "$MANAGED_SERVER_SSL_PORT");
       }
     } else {
       // check no additional servers are started
@@ -303,11 +318,11 @@ public class Domain {
   }
 
 
-  private void verifyWebLogicSSLListener(String weblogicServerName, String sslPortEnvVariable) throws Exception {
+  private void verifyWebLogicSSLListener(String podName, String sslPortEnvVariable) throws Exception {
     if (sslEnabled) {
       LoggerHelper.getLocal().log(Level.INFO,
-              "Checking the SSL port of WebLogic server " + weblogicServerName + " in " + domainUid);
-      StringBuffer wlsServerCurlCmd = getCurlCmdForHttps(weblogicServerName, sslPortEnvVariable);
+              "Checking the SSL port of WebLogic server " + podName + " in " + domainUid);
+      StringBuffer wlsServerCurlCmd = getCurlCmdForHttps(podName, sslPortEnvVariable);
 
       LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + wlsServerCurlCmd.toString());
       TestUtils.exec(wlsServerCurlCmd.toString(), true);
@@ -324,7 +339,7 @@ public class Domain {
             .append(" -- ")
             .append("/bin/bash -c 'curl -v -k https://$HOSTNAME:")
             .append(sslPortEnvVariable)
-            .append("/weblogic/ready");
+            .append("/weblogic/ready'");
 
     return cmd;
   }
@@ -1773,9 +1788,9 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO, "pvSharing for this domain is: " + pvSharing);
 
     if (domainMap.containsKey(SSL_ENABLED_KEY)) {
-      sslEnabled = ((Boolean) domainMap.getOrDefault(SSL_ENABLED_KEY, "false")).booleanValue();
-      adminServerSSLPort = ((Integer) domainMap.getOrDefault(ADMIN_SERVER_SSL_PORT_KEY, "7002")).intValue();
-      managedServerSSLPort = ((Integer) domainMap.getOrDefault(MANAGED_SERVER_SSL_PORT_KEY, "8002")).intValue();
+      sslEnabled = ((Boolean) domainMap.getOrDefault(SSL_ENABLED_KEY, Boolean.FALSE)).booleanValue();
+      adminServerSSLPort = ((Integer) domainMap.getOrDefault(ADMIN_SERVER_SSL_PORT_KEY, 7002)).intValue();
+      managedServerSSLPort = ((Integer) domainMap.getOrDefault(MANAGED_SERVER_SSL_PORT_KEY, 8002)).intValue();
     }
 
     if (exposeAdminT3Channel) {

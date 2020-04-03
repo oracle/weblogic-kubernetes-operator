@@ -104,20 +104,9 @@ public class ItDomainInImage extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap = createDomainInImageMap(
-                getNewSuffixCount(), false, testClassName);
+              getNewSuffixCount(), false, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.remove("clusterType");
-
-      // If the domain input YAML contains "sslEnabled: false" param, then let's set it to "true" to test SSL.
-      // This is backward compatible because the older sample that does not support SSL should not have
-      // this parameter.
-      String sslEnabledValue = (String) domainMap.get("sslEnabled");
-      if (sslEnabledValue != null) {
-        if (!Boolean.parseBoolean(sslEnabledValue)) {
-          domainMap.put("sslEnabled", "true");
-        }
-      }
-
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       testBasicUseCases(domain, true);
@@ -133,6 +122,51 @@ public class ItDomainInImage extends BaseTest {
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
+
+
+  /**
+   * Create a WLS domain using domain-in-image option. Verify the domain is started
+   * successfully and the SSL listeners in the WLS servers are active.
+   *
+   * @throws Exception exception
+   */
+  @Test
+  public void testDomainInImageUsingWlstWithSSLEnabled() throws Exception {
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifying the domain creation");
+    // create domain
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domainMap = createDomainInImageMap(
+              getNewSuffixCount(), false, testClassName);
+      domainMap.put("namespace", domainNS1);
+      domainMap.remove("clusterType");
+
+      // domainMap key/value pairs are hard coded in the create domain method call above
+      domainMap.put("sslEnabled", Boolean.TRUE);
+      domainMap.put("javaOptions",
+              "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.security.SSL.ignoreHostnameVerification=true");
+
+      domain = TestUtils.createDomain(domainMap);
+      domain.verifyDomainCreated();
+      domain.verifySSLListeners();
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+      if (domain != null) {
+        domain.deleteImage();
+      }
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
 
   /**
    * Create Operator and create domain using domain-in-image option. Verify the domain is started
