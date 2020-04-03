@@ -15,14 +15,6 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  */
 public class InstallWITCommon extends ActionImplCommon {
 
-  protected static final String WORK_DIR 
-      = System.getProperty("java.io.tmpdir") + "/it-results";
-  protected static final String IMAGE_TOOL 
-      = WORK_DIR + "/imagetool/bin/imagetool.sh";
-  protected static final String WDT_ZIP 
-      = WORK_DIR + "/download/weblogic-deploy.zip";
-
-
   /**
    * Check if the required directories exist.
    * Currently the directories will be created if missing. We may remove this function
@@ -44,9 +36,9 @@ public class InstallWITCommon extends ActionImplCommon {
   }
 
   /**
-   * Check if the required directoies exist.
-   * Currently the directies will be created if missing. We may remove this function
-   * once we have all required working directies pre-created.
+   * Check if the required directories exist.
+   * Currently the directories will be created if missing. We may remove this function
+   * once we have all required working directories pre-created.
    *
    * @param dir the directory that needs to be checked
    */

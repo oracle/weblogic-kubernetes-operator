@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.WITAssertion;
 
 
 // as in the actions, it is intended tests only use these assertaions and do
@@ -111,6 +112,16 @@ public class TestAssertions {
    */
   public static boolean adminNodePortAccessible(String domainUID, String namespace) {
     return Domain.adminNodePortAccessible(domainUID, namespace);
+  }
+  
+  /**
+   * Check if a Docker image exists.
+   * @param imageName - the name of the image to be checked
+   * @param imageTag  - the tag of the image to be checked
+   * @return true if the image does exist, false otherwise
+   */
+  public static boolean imageExists(String imageName, String imageTag) {
+    return WITAssertion.imageExists(imageName, imageTag);
   }
 
 }

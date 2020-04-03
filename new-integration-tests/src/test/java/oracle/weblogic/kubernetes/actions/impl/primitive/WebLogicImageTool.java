@@ -6,6 +6,10 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.io.FileNotFoundException;
 import java.util.List;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.TYPE_WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.TYPE_WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
@@ -82,7 +86,7 @@ public class WebLogicImageTool extends InstallWITCommon {
     // install WIT if needed
     return new Installer()
         .with(new InstallParams()
-            .type(InstallParams.WIT_TYPE)
+            .type(TYPE_WIT)
             .verify(true)
             .unzip(true))
         .download();
@@ -92,7 +96,7 @@ public class WebLogicImageTool extends InstallWITCommon {
     // install WDT if needed
     return new Installer()
         .with(new InstallParams()
-            .type(InstallParams.WDT_TYPE)
+            .type(TYPE_WDT)
             .verify(true)
             .unzip(false))
         .download();
@@ -145,7 +149,7 @@ public class WebLogicImageTool extends InstallWITCommon {
    */
   public boolean addInstaller() throws FileNotFoundException {
     try {
-      checkFile(WDT_ZIP);
+      checkFile(WDT_ZIP_PATH);
     } catch (FileNotFoundException fnfe) {
       logger.warning("Failed to create an image due to Exception: " + fnfe.getMessage());
       throw fnfe;
@@ -155,7 +159,7 @@ public class WebLogicImageTool extends InstallWITCommon {
         + " cache addInstaller "
         + " --type wdt"
         + " --version " + params.wdtVersion()
-        + " --path " + WDT_ZIP);
+        + " --path " + WDT_ZIP_PATH);
   }
   
   /**

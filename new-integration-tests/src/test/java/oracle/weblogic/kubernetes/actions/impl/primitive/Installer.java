@@ -5,7 +5,10 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.File;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+
 
 /**
  *  Implementation of actions that download/install tools for the uses to use.
@@ -14,8 +17,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  */
 
 public class Installer extends InstallWITCommon {
-  // temporary dir, will fix this once we decide on the
-  private static final String downloadDir = WORK_DIR + "/download";
+
   private InstallParams params;
 
   /**
@@ -35,25 +37,25 @@ public class Installer extends InstallWITCommon {
     boolean downloadResult = true;
     boolean unzipResult = true;
     if (params.verify()
-        && new File(downloadDir, params.fileName()).exists()) {
+        && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
       logger.info("File " + params.fileName() + " already exists.");
     } else {
       checkDirectory(WORK_DIR);
       downloadResult = executeAndVerify(buildDownloadCommand(), params.direct());
     }
-    if (!(new File(downloadDir + "../imagetool/imagetool.sh").exists()) 
+    if (!(new File(IMAGE_TOOL).exists()) 
         && params.unzip()) {
-      unzipResult = unzip(downloadDir, params.fileName(), downloadDir + "/..");
+      unzipResult = unzip();
     }
     return downloadResult && unzipResult;
   }
 
-  private boolean unzip(String path, String fileName, String targetDir) {
+  private boolean unzip() {
     String command = 
         "unzip -o "
-        + "-d " + targetDir + " " 
-        + path + "/" + fileName;
-    checkDirectory(targetDir);
+        + "-d " + WORK_DIR + " " 
+        + DOWNLOAD_DIR + "/" + params.fileName();
+    checkDirectory(WORK_DIR);
     return executeAndVerify(command, false);
   }
 
@@ -67,6 +69,6 @@ public class Installer extends InstallWITCommon {
     
     return "curl -fL " 
         + url 
-        + " -o " + downloadDir + "/" + params.fileName();
+        + " -o " + DOWNLOAD_DIR + "/" + params.fileName();
   }
 }

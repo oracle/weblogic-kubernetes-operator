@@ -3,21 +3,21 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.TestActions;
-import oracle.weblogic.kubernetes.assertions.impl.WITAssertion;
+import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.withWITParams;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Simple validation of basic WIT functions")
 class ItWITValidation implements LoggedTest {
-  private static final String TEST_MODEL_DIR =
-      System.getProperty("user.dir") + "/src/test/resources/wdt-models/";
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String IMAGE_NAME = "test-mii-image-2";
   private static final String IMAGE_TAG = "v1";
@@ -26,14 +26,12 @@ class ItWITValidation implements LoggedTest {
   @DisplayName("Create a MII image")
   public void testCreatingMIIImage() {
 
-    // create the MII image
-    // TODO add model files and other contents to the image once we have those resources
+    logger.info("WDT model directory is " + MODEL_DIR);
 
-    logger.info("WDT model directory is " + TEST_MODEL_DIR);
+    // build the model file list
+    List<String> modelList = Arrays.asList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
-    ArrayList<String> modelList = new ArrayList();
-    modelList.add(TEST_MODEL_DIR + WDT_MODEL_FILE);
-
+    // build an image using WebLogic Image Tool
     boolean success = TestActions.createMIIImage(
         withWITParams()
             .modelImageName(IMAGE_NAME)
@@ -43,7 +41,7 @@ class ItWITValidation implements LoggedTest {
             .redirect(false));
  
     assertEquals(true, success, "Failed to create the image using WebLogic Deploy Tool");
-    WITAssertion.imageExists(IMAGE_NAME, IMAGE_TAG);
+    TestAssertions.imageExists(IMAGE_NAME, IMAGE_TAG);
   } 
 }
 

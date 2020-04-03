@@ -206,7 +206,7 @@ public class TestActions {
   // ------------------------ Docker image  -------------------------
 
   /**
-   * Create a WITParams that contains the parameters for executing a WIT command
+   * Create a WITParams instance that contains the parameters for executing a WIT command
    *
    * @return an instance of WITParams that contains the default values
    */

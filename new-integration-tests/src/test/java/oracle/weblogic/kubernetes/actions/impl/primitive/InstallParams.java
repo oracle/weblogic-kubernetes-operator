@@ -3,24 +3,22 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WIT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_WIT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.TYPE_WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
+
 /**
  * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
  */
 
 public class InstallParams {
-  public static final String WIT_TYPE = "WIT";
-  public static final String WDT_TYPE = "WDT";
-
-  public static final String DEFAULT_WIT_DOWNLOAD_URL = "https://github.com//oracle/weblogic-image-tool";
-  public static final String DEFAULT_WIT_VERSION    = "release-1.8.3";
-  public static final String WIT_FILE_NAME  = "imagetool.zip";
-
-  public static final String DEFAULT_WDT_DOWNLOAD_URL = "https://github.com//oracle/weblogic-deploy-tooling";
-  public static final String DEFAULT_WDT_VERSION    = "weblogic-deploy-tooling-1.7.2";
-  public static final String WDT_FILE_NAME  = "weblogic-deploy.zip";
 
   // WIT or WDT
-  private String type = "WIT";
+  private String type = TYPE_WIT;
   
   // The version of the tool
   private String version;
@@ -53,7 +51,7 @@ public class InstallParams {
 
   public String version() {
     if (version == null) {
-      return WIT_TYPE.equals(type) ? DEFAULT_WIT_VERSION : DEFAULT_WDT_VERSION;
+      return TYPE_WIT.equals(type) ? DEFAULT_WIT_VERSION : DEFAULT_WDT_VERSION;
     }
     return version;
   }
@@ -65,7 +63,7 @@ public class InstallParams {
 
   public String location() {
     if (location == null) {
-      return WIT_TYPE.equals(type) ? DEFAULT_WIT_DOWNLOAD_URL : DEFAULT_WDT_DOWNLOAD_URL;
+      return TYPE_WIT.equals(type) ? DEFAULT_WIT_DOWNLOAD_URL : DEFAULT_WDT_DOWNLOAD_URL;
     }
     return location;
   }
@@ -98,7 +96,7 @@ public class InstallParams {
   }
 
   public String fileName() {
-    if (WIT_TYPE.equals(type)) {
+    if (TYPE_WIT.equals(type)) {
       return WIT_FILE_NAME;
     } else {
       return WDT_FILE_NAME;
