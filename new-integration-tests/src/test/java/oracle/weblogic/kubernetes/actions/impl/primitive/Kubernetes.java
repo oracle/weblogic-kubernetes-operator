@@ -24,15 +24,29 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapBuilder;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretBuilder;
+import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
-import io.kubernetes.client.openapi.models.V1Status;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.jose4j.json.internal.json_simple.JSONObject;
@@ -45,19 +59,29 @@ import org.jose4j.json.internal.json_simple.parser.ParseException;
 
 public class Kubernetes implements LoggedTest {
 
-  public static Random random = new Random(System.currentTimeMillis());
-  private static String pretty = "false";
-  private static Boolean allowWatchBookmarks = false;
-  private static String resourceVersion = "";
-  private static Integer timeoutSeconds = 5;
+  public static Random RANDOM = new Random(System.currentTimeMillis());
+  private static String PRETTY = "false";
+  private static Boolean ALLOW_WATCH_BOOKMARKS = false;
+  private static String RESOURCE_VERSION = "";
+  private static Integer TIMEOUT_SECONDS = 5;
   private static String DOMAIN_GROUP = "weblogic.oracle";
   private static String DOMAIN_VERSION = "v7";
   private static String DOMAIN_PLURAL = "domains";
 
-  // the CoreV1Api loads default api-client from global configuration.
+  // Core Kubernetes API clients
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
+
+  // Extended GenericKubernetesApi clients
+  private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
+  private static GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient = null;
+  private static GenericKubernetesApi<V1Pod, V1PodList> podClient = null;
+  private static GenericKubernetesApi<V1PersistentVolume, V1PersistentVolumeList> pvClient = null;
+  private static GenericKubernetesApi<V1PersistentVolumeClaim, V1PersistentVolumeClaimList> pvcClient = null;
+  private static GenericKubernetesApi<V1Secret, V1SecretList> secretClient = null;
+  private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
+  private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
 
   static {
     try {
@@ -65,9 +89,96 @@ public class Kubernetes implements LoggedTest {
       apiClient = Configuration.getDefaultApiClient();
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
+      initializeGenericKubernetesApiClients();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
+  }
+
+  /**
+   * Create static instances of GenericKubernetesApi clients
+   */
+  private static void initializeGenericKubernetesApiClients() {
+    // Invocation parameters aren't changing so create them as statics
+    configMapClient =
+        new GenericKubernetesApi<>(
+            V1ConfigMap.class,  // the api type class
+            V1ConfigMapList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "configmaps", // the resource plural
+            apiClient //the api client
+        );
+
+    namespaceClient =
+        new GenericKubernetesApi<>(
+            V1Namespace.class, // the api type class
+            V1NamespaceList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "namespaces", // the resource plural
+            apiClient //the api client
+        );
+
+    podClient =
+        new GenericKubernetesApi<>(
+            V1Pod.class,  // the api type class
+            V1PodList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "pods", // the resource plural
+            apiClient //the api client
+        );
+
+    pvClient =
+        new GenericKubernetesApi<>(
+            V1PersistentVolume.class,  // the api type class
+            V1PersistentVolumeList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "persistentvolumes", // the resource plural
+            apiClient //the api client
+        );
+
+    pvcClient =
+        new GenericKubernetesApi<>(
+            V1PersistentVolumeClaim.class,  // the api type class
+            V1PersistentVolumeClaimList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "persistentvolumeclaims", // the resource plural
+            apiClient //the api client
+        );
+
+    secretClient =
+        new GenericKubernetesApi<>(
+            V1Secret.class,  // the api type class
+            V1SecretList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "serviceaccounts", // the resource plural
+            apiClient //the api client
+        );
+
+    serviceClient =
+        new GenericKubernetesApi<>(
+            V1Service.class,  // the api type class
+            V1ServiceList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "services", // the resource plural
+            apiClient //the api client
+        );
+
+    serviceAccountClient =
+        new GenericKubernetesApi<>(
+            V1ServiceAccount.class,  // the api type class
+            V1ServiceAccountList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "serviceaccounts", // the resource plural
+            apiClient //the api client
+        );
   }
 
   // ------------------------  deployments -----------------------------------
@@ -83,6 +194,80 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- pods -----------------------------------------
 
+  /**
+   * Get a pod's log
+   *
+   * @param name - name of the Pod
+   * @param namespace - name of the Namespace
+   * @return log as a String
+   * @throws ApiException - if Kubernetes client API call fails
+   */
+  public static String getPodLog(String name, String namespace) throws ApiException {
+    return getPodLog(name, namespace, null);
+  }
+
+  /**
+   * Get a pod's log
+   *
+   * @param name - name of the Pod
+   * @param namespace - name of the Namespace
+   * @param container - name of container for which to stream logs
+   * @return log as a String
+   * @throws ApiException - if Kubernetes client API call fails
+   */
+  public static String getPodLog(String name, String namespace, String container)
+      throws ApiException {
+    String log = coreV1Api.readNamespacedPodLog(
+        name, // name of the Pod
+        namespace, // name of the Namespace
+        container, // container for which to stream logs
+        null, //  true/false Follow the log stream of the pod
+        null, // number of bytes to read from the server before terminating the log output
+        PRETTY, // pretty print output
+        null, // true/false, Return previous terminated container logs
+        null, // relative time (seconds) before the current time from which to show logs
+        null, // number of lines from the end of the logs to show
+        null // true/false, add timestamp at the beginning of every line of log output
+    );
+
+    return log;
+  }
+
+  public static boolean deletePod(V1Pod pod) throws ApiException {
+    if (pod.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deletePod()");
+    }
+
+    if (pod.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling deletePod()");
+    }
+
+    if (pod.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deletePod()");
+    }
+
+    String namespace = pod.getMetadata().getNamespace();
+    String name = pod.getMetadata().getName();
+
+    KubernetesApiResponse<V1Pod> response = podClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete pod '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "pod in background!");
+    }
+
+    return true;
+  }
+
   // --------------------------- namespaces -----------------------------------
 
   /**
@@ -93,12 +278,12 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean createNamespace(String name) throws ApiException {
-    V1ObjectMeta meta = new V1ObjectMeta().name(name);
-    V1Namespace namespace = new V1Namespace().metadata(meta);
+    V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(name).build();
+    V1Namespace namespace = new V1NamespaceBuilder().withMetadata(meta).build();
 
     namespace = coreV1Api.createNamespace(
         namespace, // name of the Namespace
-        pretty, // pretty print output
+        PRETTY, // pretty print output
         null, // indicates that modifications should not be persisted
         null // name associated with the actor or entity that is making these changes
     );
@@ -117,7 +302,7 @@ public class Kubernetes implements LoggedTest {
   public static String createUniqueNamespace() throws ApiException {
     char[] name = new char[4];
     for (int i = 0; i < name.length; i++) {
-      name[i] = (char) (random.nextInt(25) + (int) 'a');
+      name[i] = (char) (RANDOM.nextInt(25) + (int) 'a');
     }
     String namespace = "ns-" + new String(name);
     if (createNamespace(namespace)) {
@@ -137,14 +322,14 @@ public class Kubernetes implements LoggedTest {
     ArrayList<String> nameSpaces = new ArrayList<>();
 
     V1NamespaceList namespaceList = coreV1Api.listNamespace(
-        pretty, // pretty print output
-        allowWatchBookmarks, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+        PRETTY, // pretty print output
+        ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
         null, // set when retrieving more results from the server
         null, // selector to restrict the list of returned objects by their fields
         null, // selector to restrict the list of returned objects by their labels
         null, // maximum number of responses to return for a list call
-        resourceVersion, // shows changes that occur after that particular version of a resource
-        timeoutSeconds, // Timeout for the list/watch call
+        RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+        TIMEOUT_SECONDS, // Timeout for the list/watch call
         false // Watch for changes to the described resources
     );
 
@@ -160,19 +345,35 @@ public class Kubernetes implements LoggedTest {
    *
    * @param name - name of namespace
    * @return true if successful delete, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
   public static boolean deleteNamespace(String name) throws ApiException {
+    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withName(name).build();
+    V1Namespace namespace = new V1NamespaceBuilder().withMetadata(metdata).build();
+    return deleteNamespace(namespace);
+  }
 
-    GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient =
-        new GenericKubernetesApi<>(
-                V1Namespace.class, // the api type class
-                V1NamespaceList.class, // the api list type class
-                "", // the api group
-            "v1", // the api version
-                "namespaces", // the resource plural
-                apiClient //the api client
-        );
+  /**
+   * Delete a Kubernetes namespace
+   *
+   * @param namespace - V1Namespace object containing name space configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deleteNamespace(V1Namespace namespace) throws ApiException {
+    if (namespace.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deleteNamespace()");
+    }
+
+    if (namespace.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deleteNamespace()");
+    }
+
+    String name = namespace.getMetadata().getName();
 
     KubernetesApiResponse<V1Namespace> response = namespaceClient.delete(name);
 
@@ -184,7 +385,7 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting namespace"
-          + " in background!");
+              + " in background!");
     }
 
     return true;
@@ -202,11 +403,11 @@ public class Kubernetes implements LoggedTest {
    * @throws IOException - on failure to convert domain YAML spec to JSON object
    * @throws ApiException - if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(String domainUID, String namespace, String domainYAML)
-      throws IOException, ApiException {
+  public static boolean createDomainCustomResource(String domainUID, String namespace,
+      String domainYAML) throws IOException, ApiException {
     Object json = null;
     try {
-      json = convertYamlToJson(domainYAML);
+      json = convertYamlFileToJson(domainYAML);
     } catch (ParseException e) {
       throw new IOException("Failed to parse " + domainYAML, e);
     }
@@ -251,6 +452,27 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Get the domain custom resource
+   *
+   * @param domainUID - unique domain identifier
+   * @param namespace - name of namespace
+   * @return domain custom resource
+   * @throws ApiException - if Kubernetes request fails
+   */
+  public static Object getDomainCustomResource(String domainUID, String namespace)
+      throws ApiException {
+    Object domain = customObjectsApi.getNamespacedCustomObject(
+        DOMAIN_GROUP, // custom resource's group name
+        DOMAIN_VERSION, // //custom resource's version
+        namespace, // custom resource's namespace
+        DOMAIN_PLURAL, // custom resource's plural name
+        domainUID // custom object's name
+    );
+
+    return domain;
+  }
+
+  /**
    * Converts YAML file content to JSON object
    *
    * @param yamlFile - path to file containing YAML spec
@@ -258,14 +480,15 @@ public class Kubernetes implements LoggedTest {
    * @throws IOException - failure to load the YAML file
    * @throws ParseException - failure to parse JSON formatted String object
    */
-  private static Object convertYamlToJson(String yamlFile) throws IOException, ParseException {
+  private static Object convertYamlFileToJson(String yamlFile) throws IOException, ParseException {
     // Read the yaml from file
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
     Object yamlObj = yamlReader.readValue(new File(yamlFile), Object.class);
 
     // Convert to JSON object
     ObjectMapper jsonWriter = new ObjectMapper();
-    String writeValueAsString = jsonWriter.writerWithDefaultPrettyPrinter().writeValueAsString(yamlObj);
+    String writeValueAsString = jsonWriter.writerWithDefaultPrettyPrinter()
+        .writeValueAsString(yamlObj);
     JSONParser parser = new JSONParser();
     JSONObject json = (JSONObject) parser.parse(writeValueAsString);
     return json;
@@ -292,7 +515,7 @@ public class Kubernetes implements LoggedTest {
         null, // selector to restrict the list of returned objects by their labels
         null, // maximum number of responses to return for a list call
         null, // shows changes that occur after that particular version of a resource
-        timeoutSeconds, // Timeout for the list/watch call
+        TIMEOUT_SECONDS, // Timeout for the list/watch call
         false // Watch for changes to the described resources
     );
 
@@ -336,24 +559,48 @@ public class Kubernetes implements LoggedTest {
    * @param namespace - name of namespace for config map
    * @param fromFile - path to file containing config map data, as name - value pairs
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    * @throws IOException - failure to load config map data from file
    */
   public static boolean createConfigMap(String cmName, String namespace, String fromFile)
       throws ApiException,
       IOException {
-    // Initialize config map meta data
-    V1ObjectMeta meta = new V1ObjectMeta().name(cmName);
-    V1ConfigMap body = new V1ConfigMap().metadata(meta);
-
     // Load config map data
     Properties cmProperties = loadProps(fromFile);
-    body.data((Map) cmProperties);
 
-    V1ConfigMap configMap = coreV1Api.createNamespacedConfigMap(
+    // Initialize config map configuration data
+    V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(cmName).build();
+    V1ConfigMap body = new V1ConfigMapBuilder().withMetadata(meta).withData((Map) cmProperties).build();
+
+    return createConfigMap(body);
+  }
+
+  /**
+   * Create a Kubernetes Config Map
+   *
+   * @param configMap - V1ConfigMap object containing config map configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean createConfigMap(V1ConfigMap configMap) throws ApiException {
+    if (configMap.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling createConfigMap()");
+    }
+
+    if (configMap.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling createConfigMap()");
+    }
+
+    String namespace = configMap.getMetadata().getNamespace();
+
+    V1ConfigMap cm = coreV1Api.createNamespacedConfigMap(
         namespace, // config map's namespace
-        body, // config map configuration data
-        pretty, // pretty print output
+        configMap, // config map configuration data
+        PRETTY, // pretty print output
         null, // indicates that modifications should not be persisted
         null  // name associated with the actor or entity that is making these changes
     );
@@ -373,14 +620,14 @@ public class Kubernetes implements LoggedTest {
 
     V1ConfigMapList configMapList = coreV1Api.listNamespacedConfigMap(
         namespace, // config map's namespace
-        pretty, // pretty print output
-        allowWatchBookmarks, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+        PRETTY, // pretty print output
+        ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
         null, // set when retrieving more results from the server
         null, // selector to restrict the list of returned objects by their fields
         null, // selector to restrict the list of returned objects by their labels
         null, // maximum number of responses to return for a list call
-        resourceVersion, // shows changes that occur after that particular version of a resource
-        timeoutSeconds, // Timeout for the list/watch call
+        RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+        TIMEOUT_SECONDS, // Timeout for the list/watch call
         false // Watch for changes to the described resources
     );
 
@@ -400,25 +647,53 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
-    V1DeleteOptions deleteOptions = new V1DeleteOptions();
+    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withNamespace(namespace).withName(cmName)
+        .build();
+    V1ConfigMap configMap = new V1ConfigMapBuilder().withMetadata(metdata).build();
+    return deleteConfigMap(configMap);
+  }
 
-    V1Status status = coreV1Api.deleteNamespacedConfigMap(
-        cmName, // name of config map
-        namespace,  // name of the Namespace
-        pretty, // pretty print output
-        null, // indicates that modifications should not be persisted
-        0, // duration in seconds before the object should be deleted
-        false, // Should the dependent objects be orphaned
-        "Foreground", // Whether and how garbage collection will be performed
-        deleteOptions
-    );
-
-    if (status.getCode() == 200 || status.getCode() == 202) {
-      // status code 200 = OK, 202 = Accepted
-      return true;
+  /**
+   * Delete Kubernetes Config Map
+   *
+   * @param configMap - V1ConfigMap object containing config map configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deleteConfigMap(V1ConfigMap configMap) throws ApiException {
+    if (configMap.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deleteConfigMap()");
     }
 
-    return false;
+    if (configMap.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling deleteConfigMap()");
+    }
+
+    if (configMap.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deleteConfigMap()");
+    }
+
+    String namespace = configMap.getMetadata().getNamespace();
+    String name = configMap.getMetadata().getName();
+
+    KubernetesApiResponse<V1ConfigMap> response = configMapClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete config map '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "config map in background!");
+    }
+
+    return true;
   }
 
   // --------------------------- secret ---------------------------
@@ -431,23 +706,49 @@ public class Kubernetes implements LoggedTest {
    * @param password password for the domain
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
-   *
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
   public static boolean createSecret(String secretName,
       String username, String password, String namespace) throws ApiException {
-    V1ObjectMeta meta = new V1ObjectMeta().name(secretName);
+    V1ObjectMeta meta = new V1ObjectMetaBuilder().withNamespace(namespace).withName(secretName)
+        .build();
     HashMap<String, byte[]> data = new HashMap<>();
     data.put("username", username.getBytes(StandardCharsets.UTF_8));
     data.put("password", password.getBytes(StandardCharsets.UTF_8));
-    V1Secret body = new V1Secret().metadata(meta).type("Opaque").data(data);
+    V1Secret secret = new V1SecretBuilder().withMetadata(meta).withType("Opaque").withData(data)
+        .build();
 
     // TODO: what about labels?
 
-    V1Secret secret = coreV1Api.createNamespacedSecret(
+    return createSecret(secret);
+  }
+
+  /**
+   * Create Kubernetes Secret
+   *
+   * @param secret - V1Secret object containing Kubernetes secret configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean createSecret(V1Secret secret) throws ApiException {
+    if (secret.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling createSecret()");
+    }
+
+    if (secret.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling createSecret()");
+    }
+
+    String namespace = secret.getMetadata().getNamespace();
+
+    V1Secret secrt = coreV1Api.createNamespacedSecret(
         namespace, // name of the Namespace
-        body, // secret configuration data
-        pretty, // pretty print output
+        secret, // secret configuration data
+        PRETTY, // pretty print output
         null, // indicates that modifications should not be persisted
         null // fieldManager is a name associated with the actor
     );
@@ -464,25 +765,54 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deleteSecret(String secretName, String namespace) throws ApiException {
-    V1DeleteOptions deleteOptions = new V1DeleteOptions();
+    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withNamespace(namespace).withName(secretName)
+        .build();
+    V1Secret secret = new V1SecretBuilder()
+        .withMetadata(metdata).build();
+    return deleteSecret(secret);
+  }
 
-    V1Status status = coreV1Api.deleteNamespacedSecret(
-        secretName,// name of secret
-        namespace,  // name of the Namespace
-        pretty, // pretty print output
-        null, // indicates that modifications should not be persisted
-        0, // duration in seconds before the object should be deleted
-        false, // Should the dependent objects be orphaned
-        "Foreground", // Whether and how garbage collection will be performed
-        deleteOptions
-    );
-
-    if (status.getCode() == 200 || status.getCode() == 202) {
-      // status code 200 = OK, 202 = Accepted
-      return true;
+  /**
+   * Delete Kubernetes Secret
+   *
+   * @param secret - V1Secret object containing Kubernetes secret configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deleteSecret(V1Secret secret) throws ApiException {
+    if (secret.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deleteSecret()");
     }
 
-    return false;
+    if (secret.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling deleteSecret()");
+    }
+
+    if (secret.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deleteSecret()");
+    }
+
+    String namespace = secret.getMetadata().getNamespace();
+    String name = secret.getMetadata().getName();
+
+    KubernetesApiResponse<V1Secret> response = secretClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete secret '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "secret in background!");
+    }
+
+    return true;
   }
 
   // --------------------------- pv/pvc ---------------------------
@@ -491,28 +821,52 @@ public class Kubernetes implements LoggedTest {
    * Delete the Kubernetes Persistent Volume
    *
    * @param pvName the name of the Persistent Volume
-   * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @return true on success
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
   public static boolean deletePv(String pvName) throws ApiException {
-    V1DeleteOptions deleteOptions = new V1DeleteOptions();
+    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withName(pvName).build();
+    V1PersistentVolume persistentVolume = new V1PersistentVolumeBuilder().withMetadata(metdata)
+        .build();
+    return deletePv(persistentVolume);
+  }
 
-    V1Status status = coreV1Api.deletePersistentVolume(
-        pvName, // persistent volume (PV) name
-        pretty, // pretty print output
-        null, // indicates that modifications should not be persisted
-        0, // duration in seconds before the object should be deleted
-        false, // Should the dependent objects be orphaned
-        "Foreground", // Whether and how garbage collection will be performed
-        deleteOptions
-    );
-
-    if (status.getCode() == 200 || status.getCode() == 202) {
-      // status code 200 = OK, 202 = Accepted
-      return true;
+  /**
+   * Delete the Kubernetes Persistent Volume
+   *
+   * @param persistentVolume - V1ServiceAccount object containing PV configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deletePv(V1PersistentVolume persistentVolume) throws ApiException {
+    if (persistentVolume.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deletePv()");
     }
 
-    return false;
+    if (persistentVolume.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deletePv()");
+    }
+
+    String name = persistentVolume.getMetadata().getName();
+
+    KubernetesApiResponse<V1PersistentVolume> response = pvClient.delete(name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete persistent volume '" + name + "' "
+          + "with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "persistent volume in background!");
+    }
+
+    return true;
   }
 
   /**
@@ -524,31 +878,63 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException - if Kubernetes client API call fails
    */
   public static boolean deletePvc(String pvcName, String namespace) throws ApiException {
-    V1DeleteOptions deleteOptions = new V1DeleteOptions();
+    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withNamespace(namespace).withName(pvcName)
+        .build();
+    V1PersistentVolumeClaim persistentVolumeClaim = new V1PersistentVolumeClaimBuilder()
+        .withMetadata(metdata).build();
+    return deletePvc(persistentVolumeClaim);
+  }
 
-    V1Status status = coreV1Api.deleteNamespacedPersistentVolumeClaim(
-        pvcName, // persistent volume claim (PV) name
-        namespace, // name of the Namespace
-        pretty, // pretty print output
-        null, // indicates that modifications should not be persisted
-        0, // duration in seconds before the object should be deleted
-        false, // Should the dependent objects be orphaned
-        "Foreground", // Whether and how garbage collection will be performed
-        deleteOptions
-    );
-
-    if (status.getCode() == 200 || status.getCode() == 202) {
-      // status code 200 = OK, 202 = Accepted
-      return true;
+  /**
+   * Delete the Kubernetes Persistent Volume Claim
+   *
+   * @param persistentVolumeClaim - V1PersistentVolumeClaim object containing PVC configuration
+   *     data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deletePvc(V1PersistentVolumeClaim persistentVolumeClaim)
+      throws ApiException {
+    if (persistentVolumeClaim.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deletePvc()");
     }
 
-    return false;
+    if (persistentVolumeClaim.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling deletePvc()");
+    }
+
+    if (persistentVolumeClaim.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deletePvc()");
+    }
+
+    String namespace = persistentVolumeClaim.getMetadata().getNamespace();
+    String name = persistentVolumeClaim.getMetadata().getName();
+
+    KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException(
+          "Failed to delete persistent volume claim '" + name + "' from namespace: "
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "persistent volume claim in background!");
+    }
+
+    return true;
   }
 
   // --------------------------- service account ---------------------------
 
   /**
-   * Create a service account for a given namespace
+   * Create a service account
    *
    * @param serviceAccount - V1ServiceAccount object containing service account configuration data
    * @return created service account
@@ -567,10 +953,12 @@ public class Kubernetes implements LoggedTest {
           "Missing the required parameter 'namespace' when calling createServiceAccount()");
     }
 
+    String namespace = serviceAccount.getMetadata().getNamespace();
+
     serviceAccount = coreV1Api.createNamespacedServiceAccount(
-        serviceAccount.getMetadata().getNamespace(), // name of the Namespace
+        namespace, // name of the Namespace
         serviceAccount, // service account configuration data
-        pretty, // pretty print output
+        PRETTY, // pretty print output
         null, // indicates that modifications should not be persisted
         null // fieldManager is a name associated with the actor
     );
@@ -579,11 +967,12 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete a service account for given namespace
+   * Delete a service account
    *
    * @param serviceAccount - V1ServiceAccount object containing service account configuration data
    * @return true if successful
-   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
    */
   public static boolean deleteServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
     if (serviceAccount.getMetadata() == null) {
@@ -604,16 +993,6 @@ public class Kubernetes implements LoggedTest {
     String namespace = serviceAccount.getMetadata().getNamespace();
     String name = serviceAccount.getMetadata().getName();
 
-    GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient =
-        new GenericKubernetesApi<>(
-                V1ServiceAccount.class,  // the api type class
-                V1ServiceAccountList.class, // the api list type class
-                "", // the api group
-                "v1", // the api version
-                "serviceaccounts", // the resource plural
-                apiClient //the api client
-        );
-
     KubernetesApiResponse<V1ServiceAccount> response = serviceAccountClient.delete(namespace, name);
 
     if (!response.isSuccess()) {
@@ -624,7 +1003,84 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "service account in background!");
+              + "service account in background!");
+    }
+
+    return true;
+  }
+
+  // --------------------------- Services ---------------------------
+
+  /**
+   * Create Kubernetes Service
+   *
+   * @param service - V1Service object containing service configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean createService(V1Service service) throws ApiException {
+    if (service.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling createService()");
+    }
+
+    if (service.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling createService()");
+    }
+
+    String namespace = service.getMetadata().getNamespace();
+
+    V1Service svc = coreV1Api.createNamespacedService(
+        namespace, // name of the Namespace
+        service, // service configuration data
+        PRETTY, // pretty print output
+        null, // indicates that modifications should not be persisted
+        null // fieldManager is a name associated with the actor
+    );
+
+    return true;
+  }
+
+  /**
+   * Delete Service
+   *
+   * @param service - V1Service object containing service configuration data
+   * @return true if successful
+   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
+   *     unsuccessful
+   */
+  public static boolean deleteService(V1Service service) throws ApiException {
+    if (service.getMetadata() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'metadata' when calling deleteService()");
+    }
+
+    if (service.getMetadata().getNamespace() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'namespace' when calling deleteService()");
+    }
+
+    if (service.getMetadata().getName() == null) {
+      throw new ApiException(
+          "Missing the required parameter 'name' when calling deleteService()");
+    }
+
+    String namespace = service.getMetadata().getNamespace();
+    String name = service.getMetadata().getName();
+
+    KubernetesApiResponse<V1Service> response = serviceClient.delete(namespace, name);
+
+    if (!response.isSuccess()) {
+      throw new ApiException("Failed to delete Service '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "service in background!");
     }
 
     return true;
