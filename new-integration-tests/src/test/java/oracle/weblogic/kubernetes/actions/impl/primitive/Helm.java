@@ -3,84 +3,71 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-import java.util.HashMap;
-
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class Helm implements LoggedTest {
 
-  private String chartName;
-  private String releaseName;
-  private String namespace;
-  private String repoUrl;
-  private HashMap<String, Object> values;
+  /**
+   * install helm chart
+   * @param params the parameters to helm as values
+   * @return true on success, false otherwise
+   */
+  public static boolean install(HelmParams params) {
+    String namespace = params.getNamespace();
 
-  public Helm chartName(String chartName) {
-    this.chartName = chartName;
-    return this;
-  }
+    // assertions for required parameters
+    assertThat(namespace)
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
-  public Helm releaseName(String releaseName) {
-    this.releaseName = releaseName;
-    return this;
-  }
+    assertThat(params.getReleaseName())
+        .as("make sure releaseName is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
 
-  public Helm namespace(String namespace) {
-    this.namespace = namespace;
-    return this;
-  }
+    boolean success = false;
 
-  public Helm repoUrl(String repoUrl) {
-    this.repoUrl = repoUrl;
-    return this;
-  }
+    //chart reference to be used in helm install
+    String chartRef = params.getChartDir();
 
-  public Helm values(HashMap<String, Object> values) {
-    this.values = values;
-    return this;
-  }
+    // use repo url as chart reference if provided
+    if (params.getChartName() != null && params.getRepoUrl() != null) {
+      Helm.addRepo(params.getChartName(), params.getRepoUrl());
+      chartRef = params.getRepoUrl();
+    }
 
-  public String getChartName() {
-    return chartName;
-  }
-
-  public String getReleaseName() {
-    return releaseName;
-  }
-
-  public String getNamespace() {
-    return namespace;
-  }
-
-  public String getRepoUrl() {
-    return repoUrl;
-  }
-
-  public HashMap<String, Object> getValues() {
-    return values;
-  }
-
-  public boolean install() {
+    logger.info(String.format("Installing application in namespace %s using chart %s",
+        namespace, chartRef));
+    // build helm install command
     StringBuffer installCmd = new StringBuffer("helm install ")
-                              .append(releaseName).append(" ").append(chartName);
-    values.forEach((key, value) ->
-                    installCmd.append(" --set ")
-                              .append(key)
-                              .append("=")
-                              .append(value.toString().replaceAll("\\[","{").replaceAll("\\]","}")));
-    logger.info("Running helm install command " + installCmd);
+        .append(params.getReleaseName()).append(" ").append(chartRef);
+
+    // add all the parameters
+    params.getValues().forEach((key, value) ->
+        installCmd.append(" --set ")
+            .append(key)
+            .append("=")
+            .append(value.toString().replaceAll("\\[", "{").replaceAll("\\]", "}")));
+
+    // run the command
+    logger.info("Running command - \n" + installCmd);
+    success = true;
+    return success;
+
+  }
+
+  public static boolean upgrade(HelmParams params) {
     return true;
   }
 
-  public boolean upgrade() {
+  public static boolean delete(HelmParams params) {
     return true;
   }
 
-  public boolean delete() {
-    return true;
-  }
-
-  public boolean addRepo() {
+  public static boolean addRepo(String chartName, String repoUrl) {
     String addRepoCmd = "helm add repo " + chartName + " " + repoUrl;
     // execute addRepoCmd
     return true;

@@ -7,9 +7,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+
 // All parameters needed to install Operator from test
 
-public class OperatorParams {
+public class OperatorParams extends HelmParams {
 
   private static final String DOMAIN_NAMESPACES = "domainNamespaces";
   private static final String IMAGE = "image";
@@ -20,8 +22,6 @@ public class OperatorParams {
   private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
 
   // Adding some of the most commonly used params for now
-  private String releaseName;
-  private String namespace;
   private List<String> domainNamespaces;
   private String image;
   private String serviceAccount;
@@ -71,16 +71,23 @@ public class OperatorParams {
   }
 
   public OperatorParams externalRestIdentitySecret(String externalRestIdentitySecret) {
-    this.externalRestIdentitySecret  = externalRestIdentitySecret;
+    this.externalRestIdentitySecret = externalRestIdentitySecret;
     return this;
   }
 
-  public String getReleaseName() {
-    return releaseName;
+  public OperatorParams repoUrl(String repoUrl) {
+    this.repoUrl = repoUrl;
+    return this;
   }
 
-  public String getNamespace() {
-    return namespace;
+  public OperatorParams chartName(String chartName) {
+    this.chartName = chartName;
+    return this;
+  }
+
+  public OperatorParams chartDir(String chartDir) {
+    this.chartDir = chartDir;
+    return this;
   }
 
   public String getServiceAccount() {

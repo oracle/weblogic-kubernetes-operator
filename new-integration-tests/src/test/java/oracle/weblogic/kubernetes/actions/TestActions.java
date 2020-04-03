@@ -37,7 +37,7 @@ public class TestActions {
    * @return true if the operator is successfully installed, false otherwise.
    * @throws ApiException - if Kubernetes client API call fails
    */
-  public static boolean installOperator(OperatorParams params) throws ApiException {
+  public static boolean installOperator(OperatorParams params) {
     return Operator.install(params);
   }
 
@@ -71,8 +71,8 @@ public class TestActions {
    * @return true on success, false otherwise
    */
 
-  public static boolean deleteOperator(String name, String namespace) {
-    return Operator.delete(name, namespace);
+  public static boolean deleteOperator(OperatorParams params) {
+    return Operator.delete(params);
   }
 
   // ----------------------   domain  -----------------------------------
@@ -80,8 +80,8 @@ public class TestActions {
   /**
    * Create domain custom resource from the given domain yaml file.
    *
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
+   * @param domainUID  - unique domain identifier
+   * @param namespace  - name of namespace
    * @param domainYAML - domain yaml file
    * @return true on success, false otherwise
    */
@@ -181,6 +181,7 @@ public class TestActions {
     new Namespace().name(name).create();
     return name;
   }
+
   /**
    * List of namespaces in Kubernetes cluster
    *
@@ -211,10 +212,10 @@ public class TestActions {
    * @return an instance of WITParams that contains the default values
    */
   public static WITParams withWITParams() {
-    return 
+    return
         WebLogicImageTool.withDefaults();
   }
- 
+
   /**
    * Create an image using WDT models using WebLogic Image Tool
    *
@@ -222,12 +223,12 @@ public class TestActions {
    * @return true if successful delete, false otherwise
    */
   public static boolean createMIIImage(WITParams params) {
-    return 
-        WebLogicImageTool
+    return
+         WebLogicImageTool
             .withParams(params)
             .updateImage();
   }
- 
+
   // -------------------------   pv/pvc  ---------------------------------
 
   /**

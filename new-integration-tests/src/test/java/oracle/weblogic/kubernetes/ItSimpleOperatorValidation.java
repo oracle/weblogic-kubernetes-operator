@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -25,10 +24,10 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.fail;
-//import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -72,26 +71,20 @@ class ItSimpleOperatorValidation implements LoggedTest {
 
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";
-    assertDoesNotThrow(
-        () -> TestActions.createServiceAccount(new V1ServiceAccount()
-            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    assertDoesNotThrow(() -> TestActions.createServiceAccount(new V1ServiceAccount()
+        .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
     logger.info("Created service account: " + serviceAccountName);
 
     OperatorParams opParams =
         new OperatorParams().releaseName("weblogic-operator")
             .namespace(namespace)
+            .chartDir("kubernetes/charts/weblogic-operator")
             .image("weblogic-kubernetes-operator:test_itsimpleoperator")
             .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
             .serviceAccount("opns1-sa");
 
     //ToDO: use Junit 5 assertions
-    try {
-      installOperator(opParams);
-    } catch (ApiException e) {
-      e.printStackTrace();
-      fail("Failed to install Operator due to exception" + e.getMessage());
-    }
-
+    assertThat(installOperator(opParams)).isTrue();
     logger.info(String.format("Operator installed in namespace %s", namespace));
 
     // we can use a standard JUnit assertion to check on the result
@@ -122,6 +115,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
     assertDoesNotThrow(
         () -> TestActions.deleteServiceAccount(new V1ServiceAccount()
             .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+
     logger.info("Deleted service account " + serviceAccountName);
 
     // Delete namespace

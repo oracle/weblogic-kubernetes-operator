@@ -5,13 +5,13 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.HashMap;
 
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+
 // All parameters needed to install Traefik Operator
 
-public class TraefikParams {
+public class TraefikParams extends HelmParams {
 
   // Adding some of the most commonly used params for now
-  private String releaseName;
-  private String namespace;
   private int nodePortsHttp;
   private int nodePortsHttps;
 
@@ -25,6 +25,21 @@ public class TraefikParams {
     return this;
   }
 
+  public TraefikParams repoUrl(String repoUrl) {
+    this.repoUrl = repoUrl;
+    return this;
+  }
+
+  public TraefikParams chartName(String chartName) {
+    this.chartName = chartName;
+    return this;
+  }
+
+  public TraefikParams chartDir(String chartDir) {
+    this.chartDir = chartDir;
+    return this;
+  }
+
   public TraefikParams nodePortsHttp(int nodePortsHttp) {
     this.nodePortsHttp = nodePortsHttp;
     return this;
@@ -33,14 +48,6 @@ public class TraefikParams {
   public TraefikParams nodePortsHttps(int nodePortsHttps) {
     this.nodePortsHttps = nodePortsHttps;
     return this;
-  }
-
-  public String getReleaseName() {
-    return releaseName;
-  }
-
-  public String getNamespace() {
-    return namespace;
   }
 
   public HashMap<String, Object> getValues() {
