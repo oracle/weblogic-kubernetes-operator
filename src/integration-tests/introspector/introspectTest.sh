@@ -148,7 +148,7 @@ function cleanupMajor() {
   printdots_start
   FAST_DELETE="--grace-period=1 --timeout=1s" \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
-    ${test_home}/cleanup.out
+    ${test_home}/cleanup.out 2>&1
   status=$?
   printdots_end
 
@@ -355,7 +355,13 @@ function createTestRootPVDir() {
                              -l ${WEBLOGIC_IMAGE_PULL_POLICY} \
                              -f ${SCRIPTPATH}/createTestRoot.sh \
                              -c "sh /tmpmount/createTestRoot.sh ${DOMAIN_UID}" \
-                             || exit 1
+                              >  ${test_home}/util_krun.out 2>&1
+
+  if [ $? -ne 0 ]; then
+    trace "Error: Error creating physical directory. Output:"
+    cat ${test_home}/util_krun.out
+    exit 1
+  fi
 }
 
 #############################################################################
