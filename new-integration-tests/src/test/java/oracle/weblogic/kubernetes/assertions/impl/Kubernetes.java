@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -20,9 +19,10 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-public class Kubernetes implements LoggedTest {
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+
+public class Kubernetes {
 
   private static final String OPERATOR_NAME = "weblogic-operator-";
 
@@ -51,14 +51,18 @@ public class Kubernetes implements LoggedTest {
    * @return true if pod exists otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodExists(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean doesPodExist(String namespace, String domainUid, String podName) throws ApiException {
+    boolean podExist = false;
     logger.info("Checking if the pod exists in namespace");
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    return pod != null;
+    if (pod != null) {
+      podExist = true;
+    }
+    return podExist;
   }
 
   /**
@@ -98,7 +102,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Checks if a Operator pod exists in a given namespace.
+   * Checks if a Operator pod running in a given namespace.
    * The method assumes the operator name to starts with weblogic-operator-
    * and decorated with label weblogic.operatorName:namespace
    * @param namespace in which to check for the pod existence
@@ -122,16 +126,17 @@ public class Kubernetes implements LoggedTest {
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList v1PodList =
         coreV1Api.listNamespacedPod(
-            namespace,
-            Boolean.FALSE.toString(),
-            Boolean.FALSE,
-            null,
-            null,
-            labelSelector,
-            null,
-            null,
-            null,
-            Boolean.FALSE);
+            namespace, // namespace in which to look for the pods.
+            Boolean.FALSE.toString(), // // pretty print output.
+            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+            null, // continue to query when there is more results to return.
+            null, // selector to restrict the list of returned objects by their fields
+            labelSelector, // selector to restrict the list of returned objects by their labels.
+            null, // maximum number of responses to return for a list call.
+            null, // shows changes that occur after that particular version of a resource.
+            null, // Timeout for the list/watch call.
+            Boolean.FALSE // Watch for changes to the described resources.
+        );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().startsWith(podName.trim())) {
         logger.info("Pod Name :" + item.getMetadata().getName());
@@ -152,7 +157,9 @@ public class Kubernetes implements LoggedTest {
    * @return true if the service is found otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isServiceCreated(String serviceName, HashMap label, String namespace) throws ApiException {
+  public static boolean doesServiceExist(
+      String serviceName, Map<String, String> label, String namespace)
+      throws ApiException {
     return getService(serviceName, label, namespace) != null;
   }
 
@@ -164,7 +171,9 @@ public class Kubernetes implements LoggedTest {
    * @return V1Service object if found otherwise null
    * @throws ApiException when there is error in querying the cluster
    */
-  public static V1Service getService(String serviceName, HashMap label, String namespace) throws ApiException {
+  public static V1Service getService(
+      String serviceName, Map<String, String> label, String namespace)
+      throws ApiException {
     String labelSelector = null;
     if (label != null) {
       String key = label.keySet().iterator().next().toString();
@@ -174,20 +183,21 @@ public class Kubernetes implements LoggedTest {
     }
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
-        Boolean.FALSE,
-        null,
-        null,
-        labelSelector,
-        null,
-        Boolean.FALSE.toString(),
-        null,
-        null,
-        Boolean.FALSE);
+        Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+        null, // continue to query when there is more results to return.
+        null, // selector to restrict the list of returned objects by their fields
+        labelSelector, // selector to restrict the list of returned objects by their labels.
+        null, // maximum number of responses to return for a list call.
+        Boolean.FALSE.toString(), // pretty print output.
+        null, // shows changes that occur after that particular version of a resource.
+        null, // Timeout for the list/watch call.
+        Boolean.FALSE // Watch for changes to the described resources.
+    );
     for (V1Service service : v1ServiceList.getItems()) {
       if (service.getMetadata().getName().equals(serviceName.trim())
           && service.getMetadata().getNamespace().equals(namespace.trim())) {
-        logger.info("Service Name :" + service.getMetadata().getName());
-        logger.info("Service Namespace :" + service.getMetadata().getNamespace());
+        logger.info("Service Name : " + service.getMetadata().getName());
+        logger.info("Service Namespace : " + service.getMetadata().getNamespace());
         Map<String, String> labels = service.getMetadata().getLabels();
         if (labels != null) {
           for (Map.Entry<String, String> entry : labels.entrySet()) {
@@ -211,16 +221,17 @@ public class Kubernetes implements LoggedTest {
   public static void listPods(String namespace, String labelSelectors) throws ApiException {
     V1PodList v1PodList =
         coreV1Api.listNamespacedPod(
-            namespace,
-            Boolean.FALSE.toString(),
-            Boolean.FALSE,
-            null,
-            null,
-            labelSelectors,
-            null,
-            null,
-            null,
-            Boolean.FALSE);
+            namespace, // namespace in which to look for the pods.
+            Boolean.FALSE.toString(), // pretty print output.
+            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+            null, // continue to query when there is more results to return.
+            null, // selector to restrict the list of returned objects by their fields
+            labelSelectors, // selector to restrict the list of returned objects by their labels.
+            null, // maximum number of responses to return for a list call.
+            null, // shows changes that occur after that particular version of a resource.
+            null, // Timeout for the list/watch call.
+            Boolean.FALSE // Watch for changes to the described resources.
+        );
     List<V1Pod> items = v1PodList.getItems();
     logger.info(Arrays.toString(items.toArray()));
   }
@@ -235,28 +246,29 @@ public class Kubernetes implements LoggedTest {
   public static void listServices(String namespace, String labelSelectors) throws ApiException {
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
-        Boolean.FALSE,
-        null,
-        null,
-        labelSelectors,
-        null,
-        Boolean.FALSE.toString(),
-        null,
-        null,
-        Boolean.FALSE);
+        Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+        null, // continue to query when there is more results to return.
+        null, // selector to restrict the list of returned objects by their fields
+        labelSelectors, // selector to restrict the list of returned objects by their labels.
+        null, // maximum number of responses to return for a list call.
+        Boolean.FALSE.toString(), // pretty print output.
+        null, // shows changes that occur after that particular version of a resource.
+        null, // Timeout for the list/watch call.
+        Boolean.FALSE // Watch for changes to the described resources.
+        );
     List<V1Service> items = v1ServiceList.getItems();
     logger.info(Arrays.toString(items.toArray()));
     for (V1Service service : items) {
-      logger.info("Service Name :" + service.getMetadata().getName());
-      logger.info("Service Namespace :" + service.getMetadata().getNamespace());
-      logger.info("Service ResourceVersion :" + service.getMetadata().getResourceVersion());
-      logger.info("Service SelfLink :" + service.getMetadata().getSelfLink());
+      logger.info("Service Name : " + service.getMetadata().getName());
+      logger.info("Service Namespace : " + service.getMetadata().getNamespace());
+      logger.info("Service ResourceVersion : " + service.getMetadata().getResourceVersion());
+      logger.info("Service SelfLink : " + service.getMetadata().getSelfLink());
       logger.info("Service Uid :" + service.getMetadata().getUid());
-      logger.info("Service Spec Cluster IP :" + service.getSpec().getClusterIP());
-      logger.info("Service Spec getExternalIPs :" + service.getSpec().getExternalIPs());
-      logger.info("Service Spec getExternalName :" + service.getSpec().getExternalName());
-      logger.info("Service Spec getPorts :" + service.getSpec().getPorts());
-      logger.info("Service Spec getType :" + service.getSpec().getType());
+      logger.info("Service Spec Cluster IP : " + service.getSpec().getClusterIP());
+      logger.info("Service Spec getExternalIPs : " + service.getSpec().getExternalIPs());
+      logger.info("Service Spec getExternalName : " + service.getSpec().getExternalName());
+      logger.info("Service Spec getPorts : " + service.getSpec().getPorts());
+      logger.info("Service Spec getType : " + service.getSpec().getType());
       Map<String, String> labels = service.getMetadata().getLabels();
       if (labels != null) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {

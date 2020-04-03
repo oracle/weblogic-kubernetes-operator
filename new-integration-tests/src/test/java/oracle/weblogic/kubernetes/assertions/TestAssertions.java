@@ -3,18 +3,19 @@
 
 package oracle.weblogic.kubernetes.assertions;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-// as in the actions, it is intended tests only use these assertaions and do
-// not go direct to the impl classes
-public class TestAssertions implements LoggedTest {
+
+/**
+ * General assertions needed by the tests to validate CRD, Domain, Pods etc., *
+ */
+public class TestAssertions {
 
   /**
    * Check if Operator is running.
@@ -29,12 +30,12 @@ public class TestAssertions implements LoggedTest {
   /**
    * Check if operator Rest service is running.
    *
-   * @param namespace the operator rest service exists
+   * @param namespace in which the operator rest service exists
    * @return true if rest service is running otherwise false
    */
   public static Callable<Boolean> operatorRestServiceRunning(String namespace) throws ApiException {
     return () -> {
-      return Operator.isExternalRestServiceCreated(namespace);
+      return Operator.doesExternalRestServiceExists(namespace);
     };
   }
 
@@ -46,21 +47,21 @@ public class TestAssertions implements LoggedTest {
    * @param namespace in which the domain custom resource object exists
    * @return true if domain object exists
    */
-  public static Callable<Boolean> domainExists(String domainUID, String namespace) {
-    return Domain.exists(domainUID, namespace);
+  public static Callable<Boolean> domainExists(String domainUID, String domainVersion, String namespace) {
+    return Domain.doesDomainExist(domainUID, domainVersion, namespace);
   }
 
   /**
-   * Check if a Kubernetes pod exists in any state.
+   * Check if a Kubernetes pod exists in any state in the given namespace.
    *
    * @param podName name of the pod to check for
-   * @param domainUID WebLogic domain uid in which the pod belongs
+   * @param domainUID UID of WebLogic domain in which the pod exists
    * @param namespace in which the pod exists
    * @return true if the pod exists in the namespace otherwise false
    */
   public static Callable<Boolean> podExists(String podName, String domainUID, String namespace) throws ApiException {
     return () -> {
-      return Kubernetes.isPodExists(namespace, domainUID, podName);
+      return Kubernetes.doesPodExist(namespace, domainUID, podName);
     };
   }
 
@@ -96,11 +97,17 @@ public class TestAssertions implements LoggedTest {
    * Check is a service exists in given namespace.
    *
    * @param serviceName the name of the service to check for
+   * @param label a Map of key value pairs the service is decorated with
    * @param namespace in which the service is running
    * @return true if the service exists otherwise false
+   * @throws ApiException when query fails
    */
-  public static boolean serviceReady(String serviceName, HashMap label, String namespace) throws ApiException {
-    return Kubernetes.isServiceCreated(serviceName, label, namespace);
+  public static boolean serviceReady(
+      String serviceName,
+      Map<String, String> label,
+      String namespace
+  )throws ApiException {
+    return Kubernetes.doesServiceExist(serviceName, label, namespace);
   }
 
   /**

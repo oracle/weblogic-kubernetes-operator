@@ -7,9 +7,9 @@ import java.util.HashMap;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-public class Operator implements LoggedTest {
+
+public class Operator {
 
   /**
    * Check if the operator pod is running in a given namespace.
@@ -23,16 +23,16 @@ public class Operator implements LoggedTest {
   }
 
   /**
-   * Checks if the operator external service is created.
+   * Checks if the operator external service exists.
    * @param namespace in which to check for the operator external service
    * @return true if service is found otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isExternalRestServiceCreated(String namespace) throws ApiException {
+  public static boolean doesExternalRestServiceExists(String namespace) throws ApiException {
     HashMap label = new HashMap();
     label.put("weblogic.operatorName", namespace);
     String serviceName = "external-weblogic-operator-svc";
-    return Kubernetes.isServiceCreated(serviceName, label, namespace);
+    return Kubernetes.doesServiceExist(serviceName, label, namespace);
   }
 
 }
