@@ -324,18 +324,31 @@ if [ -x "$(command -v helm)" ]; then
   [[ $? == 0 ]] && HELM_VERSION=V2
   [[ $? == 1 ]] && HELM_VERSION=V3
   echo "Detected Helm Version [$(helm version --short --client)]"
-  echo @@ Deleting installed helm charts
-  namespaces=`kubectl get ns | grep -v NAME | awk '{ print $1 }'`
-  for ns in $namespaces
-  do 
-     helm list --short --namespace $ns | while read helm_name; do
-     if [ "$HELM_VERSION" == "V2" ]; then
-       helm delete --purge  $helm_name
-     else 
-      helm uninstall $helm_name -n $ns 
-     fi
-     done
-  done
+  echo @@ `timestamp` Deleting installed helm charts
+  if [ "$HELM_VERSION" == "V2" ]; then
+   helm list --short | while read helm_name; do
+   if [ ! "$DRY_RUN" = "true" ]; then
+   (
+     set -x
+     helm delete --purge  $helm_name
+    )
+   else
+     echo @@ `timestamp` Info: DRYRUN: helm delete --purge  $helm_name
+   fi
+   done
+  fi
+
+  if [ "$HELM_VERSION" == "V3" ]; then
+    if [ ! "$DRY_RUN" = "true" ]; then
+    (
+      set -x
+      helm list --all-namespaces | grep -v NAME | awk '{system("helm uninstall " $1 " --namespace " $2)}'
+    )
+    else 
+      echo @@ `timestamp` Info: DRYRUN: helm uninstall 
+      helm list --all-namespaces | grep -v NAME | awk '{print $1 "\t" $2)}'
+   fi
+  fi
 
   # cleanup tiller artifacts
   if [ "$SHARED_CLUSTER" = "true" ]; then
@@ -356,8 +369,8 @@ deleteWithLabels
 #   arg2 - non-namespaced artifacts
 #   arg3 - keywords in deletable artificats
 
-echo @@ Starting genericDelete
-genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql"
+echo @@ `timestamp` Starting genericDelete
+genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns"
 SUCCESS="$?"
 
 if [ "${DELETE_FILES:-true}" = "true" ]; then
