@@ -1,3 +1,8 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# This file need to appended into kubernetes/samples/scripts/common/domain-template.yaml
+  
   %MII_PREFIX%configuration:
     #secrets: [ %DOMAIN_UID%-rcu-access ]
   

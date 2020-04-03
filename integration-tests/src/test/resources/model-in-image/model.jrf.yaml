@@ -1,3 +1,6 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -8,24 +11,29 @@ domainInfo:
         rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
 
 topology:
-    Name: domain1
-    AdminServerName: "admin-server"
     Cluster:
-        "cluster-1":
-            DynamicServers:
-                ServerTemplate:  "cluster-1-template"
-                ServerNamePrefix: "managed-server"
-                DynamicClusterSize: 5
-                MaxDynamicClusterSize: 5
-                CalculatedListenPorts: false
+        'cluster-1':
     Server:
-        "admin-server":
-            ListenPort: 7001
-    ServerTemplate:
-        "cluster-1-template":
-            Cluster: "cluster-1"
-            ListenPort : '@@PROP:MANSVR_PORT@@'
-
+        'config-managed-server-1':
+            Cluster: 'cluster-1'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+            NumOfRetriesBeforeMsiMode: 0
+            RetryIntervalBeforeMsiMode: 1
+        'config-managed-server-2':
+            Cluster: 'cluster-1'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+            NumOfRetriesBeforeMsiMode: 0
+            RetryIntervalBeforeMsiMode: 1
+        'config-managed-server-3':
+            Cluster: 'cluster-1'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+            NumOfRetriesBeforeMsiMode: 0
+            RetryIntervalBeforeMsiMode: 1
+        'config-managed-server-4':
+            Cluster: 'cluster-1'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+            NumOfRetriesBeforeMsiMode: 0
+            RetryIntervalBeforeMsiMode: 1
 appDeployments:
     Application:
         myear:
