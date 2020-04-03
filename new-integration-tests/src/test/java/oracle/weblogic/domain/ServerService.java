@@ -30,13 +30,17 @@ public class ServerService {
     return this;
   }
 
-  public Boolean getPrecreateService() {
+  public Boolean precreateService() {
     return precreateService;
   }
 
   public ServerService labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
+  }
+
+  public Map<String, String> labels() {
+    return labels;
   }
 
   public ServerService putLabelsItem(String key, String labelsItem) {
@@ -47,13 +51,13 @@ public class ServerService {
     return this;
   }
 
-  public Map<String, String> getLabels() {
-    return labels;
-  }
-
   public ServerService annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
+  }
+
+  public Map<String, String> annotations() {
+    return annotations;
   }
 
   public ServerService putAnnotationsItem(String key, String annotationsItem) {
@@ -62,10 +66,6 @@ public class ServerService {
     }
     annotations.put(key, annotationsItem);
     return this;
-  }
-
-  public Map<String, String> getAnnotations() {
-    return annotations;
   }
 
   @Override

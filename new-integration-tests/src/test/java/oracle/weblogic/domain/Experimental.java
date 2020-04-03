@@ -18,7 +18,7 @@ public class Experimental {
     return this;
   }
 
-  public Istio getIstio() {
+  public Istio istio() {
     return this.istio;
   }
 

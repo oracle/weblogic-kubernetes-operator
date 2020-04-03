@@ -36,7 +36,7 @@ public class DomainList {
     return this;
   }
 
-  public String getApiVersion() {
+  public String apiVersion() {
     return apiVersion;
   }
 
@@ -45,7 +45,7 @@ public class DomainList {
     return this;
   }
 
-  public List<Domain> getItems() {
+  public List<Domain> items() {
     return items;
   }
 
@@ -54,7 +54,7 @@ public class DomainList {
     return this;
   }
 
-  public String getKind() {
+  public String kind() {
     return kind;
   }
 
@@ -63,7 +63,7 @@ public class DomainList {
     return this;
   }
 
-  public V1ListMeta getMetadata() {
+  public V1ListMeta metadata() {
     return metadata;
   }
 

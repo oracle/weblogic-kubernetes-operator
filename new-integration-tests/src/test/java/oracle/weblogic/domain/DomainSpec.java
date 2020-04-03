@@ -151,7 +151,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getDomainUid() {
+  public String domainUid() {
     return domainUid;
   }
 
@@ -160,7 +160,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getDomainHome() {
+  public String domainHome() {
     return domainHome;
   }
 
@@ -169,7 +169,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getServerStartPolicy() {
+  public String serverStartPolicy() {
     return serverStartPolicy;
   }
 
@@ -178,7 +178,7 @@ public class DomainSpec {
     return this;
   }
 
-  public V1SecretReference getWebLogicCredentialsSecret() {
+  public V1SecretReference webLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
@@ -187,7 +187,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getLogHome() {
+  public String logHome() {
     return logHome;
   }
 
@@ -196,7 +196,7 @@ public class DomainSpec {
     return this;
   }
 
-  public Boolean getLogHomeEnabled() {
+  public Boolean logHomeEnabled() {
     return logHomeEnabled;
   }
 
@@ -205,11 +205,16 @@ public class DomainSpec {
     return this;
   }
 
-  public String getDataHome() {
+  public String dataHome() {
     return dataHome;
   }
 
-  public Boolean getIncludeServerOutInPodLog() {
+  public DomainSpec includeServerOutInPodLog(Boolean includeServerOutInPodLog) {
+    this.includeServerOutInPodLog = includeServerOutInPodLog;
+    return this;
+  }
+
+  public Boolean includeServerOutInPodLog() {
     return includeServerOutInPodLog;
   }
 
@@ -218,7 +223,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getImage() {
+  public String image() {
     return image;
   }
 
@@ -227,13 +232,17 @@ public class DomainSpec {
     return this;
   }
 
-  public String getImagePullPolicy() {
+  public String imagePullPolicy() {
     return imagePullPolicy;
   }
 
   public DomainSpec imagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
     return this;
+  }
+
+  public List<V1LocalObjectReference> imagePullSecrets() {
+    return imagePullSecrets;
   }
 
   public DomainSpec addImagePullSecretsItem(V1LocalObjectReference imagePullSecretsItem) {
@@ -244,16 +253,12 @@ public class DomainSpec {
     return this;
   }
 
-  public List<V1LocalObjectReference> getImagePullSecrets() {
-    return imagePullSecrets;
-  }
-
   public DomainSpec replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
   }
 
-  public Integer getReplicas() {
+  public Integer replicas() {
     return this.replicas;
   }
 
@@ -262,7 +267,7 @@ public class DomainSpec {
     return this;
   }
 
-  public Boolean getDomainHomeInImage() {
+  public Boolean domainHomeInImage() {
     return domainHomeInImage;
   }
 
@@ -271,7 +276,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getDomainHomeSourceType() {
+  public String domainHomeSourceType() {
     return domainHomeSourceType;
   }
 
@@ -280,7 +285,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getIntrospectVersion() {
+  public String introspectVersion() {
     return introspectVersion;
   }
 
@@ -289,7 +294,7 @@ public class DomainSpec {
     return this;
   }
 
-  public Configuration getConfiguration() {
+  public Configuration configuration() {
     return configuration;
   }
 
@@ -298,13 +303,17 @@ public class DomainSpec {
     return this;
   }
 
-  String getConfigOverrides() {
+  public String configOverrides() {
     return configOverrides;
   }
 
   public DomainSpec configOverrideSecrets(List<String> configOverrideSecrets) {
     this.configOverrideSecrets = configOverrideSecrets;
     return this;
+  }
+
+  public List<String> configOverrideSecrets() {
+    return configOverrideSecrets;
   }
 
   public DomainSpec addConfigOverrideSecretsItem(String configOverrideSecretsItem) {
@@ -315,22 +324,22 @@ public class DomainSpec {
     return this;
   }
 
-  public List<String> getConfigOverrideSecrets() {
-    return configOverrideSecrets;
-  }
-
   public DomainSpec adminServer(AdminServer adminServer) {
     this.adminServer = adminServer;
     return this;
   }
 
-  public AdminServer getAdminServer() {
+  public AdminServer adminServer() {
     return adminServer;
   }
 
   public DomainSpec managedServers(List<ManagedServer> managedServers) {
     this.managedServers = managedServers;
     return this;
+  }
+
+  public List<ManagedServer> managedServers() {
+    return managedServers;
   }
 
   public DomainSpec addManagedServersItem(ManagedServer managedServersItem) {
@@ -341,13 +350,13 @@ public class DomainSpec {
     return this;
   }
 
-  public List<ManagedServer> getManagedServers() {
-    return managedServers;
-  }
-
   public DomainSpec clusters(List<Cluster> clusters) {
     this.clusters = clusters;
     return this;
+  }
+
+  public List<Cluster> clusters() {
+    return clusters;
   }
 
   public DomainSpec addClustersItem(Cluster clustersItem) {
@@ -358,16 +367,12 @@ public class DomainSpec {
     return this;
   }
 
-  public List<Cluster> getClusters() {
-    return clusters;
-  }
-
   public DomainSpec experimental(Experimental experimental) {
     this.experimental = experimental;
     return this;
   }
 
-  public Experimental getExperimental() {
+  public Experimental experimental() {
     return experimental;
   }
 
@@ -376,7 +381,7 @@ public class DomainSpec {
     return this;
   }
 
-  public ServerPod getServerPod() {
+  public ServerPod serverPod() {
     return serverPod;
   }
 
@@ -385,7 +390,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getServerStartState() {
+  public String serverStartState() {
     return serverStartState;
   }
 
@@ -394,7 +399,7 @@ public class DomainSpec {
     return this;
   }
 
-  public String getRestartVersion() {
+  public String restartVersion() {
     return restartVersion;
   }
 

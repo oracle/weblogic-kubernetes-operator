@@ -34,7 +34,7 @@ public class Domain {
     return this;
   }
 
-  public String getApiVersion() {
+  public String apiVersion() {
     return apiVersion;
   }
 
@@ -43,7 +43,7 @@ public class Domain {
     return this;
   }
 
-  public String getKind() {
+  public String kind() {
     return kind;
   }
 
@@ -52,7 +52,7 @@ public class Domain {
     return this;
   }
 
-  public V1ObjectMeta getMetadata() {
+  public V1ObjectMeta metadata() {
     return metadata;
   }
 
@@ -61,7 +61,7 @@ public class Domain {
     return this;
   }
 
-  public DomainSpec getSpec() {
+  public DomainSpec spec() {
     return spec;
   }
 
@@ -70,7 +70,7 @@ public class Domain {
     return this;
   }
 
-  public DomainStatus getStatus() {
+  public DomainStatus status() {
     return status;
   }
 

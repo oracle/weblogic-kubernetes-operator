@@ -35,7 +35,7 @@ public class ServerStatus {
     return this;
   }
 
-  public String getServerName() {
+  public String serverName() {
     return serverName;
   }
 
@@ -44,7 +44,7 @@ public class ServerStatus {
     return this;
   }
 
-  public String getState() {
+  public String state() {
     return state;
   }
 
@@ -53,7 +53,7 @@ public class ServerStatus {
     return this;
   }
 
-  public String getDesiredState() {
+  public String desiredState() {
     return desiredState;
   }
 
@@ -62,7 +62,7 @@ public class ServerStatus {
     return this;
   }
 
-  public String getClusterName() {
+  public String clusterName() {
     return clusterName;
   }
 
@@ -71,7 +71,7 @@ public class ServerStatus {
     return this;
   }
 
-  public String getNodeName() {
+  public String nodeName() {
     return nodeName;
   }
 
@@ -80,7 +80,7 @@ public class ServerStatus {
     return this;
   }
 
-  public ServerHealth getHealth() {
+  public ServerHealth health() {
     return health;
   }
 

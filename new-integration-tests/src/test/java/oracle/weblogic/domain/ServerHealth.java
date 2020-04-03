@@ -34,7 +34,7 @@ public class ServerHealth {
     return this;
   }
 
-  public DateTime getActivationTime() {
+  public DateTime activationTime() {
     return activationTime;
   }
 
@@ -43,7 +43,7 @@ public class ServerHealth {
     return this;
   }
 
-  public String getOverallHealth() {
+  public String overallHealth() {
     return overallHealth;
   }
 
@@ -52,16 +52,16 @@ public class ServerHealth {
     return this;
   }
 
+  public List<SubsystemHealth> subsystems() {
+    return subsystems;
+  }
+
   public ServerHealth addSubsystemsItem(SubsystemHealth subsystemsItem) {
     if (subsystems == null) {
       subsystems = new ArrayList<>();
     }
     subsystems.add(subsystemsItem);
     return this;
-  }
-
-  public List<SubsystemHealth> getSubsystems() {
-    return subsystems;
   }
 
   @Override

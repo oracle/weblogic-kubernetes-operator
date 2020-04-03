@@ -38,6 +38,10 @@ public class AdminService {
     return this;
   }
 
+  public List<Channel> channels() {
+    return channels;
+  }
+
   public AdminService addChannelsItem(Channel channelsItem) {
     if (channels == null) {
       channels = new ArrayList<>();
@@ -46,13 +50,13 @@ public class AdminService {
     return this;
   }
 
-  public List<Channel> getChannels() {
-    return channels;
-  }
-
   public AdminService labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
+  }
+
+  public Map<String, String> labels() {
+    return labels;
   }
 
   public AdminService putLabelsItem(String key, String labelsItem) {
@@ -63,13 +67,13 @@ public class AdminService {
     return this;
   }
 
-  public Map<String, String> getLabels() {
-    return labels;
-  }
-
   public AdminService annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
+  }
+
+  public Map<String, String> annotations() {
+    return Collections.unmodifiableMap(annotations);
   }
 
   public AdminService putAnnotationsItem(String key, String annotationsItem) {
@@ -78,10 +82,6 @@ public class AdminService {
     }
     annotations.put(key, annotationsItem);
     return this;
-  }
-
-  public Map<String, String> getAnnotations() {
-    return Collections.unmodifiableMap(annotations);
   }
 
   @Override

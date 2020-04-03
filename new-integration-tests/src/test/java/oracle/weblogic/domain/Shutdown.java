@@ -33,7 +33,7 @@ public class Shutdown {
     return this;
   }
 
-  public String getShutdownType() {
+  public String shutdownType() {
     return shutdownType;
   }
 
@@ -42,7 +42,7 @@ public class Shutdown {
     return this;
   }
 
-  public Long getTimeoutSeconds() {
+  public Long timeoutSeconds() {
     return timeoutSeconds;
   }
 
@@ -51,7 +51,7 @@ public class Shutdown {
     return this;
   }
 
-  public Boolean getIgnoreSessions() {
+  public Boolean ignoreSessions() {
     return ignoreSessions;
   }
 

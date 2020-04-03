@@ -29,7 +29,7 @@ public class SubsystemHealth {
     return this;
   }
 
-  public String getHealth() {
+  public String health() {
     return health;
   }
 
@@ -38,7 +38,7 @@ public class SubsystemHealth {
     return this;
   }
 
-  public String getSubsystemName() {
+  public String subsystemName() {
     return subsystemName;
   }
 
@@ -47,16 +47,16 @@ public class SubsystemHealth {
     return this;
   }
 
+  public List<String> symptoms() {
+    return symptoms;
+  }
+
   public SubsystemHealth addSymptomsItem(String symptomsItem) {
     if (symptoms == null) {
       symptoms = new ArrayList<>();
     }
     symptoms.add(symptomsItem);
     return this;
-  }
-
-  public List<String> getSymptoms() {
-    return symptoms;
   }
 
   @Override

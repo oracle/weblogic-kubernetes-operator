@@ -53,7 +53,7 @@ public class Cluster {
     return this;
   }
 
-  public String getClusterName() {
+  public String clusterName() {
     return clusterName;
   }
 
@@ -62,7 +62,7 @@ public class Cluster {
     return this;
   }
 
-  public Integer getReplicas() {
+  public Integer replicas() {
     return replicas;
   }
 
@@ -71,7 +71,7 @@ public class Cluster {
     return this;
   }
 
-  public String getServerStartPolicy() {
+  public String serverStartPolicy() {
     return serverStartPolicy;
   }
 
@@ -80,7 +80,7 @@ public class Cluster {
     return this;
   }
 
-  public Integer getMaxUnavailable() {
+  public Integer maxUnavailable() {
     return maxUnavailable;
   }
 
@@ -89,7 +89,7 @@ public class Cluster {
     return this;
   }
 
-  public ClusterService getClusterService() {
+  public ClusterService clusterService() {
     return clusterService;
   }
 
@@ -98,7 +98,7 @@ public class Cluster {
     return this;
   }
 
-  public ServerPod getServerPod() {
+  public ServerPod serverPod() {
     return serverPod;
   }
 
@@ -107,7 +107,7 @@ public class Cluster {
     return this;
   }
 
-  public String getServerStartState() {
+  public String serverStartState() {
     return serverStartState;
   }
 
@@ -116,7 +116,7 @@ public class Cluster {
     return this;
   }
 
-  public String getRestartVersion() {
+  public String restartVersion() {
     return restartVersion;
   }
 

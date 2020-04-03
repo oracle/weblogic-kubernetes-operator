@@ -125,6 +125,10 @@ class ServerPod {
     return this;
   }
 
+  public List<V1EnvVar> env() {
+    return env;
+  }
+
   public ServerPod addEnvItem(V1EnvVar envItem) {
     if (env == null) {
       env = new ArrayList<>();
@@ -133,13 +137,13 @@ class ServerPod {
     return this;
   }
 
-  public List<V1EnvVar> getEnv() {
-    return env;
-  }
-
   public ServerPod labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
+  }
+
+  public Map<String, String> labels() {
+    return labels;
   }
 
   public ServerPod putLabelsItem(String key, String labelsItem) {
@@ -150,13 +154,13 @@ class ServerPod {
     return this;
   }
 
-  public Map<String, String> getLabels() {
-    return labels;
-  }
-
   public ServerPod annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
+  }
+
+  public Map<String, String> annotations() {
+    return annotations;
   }
 
   public ServerPod putAnnotationsItem(String key, String annotationsItem) {
@@ -167,16 +171,12 @@ class ServerPod {
     return this;
   }
 
-  public Map<String, String> getAnnotations() {
-    return annotations;
-  }
-
   public ServerPod livenessProve(ProbeTuning livenessProbe) {
     this.livenessProbe = livenessProbe;
     return this;
   }
 
-  public ProbeTuning getLivenessProbe() {
+  public ProbeTuning livenessProbe() {
     return livenessProbe;
   }
 
@@ -185,13 +185,17 @@ class ServerPod {
     return this;
   }
 
-  public ProbeTuning getReadinessProbe() {
+  public ProbeTuning readinessProbe() {
     return readinessProbe;
   }
 
   public ServerPod nodeSelector(Map<String, String> nodeSelector) {
     this.nodeSelector = nodeSelector;
     return this;
+  }
+
+  public Map<String, String> nodeSelector() {
+    return nodeSelector;
   }
 
   public ServerPod putNodeSelectorItem(String key, String nodeSelectorItem) {
@@ -202,16 +206,12 @@ class ServerPod {
     return this;
   }
 
-  public Map<String, String> getNodeSelector() {
-    return nodeSelector;
-  }
-
   public ServerPod affinity(V1Affinity affinity) {
     this.affinity = affinity;
     return this;
   }
 
-  public V1Affinity getAffinity() {
+  public V1Affinity affinity() {
     return affinity;
   }
 
@@ -220,13 +220,17 @@ class ServerPod {
     return this;
   }
 
-  public String getPriorityClassName() {
+  public String priorityClassName() {
     return priorityClassName;
   }
 
   public ServerPod readinessGates(List<V1PodReadinessGate> readinessGates) {
     this.readinessGates = readinessGates;
     return this;
+  }
+
+  public List<V1PodReadinessGate> readinessGates() {
+    return readinessGates;
   }
 
   public ServerPod addReadinessGatesItem(V1PodReadinessGate readinessGateItem) {
@@ -237,16 +241,12 @@ class ServerPod {
     return this;
   }
 
-  public List<V1PodReadinessGate> getReadinessGates() {
-    return readinessGates;
-  }
-
   public ServerPod restartPolicy(String restartPolicy) {
     this.restartPolicy = restartPolicy;
     return this;
   }
 
-  public String getRestartPolicy() {
+  public String restartPolicy() {
     return restartPolicy;
   }
 
@@ -255,7 +255,7 @@ class ServerPod {
     return this;
   }
 
-  public String getRuntimeClassName() {
+  public String runtimeClassName() {
     return runtimeClassName;
   }
 
@@ -264,7 +264,7 @@ class ServerPod {
     return this;
   }
 
-  public String getNodeName() {
+  public String nodeName() {
     return nodeName;
   }
 
@@ -273,13 +273,17 @@ class ServerPod {
     return this;
   }
 
-  public String getSchedulerName() {
+  public String schedulerName() {
     return schedulerName;
   }
 
   public ServerPod tolerations(List<V1Toleration> tolerations) {
     this.tolerations = tolerations;
     return this;
+  }
+
+  public List<V1Toleration> tolerations() {
+    return tolerations;
   }
 
   public ServerPod addTolerationsItem(V1Toleration tolerationsItem) {
@@ -290,16 +294,12 @@ class ServerPod {
     return this;
   }
 
-  public List<V1Toleration> getTolerations() {
-    return tolerations;
-  }
-
   public ServerPod serviceAccountName(String serviceAccountName) {
     this.serviceAccountName = serviceAccountName;
     return this;
   }
 
-  public String getServiceAccountName() {
+  public String serviceAccountName() {
     return serviceAccountName;
   }
 
@@ -308,7 +308,7 @@ class ServerPod {
     return this;
   }
 
-  public V1ResourceRequirements getResources() {
+  public V1ResourceRequirements resources() {
     return resources;
   }
 
@@ -317,13 +317,17 @@ class ServerPod {
     return this;
   }
 
-  public V1PodSecurityContext getPodSecurityContext() {
+  public V1PodSecurityContext podSecurityContext() {
     return podSecurityContext;
   }
 
   public ServerPod initContainers(List<V1Container> initContainers) {
     this.initContainers = initContainers;
     return this;
+  }
+
+  public List<V1Container> initContainers() {
+    return initContainers;
   }
 
   public ServerPod addInitContainersItem(V1Container initContainersItem) {
@@ -334,13 +338,13 @@ class ServerPod {
     return this;
   }
 
-  public List<V1Container> getInitContainers() {
-    return initContainers;
-  }
-
   public ServerPod containers(List<V1Container> containers) {
     this.containers = containers;
     return this;
+  }
+
+  public List<V1Container> containers() {
+    return containers;
   }
 
   public ServerPod addContainersItem(V1Container containersItem) {
@@ -351,16 +355,12 @@ class ServerPod {
     return this;
   }
 
-  public List<V1Container> getContainers() {
-    return containers;
-  }
-
   public ServerPod shutdown(Shutdown shutdown) {
     this.shutdown = shutdown;
     return this;
   }
 
-  public Shutdown getShutdown() {
+  public Shutdown shutdown() {
     return shutdown;
   }
 
@@ -369,13 +369,17 @@ class ServerPod {
     return this;
   }
 
-  public V1SecurityContext getContainerSecurityContext() {
+  public V1SecurityContext containerSecurityContext() {
     return containerSecurityContext;
   }
 
   public ServerPod volumes(List<V1Volume> volumes) {
     this.volumes = volumes;
     return this;
+  }
+
+  public List<V1Volume> volumes() {
+    return volumes;
   }
 
   public ServerPod addVolumesItem(V1Volume volumesItem) {
@@ -386,13 +390,13 @@ class ServerPod {
     return this;
   }
 
-  public List<V1Volume> getVolumes() {
-    return volumes;
-  }
-
   public ServerPod volumeMounts(List<V1VolumeMount> volumeMounts) {
     this.volumeMounts = volumeMounts;
     return this;
+  }
+
+  public List<V1VolumeMount> volumeMounts() {
+    return volumeMounts;
   }
 
   public ServerPod addVolumeMountsItem(V1VolumeMount volumeMountsItem) {
@@ -401,10 +405,6 @@ class ServerPod {
     }
     volumeMounts.add(volumeMountsItem);
     return this;
-  }
-
-  public List<V1VolumeMount> getVolumeMounts() {
-    return volumeMounts;
   }
 
   @Override

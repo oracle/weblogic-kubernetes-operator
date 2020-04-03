@@ -38,7 +38,7 @@ public class DomainCondition {
     return this;
   }
 
-  public String getType() {
+  public String type() {
     return type;
   }
 
@@ -47,7 +47,7 @@ public class DomainCondition {
     return this;
   }
 
-  public DateTime getLastProbeTime() {
+  public DateTime lastProbeTime() {
     return lastProbeTime;
   }
 
@@ -56,7 +56,7 @@ public class DomainCondition {
     return this;
   }
 
-  public DateTime getLastTransitionTime() {
+  public DateTime lastTransitionTime() {
     return lastTransitionTime;
   }
 
@@ -65,7 +65,7 @@ public class DomainCondition {
     return this;
   }
 
-  public String getMessage() {
+  public String message() {
     return message;
   }
 
@@ -74,7 +74,7 @@ public class DomainCondition {
     return this;
   }
 
-  public String getReason() {
+  public String reason() {
     return reason;
   }
 
@@ -83,7 +83,7 @@ public class DomainCondition {
     return this;
   }
 
-  public String getStatus() {
+  public String status() {
     return status;
   }
 

@@ -37,7 +37,7 @@ public class ClusterStatus {
     return this;
   }
 
-  public String getClusterName() {
+  public String clusterName() {
     return clusterName;
   }
 
@@ -46,7 +46,7 @@ public class ClusterStatus {
     return this;
   }
 
-  public Integer getReplicas() {
+  public Integer replicas() {
     return replicas;
   }
 
@@ -55,7 +55,7 @@ public class ClusterStatus {
     return this;
   }
 
-  public Integer getReadyReplicas() {
+  public Integer readyReplicas() {
     return readyReplicas;
   }
 
@@ -64,7 +64,7 @@ public class ClusterStatus {
     return this;
   }
 
-  public Integer getMaximumReplicas() {
+  public Integer maximumReplicas() {
     return maximumReplicas;
   }
 
@@ -73,7 +73,7 @@ public class ClusterStatus {
     return this;
   }
 
-  public Integer getMinimumReplicas() {
+  public Integer minimumReplicas() {
     return minimumReplicas;
   }
 
@@ -82,7 +82,7 @@ public class ClusterStatus {
     return this;
   }
 
-  public Integer getReplicasGoal() {
+  public Integer replicasGoal() {
     return replicasGoal;
   }
 

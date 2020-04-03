@@ -44,7 +44,7 @@ public class ManagedServer {
     return this;
   }
 
-  public String getServerName() {
+  public String serverName() {
     return serverName;
   }
 
@@ -53,7 +53,7 @@ public class ManagedServer {
     return this;
   }
 
-  public String getServerStartPolicy() {
+  public String serverStartPolicy() {
     return serverStartPolicy;
   }
 
@@ -62,7 +62,7 @@ public class ManagedServer {
     return this;
   }
 
-  public ServerPod getServerPod() {
+  public ServerPod serverPod() {
     return serverPod;
   }
 
@@ -71,7 +71,7 @@ public class ManagedServer {
     return this;
   }
 
-  public String getServerStartState() {
+  public String serverStartState() {
     return serverStartState;
   }
 
@@ -80,7 +80,7 @@ public class ManagedServer {
     return this;
   }
 
-  public String getRestartVersion() {
+  public String restartVersion() {
     return restartVersion;
   }
 

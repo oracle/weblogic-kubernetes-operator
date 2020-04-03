@@ -53,6 +53,10 @@ public class DomainStatus {
     return this;
   }
 
+  public List<DomainCondition> conditions() {
+    return conditions;
+  }
+
   public DomainStatus addConditionsItem(DomainCondition conditionsItem) {
     if (conditions == null) {
       conditions = new ArrayList<>();
@@ -61,21 +65,13 @@ public class DomainStatus {
     return this;
   }
 
-  public List<DomainCondition> getConditions() {
-    return conditions;
-  }
-
   public DomainStatus message(String message) {
     this.message = message;
     return this;
   }
 
-  public String getMessage() {
+  public String message() {
     return message;
-  }
-
-  public String getReason() {
-    return reason;
   }
 
   public DomainStatus reason(String reason) {
@@ -83,9 +79,17 @@ public class DomainStatus {
     return this;
   }
 
+  public String reason() {
+    return reason;
+  }
+
   public DomainStatus servers(List<ServerStatus> servers) {
     this.servers = servers;
     return this;
+  }
+
+  public List<ServerStatus> servers() {
+    return servers;
   }
 
   public DomainStatus addServersItem(ServerStatus serversItem) {
@@ -96,13 +100,13 @@ public class DomainStatus {
     return this;
   }
 
-  public List<ServerStatus> getServers() {
-    return servers;
-  }
-
   public DomainStatus clusters(List<ClusterStatus> clusters) {
     this.clusters = clusters;
     return this;
+  }
+
+  public List<ClusterStatus> clusters() {
+    return clusters;
   }
 
   public DomainStatus addClustersItem(ClusterStatus clustersItem) {
@@ -113,16 +117,12 @@ public class DomainStatus {
     return this;
   }
 
-  public List<ClusterStatus> getClusters() {
-    return clusters;
-  }
-
   public DomainStatus startTime(DateTime startTime) {
     this.startTime = startTime;
     return this;
   }
 
-  public DateTime getStartTime() {
+  public DateTime startTime() {
     return startTime;
   }
 
@@ -131,7 +131,7 @@ public class DomainStatus {
     return this;
   }
 
-  public Integer getReplicas() {
+  public Integer replicas() {
     return this.replicas;
   }
 

@@ -24,7 +24,7 @@ public class ProbeTuning {
     return this;
   }
 
-  public Integer getInitialDelaySeconds() {
+  public Integer initialDelaySeconds() {
     return initialDelaySeconds;
   }
 
@@ -33,7 +33,7 @@ public class ProbeTuning {
     return this;
   }
 
-  public Integer getPeriodSeconds() {
+  public Integer periodSeconds() {
     return periodSeconds;
   }
 
@@ -42,7 +42,7 @@ public class ProbeTuning {
     return this;
   }
 
-  public Integer getTimeoutSeconds() {
+  public Integer timeoutSeconds() {
     return timeoutSeconds;
   }
 

@@ -26,6 +26,10 @@ public class ClusterService {
     return this;
   }
 
+  public Map<String, String> labels() {
+    return labels;
+  }
+
   public ClusterService putLabelsItem(String key, String labelsItem) {
     if (labels == null) {
       labels = new HashMap<>();
@@ -34,13 +38,13 @@ public class ClusterService {
     return this;
   }
 
-  public Map<String, String> getLabels() {
-    return labels;
-  }
-
   public ClusterService annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
+  }
+
+  public Map<String, String> annotations() {
+    return annotations;
   }
 
   public ClusterService putAnnotationsItem(String key, String annotationsItem) {
@@ -49,10 +53,6 @@ public class ClusterService {
     }
     annotations.put(key, annotationsItem);
     return this;
-  }
-
-  public Map<String, String> getAnnotations() {
-    return annotations;
   }
 
   @Override

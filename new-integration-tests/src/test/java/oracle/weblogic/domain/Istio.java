@@ -23,7 +23,7 @@ public class Istio {
     return this;
   }
 
-  public Boolean getEnabled() {
+  public Boolean enabled() {
     return this.enabled;
   }
 
@@ -32,7 +32,7 @@ public class Istio {
     return this;
   }
 
-  public Integer getReadinessPort() {
+  public Integer readinessPort() {
     return this.readinessPort;
   }
 

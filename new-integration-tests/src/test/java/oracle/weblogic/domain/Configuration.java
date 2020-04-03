@@ -37,7 +37,7 @@ public class Configuration {
     return this;
   }
 
-  public Model getModel() {
+  public Model model() {
     return model;
   }
 
@@ -46,13 +46,17 @@ public class Configuration {
     return this;
   }
 
-  public Opss getOpss() {
+  public Opss opss() {
     return this.opss;
   }
 
   public Configuration secrets(List<String> secrets) {
     this.secrets = secrets;
     return this;
+  }
+
+  public List<String> secrets() {
+    return secrets;
   }
 
   public Configuration addSecretsItem(String secretsItem) {
@@ -63,16 +67,12 @@ public class Configuration {
     return this;
   }
 
-  public List<String> getSecrets() {
-    return secrets;
-  }
-
   public Configuration overridesConfigMap(String overridesConfigMap) {
     this.overridesConfigMap = overridesConfigMap;
     return this;
   }
 
-  public String getOverridesConfigMap() {
+  public String overridesConfigMap() {
     return this.overridesConfigMap;
   }
 
@@ -81,7 +81,7 @@ public class Configuration {
     return this;
   }
 
-  public Long getIntrospectorJobActiveDeadlineSeconds() {
+  public Long introspectorJobActiveDeadlineSeconds() {
     return this.introspectorJobActiveDeadlineSeconds;
   }
 

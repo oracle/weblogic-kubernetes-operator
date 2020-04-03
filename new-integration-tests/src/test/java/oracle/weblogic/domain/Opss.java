@@ -22,7 +22,7 @@ public class Opss {
     return this;
   }
 
-  public String getWalletFileSecret() {
+  public String walletFileSecret() {
     return this.walletFileSecret;
   }
 
@@ -31,7 +31,7 @@ public class Opss {
     return this;
   }
 
-  public String getWalletPasswordSecret() {
+  public String walletPasswordSecret() {
     return this.walletPasswordSecret;
   }
 

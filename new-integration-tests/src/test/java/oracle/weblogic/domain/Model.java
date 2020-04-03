@@ -25,7 +25,7 @@ public class Model {
     return this;
   }
 
-  public String getDomainType() {
+  public String domainType() {
     return domainType;
   }
 
@@ -34,7 +34,7 @@ public class Model {
     return this;
   }
 
-  public String getConfigMap() {
+  public String configMap() {
     return configMap;
   }
 
@@ -43,7 +43,7 @@ public class Model {
     return this;
   }
 
-  public String getRuntimeEncryptionSecret() {
+  public String runtimeEncryptionSecret() {
     return runtimeEncryptionSecret;
   }
 

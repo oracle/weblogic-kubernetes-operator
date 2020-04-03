@@ -33,7 +33,7 @@ public class Channel {
     return this;
   }
 
-  public String getChannelName() {
+  public String channelName() {
     return channelName;
   }
 
@@ -42,7 +42,7 @@ public class Channel {
     return this;
   }
 
-  public Integer getNodePort() {
+  public Integer nodePort() {
     return nodePort;
   }
 
