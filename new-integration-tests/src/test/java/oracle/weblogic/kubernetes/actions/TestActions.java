@@ -19,8 +19,6 @@ import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.InstallParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 
@@ -207,33 +205,29 @@ public class TestActions {
 
   // ------------------------ Docker image  -------------------------
 
+  /**
+   * Create a WITParams that contains the parameters for executing a WIT command
+   *
+   * @return an instance of WITParams that contains the default values
+   */
+  public static WITParams withWITParams() {
+    return 
+        WebLogicImageTool.withDefaults();
+  }
+ 
+  /**
+   * Create an image using WDT models using WebLogic Image Tool
+   *
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if successful delete, false otherwise
+   */
   public static boolean createMIIImage(WITParams params) {
-    return
-        new WebLogicImageTool()
-            .with(params)
+    return 
+        WebLogicImageTool
+            .withParams(params)
             .updateImage();
   }
-
-  // ------------------------ Installer  -------------------------
-
-  public static boolean verifyAndInstallWIT(String version, String location) {
-    return new Installer()
-        .with(new InstallParams()
-            .type("WIT")
-            .version(version)
-            .location(location))
-        .download();
-  }
-
-  public static boolean verifyAndInstallWDT(String version, String location) {
-    return new Installer()
-        .with(new InstallParams()
-            .type("WDT")
-            .version(version)
-            .location(location))
-        .download();
-  }
-
+ 
   // -------------------------   pv/pvc  ---------------------------------
 
   /**
@@ -378,7 +372,5 @@ public class TestActions {
                                           String username, String password, String target) {
     return true;
   }
-
-  // etc...
 
 }
