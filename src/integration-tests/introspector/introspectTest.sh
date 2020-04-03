@@ -101,8 +101,6 @@ export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
 DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-PersistentVolume}
 export DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE}
-WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
-export WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 
 if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
   # Make sure the configmap and secrets are not optional
