@@ -436,14 +436,14 @@ function createMII_Image() {
   export WORKDIR=${test_home}/mii/workdir  || exit 1
   export MODEL_IMAGE_TAG=it || exit 1
   export MODEL_IMAGE_NAME=model-in-image || exit 1
-  #export MODEL_IMAGE_BUILD="when-missing"
+  export MODEL_IMAGE_BUILD="when-missing"
 
   docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
 
   trace "Info: Downloading WDT and WIT..."
 
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh \
-   > ${test_home}/miibuild_download.out 2>&1 || exit 1
+   > ${test_home}/miibuild_download.out 2>&1
 
   if [ $? -ne 0 ] ; then
     trace "Error: createMII_Image: download tools failed"
@@ -454,7 +454,7 @@ function createMII_Image() {
   trace "Info: Launching WIT to build the image..."
 
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh \
-   > ${test_home}/miibuild_image.out  2>&1  || exit 1
+   > ${test_home}/miibuild_image.out  2>&1
 
   if [ $? -ne 0 ] ; then
     trace "Error: createMII_Image: build image failed"
