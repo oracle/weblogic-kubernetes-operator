@@ -53,6 +53,7 @@ RCU_PASSWORD_CHANGED=5
 SCRIPT_ERROR=255
 
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
+[ ! -d ${WDT_MODEL_SECRETS_DIRS} ] && unset WDT_MODEL_SECRETS_DIRS
 
 #TBD: CREDENTIALS_SECRET_NAME is unexpectedly empty. Maybe that's a regression?
 #  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
