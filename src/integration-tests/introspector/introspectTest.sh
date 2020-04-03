@@ -430,13 +430,13 @@ function createMII_Image() {
   cp ${SCRIPTPATH}/mii/models/*  ${test_home}/mii/workdir/models || exit 1
   cd ${test_home}/mii/workdir  || exit 1
   echo "place holder" > dummy.txt || exit 1
-  zip archive.zip dummy.txt || exit 1
+  zip archive.zip dummy.txt > /dev/null 2>&1 || exit 1
 
   (
   export WORKDIR=${test_home}/mii/workdir  || exit 1
   export MODEL_IMAGE_TAG=it || exit 1
   export MODEL_IMAGE_NAME=model-in-image || exit 1
-  export MODEL_IMAGE_BUILD="when-missing"
+  #export MODEL_IMAGE_BUILD="when-missing"
 
   docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
 
