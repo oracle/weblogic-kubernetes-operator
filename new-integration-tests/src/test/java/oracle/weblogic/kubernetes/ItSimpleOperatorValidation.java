@@ -89,7 +89,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
             .chartDir("../kubernetes/charts/weblogic-operator")
             .image("phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop")
             .domainNamespaces(Arrays.asList(domainNamespace1, domainNamespace2))
-            .serviceAccount("opns1-sa");
+            .serviceAccount(serviceAccountName);
 
     try {
       assertThat(installOperator(opParams)).as("Operator installation failed").isTrue();
@@ -119,6 +119,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
           // operatorIsRunning() is one of our custom, reusable assertions
           .until(operatorIsRunning(opNamespace));
     } finally {
+
       // delete chart
       assertThat(TestActions.deleteOperator(opParams))
           .as("Operator uninstall failed")
@@ -143,6 +144,8 @@ class ItSimpleOperatorValidation implements LoggedTest {
       assertDoesNotThrow(
           () -> TestActions.deleteNamespace(opNamespace));
       logger.info("Deleted namespace: " + opNamespace);
+
+
     }
   }
 

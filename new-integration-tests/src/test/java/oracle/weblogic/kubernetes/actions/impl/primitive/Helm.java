@@ -55,7 +55,8 @@ public class Helm {
 
     // build helm install command
     StringBuffer installCmd = new StringBuffer("helm install ")
-        .append(params.getReleaseName()).append(" ").append(chartRef);
+        .append(params.getReleaseName()).append(" ").append(chartRef)
+        .append(" --namespace ").append(params.getNamespace());
 
     // add all the parameters
     appendValues(params.getValues(), installCmd);
@@ -98,7 +99,8 @@ public class Helm {
 
     // build helm upgrade command
     StringBuffer upgradeCmd = new StringBuffer("helm upgrade ")
-        .append(params.getReleaseName()).append(" ").append(chartDir);
+        .append(params.getReleaseName()).append(" ").append(chartDir)
+        .append(" --namespace ").append(params.getNamespace());
 
     // add all the parameters
     appendValues(params.getValues(), upgradeCmd);
@@ -114,8 +116,19 @@ public class Helm {
    * @return true on success, false otherwise
    */
   public static boolean delete(HelmParams params) {
-    //ToDo: assert for chartName
-    return exec("helm uninstall " + params.getReleaseName());
+    // assertions for required parameters
+    assertThat(params.getNamespace())
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
+
+    assertThat(params.getReleaseName())
+        .as("make sure releaseName is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
+
+    return exec("helm uninstall " + params.getReleaseName()
+        + " -n " + params.getNamespace());
   }
 
   /**
