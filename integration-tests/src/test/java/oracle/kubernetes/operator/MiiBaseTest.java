@@ -18,6 +18,7 @@ import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.jupiter.api.Assertions;
 
 public class MiiBaseTest extends BaseTest {
   /**
@@ -81,19 +82,14 @@ public class MiiBaseTest extends BaseTest {
    * Modify the domain yaml to change domain-level restart version.
    * @param domainNS the domain namespace
    * @param domainUid the domain UID
-   * @param versionNo version number of domain
-   *
-   * @throws Exception if patching domain fails
+   * @param versionNo restartVersion number of domain
    */
   protected void createDomainImage(Map<String, Object> domainMap, String imageName,
-                                   String modelFile, String modelPropFile) throws Exception {
+                                   String modelFile, String modelPropFile) {
     String domainBaseImageName = (String) domainMap.get("domainHomeImageBase");
     String domainUid = (String) domainMap.get("domainUID");
     String domainName = (String) domainMap.get("domainName");
-    LoggerHelper.getLocal().log(Level.INFO, "imageName: " + imageName);
-    LoggerHelper.getLocal().log(Level.INFO, "domainBaseImageName: " + domainBaseImageName);
-    LoggerHelper.getLocal().log(Level.INFO, "domainUid: " + domainUid);
-    LoggerHelper.getLocal().log(Level.INFO, "domainName: " + domainName);
+    ExecResult result = null;
 
     // Get the map of any additional environment vars, or null
     Map<String, String> additionalEnvMap = (Map<String, String>) domainMap.get("additionalEnvMap");
@@ -127,17 +123,22 @@ public class MiiBaseTest extends BaseTest {
       .append(" --wdtDomainType ")
       .append(WdtDomainType.WLS.geWdtDomainType());
 
-    // patching the domain
-    LoggerHelper.getLocal().log(Level.INFO, "Command to create domain image: " + createDomainImageScriptCmd);
-    ExecResult result = ExecCommand.exec(createDomainImageScriptCmd.toString(), true, additionalEnvMap);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-        "FAILURE: command "
-          + createDomainImageScriptCmd
-          + " failed, returned "
-          + result.stdout()
-          + "\n"
-          + result.stderr());
+    try {
+      // creating image
+      LoggerHelper.getLocal().log(Level.INFO, "Command to create domain image: "
+          + createDomainImageScriptCmd);
+      result = ExecCommand.exec(createDomainImageScriptCmd.toString(), true, additionalEnvMap);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(createDomainImageScriptCmd)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
+
+      Assertions.fail(errorMsg.toString(), ex.getCause());
     }
   }
 
@@ -146,11 +147,10 @@ public class MiiBaseTest extends BaseTest {
    * @param domainNS the domain namespace
    * @param domainUid the domain UID
    * @param imageName image name
-   *
-   * @throws Exception if patching domain fails
    */
   protected void modifyDomainYamlWithImageName(
-      Domain domain, String domainNS, String imageName) throws Exception {
+      Domain domain, String domainNS, String imageName) {
+    ExecResult result = null;
     String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
     StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
     patchDomainCmd
@@ -162,14 +162,27 @@ public class MiiBaseTest extends BaseTest {
         .append(imageName)
         .append("'\" }]'");
 
-    // patching the domain
-    LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-    ExecResult result = TestUtils.exec(patchDomainCmd.toString());
-    LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
+    try {
+      // patching the domain
+      LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
+      result = TestUtils.exec(patchDomainCmd.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
 
-    // verify the domain restarted
-    domain.verifyAdminServerRestarted();
-    domain.verifyManagedServersRestarted();
+      // verify the domain restarted
+      domain.verifyAdminServerRestarted();
+      domain.verifyManagedServersRestarted();
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(patchDomainCmd)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
+
+      Assertions.fail(errorMsg.toString(), ex.getCause());
+    }
   }
 
   /**
@@ -216,12 +229,10 @@ public class MiiBaseTest extends BaseTest {
    * Modify the domain yaml to change domain-level restart version.
    * @param domainNS the domain namespace
    * @param domainUid the domain UID
-   * @param versionNo version number of domain
-   *
-   * @throws Exception if patching domain fails
+   * @param versionNo restartVersion number of domain
    */
-  protected void modifyDomainYamlWithRestartVersion(
-      Domain domain, String domainNS) throws Exception {
+  protected void modifyDomainYamlWithRestartVersion(Domain domain, String domainNS) {
+    ExecResult result = null;
     String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
     StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
     patchDomainCmd
@@ -233,17 +244,30 @@ public class MiiBaseTest extends BaseTest {
         .append(versionNo)
         .append("'\" }]'");
 
-    // patching the domain
-    LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-    ExecResult result = TestUtils.exec(patchDomainCmd.toString());
-    LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
+    try {
+      // patching the domain
+      LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
+      result = TestUtils.exec(patchDomainCmd.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
 
-    // verify the domain restarted
-    domain.verifyAdminServerRestarted();
-    domain.verifyManagedServersRestarted();
+      // verify the domain restarted
+      domain.verifyAdminServerRestarted();
+      domain.verifyManagedServersRestarted();
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(patchDomainCmd)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
+
+      Assertions.fail(errorMsg.toString(), ex.getCause());
+    }
   }
 
-  private String getRestartVersion(String domainNS, String domainUid) throws Exception {
+  private String getRestartVersion(String domainNS, String domainUid) {
     String versionNo = "1";
     StringBuffer getVersionCmd = new StringBuffer("kubectl -n ");
     getVersionCmd

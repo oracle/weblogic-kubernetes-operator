@@ -9,10 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
@@ -36,12 +33,13 @@ import org.junit.jupiter.api.Test;
 
 public class ItModelInImageConfigUpdate extends MiiBaseTest {
   private static Operator operator;
-  private static Domain domain;
+  //private static Domain domain;
   private static String domainNS;
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static final String configMapSuffix = "-mii-config-map";
   private static final String dsName = "MyDataSource";
+  private static String jndiName = "jdbc/generic1";
   private static final String appName = "myear";
   private static final String readTimeout_1 = "30001";
   private static final String readTimeout_2 = "30002";
@@ -105,48 +103,65 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
    * re-create the configmap with model files that define a JDBC DataSource
    * and update the domain crd to change domain restartVersion to reload the model,
    * generate new config and initiate a rolling restart.
-   *
-   * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiConfigUpdateNonJdbcCm() throws Exception {
+  public void testMiiConfigUpdateNonJdbcCm() {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Creating Domain & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
+    Domain domain = null;
+
     try {
-      // create Domain w/o JDBC DS using the image created by MII
+      logTestBegin(testMethodName);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Creating Domain & waiting for the script to complete execution");
+
+      // create domain w/o JDBC DS using the image created by MII
       boolean createDS = false;
-      createDomainUsingMii(createDS);
+      domain = createDomainUsingMii(createDS);
+      Assertions.assertNotNull(domain, "Failed to create a domain");
 
       // copy model files that contains JDBC DS to a dir to re-create cm
-      String destDir = copyTestModelFiles();
+      final String destDir = getResultDir() + "/samples/model-in-image-update";
+      copyTestModelFiles(destDir);
 
-      // re-create cm to update config
-      wdtConfigUpdate(destDir);
+      // re-create cm to update config and verify cm is created successfylly
+      wdtConfigUpdate(destDir, domain);
 
-      // update domain yaml with restartVersion and
-      // apply the domain yaml, verify domain restarted
+      // update domain yaml with restartVersion,
+      // apply the domain yaml and verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
 
-      // verify the test result by checking updated config file on server pod
-      verifyJdbcUpdate();
+      // verify that JNDI name exists by checking updated config file on server pod
+      String jdbcDsStr = getJndiName(domain);
+      Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
+          "JDBC DS doesn't update");
+      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
+
+      // get JDBC DS prop values via WLST on server pod
+      String jdbcResourceData = getJdbcResources(destDir, domain);
 
       // verify that JDBC DS is created by checking JDBC DS name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
-      Set<String> jdbcResourcesToVerify = new HashSet<String>();
-      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
-      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_2);
-
-      verifyJdbcResources(jdbcResourcesToVerify, destDir);
+      final String[] jdbcResourcesToVerify =
+          {"datasource.name.1=" + dsName,
+              "datasource.readTimeout.1=" + readTimeout_2};
+      for (String prop : jdbcResourcesToVerify) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
 
       testCompletedSuccessfully = true;
+    } catch (Exception ex) {
+      Assertions.fail("FAILED - " + testMethodName);
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        try {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        } catch (Exception ex) {
+          LoggerHelper.getLocal().log(Level.INFO, "Failed to delete domain\n " + ex.getMessage());
+        }
       }
     }
 
@@ -159,24 +174,26 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
    * create a new image with diff tag name and model files that define a JDBC DataSource
    * and update the domain crd to change image name to reload the model,
    * generate new config and initiate a rolling restart.
-   *
-   * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiConfigUpdateNonJdbcImage() throws Exception {
+  public void testMiiConfigUpdateNonJdbcImage() {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Creating Domain & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
-    try {
-      // create Domain w/o JDBC DS using the image created by MII
-      boolean createDS = false;
-      createDomainUsingMii(createDS);
+    Domain domain = null;
 
-      // create image with a new tag to update config
+    try {
+      logTestBegin(testMethodName);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Creating Domain & waiting for the script to complete execution");
+
+      // create domain w/o JDBC DS using the image created by MII
+      boolean createDS = false;
+      domain = createDomainUsingMii(createDS);
+      Assertions.assertNotNull(domain, "Failed to create a domain");
+
+      // create image with a new tag to update config and verify image created successfully
       Map<String, Object> domainMap = domain.getDomainMap();
       final String imageName = (String) domainMap.get("image") + "_nonjdbc";
       final String wdtModelFile = "model.jdbc.yaml";
@@ -184,25 +201,39 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
 
       // update domain yaml with new image tag and
-      // apply the domain yaml, verify domain rolling-restarted
+      // apply the domain yaml, verify domain rolling-restarted successfully
       modifyDomainYamlWithImageName(domain, domainNS, imageName);
 
-      // verify the test result by checking updated config file on server pod
-      verifyJdbcUpdate();
+      // verify that JNDI name exists by checking updated config file on server pod
+      String jdbcDsStr = getJndiName(domain);
+      Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
+          "JDBC DS doesn't update");
+      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
+
+      // get JDBC DS prop values via WLST on server pod
+      final String destDir = getResultDir() + "/samples/model-in-image-update";
+      String jdbcResourceData = getJdbcResources(destDir, domain);
 
       // verify that JDBC DS is created by checking JDBC DS name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
-      Set<String> jdbcResourcesToVerify = new HashSet<String>();
-      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
-      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_2);
-
-      final String destDir = getResultDir() + "/samples/model-in-image-update";
-      verifyJdbcResources(jdbcResourcesToVerify, destDir);
+      final String[] jdbcResourcesToVerify =
+          {"datasource.name.1=" + dsName,
+              "datasource.readTimeout.1=" + readTimeout_2};
+      for (String prop : jdbcResourcesToVerify) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
 
       testCompletedSuccessfully = true;
+    } catch (Exception ex) {
+      Assertions.fail("FAILED - " + testMethodName);
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        try {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        } catch (Exception ex) {
+          LoggerHelper.getLocal().log(Level.INFO, "Failed to delete domain\n " + ex.getMessage());
+        }
       }
     }
 
@@ -215,59 +246,81 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
    * re-create the configmap with a model file that define a JDBC DataSource
    * and update the domain crd to change domain restartVersion to reload the model,
    * generate new config and initiate a rolling restart.
-   *
-   * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiConfigUpdateJdbcCm() throws Exception {
+  public void testMiiConfigUpdateJdbcCm() {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Creating Domain & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
     final String connTimeout = "5200";
+    Domain domain = null;
+
     try {
-      // create Domain w JDBC DS using the image created by MII
+      logTestBegin(testMethodName);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Creating Domain & waiting for the script to complete execution");
+
+      // create domain w JDBC DS using the image created by MII
       boolean createDS = true;
-      createDomainUsingMii(createDS);
+      domain = createDomainUsingMii(createDS);
+      Assertions.assertNotNull(domain, "Failed to create a domain");
+
+      // verify that JNDI name exists by checking updated config file on server pod
+      String jdbcDsStr = getJndiName(domain);
+      Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
+          "JDBC DS doesn't update");
+      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
+
+      // get JDBC DS prop values via WLST on server pod
+      final String destDir = getResultDir() + "/samples/model-in-image-update";
+      String jdbcResourceData = getJdbcResources(destDir, domain);
 
       // verify that JDBC DS is created by checking JDBC DS name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
-      Set<String> jdbcResourcesToVerify = new HashSet<String>();
-      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
-      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_1);
+      String[] jdbcResourcesToVerify1 =
+          {"datasource.name.1=" + dsName,
+              "datasource.readTimeout.1=" + readTimeout_1};
+      for (String prop : jdbcResourcesToVerify1) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
 
-      // Get dest dir and
-      // copy another model files that contain JDBC DS to a dir to re-create cm
-      String destDir = copyTestModelFiles();
-      verifyJdbcResources(jdbcResourcesToVerify, destDir);
+      // copy model files that contain JDBC DS to a dir to re-create cm
+      copyTestModelFiles(destDir);
 
-      // re-create cm to update config
-      wdtConfigUpdate(destDir);
+      // re-create cm to update config and verify cm is created successfylly
+      wdtConfigUpdate(destDir, domain);
 
       // update domain yaml with restartVersion and
-      // apply the domain yaml, verify domain restarted
+      // apply the domain yaml, verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
 
-      // verify the test result by checking updated config file on server pod
-      verifyJdbcUpdate();
+      // get JDBC DS props via WLST on server pod
+      jdbcResourceData = getJdbcResources(destDir, domain);
 
-      // verify that JDBC DS is created by checking JDBC DS name,
+      // verify that JDBC DS is updated by checking JDBC DS name,
       // connection timeout and read timeout via WLST on server pod
-      LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is overridden");
-      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
-      jdbcResourcesToVerify.remove("datasource.readTimeout.1=" + readTimeout_1);
-      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_2);
-      jdbcResourcesToVerify.add("datasource.connectionTimeout.1=" + connTimeout);
-
-      verifyJdbcResources(jdbcResourcesToVerify, destDir);
+      LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
+      String[] jdbcResourcesToVerify2 =
+          {"datasource.name.1=" + dsName,
+              "datasource.readTimeout.1=" + readTimeout_2,
+              "datasource.connectionTimeout.1=" + connTimeout};
+      for (String prop : jdbcResourcesToVerify2) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
 
       testCompletedSuccessfully = true;
+    } catch (Exception ex) {
+      Assertions.fail("FAILED - " + testMethodName);
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        try {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        } catch (Exception ex) {
+          LoggerHelper.getLocal().log(Level.INFO, "Failed to delete domain\n " + ex.getMessage());
+        }
       }
     }
 
@@ -280,24 +333,47 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
    * create a new image with diff tag name and model files that define a JDBC DataSource
    * and update the domain crd to change image name to reload the model,
    * generate new config and initiate a rolling restart.
-   *
-   * @throws Exception if domain creation, config update or test veriofication fails
    */
   @Test
-  public void testMiiConfigUpdateJdbcImage() throws Exception {
+  public void testMiiConfigUpdateJdbcImage() {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Creating Domain & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
-    try {
-      // create Domain w/o JDBC DS using the image created by MII
-      boolean createDS = true;
-      createDomainUsingMii(createDS);
+    final String connTimeout = "5200";
+    Domain domain = null;
 
-      // create image with a new tag to update config
+    try {
+      logTestBegin(testMethodName);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Creating Domain & waiting for the script to complete execution");
+
+      // create domain w JDBC DS using the image created by MII
+      boolean createDS = true;
+      domain = createDomainUsingMii(createDS);
+      Assertions.assertNotNull(domain, "Failed to create a domain");
+
+      // verify that JNDI name exists by checking updated config file on server pod
+      String jdbcDsStr = getJndiName(domain);
+      Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
+          "JDBC DS doesn't update");
+      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
+
+      // get JDBC DS prop values via WLST on server pod
+      final String destDir = getResultDir() + "/samples/model-in-image-update";
+      String jdbcResourceData = getJdbcResources(destDir, domain);
+
+      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
+      String[] jdbcResourcesToVerify1 =
+          {"datasource.name.1=" + dsName,
+              "datasource.readTimeout.1=" + readTimeout_1};
+      for (String prop : jdbcResourcesToVerify1) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
+
+      // create image with a new tag to update config and verify image is created successfylly
       Map<String, Object> domainMap = domain.getDomainMap();
       final String imageName = (String) domainMap.get("image") + "_jdbc";
       final String wdtModelFile = "model.jdbc.yaml";
@@ -308,22 +384,31 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       // apply the domain yaml, verify domain rolling-restarted
       modifyDomainYamlWithImageName(domain, domainNS, imageName);
 
-      // verify the test result by checking updated config file on server pod
-      verifyJdbcUpdate();
+      // get JDBC DS prop values via WLST on server pod
+      jdbcResourceData = getJdbcResources(destDir, domain);
 
-      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      // verify that JDBC DS is updated by checking JDBC DS name,
+      // connection timeout and read timeout via WLST on server pod
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
-      Set<String> jdbcResourcesToVerify = new HashSet<String>();
-      jdbcResourcesToVerify.add("datasource.name.1=" + dsName);
-      jdbcResourcesToVerify.add("datasource.readTimeout.1=" + readTimeout_2);
-
-      final String destDir = getResultDir() + "/samples/model-in-image-update";
-      verifyJdbcResources(jdbcResourcesToVerify, destDir);
+      String[] jdbcResourcesToVerify2 =
+          {"datasource.name.1=" + dsName,
+              "datasource.readTimeout.1=" + readTimeout_2,
+              "datasource.connectionTimeout.1=" + connTimeout};
+      for (String prop : jdbcResourcesToVerify2) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
 
       testCompletedSuccessfully = true;
+    } catch (Exception ex) {
+      Assertions.fail("FAILED - " + testMethodName);
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        try {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        } catch (Exception ex) {
+          LoggerHelper.getLocal().log(Level.INFO, "Failed to delete domain\n " + ex.getMessage());
+        }
       }
     }
 
@@ -345,66 +430,80 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    Domain domain = null;
+
     try {
+      logTestBegin(testMethodName);
+
       // create Domain with JDBC DataSource and application using the image created by MII
       LoggerHelper.getLocal().log(Level.INFO,
           "Creating Domain & waiting for the script to complete execution");
       boolean createDS = true;
-      createDomainUsingMii(createDS);
+      domain = createDomainUsingMii(createDS);
+      Assertions.assertNotNull(domain, "Failed to create a domain");
 
       // verify that JDBC DS is created by checking JDBC DS name and read timeout
       // verify the test result by checking override config file on server pod
       // verify that application is accessible from inside the managed server pod
-      verifyJdbcUpdate();
+      String jdbcDsStr = getJndiName(domain);
       Assertions.assertTrue(verifyApp().contains("Hello"), "Application is not found");
 
       // delete config and application using new model file
-      wdtConfigDeleteOverride();
+      wdtConfigDeleteOverride(domain);
 
       // update domain yaml with restartVersion and
-      // apply the domain yaml, verify domain restarted
+      // apply the domain yaml, verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
 
       // verify the test result by getting JDBC DS via WLST on server pod
       String destDir = getResultDir() + "/samples/model-in-image-override";
-      String jdbcResources = getJdbcResources(destDir);
+      String jdbcResources = getJdbcResources(destDir, domain);
       Assertions.assertFalse(jdbcResources.contains(dsName), dsName + " is found");
 
       // verify the app access returns 404
       Assertions.assertFalse(verifyApp().contains("Hello"), "Application is found");
 
       testCompletedSuccessfully = true;
+    } catch (Exception ex) {
+      Assertions.fail("FAILED - " + testMethodName);
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        try {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        } catch (Exception ex) {
+          LoggerHelper.getLocal().log(Level.INFO, "Failed to delete domain.\n " + ex.getMessage());
+        }
       }
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
-  private String copyTestModelFiles() throws Exception {
+  private void copyTestModelFiles(String destDir) {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
     String origDir = BaseTest.getProjectRoot()
         + "/integration-tests/src/test/resources/model-in-image";
-    String destDir = getResultDir() + "/samples/model-in-image-update";
     final String modelFile = "model.jdbc.yaml";
     final String propFile = "model.jdbc.properties";
-    Files.deleteIfExists(Paths.get(destDir));
-    Files.createDirectories(Paths.get(destDir));
 
-    TestUtils.copyFile(origDir + "/" + modelFile, destDir + "/" + modelFile);
-    TestUtils.copyFile(origDir + "/" + propFile, destDir + "/" + propFile);
+    try {
+      Files.deleteIfExists(Paths.get(destDir));
+      Files.createDirectories(Paths.get(destDir));
 
-    return destDir;
+      TestUtils.copyFile(origDir + "/" + modelFile, destDir + "/" + modelFile);
+      TestUtils.copyFile(origDir + "/" + propFile, destDir + "/" + propFile);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to copy model files", ex.getCause());
+    }
   }
 
-  private void createDomainUsingMii(boolean createDS) throws Exception {
+  private Domain createDomainUsingMii(boolean createDS) {
     final String cmFile = "model.empty.properties";
     String wdtModelFile = "model.wls.yaml";
     String wdtModelPropFile = "model.properties";
+    Domain domain = null;
 
     if (createDS) {
       wdtModelFile = "model.jdbc.image.yaml";
@@ -428,18 +527,27 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "Params used to create domain: " + paramBuff);
 
-    domain = createMiiDomainWithConfigMap(
+    try {
+      domain = createMiiDomainWithConfigMap(
         testClassName,
         domainNS,
         wdtModelFile,
         wdtModelPropFile,
         cmFile,
         WdtDomainType.WLS.geWdtDomainType());
+    } catch (Exception ex) {
+      LoggerHelper.getLocal().log(Level.INFO, "FAILURE: command: "
+          + paramBuff
+          + " failed \n"
+          + ex.getMessage());
 
-    Assertions.assertNotNull(domain, "Failed to create a domain");
+      ex.printStackTrace();
+    }
+
+    return domain;
   }
 
-  private void wdtConfigUpdate(String destDir) throws Exception {
+  private void wdtConfigUpdate(String destDir, Domain domain) {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap...");
 
     // Re-create config map after deploying domain crd
@@ -447,24 +555,23 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
     final String cmName = domainUid + configMapSuffix;
     final String label = "weblogic.domainUID=" + domainUid;
 
-    TestUtils.createConfigMap(cmName, destDir, domainNS, label);
+    try {
+      TestUtils.createConfigMap(cmName, destDir, domainNS, label);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to create cm.\n", ex.getCause());
+    }
   }
 
-  private void verifyJdbcUpdate() throws Exception {
-    final String jndiName = "jdbc/generic1";
+  private String getJndiName(Domain domain) {
+    ExecResult result = null;
+    String jdbcDsStr = "";
     // get domain name
-    StringBuffer cmdStrBuff = new StringBuffer("kubectl get domain -n ");
-    cmdStrBuff
-        .append(domainNS)
-        .append(" -o=jsonpath='{.items[0].metadata.name}'");
-
-    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
-    ExecResult result = TestUtils.exec(cmdStrBuff.toString());
-    String domainName = result.stdout();
-    LoggerHelper.getLocal().log(Level.INFO, "Domain name is: " + domainName);
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String domainName = (String) domainMap.get("domainName");
 
     // check JDBC DS update
-    cmdStrBuff = new StringBuffer("kubectl -n ");
+    StringBuffer cmdStrBuff = new StringBuffer("kubectl -n ");
     cmdStrBuff
         .append(domainNS)
         .append(" exec -it ")
@@ -478,99 +585,105 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
         .append(jndiName)
         .append("'");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
-    result = TestUtils.exec(cmdStrBuff.toString());
-    LoggerHelper.getLocal().log(Level.INFO, "JDBC DS info from server pod: " + result.stdout());
+    try {
+      LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
+      result = TestUtils.exec(cmdStrBuff.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "JDBC DS info from server pod: " + result.stdout());
+      jdbcDsStr  = result.stdout();
+    } catch (Exception ex) {
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(cmdStrBuff)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
 
-    Assertions.assertTrue(result.stdout().contains("<jndi-name>" + jndiName + "</jndi-name>"),
-        "JDBC DS doesn't update");
-  }
-
-  private void verifyJdbcResources(Set<String> jdbcResourcesSet, String destDir) throws Exception {
-    // verify JDBC DS props via WLST on server pod
-    String jdbcResources = getJdbcResources(destDir);
-
-    Iterator<String> iterator = jdbcResourcesSet.iterator();
-    while (iterator.hasNext()) {
-      String prop = iterator.next();
-      Assertions.assertTrue(jdbcResources.contains(prop), prop + " is not found");
-      LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      LoggerHelper.getLocal().log(Level.INFO, errorMsg + "\n" + ex.getMessage());
+      ex.printStackTrace();
     }
+
+    return jdbcDsStr;
   }
 
-  private String getJdbcResources(String destDir) throws Exception {
+  private String getJdbcResources(String destDir, Domain domain) {
+    ExecResult result = null;
+    String jdbcDsStr = "";
     // get domain name
-    StringBuffer cmdStrBuff = new StringBuffer("kubectl get domain -n ");
-    cmdStrBuff
-        .append(domainNS)
-        .append(" -o=jsonpath='{.items[0].metadata.name}'");
-    LoggerHelper.getLocal().log(Level.INFO, "Command to domain name: " + cmdStrBuff);
-    ExecResult result = TestUtils.exec(cmdStrBuff.toString());
-    String domainName = result.stdout();
-    LoggerHelper.getLocal().log(Level.INFO, "Domain name is: " + domainName);
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String domainName = (String) domainMap.get("domainName");
 
-    // copy verification file to test dir
-    String origDir = BaseTest.getProjectRoot()
-        + "/integration-tests/src/test/resources/model-in-image/scripts";
-    String pyFileName = "verify-jdbc-resource.py";
-    Files.createDirectories(Paths.get(destDir));
-    TestUtils.copyFile(origDir + "/" + pyFileName, destDir + "/" + pyFileName);
+    try {
+      // copy verification file to test dir
+      String origDir = BaseTest.getProjectRoot()
+          + "/integration-tests/src/test/resources/model-in-image/scripts";
+      String pyFileName = "verify-jdbc-resource.py";
+      Files.createDirectories(Paths.get(destDir));
+      TestUtils.copyFile(origDir + "/" + pyFileName, destDir + "/" + pyFileName);
 
-    // replace var in verification file
-    String tempDir = getResultDir() + "/configupdatetemp-" + domainNS;
-    Files.createDirectories(Paths.get(tempDir));
-    String content =
-        new String(Files.readAllBytes(Paths.get(destDir + "/" + pyFileName)), StandardCharsets.UTF_8);
-    content = content.replaceAll("DOMAINNAME", domainName);
-    Files.write(
-        Paths.get(tempDir, pyFileName),
-        content.getBytes(StandardCharsets.UTF_8));
+      // replace var in verification file
+      String tempDir = getResultDir() + "/configupdatetemp-" + domainNS;
+      Files.createDirectories(Paths.get(tempDir));
+      String content =
+          new String(Files.readAllBytes(Paths.get(destDir + "/" + pyFileName)), StandardCharsets.UTF_8);
+      content = content.replaceAll("DOMAINNAME", domainName);
+      Files.write(
+          Paths.get(tempDir, pyFileName),
+          content.getBytes(StandardCharsets.UTF_8));
 
-    // get server pod name
-    cmdStrBuff = new StringBuffer("kubectl get pod -n ");
-    cmdStrBuff
-        .append(domainNS)
-        .append(" -o=jsonpath='{.items[0].metadata.name}' | grep admin-server");
-    LoggerHelper.getLocal().log(Level.INFO, "Command to get pod name: " + cmdStrBuff);
-    result = TestUtils.exec(cmdStrBuff.toString());
-    String adminPodName = result.stdout();
-    LoggerHelper.getLocal().log(Level.INFO, "pod name is: " + adminPodName);
+      // get server pod name
+      StringBuffer cmdStrBuff = new StringBuffer("kubectl get pod -n ");
+      cmdStrBuff
+          .append(domainNS)
+          .append(" -o=jsonpath='{.items[0].metadata.name}' | grep admin-server");
+      LoggerHelper.getLocal().log(Level.INFO, "Command to get pod name: " + cmdStrBuff);
+      result = TestUtils.exec(cmdStrBuff.toString());
+      String adminPodName = result.stdout();
+      LoggerHelper.getLocal().log(Level.INFO, "pod name is: " + adminPodName);
 
-    // copy verification file to the pod
-    cmdStrBuff = new StringBuffer("kubectl -n ");
-    cmdStrBuff
-        .append(domainNS)
-        .append(" exec -it ")
-        .append(adminPodName)
-        .append(" -- bash -c 'mkdir -p ")
-        .append(BaseTest.getAppLocationInPod())
-        .append("'");
-    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
-    TestUtils.exec(cmdStrBuff.toString(), true);
+      // copy verification file to the pod
+      cmdStrBuff = new StringBuffer("kubectl -n ");
+      cmdStrBuff
+          .append(domainNS)
+          .append(" exec -it ")
+          .append(adminPodName)
+          .append(" -- bash -c 'mkdir -p ")
+          .append(BaseTest.getAppLocationInPod())
+          .append("'");
+      LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
+      TestUtils.exec(cmdStrBuff.toString(), true);
 
-    TestUtils.copyFileViaCat(
-        Paths.get(tempDir, pyFileName).toString(),
-        BaseTest.getAppLocationInPod() + "/" + pyFileName,
-        adminPodName,
-        domainNS);
+      TestUtils.copyFileViaCat(
+          Paths.get(tempDir, pyFileName).toString(),
+          BaseTest.getAppLocationInPod() + "/" + pyFileName,
+          adminPodName,
+          domainNS);
 
-    cmdStrBuff = new StringBuffer("kubectl -n ");
-    cmdStrBuff
-        .append(domainNS)
-        .append(" exec -it ")
-        .append(adminPodName)
-        .append(" -- bash -c 'wlst.sh ")
-        .append(BaseTest.getAppLocationInPod())
-        .append("/")
-        .append(pyFileName)
-        .append("'");
-    LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
-    result = TestUtils.exec(cmdStrBuff.toString(), true);
+      cmdStrBuff = new StringBuffer("kubectl -n ");
+      cmdStrBuff
+          .append(domainNS)
+          .append(" exec -it ")
+          .append(adminPodName)
+          .append(" -- bash -c 'wlst.sh ")
+          .append(BaseTest.getAppLocationInPod())
+          .append("/")
+          .append(pyFileName)
+          .append("'");
+      LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
+      result = TestUtils.exec(cmdStrBuff.toString(), true);
+      jdbcDsStr  = result.stdout();
+      //clean up
+      LoggerHelper.getLocal().log(Level.INFO, "Deleting: " + destDir + "/" + pyFileName);
+      Files.deleteIfExists(Paths.get(destDir + "/" + pyFileName));
+    } catch (Exception ex) {
+      LoggerHelper.getLocal().log(Level.INFO, "Failed to get DS prop values.\n" + ex.getMessage());
+      ex.printStackTrace();
+    }
 
-    return result.stdout();
+    return jdbcDsStr;
   }
 
-  private void wdtConfigDeleteOverride() throws Exception {
+  private void wdtConfigDeleteOverride(Domain domain) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
     String origDir = BaseTest.getProjectRoot()
         + "/integration-tests/src/test/resources/model-in-image";
@@ -595,10 +708,16 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
     final String cmName = domainUid + configMapSuffix;
     final String label = "weblogic.domainUID=" + domainUid;
 
-    TestUtils.createConfigMap(cmName, destDir, domainNS, label);
+    try {
+      TestUtils.createConfigMap(cmName, destDir, domainNS, label);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to create cm.\n", ex.getCause());
+    }
   }
 
   private String verifyApp() throws Exception {
+    String appStr = "";
     // get managed server pod name
     StringBuffer cmdStrBuff = new StringBuffer();
     cmdStrBuff
@@ -617,7 +736,15 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
         .append(" -- bash -c ")
         .append("'curl http://" + msPodName + ":8001/sample_war/")
         .append("'");
-    ExecResult exec = TestUtils.exec(cmdStrBuff.toString(), true);
-    return exec.stdout();
+
+    try {
+      ExecResult exec = TestUtils.exec(cmdStrBuff.toString(), true);
+      appStr = exec.stdout();
+    } catch (Exception ex) {
+      LoggerHelper.getLocal().log(Level.INFO, "Varify app failed:\n " + ex.getMessage());
+      ex.printStackTrace();
+    }
+
+    return appStr;
   }
 }
