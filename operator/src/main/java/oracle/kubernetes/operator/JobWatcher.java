@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +35,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final Map<String, JobWatcher> JOB_WATCHERS = new HashMap<>();
+  private static final Map<String, JobWatcher> JOB_WATCHERS = new ConcurrentHashMap<>();
   private static JobWatcherFactory factory;
 
   private final String namespace;
