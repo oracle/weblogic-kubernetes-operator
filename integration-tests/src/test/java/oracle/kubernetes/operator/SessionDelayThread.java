@@ -30,6 +30,7 @@ class SessionDelayThread implements Runnable {
     try {
       keepSessionAlive(delayTime, domain);
     } catch (Exception e) {
+      //if Forced or OpenSessionIgnore=true will get Unavailable due managed server shutdown
       Thread.currentThread().interrupt();
       e.printStackTrace();
     }

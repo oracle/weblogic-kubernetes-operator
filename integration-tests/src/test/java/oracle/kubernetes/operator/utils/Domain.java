@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1502,9 +1503,9 @@ public class Domain {
           System.getenv("REPO_EMAIL"),
           domainNS);
     }
-
-    // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
+    // write configOverride, shutdownOptionsOverrides and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
+        || domainMap.containsKey("shutdownOptionsOverrides")
         || !createDomainResource) {
       appendToDomainYamlAndCreate();
     }
@@ -1889,7 +1890,7 @@ public class Domain {
   }
 
   /**
-   * Append configOverrides and configOverrideSecrets section to the generated domain.yaml and
+   * Append configOverrides, shutdownOptionsOverrides and configOverrideSecrets section to the generated domain.yaml and
    * create the domain crd by calling kubectl create on the generated domain.yaml.
    *
    * @throws Exception if any error occurs writing to the file or if could not run kubectl create
@@ -1913,6 +1914,47 @@ public class Domain {
               + "\n";
 
       Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+    }
+
+    if (domainMap.containsKey("shutdownOptionsOverrides")) {
+      Map<String, Object> shutdownProps = (Map<String, Object>)domainMap.get("shutdownOptionsOverrides");
+      DomainCrd crd = new DomainCrd(domainYaml);
+      if (shutdownProps.containsKey("cluster")) {
+        List<Map<String, Object>> shutdownPropsClusters = (List<Map<String, Object>>)shutdownProps.get("cluster");
+        for (Map<String, Object> shutdownPropsCluster : shutdownPropsClusters) {
+          for (Map.Entry<String, Object> entry : shutdownPropsCluster.entrySet()) {
+            crd.addShutdownOptionsToCluster(entry.getKey(),(Map<String, Object>)entry.getValue());
+
+          }
+        }
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with cluster level shutdownoptions");
+      }
+      if (shutdownProps.containsKey("server")) {
+        List<Map<String, Object>> shutdownPropsServers = (List<Map<String, Object>>)shutdownProps.get("server");
+        for (Map<String, Object> shutdownPropsServer : shutdownPropsServers) {
+          for (Map.Entry<String, Object> entry : shutdownPropsServer.entrySet()) {
+            crd.addShutDownOptionToMS(entry.getKey(),(Map<String, Object>)entry.getValue());
+          }
+        }
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with server level shutdownoptions");
+      }
+      if (shutdownProps.containsKey("domain")) {
+        Map<String, Object> shutdownPropsDomain = (Map<String, Object>)shutdownProps.get("domain");
+        crd.addShutdownOptionToDomain(shutdownPropsDomain);
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with domain level shutdownoptions");
+      }
+      if (shutdownProps.containsKey("env")) {
+        Map<String, String> shutdownPropsEnv = (Map<String, String>)shutdownProps.get("env");
+        crd.addEnvOption(shutdownPropsEnv);
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with env level shutdownoptions");
+      }
+
+      Charset charset = StandardCharsets.UTF_8;
+      Path path = Paths.get(domainYaml);
+      String modYaml = crd.getYamlTree();
+      Files.write(path, modYaml.getBytes(charset));
+      LoggerHelper.getLocal().log(Level.INFO, "Shutdown options are added to domain.yaml ");
+
     }
 
     String command = "kubectl create -f " + domainYaml;
@@ -2025,7 +2067,9 @@ public class Domain {
 
     // skip executing yaml if configOverrides or domain in image
     if (!domainMap.containsKey("configOverrides")
-        && !domainMap.containsKey("domainHomeImageBase") && createDomainResource) {
+        && !domainMap.containsKey("domainHomeImageBase")
+        && !domainMap.containsKey("shutdownOptionsOverrides")
+        && createDomainResource) {
       createDomainScriptCmd.append(" -e ");
     }
 
@@ -2360,7 +2404,7 @@ public class Domain {
 
 
   /**
-   * write server pod logs
+   * write server pod logs.
    *
    * @throws Exception exception
    */
