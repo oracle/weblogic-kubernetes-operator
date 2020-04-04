@@ -115,7 +115,7 @@ public class Helm {
    * @param params the parameters to helm as values
    * @return true on success, false otherwise
    */
-  public static boolean delete(HelmParams params) {
+  public static boolean uninstall(HelmParams params) {
     // assertions for required parameters
     assertThat(params.getNamespace())
         .as("make sure namespace is not empty or null")

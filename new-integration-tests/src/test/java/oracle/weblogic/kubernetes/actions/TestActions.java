@@ -64,15 +64,15 @@ public class TestActions {
   }
 
   /**
-   * Delete the Operator release.
+   * Uninstall the Operator release.
    *
    * @param name      operator release name
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
    */
 
-  public static boolean deleteOperator(OperatorParams params) {
-    return Operator.delete(params);
+  public static boolean uninstallOperator(OperatorParams params) {
+    return Operator.uninstall(params);
   }
 
   // ----------------------   domain  -----------------------------------

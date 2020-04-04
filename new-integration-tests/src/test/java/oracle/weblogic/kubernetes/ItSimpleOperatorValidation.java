@@ -120,8 +120,8 @@ class ItSimpleOperatorValidation implements LoggedTest {
           .until(operatorIsRunning(opNamespace));
     } finally {
 
-      // delete chart
-      assertThat(TestActions.deleteOperator(opParams))
+      // uninstall operator release
+      assertThat(TestActions.uninstallOperator(opParams))
           .as("Operator uninstall failed")
           .isTrue();
 
