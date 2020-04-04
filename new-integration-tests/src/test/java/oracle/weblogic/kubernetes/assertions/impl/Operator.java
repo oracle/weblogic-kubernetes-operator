@@ -3,30 +3,36 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
-import java.util.Random;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import io.kubernetes.client.openapi.ApiException;
+
 
 public class Operator {
 
+  /**
+   * Check if the operator pod is running in a given namespace.
+   * @param namespace in which to check for the operator pod
+   * @return true if found and running otherwise false
+   */
   public static Callable<Boolean> isRunning(String namespace) {
-    // this uses a rand, to simulate that this operation can take
-    // variable amounts of time to complete
     return () -> {
-      int outcome = new Random(System.currentTimeMillis()).nextInt(3);
-      if (outcome == 1) {
-        logger.info("Operator pod is in 'Running' state");
-        return true;
-      } else {
-        logger.info("Operator is not in 'Running' state yet, current state is 'ImagePull'");
-        return false;
-      }
+      return Kubernetes.isOperatorPodRunning(namespace);
     };
   }
 
-  public static boolean isRestServiceCreated(String namespace) {
-    return true;
+  /**
+   * Checks if the operator external service exists.
+   * @param namespace in which to check for the operator external service
+   * @return true if service is found otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean doesExternalRestServiceExists(String namespace) throws ApiException {
+    HashMap label = new HashMap();
+    label.put("weblogic.operatorName", namespace);
+    String serviceName = "external-weblogic-operator-svc";
+    return Kubernetes.doesServiceExist(serviceName, label, namespace);
   }
 
 }
