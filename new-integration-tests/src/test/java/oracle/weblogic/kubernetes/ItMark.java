@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 @DisplayName("Simple validation of basic domain functions")
 @IntegrationTest
-class Mark implements LoggedTest {
+class ItMark implements LoggedTest {
 
   @Test
   @DisplayName("Test something")
