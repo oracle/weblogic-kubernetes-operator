@@ -4,10 +4,8 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-public class Operator extends Helm implements LoggedTest {
-
+public class Operator extends Helm {
   public static boolean scaleDomain(String domainUID, String clusterName, int numOfServers) {
     return true;
   }

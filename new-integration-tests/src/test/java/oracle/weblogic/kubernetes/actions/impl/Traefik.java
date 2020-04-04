@@ -4,9 +4,8 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
-public class Traefik extends Helm implements LoggedTest {
+public class Traefik extends Helm {
 
   public static boolean createIngress(String valuesYaml) {
     return true;

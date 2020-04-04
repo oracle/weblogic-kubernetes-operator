@@ -20,6 +20,7 @@ public class OperatorParams extends HelmParams {
   private static final String EXTERNAL_REST_IDENTITY_SECRET = "externalRestIdentitySecret";
   private static final String EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
   private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
+  private static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -29,6 +30,7 @@ public class OperatorParams extends HelmParams {
   private String externalRestIdentitySecret;
   private int externalRestHttpsPort = 0;
   private String imagePullPolicy;
+  private String imagePullSecrets;
 
   public OperatorParams releaseName(String releaseName) {
     this.releaseName = releaseName;
@@ -70,6 +72,11 @@ public class OperatorParams extends HelmParams {
     return this;
   }
 
+  public OperatorParams imagePullSecrets(String imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
+    return this;
+  }
+
   public OperatorParams externalRestIdentitySecret(String externalRestIdentitySecret) {
     this.externalRestIdentitySecret = externalRestIdentitySecret;
     return this;
@@ -105,6 +112,7 @@ public class OperatorParams extends HelmParams {
     }
     values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
     values.put(IMAGE_PULL_POLICY, imagePullPolicy);
+    values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
     values.values().removeIf(Objects::isNull);
     return values;
   }

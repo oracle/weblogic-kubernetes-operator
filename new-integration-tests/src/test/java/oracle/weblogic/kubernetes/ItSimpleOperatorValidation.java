@@ -64,64 +64,86 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
 
-    // get a new unique namespace
-    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+    // get a new unique opNamespace
+    final String opNamespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
         "Failed to create unique namespace due to ApiException");
-    logger.info(String.format("Got a new namespace called %s", namespace));
+    logger.info(String.format("Got a new namespace called %s", opNamespace));
 
-    // Create a service account for the unique namespace
-    final String serviceAccountName = namespace + "-sa";
+    final String domainNamespace1 = assertDoesNotThrow(TestActions::createUniqueNamespace,
+        "Failed to create unique namespace due to ApiException");
+    logger.info(String.format("Got a new namespace called %s", domainNamespace1));
+
+    final String domainNamespace2 = assertDoesNotThrow(TestActions::createUniqueNamespace,
+        "Failed to create unique namespace due to ApiException");
+    logger.info(String.format("Got a new namespace called %s", domainNamespace2));
+
+    // Create a service account for the unique opNamespace
+    final String serviceAccountName = opNamespace + "-sa";
     assertDoesNotThrow(() -> TestActions.createServiceAccount(new V1ServiceAccount()
-        .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+        .metadata(new V1ObjectMeta().namespace(opNamespace).name(serviceAccountName))));
     logger.info("Created service account: " + serviceAccountName);
 
     OperatorParams opParams =
         new OperatorParams().releaseName("weblogic-operator")
-            .namespace(namespace)
-            .chartDir("kubernetes/charts/weblogic-operator")
-            .image("weblogic-kubernetes-operator:test_itsimpleoperator")
-            .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
+            .namespace(opNamespace)
+            .chartDir("../kubernetes/charts/weblogic-operator")
+            .image("phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop")
+            .domainNamespaces(Arrays.asList(domainNamespace1, domainNamespace2))
             .serviceAccount("opns1-sa");
 
-    //ToDO: use Junit 5 assertions
-    assertThat(installOperator(opParams)).isTrue();
-    logger.info(String.format("Operator installed in namespace %s", namespace));
+    try {
+      assertThat(installOperator(opParams)).as("Operator installation failed").isTrue();
+      logger.info(String.format("Operator installed in namespace %s", opNamespace));
 
-    // we can use a standard JUnit assertion to check on the result
-    // assertEquals(true, success, "Operator successfully installed in namespace " + namespace);
+      // we can use a standard JUnit assertion to check on the result
+      // assertEquals(true, success, "Operator successfully installed in opNamespace " + opNamespace);
 
-    // this is an example of waiting for an async operation to complete.
-    // after the previous step was completed, kubernetes will try to pull the image,
-    // start the pod, check the readiness/health probes, etc.  this will take some
-    // period of time and either the operator will come to a running state, or it
-    // will not.
-    // in this example, we first wait 30 seconds, since it is unlikely this operation
-    // will complete in less than 30 seconds, then we check if the operator is running.
-    with().pollDelay(30, SECONDS)
-        // we check again every 10 seconds.
-        .and().with().pollInterval(10, SECONDS)
-        // this listener lets us report some status with each poll
-        .conditionEvaluationListener(
-            condition -> logger.info(()
-                -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS())))
-        // and here we can set the maximum time we are prepared to wait
-        .await().atMost(5, MINUTES)
-        // operatorIsRunning() is one of our custom, reusable assertions
-        .until(operatorIsRunning(namespace));
+      // this is an example of waiting for an async operation to complete.
+      // after the previous step was completed, kubernetes will try to pull the image,
+      // start the pod, check the readiness/health probes, etc.  this will take some
+      // period of time and either the operator will come to a running state, or it
+      // will not.
+      // in this example, we first wait 30 seconds, since it is unlikely this operation
+      // will complete in less than 30 seconds, then we check if the operator is running.
+      with().pollDelay(30, SECONDS)
+          // we check again every 10 seconds.
+          .and().with().pollInterval(10, SECONDS)
+          // this listener lets us report some status with each poll
+          .conditionEvaluationListener(
+              condition -> logger.info(()
+                  -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS())))
+          // and here we can set the maximum time we are prepared to wait
+          .await().atMost(5, MINUTES)
+          // operatorIsRunning() is one of our custom, reusable assertions
+          .until(operatorIsRunning(opNamespace));
+    } finally {
+      // delete chart
+      assertThat(TestActions.deleteOperator(opParams))
+          .as("Operator uninstall failed")
+          .isTrue();
 
-    // Delete service account from unique namespace
-    assertDoesNotThrow(
-        () -> TestActions.deleteServiceAccount(new V1ServiceAccount()
-            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+      // Delete service account from unique opNamespace
+      assertDoesNotThrow(
+          () -> TestActions.deleteServiceAccount(new V1ServiceAccount()
+              .metadata(new V1ObjectMeta().namespace(opNamespace).name(serviceAccountName))));
 
-    logger.info("Deleted service account " + serviceAccountName);
+      logger.info("Deleted service account " + serviceAccountName);
 
-    // Delete namespace
-    assertDoesNotThrow(
-        () -> TestActions.deleteNamespace(namespace));
-    logger.info("Deleted namespace: " + namespace);
+      // Delete domain namespaces
+      assertDoesNotThrow(
+          () -> TestActions.deleteNamespace(domainNamespace1));
+      logger.info("Deleted namespace: " + domainNamespace1);
+      assertDoesNotThrow(
+          () -> TestActions.deleteNamespace(domainNamespace2));
+      logger.info("Deleted namespace: " + domainNamespace2);
+
+      // Delete opNamespace
+      assertDoesNotThrow(
+          () -> TestActions.deleteNamespace(opNamespace));
+      logger.info("Deleted namespace: " + opNamespace);
+    }
   }
 
 }
