@@ -73,7 +73,7 @@ Typical attributes for overrides include:
   * JMS bridges, foreign servers, and SAF
 * Network channel external/public addresses
   * For remote RMI clients (T3, JMS, EJB)
-  * For remote WLST clients 
+  * For remote WLST clients
 * Network channel external/public ports
   * For remote RMI clients (T3, JMS, EJB)
 * Debugging
@@ -300,7 +300,7 @@ Best practices for data source modules and their overrides:
   * Secrets must be in the same Kubernetes namespace as the domain.
   * If a secret is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example:
-  
+
     ```
     kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
     kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
@@ -341,7 +341,7 @@ spec:
 Incorrectly formatted override files may be accepted without warnings or errors and may not prevent WebLogic pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
 
 On WebLogic Servers that support the `weblogic.SituationalConfig.failBootOnError` system property ( Note: It is not supported in WebLogic Server 12.2.1.3.0 ),
-by default the WebLogic server will fail to boot if any situational configuration files are invalid,
+by default the WebLogic Server will fail to boot if any situational configuration files are invalid,
 or if it encounters an error while loading situational configuration files.
 By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in the Kubernetes containers for the WebLogic Servers to `false`, you can start up the WebLogic Servers even with incorrectly formatted override files.
 
@@ -374,13 +374,13 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
     * If it doesn't, then this likely indicates your domain resource `configOverrides` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
 
 * If the Administration Server pod does start but fails to reach ready state or tries to restart:
-  * Check for this message ` WebLogic server failed to start due to missing or invalid situational configuration files` in the Administration Server pod's `kubectl log`
+  * Check for this message ` WebLogic Server failed to start due to missing or invalid situational configuration files` in the Administration Server pod's `kubectl log`
     * This suggests that the Administration Server failure to start may have been caused by errors found in a configuration override file.
-      * Lines containing the String `situational` may be found in the Administration Server pod log to provide more hints. 
+      * Lines containing the String `situational` may be found in the Administration Server pod log to provide more hints.
       * For example:
         * `<Jun 20, 2019 3:48:45 AM GMT> <Warning> <Management> <BEA-141323> <The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type "jdbc:jdbc-driver-params" must be terminated by the matching end-tag "</jdbc:jdbc-driver-params>".`
       * The warning message suggests a syntax error is found in the provided configuration override file for the testDS JDBC datasource.
-  
+
 * If you'd like to verify that the situational configuration is taking effect in the WebLogic MBean tree, then one way to do this is to compare the `server config` and `domain config` MBean tree values.
   * The `domain config` value should reflect the original value in your domain home configuration.
   * The `server config` value should reflect the overridden value.
@@ -402,7 +402,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 -Dweblogic.debug.DebugSituationalConfigDumpXml=true
 ```
 
-* **NOTE**: The WebLogic console will _not_ reflect any override changes. You cannot use the console to verify overrides are taking effect.
+* **NOTE**: The WebLogic Server Administration Console will _not_ reflect any override changes. You cannot use the Console to verify overrides are taking effect.
 
 
 ---
