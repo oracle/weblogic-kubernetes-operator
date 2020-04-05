@@ -4,20 +4,38 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.List;
+import java.util.Random;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Namespace {
+  public static Random random = new Random(System.currentTimeMillis());
+  private String name;
+
+  public Namespace name(String name) {
+    this.name = name;
+    return this;
+  }
 
   /**
-   * Creates a new unique namespace
-   * @return name of the unique namespace
-   * @throws ApiException - if Kubernetes request fails to create a namespace
+   * Generates a "unique" name by choosing a random name from
+   * 26^4 possible combinations.
+   *
+   * @return name
    */
-  public static String createUniqueNamespace() throws ApiException {
-    return Kubernetes.createUniqueNamespace();
+  public static String uniqueName() {
+    char[] nsName = new char[4];
+    for (int i = 0; i < nsName.length; i++) {
+      nsName[i] = (char) (random.nextInt(25) + (int) 'a');
+    }
+    String uniqueName = "ns-" + new String(nsName);
+    return uniqueName;
+  }
+
+  public boolean create() throws ApiException {
+    return Kubernetes.createNamespace(name);
   }
 
   /**
@@ -45,12 +63,16 @@ public class Namespace {
   /**
    * Delete a Kubernetes namespace
    *
-   * @param namespace - V1Namespace object containing name space configuration data
+   * @param namespace - name of namespace
    * @return true if successful
    * @throws ApiException - missing required configuration data, if Kubernetes request fails or
    *     unsuccessful
    */
-  public static boolean delete(V1Namespace namespace) throws ApiException {
+  public static boolean delete(String namespace) throws ApiException {
     return Kubernetes.deleteNamespace(namespace);
+  }
+
+  public static boolean exists(String name) throws ApiException {
+    return Kubernetes.listNamespaces().contains(name);
   }
 }

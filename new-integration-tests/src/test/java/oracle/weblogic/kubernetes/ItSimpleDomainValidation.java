@@ -3,10 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import io.kubernetes.client.openapi.models.V1Namespace;
-import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -49,7 +46,7 @@ class ItSimpleDomainValidation implements LoggedTest {
     logger.info("Created service account: " + serviceAccount.getMetadata().getName());
 
     // create the domain CR
-    boolean success = createDomainCustomResource(domainUID, namespace, domainYAML);
+    boolean success = createDomainCustomResource(namespace, domainYAML);
     assertTrue(success);
 
     // wait for the domain to exist
@@ -64,7 +61,7 @@ class ItSimpleDomainValidation implements LoggedTest {
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
-        .until(domainExists(domainUID, namespace));
+        .until(domainExists(domainUID, "v7", namespace));
 
     // wait for the admin server pod to exist
 
@@ -77,10 +74,8 @@ class ItSimpleDomainValidation implements LoggedTest {
         + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
     // Delete namespace
-    V1ObjectMeta metdata = new V1ObjectMetaBuilder().withName(namespace).build();
-    V1Namespace v1Namespace = new V1NamespaceBuilder().withMetadata(metdata).build();
     assertDoesNotThrow(
-        () -> TestActions.deleteNamespace(v1Namespace));
+        () -> TestActions.deleteNamespace(namespace));
     logger.info("Deleted namespace: " + namespace);
   }
 
