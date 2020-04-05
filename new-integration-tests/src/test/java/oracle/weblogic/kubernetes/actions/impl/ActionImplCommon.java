@@ -4,9 +4,10 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 // import java.io.BufferedReader;
-
-import java.io.IOException;
+import java.io.File;
+import java.io.FileNotFoundException;
 // import java.io.InputStreamReader;
+import java.io.IOException;
 // import java.util.Map;
 
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -69,4 +70,46 @@ public class ActionImplCommon {
     }
   }
 
+  /**
+   * Check if the required directories exist.
+   * Currently the directories will be created if missing. We may remove this function
+   * once we have all required working directives pre-created.
+   *
+   * @param dir the directory that needs to be checked
+   */
+  protected void checkDirectory(String dir) {
+    File file = new File(dir);
+    if (!file.isDirectory()) {
+      file.mkdir();
+      logger.info("Made a new dir " + dir);
+    }
+  }
+
+  /**
+   * Check if the required file exists, and throw if the file does not exist.
+   *
+   * @param fileName the name of the file that needs to be checked
+   * @throws FileNotFoundException if the file does not exist, or it is a directory
+   */
+  protected void checkFile(String fileName) throws FileNotFoundException {
+    File file = new File(fileName);
+    if (!(file.exists() && file.isFile())) {
+      logger.warning("The expected file " + fileName + " was not found.");
+      throw new FileNotFoundException("The expected file " + fileName + " was not found.");
+    }
+  }
+  
+  /**
+   * Check if the required file exists.
+   *
+   * @param fileName the name of the file that needs to be checked
+   * @return true if a file exists with the given fileName
+   */
+  protected boolean doesFileExist(String fileName) {
+    File file = new File(fileName);
+    if (file.exists() && file.isFile()) {
+      return true;
+    }
+    return false;
+  }
 }

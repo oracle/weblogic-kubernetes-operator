@@ -34,12 +34,12 @@ public interface ActionConstants {
   public static final String WDT = "WDT";
 
   public static final String WIT_DOWNLOAD_URL 
-      = "https://github.com//oracle/weblogic-image-tool";
+      = "https://github.com/oracle/weblogic-image-tool";
   public static final String WIT_VERSION    = "release-1.8.3";
   public static final String WIT_FILE_NAME  = "imagetool.zip";
 
   public static final String WDT_DOWNLOAD_URL 
-      = "https://github.com//oracle/weblogic-deploy-tooling";
+      = "https://github.com/oracle/weblogic-deploy-tooling";
   public static final String WDT_VERSION    = "weblogic-deploy-tooling-1.7.2";
   public static final String WDT_FILE_NAME  = "weblogic-deploy.zip";
   

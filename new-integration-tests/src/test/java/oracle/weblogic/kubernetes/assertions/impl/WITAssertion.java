@@ -20,14 +20,15 @@ public class WITAssertion {
    * @param imageTag  - the tag of the image to be checked
    * @return true if the image does exist, false otherwise
    */
-  public static boolean imageExists(String imageName, String imageTag) {
+  public static boolean doesImageExist(String imageName, String imageTag) {
     logger.info("Checking if image " + imageName + ":" + imageTag + " exists.");
     // verify the docker image is created
     try {
       ExecResult result = ExecCommand.exec(
-          "docker images | grep " 
+          "docker images -q " 
           + imageName
-          + " | grep imageTag "
+          + ":"
+          + imageTag
           + "| wc -l");
           
       if (Integer.parseInt(result.stdout().trim()) != 1) {

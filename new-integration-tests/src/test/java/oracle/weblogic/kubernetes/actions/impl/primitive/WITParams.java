@@ -18,8 +18,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 
 public class WITParams {
  
-  // TODO we start with these parameters, and will add as needed.
-
   // The name of the Docker image that is used as the base of a new image
   private String baseImageName;
   

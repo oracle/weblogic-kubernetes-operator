@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.io.FileNotFoundException;
 import java.util.List;
 
+import oracle.weblogic.kubernetes.actions.impl.ActionImplCommon;
+
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
@@ -16,21 +18,21 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
  */
 
-public class WebLogicImageTool extends InstallWITCommon {
+public class WebLogicImageTool extends ActionImplCommon {
 
   private WITParams params;
 
   /**
    * Set up the WITParams with the default values
-   * @return the instance of WIT 
+   * @return the instance of WITParams
    */
-  public static WITParams withDefaults() {
+  public static WITParams deaultParams() {
     return new WITParams().defaults();
   }
 
   /**
-   * Set up the WIT with customized parameters
-   * @return the instance of WIT 
+   * Set up the WebLogicImageTool with customized parameters
+   * @return the instance of WebLogicImageTool 
    */
   public static WebLogicImageTool withParams(WITParams params) {
     return new WebLogicImageTool().with(params);
@@ -59,9 +61,6 @@ public class WebLogicImageTool extends InstallWITCommon {
     } 
 
     try {
-      // check if the WIT binary exists, throws FileNotFoundException if the file does not exist
-      checkFile(IMAGE_TOOL);
-
       // delete the old cache entry for the WDT installer
       if (!deleteEntry()) {
         logger.warning("Failed to delete cache entry in WebLogic Image Tool");
@@ -154,12 +153,15 @@ public class WebLogicImageTool extends InstallWITCommon {
       logger.warning("Failed to create an image due to Exception: " + fnfe.getMessage());
       throw fnfe;
     }
-    return executeAndVerify(
-        IMAGE_TOOL 
-        + " cache addInstaller "
-        + " --type wdt"
-        + " --version " + params.wdtVersion()
-        + " --path " + WDT_ZIP_PATH);
+    
+    String command = String.format(
+        "%s cache addInstaller --type wdt --version %s --path %s",
+        IMAGE_TOOL,
+        params.wdtVersion(),
+        WDT_ZIP_PATH);
+        
+    return executeAndVerify(command);
+
   }
   
   /**
@@ -167,10 +169,11 @@ public class WebLogicImageTool extends InstallWITCommon {
    * @return true if the command succeeds
    */
   public boolean deleteEntry() {
-    return executeAndVerify(
-        IMAGE_TOOL 
-        + " cache deleteEntry "
-        + "--key " + "wdt_" + params.wdtVersion());
+    String command = String.format("%s cache deleteEntry --key wdt_%s",
+        IMAGE_TOOL,
+        params.wdtVersion());
+        
+    return executeAndVerify(command);
   }
 
 }

@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.File;
 
+import oracle.weblogic.kubernetes.actions.impl.ActionImplCommon;
+
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -16,7 +18,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  *  install everything before the Java test starts to run.
  */
 
-public class Installer extends InstallWITCommon {
+public class Installer extends ActionImplCommon {
 
   private InstallParams params;
 
@@ -41,34 +43,32 @@ public class Installer extends InstallWITCommon {
       logger.info("File " + params.fileName() + " already exists.");
     } else {
       checkDirectory(WORK_DIR);
+      checkDirectory(DOWNLOAD_DIR);
       downloadResult = executeAndVerify(buildDownloadCommand(), params.direct());
     }
-    if (!(new File(IMAGE_TOOL).exists()) 
-        && params.unzip()) {
-      unzipResult = unzip();
+    if (params.unzip()) {
+      // only unzip WIT once
+      if (!(doesFileExist(IMAGE_TOOL))) { 
+        unzipResult = unzip();
+      }
     }
     return downloadResult && unzipResult;
   }
 
   private boolean unzip() {
     String command = 
-        "unzip -o "
-        + "-d " + WORK_DIR + " " 
-        + DOWNLOAD_DIR + "/" + params.fileName();
-    checkDirectory(WORK_DIR);
+        String.format("unzip -o -d %s %s/%s", WORK_DIR, DOWNLOAD_DIR, params.fileName());
     return executeAndVerify(command, false);
   }
 
   private String buildDownloadCommand() {
-    String url = 
-        params.location() 
-        + "/releases/download/" 
-        + params.version() 
-        + "/" 
-        + params.fileName();
-    
-    return "curl -fL " 
-        + url 
-        + " -o " + DOWNLOAD_DIR + "/" + params.fileName();
+    String command = String.format(
+        "curl -fL %s/releases/download/%s/%s -o %s/%s", 
+        params.location(), 
+        params.version(),
+        params.fileName(),
+        DOWNLOAD_DIR,
+        params.fileName());
+    return command;
   }
 }

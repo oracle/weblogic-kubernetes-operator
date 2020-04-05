@@ -212,7 +212,7 @@ public class TestActions {
    */
   public static WITParams withWITParams() {
     return 
-        WebLogicImageTool.withDefaults();
+        WebLogicImageTool.deaultParams();
   }
  
   /**

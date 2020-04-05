@@ -6,14 +6,14 @@ package oracle.weblogic.kubernetes;
 import java.util.Arrays;
 import java.util.List;
 
-import oracle.weblogic.kubernetes.actions.TestActions;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.withWITParams;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.assertDockerImageExists;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Simple validation of basic WIT functions")
@@ -32,7 +32,7 @@ class ItWITValidation implements LoggedTest {
     List<String> modelList = Arrays.asList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
     // build an image using WebLogic Image Tool
-    boolean success = TestActions.createMIIImage(
+    boolean success = createMIIImage(
         withWITParams()
             .modelImageName(IMAGE_NAME)
             .modelImageTag(IMAGE_TAG)
@@ -41,7 +41,7 @@ class ItWITValidation implements LoggedTest {
             .redirect(false));
  
     assertEquals(true, success, "Failed to create the image using WebLogic Deploy Tool");
-    TestAssertions.imageExists(IMAGE_NAME, IMAGE_TAG);
+    assertDockerImageExists(IMAGE_NAME, IMAGE_TAG);
   } 
 }
 

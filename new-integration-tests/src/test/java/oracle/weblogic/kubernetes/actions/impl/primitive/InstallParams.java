@@ -96,10 +96,6 @@ public class InstallParams {
   }
 
   public String fileName() {
-    if (WIT.equals(type)) {
-      return WIT_FILE_NAME;
-    } else {
-      return WDT_FILE_NAME;
-    }
+    return WIT.equals(type) ? WIT_FILE_NAME : WDT_FILE_NAME;
   }
 }
