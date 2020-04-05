@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 @DisplayName("Simple validation of basic domain functions")
@@ -34,14 +33,24 @@ class ItMark implements LoggedTest {
   public void testThereWasNoException() {
     // this test will fail because it does throw an exception!
 
-    assertThatCode(() ->
-        createSecret("bob", // name
-            "weblogic", // username
-            "welcome1", // password
-            "default")) //namespace
-        .as("Test that createSecret does not throw an exception")
-        .withFailMessage("OMG! createSecret() threw an unexpected exception")
-        .doesNotThrowAnyException();
+    boolean result = false;
+    try {
+      result = createSecret("bob", // name
+          "weblogic", // username
+          "welcome1", // password
+          "default");
+    } catch (Exception e) {
+      logger.info("result is " + result);
+      assertThat(e)
+          .as("Test that createSecret does not throw an exception")
+          .withFailMessage("OMG! createSecret() threw an unexpected exception")
+          .isNotInstanceOf(Exception.class);
+    }
+    assertThat(result)
+        .as("Test that createSecret returns true")
+        .withFailMessage("OMG! createSecret() did not return true!")
+        .isTrue();
+
   }
 
   @Test
