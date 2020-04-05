@@ -38,7 +38,7 @@ class ItMark implements LoggedTest {
       result = createSecret("bob", // name
           "weblogic", // username
           "welcome1", // password
-          "default");
+          "default"); // namespace
     } catch (Exception e) {
       logger.info("result is " + result);
       assertThat(e)
