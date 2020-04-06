@@ -136,7 +136,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       // verify that JNDI name exists by checking updated config file on server pod
       String jdbcDsStr = getJndiName(domain);
       Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS doesn't update");
+          "JDBC DS wasn't updated");
       LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
 
       // get JDBC DS prop values via WLST on server pod
@@ -207,7 +207,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       // verify that JNDI name exists by checking updated config file on server pod
       String jdbcDsStr = getJndiName(domain);
       Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS doesn't update");
+          "JDBC DS wasn't updated");
       LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
 
       // get JDBC DS prop values via WLST on server pod
@@ -269,7 +269,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       // verify that JNDI name exists by checking updated config file on server pod
       String jdbcDsStr = getJndiName(domain);
       Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS doesn't update");
+          "JDBC DS wasn't updated");
       LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
 
       // get JDBC DS prop values via WLST on server pod
@@ -356,7 +356,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       // verify that JNDI name exists by checking updated config file on server pod
       String jdbcDsStr = getJndiName(domain);
       Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS doesn't update");
+          "JDBC DS wasn't updated");
       LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
 
       // get JDBC DS prop values via WLST on server pod
