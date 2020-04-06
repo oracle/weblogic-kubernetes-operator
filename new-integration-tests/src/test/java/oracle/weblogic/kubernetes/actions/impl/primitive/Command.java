@@ -3,10 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-// import java.io.BufferedReader;
-// import java.io.InputStreamReader;
 import java.io.IOException;
-// import java.util.Map;
 
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -41,35 +38,6 @@ public class Command {
     return this;
   }
 
-  /* Use ProcessBuilder
-  protected boolean executeAndVerify(String command, boolean redirectOutput) {
-    ProcessBuilder builder = new ProcessBuilder();
-    builder.command(command);
-    logger.info("Executing command = " + command + "\n env = " + builder.environment());
-    try {
-      Process process = builder.start();
-
-      // if (redirectOutput) {
-      StringBuilder output = new StringBuilder();
-
-      BufferedReader reader = new BufferedReader(
-          new InputStreamReader(process.getInputStream()));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        output.append(line + "\n");
-      }
-      int exitCode = process.waitFor();
-      return exitCode == 0;
-    } catch (IOException ioe) {
-      ioe.printStackTrace();
-      return false;
-    } catch (InterruptedException ie) {
-      ie.printStackTrace();
-      return false;
-    }
-  }
-  */
-  
   public boolean executeAndVerify() {
     logger.info("Executing command " + params.command());
     try {
