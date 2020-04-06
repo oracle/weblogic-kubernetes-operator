@@ -18,7 +18,7 @@ Swagger documentation is available [here](https://oracle.github.io/weblogic-kube
 
 The following prerequisites must be fulfilled before proceeding with the creation of the resource:
 
-* Make sure the WebLogic Kubernetes Operator is running.
+* Make sure the WebLogic Server Kubernetes Operator is running.
 * Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.
 * Create the Kubernetes secrets containing the `username` and `password` of the administrative account in the same Kubernetes namespace as the domain resource.
 
@@ -26,11 +26,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 
 Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
 
-* WebLogic sample [Domain home on a persistent volume]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}).
-
-* WebLogic sample [Domain home on image]({{< relref "/samples/simple/domains/domain-home-on-image/_index.md" >}}).
-
-* WebLogic sample [Model in image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}).
+See the WebLogic samples, [Domain home on a persistent volume]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}), [Domain home on image]({{< relref "/samples/simple/domains/domain-home-on-image/_index.md" >}}), [Model in image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}).
 
 #### Kubernetes resources
 
@@ -140,7 +136,7 @@ The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS`
 
 Note: Defining `-Djava.security.egd=file:/dev/./urandom` in the `NODEMGR_MEM_ARGS` environment variable helps to speed up the Node Manager startup on systems with low entropy.
 
-This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file. 
+This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file.
 ```
 # Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
@@ -166,7 +162,7 @@ spec:
     - name: NODEMGR_MEM_ARGS
       value: "-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom "
 ```
-      
+
 ### Pod generation
 
 The operator creates a pod for each running WebLogic Server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/), or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
