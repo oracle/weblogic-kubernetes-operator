@@ -3,14 +3,15 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
+import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
-import io.kubernetes.client.openapi.apis.ApisApi;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.util.ClientBuilder;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,24 +19,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Domain {
 
-  private static CustomObjectsApi customObjectsApi = new CustomObjectsApi();
-  private static ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
-  private static ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
-  private static ApisApi apisApi = new ApisApi();
+  static {
+    try {
+      Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
+    } catch (IOException ioex) {
+      throw new ExceptionInInitializerError(ioex);
+    }
+  }
 
+  private static final CustomObjectsApi customObjectsApi = new CustomObjectsApi();
+  private static final ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
 
   /**
    * Check if the Domain CRD exists
+   *
    * @return true if domains.weblogic.oracle CRD exists otherwise false
    * @throws ApiException when Domain CRD doesn't exist
    */
   public static boolean doesCRDExist() throws ApiException {
     try {
-      V1beta1CustomResourceDefinition domainBetaCrd =
-          apiextensionsV1beta1Api.readCustomResourceDefinition(
-              "domains.weblogic.oracle", null, null, null);
-      assertNotNull(domainBetaCrd);
-      logger.info("domainBetaCrd is not null");
+      V1beta1CustomResourceDefinition domainBetaCrd
+          = apiextensionsV1beta1Api.readCustomResourceDefinition(
+          "domains.weblogic.oracle", null, null, null);
+      assertNotNull(domainBetaCrd, "Domain CRD is null");
       return true;
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
@@ -49,6 +55,7 @@ public class Domain {
 
   /**
    * Checks if weblogic.oracle CRD domain object exists.
+   *
    * @param domainUID domain UID of the domain object
    * @param domainVersion version value for Kind Domain
    * @param namespace in which the domain object exists
@@ -56,9 +63,14 @@ public class Domain {
    */
   public static Callable<Boolean> doesDomainExist(String domainUID, String domainVersion, String namespace) {
     return () -> {
-      Object domainObject =
-          customObjectsApi.getNamespacedCustomObject(
-              "weblogic.oracle", domainVersion, namespace, "domains", domainUID);
+      Object domainObject = null;
+      try {
+        domainObject
+            = customObjectsApi.getNamespacedCustomObject(
+            "weblogic.oracle", domainVersion, namespace, "domains", domainUID);
+      } catch (ApiException apex) {
+        logger.info(apex.getMessage());
+      }
       boolean domainExist = (domainObject != null);
       logger.info("Domain Object exists : " + domainExist);
       return domainExist;

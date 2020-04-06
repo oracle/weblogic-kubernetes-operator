@@ -74,13 +74,19 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isPodRunning(String namespace, String domainUid, String podName) throws ApiException {
+    boolean status = false;
     logger.info("Checking if the pod running in namespace");
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    return pod.getStatus().getPhase().equals(RUNNING);
+    if (pod != null) {
+      status = pod.getStatus().getPhase().equals(RUNNING);
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
   }
 
   /**
@@ -92,13 +98,19 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isPodTerminating(String namespace, String domainUid, String podName) throws ApiException {
+    boolean status = false;
     logger.info("Checking if the pod terminating in namespace");
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    return pod.getStatus().getPhase().equals(TERMINATING);
+    if (pod != null) {
+      status = pod.getStatus().getPhase().equals(TERMINATING);
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
   }
 
   /**
@@ -110,9 +122,15 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isOperatorPodRunning(String namespace) throws ApiException {
+    boolean status = false;
     String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
     V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
-    return pod.getStatus().getPhase().equals(RUNNING);
+    if (pod != null) {
+      status = pod.getStatus().getPhase().equals(RUNNING);
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
   }
 
   /**
@@ -160,7 +178,12 @@ public class Kubernetes {
   public static boolean doesServiceExist(
       String serviceName, Map<String, String> label, String namespace)
       throws ApiException {
-    return getService(serviceName, label, namespace) != null;
+    boolean exist = false;
+    V1Service service = getService(serviceName, label, namespace);
+    if (service != null) {
+      exist = true;
+    }
+    return exist;
   }
 
   /**
