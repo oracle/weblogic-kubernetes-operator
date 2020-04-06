@@ -11,7 +11,6 @@ description: "Helm is used to create and deploy necessary operator resources and
 Helm is a framework that helps you manage Kubernetes applications, and Helm charts help you define and install Helm applications into a Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
 
 **Important note for users of operator releases before 2.0**
-{{% expand "Click here to expand" %}}
 
 {{% notice warning %}}
 If you have an older version of the operator installed on your cluster, for example, a 1.x version or one of the 2.0 release
@@ -23,8 +22,6 @@ Error from server (BadRequest): error when creating "/scratch/output/uidomain/we
 the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1
 ```
 {{% /notice %}}      
-
-{{% /expand %}}
 
 #### Install Helm and Tiller
 
@@ -90,16 +87,16 @@ For more detailed information, see the [REST interface configuration]({{<relref 
 
 ##### Sample SSL certificate and private key for the REST interface
 
-For testing purposes, the WebLogic Kubernetes Operator project provides a sample script
+For testing purposes, the WebLogic Server Kubernetes Operator project provides a sample script
 that generates a self-signed certificate and private key for the operator external REST interface.
 The generated certificate and key is stored in a Kubernetes `tls secret` and the sample
 script outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.
 
 {{% notice warning %}}
 The sample script should ***not*** be used in a production environment because
-typically a self-signed certificate for external communucation is not considered safe.
-A certficate signed by a commercial certificate authority is more widely accepted and
-should contain valid host names, expiration dates and key constraints.
+typically a self-signed certificate for external communication is not considered safe.
+A certificate signed by a commercial certificate authority is more widely accepted and
+should contain valid host names, expiration dates, and key constraints.
 {{% /notice %}}
 
 For more detailed information about the sample script and how to run it, see
