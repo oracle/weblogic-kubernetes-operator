@@ -25,7 +25,7 @@ import oracle.kubernetes.operator.utils.RcuSecret;
 import oracle.kubernetes.operator.utils.Secret;
 import oracle.kubernetes.operator.utils.TestUtils;
 import oracle.kubernetes.operator.utils.WalletSecret;
-//import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -112,7 +112,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
    *
    * @throws Exception exception
    */
-  //@AfterAll
+  @AfterAll
   public static void staticUnPrepare() throws Exception {
     tearDown(new Object() {
     }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
@@ -160,7 +160,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       domainMap.put("walletPasswordSecret", walletPass);
       
       jrfdomain = new JrfDomain(domainMap);
-      jrfdomain.verifyDomainCreated();
+      jrfdomain.verifyDomainCreated(80);
       testCompletedSuccessfully = true;
     } finally {
       if (jrfdomain != null && (JENKINS || testCompletedSuccessfully)) {
