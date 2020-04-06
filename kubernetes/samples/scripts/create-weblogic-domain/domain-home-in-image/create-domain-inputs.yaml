@@ -5,6 +5,7 @@
 version: create-weblogic-sample-domain-inputs-v1
 
 # Enable SSL in the admin and managed server(s).
+# Setting this to true requires updating the javaOptions parameter below.
 sslEnabled: false
 
 # Port number for admin server
@@ -121,8 +122,8 @@ exposeAdminNodePort: false
 namespace: default
 
 # Java Option for WebLogic Server
-# -Dweblogic.security.SSL.ignoreHostnameVerification=true is necessary in order for the managed server(s) to connect to the admin server
-# while booting up if SSL is enabled.
+# Add -Dweblogic.security.SSL.ignoreHostnameVerification=true if sslEnabled is true.
+# The reason is the WebLogic generated Demo certificate's host name is different from that of the runtime container.
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim
