@@ -26,7 +26,16 @@
 #   IMAGE_NAME, etc, all have defaults, or can be passed in.  See the 'export'
 #   calls in the implementation below for the complete list.
 #
-
+# Usage:
+#     For non Model In Image test
+#
+#         introspectTest.sh
+#
+#     For Model In Image test
+#
+#         export DOMAIN_SOURCE_TYPE=FromModel
+#         intropsectTest.sh
+#
 #############################################################################
 #
 # Initialize basic globals
@@ -321,7 +330,7 @@ function deployCustomOverridesConfigMap() {
 
   # We don't use overrides for MII
   if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
-    rm ${cmdir}/jdbc* ${cmdir}/diagnostics*
+    rm ${cmdir}/jdbc* ${cmdir}/diagnostics* ${cmdir}/config*
   fi
 
   kubectl -n $NAMESPACE delete cm $cmname \
@@ -439,23 +448,27 @@ function createMII_Image() {
 
   docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
 
-  trace "Info: Downloading WDT and WIT..."
-
+  trace "Info: Downloading WDT and WIT"
+  printdots_start
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh \
    > ${test_home}/miibuild_download.out 2>&1
-
-  if [ $? -ne 0 ] ; then
+  local rc=$?
+  printdots_end
+  if [ $rc -ne 0 ] ; then
     trace "Error: createMII_Image: download tools failed"
     cat ${test_home}/miibuild_download.out
     exit 1
   fi
 
-  trace "Info: Launching WIT to build the image..."
+  trace "Info: Launching WIT to build the image"
+  printdots_start
 
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh \
    > ${test_home}/miibuild_image.out  2>&1
+  local rc=$?
+  printdots_end
 
-  if [ $? -ne 0 ] ; then
+  if [ $rc -ne 0 ] ; then
     trace "Error: createMII_Image: build image failed"
     cat ${test_home}/miibuild_image.out
     exit 1
@@ -680,7 +693,7 @@ function checkOverrides() {
   logstatus=0
   local target_linecount=5
   if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
-    target_linecount=2
+    target_linecount=1
   fi
   if [ "$linecount" != "${target_linecount}" ]; then
     trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
