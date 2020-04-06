@@ -2,7 +2,7 @@
 title: "RBAC"
 date: 2019-02-23T17:15:36-05:00
 weight: 5
-description: "Role based authorization for the WebLogic Kubernetes Operator"
+description: "Operator role based authorization"
 ---
 
 #### Contents
@@ -17,14 +17,13 @@ description: "Role based authorization for the WebLogic Kubernetes Operator"
 
 The operator assumes that certain Kubernetes roles are created in the
 Kubernetes cluster.  The operator Helm chart creates the required cluster roles,
-cluster role bindings, roles and role bindings for the `ServiceAccount` that
+cluster role bindings, roles, and role bindings for the `ServiceAccount` that
 is used by the operator. The operator will also attempt to verify that
 the RBAC settings are correct when the operator starts running.
 
 {{% notice info %}}
 For more information about the Kubernetes `ServiceAccount` used by the operator, see
-[Service Accounts]({{<relref "/security/service-accounts.md#weblogic-operator-service-account">}})
-under **Security**.
+[Service Accounts]({{<relref "/security/service-accounts.md#weblogic-operator-service-account">}}).
 {{% /notice %}}
 
 The general design goal is to provide the operator with the minimum amount of
@@ -40,14 +39,8 @@ For more information about Kubernetes roles, see the
 
 To display the Kubernetes roles and related bindings used by
 the operator where the operator was installed using the
-Helm release name `weblogic-operator`, look for the Kubernetes objects:
-
-- `Role`
-- `RoleBinding`
-- `ClusterRole`
-- `ClusterRoleBinding`
-
-when using the Helm `status` command:
+Helm release name `weblogic-operator`, look for the Kubernetes objects, `Role`, `RoleBinding`,
+`ClusterRole`, and `ClusterRoleBinding`, when using the Helm `status` command:
 
 ```bash
 $ helm status weblogic-operator
