@@ -9,6 +9,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -184,7 +185,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
 
   @Override
   public int compareTo(@Nonnull ClusterStatus o) {
-    return clusterName.compareTo(o.clusterName);
+    return OperatorUtils.compareSortingStrings(clusterName, o.clusterName);
   }
 
   @Override

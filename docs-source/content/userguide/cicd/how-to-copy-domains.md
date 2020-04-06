@@ -17,7 +17,7 @@ The best practice/recommended approach is to create a "primordial domain"
 which does not contain any applications or resources,
 and to create a ZIP file of this domain before starting any servers.  
 
-> The domain ZIP must be created before starting servers.  
+> **The domain ZIP must be created before starting servers.**  
 
 When servers are started the first time, they will encrypt various other data.
 Make sure that you create the ZIP file before starting servers for the first time.
@@ -34,7 +34,7 @@ Every time you run your CI/CD pipeline to create a new mutation of the domain,
 it should retrieve and unzip the primordial domain first, and then apply changes
 to that domain using tools like WDT or WLST (see [here]({{< relref "/userguide/cicd/tools.md" >}})).
 
-> Always use external state.
+> **Always use external state.**
 
 You should always keep state outside the Docker image.  This means that you should
 use JDBC stores for leasing tables, JMS and Transaction stores,

@@ -7,8 +7,7 @@ pre = "<b> </b>"
 
 Ingresses are one approach provided by Kubernetes to configure load balancers.
 Depending on the version of Kubernetes you are using, and your cloud provider, you may need to use Ingresses.
-Please refer to [the Ingress documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/)
-for more information about Ingresses.  
+For more information about Ingresses, see [the Ingress documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/).  
 
 #### WebLogic clusters as backends of an Ingress
 
@@ -16,7 +15,7 @@ In an Ingress object, a list of backends are provided for each target that will 
 [a Kubernetes service](https://kubernetes.io/docs/concepts/services-networking/service/), more specifically, a combination of a `serviceName` and a `servicePort`.
 
 When the operator creates a WebLogic domain, it also creates a service for each WebLogic cluster in the domain.
-The operator defines the service such that its selector will match all WebLogic server pods within the WebLogic cluster
+The operator defines the service such that its selector will match all WebLogic Server pods within the WebLogic cluster
 which are in the "ready" state.
 
 The name of the service created for a WebLogic cluster follows the pattern `<domainUID>-cluster-<clusterName>`.
@@ -32,7 +31,7 @@ For example, if the `domainUID` is `myDomain_1` and the cluster name is `myClust
 `mydomain-1-cluster-mycluster-1`.
 
 The service, `serviceName` and `servicePort`, of a WebLogic cluster will be used in the routing rules defined in the Ingress
-object and the load balancer will route traffic to the WebLogic servers within the cluster based on the rules.
+object and the load balancer will route traffic to the WebLogic Servers within the cluster based on the rules.
 
 {{% notice note %}}
 Most common Ingress controllers, for example Traefik, Voyager, and nginx,

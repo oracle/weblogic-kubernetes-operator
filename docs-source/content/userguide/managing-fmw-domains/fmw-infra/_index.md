@@ -32,8 +32,8 @@ listed here, FMW Infrastructure domains work in the same way as WebLogic Server 
 The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
-FMW Infrastructure domains are supported using both the "domain on a persistent volume"
-and the "domain in a Docker image" [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+FMW Infrastructure domains are supported using both Domain in PV
+and Domain in Image [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 If you plan to experiment with upper stack products (which are not officially supported
 by the operator yet), we strongly recommend using the domain on a persistent
 volume approach.
@@ -46,7 +46,7 @@ following limitations currently exist for FMW Infrastructure domains:
 * The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
   currently supports WebLogic Server logs only.  Other logs will not be sent to
   Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
-  like Logstash or fluentd to get logs.
+  like Logstash or Fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
   been added yet.
@@ -431,7 +431,7 @@ the operator will initiate a rolling restart of the domain.
 
 If you wish to apply a non-ZDP compliant patch to the FMW Infrastructure binary image,
 you must shut down the entire domain before applying the patch. Please see the documentation on
-[domain life cycle operations]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}})
+[domain lifecycle operations]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}})
 for more information.
 
 An example of a non-ZDP compliant patch is one that includes a schema change
