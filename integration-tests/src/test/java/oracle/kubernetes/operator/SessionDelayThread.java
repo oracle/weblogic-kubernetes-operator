@@ -22,7 +22,7 @@ class SessionDelayThread implements Runnable {
    */
   private static void keepSessionAlive(long delayTime, Domain domain) throws Exception {
     String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
-    ItPodsShutdown.callWebApp(testAppPath, domain, false);
+    ItPodsShutdown.callWebApp(testAppPath, domain);
   }
 
   @Override
@@ -30,6 +30,7 @@ class SessionDelayThread implements Runnable {
     try {
       keepSessionAlive(delayTime, domain);
     } catch (Exception e) {
+      //if Forced or OpenSessionIgnore=true will get Unavailable due managed server shutdown
       Thread.currentThread().interrupt();
       e.printStackTrace();
     }
