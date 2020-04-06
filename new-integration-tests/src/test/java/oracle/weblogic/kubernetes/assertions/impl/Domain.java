@@ -41,8 +41,7 @@ public class Domain {
       V1beta1CustomResourceDefinition domainBetaCrd
           = apiextensionsV1beta1Api.readCustomResourceDefinition(
           "domains.weblogic.oracle", null, null, null);
-      assertNotNull(domainBetaCrd);
-      logger.info("domainBetaCrd is not null");
+      assertNotNull(domainBetaCrd, "Domain CRD is null");
       return true;
     } catch (ApiException aex) {
       if (aex.getCode() == 404) {
