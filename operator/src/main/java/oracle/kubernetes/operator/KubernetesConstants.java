@@ -23,6 +23,7 @@ public interface KubernetesConstants {
   String DOMAIN_SCALE_PATH = DOMAIN_SPECIFIC_PATH + "/scale";
   String DOMAIN_STATUS_PATH = DOMAIN_SPECIFIC_PATH + "/status";
 
+  boolean DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME = true;
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
   String CONTAINER_NAME = "weblogic-server";
