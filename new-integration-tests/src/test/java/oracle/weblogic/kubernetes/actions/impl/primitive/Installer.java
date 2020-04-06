@@ -5,11 +5,14 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.File;
 
-import oracle.weblogic.kubernetes.actions.impl.ActionImplCommon;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExist;
 
 
 /**
@@ -18,15 +21,27 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  *  install everything before the Java test starts to run.
  */
 
-public class Installer extends ActionImplCommon {
+public class Installer {
 
   private InstallParams params;
+  
+  /**
+   * Set up the installer with default values
+   * @return the installer instance 
+   */
+  public static InstallParams defaultInstallParams() {
+    return new InstallParams().defaults();
+  }
 
   /**
    * Set up the installer with given parameters
    * @return the installer instance 
    */
-  public Installer with(InstallParams params) {
+  public static Installer withParams(InstallParams params) {
+    return new Installer().with(params);
+  }
+  
+  private Installer with(InstallParams params) {
     this.params = params;
     return this;
   }
@@ -44,7 +59,11 @@ public class Installer extends ActionImplCommon {
     } else {
       checkDirectory(WORK_DIR);
       checkDirectory(DOWNLOAD_DIR);
-      downloadResult = executeAndVerify(buildDownloadCommand(), params.direct());
+      downloadResult = Command.withParams(
+              new CommandParams()
+              .command(buildDownloadCommand())
+              .redirect(params.redirect()))
+          .executeAndVerify();
     }
     if (params.unzip()) {
       // only unzip WIT once
@@ -58,7 +77,11 @@ public class Installer extends ActionImplCommon {
   private boolean unzip() {
     String command = 
         String.format("unzip -o -d %s %s/%s", WORK_DIR, DOWNLOAD_DIR, params.fileName());
-    return executeAndVerify(command, false);
+    return Command.withParams(
+            new CommandParams()
+            .command(command)
+            .redirect(false))
+        .executeAndVerify();
   }
 
   private String buildDownloadCommand() {

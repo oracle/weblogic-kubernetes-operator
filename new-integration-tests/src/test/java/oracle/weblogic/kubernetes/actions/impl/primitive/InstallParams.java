@@ -35,6 +35,10 @@ public class InstallParams {
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
 
+  public InstallParams defaults() {
+    return this;
+  }
+
   public InstallParams type(String type) {
     this.type = type;
     return this;
@@ -82,7 +86,7 @@ public class InstallParams {
     return this;
   }
 
-  public boolean direct() {
+  public boolean redirect() {
     return redirect;
   }
 

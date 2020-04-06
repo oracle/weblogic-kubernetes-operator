@@ -1,7 +1,7 @@
 // Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.kubernetes.actions.impl;
+package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 // import java.io.BufferedReader;
 // import java.io.InputStreamReader;
@@ -16,10 +16,30 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 /**
  * The common functionality of Installer and WebLogicImageTool
  */
-public class ActionImplCommon {
+public class Command {
 
-  protected static final String WORK_DIR 
-      = System.getProperty("java.io.tmpdir") + "/it-results";
+  private CommandParams params;
+
+  /**
+   * Set up the command with given parameters
+   * @return the command instance 
+   */
+  public static CommandParams defaultCommandParams() {
+    return new CommandParams().defaults();
+  }
+
+  /**
+   * Set up the command with given parameters
+   * @return the command instance 
+   */
+  public static Command withParams(CommandParams params) {
+    return new Command().with(params);
+  }
+  
+  private Command with(CommandParams params) {
+    this.params = params;
+    return this;
+  }
 
   /* Use ProcessBuilder
   protected boolean executeAndVerify(String command, boolean redirectOutput) {
@@ -50,14 +70,10 @@ public class ActionImplCommon {
   }
   */
   
-  protected boolean executeAndVerify(String command) {
-    return executeAndVerify(command, false);
-  }
-
-  protected boolean executeAndVerify(String command, boolean redirectOutput) {
-    logger.info("Executing command " + command);
+  public boolean executeAndVerify() {
+    logger.info("Executing command " + params.command());
     try {
-      ExecResult result = ExecCommand.exec(command, redirectOutput);
+      ExecResult result = ExecCommand.exec(params.command(), params.redirect());
       return result.exitValue() == 0;
     } catch (IOException ioe) {
       logger.warning("Failed too run the command due to " + ioe.getMessage());

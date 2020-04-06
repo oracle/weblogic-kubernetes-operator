@@ -6,19 +6,23 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-import oracle.weblogic.kubernetes.actions.impl.ActionImplCommon;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 
 /**
  * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
  */
 
-public class WebLogicImageTool extends ActionImplCommon {
+public class WebLogicImageTool {
 
   private WITParams params;
 
@@ -26,7 +30,7 @@ public class WebLogicImageTool extends ActionImplCommon {
    * Set up the WITParams with the default values
    * @return the instance of WITParams
    */
-  public static WITParams deaultParams() {
+  public static WITParams defaultWITParams() {
     return new WITParams().defaults();
   }
 
@@ -78,13 +82,17 @@ public class WebLogicImageTool extends ActionImplCommon {
       return false;
     }
   
-    return executeAndVerify(buildCommand(), params.redirect());
+    return Command.withParams(
+            defaultCommandParams()
+            .command(buildCommand())
+            .redirect(params.redirect()))
+        .executeAndVerify();
   }
   
   private boolean downloadWIT() {
     // install WIT if needed
-    return new Installer()
-        .with(new InstallParams()
+    return Installer.withParams(
+        defaultInstallParams()
             .type(WIT)
             .verify(true)
             .unzip(true))
@@ -93,8 +101,8 @@ public class WebLogicImageTool extends ActionImplCommon {
   
   private boolean downloadWDT() {
     // install WDT if needed
-    return new Installer()
-        .with(new InstallParams()
+    return Installer.withParams(
+        defaultInstallParams()
             .type(WDT)
             .verify(true)
             .unzip(false))
@@ -160,7 +168,11 @@ public class WebLogicImageTool extends ActionImplCommon {
         params.wdtVersion(),
         WDT_ZIP_PATH);
         
-    return executeAndVerify(command);
+    return Command.withParams(
+            defaultCommandParams()
+            .command(command)
+            .redirect(false))
+        .executeAndVerify();
 
   }
   
@@ -173,7 +185,10 @@ public class WebLogicImageTool extends ActionImplCommon {
         IMAGE_TOOL,
         params.wdtVersion());
         
-    return executeAndVerify(command);
+    return Command.withParams(
+            defaultCommandParams()
+            .command(command)
+            .redirect(false))
+        .executeAndVerify();
   }
-
 }
