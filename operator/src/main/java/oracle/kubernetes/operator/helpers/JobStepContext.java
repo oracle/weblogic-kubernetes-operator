@@ -153,6 +153,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
+  String getHttpAccessLogInLogHome() {
+    return Boolean.toString(getDomain().isHttpAccessLogInLogHome());
+  }
+
   String getIntrospectHome() {
     return getDomainHome();
   }
