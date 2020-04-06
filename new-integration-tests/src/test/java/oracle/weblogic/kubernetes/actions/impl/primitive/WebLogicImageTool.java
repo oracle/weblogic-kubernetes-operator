@@ -35,7 +35,7 @@ public class WebLogicImageTool {
   }
 
   /**
-   * Set up the WebLogicImageTool with customized parameters
+   * Set up the WebLogicImageTool with given parameters
    * @return the instance of WebLogicImageTool 
    */
   public static WebLogicImageTool withParams(WITParams params) {
