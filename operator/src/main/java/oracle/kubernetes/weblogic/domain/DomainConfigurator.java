@@ -148,6 +148,19 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets whether to write server HTTP access log files to the directory specified in
+   * logHome.
+   *
+   * @param httpAccessLogInLogHome boolean specifying whether to write server HTTP
+   *                               access log files to the logHome directory
+   * @return this object
+   */
+  public DomainConfigurator withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
+    getDomainSpec().withHttpAccessLogInLogHome(httpAccessLogInLogHome);
+    return this;
+  }
+
+  /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides
