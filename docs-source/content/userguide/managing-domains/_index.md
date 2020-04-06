@@ -18,18 +18,18 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 
 Please be aware of the following important considerations for WebLogic domains running in Kubernetes:
 
-* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting. 
+* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting.
   - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/` and report an error if no domain is found or more than one domain is found.  
-  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will assume that the domain home is `/shared/domains/DOMAIN_UID`. 
+  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will assume that the domain home is `/shared/domains/DOMAIN_UID`.
   - Finally, if the domain resource `domainHome` field is not specified and the `domainHomeSourceType` is `FromModel`, then the operator will assume that the domain home is `/u01/domains/DOMAIN_UID`.
-  
+
   {{% notice warning %}}
   Oracle strongly recommends storing an image containing a WebLogic domain home (`domainHomeSourceType` is `Image`)
   as private in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such).
   A Docker image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used access external resources (for example, data source password).
   For more information, see
-  [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}).
+  [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using
@@ -55,7 +55,7 @@ Please be aware of the following important considerations for WebLogic domains r
   Exposing admin, RMI, or T3 capable channels via a Kubernetes `NodePort`
   can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
-  For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels.md#weblogic-t3-channels">}}).
+  For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-channels">}}).
   {{% /notice %}}
 
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
@@ -116,7 +116,7 @@ See [Starting and stopping]({{< relref "/userguide/managing-domains/domain-lifec
 
 The operator let's you initiate scaling of clusters in various ways:
 
-* [Using kubectl to edit the domain resource]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md#on-demand-updating-the-domain-resource-directly" >}})
-* [Using the operator's REST APIs]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md#calling-the-operator-s-rest-scale-api" >}})
-* [Using WLDF policies]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md#using-a-wldf-policy-rule-and-script-action-to-call-the-operator-s-rest-scale-api" >}})
-* [Using a Prometheus action]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md#using-a-prometheus-alert-action-to-call-the-operator-s-rest-scale-api" >}})
+* [Using kubectl to edit the domain resource]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#on-demand-updating-the-domain-resource-directly" >}})
+* [Using the operator's REST APIs]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#calling-the-operators-rest-scale-api" >}})
+* [Using WLDF policies]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api" >}})
+* [Using a Prometheus action]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api" >}})

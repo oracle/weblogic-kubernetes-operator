@@ -67,7 +67,7 @@ The script will perform the following steps:
   this image contains sensitive information about the domain including keys and
   credentials that are used to access external resources (for example, data source password).
   For more information, see
-  [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}).
+  [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
   {{% /notice %}}
 * Create a tag that refers to the generated Docker image.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
@@ -112,7 +112,7 @@ If you run the sample from a machine that is remote to the Kubernetes cluster, a
 * If you want Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials and set the `imagePullSecretName` property in the inputs file to the name of the secret.
 {{% notice note %}}
 The Kubernetes secret must be in the same namespace where the domain will be running.
-For more information, see [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}).
+For more information, see [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
 {{% /notice %}}
 * Run the `create-domain.sh` script without the `-e` option.
 * Push the `image` to the target registry.
