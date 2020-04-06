@@ -380,6 +380,10 @@ public class Domain {
     return spec.getIncludeServerOutInPodLog();
   }
 
+  public boolean isHttpAccessLogInLogHome() {
+    return spec.getHttpAccessLogInLogHome();
+  }
+
   boolean isDomainHomeInImage() {
     return spec.isDomainHomeInImage();
   }
