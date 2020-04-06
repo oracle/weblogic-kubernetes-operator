@@ -7,6 +7,14 @@ import java.io.File;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -25,11 +33,33 @@ public class Installer {
   private InstallParams params;
   
   /**
-   * Set up the installer with default values
-   * @return the installer instance 
+   * Set up the installer with default values for WDT
+   * @return the InstallParams instance 
    */
-  public static InstallParams defaultInstallParams() {
-    return new InstallParams().defaults();
+  public static InstallParams defaultInstallWDTParams() {
+    return new InstallParams()
+        .defaults()
+        .type(WDT)
+        .fileName(WDT_FILE_NAME)
+        .version(WDT_VERSION)
+        .location(WDT_DOWNLOAD_URL)
+        .verify(true)
+        .unzip(false);
+  } 
+  
+  /**
+   * Set up the installer with default values for WIT
+   * @return the InstallParams instance 
+   */
+  public static InstallParams defaultInstallWITParams() {
+    return new InstallParams()
+        .defaults()
+        .type(WIT)
+        .fileName(WIT_FILE_NAME)
+        .version(WIT_VERSION)
+        .location(WIT_DOWNLOAD_URL)
+        .verify(true)
+        .unzip(true);
   }
 
   /**

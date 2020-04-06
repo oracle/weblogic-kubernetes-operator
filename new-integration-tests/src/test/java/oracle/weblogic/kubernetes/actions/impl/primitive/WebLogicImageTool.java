@@ -9,11 +9,10 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWDTParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWITParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -86,20 +85,14 @@ public class WebLogicImageTool {
   private boolean downloadWIT() {
     // install WIT if needed
     return Installer.withParams(
-        defaultInstallParams()
-            .type(WIT)
-            .verify(true)
-            .unzip(true))
+        defaultInstallWITParams())
         .download();
   }
   
   private boolean downloadWDT() {
     // install WDT if needed
     return Installer.withParams(
-        defaultInstallParams()
-            .type(WDT)
-            .verify(true)
-            .unzip(false))
+        defaultInstallWDTParams())
         .download();
   } 
   

@@ -3,14 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_VERSION;
-
 /**
  * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
  */
@@ -18,7 +10,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_VERSION;
 public class InstallParams {
 
   // WIT or WDT
-  private String type = WIT;
+  private String type;
   
   // The version of the tool
   private String version;
@@ -26,6 +18,9 @@ public class InstallParams {
   // The download site location
   private String location;
   
+  // The installer file name
+  private String fileName;
+
   // Whether verify before download
   private boolean verify = true;
   
@@ -54,9 +49,6 @@ public class InstallParams {
   }
 
   public String version() {
-    if (version == null) {
-      return WIT.equals(type) ? WIT_VERSION : WDT_VERSION;
-    }
     return version;
   }
 
@@ -66,9 +58,6 @@ public class InstallParams {
   }
 
   public String location() {
-    if (location == null) {
-      return WIT.equals(type) ? WIT_DOWNLOAD_URL : WDT_DOWNLOAD_URL;
-    }
     return location;
   }
 
@@ -99,7 +88,12 @@ public class InstallParams {
     return unzip;
   }
 
+  public InstallParams fileName(String fileName) {
+    this.fileName = fileName;
+    return this;
+  }
+  
   public String fileName() {
-    return WIT.equals(type) ? WIT_FILE_NAME : WDT_FILE_NAME;
+    return fileName;
   }
 }
