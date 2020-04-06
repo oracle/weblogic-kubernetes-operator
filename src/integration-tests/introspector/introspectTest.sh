@@ -473,7 +473,8 @@ function createMII_Image() {
     cat ${test_home}/miibuild_image.out
     exit 1
   fi
-  )
+  ) || exit 1
+
   export WEBLOGIC_IMAGE_NAME=model-in-image || exit 1
   export WEBLOGIC_IMAGE_TAG=it || exit 1
 
