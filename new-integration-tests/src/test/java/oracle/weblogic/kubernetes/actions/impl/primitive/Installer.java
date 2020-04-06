@@ -37,10 +37,10 @@ public class Installer {
    * @return the installer instance 
    */
   public static Installer withParams(InstallParams params) {
-    return new Installer().with(params);
+    return new Installer().params(params);
   }
   
-  private Installer with(InstallParams params) {
+  private Installer params(InstallParams params) {
     this.params = params;
     return this;
   }

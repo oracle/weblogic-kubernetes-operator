@@ -39,10 +39,10 @@ public class WebLogicImageTool {
    * @return the instance of WebLogicImageTool 
    */
   public static WebLogicImageTool withParams(WITParams params) {
-    return new WebLogicImageTool().with(params);
+    return new WebLogicImageTool().params(params);
   }
   
-  private WebLogicImageTool with(WITParams params) {
+  private WebLogicImageTool params(WITParams params) {
     this.params = params;
     return this;
   }

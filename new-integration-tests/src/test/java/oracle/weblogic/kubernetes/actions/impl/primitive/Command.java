@@ -30,10 +30,10 @@ public class Command {
    * @return the command instance 
    */
   public static Command withParams(CommandParams params) {
-    return new Command().with(params);
+    return new Command().params(params);
   }
   
-  private Command with(CommandParams params) {
+  private Command params(CommandParams params) {
     this.params = params;
     return this;
   }
