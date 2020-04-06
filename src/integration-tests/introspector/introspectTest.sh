@@ -34,7 +34,7 @@
 #     For Model In Image test
 #
 #         export DOMAIN_SOURCE_TYPE=FromModel
-#         intropsectTest.sh
+#         introspectTest.sh
 #
 #############################################################################
 #
@@ -146,7 +146,7 @@ function cleanupMajor() {
 
   rm -fr /tmp/introspect
   mkdir -p $test_home || exit 1
-  rm -fr ${test_home}/mii/workdir
+
   # now we use the generic integration test cleanup script to
   #
   #   1 - delete all operator related k8s artifacts
@@ -448,7 +448,7 @@ function createMII_Image() {
 
   docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
 
-  trace "Info: Downloading WDT and WIT"
+  tracen "Info: Downloading WDT and WIT"
   printdots_start
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh \
    > ${test_home}/miibuild_download.out 2>&1
@@ -460,7 +460,7 @@ function createMII_Image() {
     exit 1
   fi
 
-  trace "Info: Launching WIT to build the image"
+  tracen "Info: Launching WIT to build the image"
   printdots_start
 
   ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh \
