@@ -25,4 +25,3 @@
 # Note that a customer/admin should never override a port, they must stay fixed
 /ServerTemplates/mycluster-template,ListenPort,8001,8001
 
-/JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS/Properties/mysqlDS/Properties/user,Value,invalid-user,root
