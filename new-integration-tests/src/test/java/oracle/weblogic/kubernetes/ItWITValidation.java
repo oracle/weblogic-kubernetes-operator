@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -29,7 +29,7 @@ class ItWITValidation implements LoggedTest {
     logger.info("WDT model directory is " + MODEL_DIR);
 
     // build the model file list
-    List<String> modelList = Arrays.asList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
     // build an image using WebLogic Image Tool
     boolean success = createMIIImage(
