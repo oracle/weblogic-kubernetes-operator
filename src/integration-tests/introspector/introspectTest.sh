@@ -482,13 +482,15 @@ function createMII_Image() {
   kubectl -n $NAMESPACE create configmap  ${DOMAIN_UID}-wdt-config-map \
         --from-file=${SCRIPTPATH}/mii/wdtconfigmap | tracePipe "Info: kubectl output: "
 
-  kubectl -n $NAMESPACE label  configmap ${DOMAIN_UID}-wdt-config-map  weblogic.domainUID=$DOMAIN_UID || exit 1
+  kubectl -n $NAMESPACE label  configmap ${DOMAIN_UID}-wdt-config-map  weblogic.domainUID=$DOMAIN_UID \
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
 
   kubectl -n $NAMESPACE delete secret ${DOMAIN_UID}-runtime-encryption-secret --ignore-not-found || exit 1
   kubectl -n $NAMESPACE create secret generic  ${DOMAIN_UID}-runtime-encryption-secret \
         --from-literal=password=welcome1 | tracePipe "Info: kubectl output: "
 
-  kubectl -n $NAMESPACE label secret ${DOMAIN_UID}-runtime-encryption-secret weblogic.domainUID=$DOMAIN_UID || exit 1
+  kubectl -n $NAMESPACE label secret ${DOMAIN_UID}-runtime-encryption-secret weblogic.domainUID=$DOMAIN_UID \
+   2>&1 | tracePipe "Info: kubectl output: " || exit 1
 
 }
 
@@ -1030,7 +1032,8 @@ kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
         --from-literal=encryptd=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
-kubectl -n $NAMESPACE label secret my-secret  weblogic.domainUID=$DOMAIN_UID
+kubectl -n $NAMESPACE label secret my-secret weblogic.domainUID=$DOMAIN_UID 2>&1 | tracePipe "Info: kubectl output: " \
+  || exit 1
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
