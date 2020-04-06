@@ -3,11 +3,9 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-import java.util.HashMap;
+// All common parameters needed to install a Helm application
 
-// All common parameters needed to install a helm application
-
-public abstract class HelmParams {
+public class HelmParams {
 
   // Adding some of the most commonly used params for now
   protected String releaseName;
@@ -15,6 +13,31 @@ public abstract class HelmParams {
   protected String repoUrl;
   protected String chartName;
   protected String chartDir;
+
+  public HelmParams releaseName(String releaseName) {
+    this.releaseName = releaseName;
+    return this;
+  }
+
+  public HelmParams namespace(String namespace) {
+    this.namespace = namespace;
+    return this;
+  }
+
+  public HelmParams repoUrl(String repoUrl) {
+    this.repoUrl = repoUrl;
+    return this;
+  }
+
+  public HelmParams chartName(String chartName) {
+    this.chartName = chartName;
+    return this;
+  }
+
+  public HelmParams chartDir(String chartDir) {
+    this.chartDir = chartDir;
+    return this;
+  }
 
   public String getReleaseName() {
     return releaseName;
@@ -36,5 +59,4 @@ public abstract class HelmParams {
     return chartDir;
   }
 
-  public abstract HashMap<String, Object> getValues();
 }

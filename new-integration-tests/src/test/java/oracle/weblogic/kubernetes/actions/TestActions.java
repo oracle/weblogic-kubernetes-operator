@@ -19,6 +19,8 @@ import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 
@@ -35,7 +37,7 @@ public class TestActions {
    *
    * @param params operator parameters for helm values
    * @return true if the operator is successfully installed, false otherwise.
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean installOperator(OperatorParams params) {
     return Operator.install(params);
@@ -54,9 +56,9 @@ public class TestActions {
   /**
    * Makes a REST call to the Operator to scale the domain.
    *
-   * @param domainUID    - domainUid of the domain
-   * @param clusterName  - cluster in the domain to scale
-   * @param numOfServers - number of servers to scale upto.
+   * @param domainUID domainUid of the domain
+   * @param clusterName cluster in the domain to scale
+   * @param numOfServers number of servers to scale upto.
    * @return true on success, false otherwise
    */
   public static boolean scaleDomain(String domainUID, String clusterName, int numOfServers) {
@@ -66,12 +68,11 @@ public class TestActions {
   /**
    * Uninstall the Operator release.
    *
-   * @param name      operator release name
-   * @param namespace the name of the namespace
+   * @param params the parameters to helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
 
-  public static boolean uninstallOperator(OperatorParams params) {
+  public static boolean uninstallOperator(HelmParams params) {
     return Operator.uninstall(params);
   }
 
@@ -80,9 +81,9 @@ public class TestActions {
   /**
    * Create domain custom resource from the given domain yaml file.
    *
-   * @param domainUID  - unique domain identifier
-   * @param namespace  - name of namespace
-   * @param domainYAML - domain yaml file
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
+   * @param domainYAML domain yaml file
    * @return true on success, false otherwise
    */
   public static boolean createDomainCustomResource(String domainUID, String namespace, String domainYAML) {
@@ -92,9 +93,9 @@ public class TestActions {
   /**
    * List domain custom resources for a given namespace.
    *
-   * @param namespace - name of namespace
+   * @param namespace name of namespace
    * @return List of names of domain custom resources
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static List<String> listDomainCustomResources(String namespace) throws ApiException {
     return Domain.listDomainCustomResources(namespace);
@@ -103,8 +104,8 @@ public class TestActions {
   /**
    * Shutdown the domain.
    *
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
    * @return true on success, false otherwise
    */
   public static boolean shutdown(String domainUID, String namespace) {
@@ -113,8 +114,9 @@ public class TestActions {
 
   /**
    * Restart the domain.
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
+   *
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
    * @return true on success, false otherwise
    */
   public static boolean restart(String domainUID, String namespace) {
@@ -125,10 +127,10 @@ public class TestActions {
    * Delete a domain custom resource for a given unique domain identifier in a
    * given namespace.
    *
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deleteDomainCustomResource(String domainUID, String namespace)
       throws ApiException {
@@ -164,7 +166,7 @@ public class TestActions {
    *
    * @param name the name of the namespace
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createNamespace(String name) throws ApiException {
     return new Namespace().name(name).create();
@@ -174,7 +176,7 @@ public class TestActions {
    * Create a namespace with unique name
    *
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static String createUniqueNamespace() throws ApiException {
     String name = Namespace.uniqueName();
@@ -185,8 +187,8 @@ public class TestActions {
   /**
    * List of namespaces in Kubernetes cluster
    *
-   * @return - List of names of all namespaces in Kubernetes cluster
-   * @throws ApiException - if Kubernetes client API call fails
+   * @return List of names of all namespaces in Kubernetes cluster
+   * @throws ApiException if Kubernetes client API call fails
    */
 
   public static List<String> listNamespaces() throws ApiException {
@@ -196,9 +198,9 @@ public class TestActions {
   /**
    * Delete a namespace for the given name
    *
-   * @param name - name of namespace
+   * @param name name of namespace
    * @return true if successful delete, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deleteNamespace(String name) throws ApiException {
     return Namespace.delete(name);
@@ -219,12 +221,12 @@ public class TestActions {
   /**
    * Create an image using WDT models using WebLogic Image Tool
    *
-   * @param params - the parameters for creating a model-in-image Docker image
+   * @param params the parameters for creating a model-in-image Docker image
    * @return true if successful delete, false otherwise
    */
   public static boolean createMIIImage(WITParams params) {
     return
-         WebLogicImageTool
+        WebLogicImageTool
             .withParams(params)
             .updateImage();
   }
@@ -246,7 +248,7 @@ public class TestActions {
    *
    * @param pvName the name of the Persistent Volume
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deletePersistentVolume(String pvName) throws ApiException {
     return PersistentVolume.delete(pvName);
@@ -268,7 +270,7 @@ public class TestActions {
    * @param pvcName   the name of the Persistent Volume Claim
    * @param namespace the namespace of the Persistent Volume Claim
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deletePersistentVolumeClaim(String pvcName, String namespace)
       throws ApiException {
@@ -285,7 +287,7 @@ public class TestActions {
    * @param password   password
    * @param namespace  the name of the namespace
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createSecret(String secretName,
                                      String userName, String password, String namespace) throws ApiException {
@@ -298,7 +300,7 @@ public class TestActions {
    * @param secretName the name of the secret
    * @param namespace  the name of the namespace
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deleteSecret(String secretName, String namespace) throws ApiException {
     return Secret.delete(secretName, namespace);
@@ -312,8 +314,8 @@ public class TestActions {
    * @param namespace the name of the namespace
    * @param fromFile  file or dir path
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
-   * @throws IOException  - if fail to read fromFile
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws IOException if fail to read fromFile
    */
   public static boolean createConfigMap(String cmName, String namespace, String fromFile)
       throws IOException, ApiException {
@@ -326,7 +328,7 @@ public class TestActions {
    * @param cmName    the name of the Config Map
    * @param namespace the name of the namespace
    * @return true on success, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deleteConfigMap(String cmName, String namespace) throws ApiException {
     return ConfigMap.delete(cmName, namespace);
@@ -337,9 +339,9 @@ public class TestActions {
   /**
    * Create a service account for a given namespace
    *
-   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @param serviceAccount V1ServiceAccount object containing service account configuration data
    * @return true on success, false otherwise
-   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   * @throws ApiException missing required configuration data or if Kubernetes request fails
    */
   public static boolean createServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
     return ServiceAccount.create(serviceAccount);
@@ -348,12 +350,24 @@ public class TestActions {
   /**
    * Delete a service account for a given namespace
    *
-   * @param serviceAccount - V1ServiceAccount object containing service account configuration data
+   * @param serviceAccount V1ServiceAccount object containing service account configuration data
    * @return true on success, false otherwise
-   * @throws ApiException - missing required configuration data or if Kubernetes request fails
+   * @throws ApiException missing required configuration data or if Kubernetes request fails
    */
   public static boolean deleteServiceAccount(V1ServiceAccount serviceAccount) throws ApiException {
     return ServiceAccount.delete(serviceAccount);
+  }
+
+  // ----------------------- helm -----------------------------------
+
+  /**
+   * List releases.
+   *
+   * @param params namespace
+   * @return true on success
+   */
+  public static boolean helmList(HelmParams params) {
+    return Helm.list(params);
   }
 
   // ------------------------ where does this go  -------------------------

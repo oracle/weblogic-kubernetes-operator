@@ -11,7 +11,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 // All parameters needed to install Operator from test
 
-public class OperatorParams extends HelmParams {
+public class OperatorParams {
 
   private static final String DOMAIN_NAMESPACES = "domainNamespaces";
   private static final String IMAGE = "image";
@@ -31,16 +31,7 @@ public class OperatorParams extends HelmParams {
   private int externalRestHttpsPort = 0;
   private String imagePullPolicy;
   private String imagePullSecrets;
-
-  public OperatorParams releaseName(String releaseName) {
-    this.releaseName = releaseName;
-    return this;
-  }
-
-  public OperatorParams namespace(String namespace) {
-    this.namespace = namespace;
-    return this;
-  }
+  private HelmParams helmParams;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -82,23 +73,17 @@ public class OperatorParams extends HelmParams {
     return this;
   }
 
-  public OperatorParams repoUrl(String repoUrl) {
-    this.repoUrl = repoUrl;
-    return this;
-  }
-
-  public OperatorParams chartName(String chartName) {
-    this.chartName = chartName;
-    return this;
-  }
-
-  public OperatorParams chartDir(String chartDir) {
-    this.chartDir = chartDir;
+  public OperatorParams helmParams(HelmParams helmParams) {
+    this.helmParams = helmParams;
     return this;
   }
 
   public String getServiceAccount() {
     return serviceAccount;
+  }
+
+  public HelmParams getHelmParams() {
+    return helmParams;
   }
 
   public HashMap<String, Object> getValues() {

@@ -4,8 +4,39 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
-public class Operator extends Helm {
+public class Operator {
+
+  /**
+   * install helm chart
+   * @param params the helm parameters like namespace, release name, repo url or chart dir,
+   *               chart name and chart values to override
+   * @return true on success, false otherwise
+   */
+  public static boolean install(OperatorParams params) {
+    return Helm.install(params.getHelmParams(), params.getValues());
+  }
+
+  /**
+   * Upgrade a helm release.
+   * @param params the helm parameters like namespace, release name, repo url or chart dir,
+   *               chart name and chart values to override
+   * @return true on success, false otherwise
+   */
+  public static boolean upgrade(OperatorParams params) {
+    return Helm.upgrade(params.getHelmParams(), params.getValues());
+  }
+
+  /**
+   * Uninstall a helm release.
+   * @param params the parameters to helm uninstall command, release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstall(HelmParams params) {
+    return Helm.uninstall(params);
+  }
+
   public static boolean scaleDomain(String domainUID, String clusterName, int numOfServers) {
     return true;
   }

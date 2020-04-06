@@ -14,12 +14,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class Helm {
 
   /**
-   * install helm chart
-   * @param params the parameters to helm as values
+   * Installs a helm chart.
+   * @param helmParams the parameters to helm install command like namespace, release name,
+   *                   repo url or chart dir, chart name
+   * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */
-  public static boolean install(HelmParams params) {
-    String namespace = params.getNamespace();
+  public static boolean install(HelmParams helmParams, HashMap<String, Object> chartValues) {
+    String namespace = helmParams.getNamespace();
 
     // assertions for required parameters
     assertThat(namespace)
@@ -27,52 +29,52 @@ public class Helm {
         .isNotNull()
         .isNotEmpty();
 
-    assertThat(params.getReleaseName())
+    assertThat(helmParams.getReleaseName())
         .as("make sure releaseName is not empty or null")
         .isNotNull()
         .isNotEmpty();
 
-    assertThat(params.getRepoUrl() != null && params.getChartName() == null)
+    assertThat(helmParams.getRepoUrl() != null && helmParams.getChartName() == null)
         .as("make sure chart name is not empty or null when repo url is provided")
         .isFalse();
 
-    assertThat(params.getRepoUrl() == null && params.getChartDir() == null)
+    assertThat(helmParams.getRepoUrl() == null && helmParams.getChartDir() == null)
         .as("make sure repo url, chart name and chart dir are not empty or null. "
             + "repo url, chart name or chart dir must be provided")
         .isFalse();
 
     //chart reference to be used in helm install
-    String chartRef = params.getChartDir();
+    String chartRef = helmParams.getChartDir();
 
     // use repo url as chart reference if provided
-    if (params.getChartName() != null && params.getRepoUrl() != null) {
-      Helm.addRepo(params.getChartName(), params.getRepoUrl());
-      chartRef = params.getRepoUrl();
+    if (helmParams.getChartName() != null && helmParams.getRepoUrl() != null) {
+      Helm.addRepo(helmParams.getChartName(), helmParams.getRepoUrl());
+      chartRef = helmParams.getRepoUrl();
     }
 
-    logger.info(String.format("Installing application in namespace %s using chart %s",
+    logger.fine(String.format("Installing a chart in namespace %s using chart reference %s",
         namespace, chartRef));
 
     // build helm install command
-    StringBuffer installCmd = new StringBuffer("helm install ")
-        .append(params.getReleaseName()).append(" ").append(chartRef)
-        .append(" --namespace ").append(params.getNamespace());
+    String installCmd = String.format("helm install %1s %2s --namespace %3s ",
+        helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
 
-    // add all the parameters
-    appendValues(params.getValues(), installCmd);
+    // add override chart values
+    installCmd = installCmd + valuesToString(chartValues);
 
-    installCmd.append(" && helm list");
     // run the command
-    return exec(installCmd.toString());
+    return exec(installCmd);
 
   }
 
   /**
-   * upgrade a helm release
-   * @param params the parameters to helm as values
+   * Upgrade a helm release.
+   * @param params the parameters to helm install command like namespace, release name,
+   *                   repo url or chart dir, chart name
+   * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */
-  public static boolean upgrade(HelmParams params) {
+  public static boolean upgrade(HelmParams params, HashMap<String, Object> chartValues) {
     String namespace = params.getNamespace();
 
     // assertions for required parameters
@@ -94,25 +96,23 @@ public class Helm {
     //chart reference to be used in helm upgrade
     String chartDir = params.getChartDir();
 
-    logger.info(String.format("Upgrade application in namespace %s using chart %s",
+    logger.fine(String.format("Upgrading a release in namespace %s using chart reference %s",
         namespace, chartDir));
 
     // build helm upgrade command
-    StringBuffer upgradeCmd = new StringBuffer("helm upgrade ")
-        .append(params.getReleaseName()).append(" ").append(chartDir)
-        .append(" --namespace ").append(params.getNamespace());
+    String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s ",
+        params.getReleaseName(), chartDir, params.getNamespace());
 
-    // add all the parameters
-    appendValues(params.getValues(), upgradeCmd);
+    // add override chart values
+    upgradeCmd = upgradeCmd + valuesToString(chartValues);
 
-    upgradeCmd.append(" && helm list");
     // run the command
-    return exec(upgradeCmd.toString());
+    return exec(upgradeCmd);
   }
 
   /**
-   * uninstall a helm release
-   * @param params the parameters to helm as values
+   * Uninstall a helm release.
+   * @param params the parameters to helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstall(HelmParams params) {
@@ -127,8 +127,27 @@ public class Helm {
         .isNotNull()
         .isNotEmpty();
 
-    return exec("helm uninstall " + params.getReleaseName()
-        + " -n " + params.getNamespace());
+    logger.fine(String.format("Uninstalling release %s in namespace %s",
+        params.getReleaseName(), params.getNamespace()));
+
+    String uninstallCmd = String.format("helm uninstall %1s -n %2s", params.getReleaseName(),
+        params.getNamespace());
+    return exec(uninstallCmd);
+  }
+
+  /**
+   * List releases.
+   * @param params namespace
+   * @return true on success
+   */
+  public static boolean list(HelmParams params) {
+    // assertions for required parameters
+    assertThat(params.getNamespace())
+        .as("make sure namespace is not empty or null")
+        .isNotNull()
+        .isNotEmpty();
+
+    return exec(String.format("helm list -n %s", params.getNamespace()));
   }
 
   /**
@@ -145,15 +164,14 @@ public class Helm {
   /**
    * append the values to the given string buffer
    * @param values hash map with key, value pairs
-   * @param command the command to append to
+   * @return string with chart values
    */
-  private static void appendValues(HashMap<String, Object> values, StringBuffer command) {
+  private static String valuesToString(HashMap<String, Object> values) {
+    StringBuffer valuesString = new StringBuffer("");
     values.forEach((key, value) ->
-        command.append(" --set \"")
-            .append(key)
-            .append("=")
-            .append(value.toString().replaceAll("\\[", "{").replaceAll("\\]", "}").replace(" ",""))
-            .append("\""));
+        valuesString.append(String.format(" --set \"%1s=%2s\"",
+              key, value.toString().replaceAll("\\[", "{").replaceAll("\\]", "}").replace(" ",""))));
+    return valuesString.toString();
   }
 
   /**
@@ -170,7 +188,7 @@ public class Helm {
         return false;
       }
     } catch (Exception e) {
-      logger.info("Command failed with errors " + e.getMessage());
+      logger.info("Got exception, command failed with errors " + e.getMessage());
       return false;
     }
     return true;
