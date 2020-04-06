@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -274,10 +275,12 @@ public class DomainStatus {
   /**
    * Status of WebLogic servers in this domain.
    *
-   * @return servers
+   * @return servers sorted list of ServerStatus containing status of WebLogic servers in this domain
    */
   public List<ServerStatus> getServers() {
-    return servers;
+    List<ServerStatus> sortedServers = new ArrayList<>(servers);
+    sortedServers.sort(Comparator.naturalOrder());
+    return sortedServers;
   }
 
   /**
@@ -324,8 +327,15 @@ public class DomainStatus {
     return this;
   }
 
+  /**
+   * Status of WebLogic clusters in this domain.
+   *
+   * @return clusters sorted list of ClusterStatus containing status of WebLogic clusters in this domain
+   */
   public List<ClusterStatus> getClusters() {
-    return clusters;
+    List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
+    sortedClusters.sort(Comparator.naturalOrder());
+    return sortedClusters;
   }
 
   /**

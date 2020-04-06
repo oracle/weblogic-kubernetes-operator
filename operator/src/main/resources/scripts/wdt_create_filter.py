@@ -1,3 +1,12 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+# ------------
+# Description:
+# ------------
+#  This is a WDT filter for primordial domain creation. It filters out all resources and
+#  apps deployments, leaving only the domainInfo and admin server in topology.
+#
 def filter_model(model):
 	if model and 'topology' in model:
             topology = model['topology']

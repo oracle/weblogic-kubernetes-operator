@@ -70,6 +70,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "EXEC_FACTORY", execFactory));
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "STEP_FACTORY", stepFactory));
     mementos.add(TuningParametersStub.install());
+    mementos.add(ClientFactoryStub.install());
 
     testSupport.addDomainPresenceInfo(info);
   }

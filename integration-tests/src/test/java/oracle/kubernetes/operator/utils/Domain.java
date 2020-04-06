@@ -127,18 +127,28 @@ public class Domain {
   /**
    * Verifies the required pods are created, services are created and the servers are ready.
    *
-   * @throws Exception exception
+   * @throws RuntimeException if pods/services of the domain are not created or WLS is not running
    */
   public void verifyDomainCreated() throws Exception {
+    verifyDomainCreated(BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * Verifies the required pods are created, services are created and the servers are ready.
+   *
+   * @param maxIterations max iteration count
+   * @throws RuntimeException if pods/services of the domain are not created or WLS is not running
+   */
+  public void verifyDomainCreated(int maxIterations) throws Exception {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
     ExecResult result = TestUtils.exec(command.toString());
     if (!result.stdout().contains(domainUid)) {
       throw new RuntimeException("FAILURE: domain not found, exiting!");
     }
-    verifyPodsCreated();
-    verifyServicesCreated();
-    verifyServersReady();
+    verifyPodsCreated(maxIterations);
+    verifyServicesCreated(maxIterations);
+    verifyServersReady(maxIterations);
     if (createLoadBalancer) {
       String cmd = "curl --silent --noproxy '*' -H 'host: " + domainUid
           + ".org' http://" + getHostNameForCurl() + ":" + getLoadBalancerWebPort()
@@ -161,13 +171,23 @@ public class Domain {
   /**
    * verify pods are created.
    *
-   * @throws Exception exception
+   * @throws RuntimeException if pod is not in running state
    */
   public void verifyPodsCreated() throws Exception {
+    verifyPodsCreated(BaseTest.getMaxIterationsPod());
+  }
+   
+  /**
+   * verify pods are created.
+   *
+   * @param maxIterations max iteration count
+   * @throws RuntimeException if pod is not in running state
+   */
+  public void verifyPodsCreated(int maxIterations) throws Exception {
     // check admin pod
     LoggerHelper.getLocal().log(Level.INFO,
         "Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Created");
-    TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+    TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS, maxIterations);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
@@ -179,7 +199,7 @@ public class Domain {
                 + managedServerNameBase
                 + i
                 + ") is Created");
-        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS, maxIterations);
       }
     }
   }
@@ -192,19 +212,30 @@ public class Domain {
   public void verifyServicesCreated() throws Exception {
     verifyServicesCreated(false);
   }
+  
+  /**
+   * verify services are created.
+   * 
+   * @param maxIterations max iteration counts
+   *
+   * @throws RuntimeException if service is not created
+   */
+  public void verifyServicesCreated(int maxIterations) throws Exception {
+    verifyServicesCreated(false, maxIterations);
+  }
 
   /**
    * verify services are created.
    *
    * @param precreateService - if true check services are created for configuredManagedServerCount
    *                         number of servers else check for initialManagedServerReplicas number of servers
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
-  public void verifyServicesCreated(boolean precreateService) throws Exception {
+  public void verifyServicesCreated(boolean precreateService, int maxIterations) throws Exception {
     // check admin service
     LoggerHelper.getLocal().log(Level.INFO,
         "Checking if admin service(" + domainUid + "-" + adminServerName + ") is created");
-    TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS);
+    TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS, maxIterations);
 
     if (exposeAdminT3Channel) {
       LoggerHelper.getLocal().log(Level.INFO,
@@ -213,7 +244,7 @@ public class Domain {
               + "-"
               + adminServerName
               + "-external) is created");
-      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS);
+      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS, maxIterations);
     }
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
@@ -228,27 +259,50 @@ public class Domain {
                 + managedServerNameBase
                 + i
                 + ") is created");
-        TestUtils.checkServiceCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+        TestUtils.checkServiceCreated(domainUid + "-" + managedServerNameBase + i, domainNS, maxIterations);
       }
     }
   }
+  
+  /**
+   * verify services are created.
+   *
+   * @param precreateService - if true check services are created for configuredManagedServerCount
+   *                         number of servers else check for initialManagedServerReplicas number of servers
+   * @throws RuntimeException if service is not created
+   */
+  public void verifyServicesCreated(boolean precreateService) throws Exception {
+    verifyServicesCreated(precreateService, BaseTest.getMaxIterationsPod());
+  }
+
 
   /**
    * verify servers are ready.
    *
-   * @throws Exception exception
+   * @throws RuntimeException if WLS pod is not ready and pod output doesn't contain 1/1
    */
   public void verifyServersReady() throws Exception {
+    verifyServersReady(BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * verify servers are ready.
+   * 
+   * @param maxIterations max iterations count
+   *
+   * @throws RuntimeException if WLS pod is not ready and pod output doesn't contain 1/1
+   */
+  public void verifyServersReady(int maxIterations) throws Exception {
     // check admin pod
     LoggerHelper.getLocal().log(Level.INFO, "Checking if admin server is Running and Ready");
-    TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
+    TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS, maxIterations);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         LoggerHelper.getLocal().log(Level.INFO,
             "Checking if managed server (" + managedServerNameBase + i + ") is Running and Ready");
-        TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
+        TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS, maxIterations);
       }
     } else {
       // check no additional servers are started
