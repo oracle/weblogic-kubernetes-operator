@@ -7,6 +7,7 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Assertions for the results of WebLogic Image Tool operations
@@ -23,6 +24,7 @@ public class WITAssertion {
   public static boolean doesImageExist(String imageName, String imageTag) {
     logger.info("Checking if image " + imageName + ":" + imageTag + " exists.");
     // verify the docker image is created
+    Exception exception = null;;
     try {
       ExecResult result = ExecCommand.exec(
           "docker images -q " 
@@ -35,14 +37,16 @@ public class WITAssertion {
         return false;
       }
     } catch (Exception e) {
-      logger.warning("Failed to check if Docker image " 
-          + imageName 
-          + ":" 
-          + imageTag
-          + "exists due to Exception: " 
-          + e.getMessage());
-      return false;
+      exception = e;
     }
+    assertThat(exception)
+          .as("Check if th expected Docker image exists")
+          .withFailMessage("Failed to check if Docker image " 
+              + imageName 
+              + ":" 
+              + imageTag
+              + "exists.")
+          .isNull();
     return true;
   }
 }
