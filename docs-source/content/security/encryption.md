@@ -24,7 +24,7 @@ WebLogic domain is kept in a Kubernetes `Secret` which follows the naming patter
 the unique identifier of the domain, for example, `mydomain-weblogic-credentials`.
 
 {{% notice info %}}
-For more information about the WebLogic credentials secret, see [Secrets]({{<relref "/security/secrets.md#reference">}}).
+For more information about the WebLogic credentials secret, see [Secrets]({{<relref "/security/secrets.md">}}).
 {{% /notice %}}
 
 #### Encryption of Kubernetes secrets

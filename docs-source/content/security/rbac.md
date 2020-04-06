@@ -23,7 +23,7 @@ the RBAC settings are correct when the operator starts running.
 
 {{% notice info %}}
 For more information about the Kubernetes `ServiceAccount` used by the operator, see
-[Service Accounts]({{<relref "/security/service-accounts.md#weblogic-operator-service-account">}}).
+[Service Accounts]({{<relref "/security/service-accounts#weblogic-server-kubernetes-operator-service-accounts">}}).
 {{% /notice %}}
 
 The general design goal is to provide the operator with the minimum amount of
