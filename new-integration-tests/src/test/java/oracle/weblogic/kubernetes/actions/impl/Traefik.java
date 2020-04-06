@@ -4,35 +4,36 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 public class Traefik {
   /**
-   * The URL of the Traefik's Helm Repository.
-   */
-  private static String TRAEFIK_HELM_REPO_URL = "";
-  /**
-   * The name of the Traefik Helm Chart (in the repository).
-   */
-  private static String TRAEFIK_CHART_NAME = "traefik";
-
-  /**
-   * Install Traefik Operator.
-   *
-   * @param params parameters for helm values
+   * install helm chart
+   * @param params the helm parameters like namespace, release name, repo url or chart dir,
+   *               chart name and chart values to override
    * @return true on success, false otherwise
    */
   public static boolean install(TraefikParams params) {
-    boolean success = false;
-    if (new Helm().chartName(TRAEFIK_CHART_NAME).repoUrl(TRAEFIK_HELM_REPO_URL).addRepo()) {
-      //logger.info(String.format("Installing Traefik Operator in namespace %s", namespace));
-      success = new Helm().chartName(TRAEFIK_CHART_NAME)
-          .releaseName(params.getReleaseName())
-          .namespace(params.getNamespace())
-          .values(params.getValues())
-          .install();
-    }
-    return success;
+    return Helm.install(params.getHelmParams(), params.getValues());
+  }
 
+  /**
+   * Upgrade a helm release.
+   * @param params the helm parameters like namespace, release name, repo url or chart dir,
+   *               chart name and chart values to override
+   * @return true on success, false otherwise
+   */
+  public static boolean upgrade(TraefikParams params) {
+    return Helm.upgrade(params.getHelmParams(), params.getValues());
+  }
+
+  /**
+   * Uninstall a helm release.
+   * @param params the parameters to helm uninstall command, release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstall(HelmParams params) {
+    return Helm.uninstall(params);
   }
 
   public static boolean createIngress(String valuesYaml) {
