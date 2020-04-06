@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.withWITParams;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.assertDockerImageExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Simple validation of basic WIT functions")
@@ -41,7 +41,7 @@ class ItWITValidation implements LoggedTest {
             .redirect(false));
  
     assertEquals(true, success, "Failed to create the image using WebLogic Deploy Tool");
-    assertDockerImageExists(IMAGE_NAME, IMAGE_TAG);
+    dockerImageExists(IMAGE_NAME, IMAGE_TAG);
   } 
 }
 
