@@ -261,6 +261,7 @@ public class Operator {
                       .append("/clusters/")
                       .append(clusterName)
                       .append("/scale");
+      TestUtils.makeOperatorPostRestCall(this, myOpRestApiUrl.toString(), myJsonObjStr);
     }
     // give sometime to complete
     LoggerHelper.getLocal().log(Level.INFO, "Wait 30 sec for scaling to complete...");
