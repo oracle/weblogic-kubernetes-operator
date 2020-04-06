@@ -296,6 +296,10 @@
           "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true. ",
           "type": "boolean"
         },
+        "httpAccessLogInLogHome": {
+          "description": "If true (the default), then server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain home configuration.",
+          "type": "boolean"
+        },
         "webLogicCredentialsSecret": {
           "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namespace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
@@ -309,7 +313,7 @@
           "$ref": "#/definitions/ServerPod"
         },
         "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
+          "description": "The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
