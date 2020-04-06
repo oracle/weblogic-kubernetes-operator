@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Level;
 
+import oracle.kubernetes.operator.BaseTest;
+
 //import oracle.kubernetes.operator.BaseTest;
 
 /**
@@ -61,10 +63,14 @@ public class JrfDomain extends Domain {
    */
   private void updateDomainMapForJrf(boolean adminPortEnabled) throws Exception {
     // jrf specific input parameter
-    /*domainMap.put(
-        "image",
-        BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag());*/
-
+    if (domainMap.containsKey("domainHomeSourceType")) {
+      if (((String) domainMap.get("domainHomeSourceType"))
+          .equalsIgnoreCase("PersistentVolume")) {
+        domainMap.put(
+            "image",
+            BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag());
+      }  
+    }
     /*if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
     } else {
@@ -72,6 +78,9 @@ public class JrfDomain extends Domain {
     }*/
 
     // update create-domain-script.sh if adminPortEnabled is true
+    //debug, remove
+    LoggerHelper.getLocal().log(Level.INFO,
+        "JRF domain image: " + (String)domainMap.get("image"));
     if (adminPortEnabled) {
       String createDomainScript =
           domainMap.get("resultDir")

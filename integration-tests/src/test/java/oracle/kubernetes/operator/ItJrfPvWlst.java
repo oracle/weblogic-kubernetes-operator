@@ -122,11 +122,11 @@ public class ItJrfPvWlst extends BaseTest {
         Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
         domainMap.put("namespace", domainNS);
         domainMap.put("initialManagedServerReplicas", new Integer("2"));
-        domainMap.put(
-            "image",
-             BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag());
+        //domainMap.put(
+        //    "image", getfmwImageName() + ":" + getfmwImageTag());
         domainMap.put("clusterName", "infra-cluster");
         domainMap.put("managedServerNameBase", "infraserver");
+        domainMap.put("domainHomeSourceType", "PersistentVolume");
         domainMap.put("rcuSchemaPrefix", "jrfdomain");
         domainMap.put("rcuDatabaseURL", "oracle-db.default.svc.cluster.local:1521/devpdb.k8s");
         domainUid = (String) domainMap.get("domainUID");
