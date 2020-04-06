@@ -83,7 +83,7 @@ public class WebLogicImageTool {
     }
   
     return Command.withParams(
-            defaultCommandParams()
+        defaultCommandParams()
             .command(buildCommand())
             .redirect(params.redirect()))
         .executeAndVerify();

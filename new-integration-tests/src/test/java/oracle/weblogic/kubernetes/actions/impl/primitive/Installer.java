@@ -5,11 +5,10 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.File;
 
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExist;
@@ -60,7 +59,7 @@ public class Installer {
       checkDirectory(WORK_DIR);
       checkDirectory(DOWNLOAD_DIR);
       downloadResult = Command.withParams(
-              new CommandParams()
+          defaultCommandParams() 
               .command(buildDownloadCommand())
               .redirect(params.redirect()))
           .executeAndVerify();
@@ -78,7 +77,7 @@ public class Installer {
     String command = 
         String.format("unzip -o -d %s %s/%s", WORK_DIR, DOWNLOAD_DIR, params.fileName());
     return Command.withParams(
-            new CommandParams()
+        defaultCommandParams()  
             .command(command)
             .redirect(false))
         .executeAndVerify();
