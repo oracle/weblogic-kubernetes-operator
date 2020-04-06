@@ -8,12 +8,13 @@ import java.util.Arrays;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -23,12 +24,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.fail;
-//import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 // this is a POC for a new way of writing tests.
 // this is meant to be a simple test.  later i will add more complex tests and deal
@@ -51,6 +58,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 // will also automatically log entry/exit messages for each test method.
 class ItSimpleOperatorValidation implements LoggedTest {
 
+  private HelmParams opHelmParams = null;
+  private V1ServiceAccount serviceAccount = null;
+  private String opNamespace = null;
+  private String domainNamespace1 = null;
+  private String domainNamespace2 = null;
+
+
   @Test
   @Order(1)
   @DisplayName("Install the operator")
@@ -65,37 +79,56 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
 
-    // get a new unique namespace
-    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
-        "Failed to create unique namespace due to ApiException");
-    logger.info(String.format("Got a new namespace called %s", namespace));
+    // get a new unique opNamespace
+    opNamespace = createNamespace();
+    logger.info(String.format("Created a new namespace called %s", opNamespace));
 
-    // Create a service account for the unique namespace
-    final String serviceAccountName = namespace + "-sa";
-    assertDoesNotThrow(
-        () -> TestActions.createServiceAccount(new V1ServiceAccount()
-            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    domainNamespace1 = createNamespace();
+    logger.info(String.format("Created a new namespace called %s", domainNamespace1));
+
+    domainNamespace2 = createNamespace();
+    logger.info(String.format("Created a new namespace called %s", domainNamespace2));
+
+    // Create a service account for the unique opNamespace
+    final String serviceAccountName = opNamespace + "-sa";
+    serviceAccount = new V1ServiceAccount()
+        .metadata(
+            new V1ObjectMeta()
+                .namespace(opNamespace)
+                .name(serviceAccountName));
+
+    assertThatCode(
+        () -> createServiceAccount(serviceAccount))
+        .as("Test that createServiceAccount doesn not throw an exception")
+        .withFailMessage("createServiceAccount() threw an exception")
+        .doesNotThrowAnyException();
     logger.info("Created service account: " + serviceAccountName);
 
+    // helm install parameters
+    opHelmParams = new HelmParams()
+        .releaseName("weblogic-operator")
+        .namespace(opNamespace)
+        .chartDir("../kubernetes/charts/weblogic-operator");
+
+    // Operator chart values to override
     OperatorParams opParams =
-        new OperatorParams().releaseName("weblogic-operator")
-            .namespace(namespace)
-            .image("weblogic-kubernetes-operator:test_itsimpleoperator")
-            .domainNamespaces(Arrays.asList("domainns1", "domainns2"))
-            .serviceAccount("opns1-sa");
+        new OperatorParams()
+            .helmParams(opHelmParams)
+            .image("phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop")
+            .domainNamespaces(Arrays.asList(domainNamespace1, domainNamespace2))
+            .serviceAccount(serviceAccountName);
 
-    //ToDO: use Junit 5 assertions
-    try {
-      installOperator(opParams);
-    } catch (ApiException e) {
-      e.printStackTrace();
-      fail("Failed to install Operator due to exception" + e.getMessage());
-    }
+    // install Operator
+    assertThat(installOperator(opParams))
+        .as("Test installOperator returns true")
+        .withFailMessage("installOperator() did not return true")
+        .isTrue();
+    logger.info(String.format("Operator installed in namespace %s", opNamespace));
 
-    logger.info(String.format("Operator installed in namespace %s", namespace));
-
-    // we can use a standard JUnit assertion to check on the result
-    // assertEquals(true, success, "Operator successfully installed in namespace " + namespace);
+    assertThat(helmList(opHelmParams))
+        .as("Test helmList returns true")
+        .withFailMessage("helmList() did not return true")
+        .isTrue();
 
     // this is an example of waiting for an async operation to complete.
     // after the previous step was completed, kubernetes will try to pull the image,
@@ -116,18 +149,71 @@ class ItSimpleOperatorValidation implements LoggedTest {
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
-        .until(operatorIsRunning(namespace));
+        .until(operatorIsRunning(opNamespace));
 
-    // Delete service account from unique namespace
-    assertDoesNotThrow(
-        () -> TestActions.deleteServiceAccount(new V1ServiceAccount()
-            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
-    logger.info("Deleted service account " + serviceAccountName);
+  }
 
-    // Delete namespace
-    assertDoesNotThrow(
-        () -> TestActions.deleteNamespace(namespace));
-    logger.info("Deleted namespace: " + namespace);
+  @AfterEach
+  public void tearDown() {
+    // uninstall operator release
+    if (opHelmParams != null) {
+      assertThat(uninstallOperator(opHelmParams))
+          .as("Test uninstallOperator returns true")
+          .withFailMessage("uninstallOperator() did not return true")
+          .isTrue();
+    }
+
+    // Delete service account from unique opNamespace
+    if (serviceAccount != null) {
+      assertThatCode(
+          () -> deleteServiceAccount(serviceAccount))
+          .as("Test that deleteServiceAccount doesn not throw an exception")
+          .withFailMessage("deleteServiceAccount() threw an exception")
+          .doesNotThrowAnyException();
+    }
+    // Delete domain namespaces
+    if (domainNamespace1 != null) {
+      assertThatCode(
+          () -> deleteNamespace(domainNamespace1))
+          .as("Test that deleteNamespace doesn not throw an exception")
+          .withFailMessage("deleteNamespace() threw an exception")
+          .doesNotThrowAnyException();
+      logger.info("Deleted namespace: " + domainNamespace1);
+    }
+
+    if (domainNamespace2 != null) {
+      assertThatCode(
+          () -> deleteNamespace(domainNamespace2))
+          .as("Test that deleteNamespace doesn not throw an exception")
+          .withFailMessage("deleteNamespace() threw an exception")
+          .doesNotThrowAnyException();
+      logger.info("Deleted namespace: " + domainNamespace2);
+    }
+
+    // Delete opNamespace
+    if (opNamespace != null) {
+      assertThatCode(
+          () -> deleteNamespace(opNamespace))
+          .as("Test that deleteNamespace doesn not throw an exception")
+          .withFailMessage("deleteNamespace() threw an exception")
+          .doesNotThrowAnyException();
+      logger.info("Deleted namespace: " + opNamespace);
+    }
+
+  }
+
+  private String createNamespace() {
+    String namespace = null;
+    try {
+      namespace = createUniqueNamespace();
+    } catch (Exception e) {
+      e.printStackTrace();
+      assertThat(e)
+          .as("Test that createUniqueNamespace does not throw an exception")
+          .withFailMessage("createUniqueNamespace() threw an unexpected exception")
+          .isNotInstanceOf(ApiException.class);
+    }
+    return namespace;
   }
 
 }
