@@ -101,7 +101,8 @@ export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
 DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-PersistentVolume}
 export DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE}
-
+WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+export WDT_DOMAIN_TYPE
 if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
   # Make sure the configmap and secrets are not optional
   export MII_WDT_CONFIGMAP="false"
@@ -642,8 +643,8 @@ function deploySinglePodService() {
     export SERVICE_INTERNAL_PORT="${internal_port}"
     export SERVICE_EXTERNAL_PORT="${external_port}"
     export SERVICE_NAME=${service_name}
-    ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml} || exit 1
-  )
+    ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml}
+  ) || exit 1
 
   kubectl create -f ${target_yaml} \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
@@ -665,7 +666,7 @@ function deploySinglePodService() {
 
 #############################################################################
 #
-# Check if automatic overrides and custom overrides took effect on the admin pod
+# Check if automatic overrides and custom overrides took effect on the admin pod for non MII
 #
 
 function checkOverrides() {
@@ -677,8 +678,11 @@ function checkOverrides() {
 
   linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
-
-  if [ "$linecount" != "5" ]; then
+  local target_linecount=5
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    target_linecount=2
+  fi
+  if [ "$linecount" != "${target_linecount}" ]; then
     trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
@@ -689,9 +693,12 @@ function checkOverrides() {
   #
 
   trace "Info: Checking beans to see if sit-cfg took effect.  Input file '$test_home/checkBeans.input', output file '$test_home/checkBeans.out'."
-
+  local src_input_file=checkBeans.inputt
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    src_input_file=checkMIIBeans.inputt
+  fi
   rm -f ${test_home}/checkBeans.input
-  ${SCRIPTPATH}/util_subst.sh -g checkBeans.inputt ${test_home}/checkBeans.input || exit 1
+  ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
   tracen "Info: Waiting for WLST checkBeans.py to complete."
@@ -712,6 +719,7 @@ function checkOverrides() {
     exit 1
   fi
 }
+
 
 #############################################################################
 #
@@ -1045,9 +1053,7 @@ checkWLVersionChecks
 # Check admin-server pod log and also call on-line WLST to check if
 # automatic and custom overrides are taking effect in the bean tree:
 
-if [ "${DOMAIN_SOURCE_TYPE}" != "FromModel" ] ; then
-  checkOverrides
-fi
+checkOverrides
 
 # Check DS to see if it can contact the DB.  This will only pass if the
 # overrides actually took effect:

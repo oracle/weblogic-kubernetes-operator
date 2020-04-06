@@ -1,3 +1,5 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
