@@ -14,6 +14,8 @@ import java.util.Random;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import io.kubernetes.client.extended.generic.GenericKubernetesApi;
 import io.kubernetes.client.extended.generic.KubernetesApiResponse;
 import io.kubernetes.client.openapi.ApiClient;
@@ -42,6 +44,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
+import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.jose4j.json.internal.json_simple.JSONObject;
 import org.jose4j.json.internal.json_simple.parser.JSONParser;
@@ -470,9 +473,9 @@ public class Kubernetes implements LoggedTest {
    * @param domainUID - unique domain identifier
    * @param namespace - name of namespace
    * @return domain custom resource
-   * @throws ApiException - if Kubernetes request fails
+   * @throws ApiException - if Kubernetes request fails or domain does not exist
    */
-  public static Object getDomainCustomResource(String domainUID, String namespace)
+  public static Domain getDomainCustomResource(String domainUID, String namespace)
       throws ApiException {
     Object domain = customObjectsApi.getNamespacedCustomObject(
         DOMAIN_GROUP, // custom resource's group name
@@ -482,7 +485,25 @@ public class Kubernetes implements LoggedTest {
         domainUID // custom object's name
     );
 
-    return domain;
+    if (domain != null) {
+      return handleResponse(domain, Domain.class);
+    }
+
+    throw new ApiException("Domain Custom Resource '" + domainUID + "' not found in namespace " + namespace);
+  }
+
+  /**
+   * Converts the response to appropriate type
+   *
+   * @param response - response object to convert
+   * @param type - the type to convert into
+   * @return the Java object of the type the response object is converted to
+   */
+  @SuppressWarnings("unchecked")
+  private static <T> T handleResponse(Object response, Class<T> type) {
+    Gson gson = apiClient.getJSON().getGson();
+    JsonElement jsonElement = gson.toJsonTree(response);
+    return gson.fromJson(jsonElement, type);
   }
 
   /**

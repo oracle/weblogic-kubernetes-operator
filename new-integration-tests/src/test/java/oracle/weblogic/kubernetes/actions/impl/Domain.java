@@ -51,4 +51,17 @@ public class Domain {
       throws ApiException {
     return Kubernetes.deleteDomainCustomResource(domainUID, namespace);
   }
+
+  /**
+   * Get the domain custom resource
+   *
+   * @param domainUID - unique domain identifier
+   * @param namespace - name of namespace
+   * @return domain custom resource
+   * @throws ApiException - if Kubernetes request fails or domain does not exist
+   */
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUID,
+      String namespace) throws ApiException {
+    return Kubernetes.getDomainCustomResource(domainUID, namespace);
+  }
 }
