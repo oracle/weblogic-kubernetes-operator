@@ -105,6 +105,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
+    self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
@@ -230,6 +231,9 @@ class OfflineWlstEnv(object):
 
   def getDataHome(self):
     return self.DATA_HOME
+
+  def isAccessLogInLogHome(self):
+    return self.ACCESS_LOG_IN_LOG_HOME == 'true';
 
   def isFMWInfraDomain(self):
     return self.IS_FMW_INFRA_DOMAIN
@@ -1016,6 +1020,7 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(name, server, false)
+    self.customizeAccessLog(name)
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
@@ -1035,6 +1040,7 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(server_name_prefix + "${id}", template, false)
+    self.customizeAccessLog(server_name_prefix + "${id}")
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
@@ -1140,6 +1146,26 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:directory" + fileaction + ">" + data_dir + "</d:directory>")
     self.undent()
     self.writeln("</d:default-file-store>")
+
+  def customizeAccessLog(self, name):
+    # do not customize if LOG_HOME is not set
+    logs_dir = self.env.getDomainLogHome()
+    if logs_dir is None or len(logs_dir) == 0:
+      return
+
+    # customize only if ACCESS_LOG_IN_LOG_HOME is 'true'
+    if self.env.isAccessLogInLogHome():
+      self.writeln("<d:web-server>")
+      self.indent()
+      self.writeln("<d:web-server-log>")
+      self.indent()
+      # combine-mode "replace" works regardless of whether web-server and web-server-log is present or not
+      self.writeln("<d:file-name f:combine-mode=\"replace\">"
+                   + logs_dir + "/" + name + "_access.log</d:file-name>")
+      self.undent()
+      self.writeln("</d:web-server-log>")
+      self.undent()
+      self.writeln("</d:web-server>")
 
 class CustomSitConfigIntrospector(SecretManager):
 

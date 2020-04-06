@@ -79,11 +79,18 @@ includeServerOutInPodLog: true
 # The default is false.
 logHomeOnPV: false
 
-# The in-pod location for domain log, server logs, server out, and node manager log files
-# If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
+# The in-pod location for domain log, server logs, server out, Node Manager log, and
+# HTTP access log files. If not specified, the value is derived from the domainUID as
+# /shared/logs/<domainUID>.
 # This parameter is required if 'logHomeOnPV' is true.
 # Otherwise, it is ignored.
 logHome: /shared/logs/domain1
+
+# Set this value to 'false' to have HTTP access log files written to the directory 
+# configured in the WebLogic domain home.
+# The default is 'true', which means HTTP access log files will be written to
+# the logHome directory when logHomeOnPV is enabled. 
+httpAccessLogInLogHome: true
 
 # An (optional) in-pod location for data storage of default and custom file stores.
 # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
