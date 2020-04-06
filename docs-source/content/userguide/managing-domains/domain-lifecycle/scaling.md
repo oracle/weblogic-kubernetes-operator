@@ -6,7 +6,7 @@ weight: 3
 description: "The operator provides several ways to initiate scaling of WebLogic clusters."
 ---
 
-WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/12213/wls/CLUST/dynamic_clusters.htm#CLUST678).
+WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/clust/dynamic_clusters.html#GUID-DA7F7FAD-49AA-4F3D-8A05-0D9921B96971).
 
 The following blogs provide more in-depth information on support for scaling WebLogic clusters in Kubernetes:
 
@@ -16,9 +16,9 @@ The following blogs provide more in-depth information on support for scaling Web
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
 * [On-demand, updating the domain resource directly (using `kubectl`)](#on-demand-updating-the-domain-resource-directly).
-* [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operator-s-rest-scale-api).
-* [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operator-s-rest-scale-api).
-* [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operator-s-rest-scale-api).
+* [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operators-rest-scale-api).
+* [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api).
+* [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api).
 
 ### On-demand, updating the domain resource directly
 The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` property within a domain resource.  This can be done by using the `kubectl` command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the domain resource directly by using the `kubectl edit` command.  For example:
@@ -91,12 +91,12 @@ curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept
 If you omit the header, you'll get a `400 (bad request)` response without any details explaining why the request was bad.  If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.
 
 #### Operator REST endpoints
-The WebLogic Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
+The WebLogic Server Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
 is disabled by default and only exposed if explicitly configured.
-Detailed instructions for configuring the external REST endpoint are available [here]({{< relref "/userguide/managing-operators/_index.md#optional-configure-the-operator-s-external-rest-https-interface" >}}).
+Detailed instructions for configuring the external REST endpoint are available [here]({{< relref "/userguide/managing-operators/_index.md#optional-configure-the-operators-external-rest-https-interface" >}}).
 
 {{% notice note %}}
 Regardless of which endpoint is being invoked, the URL format for scaling is the same.
@@ -120,7 +120,7 @@ In response to a change to either `replicas` property, in the domain resource, t
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
-in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh),
+in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Server Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
 #### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
@@ -129,7 +129,7 @@ The following steps are provided as a guideline on how to configure a WLDF Polic
 1. Copy the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script to a directory (such as `$DOMAIN_HOME/bin/scripts`) so that it's accessible within the Administration Server pod.
 
 1. Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
-see [Configuring Policies and Actions](https://docs.oracle.com/middleware/12213/wls/WLDFC/config_watch_notif.htm#WLDFC188) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
+see [Configuring Policies and Actions](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_watch_notif.html#GUID-D3FA8301-AAF2-41CE-A6A5-AB4005849913) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
 
      a. Configure a WLDF policy with a rule expression for monitoring WebLogic Server metrics, such as memory, idle threads, and CPU load for example.
 
@@ -163,14 +163,14 @@ The scalingAction.sh script accepts a number of customizable parameters:
 * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes  
 
 {{% notice note %}}
-Set this to https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT} when invoking `scalingAction.sh` from the Administration Server pod.
+Set this to `https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}` when invoking `scalingAction.sh` from the Administration Server pod.
 {{% /notice %}}
 
 * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
 * `wls_domain_namespace` - Kubernetes namespace in which the WebLogic domain is defined, default=`default`
 
-* `operator_service_name` - WebLogic Kubernetes Operator Service name of the REST endpoint, default=`internal-weblogic-operator-service`
+* `operator_service_name` - WebLogic Server Kubernetes Operator Service name of the REST endpoint, default=`internal-weblogic-operator-service`
 
 * `operator_service_account` - Kubernetes Service Account name for the operator, default=`weblogic-operator`
 

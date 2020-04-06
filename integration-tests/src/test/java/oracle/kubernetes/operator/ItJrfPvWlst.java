@@ -134,7 +134,7 @@ public class ItJrfPvWlst extends BaseTest {
             "Creating and verifying the domain creation with domainUid: " + domainUid);
 
         jrfdomain = new JrfDomain(domainMap);
-        jrfdomain.verifyDomainCreated();
+        jrfdomain.verifyDomainCreated(80);
         
         // basic test cases
         testBasicUseCases(jrfdomain, false);
