@@ -687,6 +687,25 @@ public class JobHelperTest {
         nullValue());
   }
 
+  @Test
+  public void whenDomainHasHttpAccessLogInLogHomeConfigured_introspectorPodSpecStartupWithIt() {
+    configureDomain().withHttpAccessLogInLogHome(false);
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "false")
+    );
+  }
+
+  @Test
+  public void whenNotConfigured_introspectorPodSpec_hasTrueAccessLogInLogHomeEnvVar() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "true")
+    );
+  }
+
   private DomainPresenceInfo createDomainPresenceInfo() {
     DomainPresenceInfo domainPresenceInfo =
         new DomainPresenceInfo(
