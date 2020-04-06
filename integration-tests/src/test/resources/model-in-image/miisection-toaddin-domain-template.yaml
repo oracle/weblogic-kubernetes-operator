@@ -5,7 +5,6 @@
 
 
   %MII_PREFIX%configuration:
-    #%MII_PREFIX%  secrets: [ %WEBLOGIC_CREDENTIALS_SECRET_NAME% ]
 
     %MII_PREFIX%  model:
   #

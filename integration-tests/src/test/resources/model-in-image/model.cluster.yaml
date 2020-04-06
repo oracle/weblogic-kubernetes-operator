@@ -10,20 +10,12 @@ topology:
         'config-managed-server-1':
             Cluster: 'cluster-2'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
         'config-managed-server-2':
             Cluster: 'cluster-2'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
         'config-managed-server-3':
             Cluster: 'cluster-2'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
         'config-managed-server-4':
             Cluster: 'cluster-2'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
