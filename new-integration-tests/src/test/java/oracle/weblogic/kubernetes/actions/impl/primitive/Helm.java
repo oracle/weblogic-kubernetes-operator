@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class Helm {
 
   /**
-   * Installs a helm chart.
+   * Installs a Helm chart.
    * @param helmParams the parameters to helm install command like namespace, release name,
    *                   repo url or chart dir, chart name
    * @param chartValues the values to override in a chart
@@ -68,7 +68,7 @@ public class Helm {
   }
 
   /**
-   * Upgrade a helm release.
+   * Upgrade a Helm release.
    * @param params the parameters to helm install command like namespace, release name,
    *                   repo url or chart dir, chart name
    * @param chartValues the values to override in a chart
@@ -111,7 +111,7 @@ public class Helm {
   }
 
   /**
-   * Uninstall a helm release.
+   * Uninstall a Helm release.
    * @param params the parameters to helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
@@ -151,7 +151,7 @@ public class Helm {
   }
 
   /**
-   * Add a chart repository
+   * Add a chart repository.
    * @param chartName the name of the chart
    * @param repoUrl reposiroty url
    * @return true on success, false otherwise
@@ -162,7 +162,7 @@ public class Helm {
   }
 
   /**
-   * append the values to the given string buffer
+   * Append the values to the given string buffer.
    * @param values hash map with key, value pairs
    * @return string with chart values
    */
@@ -175,8 +175,8 @@ public class Helm {
   }
 
   /**
-   * Executes the given command
-   * @param command the command to run
+   * Executes the given command.
+   * @param command the command to execute
    * @return true on success, false otherwise
    */
   private static boolean exec(String command) {
