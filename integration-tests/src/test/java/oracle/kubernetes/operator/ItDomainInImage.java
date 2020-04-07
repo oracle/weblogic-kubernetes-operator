@@ -125,10 +125,10 @@ public class ItDomainInImage extends BaseTest {
 
 
   /**
-   * Create a WLS domain using domain-in-image option. Verify the domain is started
-   * successfully and the SSL listeners in the WLS servers are active.
+   * Creates a WebLogic domain using domain-in-image option. Verifies the domain is started
+   * successfully and the SSL listeners in the WebLogic servers are active.
    *
-   * @throws Exception exception
+   * @throws Exception If an error occurred
    */
   @Test
   public void testDomainInImageUsingWlstWithSSLEnabled() throws Exception {

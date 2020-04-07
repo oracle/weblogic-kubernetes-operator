@@ -229,8 +229,9 @@ public class Domain {
   }
 
   /**
-   * Verify the SSL listeners in the domain are active by making an SSL connection to each one
-   * @throws Exception
+   * Verifies the SSL listeners in the domain are active by making an SSL connection to each one
+   *
+   * @throws Exception If an error occurred
    */
   public void verifySSLListeners() throws Exception {
     // Check admin server's SSL port
