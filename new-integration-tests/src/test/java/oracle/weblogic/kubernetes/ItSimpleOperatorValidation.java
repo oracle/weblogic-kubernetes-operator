@@ -166,7 +166,8 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // Delete service account from unique opNamespace
     if (serviceAccount != null) {
       assertThatCode(
-          () -> deleteServiceAccount(serviceAccount))
+          () -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
+              serviceAccount.getMetadata().getNamespace()))
           .as("Test that deleteServiceAccount doesn not throw an exception")
           .withFailMessage("deleteServiceAccount() threw an exception")
           .doesNotThrowAnyException();

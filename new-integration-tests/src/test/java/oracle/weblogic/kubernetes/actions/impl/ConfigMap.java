@@ -3,19 +3,33 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.io.IOException;
-
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class ConfigMap {
 
-  public static boolean create(String cmName, String namespace, String fromFile)
-      throws ApiException, IOException {
-    return Kubernetes.createConfigMap(cmName, namespace, fromFile);
+  /**
+   * Create Kubernetes Config Map.
+   *
+   * @param configMap V1ConfigMap object containing config map configuration data
+   * @return true on success
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean create(V1ConfigMap configMap) throws ApiException {
+    return Kubernetes.createConfigMap(configMap);
   }
 
-  public static boolean delete(String cmName, String namespace) throws ApiException {
-    return Kubernetes.deleteConfigMap(cmName, namespace);
+  /**
+   /**
+   * Delete Kubernetes Config Map.
+   *
+   * @param name name of the Config Map
+   * @param namespace name of namespace
+   * @return true if successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean delete(String name, String namespace) throws ApiException {
+    return Kubernetes.deleteConfigMap(name, namespace);
   }
 }

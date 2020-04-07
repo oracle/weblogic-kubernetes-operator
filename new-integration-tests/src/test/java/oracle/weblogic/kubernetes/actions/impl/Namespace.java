@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Random;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Namespace {
   public static Random random = new Random(System.currentTimeMillis());
   private String name;
-
 
   public Namespace name(String name) {
     this.name = name;
@@ -38,12 +38,36 @@ public class Namespace {
     return Kubernetes.createNamespace(name);
   }
 
+  /**
+   * Create a Kubernetes namespace.
+   *
+   * @param name V1Namespace object containing namespace configuration data
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes Client API request fails
+   */
+  public static boolean create(V1Namespace name) throws ApiException {
+    return Kubernetes.createNamespace(name);
+  }
+
+  /**
+   * List of namespaces in Kubernetes cluster
+   *
+   * @return List of names of all namespaces in Kubernetes cluster
+   * @throws ApiException if Kubernetes client API call fails
+   */
   public static List<String> listNamespaces() throws ApiException {
     return Kubernetes.listNamespaces();
   }
 
-  public static boolean delete(String name) throws ApiException {
-    return Kubernetes.deleteNamespace(name);
+  /**
+   * Delete a Kubernetes namespace.
+   *
+   * @param namespace name of namespace
+   * @return true if successful, false otherwise
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static boolean delete(String namespace) throws ApiException {
+    return Kubernetes.deleteNamespace(namespace);
   }
 
   public static boolean exists(String name) throws ApiException {

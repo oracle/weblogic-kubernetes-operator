@@ -4,15 +4,31 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class PersistentVolume {
 
-  public static boolean create(String pvYaml) {
-    return Kubernetes.create(pvYaml);
+  /**
+   * Create a Kubernetes Persistent Volume.
+   *
+   * @param persistentVolume V1PersistentVolume object containing persistent volume
+   *     configuration data
+   * @return true if successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean create(V1PersistentVolume persistentVolume) throws ApiException {
+    return Kubernetes.createPv(persistentVolume);
   }
 
-  public static boolean delete(String pvName) throws ApiException {
-    return Kubernetes.deletePv(pvName);
+  /**
+   * Delete the Kubernetes Persistent Volume.
+   *
+   * @param name name of the Persistent Volume
+   * @return true if successful
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean delete(String name) throws ApiException {
+    return Kubernetes.deletePv(name);
   }
 }
