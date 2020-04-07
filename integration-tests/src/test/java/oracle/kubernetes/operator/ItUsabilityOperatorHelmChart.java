@@ -285,7 +285,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Install operator usab-1 with taget DomainNameSpace [usab-domainns-1].
+   * Install operator usab-1 with target DomainNameSpace [usab-domainns-1].
    * Install operator usab-2 with same target DomainNamesapce [usab-domainns-1].
    * Second operator should fail to install with following exception 
    * Error: rendered manifests contain a resource that already exists. 
