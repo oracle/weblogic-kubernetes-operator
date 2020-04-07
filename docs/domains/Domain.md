@@ -29,7 +29,7 @@ DomainSpec is a description of a domain.
 | `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
-| `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
+| `includeServerOutInPodLog` | Boolean | If true (the default), then the server .out file will be included in the pod's stdout. |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
