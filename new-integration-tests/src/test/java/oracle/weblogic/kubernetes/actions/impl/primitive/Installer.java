@@ -86,7 +86,6 @@ public class Installer {
         && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
       logger.info("File " + params.fileName() + " already exists.");
     } else {
-      checkDirectory(WORK_DIR);
       checkDirectory(DOWNLOAD_DIR);
       downloadResult = Command.withParams(
           defaultCommandParams() 

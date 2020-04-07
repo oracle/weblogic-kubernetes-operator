@@ -23,7 +23,7 @@ public class FileUtils {
   public static void checkDirectory(String dir) {
     File file = new File(dir);
     if (!file.isDirectory()) {
-      file.mkdir();
+      file.mkdirs();
       logger.info("Made a new dir " + dir);
     }
   }
