@@ -209,20 +209,20 @@ public class TestActions {
   // ------------------------ Docker image  -------------------------
 
   /**
-   * Create a WITParams that contains the parameters for executing a WIT command
+   * Create a WITParams instance that contains the parameters for executing a WIT command
    *
    * @return an instance of WITParams that contains the default values
    */
   public static WITParams withWITParams() {
     return
-        WebLogicImageTool.withDefaults();
+        WebLogicImageTool.defaultWITParams();
   }
 
   /**
    * Create an image using WDT models using WebLogic Image Tool
    *
-   * @param params the parameters for creating a model-in-image Docker image
-   * @return true if successful delete, false otherwise
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
    */
   public static boolean createMIIImage(WITParams params) {
     return
