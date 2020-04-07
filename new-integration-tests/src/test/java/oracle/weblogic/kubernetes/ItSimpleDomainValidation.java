@@ -4,7 +4,10 @@
 package oracle.weblogic.kubernetes;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -30,8 +34,7 @@ class ItSimpleDomainValidation implements LoggedTest {
   @Slow
   public void testCreatingDomain() {
 
-    String domainUID = "domain1";
-    String domainYAML = "something";
+    final String domainUID = "domain1";
 
     // get a new unique namespace
     final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
@@ -46,7 +49,22 @@ class ItSimpleDomainValidation implements LoggedTest {
     logger.info("Created service account: " + serviceAccount.getMetadata().getName());
 
     // create the domain CR
-    boolean success = createDomainCustomResource(namespace, domainYAML);
+    V1ObjectMeta metadata = new V1ObjectMetaBuilder()
+        .withName(domainUID)
+        .withNamespace(namespace)
+        .build();
+    DomainSpec domainSpec = new DomainSpec()
+        .domainHome("/shared/domains/sample-domain1")
+        .domainHomeInImage(false)
+        .image("store/oracle/weblogic:12.2.1.3").imagePullPolicy("IfNotPresent");
+    Domain domain = new Domain()
+        .apiVersion("weblogic.oracle/v7")
+        .kind("Domain")
+        .metadata(metadata)
+        .spec(domainSpec);
+    boolean success = assertDoesNotThrow(
+        () -> createDomainCustomResource(domain)
+    );
     assertTrue(success);
 
     // wait for the domain to exist
@@ -67,9 +85,16 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     // wait for the managed servers to exist
 
+    // Delete domain custom resource
+    assertDoesNotThrow(
+        () -> deleteDomainCustomResource(domainUID, namespace)
+    );
+    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + namespace);
+
     // Delete service account from unique namespace
     assertDoesNotThrow(
-        () -> Kubernetes.deleteServiceAccount(serviceAccount));
+        () -> Kubernetes.deleteServiceAccount(serviceAccount.getMetadata().getName(),
+            serviceAccount.getMetadata().getNamespace()));
     logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
         + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
 

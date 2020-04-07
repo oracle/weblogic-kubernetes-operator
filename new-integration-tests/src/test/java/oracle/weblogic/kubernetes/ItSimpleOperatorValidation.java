@@ -120,8 +120,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
 
     // Delete service account from unique namespace
     assertDoesNotThrow(
-        () -> TestActions.deleteServiceAccount(new V1ServiceAccount()
-            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+        () -> TestActions.deleteServiceAccount(serviceAccountName, namespace));
     logger.info("Deleted service account " + serviceAccountName);
 
     // Delete namespace

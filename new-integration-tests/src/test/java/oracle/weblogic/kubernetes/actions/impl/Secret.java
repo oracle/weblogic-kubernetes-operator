@@ -10,26 +10,25 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 public class Secret {
 
   /**
-   * Create Kubernetes Secret
+   * Create a Kubernetes Secret.
    *
-   * @param secret - V1Secret object containing Kubernetes secret configuration data
+   * @param secret V1Secret object containing Kubernetes secret configuration data
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean create(V1Secret secret) throws ApiException {
     return Kubernetes.createSecret(secret);
   }
 
   /**
-   * Delete Kubernetes Secret
+   * Delete a Kubernetes Secret.
    *
-   * @param secret - V1Secret object containing Kubernetes secret configuration data
+   * @param name name of the Secret
+   * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(V1Secret secret) throws ApiException {
-    return Kubernetes.deleteSecret(secret);
+  public static boolean delete(String name, String namespace) throws ApiException {
+    return Kubernetes.deleteSecret(name, namespace);
   }
 }

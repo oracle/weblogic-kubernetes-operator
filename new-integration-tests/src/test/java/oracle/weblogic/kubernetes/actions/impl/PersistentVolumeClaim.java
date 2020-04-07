@@ -10,37 +10,26 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 public class PersistentVolumeClaim {
 
   /**
-   * Create a Kubernetes Persistent Volume Claim using the specified path to a file in yaml format
+   * Create a Kubernetes Persistent Volume Claim.
    *
-   * @param pvcYaml the persistent volume claim yaml file
-   * @return true on success, false otherwise
-   */
-  public static boolean create(String pvcYaml) {
-    return Kubernetes.create(pvcYaml);
-  }
-
-  /**
-   * @param persistentVolumeClaim - V1PersistentVolumeClaim object containing Kubernetes
+   * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes
    *     persistent volume claim configuration data
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean create(V1PersistentVolumeClaim persistentVolumeClaim) throws ApiException {
     return Kubernetes.createPvc(persistentVolumeClaim);
   }
 
   /**
-   * Delete the Kubernetes Persistent Volume Claim
+   * Delete the Kubernetes Persistent Volume Claim.
    *
-   * @param persistentVolumeClaim - V1PersistentVolumeClaim object containing PVC configuration
-   *     data
+   * @param name name of the Persistent Volume Claim
+   * @param namespace name of the namespace
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(V1PersistentVolumeClaim persistentVolumeClaim)
-      throws ApiException {
-    return Kubernetes.deletePvc(persistentVolumeClaim);
+  public static boolean delete(String name, String namespace) throws ApiException {
+    return Kubernetes.deletePvc(name, namespace);
   }
 }

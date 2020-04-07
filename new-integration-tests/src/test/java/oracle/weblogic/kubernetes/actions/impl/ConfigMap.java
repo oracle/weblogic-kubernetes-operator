@@ -10,26 +10,26 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 public class ConfigMap {
 
   /**
-   * Create Kubernetes Config Map
+   * Create Kubernetes Config Map.
    *
-   * @param configMap - V1ConfigMap object containing config map configuration data
+   * @param configMap V1ConfigMap object containing config map configuration data
    * @return true on success, false otherwise
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean create(V1ConfigMap configMap) throws ApiException {
     return Kubernetes.createConfigMap(configMap);
   }
 
   /**
-   * Delete Kubernetes Config Map
+   /**
+   * Delete Kubernetes Config Map.
    *
-   * @param configMap - V1ConfigMap object containing config map configuration data
+   * @param name name of the Config Map
+   * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(V1ConfigMap configMap) throws ApiException {
-    return Kubernetes.deleteConfigMap(configMap);
+  public static boolean delete(String name, String namespace) throws ApiException {
+    return Kubernetes.deleteConfigMap(name, namespace);
   }
 }

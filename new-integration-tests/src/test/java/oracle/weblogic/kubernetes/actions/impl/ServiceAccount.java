@@ -9,13 +9,27 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class ServiceAccount {
 
+  /**
+   * Create a Kubernetes Service Account.
+   *
+   * @param serviceAccount V1ServiceAccount object containing service account configuration data
+   * @return created service account
+   * @throws ApiException if Kubernetes client API call fails
+   */
   public static boolean create(V1ServiceAccount serviceAccount) throws ApiException {
     Kubernetes.createServiceAccount(serviceAccount);
     return true;
   }
 
-  public static boolean delete(V1ServiceAccount serviceAccount) throws ApiException {
-    Kubernetes.deleteServiceAccount(serviceAccount);
-    return true;
+  /**
+   * Delete a Kubernetes Service Account.
+   *
+   * @param name name of the Service Account
+   * @param namespace name of namespace
+   * @return true if successful
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean delete(String name, String namespace) throws ApiException {
+    return Kubernetes.deleteServiceAccount(name, namespace);
   }
 }

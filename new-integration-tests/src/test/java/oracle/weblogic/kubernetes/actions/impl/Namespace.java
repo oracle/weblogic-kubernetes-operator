@@ -39,12 +39,11 @@ public class Namespace {
   }
 
   /**
-   * Create Kubernetes namespace
+   * Create a Kubernetes namespace.
    *
-   * @param name - V1Namespace object containing namespace configuration data
+   * @param name V1Namespace object containing namespace configuration data
    * @return true on success, false otherwise
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes Client API request fails
    */
   public static boolean create(V1Namespace name) throws ApiException {
     return Kubernetes.createNamespace(name);
@@ -53,20 +52,19 @@ public class Namespace {
   /**
    * List of namespaces in Kubernetes cluster
    *
-   * @return - List of names of all namespaces in Kubernetes cluster
-   * @throws ApiException - if Kubernetes client API call fails
+   * @return List of names of all namespaces in Kubernetes cluster
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static List<String> listNamespaces() throws ApiException {
     return Kubernetes.listNamespaces();
   }
 
   /**
-   * Delete a Kubernetes namespace
+   * Delete a Kubernetes namespace.
    *
-   * @param namespace - name of namespace
+   * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes request fails
    */
   public static boolean delete(String namespace) throws ApiException {
     return Kubernetes.deleteNamespace(namespace);

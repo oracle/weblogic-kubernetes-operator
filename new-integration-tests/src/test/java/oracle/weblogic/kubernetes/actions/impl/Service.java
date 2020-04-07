@@ -10,26 +10,25 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 public class Service {
 
   /**
-   * Create Kubernetes Service
+   * Create a Kubernetes Service.
    *
-   * @param service - V1Service object containing Kubernetes secret configuration data
+   * @param service V1Service object containing Kubernetes secret configuration data
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean create(V1Service service) throws ApiException {
     return Kubernetes.createService(service);
   }
 
   /**
-   * Delete Kubernetes Service
+   * Delete a Kubernetes Service.
    *
-   * @param service - V1Service object containing service configuration data
+   * @param name name of the Service
+   * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException - missing required configuration data, if Kubernetes request fails or
-   *     unsuccessful
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(V1Service service) throws ApiException {
-    return Kubernetes.deleteService(service);
+  public static boolean delete(String name, String namespace) throws ApiException {
+    return Kubernetes.deleteService(name, namespace);
   }
 }

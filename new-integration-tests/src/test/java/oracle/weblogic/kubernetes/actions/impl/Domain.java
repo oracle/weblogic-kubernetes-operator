@@ -3,31 +3,30 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.util.List;
-
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Domain {
 
   /**
-   * Create Custom Resource Domain
-   * @param namespace - name of namespace
-   * @param domainYAML - path to a file containing domain custom resource spec in yaml format
-   * @return true if successful
+   * Create a domain custom resource.
+   *
+   * @param domain Domain custom resource model object
+   * @return true on success, false otherwise
    */
-  public static boolean createDomainCustomResource(String namespace, String domainYAML) {
-    return true;
+  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
+      throws ApiException {
+    return Kubernetes.createDomainCustomResource(domain);
   }
 
   /**
-   * List all Custom Resource Domains
+   * List all Custom Resource Domains in a namespace.
    *
-   * @param namespace - name of namespace
+   * @param namespace name of namespace
    * @return list of Custom Resource Domains for a given namespace
-   * @throws ApiException - if Kubernetes client API call fails
    */
-  public static List<String> listDomainCustomResources(String namespace) throws ApiException {
+  public static DomainList listDomainCustomResources(String namespace) {
     return Kubernetes.listDomains(namespace);
   }
 
@@ -40,12 +39,12 @@ public class Domain {
   }
 
   /**
-   * Delete the domain custom resource
+   * Delete a Domain Custom Resource.
    *
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException - if Kubernetes client API call fails
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deleteDomainCustomResource(String domainUID, String namespace)
       throws ApiException {
@@ -53,12 +52,12 @@ public class Domain {
   }
 
   /**
-   * Get the domain custom resource
+   * Get a Domain Custom Resource.
    *
-   * @param domainUID - unique domain identifier
-   * @param namespace - name of namespace
-   * @return domain custom resource
-   * @throws ApiException - if Kubernetes request fails or domain does not exist
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
+   * @return domain custom resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes request fails
    */
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUID,
       String namespace) throws ApiException {
