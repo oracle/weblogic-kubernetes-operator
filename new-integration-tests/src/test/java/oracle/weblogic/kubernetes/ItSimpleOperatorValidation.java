@@ -79,13 +79,13 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // successful or not.
 
     // get a new unique opNamespace
-    opNamespace = createUniqueNamespaceInTryBlock();
+    opNamespace = createNamespace();
     logger.info(String.format("Created a new namespace called %s", opNamespace));
 
-    domainNamespace1 = createUniqueNamespaceInTryBlock();
+    domainNamespace1 = createNamespace();
     logger.info(String.format("Created a new namespace called %s", domainNamespace1));
 
-    domainNamespace2 = createUniqueNamespaceInTryBlock();
+    domainNamespace2 = createNamespace();
     logger.info(String.format("Created a new namespace called %s", domainNamespace2));
 
     // Create a service account for the unique opNamespace
@@ -201,7 +201,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
 
   }
 
-  private String createUniqueNamespaceInTryBlock() {
+  private String createNamespace() {
     String namespace = null;
     try {
       namespace = createUniqueNamespace();
