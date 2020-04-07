@@ -19,31 +19,41 @@ public class ClusterStatusTest {
 
   @Test
   public void verify_Equal_compareTo() {
-    assertThat(nullCluster.compareTo(nullCluster), equalTo(0));
-    assertThat(cluster1.compareTo(cluster1), equalTo(0));
+    assertThat("compareTo should return 0 if both Cluster have null cluster name",
+        nullCluster.compareTo(new ClusterStatus()), equalTo(0));
+    assertThat("compareTo should return 0 if both ClusterStatus have same cluster name",
+        cluster1.compareTo(new ClusterStatus().withClusterName("cluster1")), equalTo(0));
   }
 
   @Test
   public void verifyThat_cluster1_before_cluster2() {
-    assertThat(cluster1.compareTo(cluster2), lessThan(0));
-    assertThat(cluster2.compareTo(cluster1), greaterThan(0));
+    assertThat("ClusterStatus for cluster1 should be ordered before ClusterStatus for cluster2",
+        cluster1.compareTo(cluster2), lessThan(0));
+    assertThat("ClusterStatus for cluster2 should be ordered after ClusterStatus for cluster1",
+        cluster2.compareTo(cluster1), greaterThan(0));
   }
 
   @Test
   public void verifyThat_cluster1_before_cluster10() {
-    assertThat(cluster1.compareTo(cluster10), lessThan(0));
-    assertThat(cluster10.compareTo(cluster1), greaterThan(0));
+    assertThat("ClusterStatus for cluster1 should be ordered before ClusterStatus for cluster10",
+        cluster1.compareTo(cluster10), lessThan(0));
+    assertThat("ClusterStatus for cluster10 should be ordered after ClusterStatus for cluster1",
+        cluster10.compareTo(cluster1), greaterThan(0));
   }
 
   @Test
   public void verifyThat_cluster2_before_cluster10() {
-    assertThat(cluster2.compareTo(cluster10), lessThan(0));
-    assertThat(cluster10.compareTo(cluster2), greaterThan(0));
+    assertThat("ClusterStatus for cluster2 should be ordered before ClusterStatus for cluster10",
+        cluster2.compareTo(cluster10), lessThan(0));
+    assertThat("ClusterStatus for cluster10 should be ordered after ClusterStatus for cluster2",
+        cluster10.compareTo(cluster2), greaterThan(0));
   }
 
   @Test
   public void verifyThat_nullCluster_before_cluster1() {
-    assertThat(nullCluster.compareTo(cluster1), lessThan(0));
-    assertThat(cluster1.compareTo(nullCluster), greaterThan(0));
+    assertThat("ClusterStatus without cluster name should be ordered before ClusterStatus for cluster1",
+        nullCluster.compareTo(cluster1), lessThan(0));
+    assertThat("ClusterStatus for cluster1 should be ordered after ClusterStatus without cluster name",
+        cluster1.compareTo(nullCluster), greaterThan(0));
   }
 }
