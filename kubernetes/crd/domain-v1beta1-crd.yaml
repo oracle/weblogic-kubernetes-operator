@@ -10177,8 +10177,8 @@ spec:
                 access log files if `httpAccessLogInLogHome` is true.
             includeServerOutInPodLog:
               type: boolean
-              description: If true (the default), the server .out file will be included
-                in the pod's stdout.
+              description: If true (the default), then the server .out file will be
+                included in the pod's stdout.
             managedServers:
               type: array
               description: Configuration for individual Managed Servers.
