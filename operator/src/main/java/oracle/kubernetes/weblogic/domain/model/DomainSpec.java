@@ -111,7 +111,7 @@ public class DomainSpec extends BaseConfiguration {
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), the server .out file will be included in the pod's stdout.")
+  @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
@@ -503,12 +503,12 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Whether to write the server HTTP access log file to the directory specified in
+   * Whether to write server HTTP access log files to the directory specified in
    * {@link #logHome} if {@link #logHomeEnabled} is true.
    *
-   * @return true if the server HTTP access log file should be included in the directory
-   *     specified in {@link #logHome}, false if server HTTP access log file should be written
-   *     to the directory as configured in WebLogic domain home configuration
+   * @return true if server HTTP access log files should be included in the directory
+   *     specified in {@link #logHome}, false if server HTTP access log files should be written
+   *     to the directory as configured in the WebLogic domain home configuration
    */
   boolean getHttpAccessLogInLogHome() {
     return Optional.ofNullable(httpAccessLogInLogHome)

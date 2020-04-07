@@ -28,7 +28,7 @@ public class OperatorUtils {
 
   /**
    * Create a Map using the elements from the given map, with their keys sorted
-   * using the 'numero lexi sorting name'.
+   * using the sorted name as returned by {@link #getSortingString(String)}.
    *
    * @param map Map containing elements to be sorted by the keys
    * @param <T> Type of map entries
@@ -49,8 +49,7 @@ public class OperatorUtils {
   }
 
   /**
-   * Compare the 'numero lexi sorting name' as defined in {@link #getSortingString(String)} of the
-   * given two Strings.
+   * Compare the given 2 Strings using the sorted name as returned by {@link #getSortingString(String)}.
    *
    * @param str1 First string for comparison
    * @param str2 Second string for comparison
