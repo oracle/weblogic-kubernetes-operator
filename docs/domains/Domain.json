@@ -317,7 +317,7 @@
           "type": "string"
         },
         "includeServerOutInPodLog": {
-          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
+          "description": "If true (the default), then the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
         },
         "managedServers": {
