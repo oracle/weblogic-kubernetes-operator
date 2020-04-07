@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -206,10 +207,11 @@ class ItSimpleOperatorValidation implements LoggedTest {
     try {
       namespace = createUniqueNamespace();
     } catch (Exception e) {
+      e.printStackTrace();
       assertThat(e)
           .as("Test that createUniqueNamespace does not throw an exception")
           .withFailMessage("createUniqueNamespace() threw an unexpected exception")
-          .isNotInstanceOf(Exception.class);
+          .isNotInstanceOf(ApiException.class);
     }
     return namespace;
   }
