@@ -37,11 +37,6 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     final String domainUID = "domain1";
 
-    // get a new unique namespace
-    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
-        "Failed to create unique namespace due to ApiException");
-    logger.info(String.format("Got a new namespace called %s", namespace));
-
     // create a PVC POJO object and call TestActions.createPvc()
     PersistentVolumeClaim pvc = new PersistentVolumeClaim();
     pvc.labels().put("weblogic.resourceVersion", "domain-v2");
@@ -52,11 +47,16 @@ class ItSimpleDomainValidation implements LoggedTest {
       .persistentVolumeReclaimPolicy("Recycle")
       .storageClassName("itoperator-domain-2-weblogic-sample-storage-class")
       .name("mypvc")
-      .namespace("mypvc-ns");
+        .namespace("mypvc-ns");
 
     assertDoesNotThrow(
         () -> TestActions.createPersistentVolumeClaim(null)
     );
+
+    // get a new unique namespace
+    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+        "Failed to create unique namespace due to ApiException");
+    logger.info(String.format("Got a new namespace called %s", namespace));
 
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";

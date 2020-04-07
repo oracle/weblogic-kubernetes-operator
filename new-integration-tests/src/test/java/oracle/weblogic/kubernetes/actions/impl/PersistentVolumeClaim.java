@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -10,8 +13,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import java.util.HashMap;
-import java.util.Map;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class PersistentVolumeClaim {
@@ -36,7 +37,7 @@ public class PersistentVolumeClaim {
       .persistentVolumeReclaimPolicy("Recycle")
       .storageClassName("itoperator-domain-2-weblogic-sample-storage-class")
       .name("mypvc")
-      .namespace("mypvc-ns");
+        .namespace("mypvc-ns");
 
     // PersistentVolumeClaim TestAction create()
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim();

@@ -3,13 +3,13 @@
 
 package oracle.weblogic.domain;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -18,8 +18,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class PersistentVolumeClaim {
 
   @ApiModelProperty(
-    "The labels to be attached to generated resources. The label names must "
-    + "not start with 'weblogic.'.")
+      "The labels to be attached to generated resources. The label names must "
+      + "not start with 'weblogic.'.")
   private Map<String, String> labels = new HashMap<>();
 
   @ApiModelProperty("StorageClass Name of the volume.")
