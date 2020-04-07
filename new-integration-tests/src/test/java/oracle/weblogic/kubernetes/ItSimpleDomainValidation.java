@@ -8,6 +8,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -40,6 +41,22 @@ class ItSimpleDomainValidation implements LoggedTest {
     final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
         "Failed to create unique namespace due to ApiException");
     logger.info(String.format("Got a new namespace called %s", namespace));
+
+    // create a PVC POJO object and call TestActions.createPvc()
+    PersistentVolumeClaim pvc = new PersistentVolumeClaim();
+    pvc.labels().put("weblogic.resourceVersion", "domain-v2");
+    pvc.labels().put("weblogic.domainUID", "mydomain");
+    pvc.accessMode().add("ReadWriteMany");
+    pvc
+      .capacity("10Gi")
+      .persistentVolumeReclaimPolicy("Recycle")
+      .storageClassName("itoperator-domain-2-weblogic-sample-storage-class")
+      .name("mypvc")
+      .namespace("mypvc-ns");
+
+    assertDoesNotThrow(
+        () -> TestActions.createPersistentVolumeClaim(null)
+    );
 
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";
