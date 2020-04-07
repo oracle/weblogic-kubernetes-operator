@@ -10,6 +10,7 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.WITAssertion;
 
 
 /**
@@ -151,6 +152,16 @@ public class TestAssertions {
    */
   public static boolean adminNodePortAccessible(String domainUID, String namespace) {
     return Domain.adminNodePortAccessible(domainUID, namespace);
+  }
+  
+  /**
+   * Check if a Docker image exists.
+   * @param imageName the name of the image to be checked
+   * @param imageTag  the tag of the image to be checked
+   * @return true if the image does exist, false otherwise
+   */
+  public static boolean dockerImageExists(String imageName, String imageTag) {
+    return WITAssertion.doesImageExist(imageName, imageTag);
   }
 
 }

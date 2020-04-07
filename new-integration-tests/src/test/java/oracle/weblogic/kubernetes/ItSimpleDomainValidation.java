@@ -56,7 +56,8 @@ class ItSimpleDomainValidation implements LoggedTest {
     DomainSpec domainSpec = new DomainSpec()
         .domainHome("/shared/domains/sample-domain1")
         .domainHomeInImage(false)
-        .image("store/oracle/weblogic:12.2.1.3").imagePullPolicy("IfNotPresent");
+        .image("store/oracle/weblogic:12.2.1.3")
+        .imagePullPolicy("IfNotPresent");
     Domain domain = new Domain()
         .apiVersion("weblogic.oracle/v7")
         .kind("Domain")

@@ -8,19 +8,9 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
  */
 
 public class InstallParams {
-  public static final String WIT_TYPE = "WIT";
-  public static final String WDT_TYPE = "WDT";
-
-  public static final String DEFAULT_WIT_DOWNLOAD_URL = "https://github.com//oracle/weblogic-image-tool";
-  public static final String DEFAULT_WIT_VERSION    = "release-1.8.3";
-  public static final String WIT_FILE_NAME  = "imagetool.zip";
-
-  public static final String DEFAULT_WDT_DOWNLOAD_URL = "https://github.com//oracle/weblogic-deploy-tooling";
-  public static final String DEFAULT_WDT_VERSION    = "weblogic-deploy-tooling-1.7.2";
-  public static final String WDT_FILE_NAME  = "weblogic-deploy.zip";
 
   // WIT or WDT
-  private String type = "WIT";
+  private String type;
   
   // The version of the tool
   private String version;
@@ -28,6 +18,9 @@ public class InstallParams {
   // The download site location
   private String location;
   
+  // The installer file name
+  private String fileName;
+
   // Whether verify before download
   private boolean verify = true;
   
@@ -36,6 +29,10 @@ public class InstallParams {
   
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
+
+  public InstallParams defaults() {
+    return this;
+  }
 
   public InstallParams type(String type) {
     this.type = type;
@@ -52,9 +49,6 @@ public class InstallParams {
   }
 
   public String version() {
-    if (version == null) {
-      return WIT_TYPE.equals(type) ? DEFAULT_WIT_VERSION : DEFAULT_WDT_VERSION;
-    }
     return version;
   }
 
@@ -64,9 +58,6 @@ public class InstallParams {
   }
 
   public String location() {
-    if (location == null) {
-      return WIT_TYPE.equals(type) ? DEFAULT_WIT_DOWNLOAD_URL : DEFAULT_WDT_DOWNLOAD_URL;
-    }
     return location;
   }
 
@@ -84,7 +75,7 @@ public class InstallParams {
     return this;
   }
 
-  public boolean direct() {
+  public boolean redirect() {
     return redirect;
   }
 
@@ -97,11 +88,12 @@ public class InstallParams {
     return unzip;
   }
 
+  public InstallParams fileName(String fileName) {
+    this.fileName = fileName;
+    return this;
+  }
+  
   public String fileName() {
-    if (WIT_TYPE.equals(type)) {
-      return WIT_FILE_NAME;
-    } else {
-      return WDT_FILE_NAME;
-    }
+    return fileName;
   }
 }

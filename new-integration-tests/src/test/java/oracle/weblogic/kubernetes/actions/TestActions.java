@@ -229,14 +229,14 @@ public class TestActions {
    */
   public static WITParams withWITParams() {
     return
-        WebLogicImageTool.withDefaults();
+        WebLogicImageTool.defaultWITParams();
   }
 
   /**
    * Create an image using WDT models using WebLogic Image Tool.
    *
-   * @param params the parameters for creating a model-in-image Docker image
-   * @return true if successful delete, false otherwise
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
    */
   public static boolean createMIIImage(WITParams params) {
     return

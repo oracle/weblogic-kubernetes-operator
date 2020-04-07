@@ -44,8 +44,7 @@ public class ExecCommand {
   public static ExecResult exec(
       String command, 
       boolean isRedirectToOut,
-      Map<String, 
-      String> additionalEnvMap
+      Map<String, String> additionalEnvMap
   ) throws IOException, InterruptedException {
 
     Process p = null;

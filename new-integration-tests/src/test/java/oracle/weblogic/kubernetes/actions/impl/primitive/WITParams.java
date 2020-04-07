@@ -5,24 +5,19 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.List;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+
 /**
  * Contains the parameters for creating a Docker image using the WebLogic Image Tool.
  *
  */
 
 public class WITParams {
-  public static final String WLS = "WLS";
-  public static final String JRF = "JRF";
-  public static final String RJRF = "RestrictedJRF";
-  public static final String WLS_BASE_IMAGE_NAME = "container-registry.oracle.com/middleware/weblogic";
-  public static final String JRF_BASE_IMAGE_NAME = "container-registry.oracle.com/middleware/fmw-infrastructure";
-  public static final String WLS_BASE_IMAGE_TAG = "12.2.1.4";
-
-  public static final String MODEL_IMAGE_NAME = "test-mii-image";
-  public static final String MODEL_IMAGE_TAG  = "v1";
  
-  // TODO we start with these parameters, and will add as needed.
-
   // The name of the Docker image that is used as the base of a new image
   private String baseImageName;
   
@@ -56,8 +51,8 @@ public class WITParams {
   public WITParams defaults() {
     this.baseImageName(WLS_BASE_IMAGE_NAME)
         .baseImageTag(WLS_BASE_IMAGE_TAG)
-        .modelImageName(MODEL_IMAGE_NAME)
-        .modelImageTag(MODEL_IMAGE_TAG)
+        .modelImageName(DEFAULT_MODEL_IMAGE_NAME)
+        .modelImageTag(DEFAULT_MODEL_IMAGE_TAG)
         .domainType(WLS);
     return this;
   }
