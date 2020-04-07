@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+
 // All parameters needed to install Operator from test
 
 public class OperatorParams {
@@ -18,10 +20,9 @@ public class OperatorParams {
   private static final String EXTERNAL_REST_IDENTITY_SECRET = "externalRestIdentitySecret";
   private static final String EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
   private static final String IMAGE_PULL_POLICY = "imagePullPolicy";
+  private static final String IMAGE_PULL_SECRETS = "imagePullSecrets";
 
   // Adding some of the most commonly used params for now
-  private String releaseName;
-  private String namespace;
   private List<String> domainNamespaces;
   private String image;
   private String serviceAccount;
@@ -29,16 +30,8 @@ public class OperatorParams {
   private String externalRestIdentitySecret;
   private int externalRestHttpsPort = 0;
   private String imagePullPolicy;
-
-  public OperatorParams releaseName(String releaseName) {
-    this.releaseName = releaseName;
-    return this;
-  }
-
-  public OperatorParams namespace(String namespace) {
-    this.namespace = namespace;
-    return this;
-  }
+  private String imagePullSecrets;
+  private HelmParams helmParams;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -70,21 +63,27 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams externalRestIdentitySecret(String externalRestIdentitySecret) {
-    this.externalRestIdentitySecret  = externalRestIdentitySecret;
+  public OperatorParams imagePullSecrets(String imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
     return this;
   }
 
-  public String getReleaseName() {
-    return releaseName;
+  public OperatorParams externalRestIdentitySecret(String externalRestIdentitySecret) {
+    this.externalRestIdentitySecret = externalRestIdentitySecret;
+    return this;
   }
 
-  public String getNamespace() {
-    return namespace;
+  public OperatorParams helmParams(HelmParams helmParams) {
+    this.helmParams = helmParams;
+    return this;
   }
 
   public String getServiceAccount() {
     return serviceAccount;
+  }
+
+  public HelmParams getHelmParams() {
+    return helmParams;
   }
 
   public HashMap<String, Object> getValues() {
@@ -98,6 +97,7 @@ public class OperatorParams {
     }
     values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
     values.put(IMAGE_PULL_POLICY, imagePullPolicy);
+    values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
     values.values().removeIf(Objects::isNull);
     return values;
   }

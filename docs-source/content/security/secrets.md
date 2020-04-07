@@ -21,7 +21,7 @@ Also, the domain credentials secret must be created in the namespace where the `
 
 {{% notice note %}}
 For an example of a WebLogic domain resource using `webLogicCredentialsSecret`,
-see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#1-use-imagepullsecrets-with-the-domain-resource">}}).
+see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#1-use-imagepullsecrets-with-the-domain-resource">}}).
 {{% /notice %}}
 
 The samples supplied with the operator use a naming convention that follows
@@ -76,7 +76,7 @@ in the registry. The `imagePullSecrets` setting on the `Domain` can be used to s
 Kubernetes `Secret` that holds the registry credentials.
 
 {{% notice info %}}
-For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}).
+For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
 {{% /notice %}}
 
 #### Operator image pull secret
@@ -120,7 +120,7 @@ accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
 is used to hold the certificate(s) and private key.
 
 {{% notice info %}}
-For more information, see [Certificates]({{<relref "/security/certificates.md#reference">}}).
+For more information, see [Certificates]({{<relref "/security/certificates#additional-reading">}}).
 {{% /notice %}}
 
 #### Operator internal REST interface secret

@@ -25,7 +25,7 @@ public class Secret {
    *
    * @param name name of the Secret
    * @param namespace name of namespace
-   * @return true if successful
+   * @return true if successful, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean delete(String name, String namespace) throws ApiException {

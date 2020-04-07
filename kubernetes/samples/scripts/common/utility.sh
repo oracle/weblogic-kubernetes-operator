@@ -330,6 +330,10 @@ function createFiles {
     logHome="${domainPVMountPath}/logs/${domainUID}"
   fi
 
+  if [ -z "${httpAccessLogInLogHome}" ]; then
+    httpAccessLogInLogHome="true"
+  fi
+  
   if [ -z "${dataHome}" ]; then
     dataHome=""
   fi
@@ -495,6 +499,7 @@ function createFiles {
   sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${dcrOutput}
   sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}

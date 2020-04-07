@@ -39,7 +39,7 @@ by `DNS:` for a host name, or `IP:` for an address, as with this example:
 ```
 
 The external certificate and key can be changed after installation of the operator. For
-more information, see [Updating operator external certificates]({{<relref "/security/certificates.md#updating-operator-external-certificate">}}).
+more information, see [Updating operator external certificates]({{<relref "/security/certificates#updating-operator-external-certificates">}}).
 
 The script as used below will create the `tls secret` named `weblogic-operator-identity` in the namespace `weblogic-operator-ns` using a self-signed
 certificate and private key:

@@ -14,7 +14,7 @@ public class PersistentVolume {
    *
    * @param persistentVolume V1PersistentVolume object containing persistent volume
    *     configuration data
-   * @return true if successful
+   * @return true if successful, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean create(V1PersistentVolume persistentVolume) throws ApiException {

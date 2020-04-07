@@ -63,7 +63,7 @@ public class Namespace {
    * Delete a Kubernetes namespace.
    *
    * @param namespace name of namespace
-   * @return true if successful
+   * @return true if successful, false otherwise
    * @throws ApiException if Kubernetes request fails
    */
   public static boolean delete(String namespace) throws ApiException {

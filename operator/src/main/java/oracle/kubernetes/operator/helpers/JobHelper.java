@@ -291,6 +291,7 @@ public class JobHelper {
       addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
       addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
       addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
+      addEnvVar(vars, ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, getHttpAccessLogInLogHome());
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
