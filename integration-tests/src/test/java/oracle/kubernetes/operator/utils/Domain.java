@@ -229,7 +229,7 @@ public class Domain {
   }
 
   /**
-   * Verifies the SSL listeners in the domain are active by making an SSL connection to each one
+   * Verifies the SSL listeners in the domain are active by making an SSL connection to each one.
    *
    * @throws Exception If an error occurred
    */
