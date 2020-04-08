@@ -14,7 +14,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description = "Describes the configuration for a PersistentVolume.")
+@ApiModel(description = "Describes the configuration for a PersistentVolumeClaim.")
 public class PersistentVolumeClaim {
 
   @ApiModelProperty(
@@ -55,24 +55,6 @@ public class PersistentVolumeClaim {
     return labels;
   }
 
-  public PersistentVolumeClaim persistentVolumeReclaimPolicy(String persistentVolumeReclaimPolicy) {
-    this.persistentVolumeReclaimPolicy = persistentVolumeReclaimPolicy;
-    return this;
-  }
-
-  public String persistentVolumeReclaimPolicy() {
-    return persistentVolumeReclaimPolicy;
-  }
-
-  public PersistentVolumeClaim volumeMode(String volumeMode) {
-    this.volumeMode = persistentVolumeReclaimPolicy;
-    return this;
-  }
-
-  public String volumeMode() {
-    return volumeMode;
-  }
-
   public PersistentVolumeClaim storageClassName(String storageClassName) {
     this.storageClassName = storageClassName;
     return this;
@@ -100,6 +82,24 @@ public class PersistentVolumeClaim {
     return accessMode;
   }
 
+  public PersistentVolumeClaim persistentVolumeReclaimPolicy(String persistentVolumeReclaimPolicy) {
+    this.persistentVolumeReclaimPolicy = persistentVolumeReclaimPolicy;
+    return this;
+  }
+
+  public String persistentVolumeReclaimPolicy() {
+    return persistentVolumeReclaimPolicy;
+  }
+
+  public PersistentVolumeClaim volumeMode(String volumeMode) {
+    this.volumeMode = volumeMode;
+    return this;
+  }
+
+  public String volumeMode() {
+    return volumeMode;
+  }
+  
   public PersistentVolumeClaim path(String path) {
     this.path = path;
     return this;
@@ -109,22 +109,22 @@ public class PersistentVolumeClaim {
     return path;
   }
 
-  public String name() {
-    return name;
-  }
-
   public PersistentVolumeClaim name(String name) {
     this.name = name;
     return this;
   }
 
-  public String namespace() {
-    return namespace;
+  public String name() {
+    return name;
   }
 
   public PersistentVolumeClaim namespace(String namespace) {
     this.namespace = namespace;
     return this;
+  }
+
+  public String namespace() {
+    return namespace;
   }
 
   @Override

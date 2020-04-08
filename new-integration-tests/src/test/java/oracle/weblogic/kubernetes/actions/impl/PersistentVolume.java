@@ -26,7 +26,7 @@ public class PersistentVolume {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean create(oracle.weblogic.domain.PersistentVolumeClaim persistentVolume) throws ApiException {
-    // PersistentVolumeClaim TestAction create()
+    // create a Kubernetes V1PersistentVolume object
     V1PersistentVolume v1pv = new V1PersistentVolume();
 
     // build metadata object
@@ -43,20 +43,19 @@ public class PersistentVolume {
     spec.setStorageClassName(persistentVolume.storageClassName());
     spec.setAccessModes(persistentVolume.accessMode());
 
+    v1pv.setMetadata(metadata);
+    v1pv.setSpec(spec);
+    v1pv.getSpec().setPersistentVolumeReclaimPolicy(persistentVolume.persistentVolumeReclaimPolicy());
+    v1pv.getSpec().setVolumeMode(persistentVolume.volumeMode());
+
     // build resource requirements object
     Map<String, Quantity> requests = new HashMap<>();
     Quantity maxClaims = Quantity.fromString(persistentVolume.capacity());
     requests.put("storage", maxClaims);
     spec.setCapacity(requests);
-
-
-    v1pv.setMetadata(metadata);
-    v1pv.setSpec(spec);
     V1HostPathVolumeSource hostPath = new V1HostPathVolumeSource();
     hostPath.setPath(persistentVolume.path());
     v1pv.getSpec().setHostPath(hostPath);
-    v1pv.getSpec().setPersistentVolumeReclaimPolicy(persistentVolume.persistentVolumeReclaimPolicy());
-    v1pv.getSpec().setVolumeMode(persistentVolume.volumeMode());
 
     return Kubernetes.createPv(v1pv);
   }

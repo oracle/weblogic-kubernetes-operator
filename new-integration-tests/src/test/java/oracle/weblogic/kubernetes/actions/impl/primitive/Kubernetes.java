@@ -654,9 +654,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.warning("Response Code :" + apex.getCode());
       logger.warning("Response Body :" + apex.getResponseBody());
-      logger.info("Message :" + apex.getLocalizedMessage());
       throw apex;
     }
 
@@ -700,9 +698,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.warning("Response Code :" + apex.getCode());
       logger.warning("Response Body :" + apex.getResponseBody());
-      logger.info("Message :" + apex.getLocalizedMessage());
       throw apex;
     }
 
