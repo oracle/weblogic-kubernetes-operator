@@ -39,9 +39,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed
    * It does the initialization of the integration test properties defined in 
-   * OperatorIT.properties and define resultRoot,pvRoot and projectRoot attributes.
+   * OperatorIT.properties and define resultRoot, pvRoot, and projectRoot attributes.
    *
-   * @throws Exception if the test initilization fails
+   * @throws Exception if the test initialization fails
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
@@ -220,7 +220,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * Create the service account.
    * Make sure operator pod is in ready state.
    *
-   * @throws Exception when operator pod is not ready after serviceaccount is created 
+   * @throws Exception when operator pod is not ready after the service account is created 
    */
   @Test
   public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
@@ -419,7 +419,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
           .contains(
               "Service \"external-weblogic-operator-svc\" is invalid: spec.ports[0].nodePort: Invalid value:")) {
         throw new Exception(
-            "FAILURE: Helm install operator with dublicated rest port number does not report expected message "
+            "FAILURE: Helm install operator with duplicated rest port number does not report the expected message "
                 + ex.getMessage());
       }
       String cmdLb = "";
@@ -471,12 +471,12 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
       throw new Exception(
-          "FAILURE: Helm installs the operator with invalid value for attribute elkIntegrationEnabled ");
+          "FAILURE: Helm installs the operator with an invalid value for attribute elkIntegrationEnabled ");
 
     } catch (Exception ex) {
       if (!ex.getMessage().contains("elkIntegrationEnabled must be a bool : string")) {
         throw new Exception(
-            "FAILURE: Helm installs the operator with invalid value for attribute "
+            "FAILURE: Helm installs the operator with an invalid value for an attribute "
                 + "elkIntegrationEnabled does not report expected message "
                 + ex.getMessage());
       }
@@ -488,7 +488,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       operator = new Operator(operatorMap, true, true, false, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
       throw new Exception(
-          "FAILURE: Helm installs the operator with invalid value for attribute javaLoggingLevel ");
+          "FAILURE: Helm installs the operator with an invalid value for an attribute javaLoggingLevel ");
 
     } catch (Exception ex) {
       if (!ex.getMessage()
@@ -496,7 +496,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
               "javaLoggingLevel must be one of the following values [SEVERE WARNING "
                   + "INFO CONFIG FINE FINER FINEST] : VERBOSE")) {
         throw new Exception(
-            "FAILURE: Helm installs the operator with invalid value for attribute "
+            "FAILURE: Helm installs the operator with an invalid value for an attribute "
                 + "externalRestEnabled does not report expected message "
                 + ex.getMessage());
       }
@@ -569,13 +569,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
   /**
    * Create operator and verify it is deployed successfully 
-   * Create domain1 and verify domain is started 
+   * Create domain1 and verify the domain is started 
    * Upgrade the operator target domainNamespaces to include namespace for domain2 
    * Verify both domains are managed by the operator by making a REST API call
-   * Call helm upgrade to remove first domain from operator target domainNamespaces
+   * Call helm upgrade to remove the first domain from operator target domainNamespaces
    * Verify it can't be managed by operator anymore
    *
-   * @throws Exception when opeator fails to manage the domain as expected
+   * @throws Exception when an operator fails to manage the domain as expected
    */
   @Test
   public void testAddRemoveDomainUpdateOperatorHC() throws Exception {
