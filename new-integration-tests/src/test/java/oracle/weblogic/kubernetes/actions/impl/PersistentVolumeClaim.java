@@ -15,56 +15,50 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
+/**
+ * TestAction class PersistentVolumeClaim to create and delete a Kubernetes Persistent Volume
+ * It takes a oracle.weblogic.domain.PersistentVolumeClaim persistentVolumeClaim POJO object
+ * to pass the PersistentVolumeClaim details to the create method
+ */
 public class PersistentVolumeClaim {
 
   /**
    * Create a Kubernetes Persistent Volume Claim.
    *
-   * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes
-   *     persistent volume claim configuration data
-   * @return true if successful
+   * @param oracle.weblogic.domain.PersistentVolumeClaim persistentVolumeClaim object containing
+   *  persistent volume claim configuration data
+   * @return true if successful false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean create(V1PersistentVolumeClaim persistentVolumeClaim) throws ApiException {
-
-    // test code
-    oracle.weblogic.domain.PersistentVolumeClaim pvc = new oracle.weblogic.domain.PersistentVolumeClaim();
-    pvc.labels().put("weblogic.resourceVersion", "domain-v2");
-    pvc.labels().put("weblogic.domainUID", "mydomain");
-    pvc.accessMode().add("ReadWriteMany");
-    pvc
-      .capacity("10Gi")
-      .persistentVolumeReclaimPolicy("Recycle")
-      .storageClassName("itoperator-domain-2-weblogic-sample-storage-class")
-      .name("mypvc")
-        .namespace("mypvc-ns");
+  public static boolean create(oracle.weblogic.domain.PersistentVolumeClaim persistentVolumeClaim) throws ApiException {
 
     // PersistentVolumeClaim TestAction create()
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim();
 
     // build metadata object
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
-        .withName(pvc.name()) // set PVC name
-        .withNamespace(pvc.namespace()) // set PVC namespace
+        .withName(persistentVolumeClaim.name()) // set PVC name
+        .withNamespace(persistentVolumeClaim.namespace()) // set PVC namespace
         .build();
     // set PVC labels
-    metadata.setLabels(pvc.labels());
+    metadata.setLabels(persistentVolumeClaim.labels());
 
     // build spec object
     V1PersistentVolumeClaimSpec spec = new V1PersistentVolumeClaimSpec();
     // set spec storageclassname and accessModes
-    spec.setStorageClassName(pvc.storageClassName());
-    spec.setAccessModes(pvc.accessMode());
+    spec.setStorageClassName(persistentVolumeClaim.storageClassName());
+    spec.setAccessModes(persistentVolumeClaim.accessMode());
 
-    V1ResourceRequirements resources = new V1ResourceRequirements();
+    // build resource requirements object
     Map<String, Quantity> requests = new HashMap<>();
-    resources.setRequests(requests);
-    Quantity maxClaims = Quantity.fromString(pvc.capacity());
+    Quantity maxClaims = Quantity.fromString(persistentVolumeClaim.capacity());
     requests.put("storage", maxClaims);
-    resources.setLimits(requests);
+    V1ResourceRequirements resources = new V1ResourceRequirements();
+    resources.setRequests(requests);
 
     v1pvc.setMetadata(metadata);
     v1pvc.setSpec(spec);
+    v1pvc.getSpec().setResources(resources);
 
     return Kubernetes.createPvc(v1pvc);
   }

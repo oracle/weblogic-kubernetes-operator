@@ -37,22 +37,6 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     final String domainUID = "domain1";
 
-    // create a PVC POJO object and call TestActions.createPvc()
-    PersistentVolumeClaim pvc = new PersistentVolumeClaim();
-    pvc.labels().put("weblogic.resourceVersion", "domain-v2");
-    pvc.labels().put("weblogic.domainUID", "mydomain");
-    pvc.accessMode().add("ReadWriteMany");
-    pvc
-      .capacity("10Gi")
-      .persistentVolumeReclaimPolicy("Recycle")
-      .storageClassName("itoperator-domain-2-weblogic-sample-storage-class")
-      .name("mypvc")
-        .namespace("mypvc-ns");
-
-    assertDoesNotThrow(
-        () -> TestActions.createPersistentVolumeClaim(null)
-    );
-
     // get a new unique namespace
     final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
         "Failed to create unique namespace due to ApiException");
@@ -64,6 +48,27 @@ class ItSimpleDomainValidation implements LoggedTest {
         () -> Kubernetes.createServiceAccount(new V1ServiceAccount()
             .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
     logger.info("Created service account: " + serviceAccount.getMetadata().getName());
+
+    // create a persistent volume claim
+    PersistentVolumeClaim persistentVolumeClaim = new PersistentVolumeClaim();
+    persistentVolumeClaim.labels().put("weblogic.resourceVersion", "domain-v2");
+    persistentVolumeClaim.labels().put("weblogic.domainUID", "mydomain");
+    persistentVolumeClaim.accessMode().add("ReadWriteMany");
+    persistentVolumeClaim
+      .capacity("10Gi")
+      .persistentVolumeReclaimPolicy("Recycle")
+      .storageClassName("itoperator-domain-2-weblogic-sample-storage-class")
+      .name("mypvc")
+        .namespace("mypvc-ns");
+
+    assertDoesNotThrow(
+        () -> TestActions.createPersistentVolumeClaim(persistentVolumeClaim)
+    );
+
+    persistentVolumeClaim.name("mypv").namespace("mypv-ns");
+    assertDoesNotThrow(
+        () -> TestActions.createPersistentVolume(persistentVolumeClaim)
+    );
 
     // create the domain CR
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()

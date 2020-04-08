@@ -682,13 +682,22 @@ public class Kubernetes implements LoggedTest {
 
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
 
-    V1PersistentVolumeClaim pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
-        namespace, // name of the Namespace
-        persistentVolumeClaim, // persistent volume claim configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // fieldManager is a name associated with the actor
-    );
+    try {
+      KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.delete(namespace,
+          persistentVolumeClaim.getMetadata().getName());
+      V1PersistentVolumeClaim pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
+          namespace, // name of the Namespace
+          persistentVolumeClaim, // persistent volume claim configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.info("Code :" + apex.getCode());
+      logger.info("Response Body :" + apex.getResponseBody());
+      logger.info("Message :" + apex.getLocalizedMessage());
+      apex.printStackTrace();
+    }
 
     return true;
   }
