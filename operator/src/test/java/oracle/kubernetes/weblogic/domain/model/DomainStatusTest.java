@@ -277,6 +277,34 @@ public class DomainStatusTest {
     assertThat(clusterStatuses, contains(cluster1, cluster2, cluster10));
   }
 
+  @Test
+  public void verifyThat_getServers_returnCopyOfServersList() {
+    ServerStatus server1 = new ServerStatus().withServerName("server1");
+    ServerStatus server2 = new ServerStatus().withServerName("server2");
+
+    domainStatus.addServer(server1);
+
+    List<ServerStatus> serverStatuses = domainStatus.getServers();
+
+    domainStatus.addServer(server2);
+
+    assertThat(serverStatuses.size(), is(equalTo(1)));
+  }
+
+  @Test
+  public void verifyThat_getClusters_returnCopyOfClustersList() {
+    ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster1");
+    ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
+
+    domainStatus.addCluster(cluster1);
+
+    List<ClusterStatus> clusterStatuses = domainStatus.getClusters();
+
+    domainStatus.addCluster(cluster2);
+
+    assertThat(clusterStatuses.size(), is(equalTo(1)));
+  }
+
   static class ClusterStatusMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<ClusterStatus> {
     private String name;
     private Integer replicas;
