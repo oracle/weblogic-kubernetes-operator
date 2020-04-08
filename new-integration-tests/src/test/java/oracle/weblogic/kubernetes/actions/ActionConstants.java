@@ -11,10 +11,16 @@ public interface ActionConstants {
   // Directory for resources
   public static final String RESOURCE_DIR 
       = System.getProperty("user.dir") + "/src/test/resources"; 
+  // Directory for all applications
+  public static final String APP_DIR = RESOURCE_DIR + "/apps"; 
   // Directory for all WDT models
   public static final String MODEL_DIR = RESOURCE_DIR + "/wdt-models"; 
   // Directory for download items
   public static final String DOWNLOAD_DIR = WORK_DIR + "/download";
+  // Directory for staging purposes
+  public static final String STAGE_DIR = WORK_DIR + "/stage";
+  //Directory for archiving purposes
+  public static final String ARCHIVE_DIR = STAGE_DIR + "/archive";
   
   // ------------ WebLogicImageTool action constants -------------
   public static final String WLS = "WLS";

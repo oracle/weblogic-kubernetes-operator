@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
@@ -409,6 +410,32 @@ public class TestActions {
   public static boolean helmList(HelmParams params) {
     return Helm.list(params);
   }
+  
+  // ------------------------ Application Builder  -------------------------
+
+  /**
+   * Create an AppParams instance that contains the parameters for an application
+   *
+   * @return an instance of AppParams that contains the default values
+   */
+  public static AppParams withAppParams() {
+    return
+        AppBuilder.defaultAppParams();
+  }
+
+  /**
+   * Create an image using WDT models using WebLogic Image Tool
+   *
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean buildAppArchive(AppParams params) {
+    return
+        AppBuilder
+            .withParams(params)
+            .build();
+  }
+
 
   // ------------------------ where does this go  -------------------------
 

@@ -24,3 +24,10 @@ topology:
         "cluster-1-template":
             Cluster: "cluster-1"
             ListenPort : '@@PROP:MANSVR_PORT@@'
+
+appDeployments:
+    Application:
+        myear:
+            SourcePath: wlsdeploy/applications/sample_app.ear
+            ModuleType: ear
+            Target: 'cluster-1'
