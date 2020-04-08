@@ -19,6 +19,8 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.weblogic.domain.PersistentVolume;
 import oracle.weblogic.domain.PersistentVolumeClaim;
 
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+
 /**
  * Helper class to build Kubernetes objects.
  */
@@ -32,6 +34,7 @@ public class K8sUtils {
    * @throws ApiException when Kubernetes objects fails to be created
    */
   public static V1PersistentVolume createPVObject(PersistentVolume persistentVolume) throws ApiException {
+    logger.info("creating a persistent volume Kubernetes object");
     // create a Kubernetes V1PersistentVolume object
     V1PersistentVolume v1pv = new V1PersistentVolume();
 
@@ -75,6 +78,8 @@ public class K8sUtils {
    */
   public static V1PersistentVolumeClaim createPVCObject(
       PersistentVolumeClaim persistentVolumeClaim) throws ApiException {
+
+    logger.info("creating a persistent volume claim Kubernetes object");
 
     // PersistentVolumeClaim TestAction create()
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim();

@@ -647,6 +647,7 @@ public class Kubernetes implements LoggedTest {
           "Parameter 'persistentVolume' cannot be null when calling createPv()");
     }
 
+    logger.info("creating persistent volume " + persistentVolume.getMetadata().getName());
     try {
       V1PersistentVolume pv = coreV1Api.createPersistentVolume(
           persistentVolume, // persistent volume configuration data
@@ -684,7 +685,7 @@ public class Kubernetes implements LoggedTest {
       throw new IllegalArgumentException(
           "'namespace' field in the metadata cannot be null when calling createPvc()");
     }
-
+    logger.info("creating persistent volume claim" + persistentVolumeClaim.getMetadata().getName());
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
 
     try {
