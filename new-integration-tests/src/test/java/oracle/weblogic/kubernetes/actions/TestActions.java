@@ -7,6 +7,8 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -17,6 +19,7 @@ import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
+import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
@@ -252,8 +255,7 @@ public class TestActions {
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createPersistentVolume(
-      oracle.weblogic.domain.PersistentVolumeClaim persistentVolume) throws ApiException {
+  public static boolean createPersistentVolume(V1PersistentVolume persistentVolume) throws ApiException {
     return PersistentVolume.create(persistentVolume);
   }
 
@@ -277,9 +279,9 @@ public class TestActions {
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createPersistentVolumeClaim(oracle.weblogic.domain.PersistentVolumeClaim persistentVolumeClaim)
+  public static boolean createPersistentVolumeClaim(V1PersistentVolumeClaim persistentVolumeClaim)
       throws ApiException {
-    return oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim.create(persistentVolumeClaim);
+    return PersistentVolumeClaim.create(persistentVolumeClaim);
   }
 
   /**
