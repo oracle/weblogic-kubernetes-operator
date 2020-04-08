@@ -179,7 +179,15 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	fi
     	
   #fi
-  setup_shared_cluster
+  helm version --short --client | grep v2
+  [[ $? == 0 ]] && HELM_VERSION=V2
+  [[ $? == 1 ]] && HELM_VERSION=V3
+  if [ "$HELM_VERSION" == "V2" ]; then
+    setup_shared_cluster
+  else
+    echo "Skipping tiller installation for helm version v3.x"
+  fi
+
   docker images
     
 elif [ "$JENKINS" = "true" ]; then
