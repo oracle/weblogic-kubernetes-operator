@@ -55,7 +55,15 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
 echo "@@ Info: WORKDIR='$WORKDIR'."
 
-mkdir -p ${WORKDIR}
+source ${WORKDIR}/env.sh
+
+# TBD if env.sh changes WORKDIR itself, all bets are off! maybe we should check for that?
+# TBD add explicit check for existance of env.sh in all places that we source it
+# TBD let's put the boiler plate in init_x.sh and have it do the stuff that's common to all scripts
+#     such as sourcing env.sh, making sure WORKDIR is setup,  moving to WORKDIR, etc.
+#     maybe they can all call stage-workdir.sh which could behave differently depending
+#     on whether WORKDIR already exists, and source env.sh file otherwise...
+
 cd ${WORKDIR?}
 
 mkdir -p ${WORKDIR}/models

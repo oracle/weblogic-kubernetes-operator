@@ -34,11 +34,14 @@ set -eu
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+source $WORKDIR/env.sh
+
 DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}
 DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
 WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
 echo "@@ Info: WORKDIR='$WORKDIR'."
 

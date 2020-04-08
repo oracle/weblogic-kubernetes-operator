@@ -35,7 +35,8 @@ WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 RCUDB_NAMESPACE=${RCUDB_NAMESPACE:-default}
 
 echo "@@ Info: WORKDIR='$WORKDIR'."
-mkdir -p ${WORKDIR}
+
+source ${WORKDIR}/env.sh
 
 case "${WDT_DOMAIN_TYPE}" in
   WLS|JRF|RestrictedJRF) ;;

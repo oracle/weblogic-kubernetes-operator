@@ -51,7 +51,8 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
 echo "@@ Info: WORKDIR='$WORKDIR'."
 
-mkdir -p ${WORKDIR}
+source ${WORKDIR}/env.sh
+
 cd ${WORKDIR}
 
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}

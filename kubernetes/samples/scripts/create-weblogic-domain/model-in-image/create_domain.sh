@@ -37,7 +37,8 @@ WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 DOMAIN_RESOURCE_FILE="${WORKDIR}/k8s-domain.yaml"
 
 echo "@@ Info: WORKDIR='$WORKDIR'."
-mkdir -p ${WORKDIR}
+
+source ${WORKDIR}/env.sh
 
 echo "@@ Info: Creating domain resource file '${DOMAIN_RESOURCE_FILE}' from '${DOMAIN_RESOURCE_TEMPLATE}'"
 
