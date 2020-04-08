@@ -34,6 +34,9 @@ public class PersistentVolumeClaim {
   @ApiModelProperty("Persistent Volume Reclaim Policy")
   private String persistentVolumeReclaimPolicy;
 
+  @ApiModelProperty("Persistent Volume Mode")
+  private String volumeMode;
+
   @ApiModelProperty("Persistent Volume Host Path")
   private String path;
 
@@ -59,6 +62,15 @@ public class PersistentVolumeClaim {
 
   public String persistentVolumeReclaimPolicy() {
     return persistentVolumeReclaimPolicy;
+  }
+
+  public PersistentVolumeClaim volumeMode(String volumeMode) {
+    this.volumeMode = persistentVolumeReclaimPolicy;
+    return this;
+  }
+
+  public String volumeMode() {
+    return volumeMode;
   }
 
   public PersistentVolumeClaim storageClassName(String storageClassName) {
@@ -93,6 +105,10 @@ public class PersistentVolumeClaim {
     return this;
   }
 
+  public String path() {
+    return path;
+  }
+
   public String name() {
     return name;
   }
@@ -119,6 +135,7 @@ public class PersistentVolumeClaim {
       .append("capacity", capacity)
       .append("accessMode", accessMode)
       .append("persistentVolumeReclaimPolicy", persistentVolumeReclaimPolicy)
+      .append("volumeMode", volumeMode)
       .append("path", path)
       .append("name", name)
       .append("namespace", namespace)
@@ -141,6 +158,7 @@ public class PersistentVolumeClaim {
       .append(capacity, rhs.capacity)
       .append(accessMode, rhs.accessMode)
       .append(persistentVolumeReclaimPolicy, rhs.persistentVolumeReclaimPolicy)
+      .append(volumeMode, rhs.volumeMode)
       .append(path, rhs.path)
       .append(name, rhs.name)
       .append(namespace, rhs.namespace)
@@ -155,6 +173,7 @@ public class PersistentVolumeClaim {
       .append(capacity)
       .append(accessMode)
       .append(persistentVolumeReclaimPolicy)
+      .append(volumeMode)
       .append(path)
       .append(name)
       .append(namespace)

@@ -646,12 +646,19 @@ public class Kubernetes implements LoggedTest {
           "Parameter 'persistentVolume' cannot be null when calling createPv()");
     }
 
-    V1PersistentVolume pv = coreV1Api.createPersistentVolume(
-        persistentVolume, // persistent volume configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // fieldManager is a name associated with the actor
-    );
+    try {
+      V1PersistentVolume pv = coreV1Api.createPersistentVolume(
+          persistentVolume, // persistent volume configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.warning("Response Code :" + apex.getCode());
+      logger.warning("Response Body :" + apex.getResponseBody());
+      logger.info("Message :" + apex.getLocalizedMessage());
+      throw apex;
+    }
 
     return true;
   }
@@ -693,10 +700,10 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.info("Code :" + apex.getCode());
-      logger.info("Response Body :" + apex.getResponseBody());
+      logger.warning("Response Code :" + apex.getCode());
+      logger.warning("Response Body :" + apex.getResponseBody());
       logger.info("Message :" + apex.getLocalizedMessage());
-      apex.printStackTrace();
+      throw apex;
     }
 
     return true;

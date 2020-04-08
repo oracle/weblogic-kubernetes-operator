@@ -3,7 +3,12 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -38,8 +43,21 @@ public class PersistentVolume {
     spec.setStorageClassName(persistentVolume.storageClassName());
     spec.setAccessModes(persistentVolume.accessMode());
 
+    // build resource requirements object
+    Map<String, Quantity> requests = new HashMap<>();
+    Quantity maxClaims = Quantity.fromString(persistentVolume.capacity());
+    requests.put("storage", maxClaims);
+    spec.setCapacity(requests);
+
+
     v1pv.setMetadata(metadata);
     v1pv.setSpec(spec);
+    V1HostPathVolumeSource hostPath = new V1HostPathVolumeSource();
+    hostPath.setPath(persistentVolume.path());
+    v1pv.getSpec().setHostPath(hostPath);
+    v1pv.getSpec().setPersistentVolumeReclaimPolicy(persistentVolume.persistentVolumeReclaimPolicy());
+    v1pv.getSpec().setVolumeMode(persistentVolume.volumeMode());
+
     return Kubernetes.createPv(v1pv);
   }
 
