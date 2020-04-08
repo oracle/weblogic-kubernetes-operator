@@ -17,34 +17,29 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @ApiModel(description = "Describes the configuration for a PersistentVolume.")
 public class PersistentVolume {
 
-  @ApiModelProperty(
-      "The labels to be attached to generated resources. The label names must "
-      + "not start with 'weblogic.'.")
+  @ApiModelProperty("The labels to be attached to generated volume.")
   private Map<String, String> labels = new HashMap<>();
-
-  @ApiModelProperty("StorageClass Name of the volume.")
-  private String storageClassName;
-
-  @ApiModelProperty("Storage capacity of the volume.")
-  private String capacity;
-
-  @ApiModelProperty("Access Mode of the volume.")
-  private List<String> accessMode = new ArrayList<>();
-
-  @ApiModelProperty("Persistent Volume Reclaim Policy")
-  private String persistentVolumeReclaimPolicy;
-
-  @ApiModelProperty("Persistent Volume Mode")
-  private String volumeMode;
-
-  @ApiModelProperty("Persistent Volume Host Path")
-  private String path;
 
   @ApiModelProperty("Persistent Volume Name")
   private String name;
 
-  @ApiModelProperty("Persistent Volume Namespace")
-  private String namespace;
+  @ApiModelProperty("Access Mode of the volume.")
+  private List<String> accessMode = new ArrayList<>();
+
+  @ApiModelProperty("Storage capacity of the volume.")
+  private String storage;
+
+  @ApiModelProperty("Persistent Volume Host Path")
+  private String path;
+
+  @ApiModelProperty("Persistent Volume Reclaim Policy")
+  private String persistentVolumeReclaimPolicy;
+
+  @ApiModelProperty("StorageClass Name of the volume.")
+  private String storageClassName;
+
+  @ApiModelProperty("Persistent Volume Mode")
+  private String volumeMode;
 
   public PersistentVolume labels(Map<String, String> labels) {
     this.labels = labels;
@@ -53,60 +48,6 @@ public class PersistentVolume {
 
   public Map<String, String> labels() {
     return labels;
-  }
-
-  public PersistentVolume storageClassName(String storageClassName) {
-    this.storageClassName = storageClassName;
-    return this;
-  }
-
-  public String storageClassName() {
-    return storageClassName;
-  }
-
-  public PersistentVolume capacity(String capacity) {
-    this.capacity = capacity;
-    return this;
-  }
-
-  public String capacity() {
-    return capacity;
-  }
-
-  public PersistentVolume accessMode(List<String> accessMode) {
-    this.accessMode = accessMode;
-    return this;
-  }
-
-  public List<String> accessMode() {
-    return accessMode;
-  }
-
-  public PersistentVolume persistentVolumeReclaimPolicy(String persistentVolumeReclaimPolicy) {
-    this.persistentVolumeReclaimPolicy = persistentVolumeReclaimPolicy;
-    return this;
-  }
-
-  public String persistentVolumeReclaimPolicy() {
-    return persistentVolumeReclaimPolicy;
-  }
-
-  public PersistentVolume volumeMode(String volumeMode) {
-    this.volumeMode = volumeMode;
-    return this;
-  }
-
-  public String volumeMode() {
-    return volumeMode;
-  }
-
-  public PersistentVolume path(String path) {
-    this.path = path;
-    return this;
-  }
-
-  public String path() {
-    return path;
   }
 
   public PersistentVolume name(String name) {
@@ -118,27 +59,71 @@ public class PersistentVolume {
     return name;
   }
 
-  public PersistentVolume namespace(String namespace) {
-    this.namespace = namespace;
+  public PersistentVolume accessMode(List<String> accessMode) {
+    this.accessMode = accessMode;
     return this;
   }
 
-  public String namespace() {
-    return namespace;
+  public List<String> accessMode() {
+    return accessMode;
+  }
+
+  public PersistentVolume storage(String storage) {
+    this.storage = storage;
+    return this;
+  }
+
+  public String storage() {
+    return storage;
+  }
+
+  public PersistentVolume path(String path) {
+    this.path = path;
+    return this;
+  }
+
+  public String path() {
+    return path;
+  }
+
+  public PersistentVolume persistentVolumeReclaimPolicy(String persistentVolumeReclaimPolicy) {
+    this.persistentVolumeReclaimPolicy = persistentVolumeReclaimPolicy;
+    return this;
+  }
+
+  public String persistentVolumeReclaimPolicy() {
+    return persistentVolumeReclaimPolicy;
+  }
+
+  public PersistentVolume storageClassName(String storageClassName) {
+    this.storageClassName = storageClassName;
+    return this;
+  }
+
+  public String storageClassName() {
+    return storageClassName;
+  }
+
+  public PersistentVolume volumeMode(String volumeMode) {
+    this.volumeMode = volumeMode;
+    return this;
+  }
+
+  public String volumeMode() {
+    return volumeMode;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
       .append("labels", labels)
-      .append("storageClassName", storageClassName)
-      .append("capacity", capacity)
-      .append("accessMode", accessMode)
-      .append("persistentVolumeReclaimPolicy", persistentVolumeReclaimPolicy)
-      .append("volumeMode", volumeMode)
-      .append("path", path)
       .append("name", name)
-      .append("namespace", namespace)
+      .append("accessMode", accessMode)
+      .append("capacity", storage)
+      .append("path", path)
+      .append("persistentVolumeReclaimPolicy", persistentVolumeReclaimPolicy)
+      .append("storageClassName", storageClassName)
+      .append("volumeMode", volumeMode)
       .toString();
   }
 
@@ -154,14 +139,13 @@ public class PersistentVolume {
     PersistentVolume rhs = (PersistentVolume) other;
     return new EqualsBuilder()
       .append(labels, rhs.labels)
-      .append(storageClassName, rhs.storageClassName)
-      .append(capacity, rhs.capacity)
-      .append(accessMode, rhs.accessMode)
-      .append(persistentVolumeReclaimPolicy, rhs.persistentVolumeReclaimPolicy)
-      .append(volumeMode, rhs.volumeMode)
-      .append(path, rhs.path)
       .append(name, rhs.name)
-      .append(namespace, rhs.namespace)
+      .append(accessMode, rhs.accessMode)
+      .append(storage, rhs.storage)
+      .append(path, rhs.path)
+      .append(persistentVolumeReclaimPolicy, rhs.persistentVolumeReclaimPolicy)
+      .append(storageClassName, rhs.storageClassName)
+      .append(volumeMode, rhs.volumeMode)
       .isEquals();
   }
 
@@ -169,14 +153,13 @@ public class PersistentVolume {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
       .append(labels)
-      .append(storageClassName)
-      .append(capacity)
-      .append(accessMode)
-      .append(persistentVolumeReclaimPolicy)
-      .append(volumeMode)
-      .append(path)
       .append(name)
-      .append(namespace)
+      .append(accessMode)
+      .append(storage)
+      .append(path)
+      .append(persistentVolumeReclaimPolicy)
+      .append(storageClassName)
+      .append(volumeMode)
       .toHashCode();
   }
 

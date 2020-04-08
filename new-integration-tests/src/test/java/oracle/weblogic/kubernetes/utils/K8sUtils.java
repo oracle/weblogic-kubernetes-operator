@@ -19,36 +19,45 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.weblogic.domain.PersistentVolume;
 import oracle.weblogic.domain.PersistentVolumeClaim;
 
+/**
+ * Helper class to build Kubernetes objects.
+ */
 public class K8sUtils {
 
+  /**
+   * Creates a V1PersistentVolume object given a PersistentVolume POJO object
+   *
+   * @param persistentVolume POJO object of PersistentVolume containing PV configuration data
+   * @return V1PersistentVolume object
+   * @throws ApiException when Kubernetes objects fails to be created
+   */
   public static V1PersistentVolume createPVObject(PersistentVolume persistentVolume) throws ApiException {
     // create a Kubernetes V1PersistentVolume object
     V1PersistentVolume v1pv = new V1PersistentVolume();
 
     // build metadata object
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
-        .withName(persistentVolume.name()) // set PVC name
-        .withNamespace(persistentVolume.namespace()) // set PVC namespace
+        .withName(persistentVolume.name()) // set PV name
+        .withLabels(persistentVolume.labels()) // set PV labels
         .build();
-    // set PVC labels
-    metadata.setLabels(persistentVolume.labels());
 
     // build spec object
     V1PersistentVolumeSpec spec = new V1PersistentVolumeSpec();
     // set spec storageclassname and accessModes
-    spec.setStorageClassName(persistentVolume.storageClassName());
     spec.setAccessModes(persistentVolume.accessMode());
+    spec.setStorageClassName(persistentVolume.storageClassName());
 
     v1pv.setMetadata(metadata);
     v1pv.setSpec(spec);
     v1pv.getSpec().setPersistentVolumeReclaimPolicy(persistentVolume.persistentVolumeReclaimPolicy());
     v1pv.getSpec().setVolumeMode(persistentVolume.volumeMode());
 
-    // build resource requirements object
-    Map<String, Quantity> requests = new HashMap<>();
-    Quantity maxClaims = Quantity.fromString(persistentVolume.capacity());
-    requests.put("storage", maxClaims);
-    spec.setCapacity(requests);
+    // set storage and path
+    Map<String, Quantity> capacity = new HashMap<>();
+    Quantity maxClaims = Quantity.fromString(persistentVolume.storage());
+    capacity.put("storage", maxClaims);
+    spec.setCapacity(capacity);
+
     V1HostPathVolumeSource hostPath = new V1HostPathVolumeSource();
     hostPath.setPath(persistentVolume.path());
     v1pv.getSpec().setHostPath(hostPath);
@@ -56,6 +65,14 @@ public class K8sUtils {
     return v1pv;
   }
 
+  /**
+   * Creates a V1PersistentVolumeClaim object given a PersistentVolumeClaim POJO object
+   *
+   * @param persistentVolumeClaim POJO object of PersistentVolumeClaim containing PVC configuration
+    data
+   * @return V1PersistentVolume object
+   * @throws ApiException when Kubernetes objects fails to be created
+   */
   public static V1PersistentVolumeClaim createPVCObject(
       PersistentVolumeClaim persistentVolumeClaim) throws ApiException {
 
@@ -66,25 +83,25 @@ public class K8sUtils {
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
         .withName(persistentVolumeClaim.name()) // set PVC name
         .withNamespace(persistentVolumeClaim.namespace()) // set PVC namespace
+        .withLabels(persistentVolumeClaim.labels()) // set PVC labels
         .build();
-    // set PVC labels
-    metadata.setLabels(persistentVolumeClaim.labels());
 
     // build spec object
     V1PersistentVolumeClaimSpec spec = new V1PersistentVolumeClaimSpec();
     // set spec storageclassname and accessModes
-    spec.setStorageClassName(persistentVolumeClaim.storageClassName());
     spec.setAccessModes(persistentVolumeClaim.accessMode());
+    spec.setStorageClassName(persistentVolumeClaim.storageClassName());
 
-    // build resource requirements object
-    Map<String, Quantity> requests = new HashMap<>();
-    Quantity maxClaims = Quantity.fromString(persistentVolumeClaim.capacity());
-    requests.put("storage", maxClaims);
-    V1ResourceRequirements resources = new V1ResourceRequirements();
-    resources.setRequests(requests);
-
+    // set the matadata and spec objects
     v1pvc.setMetadata(metadata);
     v1pvc.setSpec(spec);
+
+    // build resource requirements object
+    Quantity maxClaims = Quantity.fromString(persistentVolumeClaim.storage());
+    Map<String, Quantity> capacity = new HashMap<>();
+    capacity.put("storage", maxClaims);
+    V1ResourceRequirements resources = new V1ResourceRequirements();
+    resources.setRequests(capacity);
     v1pvc.getSpec().setResources(resources);
 
     return v1pvc;

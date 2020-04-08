@@ -8,12 +8,14 @@ import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.PersistentVolume;
 import oracle.weblogic.domain.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.K8sUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -42,33 +44,50 @@ class ItSimpleDomainValidation implements LoggedTest {
         "Failed to create unique namespace due to ApiException");
     logger.info(String.format("Got a new namespace called %s", namespace));
 
+    // create a persistent volume claim
+    final String storageClassName = domainUID + "-weblogic-domain-storage-class";
+    final String pvcName = domainUID + "-pvc";
+    PersistentVolumeClaim persistentVolumeClaim = new PersistentVolumeClaim();
+    persistentVolumeClaim.labels().put("weblogic.resourceVersion", "domain-v2");
+    persistentVolumeClaim.labels().put("weblogic.domainUID", domainUID);
+    persistentVolumeClaim.accessMode().add("ReadWriteMany");
+    persistentVolumeClaim
+        .name(pvcName)
+        .namespace(namespace)
+        .storage("10Gi")
+        .storageClassName(storageClassName)
+        .volumeMode("Filesystem")
+        .volumeName(domainUID + "-weblogic-pv");
+
+    assertDoesNotThrow(
+        () -> TestActions.createPersistentVolumeClaim(K8sUtils.createPVCObject(persistentVolumeClaim))
+    );
+
+    // create a persistent volume
+    final String pvName = domainUID + "-pv";
+    final String pvPath = System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume";
+    PersistentVolume persistentVolume = new PersistentVolume();
+    persistentVolume.labels().put("weblogic.resourceVersion", "domain-v2");
+    persistentVolume.labels().put("weblogic.domainUID", domainUID);
+    persistentVolume.accessMode().add("ReadWriteMany");
+    persistentVolume
+        .name(pvName)
+        .storage("10Gi")
+        .path(pvPath)
+        .persistentVolumeReclaimPolicy("Recycle")
+        .storageClassName(storageClassName)
+        .volumeMode("Filesystem");
+
+    assertDoesNotThrow(
+        () -> TestActions.createPersistentVolume(K8sUtils.createPVObject(persistentVolume))
+    );
+
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";
     final V1ServiceAccount serviceAccount = assertDoesNotThrow(
         () -> Kubernetes.createServiceAccount(new V1ServiceAccount()
-            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+        .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
     logger.info("Created service account: " + serviceAccount.getMetadata().getName());
-
-    // create a persistent volume claim
-    PersistentVolumeClaim persistentVolumeClaim = new PersistentVolumeClaim();
-    persistentVolumeClaim.labels().put("weblogic.resourceVersion", "domain-v2");
-    persistentVolumeClaim.labels().put("weblogic.domainUID", "mydomain");
-    persistentVolumeClaim.accessMode().add("ReadWriteMany");
-    persistentVolumeClaim
-      .capacity("10Gi")
-      .persistentVolumeReclaimPolicy("Recycle")
-      .storageClassName("itoperator-domain-2-weblogic-sample-storage-class")
-      .name("mypvc")
-        .namespace("mypvc-ns");
-
-    assertDoesNotThrow(
-        () -> TestActions.createPersistentVolumeClaim(persistentVolumeClaim)
-    );
-
-    persistentVolumeClaim.name("mypv").namespace("mypv-ns");
-    assertDoesNotThrow(
-        () -> TestActions.createPersistentVolume(persistentVolumeClaim)
-    );
 
     // create the domain CR
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
