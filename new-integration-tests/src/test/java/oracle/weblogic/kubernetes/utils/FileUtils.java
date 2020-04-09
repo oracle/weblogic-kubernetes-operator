@@ -72,12 +72,16 @@ public class FileUtils {
   public static void cleanupDirectory(String dir) throws IOException {
     File file = new File(dir);
     logger.info("Cleaning up directory " + dir);
-    boolean isDir = file.exists() && file.isDirectory();
-    assertThat(isDir)
+    if (!file.exists()) {
+      // nothing to do
+      return;
+    }
+
+    assertThat(file.isDirectory())
         .as("Make sure the given name is a directory")
         .withFailMessage("Cannot clean up something that is not a directory")
         .isTrue();
-      
+
     Files.walk(Paths.get(dir))
         .sorted(Comparator.reverseOrder())
         .map(Path::toFile)
