@@ -294,7 +294,7 @@ public class TestActions {
    */
   public static boolean deletePersistentVolumeClaim(String name, String namespace)
       throws ApiException {
-    return oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim.delete(name, namespace);
+    return PersistentVolumeClaim.delete(name, namespace);
   }
 
   // --------------------------  secret  ----------------------------------
