@@ -447,7 +447,7 @@ public class Domain {
                 + this.getDomainUid()
                 + "-"
                 + this.adminServerName
-                + " /usr/bin/curl ");
+                + " --bash -c 'curl ");
 
     /*
      * Make sure we can reach the port,
@@ -465,8 +465,13 @@ public class Domain {
       callWebAppAndWaitTillReady(
           new StringBuffer(curlCmd.toString())
               .append(serverAppUrl.toString())
-              .append(" -- --write-out %{http_code} -o /dev/null")
+              .append("  --write-out %{http_code} -o /dev/null'")
               .toString());
+      LoggerHelper.getLocal().log(Level.INFO,
+              "Executing curl command " + curlCmd
+                      + serverAppUrl
+                      + "  --write-out %{http_code} -o /dev/null'");
+
     }
 
     /*
