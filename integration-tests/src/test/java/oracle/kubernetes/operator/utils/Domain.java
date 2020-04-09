@@ -447,7 +447,7 @@ public class Domain {
                 + this.getDomainUid()
                 + "-"
                 + this.adminServerName
-                + " --bash -c 'curl ");
+                + " -- bash -c 'curl ");
 
     /*
      * Make sure we can reach the port,
