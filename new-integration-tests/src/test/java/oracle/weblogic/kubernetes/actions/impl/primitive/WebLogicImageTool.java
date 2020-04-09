@@ -26,15 +26,15 @@ public class WebLogicImageTool {
   private WITParams params;
 
   /**
-   * Set up the WITParams with the default values
-   * @return the instance of WITParams
+   * Create a WITParams with the default values.
+   * @return a WITParams instance
    */
   public static WITParams defaultWITParams() {
     return new WITParams().defaults();
   }
 
   /**
-   * Set up the WebLogicImageTool with given parameters
+   * Set up the WebLogicImageTool with given parameters.
    * @return the instance of WebLogicImageTool 
    */
   public static WebLogicImageTool withParams(WITParams params) {
@@ -47,7 +47,7 @@ public class WebLogicImageTool {
   }
 
   /**
-   * Create an image using the params using WIT update command
+   * Create an image using the params using WIT update command.
    * @return true if the command succeeds 
    */
   public boolean updateImage() {

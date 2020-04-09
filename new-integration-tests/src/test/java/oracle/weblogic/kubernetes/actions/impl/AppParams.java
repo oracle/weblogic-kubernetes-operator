@@ -4,7 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 /**
- * Contains the parameters for creating an application archive
+ * Contains the parameters for creating an application archive.
  */
 
 public class AppParams {

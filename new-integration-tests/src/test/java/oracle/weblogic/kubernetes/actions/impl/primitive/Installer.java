@@ -33,8 +33,8 @@ public class Installer {
   private InstallParams params;
   
   /**
-   * Set up the installer with default values for WDT
-   * @return the InstallParams instance 
+   * Create an InstallParams with the default values for WDT.
+   * @return an InstallParams instance 
    */
   public static InstallParams defaultInstallWDTParams() {
     return new InstallParams()
@@ -48,8 +48,8 @@ public class Installer {
   } 
   
   /**
-   * Set up the installer with default values for WIT
-   * @return the InstallParams instance 
+   * Create an InstallParams with the default values for WIT.
+   * @return an InstallParams instance 
    */
   public static InstallParams defaultInstallWITParams() {
     return new InstallParams()
@@ -64,7 +64,7 @@ public class Installer {
 
   /**
    * Set up the installer with given parameters
-   * @return the installer instance 
+   * @return an installer instance 
    */
   public static Installer withParams(InstallParams params) {
     return new Installer().params(params);

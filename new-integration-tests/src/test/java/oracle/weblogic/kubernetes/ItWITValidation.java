@@ -39,18 +39,18 @@ class ItWITValidation implements LoggedTest {
     // build the model file list
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
     
-    // build an application archive using the src in APP_NAME directory
+    // build an application archive using what is in resources/apps/APP_NAME
     boolean archiveBuilt = buildAppArchive(
         withAppParams()
             .srcDir(APP_NAME));
     
     assertThat(archiveBuilt)
         .as("Create an app archive")
-        .withFailMessage("Failed to create the app archive")
+        .withFailMessage("Failed to create app archive for " + APP_NAME)
         .isTrue();
     
+    // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    
     List<String> archiveList = Collections.singletonList(zipFile);
     
     // build an image using WebLogic Image Tool
@@ -61,10 +61,10 @@ class ItWITValidation implements LoggedTest {
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
             .wdtVersion("latest")
-            .redirect(false));
+            .redirect(true));
  
     assertThat(success)
-        .as("Test the Docker image is created")
+        .as("Test the Docker image creation has succeeded")
         .withFailMessage("Failed to create the image using WebLogic Deploy Tool")
         .isTrue();
     

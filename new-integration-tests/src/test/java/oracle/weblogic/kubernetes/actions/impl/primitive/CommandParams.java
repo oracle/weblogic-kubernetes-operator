@@ -4,12 +4,12 @@
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 /**
- * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
+ * Contains the parameters for an execute command.
  */
 
 public class CommandParams {
 
-  // the command to execute
+  // The command to execute
   private String command;
   
   // Whether the output of the command is redirected to system out

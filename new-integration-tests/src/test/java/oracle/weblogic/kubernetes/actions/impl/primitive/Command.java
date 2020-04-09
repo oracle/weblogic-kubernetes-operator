@@ -11,23 +11,23 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
- * The common functionality of Installer and WebLogicImageTool
+ * The common functionality of Installer and WebLogicImageTool.
  */
 public class Command {
 
   private CommandParams params;
 
   /**
-   * Set up the command with given parameters
-   * @return the command instance 
+   * Create a CommandParams instance with the default values.
+   * @return a CommandParams instance 
    */
   public static CommandParams defaultCommandParams() {
     return new CommandParams().defaults();
   }
 
   /**
-   * Set up the command with given parameters
-   * @return the command instance 
+   * Set up a command with given parameters.
+   * @return a command instance 
    */
   public static Command withParams(CommandParams params) {
     return new Command().params(params);

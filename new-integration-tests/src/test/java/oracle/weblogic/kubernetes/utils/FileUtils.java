@@ -65,7 +65,7 @@ public class FileUtils {
   }
   
   /**
-   * Remove the given directory and its contents
+   * Remove the given directory and its contents.
    *
    * @param dir the directory to be cleaned up
    */
@@ -100,7 +100,7 @@ public class FileUtils {
         try {
           copy(source, destPath.resolve(srcPath.relativize(source)));
         } catch (IOException e) {
-          // cannot throw no runtime exception. the caller checks throwable
+          // cannot throw non runtime exception. the caller checks throwable
           throw new RuntimeException("Failed to copy file " + source);
         }
       });

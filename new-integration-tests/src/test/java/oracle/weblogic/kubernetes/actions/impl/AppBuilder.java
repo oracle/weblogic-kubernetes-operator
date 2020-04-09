@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 /**
- *  Implementation of actions that build an Java application archive file
+ *  Implementation of actions that build an application archive file.
  */
 
 public class AppBuilder {
@@ -26,15 +26,15 @@ public class AppBuilder {
   private AppParams params;
 
   /**
-   * Set up the AppBuilder with given parameters
-   * @return the AppBuilder instance 
+   * Create an AppParams instance with the default values.
+   * @return an AppParams instance 
    */
   public static AppParams defaultAppParams() {
     return new AppParams().defaults();
   }
 
   /**
-   * Set up the AppBuilder with given parameters
+   * Set up the AppBuilder with given parameters.
    * @return the AppBuilder instance 
    */
   public static AppBuilder withParams(AppParams params) {
@@ -84,7 +84,7 @@ public class AppBuilder {
         .withFailMessage("Failed to create an ear archive file")
         .isNull();
 
-    // build an zip file that can be passed to WDT
+    // build a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.srcDir());
     exception = null;
     try {
@@ -107,10 +107,10 @@ public class AppBuilder {
   }
 
   /**
-   * Build an archive that includes the directory structure below the srcDir.
+   * Build an archive that includes the contents in srcDir.
    *
-   * @param jarPath Jar file path for resulting archive
-   * @param srcDir  source directory
+   * @param jarPath Jar file path for the generated archive
+   * @param srcDir source directory
    */
   private boolean buildJarArchive(
       String jarPath, 
@@ -129,8 +129,8 @@ public class AppBuilder {
   /**
    * Build a zip archive that includes an ear file in the srcDir.
    *
-   * @param zipPath zip file path for resulting archive
-   * @param srcDir  source directory
+   * @param zipPath zip file path for the generated archive
+   * @param srcDir source directory
    */
   private boolean buildZipArchive(
       String zipPath, 

@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
@@ -414,7 +415,7 @@ public class TestActions {
   // ------------------------ Application Builder  -------------------------
 
   /**
-   * Create an AppParams instance that contains the parameters for an application
+   * Create an AppParams instance that contains the parameters for an application.
    *
    * @return an instance of AppParams that contains the default values
    */
@@ -424,9 +425,10 @@ public class TestActions {
   }
 
   /**
-   * Create an image using WDT models using WebLogic Image Tool
+   * Create an application archive that can be used by WebLogic Image Tool
+   * to create an image with the application for a model-in-image use case.
    *
-   * @param params - the parameters for creating a model-in-image Docker image
+   * @param params the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
   public static boolean buildAppArchive(AppParams params) {
