@@ -158,7 +158,8 @@ public class WebLogicImageTool {
     return Command.withParams(
             defaultCommandParams()
             .command(command)
-            .redirect(false))
+            .env(params.env())
+            .redirect(params.redirect()))
         .execute();
 
   }
@@ -175,7 +176,8 @@ public class WebLogicImageTool {
     return Command.withParams(
             defaultCommandParams()
             .command(command)
-            .redirect(false))
+            .env(params.env())
+            .redirect(params.redirect()))
         .execute();
   }
 }
