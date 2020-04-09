@@ -41,7 +41,10 @@ public class Command {
   public boolean executeAndVerify() {
     logger.info("Executing command " + params.command());
     try {
-      ExecResult result = ExecCommand.exec(params.command(), params.redirect());
+      ExecResult result = ExecCommand.exec(
+          params.command(), 
+          params.redirect(),
+          params.env());
       return result.exitValue() == 0;
     } catch (IOException ioe) {
       logger.warning("Failed too run the command due to " + ioe.getMessage());

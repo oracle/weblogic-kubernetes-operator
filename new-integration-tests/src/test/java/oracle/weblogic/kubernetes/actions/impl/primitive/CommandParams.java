@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.util.Map;
+
 /**
  * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
  */
@@ -11,7 +13,10 @@ public class CommandParams {
 
   // the command to execute
   private String command;
-  
+ 
+  // The env variables that are needed for running a command
+  private Map<String, String> env;
+
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
   
@@ -26,6 +31,15 @@ public class CommandParams {
 
   public String command() {
     return command;
+  }
+  
+  public CommandParams env(Map<String, String> env) {
+    this.env = env;
+    return this;
+  }
+
+  public Map<String, String> env() {
+    return env;
   }
 
   public CommandParams redirect(boolean redirect) {

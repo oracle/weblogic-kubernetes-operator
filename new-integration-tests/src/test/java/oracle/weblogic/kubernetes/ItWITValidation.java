@@ -4,16 +4,20 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.withWITParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Simple validation of basic WIT functions")
@@ -31,6 +35,11 @@ class ItWITValidation implements LoggedTest {
     // build the model file list
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
+    // Set additional environment variables for WIT
+    checkDirectory(WIT_BUILD_DIR);
+    Map<String, String> env = new HashMap();
+    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+
     // build an image using WebLogic Image Tool
     boolean success = createMIIImage(
         withWITParams()
@@ -38,7 +47,8 @@ class ItWITValidation implements LoggedTest {
             .modelImageTag(IMAGE_TAG)
             .modelFiles(modelList)
             .wdtVersion("latest")
-            .redirect(false));
+            .env(env)
+            .redirect(true));
  
     assertEquals(true, success, "Failed to create the image using WebLogic Deploy Tool");
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
