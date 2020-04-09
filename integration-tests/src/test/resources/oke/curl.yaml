@@ -12,6 +12,6 @@ spec:
       command:
         - sleep
         - "5600"
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
       name: curl
   restartPolicy: Always
