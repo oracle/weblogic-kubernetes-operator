@@ -80,7 +80,7 @@ public class WebLogicImageTool {
             .command(buildCommand())
             .env(params.env())
             .redirect(params.redirect()))
-        .executeAndVerify();
+        .execute();
   }
   
   private boolean downloadWIT() {
@@ -159,7 +159,7 @@ public class WebLogicImageTool {
             defaultCommandParams()
             .command(command)
             .redirect(false))
-        .executeAndVerify();
+        .execute();
 
   }
   
@@ -176,6 +176,6 @@ public class WebLogicImageTool {
             defaultCommandParams()
             .command(command)
             .redirect(false))
-        .executeAndVerify();
+        .execute();
   }
 }

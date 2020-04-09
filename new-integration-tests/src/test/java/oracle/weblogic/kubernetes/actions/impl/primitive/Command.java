@@ -38,7 +38,7 @@ public class Command {
     return this;
   }
 
-  public boolean executeAndVerify() {
+  public boolean execute() {
     logger.info("Executing command " + params.command());
     try {
       ExecResult result = ExecCommand.exec(

@@ -91,7 +91,7 @@ public class Installer {
           defaultCommandParams() 
               .command(buildDownloadCommand())
               .redirect(params.redirect()))
-          .executeAndVerify();
+          .execute();
     }
     if (params.unzip()) {
       // only unzip WIT once
@@ -109,7 +109,7 @@ public class Installer {
         defaultCommandParams()  
             .command(command)
             .redirect(false))
-        .executeAndVerify();
+        .execute();
   }
 
   private String buildDownloadCommand() {

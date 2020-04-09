@@ -123,7 +123,7 @@ public class AppBuilder {
             defaultCommandParams()
             .command(cmd)
             .redirect(false))
-        .executeAndVerify();
+        .execute();
   }
 
   /**
@@ -147,6 +147,6 @@ public class AppBuilder {
         defaultCommandParams()
             .command(cmd)
             .redirect(false))
-        .executeAndVerify();
+        .execute();
   }
 }
