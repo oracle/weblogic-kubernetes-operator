@@ -11,7 +11,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
- * The common functionality of Installer and WebLogicImageTool.
+ * Implementation of actions that perform command execution.
  */
 public class Command {
 

@@ -47,7 +47,7 @@ public class AppBuilder {
   }
 
   /**
-   * Build an archive file for an application
+   * Build an application archive using a pre-populated AppParams instance.
    * @return true if the command succeeds 
    */
   public boolean build() {
@@ -109,7 +109,7 @@ public class AppBuilder {
   /**
    * Build an archive that includes the contents in srcDir.
    *
-   * @param jarPath Jar file path for the generated archive
+   * @param jarPath Jar file path for the resulting archive
    * @param srcDir source directory
    */
   private boolean buildJarArchive(
@@ -129,7 +129,7 @@ public class AppBuilder {
   /**
    * Build a zip archive that includes an ear file in the srcDir.
    *
-   * @param zipPath zip file path for the generated archive
+   * @param zipPath zip file path for the resulting archive
    * @param srcDir source directory
    */
   private boolean buildZipArchive(

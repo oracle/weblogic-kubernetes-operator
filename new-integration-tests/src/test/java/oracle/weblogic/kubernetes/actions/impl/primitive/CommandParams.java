@@ -6,7 +6,7 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.util.Map;
 
 /**
- * Contains the parameters for an execute command.
+ * Contains the parameters for executing a command.
  */
 
 public class CommandParams {

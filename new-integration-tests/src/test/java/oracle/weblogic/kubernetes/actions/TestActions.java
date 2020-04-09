@@ -415,9 +415,9 @@ public class TestActions {
   // ------------------------ Application Builder  -------------------------
 
   /**
-   * Create an AppParams instance that contains the parameters for an application.
+   * Create an AppParams instance that contains the default values.
    *
-   * @return an instance of AppParams that contains the default values
+   * @return an AppParams instance that contains the default values
    */
   public static AppParams withAppParams() {
     return
