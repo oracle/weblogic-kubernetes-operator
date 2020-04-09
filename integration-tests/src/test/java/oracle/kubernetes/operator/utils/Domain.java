@@ -482,7 +482,8 @@ public class Domain {
         .append(":")
         .append(port)
         .append("/");
-    clusterAppUrl.append(path);
+    clusterAppUrl.append(path)
+        .append("'");
 
     // execute curl and look for each managed server name in response
     callWebAppAndCheckForServerNameInResponse(
