@@ -15,6 +15,8 @@ public interface ActionConstants {
   public static final String MODEL_DIR = RESOURCE_DIR + "/wdt-models"; 
   // Directory for download items
   public static final String DOWNLOAD_DIR = WORK_DIR + "/download";
+  // Directory for WIT build
+  public static final String WIT_BUILD_DIR = WORK_DIR + "/wit-build"; 
   
   // ------------ WebLogicImageTool action constants -------------
   public static final String WLS = "WLS";

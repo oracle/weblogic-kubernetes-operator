@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.List;
+import java.util.Map;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DEFAULT_MODEL_IMAGE_TAG;
@@ -45,6 +46,9 @@ public class WITParams {
   // The type of the WebLogic domain. The valid values are "WLS, "JRF", and "Restricted JRF"
   private String domainType;
   
+  // The env variables that are needed for running WIT
+  private Map<String, String> env;
+
   // Whether the output of the command is redirected to system out
   private boolean redirect;
   
@@ -140,6 +144,15 @@ public class WITParams {
 
   public String generatedImageName() {
     return modelImageName + ":" + modelImageTag;
+  }
+  
+  public WITParams env(Map<String, String> env) {
+    this.env = env;
+    return this;
+  }
+
+  public Map<String, String> env() {
+    return env;
   }
 
   public WITParams redirect(boolean redirect) {
