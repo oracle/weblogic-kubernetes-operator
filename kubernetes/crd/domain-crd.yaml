@@ -5430,8 +5430,8 @@ spec:
                   if logHomeEnabled is false.
               includeServerOutInPodLog:
                 type: boolean
-                description: If true (the default), the server .out file will be included
-                  in the pod's stdout.
+                description: If true (the default), then the server .out file will
+                  be included in the pod's stdout.
               clusters:
                 type: array
                 description: Configuration for the clusters.

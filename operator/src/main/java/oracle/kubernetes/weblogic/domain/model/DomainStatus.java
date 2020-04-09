@@ -275,7 +275,7 @@ public class DomainStatus {
   /**
    * Status of WebLogic servers in this domain.
    *
-   * @return servers sorted list of ServerStatus containing status of WebLogic servers in this domain
+   * @return a sorted list of ServerStatus containing status of WebLogic servers in this domain
    */
   public List<ServerStatus> getServers() {
     List<ServerStatus> sortedServers = new ArrayList<>(servers);
@@ -330,7 +330,7 @@ public class DomainStatus {
   /**
    * Status of WebLogic clusters in this domain.
    *
-   * @return clusters sorted list of ClusterStatus containing status of WebLogic clusters in this domain
+   * @return a sorted list of ClusterStatus containing status of WebLogic clusters in this domain
    */
   public List<ClusterStatus> getClusters() {
     List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
