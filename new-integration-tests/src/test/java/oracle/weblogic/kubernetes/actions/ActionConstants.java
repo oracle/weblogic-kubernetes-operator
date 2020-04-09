@@ -21,6 +21,8 @@ public interface ActionConstants {
   public static final String STAGE_DIR = WORK_DIR + "/stage";
   //Directory for archiving purposes
   public static final String ARCHIVE_DIR = STAGE_DIR + "/archive";
+  // Directory for WIT build
+  public static final String WIT_BUILD_DIR = WORK_DIR + "/wit-build"; 
   
   // ------------ WebLogicImageTool action constants -------------
   public static final String WLS = "WLS";

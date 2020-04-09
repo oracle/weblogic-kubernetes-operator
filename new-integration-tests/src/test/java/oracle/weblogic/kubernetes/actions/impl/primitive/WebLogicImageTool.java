@@ -78,6 +78,7 @@ public class WebLogicImageTool {
     return Command.withParams(
         defaultCommandParams()
             .command(buildCommand())
+            .env(params.env())
             .redirect(params.redirect()))
         .executeAndVerify();
   }
