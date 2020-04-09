@@ -6,7 +6,7 @@ weight: 6
 description: "Tools that are available to build CI/CD pipelines."
 ---
 
-### WebLogic Deploy Tooling (WDT)
+#### WebLogic Deploy Tooling (WDT)
 
 You can use several of the [WDT tools](https://github.com/oracle/weblogic-deploy-tooling)
 in a CI/CD pipeline. For example, the
@@ -22,7 +22,7 @@ interesting.  A good way to get a jumpstart on a model is to use the
 `discoverDomain` tool in WDT which builds a model based on an existing domain.
 
 {{% notice note %}}
-A Model in Image domain takes complete advantage of the WDT tool. It let's
+A Model in Image domain completely takes advantage of the WDT tool. It let's
 you specify an operator domain directly with a model instead of requiring
 that you supply a domain home.
 {{% /notice %}}
@@ -40,7 +40,7 @@ Other than the tools themselves, there are three components to the WDT tools:
 - *The Properties File* - A standard Java properties file.  
   A property file used to provide values to placeholders in the model.
 
-### WDT Create Domain Samples
+#### WDT Create Domain Samples
 
 - (Docker) A sample for creating a domain in a Docker image with WDT can be found
   [here](https://github.com/oracle/weblogic-deploy-tooling/tree/master/samples/docker-domain).
@@ -52,7 +52,7 @@ Other than the tools themselves, there are three components to the WDT tools:
   instead of a domain home. In this case, the operator generates the domain
   home for you at runtime.
 
-### WebLogic Scripting Tool (WLST)
+#### WebLogic Scripting Tool (WLST)
 
 You can use WLST scripts to create and update domain homes in a CI/CD pipeline
 for Domain in Image and Domain in PV domains.
@@ -67,7 +67,7 @@ language.  WDT provides advantages like being able to use the same model with
 different versions of WebLogic, whereas you may need to update WLST scripts
 manually when migrating to a new version of WebLogic for example.
 
-### WebLogic pack and unpack tools
+#### WebLogic pack and unpack tools
 
 WebLogic Server provides tools called "pack" and "unpack" that can be used to
 "clone" a domain home.  These tools do not preserve the domain encryption key.

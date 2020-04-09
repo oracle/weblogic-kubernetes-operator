@@ -41,7 +41,7 @@ $ kubectl -n domain1-ns label secret domain1-weblogic-credentials \
 
 {{% notice tip %}}
 Oracle recommends that you not include unencrypted passwords on command lines.
-Passwords and other sensitive data can be prompted for or looked up by shell scripts and/or
+Passwords and other sensitive data can be prompted for or looked up by shell scripts or
 tooling. For more information about creating Kubernetes secrets, see the Kubernetes
 [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#creating-your-own-secrets)
 documentation.
@@ -52,7 +52,7 @@ The operator's introspector job will expect the secret key names to be:
 - `username`
 - `password`
 
-For example, here is what results when describing the Kubernetes `Secret`:
+For example, here is the result when describing the Kubernetes `Secret`:
 ```bash
 $ kubectl -n domain1-ns describe secret domain1-weblogic-credentials
 Name:         domain1-weblogic-credentials
@@ -117,7 +117,7 @@ For more information, see
 
 The operator can expose an external REST HTTPS interface which can be
 accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
-is used to hold the certificate(s) and private key.
+is used to hold the certificates and private key.
 
 {{% notice info %}}
 For more information, see [Certificates]({{<relref "/security/certificates#additional-reading">}}).
