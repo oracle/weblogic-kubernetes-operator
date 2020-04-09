@@ -8,9 +8,8 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 /**
- * TestAction class PersistentVolumeClaim to create and delete a Kubernetes Persistent Volume
- * It takes a oracle.weblogic.domain.PersistentVolumeClaim persistentVolumeClaim POJO object
- * to pass the PersistentVolumeClaim details to the create method
+ * TestAction class PersistentVolumeClaim to create and delete a Kubernetes Persistent Volume.
+ *
  */
 public class PersistentVolumeClaim {
 

@@ -27,7 +27,7 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 public class K8sUtils {
 
   /**
-   * Creates a V1PersistentVolume object given a PersistentVolume POJO object
+   * Creates a V1PersistentVolume object given a PersistentVolume POJO object.
    *
    * @param persistentVolume POJO object of PersistentVolume containing PV configuration data
    * @return V1PersistentVolume object
@@ -69,7 +69,7 @@ public class K8sUtils {
   }
 
   /**
-   * Creates a V1PersistentVolumeClaim object given a PersistentVolumeClaim POJO object
+   * Creates a V1PersistentVolumeClaim object given a PersistentVolumeClaim POJO object.
    *
    * @param persistentVolumeClaim POJO object of PersistentVolumeClaim containing PVC configuration
     data
