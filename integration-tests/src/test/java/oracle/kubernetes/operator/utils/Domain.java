@@ -465,12 +465,8 @@ public class Domain {
       callWebAppAndWaitTillReady(
           new StringBuffer(curlCmd.toString())
               .append(serverAppUrl.toString())
-              .append("  --write-out %{http_code} -o /dev/null'")
+              .append("  -w \"%{http_code}\" -o /dev/null'")
               .toString());
-      LoggerHelper.getLocal().log(Level.INFO,
-              "Executing curl command " + curlCmd
-                      + serverAppUrl
-                      + "  --write-out %{http_code} -o /dev/null'");
 
     }
 
@@ -1696,7 +1692,9 @@ public class Domain {
       String responseCode = result.stdout().trim();
       if (result.exitValue() != 0 || !responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
-            "callWebApp did not return 200 status code, got "
+            "callWebApp "
+                + curlCmd
+                + "did not return 200 status code, got "
                 + responseCode
                 + ", iteration "
                 + i
