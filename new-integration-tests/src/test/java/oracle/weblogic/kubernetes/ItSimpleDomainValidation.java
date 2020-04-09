@@ -46,37 +46,38 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     // create a persistent volume claim
     final String storageClassName = domainUID + "-weblogic-domain-storage-class";
-    final String pvcName = domainUID + "-pvc";
+    final String pvcName = domainUID + "-pvc"; // name of the persistent volume claim
     PersistentVolumeClaim persistentVolumeClaim = new PersistentVolumeClaim();
     persistentVolumeClaim.labels().put("weblogic.resourceVersion", "domain-v2");
-    persistentVolumeClaim.labels().put("weblogic.domainUID", domainUID);
-    persistentVolumeClaim.accessMode().add("ReadWriteMany");
+    persistentVolumeClaim.labels().put("weblogic.domainUID", domainUID); // label it with domain uid
+    persistentVolumeClaim.accessMode().add("ReadWriteMany"); // access mode of the persistent volume claim
     persistentVolumeClaim
         .name(pvcName)
-        .namespace(namespace)
-        .storage("10Gi")
+        .namespace(namespace)  // name space
+        .storage("10Gi") // storage capacity requirement
         .storageClassName(storageClassName)
-        .volumeMode("Filesystem")
-        .volumeName(domainUID + "-weblogic-pv");
+        .volumeMode("Filesystem") // Block or Filesystem
+        .volumeName(domainUID + "-weblogic-pv"); // volume name
 
     assertDoesNotThrow(
         () -> TestActions.createPersistentVolumeClaim(K8sUtils.createPVCObject(persistentVolumeClaim))
     );
 
     // create a persistent volume
-    final String pvName = domainUID + "-pv";
+    final String pvName = domainUID + "-pv"; // name of the persistent volume
+    // path for the persistent volume
     final String pvPath = System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume";
     PersistentVolume persistentVolume = new PersistentVolume();
     persistentVolume.labels().put("weblogic.resourceVersion", "domain-v2");
-    persistentVolume.labels().put("weblogic.domainUID", domainUID);
-    persistentVolume.accessMode().add("ReadWriteMany");
+    persistentVolume.labels().put("weblogic.domainUID", domainUID); // label it with domain uid
+    persistentVolume.accessMode().add("ReadWriteMany"); // access mode of the persistent volume
     persistentVolume
         .name(pvName)
-        .storage("10Gi")
+        .storage("10Gi") // storage capacity requirement
         .path(pvPath)
-        .persistentVolumeReclaimPolicy("Recycle")
-        .storageClassName(storageClassName)
-        .volumeMode("Filesystem");
+        .persistentVolumeReclaimPolicy("Recycle") // one of Recycle, Retain, Delete
+        .storageClassName(storageClassName) // storage class string
+        .volumeMode("Filesystem"); // Block or Filesystem
 
     assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(K8sUtils.createPVObject(persistentVolume))
