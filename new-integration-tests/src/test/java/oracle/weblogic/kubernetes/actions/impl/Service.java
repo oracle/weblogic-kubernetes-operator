@@ -26,9 +26,8 @@ public class Service {
    * @param name name of the Service
    * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(String name, String namespace) throws ApiException {
+  public static boolean delete(String name, String namespace) {
     return Kubernetes.deleteService(name, namespace);
   }
 }

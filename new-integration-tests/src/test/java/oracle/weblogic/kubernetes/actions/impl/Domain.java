@@ -44,10 +44,8 @@ public class Domain {
    * @param domainUID unique domain identifier
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace)
-      throws ApiException {
+  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
     return Kubernetes.deleteDomainCustomResource(domainUID, namespace);
   }
 

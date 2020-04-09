@@ -20,6 +20,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -87,21 +88,17 @@ class ItSimpleDomainValidation implements LoggedTest {
     // wait for the managed servers to exist
 
     // Delete domain custom resource
-    assertDoesNotThrow(
-        () -> deleteDomainCustomResource(domainUID, namespace)
-    );
+    assertTrue(deleteDomainCustomResource(domainUID, namespace));
     logger.info("Deleted Domain Custom Resource " + domainUID + " from " + namespace);
 
     // Delete service account from unique namespace
-    assertDoesNotThrow(
-        () -> Kubernetes.deleteServiceAccount(serviceAccount.getMetadata().getName(),
+    assertTrue(deleteServiceAccount(serviceAccount.getMetadata().getName(),
             serviceAccount.getMetadata().getNamespace()));
-    logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
+    logger.info("Deleted service account '" + serviceAccount.getMetadata().getName()
         + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
     // Delete namespace
-    assertDoesNotThrow(
-        () -> TestActions.deleteNamespace(namespace));
+    assertTrue(TestActions.deleteNamespace(namespace));
     logger.info("Deleted namespace: " + namespace);
   }
 
