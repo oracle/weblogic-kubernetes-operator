@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -656,7 +655,8 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.log(Level.SEVERE, apex.getResponseBody(), apex);
+      logger.severe(apex.getResponseBody());
+      throw apex;
     }
 
     return true;
@@ -699,7 +699,7 @@ public class Kubernetes implements LoggedTest {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.warning("Response Body :" + apex.getResponseBody());
+      logger.severe(apex.getResponseBody());
       throw apex;
     }
 
