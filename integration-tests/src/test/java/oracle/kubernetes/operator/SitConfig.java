@@ -72,21 +72,6 @@ public class SitConfig extends BaseTest {
   }
 
   /**
-   * Destroys the domain.
-   *
-   * @throws Exception when domain destruction fails
-   */
-  protected static void destroySitConfigDomain(Domain domain, boolean domainInImage) throws Exception {
-    if (domain != null) {
-      LoggerHelper.getLocal().log(Level.INFO, "Destroying domain...");
-      domain.destroy();
-      if (domainInImage) {
-        domain.deleteImage();
-      }
-    }
-  }
-
-  /**
    * create domain, mysql database, test directories.
    * @param domainInImage - select domain in image or domain in pv
    * @param domainNS - namespace to create domain

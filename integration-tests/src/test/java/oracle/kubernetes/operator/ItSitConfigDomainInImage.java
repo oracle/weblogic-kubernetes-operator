@@ -90,7 +90,11 @@ public class ItSitConfigDomainInImage extends SitConfig {
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
-      destroySitConfigDomain(domain, true);
+      LoggerHelper.getLocal().log(Level.INFO, "Deleting domain and domain image...");
+      if (domain != null) {
+        domain.destroy();
+        domain.deleteImage();
+      }
       if (operator1 != null) {
         LoggerHelper.getLocal().log(Level.INFO, "Destroying operator...");
         operator1.destroy();
