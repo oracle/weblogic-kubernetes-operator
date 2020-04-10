@@ -14,7 +14,6 @@ import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The utility class for file operations.
@@ -77,10 +76,9 @@ public class FileUtils {
       return;
     }
 
-    assertThat(file.isDirectory())
-        .as("Make sure the given name is a directory")
-        .withFailMessage("Cannot clean up something that is not a directory")
-        .isTrue();
+    if (!file.isDirectory()) {
+      throw new IllegalArgumentException("The parameter " + dir + " should be a directory.");
+    }
 
     Files.walk(Paths.get(dir))
         .sorted(Comparator.reverseOrder())

@@ -15,6 +15,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  *  Implementation of actions that build an application archive file.
@@ -62,7 +63,9 @@ public class AppBuilder {
         });
         
     assertThat(throwable)
-        .as("Create directory " + ARCHIVE_DIR)
+        .as(String.format(
+            "Prepare archive directory %s, and copy app sources over",
+            ARCHIVE_DIR))
         .withFailMessage("Failed to get the directory " + ARCHIVE_DIR + " ready")
         .isNull();
 
@@ -76,14 +79,9 @@ public class AppBuilder {
           .withFailMessage("Failed to create the app ear file " + jarPath) 
           .isTrue();
     } catch (Exception e) {
-      exception = e;
+      fail("Failed to create an ear archive file", e);
     }
     
-    assertThat(exception)
-        .as("Create an application ear file")
-        .withFailMessage("Failed to create an ear archive file")
-        .isNull();
-
     // build a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.srcDir());
     exception = null;
@@ -95,13 +93,8 @@ public class AppBuilder {
           .isTrue();
     
     } catch (Exception e) {
-      exception = e;
+      fail("Failed to create the application archive file " + zipPath, e);
     }
-    
-    assertThat(exception)
-        .as("Create an application archive file")
-        .withFailMessage("Failed to create an applicatio archive file")
-        .isNull();
     
     return true;
   }

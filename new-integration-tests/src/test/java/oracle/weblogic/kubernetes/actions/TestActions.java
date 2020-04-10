@@ -229,7 +229,7 @@ public class TestActions {
    *
    * @return an instance of WITParams that contains the default values
    */
-  public static WITParams withWITParams() {
+  public static WITParams defaultWITParams() {
     return
         WebLogicImageTool.defaultWITParams();
   }
@@ -419,7 +419,7 @@ public class TestActions {
    *
    * @return an AppParams instance that contains the default values
    */
-  public static AppParams withAppParams() {
+  public static AppParams defaultAppParams() {
     return
         AppBuilder.defaultAppParams();
   }

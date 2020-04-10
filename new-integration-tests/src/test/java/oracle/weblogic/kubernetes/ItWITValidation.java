@@ -17,8 +17,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.withAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.withWITParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWITParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +45,7 @@ class ItWITValidation implements LoggedTest {
     
     // build an application archive using what is in resources/apps/APP_NAME
     boolean archiveBuilt = buildAppArchive(
-        withAppParams()
+        defaultAppParams()
             .srcDir(APP_NAME));
     
     assertThat(archiveBuilt)
@@ -64,7 +64,7 @@ class ItWITValidation implements LoggedTest {
 
     // build an image using WebLogic Image Tool
     boolean success = createMIIImage(
-        withWITParams()
+        defaultWITParams()
             .modelImageName(IMAGE_NAME)
             .modelImageTag(IMAGE_TAG)
             .modelFiles(modelList)
