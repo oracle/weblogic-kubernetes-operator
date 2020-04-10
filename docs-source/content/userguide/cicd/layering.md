@@ -8,8 +8,8 @@ description: "Learn about Docker image layering and why it is important."
 
 
 Docker images are composed of layers, as shown in the diagram below.  If you download
-the standard `weblogic:12.2.1.3` image from the [Oracle Container Registry](https://container-registry.oracle.com),
-then you can see these layers using the command  `docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.3`
+the standard `weblogic:12.2.1.4` image from the [Oracle Container Registry](https://container-registry.oracle.com),
+then you can see these layers using the command  `docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.4`
 (the domain layer will not be there).  You are not required to use layers, but
 efficient use of layers is considered a best practice.
 

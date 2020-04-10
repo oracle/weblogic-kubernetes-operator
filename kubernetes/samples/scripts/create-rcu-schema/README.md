@@ -19,7 +19,7 @@ You can access the Database through the NodePort outside of the Kubernetes clust
 
 This script generates the RCU schema based `schemaPrefix` and `dburl`.
 
-The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
+The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
 ```
 $ ./create-rcu-schema.sh -h
@@ -32,12 +32,12 @@ usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <rcuType> -d <dburl> -i <imag
   -p Fmw Infrastructure ImagePull Secret (optional)
       (default: docker-store)
   -i Fmw Infrastructure Image (optional)
-      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3)
+      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4)
   -h Help
 
 $ ./create-rcu-schema.sh -s domain1
 
-ImagePullSecret[docker-store] Image[container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3] dburl[oracle-db.default.svc.cluster.local:1521/devpdb.k8s]
+ImagePullSecret[docker-store] Image[container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4] dburl[oracle-db.default.svc.cluster.local:1521/devpdb.k8s]
 [oracle-db-54667dfd5f-76sxf] already initialized ..
 Checking Pod READY column for State [1/1]
 NAME                         READY   STATUS    RESTARTS   AGE

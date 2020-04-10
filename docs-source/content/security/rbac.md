@@ -23,7 +23,7 @@ the RBAC settings are correct when the operator starts running.
 
 {{% notice info %}}
 For more information about the Kubernetes `ServiceAccount` used by the operator, see
-[Service Accounts]({{<relref "/security/service-accounts.md#weblogic-operator-service-account">}}).
+[Service Accounts]({{<relref "/security/service-accounts#weblogic-server-kubernetes-operator-service-accounts">}}).
 {{% /notice %}}
 
 The general design goal is to provide the operator with the minimum amount of
@@ -74,10 +74,10 @@ The following naming pattern is used for the `Role` and `RoleBinding` objects:
 *Using:*
 
 1. `<type>` as the kind of Kubernetes object:
-  * _role_
-  * _rolebinding_
+     * _role_
+     * _rolebinding_
 2. `<optional-role-name>` as an optional name given to the role or role binding
-  * For example: `namespace`
+     * For example: `namespace`
 
 A complete name for an operator created Kubernetes `RoleBinding` would be:
 
@@ -91,13 +91,13 @@ The following naming pattern is used for the `ClusterRole` and `ClusterRoleBindi
 
 *Using:*
 
-1. `<operator-ns>` as the namespace the operator is installed in
-  * For example: `weblogic-operator-ns`
+1. `<operator-ns>` as the namespace in which the operator is installed
+     * For example: `weblogic-operator-ns`
 2. `<type>` as the kind of Kubernetes object:
-  * _clusterrole_
-  * _clusterrolebinding_
+     * _clusterrole_
+     * _clusterrolebinding_
 3. `<role-name>` as the name given to the role or role binding
-  * For example: `general`
+     * For example: `general`
 
 A complete name for an operator created Kubernetes `ClusterRoleBinding` would be:
 
@@ -121,7 +121,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 Assuming that the operator was installed into the Kubernetes namespace `weblogic-operator-ns`,
 the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` granting permission to the operator.
 
-**Note**: The Operator names in table below represent the `<role-name>` from [cluster names](#kubernetes-cluster-role-and-cluster-role-binding-naming-convention) section.
+**Note**: The operator names in table below represent the `<role-name>` from the [cluster names](#kubernetes-cluster-role-and-cluster-role-binding-naming-convention) section.
 
 | Cluster Role Binding | Mapped to Cluster Role | Resource Access | Notes |
 | --- | --- | --- | --- |

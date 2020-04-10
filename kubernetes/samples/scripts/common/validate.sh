@@ -393,6 +393,10 @@ function validateCommonInputs {
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
   validateFmwDomainType
+  # Below three validate methods are used for MII integration testing
+  validateWdtDomainType
+  validateWdtModelFile
+  validateWdtModelPropertiesFile
 
   failIfValidationErrors
 }
@@ -405,6 +409,56 @@ function validateDomainPVC {
   checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
     validationError "The domain persistent volume claim ${persistentVolumeClaimName} does not exist in namespace ${namespace}"
+  fi
+  failIfValidationErrors
+}
+
+#
+# Function to validate the WDT model file exists
+# used for MII integration testing
+#
+function validateWdtModelFile {
+  # Check if the model file exists
+  if [ ! -z $wdtModelFile ]; then
+    if [ ! -f $wdtModelFile ]; then
+      validationError "The WDT model file ${wdtModelFile} does not exist"
+    fi
+  fi
+  failIfValidationErrors
+}
+
+#
+# Function to validate the WDT model property file exists
+# used for MII integration testing
+#
+function validateWdtModelPropertiesFile {
+  # Check if the model property file exists
+  if [ ! -z $wdtModelPropertiesFile ]; then
+    if [ ! -f $wdtModelPropertiesFile ]; then
+      validationError "The WDT model property file ${wdtModelPropertiesFile} does not exist"
+    fi
+  fi
+  failIfValidationErrors
+}
+
+# Function to validate the wdtDomainType
+# used for MII integration testing
+function validateWdtDomainType {
+  if [ ! -z ${wdtDomainType} ]; then
+    case ${wdtDomainType} in
+      "WLS")
+      ;;
+      "JRF")
+      ;;
+      "RestrictedJRF")
+      ;;
+      *)
+        validationError "Invalid value for wdtDomainType: ${wdtDomainType}. Valid values are WLS or JRF or restrictedJRF."
+      ;;
+    esac
+  else
+    # Set the default
+    wdtDomainType="WLS"
   fi
   failIfValidationErrors
 }

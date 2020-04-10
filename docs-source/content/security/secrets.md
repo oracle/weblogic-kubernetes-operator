@@ -21,7 +21,7 @@ Also, the domain credentials secret must be created in the namespace where the `
 
 {{% notice note %}}
 For an example of a WebLogic domain resource using `webLogicCredentialsSecret`,
-see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#1-use-imagepullsecrets-with-the-domain-resource">}}).
+see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#1-use-imagepullsecrets-with-the-domain-resource">}}).
 {{% /notice %}}
 
 The samples supplied with the operator use a naming convention that follows
@@ -41,7 +41,7 @@ $ kubectl -n domain1-ns label secret domain1-weblogic-credentials \
 
 {{% notice tip %}}
 Oracle recommends that you not include unencrypted passwords on command lines.
-Passwords and other sensitive data can be prompted for or looked up by shell scripts and/or
+Passwords and other sensitive data can be prompted for or looked up by shell scripts or
 tooling. For more information about creating Kubernetes secrets, see the Kubernetes
 [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#creating-your-own-secrets)
 documentation.
@@ -52,7 +52,7 @@ The operator's introspector job will expect the secret key names to be:
 - `username`
 - `password`
 
-For example, here is what results when describing the Kubernetes `Secret`:
+For example, here is the result when describing the Kubernetes `Secret`:
 ```bash
 $ kubectl -n domain1-ns describe secret domain1-weblogic-credentials
 Name:         domain1-weblogic-credentials
@@ -76,7 +76,7 @@ in the registry. The `imagePullSecrets` setting on the `Domain` can be used to s
 Kubernetes `Secret` that holds the registry credentials.
 
 {{% notice info %}}
-For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}).
+For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
 {{% /notice %}}
 
 #### Operator image pull secret
@@ -106,7 +106,7 @@ For more information, see
 The operator supports embedding macros within configuration override templates
 that reference Kubernetes secrets. These Kubernetes secrets can be created with any name in the
 namespace where the `Domain` will be running. The Kubernetes secret names are
-specified using `configOverrideSecrets` in the WebLogic `Domain` resource.
+specified using `configuration.secrets` in the WebLogic `Domain` resource.
 
 {{% notice info %}}
 For more information, see
@@ -117,10 +117,10 @@ For more information, see
 
 The operator can expose an external REST HTTPS interface which can be
 accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
-is used to hold the certificate(s) and private key.
+is used to hold the certificates and private key.
 
 {{% notice info %}}
-For more information, see [Certificates]({{<relref "/security/certificates.md#reference">}}).
+For more information, see [Certificates]({{<relref "/security/certificates#additional-reading">}}).
 {{% /notice %}}
 
 #### Operator internal REST interface secret

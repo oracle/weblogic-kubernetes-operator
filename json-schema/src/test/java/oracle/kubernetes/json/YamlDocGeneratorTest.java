@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class YamlDocGeneratorTest {
-  private static final String K8S_VERSION = "1.9.0";
+  private static final String K8S_VERSION = "1.13.5";
   private SchemaGenerator schemaGenerator = new SchemaGenerator();
   @SuppressWarnings("unused")
   @Description("An annotated field")
@@ -164,6 +164,7 @@ public class YamlDocGeneratorTest {
                 "### Start",
                 "",
                 tableHeader(),
+                tableEntry("`deprecatedField`", "number", ""),
                 tableEntry("`derived`", linkTo("Derived Object", "#derived-object"), ""),
                 tableEntry("`simple`", linkTo("Simple Object", "#simple-object"), ""))));
   }
@@ -189,6 +190,7 @@ public class YamlDocGeneratorTest {
                 "### Start",
                 "",
                 tableHeader(),
+                tableEntry("`deprecatedField`", "number", ""),
                 tableEntry("`derived`", linkTo("Derived Object", "#derived-object"), ""),
                 tableEntry("`simple`", linkTo("Simple Object", "#simple-object"), ""),
                 "",

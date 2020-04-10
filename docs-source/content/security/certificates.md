@@ -9,18 +9,18 @@ description: "Operator SSL/TLS certificate handling"
 
 If the operator needs to update the external certificate and key currently
 being used or was installed without an external REST API SSL/TLS identity,
-the `helm upgrade` command is used to re-start the operator
-with the new or updated kubernetes `tls secret` that contains
-the desired certificate(s).
+the `helm upgrade` command is used to restart the operator
+with the new or updated Kubernetes `tls secret` that contains
+the desired certificates.
 
-The operator _requires_ a re-start in order to begin using the new or udpated external
+The operator _requires_ a restart in order to begin using the new or updated external
 certificate. The Helm `--recreate-pods` flag is used to cause the existing
-kubernetes pod to be terminated and a new pod to be started with the updated configuration.
+Kubernetes pod to be terminated and a new pod to be started with the updated configuration.
 
 For example, if the operator was installed with the Helm release name `weblogic-operator`
-in the namespace `weblogic-operator-ns` and the kubernetes `tls secret` is named
+in the namespace `weblogic-operator-ns` and the Kubernetes `tls secret` is named
 `weblogic-operator-cert`, the following commands can be used to update the operator
-certificate(s) and key:
+certificates and key:
 
 ```bash
 $ kubectl create secret tls weblogic-operator-cert -n weblogic-operator-ns \

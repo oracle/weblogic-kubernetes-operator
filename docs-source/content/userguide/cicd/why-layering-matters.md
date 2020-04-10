@@ -49,25 +49,28 @@ level of detail needed to implement something like this.
 
 Next you might think, "Oh, that’s ok, we can just rebuild the layers above the JDK
 on top of this new layer."  That is very true, we can.  But there is a big caveat
-here.  When you create a WebLogic domain, a domain encryption key is created.  This
+here for Domain in Image domains. When
+you create a WebLogic domain, a domain encryption key is created.  This
 key is stored in the `security/SerializedSystemIni.dat` file in your domain and it
 is used to encrypt several other things in your domain configuration, like passwords,
-for example.  Today (in WebLogic Server 12.2.1.3.0) there is no way to conveniently
+for example.  Today (in WebLogic Server 12.2.1.4.0) there is no way to conveniently
 "extract" or "reuse" this encryption key.  So what does this mean in practice?
 
-
-> If you recreate the domain in your CI/CD process, even though you may end up with
+{{% notice warning %}}
+If you recreate a Domain in Image domain in your CI/CD process, even though you may end up with
 a domain that is for all intents and purposes identical to the previous domain, it
 will have a different encryption key.
+{{% /notice %}}
 
-This means that technically it is a "different" domain.  Does this matter?  Maybe,
+This means that technically, it is a "different" domain for Domain in Image type domains.
+Does this matter?  Maybe,
 maybe not.  It depends.  If you want to do a rolling restart of your domain, then
 yes, it matters.  First of all, the "new" servers will fail to start because the
 operator will be trying to inject credentials to start the server which were
 encrypted with the "old" domain encryption key.
 
-But even if this did not prevent them from starting, there would still be a problem.  
-You cannot have members of a domain with different encryption keys.  If WebLogic
+But even if this did not prevent Domain in Image pods from starting, there would still
+be a problem.  You cannot have members of a domain with different encryption keys.  If WebLogic
 saw a new member trying to join the domain with a different key, it would consider
 it to be an intruder and refuse to accept it into the domain.  Client HTTP sessions
 would not work across the two different sets of servers, so clients could see errors
@@ -82,9 +85,10 @@ acceptable, or it may not.
 Another option is to find a way to keep the "same" domain, that is, the same domain
 encryption key, so that we can still roll the domain and there will be no conflicts.
 
-#### Mutating the domain configuration without losing the encryption keys
+#### Mutating Domain in Image domain home configuration without losing encryption keys
 
-If we want to make a change in a lower layer without losing our domain encryption
+If we want to make a change in a lower layer in Domain in Image domains
+without losing our domain encryption
 keys, then we need to find a way to "save" the domain and then put it back into a
 new layer, later, on top of the other new (lower) layers, as depicted in the image below:
 
