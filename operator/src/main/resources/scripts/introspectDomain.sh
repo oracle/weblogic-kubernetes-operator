@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -40,12 +40,16 @@
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
+
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # setup tracing
 
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
+
 
 # Local createFolder method which does an 'exit 1' instead of exitOrLoop for
 # immediate failure during introspection
@@ -74,7 +78,6 @@ exportInstallHomes
 checkEnv -q \
          DOMAIN_UID \
          NAMESPACE \
-         DOMAIN_HOME \
          ORACLE_HOME \
          JAVA_HOME \
          NODEMGR_HOME \
@@ -84,11 +87,12 @@ checkEnv -q \
 
 for script_file in "${SCRIPTPATH}/wlst.sh" \
                    "${SCRIPTPATH}/startNodeManager.sh"  \
+                   "${SCRIPTPATH}/modelInImage.sh"  \
                    "${SCRIPTPATH}/introspectDomain.py"; do
   [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1 
 done 
 
-for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
+for dir_var in JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
@@ -99,6 +103,40 @@ if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
   trace "Creating data home directory: '${DATA_HOME}'"
   createFolder ${DATA_HOME}
 fi
+
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
+
+source ${SCRIPTPATH}/modelInImage.sh
+
+if [ $? -ne 0 ]; then
+      trace SEVERE "Error sourcing modelInImage.sh" && exit 1
+fi
+# Add another env/attribute in domain yaml for model in image
+# log error if dir exists and attribute set
+DOMAIN_CREATED=0
+if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+    trace "Beginning Model In Image"
+    command -v gzip
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "gzip is missing - image must have gzip installed " && exit 1
+    fi
+    command -v tar
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "tar is missing - image must have tar installed " && exit 1
+    fi
+    mkdir -p ${DOMAIN_HOME}
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "cannot create domain home directory '${DOMAIN_HOME}'" && exit 1
+    fi
+    createWLDomain || exit 1
+    created_domain=$DOMAIN_CREATED
+    trace "created domain return code = " ${created_domain}
+else
+    created_domain=1
+fi
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN END" 
 
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
@@ -116,22 +154,36 @@ traceDirs after
 checkWebLogicVersion || exit 1
 
 # start node manager
-
-trace "Starting node manager"
-
-${SCRIPTPATH}/startNodeManager.sh || exit 1
-
-# put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
-# the introspector wlst script and WL server pods will use this value
-
-generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
-
 # run instrospector wlst script
+if [ ${created_domain} -ne 0 ]; then
 
-trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM START" 
 
-${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
+    # start node manager -why ??
+    trace "Starting node manager"
+    ${SCRIPTPATH}/startNodeManager.sh || exit 1
 
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII NM END" 
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 START"
+
+    # put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
+    # the introspector wlst script and WL server pods will use this value
+    generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII MD5 END"
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT START"
+
+    trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
+    ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
+
+    traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
+fi
 trace "Domain introspection complete"
 
 exit 0

@@ -7,5 +7,10 @@ package oracle.kubernetes.operator.helpers;
  * Types of secrets which can be configured on a domain.
  */
 public enum SecretType {
-  WebLogicCredentials, ImagePull, ConfigOverride
+  WebLogicCredentials, 
+  ImagePull, 
+  ConfigOverride, 
+  RuntimeEncryption,
+  OpssWalletPassword, 
+  OpssWalletFile
 }

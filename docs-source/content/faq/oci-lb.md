@@ -11,7 +11,7 @@ provision load balancers for you by creating a `Service` of type
 `LoadBalancer` instead of (or in addition to) installing an
 Ingress controller like Traefik or Voyager.
 
-OKE Kubernetes worker nodes normally do not have public IP addresses.
+OKE Kubernetes worker nodes typically do not have public IP addresses.
 This means that the `NodePort` services created by the operator are
 not usable, because they would expose ports on the worker node's private
 IP addresses only, which are not reachable from outside the cluster.  
@@ -29,8 +29,8 @@ cluster.
 #### Requesting an OCI load balancer
 
 When your domain is created by the operator, a number of Kubernetes
-services are created by the operator, including one for the WebLogic
-Administration Server and one for each managed server and cluster.
+services are created by the operator, including one for the WebLogic Server
+Administration Server and one for each Managed Server and cluster.
 
 In the example below, there is a domain called `bobs-bookstore` in the
 `bob` namespace.  This domain has a cluster called `cluster-1` which
@@ -81,7 +81,7 @@ bobs-bookstore-managed-server2         ClusterIP      None            <none>    
 bobs-bookstore-oci-lb-service          LoadBalancer   10.96.121.216   <pending>     31111:31671/TCP               9s
 ```
 
-After a short time (typically less than a minute) the OCI load balancer will be provisioned and the
+After a short time (typically less than a minute), the OCI load balancer will be provisioned and the
 external IP address will be displayed:
 
 ```

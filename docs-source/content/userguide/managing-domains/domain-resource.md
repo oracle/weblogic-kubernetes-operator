@@ -24,9 +24,10 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 
 #### YAML files
 
-Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample script, `create-domain.sh`, generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
+Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
 
-See the WebLogic sample, [Domain home on a persistent volume]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}).
+See the WebLogic samples, [Domain home on a PV]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}),
+[Domain home in Image]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}}), and [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}).
 
 #### Kubernetes resources
 
@@ -61,21 +62,22 @@ The domain resource `spec` section contains elements for configuring the domain 
 Elements related to domain identification, Docker image, and domain home:
 
 * `domainUID`: The domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of `metadata.name`.
-* `image`: The WebLogic Docker image. Required when `domainHomeInImage` is true; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.3`.
-* `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never` and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
+* `image`: The WebLogic Docker image. Required when `domainHomeSourceType` is `Image`; otherwise, defaults to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
+* `imagePullPolicy`: The image pull policy for the WebLogic Docker image. Legal values are `Always`, `Never`, and `IfNotPresent`. Defaults to `Always` if image ends in `:latest`; `IfNotPresent` otherwise.
 * `imagePullSecrets`: A list of image pull secrets for the WebLogic Docker image.
-* `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeInImage` is false. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeInImage` is true.
-* `domainHomeInImage`: True if this domain's home is defined in the Docker image for the domain. Defaults to true.
+* `domainHome`: The folder for the WebLogic domain. Not required. Defaults to `/shared/domains/domains/domainUID` if `domainHomeSourceType` is `PersistentVolume`. Defaults to `/u01/oracle/user_projects/domains/` if `domainHomeSourceType` is `Image`. Defaults to `/u01/domains/domainUID` if `domainHomeSourceType` is `FromModel`.
+* `domainHomeSourceType`: The source for the domain home. Legal values are `Image` (for Domain in Image), `PersistentVolume` (for Domain in PV), and `FromModel` (for Model in Image). Defaults to `Image`.
 
 Elements related to logging:
 
-* `includeServerOutInPodLog`: If true (the default), the server `.out` file will be included in the pod's stdout.
-* `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server `.out` files.
-* `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeInImage` is false. Defaults to false if `domainHomeInImage` is true.
+* `includeServerOutInPodLog`: If true (the default), the server `.out` file will be included in the pod's `stdout`.
+* `logHome`: The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server `.out` files. Defaults to `/shared/logs/<domainUID>`. Ignored if `logHomeEnabled` is `false`.
+* `logHomeEnabled`: Specifies whether the log home folder is enabled. Not required. Defaults to true if `domainHomeSourceType` is `PersistentVolume`. Defaults to false if `domainHomeSourceType` is `Image` or `FromModel`.
 
 Elements related to security:
 
 * `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
+* See also elements under `configuration` below.
 
 Elements related to domain [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}):
 
@@ -84,10 +86,25 @@ Elements related to domain [startup and shutdown]({{< relref "/userguide/managin
 * `restartVersion`: If present, every time this value is updated, the operator will restart the required servers.
 * `replicas`: The number of Managed Servers to run in any cluster that does not specify a `replicas` count.
 
-Elements related to overriding WebLogic domain configuration:
+Elements related to specifying and overriding WebLogic domain configuration:
 
-* `configOverrides`: The name of the config map for optional WebLogic configuration overrides.
-* `configOverrideSecrets`: A list of names of the secrets for optional WebLogic configuration overrides.
+* These elements are under `configuration`.
+
+  * `overridesConfigMap`: The name of the config map for optional [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}). The value only applies if the `domainHomeSourceType` is `Image` or `PersistentVolume`. Do not set this value if the `domainHomeSourceType` is `FromModel`.
+  * `secrets`: A list of secret names for optional [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) macros or Model in Image [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) macros. Often used for specifying data source URLs, user names, and passwords.
+  * `introspectorJobActiveDeadlineSeconds`: Time in seconds before timing out the introspector job. Default is 120 seconds.
+
+* These elements are under `configuration.model`, only apply if the `domainHomeSourceType` is `FromModel`, and are discussed in [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}).
+
+  * `configMap`: Optional configuration map for supplying [runtime model file updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) to Model in Image model configuration.
+  * `domainType`: Must be one of `WLS`, `JRF`, or `RestrictedJRF`.  Default is `WLS`.
+  * `runtimeEncryptionSecret`: Required. Expected field is `password`. This is used by Model in Image to encrypt data while the data is passed from the introspector job to WebLogic pods. The password can be arbitrary: the only requirement is that it must stay the same for the life of a domain resource. If a domain resource is deleted then redeployed, it's fine to change the password during the interim.
+  * `wdtEncryptionSecret`: Optional. Rarely used. See [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) for details.
+
+* These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`. For details, see [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+
+  * `walletPasswordSecret`: The expected secret field is `walletPassword`. Used to encrypt/decrypt the wallet that's used for accessing the domain's entries in its RCU database.
+  * `walletFileSecret`: Optional. The expected secret field is `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database (specify a wallet file that was obtained from the domain home while the domain was booted for the first time).
 
 Elements related to Kubernetes pod and service generation:
 
@@ -100,7 +117,7 @@ Sub-sections related to the Administration Server, specific clusters, or specifi
 * `clusters`: Configuration for specific clusters.
 * `managedServers`: Configuration for specific Managed Servers.
 
-The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec` set the defaults for the entire domain.  The values under a specific entry under `clusters` set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers` set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See the [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) documentation for details about `serverStartPolicy` combination.
+The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec`, set the defaults for the entire domain.  The values under a specific entry under `clusters`, set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers`, set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See [Startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}) for details about `serverStartPolicy` combinations.
 
 ### JVM memory and Java option environment variables
 
@@ -108,24 +125,24 @@ You can use the following environment variables to specify JVM memory and JVM op
 
 * `JAVA_OPTIONS` : Java options for starting WebLogic Server.
 * `USER_MEM_ARGS` : JVM memory arguments for starting WebLogic Server.
-* `NODEMGR_JAVA_OPTIONS` : Java options for starting Node Manager instance.
-* `NODEMGR_MEM_ARGS` : JVM memory arguments for starting Node Manager instance.
+* `NODEMGR_JAVA_OPTIONS` : Java options for starting a Node Manager instance.
+* `NODEMGR_MEM_ARGS` : JVM memory arguments for starting a Node Manager instance.
 
-Note: The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
+**Note**: The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
 The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
 
 * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
 * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
-Note: Defining `-Djava.security.egd=file:/dev/./urandom` in the `NODEMGR_MEM_ARGS` environment variable helps to speed up the Node Manager startup on systems with low entropy.
+**Note**: Defining `-Djava.security.egd=file:/dev/./urandom` in the `NODEMGR_MEM_ARGS` environment variable helps to speed up the Node Manager startup on systems with low entropy.
 
 This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file.
 ```
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain1
@@ -151,22 +168,22 @@ spec:
 
 The operator creates a pod for each running WebLogic Server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/), or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
 
-Prior to creating a pod, the operator replaces variable references allowing the pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where *VARIABLE_NAME* is one of the variable names available in the container for the WebLogic Server instance.  The default set of environment variables includes:
+Prior to creating a pod, the operator replaces variable references allowing the pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where `VARIABLE_NAME` is one of the variable names available in the container for the WebLogic Server instance.  The default set of environment variables includes:
 
-* `DOMAIN_NAME`: The WebLogic domain name
-* `DOMAIN_UID`: The domain unique identifier
-* `DOMAIN_HOME`: The domain home location as a file system path within the container
-* `SERVER_NAME`: The WebLogic Server name
-* `CLUSTER_NAME`: The WebLogic cluster name, if this is a cluster member
-* `LOG_HOME`: The WebLogic log location as a file system path within the container
+* `DOMAIN_NAME`: The WebLogic domain name.
+* `DOMAIN_UID`: The domain unique identifier.
+* `DOMAIN_HOME`: The domain home location as a file system path within the container.
+* `SERVER_NAME`: The WebLogic Server name.
+* `CLUSTER_NAME`: The WebLogic cluster name, if this is a cluster member.
+* `LOG_HOME`: The WebLogic log location as a file system path within the container.
 
-This example domain YAML file specifies that pods for WebLogic Server instances in the `cluster-1` cluster will have a per-managed server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
+This example domain YAML file specifies that pods for WebLogic Server instances in the `cluster-1` cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes `StatefulSet`), an `init` container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled as much as possible on different nodes:
 
 ```
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain1
@@ -176,8 +193,8 @@ metadata:
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
-  domainHomeInImage: true
-  image: "phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.3"
+  domainHomeSourceType: Image
+  image: "phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4"
   imagePullPolicy: "IfNotPresent"
   imagePullSecrets:
   - name: ocirsecret
@@ -227,4 +244,4 @@ spec:
     replicas: 2
 ```
 
-The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The job pod for the introspector is generated using the `serverPod` entries for the administration server.  Because the administration server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be "introspector".
+The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The job pod for the introspector is generated using the `serverPod` entries for the Administration Server.  Because the Administration Server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be "introspector".

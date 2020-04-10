@@ -96,7 +96,7 @@ serviceAccount: "weblogic-operator"
 
 ##### `dedicated`
 
-Specifies if this operator will only manage WebLogic domains in the same namespace in which the operator itself is deployed.  If set to `true`, then the `domainNamespaces` value is ignored.
+Specifies if this operator will manage WebLogic domains only in the same namespace in which the operator itself is deployed.  If set to `true`, then the `domainNamespaces` value is ignored.
 
 Defaults to `false`.
 
@@ -247,7 +247,7 @@ externalRestEnabled: true
 ```
 
 ##### `externalRestHttpsPort`
-Specif`ies the node port that should be allocated for the external operator REST HTTPS interface.
+Specifies the node port that should be allocated for the external operator REST HTTPS interface.
 
 Only used when `externalRestEnabled` is `true`, otherwise ignored.
 
@@ -383,7 +383,7 @@ Error: release op2 failed: secrets "weblogic-operator-secrets" already exists
 
 Both the previous and new release own the resources created by the previous operator.
 
-* You can't modify it to change the namespace (because `helm upgrade` doesn't let you change the namespace).
+* You can't modify it to change the namespace (because `helm upgrade` does not let you change the namespace).
 * You can't fix it by deleting this release because it removes your previous operator's resources.
 * You can't fix it by rolling back this release because it is not in the `DEPLOYED` state.
 * You can't fix it by deleting the previous release because it removes the operator's resources too.
@@ -401,16 +401,16 @@ Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-oper
 To recover:
 
 - `helm delete --purge` the failed release.
-  - **NOTE**: This deletes the role binding in the domain namespace that was created by the first operator release to give the operator access to the domain namespace.
+  - **NOTE**: This deletes the role binding in the domain namespace that was created by the first operator release, to give the operator access to the domain namespace.
 - `helm upgrade <old op release> kubernetes/charts/weblogic-operator --values <old op custom-values.yaml>`
   - This recreates the role binding.
   - There might be intermittent failures in the operator for the period of time when the role binding was deleted.
 
 #### Upgrading an operator and having it manage a domain namespace that another operator is already managing
 
-The `helm upgrade` succeeds, and silently adopts the resources the first operator's Helm chart created in the domain namespace (for example, `rolebinding`), and, if you also told it to stop managing another domain namespace, it abandons the role binding it created in that namespace.
+The `helm upgrade` succeeds, and silently adopts the resources the first operator's Helm chart created in the domain namespace (for example, `rolebinding`), and, if you also instructed it to stop managing another domain namespace, it abandons the role binding it created in that namespace.
 
-For example, if you delete this release, then the first operator will get messed up because the role binding it needs is gone. The big problem is that you don't get a warning, so you don't know that there's a problem to fix.
+For example, if you delete this release, then the first operator will end up without the role binding it needs. The problem is that you don't get a warning, so you don't know that there's a problem to fix.
 
 * This can be fixed by just upgrading the Helm release.
 * This may also be fixed by rolling back the Helm release.
@@ -507,5 +507,4 @@ To recover:
 #### Deleting and recreating a namespace that an operator manages without informing the operator
 
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
-
 For more information about the problem and solutions, see [Managing domain namespaces]({{<relref "/faq/namespace-management.md">}}).

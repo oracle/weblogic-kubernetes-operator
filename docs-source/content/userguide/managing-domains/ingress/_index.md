@@ -47,9 +47,9 @@ additional pods become ready, or pods enter a non-ready state.
 
 1. Install the Ingress controller.
 
-    After the Ingress controller is running, it monitors Ingress resources in a given namespace(s) and acts accordingly.
+    After the Ingress controller is running, it monitors Ingress resources in a given namespace and acts accordingly.
 
-1. Create Ingress resource(s).
+1. Create Ingress resources.
 
     Ingress resources contain routing rules to one or more backends. An Ingress controller is responsible to apply the rules to the underlying load balancer.
     There are two approaches to create the Ingress resource:
