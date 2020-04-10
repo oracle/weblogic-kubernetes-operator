@@ -22,7 +22,7 @@ The following types of server restarts are supported in Oracle WebLogic Server i
 
 * Rolling restarts - a coordinated and controlled shut down of all of the servers in a domain or cluster while ensuring that service to the end user is not interrupted.
 
-   * Operator initiated - where the WebLogic Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of server pods in a WebLogic domain.
+   * Operator initiated - where the WebLogic Server Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of server pods in a WebLogic domain.
 
    * Manually initiated - required when certain changes in the Oracle WebLogic Server in Kubernetes environment cannot be detected by the operator, so a rolling restart must be manually initiated.
 
@@ -48,14 +48,14 @@ This document describes what actions you need to take to properly restart your s
 
 Changes to the Oracle WebLogic Server configuration may require either a rolling or full domain restart depending on the domain home location and the type of configuration change.
 
-* **Domain home in image:**
-For domain home in image, any changes (dynamic or non-dynamic) to the WebLogic configuration requires a full domain restart.  
+* **Domain in Image:**
+For a domain home in image, any changes (dynamic or non-dynamic) to the WebLogic configuration requires a full domain restart.  
     * If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image property on a domain resource](#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource).
     * If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts" >}}).
 
-* **Model in image:**
+* **Model in Image:**
 
-    * Any image that supplies configuration changes that are incompatible with the current running domain require a full shutdown before changing the domain resource image setting, instead of a rolling restart. Consult [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}) for changes that support a rolling restart.
+    * Any image that supplies configuration changes that are incompatible with the current running domain require a full shutdown before changing the domain resource image setting, instead of a rolling restart. For changes that support a rolling restart, see [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}).
 
     * If you create a new image with a new name, and you want to avoid a rolling restart, see [Avoiding a rolling restart when changing image property on a domain resource](#avoiding-a-rolling-restart-when-changing-image-property-on-a-domain-resource).
 
@@ -63,11 +63,11 @@ For domain home in image, any changes (dynamic or non-dynamic) to the WebLogic c
 
     * If you are supplying updated models or secrets for a running domain, and you want the configuration updates to take effect using a rolling restart:
       * You must either supply a new image name in the domain resource or change the domain resource `restartVersion` in order to force the operator to reload the configuration.
-      * With either of these two changes, the operator will rerun the domain's introspector job, which will verify and apply the new configuration. If the introspector's configuration verification succeeds, then it will subsequently roll the pods; if the job fails, then a roll will not occur.
-      * If you change other fields that typically cause a restart, such as `volumes`, `env`, and such, then the introspector will not rerun and a rolling restart will proceed without loading the configuration changes.
+      * With either of these two changes, the operator will rerun the domain's introspector job, which will verify and apply the new configuration. If the introspector job's configuration verification succeeds, then it will subsequently roll (restart) the pods; if the job fails, then a roll will not occur.
+      * If you change other fields that typically cause a restart, such as `volumes`, `env`, and such, then the introspector job will not rerun and a rolling restart will proceed without loading the configuration changes.
 
-* **Domain home on PV:**
-For domain home on PV, the type of restart needed to apply the changes, depends on the nature of the WebLogic configuration change:
+* **Domain in PV:**
+For a domain home on PV, the type of restart needed to apply the changes depends on the nature of the WebLogic configuration change:
     * Changes to parts of the WebLogic configuration that the operator introspects, require a full restart, even if the changes are dynamic.
       The following are the types of changes to the WebLogic Server configuration that the operator introspects:
         * Adding or removing a cluster, server, dynamic server, or network access point
@@ -78,7 +78,7 @@ For domain home on PV, the type of restart needed to apply the changes, depends 
     * Other dynamic WebLogic configuration changes do not require a restart.  For example, a change to a server's connection timeout property
 is dynamic and does not require a restart.
     * Other non-dynamic WebLogic configuration changes require either a manually initiated rolling restart or a full domain restart, depending on the nature of the change.
-      For example, a rolling restart is applicable when changing a WebLogic Server's `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
+      For example, a rolling restart is applicable when changing a WebLogic Server `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
 
 
 #### Changing the custom domain configuration overrides
@@ -215,11 +215,11 @@ If you've created a new image that is not rolling-compatible, and you've changed
 
     In these cases, you must manually initiate a restart.
 
-* **Managed Coherence Servers safe shutdown**.
+* **Managed Coherence Servers safe shut down**.
 
     If the domain is configured to use a Coherence cluster, then you will need to increase the Kubernetes graceful timeout value.
     When a server is shut down, Coherence needs time to recover partitions and rebalance the cluster before it is safe to shut down a second server.
-    Using the Kubernetes graceful termination feature, the operator will automatically wait until the Coherence HAStatus MBean attribute
+    Using the Kubernetes graceful termination feature, the operator will automatically wait until the Coherence `HAStatus` MBean attribute
     indicates that it is safe to shut down the server.  However, after the graceful termination timeout expires, the pod will be deleted regardless.
     Therefore, it is important to set the domain YAML `timeoutSeconds` to a large enough value to prevent the server from shutting down before
     Coherence is safe. Furthermore, if the operator is not able to access the Coherence MBean, then the server will not be shut down

@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+  (check with `kubectl version`).  Not supported on Kubernetes 1.16 or 1.17; see note below.
+* Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+ (check with `kubectl version`). Not supported on Kubernetes 1.16 or later; see note below.
   See note below for OpenShift.
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 or 19.03.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
@@ -44,23 +44,23 @@ WebLogic Server and the operator are supported on "Authorized Cloud Environments
 [this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf) and
 [this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
 
-The official document that defines the [supported configurations is here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
+The official document that defines the supported configurations is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
 
 In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
-Container Services for use with Kubernetes* on OCI Compute, and on "authorized cloud environments".
+Container Services for use with Kubernetes* on OCI Compute, and on "Authorized Cloud Environments".
 
 ### Microsoft Azure Kubernetes Service
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
-Operator, Oracle WebLogic Sever 12c and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
+Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
 referenced above).
 
-AKE support and limitations:
+AKS support and limitations:
 
-* Both "domain in image" and "domain on persistent volume" models are supported.  
-* For domain on persistent volume we support Azure Files volumes accessed through
-  a persistent volume claim - see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
+* Both Domain in Image and Domain in PV domain home source types are supported.  
+* For Domain in PV, we support Azure Files volumes accessed through
+  a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
 * Azure Load Balancers are supported when provisioned using a Kubernetes service of `type=LoadBalancer`.
 * Oracle databases running in Oracle Cloud Infrastructure are supported for Fusion Middleware
   Infrastructure MDS data stores only when accessed through an OCI FastConnect.
@@ -68,9 +68,9 @@ AKE support and limitations:
 
 ### Oracle Linux Cloud Native Environment
 
-[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on the Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
+[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
-WebLogic Server and the WebLogic Kubernetes operator are certified and supported on Oracle Linux Cloud Native Environment.
+WebLogic Server and the WebLogic Server Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment.
 
 
 ### OpenShift
@@ -84,16 +84,16 @@ This could be either the `anyuid` SCC or a custom one that you define for user/g
 
 ### Important note about development-focused Kubernetes distributions
 
-There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift and so on.
+There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift, and so on.
 Often these run Kubernetes in a virtual machine on your development machine.  We have found that these distributions
 present some extra challenges in areas like:
 
 * Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems
 * Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images
-* Storage providers that do not always support the features that the operator and/or WebLogic rely on
-* Load balancing implementations that do not always support the features that the operator and/or WebLogic rely on
+* Storage providers that do not always support the features that the operator or WebLogic rely on
+* Load balancing implementations that do not always support the features that the operator or WebLogic rely on
 
-As such, we *do not* recommend using these distributions to run the operator and/or WebLogic, and we do not
+As such, we *do not* recommend using these distributions to run the operator or WebLogic, and we do not
 provide support for WebLogic or the operator running in these distributions.
 
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a

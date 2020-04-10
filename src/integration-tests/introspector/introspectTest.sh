@@ -77,6 +77,7 @@ export NAMESPACE=${NAMESPACE:-default}
 
 export LOG_HOME=${LOG_HOME:-/shared/logs}
 export SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG:-true}
+export ACCESS_LOG_IN_LOG_HOME=${ACCESS_LOG_IN_LOG_HOME:-true}
 export DOMAIN_HOME=${DOMAIN_HOME:-/shared/domains/${DOMAIN_UID}}
 
 [ -z ${WEBLOGIC_CREDENTIALS_SECRET_NAME} ] && \

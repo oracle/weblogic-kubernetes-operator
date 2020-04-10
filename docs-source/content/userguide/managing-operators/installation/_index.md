@@ -44,12 +44,11 @@ This creates a Helm release, named `weblogic-operator` in the `weblogic-operator
 You can verify the operator installation by examining the output from the `helm install` command.
 
 {{% notice note %}}
-When the operator image is stored in a private registry, see
-[WebLogic Kubernetes Operator image pull secret]({{<relref "/security/secrets.md#weblogic-kubernetes-operator-image-pull-secret">}})
-for more information on specifying the registry credentials.
+For more information on specifying the registry credentials when the operator image is stored in a private registry, see
+[Operator image pull secret]({{<relref "/security/secrets#operator-image-pull-secret">}}).
 {{% /notice %}}
 
-#### Alternatively, install the operator Helm chart from GitHub chart repository
+#### Alternatively, install the operator Helm chart from the GitHub chart repository
 
 Add this repository to the Helm installation:
 

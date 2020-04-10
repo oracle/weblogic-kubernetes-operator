@@ -2,7 +2,7 @@
 title: "OpenShift"
 date: 2019-10-04T08:08:08-05:00
 weight: 7
-description: "OpenShift information for the WebLogic Kubernetes Operator"
+description: "OpenShift information for the operator"
 ---
 
 #### OpenShift `anyuid` security context
@@ -23,7 +23,7 @@ For example, to update the OpenShift policy, use:
 $ oc adm policy add-scc-to-user anyuid -z default
 ```
 
-and to annotate the WebLogic containers, update the WebLogic `Domain` resource
+To annotate the WebLogic containers, update the WebLogic `Domain` resource
 to include `annotations` for the `serverPod`. For example:
 
 ``` yaml
@@ -36,16 +36,15 @@ spec:
     env:
       - name: var1
         value: value1
-    annotations: 
+    annotations:
       openshift.io/scc: anyuid
 ```
 
 {{% notice note %}}
 For additional information about OpenShift requirements and the operator,
-see the [OpenShift]({{<relref  "/userguide/introduction/introduction.md#openshift">}}) section in the User Guide.
+see the [OpenShift]({{<relref  "/userguide/introduction/introduction#openshift">}}) section in the User Guide.
 {{% /notice %}}
 
 #### Using a dedicated namespace
 
-When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all the WebLogic domains that it manages. For more details about the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values" >}}).
-
+When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all the WebLogic domains that it manages. For more details about the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}).

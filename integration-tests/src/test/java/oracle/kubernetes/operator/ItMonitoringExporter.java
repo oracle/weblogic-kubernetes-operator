@@ -175,7 +175,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to delete resource
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
@@ -318,7 +318,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * clone, build , deploy monitoring exporter on specified domain, operator.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to deploy
    */
   private static void deployRunMonitoringExporter(Domain domain, Operator operator)
       throws Exception {
@@ -418,6 +418,7 @@ public class ItMonitoringExporter extends BaseTest {
     test16_ChangeConfigInvalidPass();
     test17_ChangeConfigEmptyUser();
     test18_ChangeConfigEmptyPass();
+    test19_ReplaceMetricsDomainQualifierTrueConfiguration();
   }
 
 
@@ -537,7 +538,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to append monitoring exporter configuration with empty configuration.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test07_AppendWithEmptyConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -571,7 +572,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to replace monitoring exporter configuration with configuration file not in the yaml
    * format.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -604,7 +605,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to replace monitoring exporter configuration with configuration file in the corrupted yaml
    * format.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -657,16 +658,13 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to replace monitoring exporter configuration with configuration file with
    * NameSnakeCase=false.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   private void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    final WebClient webClient = new WebClient();
-    HtmlPage originalPage = webClient.getPage(exporterUrl);
-    assertNotNull(originalPage);
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_snakecasefalse.yml");
     assertNotNull(page);
@@ -677,9 +675,32 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Try to change monitoring exporter configuration without authentication.
+   * Test to replace monitoring exporter configuration with configuration file with
+   * domainQualifier=true.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  private void test19_ReplaceMetricsDomainQualifierTrueConfiguration() throws Exception {
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    HtmlPage page =
+        submitConfigureForm(exporterUrl, "replace", configPath + "/rest_domainqualtrue.yml");
+    assertNotNull(page);
+    LoggerHelper.getLocal().log(Level.INFO, "page - " + page.asText());
+    assertTrue(page.asText().contains("domainQualifier"));
+
+    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
+    assertTrue(checkMetricsViaPrometheus(searchKey, "\"domain\":\"" + domain.getDomainUid() + "\""));
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Test to change monitoring exporter configuration without authentication.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
    */
   // verify that change configuration fails without authentication
   private void test14_ChangeConfigNoCredentials() throws Exception {
@@ -927,24 +948,19 @@ public class ItMonitoringExporter extends BaseTest {
       String effect, String configFile, String expectedErrorMsg, String username, String password)
       throws Exception {
     try {
-      HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, username, password);
+      final WebClient webClient = new WebClient();
+      setCredentials(webClient, username, password);
+      HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, webClient);
       throw new RuntimeException("Expected exception was not thrown ");
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
     }
   }
 
-  private HtmlPage submitConfigureForm(
-      String exporterUrl, String effect, String configFile, String username, String password)
-      throws Exception {
-    final WebClient webClient = new WebClient();
-    setCredentials(webClient, username, password);
-    return submitConfigureForm(exporterUrl, effect, configFile, webClient);
-  }
-
   private HtmlPage submitConfigureForm(String exporterUrl, String effect, String configFile)
       throws Exception {
     final WebClient webClient = new WebClient();
+    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
     setCredentials(webClient);
     return submitConfigureForm(exporterUrl, effect, configFile, webClient);
   }
@@ -952,7 +968,11 @@ public class ItMonitoringExporter extends BaseTest {
   private HtmlPage submitConfigureForm(
       String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
     // Get the first page
-    final HtmlPage page1 = webClient.getPage(exporterUrl);
+    HtmlPage page1 = webClient.getPage(exporterUrl);
+    if (page1 == null) {
+      //try again
+      page1 = webClient.getPage(exporterUrl);
+    }
     assertNotNull(page1);
     assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
 

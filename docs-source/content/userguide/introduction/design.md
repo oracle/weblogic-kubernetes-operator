@@ -8,7 +8,7 @@ description: "The Oracle WebLogic Server Kubernetes Operator (the “operator”
 
 The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
 
-Human operators are normally responsible for starting and stopping environments, initiating backups, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.  It is envisaged that the operator will have similar responsibilities in a Kubernetes environment.
+Human operators are typically responsible for starting and stopping environments, initiating backups, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.  It is envisaged that the operator will have similar responsibilities in a Kubernetes environment.
 
 It is important to note the distinction between an *operator* and an *administrator*.  A WebLogic Server administrator typically has different responsibilities centered around managing the detailed configuration of the WebLogic domains.  The operator has only limited interest in the domain configuration, with its main concern being the high-level topology of the domain; for example, how many clusters and servers, and information about network access points, such as channels.
 
@@ -20,7 +20,7 @@ The operator is designed with security in mind from the outset.  Some examples o
 
 *	During the deployment of the operator, Kubernetes roles are defined and assigned to the operator.  These roles are designed to give the operator the minimum amount of privileges that it requires to perform its tasks.
 *	The code base is regularly scanned with security auditing tools and any issues that are identified are promptly resolved.
-*	All HTTP communications – between the operator and an external client, between the operator and WebLogic Administration Servers, and so on – are configured to require SSL and TLS 1.2.
+*	All HTTP communications – between the operator and an external client, between the operator and WebLogic Server Administration Servers, and so on – are configured to require SSL and TLS 1.2.
 *	Unused code is pruned from the code base regularly.
 *	Dependencies are kept as up-to-date as possible and are regularly reviewed for security vulnerabilities.
 

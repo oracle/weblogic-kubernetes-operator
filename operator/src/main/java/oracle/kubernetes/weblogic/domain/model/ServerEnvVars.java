@@ -49,6 +49,10 @@ public class ServerEnvVars {
   /** 'true' or 'false' to indicate whether the server output should be included in the pod log. */
   public static final String SERVER_OUT_IN_POD_LOG = "SERVER_OUT_IN_POD_LOG";
 
+  /** 'true' or 'false' to indicate whether the server HTTP access log should be include in the
+   *  directory specified by LOG_HOME. */
+  public static final String ACCESS_LOG_IN_LOG_HOME = "ACCESS_LOG_IN_LOG_HOME";
+
   private static final List<String> RESERVED_NAMES = Arrays.asList(
         DOMAIN_UID, DOMAIN_NAME, DOMAIN_HOME, NODEMGR_HOME, SERVER_NAME, SERVICE_NAME,
         ADMIN_NAME, AS_SERVICE_NAME, ADMIN_PORT, ADMIN_PORT_SECURE,

@@ -437,6 +437,14 @@ public class Domain {
     return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getModel).orElse(null);
   }
 
+  public boolean isHttpAccessLogInLogHome() {
+    return spec.getHttpAccessLogInLogHome();
+  }
+
+  boolean isDomainHomeInImage() {
+    return spec.isDomainHomeInImage();
+  }
+
   public boolean isIstioEnabled() {
     return spec.isIstioEnabled();
   }
