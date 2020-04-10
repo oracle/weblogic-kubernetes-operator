@@ -788,7 +788,8 @@ public class Domain {
    */
   public void deleteImage() throws Exception {
     // delete domain image
-    if (domainMap.containsKey("image")) {
+    if (domainMap.containsKey("image") &&
+        !(((String)domainMap.get("image")).startsWith("container-registry.oracle.com"))) {
       String cmd = "docker rmi -f " + domainMap.get("image");
       TestUtils.exec(cmd, true);
     }
