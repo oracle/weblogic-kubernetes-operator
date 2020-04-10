@@ -934,19 +934,16 @@ public class TestUtils {
   public static void makeOperatorRestCallOke(Operator operator, String restUrl) throws Exception {
     String resourceDir = BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/oke";
-    String yamlPath = operator.getUserProjectsDir()
+    String curlPath = operator.getUserProjectsDir()
             + "/weblogic-operators/"
             + operator.getOperatorNamespace()
             + "/curl.yaml";
 
-    copyFile(resourceDir + "/curl.yaml", yamlPath);
+    copyFile(resourceDir + "/curl.yaml", curlPath);
 
-    replaceStringInFile(operator.getUserProjectsDir()
-              + "/weblogic-operators/"
-              + operator.getOperatorNamespace()
-              + "/curl.yaml", "default", operator.getOperatorNamespace());
+    replaceStringInFile(curlPath, "default", operator.getOperatorNamespace());
 
-    String command = "kubectl apply -f " + yamlPath;
+    String command = "kubectl apply -f " + curlPath;
     ExecResult result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
       throw new Exception("Couldn't create pod " + result.stderr());
@@ -954,7 +951,7 @@ public class TestUtils {
 
     String operatorCert = getExternalOperatorCertificate(operator);
     kubectlcp(operatorCert, "operator.cert.pem", "curl", operator.getOperatorNamespace());
-    command = " kubectl exec curl -- " + restUrl;
+    command = " kubectl exec curl -- " + restUrl + " -n " + operator.getOperatorNamespace();
     result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
       throw new Exception("Couldn't execute rest command " + result.stderr());
@@ -966,7 +963,7 @@ public class TestUtils {
               + result.stdout()
               + " : "
               + result.stderr());
-      command = " kubectl exec curl -- cat curl.out";
+      command = " kubectl exec curl -- cat curl.out" + " -n " + operator.getOperatorNamespace();
       result = ExecCommand.exec(command, true);
       if (result.exitValue() != 0) {
         throw new Exception("Couldn't find curl.out file " + result.stderr());
