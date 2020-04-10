@@ -75,7 +75,7 @@ class ItWITValidation implements LoggedTest {
  
     assertThat(success)
         .as("Test the Docker image creation has succeeded")
-        .withFailMessage("Failed to create the image using WebLogic Deploy Tool")
+        .withFailMessage("Failed to create the image using WebLogic Image Tool")
         .isTrue();
     
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
