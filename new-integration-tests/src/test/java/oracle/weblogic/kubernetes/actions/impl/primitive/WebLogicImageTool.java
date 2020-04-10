@@ -13,8 +13,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWDTParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWITParams;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
@@ -66,7 +64,7 @@ public class WebLogicImageTool {
       return false;
     }
 
-    // add the cache entry for the WDT installer
+    // add the WDT installer that we just downloaded into WIT cache entry
     if (!addInstaller()) {
       return false;
     }
@@ -139,12 +137,6 @@ public class WebLogicImageTool {
    * @return true if the command succeeds 
    */
   public boolean addInstaller() {
-    assertThatCode(
-        () -> checkFile(WDT_ZIP_PATH))
-        .as("Test if the WebLogic Deploy Tool installer exists")
-        .withFailMessage("Fialed to find WebLogic Deplyo Tool installer " + WDT_ZIP_PATH)
-        .doesNotThrowAnyException();
-    
     String command = String.format(
         "%s cache addInstaller --type wdt --version %s --path %s",
         IMAGE_TOOL,
