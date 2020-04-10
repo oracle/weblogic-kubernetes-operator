@@ -185,6 +185,12 @@ class ItSimpleDomainValidation implements LoggedTest {
     logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
         + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
+    // Delete the persistent volume claim and persistent volume
+    assertDoesNotThrow(
+        () -> Kubernetes.deletePvc(pvcName, namespace));
+    assertDoesNotThrow(
+        () -> Kubernetes.deletePv(pvName));
+
     // Delete namespace
     assertDoesNotThrow(
         () -> TestActions.deleteNamespace(namespace));
