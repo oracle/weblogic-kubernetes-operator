@@ -1,0 +1,21 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# A sparce model file to add a Configured Cluster 
+
+topology:
+    Cluster:
+        'cluster-2':
+    Server:
+        'config-managed-server-1':
+            Cluster: 'cluster-2'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+        'config-managed-server-2':
+            Cluster: 'cluster-2'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+        'config-managed-server-3':
+            Cluster: 'cluster-2'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+        'config-managed-server-4':
+            Cluster: 'cluster-2'
+            ListenPort: '@@PROP:MANSVR_PORT@@'

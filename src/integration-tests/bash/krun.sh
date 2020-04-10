@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -71,10 +71,10 @@ cat << EOF
   Sample usage:
 
     # Use an alternate image and show the user/uid/gid for that image
-    ./krun.sh -i container-registry.oracle.com/middleware/weblogic:12.2.1.3 -c 'id'
+    ./krun.sh -i container-registry.oracle.com/middleware/weblogic:12.2.1.4 -c 'id'
  
     # Get the WL version in a WL image
-    ./krun.sh -i container-registry.oracle.com/middleware/weblogic:12.2.1.3 -c \\
+    ./krun.sh -i container-registry.oracle.com/middleware/weblogic:12.2.1.4 -c \\
       'source /u01/oracle/wlserver/server/bin/setWLSEnv.sh && java weblogic.version'
 
     # Mount an existing pvc to /shared, and jar up a couple of its directories

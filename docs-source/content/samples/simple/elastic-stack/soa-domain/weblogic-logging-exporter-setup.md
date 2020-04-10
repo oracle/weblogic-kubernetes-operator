@@ -95,7 +95,7 @@ weblogicLoggingExporterSeverity: TRACE
 weblogicLoggingExporterBulkSize: 1
 ```  
 
-Copy the `WebLogicLoggingExporter.yaml` file to the domain home directory in the WebLogic Administration Server pod.  
+Copy the `WebLogicLoggingExporter.yaml` file to the domain home directory in the WebLogic Server Administration Server pod.  
 ```
 $ kubectl cp WebLogicLoggingExporter.yaml soans/soainfra-adminserver:/u01/oracle/user_projects/domains/soainfra/config/
 ```  

@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
@@ -93,11 +94,17 @@ public class ConfigMapHelper {
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
     Map<String, String> map = new HashMap<>();
+    String token = ">>>  updatedomainResult=";
+
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
+        if (line.contains(token)) {
+          int index = line.indexOf(token);
+          int beg = index + 1 + token.length();
+          map.put("UPDATEDOMAINRESULT", line.substring(beg - 1));
+        }
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
-          // Beginning of file, extract file name
           String filename = extractFilename(line);
           readFile(reader, filename, map, domainUid);
         }
@@ -135,6 +142,18 @@ public class ConfigMapHelper {
     int lastSlash = line.lastIndexOf('/');
     String fname = line.substring(lastSlash + 1, line.length());
     return fname;
+  }
+
+  /**
+   * getModelInImageSpecHash returns the hash for the fields that should be compared for changes.
+   *
+   * @param imageName image name
+   * @return int hash value of the fields
+   */
+  public static int getModelInImageSpecHash(String imageName) {
+    return new HashCodeBuilder(17, 37)
+        .append(imageName)
+        .toHashCode();
   }
 
   /**
@@ -366,6 +385,8 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
       String topologyYaml = data.get("topology.yaml");
+      String miiModelSecretsHash = data.get("secrets.md5");
+      String miiDomainZipHash = data.get("domainzip_hash");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
@@ -380,6 +401,27 @@ public class ConfigMapHelper {
         ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
         packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+        if (miiDomainZipHash != null) {
+          packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
+        }
+        if (miiModelSecretsHash != null) {
+          packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
+        }
+        String domainRestartVersion = info.getDomain().getRestartVersion();
+        String domainIntrospectVersion = info.getDomain().getIntrospectVersion();
+        int modelInImageSpecHash =  ConfigMapHelper.getModelInImageSpecHash(info.getDomain().getSpec().getImage());
+        if (domainRestartVersion != null) {
+          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+          data.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+        }
+        if (domainIntrospectVersion != null) {
+          packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+          data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+        }
+        if ("FromModel".equals(info.getDomain().getDomainHomeSourceType())) {
+          packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
+          data.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
+        }
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
@@ -586,8 +628,46 @@ public class ConfigMapHelper {
       V1ConfigMap result = callResponse.getResult();
       if (result != null) {
         Map<String, String> data = result.getData();
-        String topologyYaml = data.get("topology.yaml");
+        final String topologyYaml = data.get("topology.yaml");
+        final String miiModelSecretsHash = data.get("secrets.md5");
+        final String miiDomainZipHash = data.get("domainzip_hash");
+        final String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
+        final String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+        final String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
+            + info.getDomain().getRestartVersion());
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version  (from ino spec) "
+            + info.getDomain().getIntrospectVersion());
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
+            + domainRestartVersion);
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version from cm result "
+            + domainIntrospectVersion);
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess image spec hash from cm result "
+            + modelInImageSpecHash);
+
         if (topologyYaml != null) {
+
+          if (miiDomainZipHash != null) {
+            packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
+          }
+
+          if (miiModelSecretsHash != null) {
+            packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
+          }
+
+          if (domainIntrospectVersion != null) {
+            packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
+          }
+
+          if (domainRestartVersion != null) {
+            packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+          }
+
+          if (modelInImageSpecHash != null) {
+            packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, modelInImageSpecHash);
+          }
+
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
           if (domainTopology != null) {
@@ -600,8 +680,8 @@ public class ConfigMapHelper {
             return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
           }
         }
-      }
 
+      }
       return doNext(packet);
     }
   }

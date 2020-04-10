@@ -5,7 +5,7 @@ draft: false
 weight: 21
 ---
 
-> One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log report errors like this:
+> One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log reports errors like this:
 >
 > ***Domain secret mismatch. The domain secret in `DOMAIN_HOME/security/SerializedSystemIni.dat` where DOMAIN_HOME=`$DOMAIN_HOME` does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.***
 
@@ -25,17 +25,17 @@ secured value can be injected in to the `boot.properties` files when starting se
 When the domain directory is changed such that the domain-specific encryption key is different, the `boot.properties` entries
 generated during introspection will now be invalid.
 
-This can happen in a variety of ways, depending on the [domain home source type](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/):
+This can happen in a variety of ways, depending on the [domain home source type](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/).
 
 #### Domain in Image
 
 ##### Rolling to an image containing new or unrelated domain directory
 
-The error occurs while rolling pods to have containers based on a new Docker image that contains an entirely new or unrelated domain directory.
+The error occurs while rolling pods have containers based on a new Docker image that contains an entirely new or unrelated domain directory.
 
 The problem is that WebLogic cannot support server instances being part of the same WebLogic domain if the server instances do
 not all share the same domain-specific encryption key. Additionally, operator introspection
-currently happens only when starting servers following a total shutdown. Therefore, the "boot.properites" files generated from
+currently happens only when starting servers following a total shutdown. Therefore, the `boot.properites` files generated from
 introspecting the image containing the original domain directory will be invalid when used with a container started with
 the updated Docker image containing the new or unrelated domain directory.
 

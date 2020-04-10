@@ -4,12 +4,17 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +30,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainValidationTest {
 
   private static final String SECRET_NAME = "mysecret";
+  private static final String OVERRIDES_CM_NAME_IMAGE = "overrides-cm-image";
+  private static final String OVERRIDES_CM_NAME_MODEL = "overrides-cm-model";
   private Domain domain = createTestDomain();
   private KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
@@ -34,7 +41,9 @@ public class DomainValidationTest {
    */
   @Before
   public void setUp() throws Exception {
-    resourceLookup.defineSecret(SECRET_NAME, NS);
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, null);
   }
@@ -202,7 +211,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWebLogicCredentialsSecretNameNotFound_reportError() {
-    resourceLookup.undefineSecret(SECRET_NAME, NS);
+    resourceLookup.undefineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("WebLogicCredentials", SECRET_NAME, "not found", NS)));
@@ -210,7 +219,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenBadWebLogicCredentialsSecretNamespaceSpecified_reportError() {
-    resourceLookup.defineSecret(SECRET_NAME, "badNamespace");
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, "badNamespace");
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, "badNamespace");
 
@@ -229,7 +238,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenImagePullSecretExists_dontReportError() {
-    resourceLookup.defineSecret("a-secret", NS);
+    resourceLookup.defineResource("a-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -246,8 +255,198 @@ public class DomainValidationTest {
 
   @Test
   public void whenConfigOverrideSecretExists_dontReportError() {
-    resourceLookup.defineSecret("override-secret", NS);
+    resourceLookup.defineResource("override-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenConfigOverrideCmExistsTypeImage_dontReportError() {
+    resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
+    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType("Image");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenConfigOverrideCmExistsTypeFromModel_reportError() {
+    resourceLookup.defineResource("overrides-cm-model", KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource("wdt-cm-secret", KubernetesResourceType.Secret, NS);
+    configureDomain(domain).withConfigOverrides("overrides-cm-model")
+        .withRuntimeEncryptionSecret("wdt-cm-secret")
+        .withDomainHomeSourceType("FromModel");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Configuration overridesConfigMap", 
+            "overrides-cm", "not supported", "FromModel")));
+  }
+
+  @Test
+  public void whenWdtConfigMapExists_fromModel_dontReportError() {
+    resourceLookup.defineResource("wdt-cm", KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource("wdt-cm-secret-model1", KubernetesResourceType.Secret, NS);
+    configureDomain(domain)
+        .withRuntimeEncryptionSecret("wdt-cm-secret-model1")
+        .withModelConfigMap("wdt-cm")
+        .withDomainHomeSourceType(DomainSourceType.FromModel.toString());
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWdtConfigMapSpecifiedButDoesNotExist_fromModel_reportError() {
+    resourceLookup.defineResource("wdt-cm-secret-model2", KubernetesResourceType.Secret, NS);
+    configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model2")
+        .withModelConfigMap("wdt-configmap")
+        .withDomainHomeSourceType(DomainSourceType.FromModel.toString());
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("ConfigMap", "wdt-configmap", "spec.configuration.model.configMap", 
+            "not found", NS)));
+  }
+
+  @Test
+  public void whenWdtConfigMapSpecifiedButDoesNotExist_Image_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+        .withModelConfigMap("wdt-configmap");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_Image_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+        .withRuntimeEncryptionSecret("runtime-secret");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretUnspecified_Image_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString());
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_fromModel_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("runtime-secret");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("RuntimeEncryption", "runtime-secret", "not found", NS)));
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretExists_fromModel_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("runtime-good-secret");
+    resourceLookup.defineResource("runtime-good-secret", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenRuntimeEncryptionSecretUnspecified_fromModel_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString());
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.model.runtimeEncryptionSecret", 
+            "must be specified", "FromModel")));
+  }
+
+  @Test
+  public void whenWalletPasswordSecretSpecifiedButDoesNotExist_fromModel_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-missing");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("secret", "wallet-password-secret-missing", "not found", NS)));
+  }
+
+  @Test
+  public void whenWalletFileSecretSpecifiedButDoesNotExist_Image_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletFileSecret("wallet-file-secret-missing");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("secret", 
+            "wallet-file-secret-missing", "not found", NS)));
+  }
+
+  @Test
+  public void whenWalletPasswordSecretExists_fromModel_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-good");
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-password-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletFileSecretExists_fromModel_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletFileSecret("wallet-file-secret-good");
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-file-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withDomainType("JRF");
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.opss.walletPasswordSecret", 
+            "must be specified", "FromModel", "JRF")));
+  }
+
+  @Test
+  public void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withDomainType("JRF")
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-good");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-password-secret-good", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletPasswordSecretUnspecified_Image_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+        .withOpssWalletFileSecret("wallet-file-secret");
+
+    resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  public void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withDomainType("WLS")
+        .withOpssWalletFileSecret("wallet-file-secret");
+
+    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -256,25 +455,47 @@ public class DomainValidationTest {
     return new DomainCommonConfigurator(domain);
   }
 
+  /**
+   *  Types of Kubernetes resources which can be looked up on a domain.
+   *   
+   */
+  public enum KubernetesResourceType {
+    Secret, ConfigMap
+  }
+
   @SuppressWarnings("SameParameterValue")
   private class KubernetesResourceLookupStub implements KubernetesResourceLookup {
-    private List<V1ObjectMeta> definedSecrets = new ArrayList<>();
+    private Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
 
-    void undefineSecret(String name, String namespace) {
-      for (Iterator<V1ObjectMeta> each = definedSecrets.iterator(); each.hasNext();) {
+    private List<V1ObjectMeta> getResourceList(KubernetesResourceType type) {
+      return definedResources.computeIfAbsent(type, (key) -> new ArrayList<>());
+    }
+
+    void undefineResource(String name, KubernetesResourceType type, String namespace) {
+      for (Iterator<V1ObjectMeta> each = getResourceList(type).iterator(); each.hasNext();) {
         if (hasSpecification(each.next(), name, namespace)) {
           each.remove();
         }
       }
     }
 
-    void defineSecret(String name, String namespace) {
-      definedSecrets.add(new V1ObjectMeta().name(name).namespace(namespace));
+    void defineResource(String name, KubernetesResourceType type, String namespace) {
+      Optional.ofNullable(getResourceList(type)).orElse(Collections.emptyList())
+          .add(new V1ObjectMeta().name(name).namespace(namespace));
     }
 
     @Override
     public boolean isSecretExists(String name, String namespace) {
-      return definedSecrets.stream().anyMatch(m -> hasSpecification(m, name, namespace));
+      return isResourceExists(name, KubernetesResourceType.Secret, namespace);
+    }
+
+    @Override
+    public boolean isConfigMapExists(String name, String namespace) {
+      return isResourceExists(name, KubernetesResourceType.ConfigMap, namespace);
+    }
+
+    private boolean isResourceExists(String name, KubernetesResourceType type, String namespace) {
+      return getResourceList(type).stream().anyMatch(m -> hasSpecification(m, name, namespace));
     }
 
     boolean hasSpecification(V1ObjectMeta m, String name, String namespace) {

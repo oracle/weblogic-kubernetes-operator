@@ -77,6 +77,7 @@ public class Domain {
   private boolean voyager;
   private boolean createDomainResource = true;
   private boolean createLoadBalancer = true;
+  private String domainHomeSourceType = "";
 
   public Domain() throws Exception {
     domainMap = new HashMap<String, Object>();
@@ -155,6 +156,17 @@ public class Domain {
           + "/weblogic/ready --write-out %{http_code} -o /dev/null";
       callWebAppAndWaitTillReady(cmd);
     }
+
+    // using nodePort for now to access console, will be changed to t3channelport
+    if (exposeAdminNodePort) {
+      String cmd = "curl --silent --noproxy " + getHostNameForCurl()
+          + " http://" + getHostNameForCurl() + ":" + getNodePort()
+          + "/console/login/LoginForm.jsp --user "
+          + BaseTest.getUsername() + ":" + BaseTest.getPassword()
+          + " --write-out %{http_code} -o /dev/null";
+      callWebAppAndWaitTillReady(cmd);
+    }
+
   }
 
   /**
@@ -1436,6 +1448,15 @@ public class Domain {
   }
 
   /**
+   * verify if all the servers in the domain are restarted.
+   * @throws Exception on failure
+   */
+  public void verifyDomainRestarted() throws Exception {
+    verifyAdminServerRestarted();
+    verifyManagedServersRestarted();
+  }
+
+  /**
    * Create a Kubernetes secret and label the secret with domainUid. This secret is used for
    * weblogicCredentialsSecretName in the domain inputs.
    *
@@ -1557,6 +1578,10 @@ public class Domain {
           System.getenv("REPO_EMAIL"),
           domainNS);
     }
+
+    //create configmap for MII
+    createMiiConfigMap("miiConfigMap", "miiConfigMapFileOrDir");
+
     // write configOverride, shutdownOptionsOverrides and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
         || domainMap.containsKey("shutdownOptionsOverrides")
@@ -1626,7 +1651,7 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = ExecCommand.exec(curlCmd);
+      ExecResult result = TestUtils.exec(curlCmd, true);
       String responseCode = result.stdout().trim();
       if (result.exitValue() != 0 || !responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
@@ -1717,22 +1742,35 @@ public class Domain {
     resultsDir = (String) domainMap.get("resultDir");
     pvRoot = (String) domainMap.get("pvRoot");
     projectRoot = BaseTest.getProjectRoot();
-
+    if (domainMap.containsKey("domainHomeSourceType")) {
+      domainHomeSourceType = (String) domainMap.get("domainHomeSourceType");
+    }
     // copy samples to RESULT_DIR
     if (Files.exists(Paths.get(resultsDir + "/samples"))) {
       TestUtils.exec("rm -rf " + resultsDir + "/samples");
     }
-    if (domainMap.containsKey("projectRoot")) {
-      TestUtils.exec(
-          "cp -rf "
-              + domainMap.get("projectRoot")
-              + "/kubernetes/samples "
-              + resultsDir,
+    TestUtils.exec("cp -rf "
+            + (domainMap.containsKey("projectRoot")
+            ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
+            + "/kubernetes/samples "
+            + resultsDir,
+        true);
+
+    if (domainHomeSourceType.equals("FromModel")) {
+      TestUtils.exec("cp -rf "
+              + (domainMap.containsKey("projectRoot")
+              ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
+              + "/integration-tests/src/test/resources/model-in-image "
+              + resultsDir + "/samples",
           true);
-    } else {
-      TestUtils.exec(
-          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + resultsDir,
-          true);
+      //append mii section to domain-template.yaml
+      Path domainTemplateFile = Paths.get(
+          resultsDir + "/samples/scripts/common/domain-template.yaml");
+      Path miiConfigPartFile = Paths.get(
+          resultsDir + "/samples/model-in-image/miisection-toaddin-domain-template.yaml");
+      Files.write(domainTemplateFile, Files.readAllBytes(miiConfigPartFile),
+          StandardOpenOption.APPEND);
+
     }
 
     this.voyager =
@@ -1749,7 +1787,11 @@ public class Domain {
     // read sample domain inputs
     String sampleDomainInputsFile =
         "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
-    if (domainMap.containsKey("domainHomeImageBase")) {
+    if (domainHomeSourceType.equals("FromModel")) {
+      sampleDomainInputsFile =
+          "/samples/model-in-image/create-domain-inputs.yaml";
+
+    } else if (domainMap.containsKey("domainHomeImageBase")) {
       sampleDomainInputsFile =
           "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
     } else if (domainMap.containsKey("rcuDatabaseURL")) {
@@ -1790,6 +1832,7 @@ public class Domain {
     }
     LoggerHelper.getLocal().log(Level.INFO, "pvSharing for this domain is: " + pvSharing);
 
+
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
@@ -1804,6 +1847,7 @@ public class Domain {
       LoggerHelper.getLocal().log(Level.INFO, "IMAGE_TAG_WEBLOGIC " + imageTag);
     }
     domainMap.put("logHome", "/shared/logs/" + domainUid);
+
     if (domainMap.containsKey("weblogicImageTagWIT")) {
       domainMap.put("image", domainMap.get("weblogicImageTagWIT"));
     } else if (!domainMap.containsKey("domainHomeImageBase")) {
@@ -1843,11 +1887,30 @@ public class Domain {
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
+    checkModelInImageAttributes();
+
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
     
     if (!domainMap.containsKey("domainHomeImageBase")) {
       createDockerRegistrySecret();
+    }
+  }
+
+  private void checkModelInImageAttributes() {
+    //model in image attributes
+    if (domainHomeSourceType.equals("FromModel")) {
+      if (!domainMap.containsKey("wdtModelFile")) {
+        throw new RuntimeException("wdtModelFile is required for Model-In-Image");
+      } else {
+        domainMap.put("wdtModelFile",
+            resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelFile"));
+      }
+
+      if (domainMap.containsKey("wdtModelPropertiesFile")) {
+        domainMap.put("wdtModelPropertiesFile",
+            resultsDir + "/samples/model-in-image/" + domainMap.get("wdtModelPropertiesFile"));
+      }
     }
   }
 
@@ -2101,7 +2164,15 @@ public class Domain {
     createDomainScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
         .append(resultsDir);
     // call different create-domain.sh based on the domain type
-    if (domainMap.containsKey("domainHomeImageBase")) {
+    if (domainHomeSourceType.equals("FromModel")) {
+      createDomainScriptCmd
+          .append(
+              "/samples/model-in-image/create-domain.sh -u ")
+          .append(BaseTest.getUsername())
+          .append(" -p ")
+          .append(BaseTest.getPassword())
+          .append(" -i ");
+    } else if (domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd
           .append(
               "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
@@ -2456,6 +2527,26 @@ public class Domain {
         appName, scriptName, username, password, infoDirName, archiveExt);
   }
 
+  /**
+   * create config map with given keys for map name and file.
+   * @param cmKeyName Config map key name
+   * @param cmFileKeyName Config map file key name
+   * @throws Exception on failure
+   */
+  public void createMiiConfigMap(String cmKeyName, String cmFileKeyName) throws Exception {
+    if (domainHomeSourceType.equals("FromModel")) {
+      if (domainMap.containsKey(cmKeyName)) {
+        if (!domainMap.containsKey(cmFileKeyName)) {
+          throw new RuntimeException("FAILED: Missing " + cmFileKeyName + " when "
+              + cmKeyName + " is configured");
+        }
+        TestUtils.createConfigMap(domainMap.get(cmKeyName).toString(),
+            resultsDir + "/samples/model-in-image/"
+                  + domainMap.get(cmFileKeyName), domainNS,
+            " weblogic.domainUID=" + domainUid);
+      }
+    }
+  }
 
   /**
    * Write server pod logs.
@@ -2482,4 +2573,22 @@ public class Domain {
     }
   }
 
+  /**
+   * append overridesConfigMap to domain.yaml and apply.
+   * @throws Exception on failure
+   */
+  public void appendOverridesConfigMapAndApply() throws Exception {
+    if (!domainMap.containsKey("overridesConfigMap")) {
+      throw new RuntimeException("FAILED: Missing overridesConfigMap in domain map");
+    }
+    String domainYaml =
+        (String)domainMap.get("userProjectsDir")
+            + "/weblogic-domains/"
+            + domainMap.get("domainUID")
+            + "/domain.yaml";
+
+    String contentToAppend = "  overridesConfigMap: " + domainMap.get("overridesConfigMap");
+    Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+  }
 }
