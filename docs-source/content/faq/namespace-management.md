@@ -153,7 +153,7 @@ Events:
 If you still run into problems after you perform the `helm upgrade` to re-initialize a namespace
 that is deleted and recreated, you can restart the operator pod as shown
 in the following examples, where the operator itself is running in the
-namespace `weblogic-operator-namespace` with a release name of `weblogic-operator`.
+namespace `weblogic-operator-namespace` with the release name, `weblogic-operator`.
 
 * Kill the operator pod, and let Kubernetes restart it.
 

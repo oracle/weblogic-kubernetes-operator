@@ -1,0 +1,56 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+resources:
+    FileStore:
+        TestFileStore:
+           Target: 'admin-server'
+        TestClusterFileStore:
+           Target: 'cluster-1'
+    JMSServer:
+        TestJmsServer:
+            ProductionPausedAtStartup: false
+            ConsumptionPausedAtStartup: false
+            Target: 'admin-server'
+            PersistentStore: 'TestFileStore'
+            InsertionPausedAtStartup: false
+        TestClusterJmsServer:
+            ProductionPausedAtStartup: false
+            ConsumptionPausedAtStartup: false
+            Target: 'cluster-1'
+            PersistentStore: 'TestClusterFileStore'
+            InsertionPausedAtStartup: false
+
+    JMSSystemResource:
+        TestJmsModule:
+            Target: 'admin-server'
+            SubDeployment:
+                TestSubDeployment:
+                    Target: TestJmsServer
+            JmsResource:
+              ConnectionFactory:
+                testCF:
+                   JNDIName: jms/testCF
+                   DefaultTargetingEnabled: true
+              Queue:
+                testQueue:
+                   SubDeploymentName: TestSubDeployment
+                   JNDIName: jms/testQueue
+                testQueue2:
+                  SubDeploymentName: TestSubDeployment
+                  JNDIName: jms/testQueue2
+        TestClusterJmsModule:
+            Target: 'cluster-1'
+            SubDeployment:
+                TestClusterSubDeployment:
+                    Target: TestClusterJmsServer
+            JmsResource:
+              UniformDistributedQueue:
+                testUniformQueue:
+                   SubDeploymentName: TestClusterSubDeployment
+                   JNDIName: jms/testUniformQueue
+              UniformDistributedTopic:
+                testUniformTopic:
+                   SubDeploymentName: TestClusterSubDeployment
+                   ForwardingPolicy: Partitioned
+                   JNDIName: jms/testUniformTopic

@@ -2301,7 +2301,37 @@ public class TestUtils {
   }
 
   /**
-   * Utility method to find CreationTimeStamp for a Pod
+   * Create configmap in the given namespace. Also creates label.
+   * @param cmName config map name
+   * @param fileOrDirPath File path
+   * @param namespace namespace
+   * @throws Exception on failure
+   */
+  public static void createConfigMap(String cmName, String fileOrDirPath,
+                                     String namespace, String label) throws Exception {
+    String cmd = "kubectl -n " + namespace
+        + " delete configmap " + cmName
+        + " --ignore-not-found";
+    TestUtils.exec(cmd);
+
+    cmd = "kubectl -n " + namespace
+        + " create configmap " + cmName
+        + " --from-file=" + fileOrDirPath;
+    TestUtils.exec(cmd, true);
+
+    // create label for configmap
+    cmd =
+        "kubectl -n "
+            + namespace
+            + " label cm "
+            + cmName
+            + " "
+            + label;
+    TestUtils.exec(cmd);
+  }
+
+  /**
+   * Utility method to find CreationTimeStamp for a Pod.
    * @param namespace namespace for the pod
    * @param pod       name of the pod
    * @return creationTimestamp of the Pod 
@@ -2318,7 +2348,7 @@ public class TestUtils {
   }
 
   /**
-   * Utility method to find DeletionTimestamp for a Pod
+   * Utility method to find DeletionTimestamp for a Pod.
    * @param namespace namespace for the pod
    * @param pod       name of the pod
    * @return deletionTimestamp of the Pod 
