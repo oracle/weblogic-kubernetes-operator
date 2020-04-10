@@ -4,16 +4,16 @@
 package oracle.weblogic.kubernetes.extensions;
 
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 
 public class Timing implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
-
-  private static final Logger logger = Logger.getLogger(Timing.class.getName());
+  private static final LoggingFacade logger = LoggingFactory.getLogger(Timing.class);
 
   private static final String START_TIME = "start time";
 
@@ -28,8 +28,7 @@ public class Timing implements BeforeTestExecutionCallback, AfterTestExecutionCa
     long startTime = getStore(context).remove(START_TIME, long.class);
     long duration = System.currentTimeMillis() - startTime;
 
-    logger.info(() ->
-        String.format("Method [%s] took %s ms.", testMethod.getName(), duration));
+    logger.info("Method [{0}] took {1} ms.", testMethod.getName(), duration);
   }
 
   private Store getStore(ExtensionContext context) {

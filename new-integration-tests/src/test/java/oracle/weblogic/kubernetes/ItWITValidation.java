@@ -38,7 +38,7 @@ class ItWITValidation implements LoggedTest {
   @DisplayName("Create a MII image")
   public void testCreatingMIIImage() {
 
-    logger.info("WDT model directory is " + MODEL_DIR);
+    logger.info("WDT model directory is {0}", MODEL_DIR);
 
     // build the model file list
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);

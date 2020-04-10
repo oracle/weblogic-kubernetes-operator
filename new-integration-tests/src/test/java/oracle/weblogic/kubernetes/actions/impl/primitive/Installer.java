@@ -84,7 +84,7 @@ public class Installer {
     boolean unzipSucceeded = true;
     if (params.verify()
         && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
-      logger.info("File " + params.fileName() + " already exists.");
+      logger.info("File {0} already exists.", params.fileName());
     } else {
       checkDirectory(DOWNLOAD_DIR);
       downloadSucceeded = Command.withParams(
