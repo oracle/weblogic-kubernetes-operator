@@ -3,8 +3,8 @@
 
 package oracle.weblogic.kubernetes.extensions;
 
-import java.util.logging.Logger;
-
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -12,20 +12,16 @@ import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public interface LoggedTest {
-  Logger logger = Logger.getLogger(LoggedTest.class.getName());
+  LoggingFacade logger = LoggingFactory.getLogger(LoggedTest.class);
 
   @BeforeEach
   default void beforeEachTest(TestInfo testInfo) {
-    logger.info(() -> String.format("About to execute [%s] in %s",
-        testInfo.getDisplayName(),
-        getMethodName(testInfo)));
+    logger.info("About to execute [{0}] in {1}", testInfo.getDisplayName(), getMethodName(testInfo));
   }
 
   @AfterEach
   default void afterEachTest(TestInfo testInfo) {
-    logger.info(() -> String.format("Finished executing [%s] in %s",
-        testInfo.getDisplayName(),
-        getMethodName(testInfo)));
+    logger.info("Finished executing [{0}] in {1}", testInfo.getDisplayName(), getMethodName(testInfo));
   }
 
   private String getMethodName(TestInfo testInfo) {
