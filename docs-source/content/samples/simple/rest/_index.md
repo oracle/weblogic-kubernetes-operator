@@ -9,7 +9,7 @@ description: "Sample for generating a self-signed certificate and private key th
 
 When a user enables the operator's external REST API (by setting
 `externalRestEnabled` to `true` when installing or upgrading the operator Helm chart), the user also needs
-to provide the certificate(s) and private key used for the SSL/TLS identity on the external REST API endpoint by creating a
+to provide the certificates and private key used for the SSL/TLS identity on the external REST API endpoint by creating a
 kubernetes `tls secret` and using that secret's name with the operator Helm chart values.
 
 This sample script generates a self-signed certificate and private key that can be used
@@ -26,14 +26,14 @@ $ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh \
 ```
 
 Where `<SANs>` lists the subject alternative names to put into the generated self-signed
-certificate for the external WebLogic Server Kubernetes Operator REST HTTPS interface, `<operator-namespace>` should match
+certificate for the external operator REST `HTTPS` interface, `<operator-namespace>` should match
 the namespace where the operator will be installed, and optionally the secret name, which defaults
 to `weblogic-operator-external-rest-identity`.
 
 You should include the addresses of all masters and load balancers
-(i.e. what a client specifies to access the external REST endpoint)
+(for example, what a client specifies to access the external REST endpoint)
 in the subject alternative name list. In addition, each name must be prefaced
-by `DNS:` for a host name, or `IP:` for an address, as with this example:
+by `DNS:` for a host name, or `IP:` for an address, as in this example:
 ```
 -a "DNS:myhost,DNS:localhost,IP:127.0.0.1"
 ```
@@ -41,7 +41,7 @@ by `DNS:` for a host name, or `IP:` for an address, as with this example:
 The external certificate and key can be changed after installation of the operator. For
 more information, see [Updating operator external certificates]({{<relref "/security/certificates#updating-operator-external-certificates">}}).
 
-The script as used below will create the `tls secret` named `weblogic-operator-identity` in the namespace `weblogic-operator-ns` using a self-signed
+The following script will create the `tls secret` named `weblogic-operator-identity` in the namespace `weblogic-operator-ns`, using a self-signed
 certificate and private key:
 
 ```

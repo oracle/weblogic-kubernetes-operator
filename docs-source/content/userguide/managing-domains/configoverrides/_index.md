@@ -112,7 +112,7 @@ Typical attributes for overrides include:
   * Node Manager access credentials
   * Any existing MBean name (for example, you cannot change the domain name)
 
-Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the Network Access Point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
+Note that it's OK, even expected, to override network access point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 The behavior when using an unsupported override is undefined.
 
@@ -258,7 +258,7 @@ Best practices for data source modules and their overrides:
 
 * A data source module must already exist in your original configuration if you want to override it; it's not possible to add a new module by using overrides. If you need your overrides to set up a new module, then have your original configuration specify 'skeleton' modules that can be overridden. See the next two bulleted items for the typical contents of a skeleton data source module.
 * Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that's wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes deployment could cause your production applications to use your QA database.
-* Set your original (non-overridden) `JDBCConnectionPoolParams` `MinCapacity` and `InitialCapacity` to `0`, and set your original `DriverName` to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn't running, and/or you haven't specified your overrides yet.
+* Set your original (non-overridden) `JDBCConnectionPoolParams` `MinCapacity` and `InitialCapacity` to `0`, and set your original `DriverName` to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn't running, or you haven't specified your overrides yet.
 
 ```
 <?xml version='1.0' encoding='UTF-8'?>
@@ -415,7 +415,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
 ---
 ### Internal design flow
 
-* When a domain is first deployed, or is restarted, the operator runtime creates an introspector Kubernetes job named `DOMAIN_UID-introspect-domain-job`.
+* When a domain is first deployed, or is restarted, the operator runtime creates a Kubernetes introspector job named `DOMAIN_UID-introspect-domain-job`.
 * The introspector job's pod:
   * Mounts the Kubernetes configuration map and secrets specified by using the operator domain resource `configuration.overridesConfigMap`, `webLogicCredentialsSecret`, and `configuration.secrets` fields.
   * Reads the mounted situational configuration templates from the configuration map and expands them to create the actual situational configuration files for the domain:
@@ -425,7 +425,7 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
       * It returns expanded situational configuration files to the operator.
       * It reports any errors when attempting expansion to the operator.
 * The operator runtime:
-  * Reads the expanded situational configuration files and/or errors from the introspector.
+  * Reads the expanded situational configuration files or errors from the introspector.
   * And, if the introspector reported no errors, it:
       * Puts situational configuration files in a configuration map named `DOMAIN_UID-weblogic-domain-introspect-cm`.
       * Mounts this configuration map into the WebLogic Server pods.

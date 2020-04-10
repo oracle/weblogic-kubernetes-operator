@@ -28,7 +28,7 @@ provide a "well known address (WKA)" so that all members can find the senior
 member.  Most Kubernetes overlay network providers do not
 support multicast.  
 
-This is done by specifying the Coherence well known addresses in a variable named
+This is done by specifying Coherence well known addresses in a variable named
 `coherence.wka` as shown in the following example:
 
 ```
@@ -45,7 +45,7 @@ a WebLogic domain, refer to the [Coherence operator documentation](https://oracl
 
 In order for Coherence clusters to form correctly, the `conntrack` library
 must be installed.  Most Kubernetes distributions will do this for you.
-If you have issues with clusters not forming, you should check that
+If you have issues with clusters not forming, then you should check that
 `conntrack` is installed using this command (or equivalent):
 
 ```
@@ -61,7 +61,7 @@ should install `conntrack` using your operating system tools.
 
 Some Kubernetes distributions create `iptables` rules that block some
 types of traffic that Coherence requires to form clusters.  If you are
-not able to form clusters, you can check for this issue using the
+not able to form clusters, then you can check for this issue using the
 following command:
 
 ```

@@ -77,7 +77,7 @@ If more servers are configured as `ALWAYS` than the cluster's `replicas` count, 
 For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server
 so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
 property, which is available at domain, cluster, and server levels.  When `serverStartState` is set to `ADMIN`, then servers will
-progress only to the administrative state.  You could then use the WebLogic console, REST API, or a WLST script to make any necessary
+progress only to the administrative state.  Then you could use the WebLogic Server Administration Console, REST API, or a WLST script to make any necessary
 updates before advancing the server to the running state.
 
 Changes to the `serverStartState` property do not affect already started servers.
@@ -366,7 +366,7 @@ Set `restartVersion` at the `managedServer` level to a new value.
 ```
 #### Full domain restarts
 
-To do a full domain restart, first shut down all of the domain's servers (Administration and Managed Servers), taking the domain out of service,
+To do a full domain restart, first shut down all of the domain's servers (Administration Server and Managed Servers), taking the domain out of service,
 then restart them.  Unlike rolling restarts, the operator cannot detect and initiate a full domain restart; you must always manually initiate it.
 
 To manually initiate a full domain restart:
