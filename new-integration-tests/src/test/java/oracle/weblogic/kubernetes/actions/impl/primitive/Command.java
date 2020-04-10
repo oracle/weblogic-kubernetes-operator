@@ -48,7 +48,7 @@ public class Command {
           params.env());
       return result.exitValue() == 0;
     } catch (IOException | InterruptedException ie) {
-      logger.warning("Failed too run the command due to {0}", ie.getMessage());
+      logger.warning("Failed to run the command due to {0}", ie.getMessage());
       return false;
     }
   }

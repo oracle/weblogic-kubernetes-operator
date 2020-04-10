@@ -18,10 +18,12 @@ public class LoggingFacade {
   private final Logger logger;
 
   /**
-   * Construct logging facade.
-   * @param logger logger
+   * Use LoggingFactory.getLogger() to get new instances of a LoggingFacade logger.
+   * LoggingFacade wraps java.util.logging.Logger to provide convenience methods that improve
+   * and simplify the logging API.
+   * @param logger a resolved java.util.logging.Logger with bundle
    */
-  public LoggingFacade(Logger logger) {
+  LoggingFacade(Logger logger) {
     this.logger = logger;
 
     final Logger parentLogger = Logger.getAnonymousLogger().getParent();
@@ -595,10 +597,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Obtains caller details, class name and method, to be provided to the actual Logger. This code
-   * is adapted from ODLLogRecord, which should yield consistency in reporting using PlatformLogger
-   * versus a raw (ODL) Logger. JDK Logger does something similar but utilizes native methods
-   * directly.
+   * Obtains caller details, class name and method, to be provided to the actual Logger.
    */
   CallerDetails inferCaller() {
     CallerDetails details = new CallerDetails();
