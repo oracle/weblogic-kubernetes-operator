@@ -89,7 +89,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
-      destroySitConfigDomain(domain);
+      destroySitConfigDomain(domain, false);
       if (operator1 != null) {
         LoggerHelper.getLocal().log(Level.INFO, "Destroying operator...");
         operator1.destroy();

@@ -76,11 +76,13 @@ public class SitConfig extends BaseTest {
    *
    * @throws Exception when domain destruction fails
    */
-  protected static void destroySitConfigDomain(Domain domain) throws Exception {
+  protected static void destroySitConfigDomain(Domain domain, boolean domainInImage) throws Exception {
     if (domain != null) {
       LoggerHelper.getLocal().log(Level.INFO, "Destroying domain...");
       domain.destroy();
-      domain.deleteImage();
+      if (domainInImage) {
+        domain.deleteImage();
+      }
     }
   }
 
