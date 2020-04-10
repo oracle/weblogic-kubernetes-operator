@@ -4,14 +4,17 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -154,7 +157,14 @@ public class ItDomainInImage extends BaseTest {
 
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      domain.verifySSLListeners();
+      List<ExecResult> execResultList = domain.verifySSLListeners();
+      Assert.assertTrue(execResultList.size() > 0);
+      for (ExecResult execResult : execResultList) {
+        Assert.assertNotNull(execResult);
+        Assert.assertEquals(0, execResult.exitValue());
+        Assert.assertTrue(execResult.stderr().contains("HTTP/1.1 200 OK"));
+      }
+
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {

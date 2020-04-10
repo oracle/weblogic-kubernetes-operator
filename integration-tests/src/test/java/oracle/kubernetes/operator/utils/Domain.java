@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -233,17 +234,21 @@ public class Domain {
    *
    * @throws Exception If an error occurred
    */
-  public void verifySSLListeners() throws Exception {
+  public List<ExecResult> verifySSLListeners() throws Exception {
+    List execResults = new ArrayList<ExecResult>(1 + initialManagedServerReplicas);
     // Check admin server's SSL port
-    verifyWebLogicSSLListener(domainUid + "-" + adminServerName, "$ADMIN_SERVER_SSL_PORT");
+    execResults.add(verifyWebLogicSSLListener(domainUid + "-" + adminServerName, "$ADMIN_SERVER_SSL_PORT"));
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server's SSL port
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         LoggerHelper.getLocal().log(Level.INFO,
                 "Checking if managed server's SSL port (" + managedServerNameBase + i + ") is active.");
-        verifyWebLogicSSLListener(domainUid + "-" + managedServerNameBase + i, "$MANAGED_SERVER_SSL_PORT");
+        execResults.add(verifyWebLogicSSLListener(domainUid + "-" + managedServerNameBase + i,
+                "$MANAGED_SERVER_SSL_PORT"));
       }
     }
+
+    return  execResults;
   }
 
   /**
@@ -319,15 +324,18 @@ public class Domain {
   }
 
 
-  private void verifyWebLogicSSLListener(String podName, String sslPortEnvVariable) throws Exception {
+  private ExecResult verifyWebLogicSSLListener(String podName, String sslPortEnvVariable) throws Exception {
+    ExecResult execResult = null;
     if (sslEnabled) {
       LoggerHelper.getLocal().log(Level.INFO,
               "Checking the SSL port of WebLogic server " + podName + " in " + domainUid);
       StringBuffer wlsServerCurlCmd = getCurlCmdForHttps(podName, sslPortEnvVariable);
 
       LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + wlsServerCurlCmd.toString());
-      TestUtils.exec(wlsServerCurlCmd.toString(), true);
+      execResult = TestUtils.exec(wlsServerCurlCmd.toString(), true);
     }
+
+    return  execResult;
   }
 
 
