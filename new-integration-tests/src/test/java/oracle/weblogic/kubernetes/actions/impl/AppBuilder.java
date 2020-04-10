@@ -10,12 +10,10 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.catchThrowable;
-import static org.assertj.core.api.Assertions.fail;
 
 /**
  *  Implementation of actions that build an application archive file.
@@ -53,50 +51,26 @@ public class AppBuilder {
    */
   public boolean build() {
     // prepare the archive directory and copy over the app src
-    Throwable throwable = catchThrowable(
-        () -> { 
-        cleanupDirectory(ARCHIVE_DIR);
-        checkDirectory(ARCHIVE_SRC_DIR);
-        copyFolder(
-            APP_DIR + "/" + params.srcDir(), 
-            ARCHIVE_SRC_DIR);
-        });
-        
-    assertThat(throwable)
-        .as(String.format(
-            "Prepare archive directory %s, and copy app sources over",
-            ARCHIVE_DIR))
-        .withFailMessage("Failed to get the directory " + ARCHIVE_DIR + " ready")
-        .isNull();
+    try {
+      cleanupDirectory(ARCHIVE_DIR);
+      checkDirectory(ARCHIVE_SRC_DIR);
+      copyFolder(
+          APP_DIR + "/" + params.srcDir(), 
+          ARCHIVE_SRC_DIR);
+    } catch (IOException ioe) {    
+      logger.warning("Failed to get the directory " + ARCHIVE_DIR + " ready");
+      return false;
+    }
 
     // build the app archive 
-    Exception exception = null;
     String jarPath = String.format("%s.ear", params.srcDir());
-    try {
-      boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
-      assertThat(jarBuilt)
-          .as("Create app ear file " + jarPath)
-          .withFailMessage("Failed to create the app ear file " + jarPath) 
-          .isTrue();
-    } catch (Exception e) {
-      fail("Failed to create an ear archive file", e);
-    }
+    boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
     
     // build a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.srcDir());
-    exception = null;
-    try {
-      boolean zipBuilt = buildZipArchive(zipPath, ARCHIVE_DIR);
-      assertThat(zipBuilt)
-          .as("Create app zip file " + zipPath)
-          .withFailMessage("Failed to create the zip file " + zipPath) 
-          .isTrue();
-    
-    } catch (Exception e) {
-      fail("Failed to create the application archive file " + zipPath, e);
-    }
-    
-    return true;
+    boolean zipBuilt = buildZipArchive(zipPath, ARCHIVE_DIR);
+
+    return jarBuilt && zipBuilt;
   }
 
   /**
@@ -108,7 +82,7 @@ public class AppBuilder {
   private boolean buildJarArchive(
       String jarPath, 
       String srcDir
-  ) throws IOException {
+  ) {
 
     String cmd = String.format("cd %s; jar -cfM %s . ", srcDir, jarPath);
 
@@ -128,7 +102,7 @@ public class AppBuilder {
   private boolean buildZipArchive(
       String zipPath, 
       String srcDir
-  ) throws IOException, InterruptedException {
+  ) {
 
     String cmd = String.format(
         "cd %s ; zip %s wlsdeploy/applications/%s.ear ", 
