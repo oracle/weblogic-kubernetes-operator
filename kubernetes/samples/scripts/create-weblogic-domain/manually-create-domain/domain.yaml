@@ -1,10 +1,10 @@
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
 # what updates are needed.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   # Update this with the `domainUID` of your domain:
@@ -21,8 +21,8 @@ spec:
   # Note that this might be in the image itself or in a mounted volume or network storage.
   domainHome: /u01/oracle/user_projects/domains/domain1
 
-  # If the domain home is inside the Docker image, set this to `true`, otherwise set `false`:
-  domainHomeInImage: true
+  # Domain home source type.  Legal values are Image, PersistentVolume, or FromModel
+  domainHomeSourceType: Image
 
   # Update this with the name of the Docker image that will be used to run your domain:
   image: "my-domain1-image:1.0"
