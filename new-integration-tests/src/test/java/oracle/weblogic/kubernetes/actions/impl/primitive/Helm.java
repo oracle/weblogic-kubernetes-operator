@@ -5,13 +5,15 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.HashMap;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class Helm {
+  private static final LoggingFacade logger = LoggingFactory.getLogger(Helm.class);
 
   /**
    * Installs a Helm chart.
@@ -52,8 +54,7 @@ public class Helm {
       chartRef = helmParams.getRepoUrl();
     }
 
-    logger.fine(String.format("Installing a chart in namespace %s using chart reference %s",
-        namespace, chartRef));
+    logger.fine("Installing a chart in namespace {0} using chart reference {1}", namespace, chartRef);
 
     // build helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
@@ -96,8 +97,7 @@ public class Helm {
     //chart reference to be used in helm upgrade
     String chartDir = params.getChartDir();
 
-    logger.fine(String.format("Upgrading a release in namespace %s using chart reference %s",
-        namespace, chartDir));
+    logger.fine("Upgrading a release in namespace {0} using chart reference {1}", namespace, chartDir);
 
     // build helm upgrade command
     String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s ",
@@ -127,8 +127,7 @@ public class Helm {
         .isNotNull()
         .isNotEmpty();
 
-    logger.fine(String.format("Uninstalling release %s in namespace %s",
-        params.getReleaseName(), params.getNamespace()));
+    logger.fine("Uninstalling release {0} in namespace {1}", params.getReleaseName(), params.getNamespace());
 
     String uninstallCmd = String.format("helm uninstall %1s -n %2s", params.getReleaseName(),
         params.getNamespace());
