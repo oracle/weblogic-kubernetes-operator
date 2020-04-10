@@ -45,12 +45,15 @@ public class Command {
           params.command(), 
           params.redirect(),
           params.env());
+      if (result.exitValue() != 0) {
+        logger.warning("The command execution failed with the result: " + result);
+      }
       return result.exitValue() == 0;
     } catch (IOException ioe) {
-      logger.warning("Failed too run the command due to " + ioe.getMessage());
+      logger.warning("The command execution failed due to " + ioe.getMessage());
       return false;
     } catch (InterruptedException ie) {
-      logger.warning("Failed too run the command due to " + ie.getMessage());
+      logger.warning("The command execution failed due to " + ie.getMessage());
       return false;
     }
   }

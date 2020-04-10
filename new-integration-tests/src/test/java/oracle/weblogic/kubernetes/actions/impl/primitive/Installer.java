@@ -80,14 +80,14 @@ public class Installer {
    * @return true if the command succeeds 
    */
   public boolean download() {
-    boolean downloadResult = true;
-    boolean unzipResult = true;
+    boolean downloadSucceeded = true;
+    boolean unzipSucceeded = true;
     if (params.verify()
         && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
       logger.info("File " + params.fileName() + " already exists.");
     } else {
       checkDirectory(DOWNLOAD_DIR);
-      downloadResult = Command.withParams(
+      downloadSucceeded = Command.withParams(
           defaultCommandParams() 
               .command(buildDownloadCommand())
               .redirect(params.redirect()))
@@ -95,11 +95,11 @@ public class Installer {
     }
     if (params.unzip()) {
       // only unzip WIT once
-      if (!(doesFileExist(IMAGE_TOOL))) { 
-        unzipResult = unzip();
+      if (!(doesFileExist(IMAGE_TOOL))) {
+        unzipSucceeded = unzip();
       }
     }
-    return downloadResult && unzipResult;
+    return downloadSucceeded && unzipSucceeded;
   }
 
   private boolean unzip() {

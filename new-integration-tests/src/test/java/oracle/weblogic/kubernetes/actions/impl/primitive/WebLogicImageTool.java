@@ -13,7 +13,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWDTParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWITParams;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -53,31 +52,27 @@ public class WebLogicImageTool {
   public boolean updateImage() {
     // download WIT if it is not in the expected location 
     if (!downloadWIT()) {
-      logger.warning("Failed to download or unzip WebLogic Image Tool");
       return false;
     } 
    
     // download WDT if it is not in the expected location 
     if (!downloadWDT()) {
-      logger.warning("Failed to download WebLogic Deploy Tool");
       return false;
     } 
 
     // delete the old cache entry for the WDT installer
     if (!deleteEntry()) {
-      logger.warning("Failed to delete cache entry in WebLogic Image Tool");
       return false;
     }
 
     // add the cache entry for the WDT installer
     if (!addInstaller()) {
-      logger.warning("Failed to add installer to WebLogic Image Tool");
       return false;
     }
   
     return Command.withParams(
         defaultCommandParams()
-            .command(buildCommand())
+            .command(buildiWITCommand())
             .env(params.env())
             .redirect(params.redirect()))
         .execute();
@@ -97,7 +92,7 @@ public class WebLogicImageTool {
         .download();
   } 
   
-  private String buildCommand() {
+  private String buildiWITCommand() {
     String command = 
         IMAGE_TOOL 
         + " update "
