@@ -9,11 +9,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.apache.commons.io.FileUtils.cleanDirectory;
 
 /**
  * The utility class for file operations.
@@ -64,7 +64,7 @@ public class FileUtils {
   }
   
   /**
-   * Remove the given directory and its contents.
+   * Remove the contents of the given directory.
    *
    * @param dir the directory to be cleaned up
    */
@@ -79,11 +79,7 @@ public class FileUtils {
     if (!file.isDirectory()) {
       throw new IllegalArgumentException("The parameter " + dir + " should be a directory.");
     }
-
-    Files.walk(Paths.get(dir))
-        .sorted(Comparator.reverseOrder())
-        .map(Path::toFile)
-        .forEach(File::delete);
+    cleanDirectory(file);
 
   }
   
