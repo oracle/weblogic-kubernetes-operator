@@ -21,20 +21,19 @@ topology:
         'managed-server1':
             Cluster: 'cluster-1'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
-        'managed-server2':
+         'managed-server2':
             Cluster: 'cluster-1'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
-        'managed-server3':
+         'managed-server3':
             Cluster: 'cluster-1'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
-        'managed-server4':
+         'managed-server4':
             Cluster: 'cluster-1'
             ListenPort: '@@PROP:MANSVR_PORT@@'
-            NumOfRetriesBeforeMsiMode: 0
-            RetryIntervalBeforeMsiMode: 1
+           
+appDeployments:
+    Application:
+        myear:
+            SourcePath: wlsdeploy/applications/sample_app.ear
+            ModuleType: ear
+            Target: 'cluster-1'            

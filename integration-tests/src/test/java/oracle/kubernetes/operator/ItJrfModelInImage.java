@@ -3,20 +3,20 @@
 
 package oracle.kubernetes.operator;
 
-//import java.nio.charset.Charset;
-//import java.nio.charset.StandardCharsets;
-//import java.nio.file.Files;
-//import java.nio.file.Path;
-//import java.nio.file.Paths;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-//import java.util.HashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.DbUtils;
-//import oracle.kubernetes.operator.utils.Domain;
-//import oracle.kubernetes.operator.utils.DomainCrd;
-//import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.DomainCrd;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -121,14 +121,15 @@ public class ItJrfModelInImage extends MiiBaseTest {
   }
 
   /**
-   * Create a domain using model in image with model yaml and model properties
-   * file in the image. Deploy the domain, verify the running domain has
-   * the correct configuration as given in the image.
+   * Create and deploy a JRF domain using model in image. Save walletFileSecret and then shutdown the domain by 
+   * changing serverStartPolicy to "NEVER". Enable walletFileSecret in the domain yaml file and start the domain 
+   * with the modified domain yaml file.
    *
-   * @throws Exception exception
+   * @throwsRuntimeException if pods/services of the domain are not created or WLS is not running during the first 
+   *                         and the second domain startup 
    */
   @Test
-  public void testMiiWithNoConfigMap() throws Exception {
+  public void testReuseRCU2Deployments() throws Exception {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -160,15 +161,94 @@ public class ItJrfModelInImage extends MiiBaseTest {
       domainMap.put("walletPasswordSecret", walletPass);
       
       jrfdomain = new JrfDomain(domainMap);
-      jrfdomain.verifyDomainCreated(80);
+      jrfdomain.verifyDomainCreated();
+      
+      saveWalletFileSecret(getResultDir(), domainUid, namespace);
+      String walletFileSecretName = domainUid + "-opss-walletfile-secret";
+      restoreWalletFileSecret(getResultDir(), domainUid, namespace, walletFileSecretName);
+      
+      //shutdown the domain
+      
+      jrfdomain.shutdownUsingServerStartPolicy();
+      
+      String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + jrfdomain.getDomainUid()
+          + "/domain.yaml"; 
+      DomainCrd crd = new DomainCrd(originalYaml);
+      Map<String, String> opssNode = new HashMap();
+      opssNode.put("walletFileSecret", walletFileSecretName);
+      crd.addObjectNodeToOpss(opssNode);
+      String modYaml = crd.getYamlTree();
+      LoggerHelper.getLocal().log(Level.INFO, modYaml);
+      // Write the modified yaml to a new file
+      Path path = Paths.get(getUserProjectsDir() + "/weblogic-domains/" + jrfdomain.getDomainUid(),
+          "modified.domain.yaml");
+      LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+      
+      //Apply the new yaml to update the domain crd
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
+      
+      jrfdomain.verifyDomainCreated();
       testCompletedSuccessfully = true;
+
     } finally {
       if (jrfdomain != null && (JENKINS || testCompletedSuccessfully)) {
+        LoggerHelper.getLocal().log(Level.INFO, "DONE!!!");
         TestUtils.deleteWeblogicDomainResources(jrfdomain.getDomainUid());
       }
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
+  
+  private static void saveWalletFileSecret(String scriptsDir, String domainUid, String nameSpace)throws Exception {
+    String cmd = "sh " 
+        + scriptsDir
+        + "/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -d "
+        + domainUid
+        + " -n "
+        + nameSpace
+        + " -s";
+    TestUtils.exec(cmd, true);
+  }
+  
+  private static void restoreWalletFileSecret(String scriptsDir, String domainUid, String nameSpace, 
+      String secretName)throws Exception {
+    String cmd = "sh " 
+        + scriptsDir
+        + "/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -d "
+        + domainUid
+        + " -n "
+        + nameSpace
+        + " -r"
+        + " -ws "
+        + secretName;
+    TestUtils.exec(cmd, true);
+  }
+  
+  /**
+   * Create a Kubernetes secret and label the secret with domainUid. This secret is used for
+   * weblogicCredentialsSecretName in the domain inputs.
+   *
+   * @throws Exception when the kubectl create secret command fails or label secret fails
+   */
+  /*private void createSecret(String domainNS, String domainUid, String secretName) throws Exception {
+    Secret secret =
+        new Secret(
+            domainNS,
+            secretName,
+            BaseTest.getUsername(),
+            BaseTest.getPassword());
+    //domainMap.put("weblogicCredentialsSecretName", secret.getSecretName());
+    final String labelCmd =
+        String.format(
+            "kubectl label secret %s weblogic.domainUID=%s -n %s",
+            secret.getSecretName(), domainUid, domainNS);
+    TestUtils.exec(labelCmd);
+  }*/
+  
   
 }

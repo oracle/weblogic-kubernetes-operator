@@ -21,7 +21,7 @@ echo "@@ Info: Running '$(basename "$0")'."
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 WALLET_FILE=${WALLET_FILE:-./ewallet.p12}
-WALLET_SECRET=${DOMAIN_UID}-opss-walletfile-secret
+WALLET_SECRET=${WALLET_SECRET:-${DOMAIN_UID}-opss-walletfile-secret}
 
 usage_exit() {
 cat << EOF
@@ -137,7 +137,7 @@ if [ $FILESIZE = 0 ]; then
 fi
 
 if [ ${RESTORE_WALLET} -eq 1 ] ; then
-  echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}'."
+  echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' domainUid '${DOMAIN_UID}' for wallet file '${WALLET_FILE}'."
   $SCRIPTDIR/create_secret.sh \
     -n ${DOMAIN_NAMESPACE} \
     -d ${DOMAIN_UID} \

@@ -136,6 +136,19 @@ public class DomainCrd {
       ((ObjectNode) adminServerNode).put(entry.getKey(), entry.getValue());
     }
   }
+  
+  /**
+   * A utility method to add attributes to opss node in domain.yaml.
+   *
+   * @param attributes - A HashMap of key value pairs
+   */
+  public void addObjectNodeToOpss(Map<String, String> attributes) {
+
+    JsonNode opssNode = getOpssNode();
+    for (Map.Entry<String, String> entry : attributes.entrySet()) {
+      ((ObjectNode) opssNode).put(entry.getKey(), entry.getValue());
+    }
+  }
 
   /**
    * A utility method to add attributes to cluster node in domain.yaml.
@@ -360,6 +373,18 @@ public class DomainCrd {
     modelNode.remove("runtimeEncryptionSecret");
     ((ObjectNode) modelNode).put("runtimeEncryptionSecret", secret);
   }
+  
+  /**
+   * Utility method to replace runtimeEncryptionSecret in domain.yaml
+   *
+   * @param secret , new secret to be replaced
+   * @throws JsonProcessingException when runtimeEncryptionSecret not available
+   */
+  public void unCommentoutWalletFileSecret(String secret) throws JsonProcessingException {
+    ObjectNode modelNode = (ObjectNode) getConfigModelNode();
+    modelNode.remove("#walletFileSecret");
+    ((ObjectNode) modelNode).put("walletFileSecret", secret);
+  }
 
   /** Gets the spec node entry from Domain CRD JSON tree. */
   private JsonNode getSpecNode() {
@@ -383,6 +408,16 @@ public class DomainCrd {
   private JsonNode getAdminServerNode() {
     return root.path("spec").path("adminServer");
   }
+  
+  /**
+   * Gets the opss node entry from Domain CRD JSON tree.
+   *
+   * @return opss node
+   */
+  private JsonNode getOpssNode() {
+    return root.path("spec").path("configuration").path("opss");
+  }
+
 
   /**
    * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name.
