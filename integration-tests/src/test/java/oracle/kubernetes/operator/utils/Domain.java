@@ -181,8 +181,8 @@ public class Domain {
     if (exposeAdminNodePort) {
       String cmd = "curl --silent --noproxy " + getHostNameForCurl()
           + " http://" + getHostNameForCurl();
-      if(!BaseTest.OKE_CLUSTER) {
-        cmd = cmd +":" + getNodePort();
+      if (!BaseTest.OKE_CLUSTER) {
+        cmd = cmd + ":" + getNodePort();
       }
       cmd = cmd   + "/console/login/LoginForm.jsp --user "
           + BaseTest.getUsername() + ":" + BaseTest.getPassword()
