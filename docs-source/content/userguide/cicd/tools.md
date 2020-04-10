@@ -22,7 +22,7 @@ interesting.  A good way to get a jumpstart on a model is to use the
 `discoverDomain` tool in WDT which builds a model based on an existing domain.
 
 {{% notice note %}}
-A Model in Image domain completely takes advantage of the WDT tool. It let's
+A Model in Image domain takes advantage of WDT by letting
 you specify an operator domain directly with a model instead of requiring
 that you supply a domain home.
 {{% /notice %}}
