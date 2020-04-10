@@ -25,7 +25,7 @@ public class LoggingFactory {
 
   /**
    * Obtains a Logger from the underlying logging implementation and wraps it in a LoggingFacade.
-   * Infers caller class and bundle name.
+   * Infers resource bundle name as OperatorIntegrationTests.
    *
    * @param clazz use class name as logger name
    * @return a logger for the caller to use

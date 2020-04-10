@@ -73,9 +73,9 @@ class ItSimpleDomainValidation implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for domain to be running (elapsed time {0}ms, remaining time {1}}ms)",
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
+                "Waiting for domain to be running (elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
