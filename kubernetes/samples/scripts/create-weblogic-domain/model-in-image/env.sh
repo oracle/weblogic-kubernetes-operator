@@ -31,15 +31,15 @@
 
 # ::: model image model files
 #  Location of the model .zip, .properties, and .yaml files 
-#  that will be copied into the image.  Default is 'WORKDIR/models'
-#  which is populated by the ./build_model.sh script.
+#  that will be copied into the image.  Default is 'WORKDIR/model'
+#  which is populated by the ./stage-model.sh script.
 # export MODEL_DIR=
 
 # ::: runtime model files
 #  Location of model files that will be loaded at runtime from
-#  a configmap specified by the domain resource. Default is 'WORKDIR/wdtconfigmap'
-#  which is populated by the ./build_model.sh script.
-# export WDTCONFIGMAPDIR=
+#  a configmap specified by the domain resource. Default is 'WORKDIR/configmap'
+#  which is populated by the ./stage-configmap.sh script.
+# export CONFIGMAPDIR=
 
 # ::: when to downlaod WDT installer
 #  Set to 'always' to always download WDT even if WORKDIR already has a download, default is 'when-missing'
@@ -68,8 +68,13 @@
 
 # ::: Domain resource template
 #  Use this file for a domain resource template instead
-#  of ./k8s-domain.yaml.template
+#  of sample-domain-resource-wls/k8s-domain.yaml.template
+#  or sample-domain-resource-jrf/k8s-domain.yaml.template
 # export DOMAIN_RESOURCE_TEMPLATE=
+
+# ::: Domain Name
+#  Default is domain1.
+# export DOMAIN_NAME=
 
 # ::: Domain UID
 #  Default is sample-domain1.

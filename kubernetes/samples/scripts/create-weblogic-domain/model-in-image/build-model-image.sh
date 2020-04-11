@@ -3,17 +3,17 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script uses the WebLogic Image Tool to build a Docker image with model in image
-#  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
-#  and it gets model files from the WORKDIR/models directory that was setup by the build_model.sh script.
+#  artifacts. By default, it uses the base image obtained earlier with stage-base-image.sh,
+#  and it gets model files from the WORKDIR/model directory that was setup by the stage-model.sh script.
 #
 #  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG. 
 #
 #  Assumptions:
 #
 #    This script should be called by build.sh.
-#    The WebLogic Image Tool is downloaded to WORKDIR/weblogic-image-tool.zip (see ./build_download.sh).
-#    The WebLogic Deploy Tool is downloaded to WORKDIR/weblogic-deploy-tooling.zip (see ./build_download.sh).
-#    Model files have been staged in the "WORKDIR/models" directory (see ./build_model.sh) or
+#    The WebLogic Image Tool is downloaded to WORKDIR/weblogic-image-tool.zip (see ./stage-tooling.sh).
+#    The WebLogic Deploy Tool is downloaded to WORKDIR/weblogic-deploy-tooling.zip (see ./stage-tooling.sh).
+#    Model files have been staged in the "WORKDIR/model" directory (see ./stage-model.sh) or
 #    MODEL_DIR has been explicitly set to point to a different location.
 #
 #  Optional environment variables:
@@ -24,8 +24,8 @@
 #
 #    MODEL_DIR:
 #      Location of the model .zip, .properties, and .yaml files
-#      that will be copied in to the image.  Default is 'WORKDIR/models'
-#      which is populated by the ./build_model.sh script.
+#      that will be copied in to the model image.  Default is 'WORKDIR/model'
+#      which is populated by the ./stage-model.sh script.
 #
 #    MODEL_YAML_FILES, MODEL_ARCHIVE_FILES, MODEL_VARIABLES_FILES:
 #      Optionally, set one or more of these with comma-separated lists of file
@@ -89,7 +89,7 @@ echo @@
 echo @@ Info: Obtaining model files
 echo @@
 
-MODEL_DIR=${MODEL_DIR:-$WORKDIR/models}
+MODEL_DIR=${MODEL_DIR:-$WORKDIR/model}
 MODEL_YAML_FILES="${MODEL_YAML_FILES:-$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')}"
 MODEL_ARCHIVE_FILES="${MODEL_ARCHIVE_FILES:-$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')}"
 MODEL_VARIABLE_FILES="${MODEL_VARIABLE_FILES:-$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')}"
@@ -105,14 +105,14 @@ echo @@
 mkdir -p cache
 unzip -o weblogic-image-tool.zip
 
-IMGTOOL_BIN=${WORKDIR}/imagetool/bin/imagetool.sh
+IMGTOOL=${WORKDIR}/imagetool/bin/imagetool.sh
 
 # The image tool uses the WLSIMG_CACHEDIR and WLSIMG_BLDIR env vars:
 export WLSIMG_CACHEDIR=${WORKDIR}/cache
 export WLSIMG_BLDDIR=${WORKDIR}
 
-${IMGTOOL_BIN} cache deleteEntry --key wdt_myversion
-${IMGTOOL_BIN} cache addInstaller \
+${IMGTOOL} cache deleteEntry --key wdt_myversion
+${IMGTOOL} cache addInstaller \
   --type wdt --version myversion --path ${WORKDIR}/weblogic-deploy-tooling.zip
 
 echo "@@"
@@ -120,16 +120,19 @@ echo "@@ Info: Starting model image build for '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TA
 echo "@@"
 
 #
-# Run the image tool to create the image. It will use the WDT binaries
+# Run the image tool to create the model image. It will use the WDT binaries
 # in the local image tool cache marked with key 'myversion' (see 'cache' commands above).
+# Note: The "${macro:+text}" syntax expands to "" if 'macro' is empty, and to 'text' if it isn't
 #
 
-${IMGTOOL_BIN} update \
+# TBD test empty cases, even all three empty
+
+${IMGTOOL} update \
   --tag $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG \
   --fromImage $BASE_IMAGE_NAME:$BASE_IMAGE_TAG \
-  --wdtModel ${MODEL_YAML_FILES} \
-  --wdtVariables ${MODEL_VARIABLE_FILES} \
-  --wdtArchive ${MODEL_ARCHIVE_FILES} \
+  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \
+  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \
+  ${MODEL_ARCHIVE_VALUES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \
   --wdtModelOnly \
   --wdtVersion myversion \
   --wdtDomainType ${WDT_DOMAIN_TYPE}

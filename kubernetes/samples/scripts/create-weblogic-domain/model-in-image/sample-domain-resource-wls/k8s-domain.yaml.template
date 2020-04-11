@@ -49,12 +49,12 @@ spec:
   serverPod:
     # an (optional) list of environment variable to be set on the servers
     env:
+    - name: DOMAIN_NAME
+      value: "@@DOMAIN_NAME@@"
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
-    - name: ALLOW_DYNAMIC_CLUSTER_IN_FMW
-      value: "true"
     - name: TRACE_TIMING
       value: "true"
     # volumes:
@@ -90,28 +90,16 @@ spec:
 
   configuration:
 
-    # secrets that are referenced by model yaml macros
-    # @@DOMAIN_UID@@-rcu-access is used for JRF domains
-    #secrets: [ @@DOMAIN_UID@@-rcu-access ]
+    # Secrets that are referenced by model yaml macros
+    #secrets:
+    #  -name: @@DOMAIN_UID@@-datasource-secret
     
-    # increase the introspector job active timeout value. Mainly for JRF use cases
-    #introspectorJobActiveDeadlineSeconds: 300
-
     model:
       # Optional configmap for additional models and variable files
       configMap: @@DOMAIN_UID@@-wdt-config-map
 
-      # wdt domain type for model in image case
-      # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
+      # Valid wdt domain types are 'WLS', 'JRF', and 'RestrictedJRF'
       domainType: "@@WDT_DOMAIN_TYPE@@"
 
-      # Name of secret with runtimeEncryptionSecret 
+      # All model-in-image domains required a runtimeEncryptionSecret with a 'password' field
       runtimeEncryptionSecret: @@DOMAIN_UID@@-runtime-encryption-secret
-
-    #opss:
-
-      # Name of secret with walletPassword for extracting the wallet, used for JRF domains
-      #walletPasswordSecret: @@DOMAIN_UID@@-opss-wallet-password-secret
-      
-      # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domain
-      #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret

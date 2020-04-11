@@ -13,7 +13,7 @@
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
-#   WDTCONFIGMAPDIR           - defaults to './wdtconfigmap' (a directory populated by build_model.sh)
+#   CONFIGMAPDIR              - defaults to '${WORKDIR}/configmap' (a directory populated by stage-configmap.sh)
 #   MODEL_IMAGE_NAME          - defaults to 'model-in-image'
 #   MODEL_IMAGE_TAG           - defaults to 'v1'
 #   DOMAIN_RESOURCE_TEMPLATE  - use this file for a domain resource template instead
@@ -30,7 +30,7 @@ echo "@@ Info: Running '$(basename "$0")'."
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
-WDTCONFIGMAPDIR=${WDTCONFIGMAPDIR:-$WORKDIR/wdtconfigmap}
+CONFIGMAPDIR=${CONFIGMAPDIR:-$WORKDIR/configmap}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 RCUDB_NAMESPACE=${RCUDB_NAMESPACE:-default}
 
@@ -55,33 +55,33 @@ while [ 1 -eq 1 ]; do
 done
 
 echo "@@ Info: Creating weblogic domain secret"
-$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-weblogic-credentials \
+$SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-weblogic-credentials \
   -l username=weblogic \
   -l password=welcome1
 
 if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
-  $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-rcu-access \
+  $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-rcu-access \
     -l rcu_prefix=FMW1 \
     -l rcu_schema_password=Oradoc_db1 \
     -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
   echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-  $SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
+  $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
     -l walletPassword=welcome1
 fi
 
 echo "@@ Info: Creating model runtime encryption secret"
-$SCRIPTDIR/create_secret.sh -s ${DOMAIN_UID}-runtime-encryption-secret \
+$SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-runtime-encryption-secret \
   -l password=$(uuidgen).$SECONDS.$PPID.$RANDOM
 
 
 echo "@@ Info: Creating sample wdt configmap (optional)"
-$SCRIPTDIR/create_configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${WDTCONFIGMAPDIR}
+$SCRIPTDIR/util-create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${CONFIGMAPDIR}
 
 
 echo "@@ Info: Creating domain resource yaml '$WORKDIR/k8s-domain.yaml'."
-$SCRIPTDIR/create_domain.sh
+$SCRIPTDIR/stage-domain-resource.sh
 
 
 echo "@@ Info: Applying domain resource yaml '$WORKDIR/k8s-domain.yaml'"

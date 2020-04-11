@@ -1,8 +1,12 @@
 #!/bin/bash
 
+#
 # TBD add doc at top of this script
-#     turn parms into -e (count) and -t seconds
-# TBD modify to wait for 'ready' state
+#     turn parms into -e (count) and -t seconds -n namespace -d domain_uid
+#
+# TBD modify to wait for an expected restart version - get the restart version from 
+#     the domain resource
+#
 
 set -eu
 set -o pipefail
@@ -20,12 +24,16 @@ while [ 1 -eq 1 ]; do
 
   # WL Server pods are the only pods with the weblogic.serverName label
 
-  cur_pods=$(kubectl -n ${DOMAIN_NAMESPACE} get pods \
-             -l weblogic.serverName,weblogic.domainUID=${DOMAIN_UID} \
-             -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
-             | wc -l)
+  set +e
+  # grep returns non-zero if it doesn't find anything (sigh), so disable error checking and cross-fingers...
 
-  out_str="for WebLogic pod count to reach '$expected'" 
+  cur_pods=$(kubectl -n ${DOMAIN_NAMESPACE} get pods \
+                 -l weblogic.serverName,weblogic.domainUID=${DOMAIN_UID} \
+                 -o=jsonpath='{range .items[*]}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\n"}{end}' \
+             | grep true | wc -l)
+  set -e
+
+  out_str="for ready WebLogic pod count to reach '$expected'" 
   out_str+=", ns=$DOMAIN_NAMESPACE"
   out_str+=", domainUID=$DOMAIN_UID"
   out_str+=", timeout_secs='$timeout_secs'"

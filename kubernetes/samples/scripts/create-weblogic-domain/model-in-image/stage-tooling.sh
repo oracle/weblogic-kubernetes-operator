@@ -17,7 +17,7 @@
 #
 #    DOWNLOAD_WDT DOWNLOAD_WIT
 #      Default to 'when-missing'. Set to 'always' to force download even
-#      if local installer zip is missing.
+#      if local installer zip is missing.  TBD rename to 'FORCE' and add "-force" support?
 #
 #    WDT_INSTALLER_URL WIT_INSTALLER_URL
 #      Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'

@@ -5,8 +5,8 @@
 #
 # This script sets up a working directory for this sample. It copies ./env.sh
 # to this directory. It fails with a non-zero exit code if it cannot
-# create the directory when the directory doesn't already exist, or if 
-# it cannot copy env.sh to the directory if env.sh isn't already copied to
+# create the directory when the directory doesn't already exist. It also fails
+# if it cannot copy env.sh to the directory if env.sh isn't already copied to
 # the directory.
 #
 # Once the working directory is setup, the other sample scripts will

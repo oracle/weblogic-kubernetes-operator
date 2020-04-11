@@ -68,3 +68,5 @@ fi
 
 docker pull ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}
 
+# TBD add push step if supporting remote repo?
+

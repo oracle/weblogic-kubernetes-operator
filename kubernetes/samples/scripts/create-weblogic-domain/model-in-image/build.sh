@@ -22,18 +22,25 @@ echo "@@ Info: Running '$(basename "$0")'."
 # This step downloads the latest WebLogic Deploy Tool and WebLogic Image Tool in the current directory
 # If this is run behind a proxy, then environment variables http_proxy and https_proxy must be set.
 
-$SCRIPTDIR/build_download.sh
+$SCRIPTDIR/stage-tooling.sh
 
-# This step populates the model. It places a sample application and WDT files in the WORKDIR/models directory.
+# This step populates the model. It places a sample application and WDT files in the WORKDIR/model directory.
 
-$SCRIPTDIR/build_model.sh
+$SCRIPTDIR/stage-model.sh
 
 # This step obtains a base image using a docker pull (WebLogic with patches).
 
-$SCRIPTDIR/build_image_base.sh
+$SCRIPTDIR/stage-base-image.sh
 
-# This step builds a model image using the base image. It embeds the model files
-# in WORKDIR/models that was setup by ./build_model.sh and embeds the 
-# WebLogic Deploy Tool that was downloaded by build_download.sh.
+# This step builds a model image. By default, it builds in the 
+# base image setup by ./stage-base-iamge.sh, embeds the
+# model files in WORKDIR/model that was setup by ./stage-model.sh and embeds the 
+# WebLogic Deploy Tool that was downloaded by ./stage-tooling.sh.
 
-$SCRIPTDIR/build_image_model.sh
+$SCRIPTDIR/build-model-image.sh
+
+# This step stages files for an optional configmap to WORKDIR/configmap. WORKDIR/configmap
+# is unused unless both (a) a configmap is deployed with these files, and (b) the domain
+# resource configuration.model.configMap field references the config map from (a).
+
+$SCRIPTDIR/stage-configmap.sh

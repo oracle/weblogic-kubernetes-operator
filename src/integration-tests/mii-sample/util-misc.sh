@@ -12,7 +12,7 @@ function tracen() {
   echo -n @@ "[$(timestamp)]" "[$(basename $0):${BASH_LINENO[0]}]:" "$@"
 }
 
-# consult with Derek - this probably isn't safe!
+# TBD consult with Derek - this probably isn't safe!
 function cleanDanglingDockerImages() {
   trace "Cleaning dangling docker images (if any)."
   if [ ! -z "$(docker images -f "dangling=true" -q)" ]; then
@@ -27,36 +27,36 @@ function cleanDanglingDockerImages() {
 # if command fails, prints out an Error and exits non-zero
 # if command succeeds, exits zero
 # TBD discuss DRY_RUN
-# assumes set -e is already set! TBD check if it's set 
 
 function doCommand() {
+
+  if [ "$(shopt -po errexit | awk '{ print $2 }')" = "-o" ]; then
+    trace "Error: The doCommand script expects that 'set -e' was already called."
+    return 1
+  fi
+
   local command="$@"
-  local out_file="$WORKDIR/command_out/$PPID.$(timestamp).$(basename $1).out"
 
   if [ $DRY_RUN ]; then
     echo "dryrun: $command"
     return
   fi
 
+  local out_file="$WORKDIR/command_out/$PPID.$(timestamp).$(basename $(printf $1)).out"
   tracen Info Running command "'$command'," "output='$out_file'."
   printdots_start
-  (
-    set +e
-    eval $command > $out_file 2>&1
-    local err_code=$?
-    if [ $err_code -ne 0 ]; then
-      echo
-      trace "Error Running command '$command', output='$out_file'. Output contains:"
-      cat $out_file
-      trace "Error Running command '$command', output='$out_file'. Output dumped above."
-    fi
-    set -e
-    exit $err_code
-  )
-  (
-    # printdots_end non zero sometimes - not sure why, so disable error checking
-    set +e
-    printdots_end
-  )
-}
 
+  set +e
+  eval $command > $out_file 2>&1
+  local err_code=$?
+  if [ $err_code -ne 0 ]; then
+    echo
+    trace "Error Running command '$command', output='$out_file'. Output contains:"
+    cat $out_file
+    trace "Error Running command '$command', output='$out_file'. Output dumped above."
+  fi
+  printdots_end
+  set -e
+
+  return $err_code
+}

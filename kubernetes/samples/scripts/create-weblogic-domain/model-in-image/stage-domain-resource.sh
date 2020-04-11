@@ -13,56 +13,52 @@
 #   WORKDIR                  - Working directory for the sample with at least
 #                              10g of space. Defaults to 
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
+#   DOMAIN_NAME              - defaults to 'domain1'
 #   DOMAIN_UID               - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE         - defaults to '${DOMAIN_UID}-ns'
 #   MODEL_IMAGE_NAME         - defaults to 'model-in-image'
 #   MODEL_IMAGE_TAG          - defaults to 'v1'
+#   WDT_DOMAIN_TYPE          - WLS (default), RestrictedJRF, or JRF
 #   DOMAIN_RESOURCE_TEMPLATE - use this file for a domain resource template instead
 #                              of k8s-domain.yaml.template 
-#   WDT_DOMAIN_TYPE          - WLS (default), RestrictedJRF, or JRF
 #
 
 set -eu
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-echo "@@ Info: Running '$(basename "$0")'."
-
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+echo "@@ Info: Running '$(basename "$0")'."
+echo "@@ Info: WORKDIR='$WORKDIR'."
+
+WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+DOMAIN_NAME=${DOMAIN_NAME:-domain1}
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
-DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/k8s-domain.yaml.template}"
-WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
-DOMAIN_RESOURCE_FILE="${WORKDIR}/k8s-domain.yaml"
-
-echo "@@ Info: WORKDIR='$WORKDIR'."
 
 source ${WORKDIR}/env.sh
 
+if [ -z "${DOMAIN_RESOURCE_TEMPLATE:-} ]; then
+  case "$WDT_DOMAIN_TYPE" in
+    WLS|RestrictedJRF) DOMAIN_RESOURCE_TEMPLATE="${SCRIPTDIR}/sample-domain-resource-wls/k8s-domain.yaml.template" ;;
+    JRF)               DOMAIN_RESOURCE_TEMPLATE="${SCRIPTDIR}/sample-domain-resource-jrf/k8s-domain.yaml.template" ;;
+    *) echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1 ;;
+  esac
+fi
+
+DOMAIN_RESOURCE_FILE=${WORKDIR}/k8s-domain.yaml
+
 echo "@@ Info: Creating domain resource file '${DOMAIN_RESOURCE_FILE}' from '${DOMAIN_RESOURCE_TEMPLATE}'"
-
-if [ ! "${WDT_DOMAIN_TYPE}" == "WLS" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] \
-   && [ ! "${WDT_DOMAIN_TYPE}" == "JRF" ]; then
-  echo "Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
-fi
-
-if [ "${DOMAIN_RESOURCE_FILE}" = "${DOMAIN_RESOURCE_TEMPLATE}" ]; then
-  echo @@ Error: source and target file match.
-  exit 1
-fi
 
 cp ${DOMAIN_RESOURCE_TEMPLATE} ${DOMAIN_RESOURCE_FILE}
 
-for template_var in WDT_DOMAIN_TYPE DOMAIN_UID DOMAIN_NAMESPACE MODEL_IMAGE_NAME MODEL_IMAGE_TAG; do
+for template_var in WDT_DOMAIN_TYPE DOMAIN_NAME DOMAIN_UID DOMAIN_NAMESPACE MODEL_IMAGE_NAME MODEL_IMAGE_TAG; do
   sed -i -e "s;@@${template_var}@@;${!template_var};" $DOMAIN_RESOURCE_FILE
 done
 
-if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] ; then
-  # uncomment domain resource template fields used by the JRF path through the sample
+if [ ! -z "${CONFIGMAPDIR:-}" ]; then
+  # Since CONFIGMAPDIR is set, then assume we're going to deploy and use the model.configuration.configMap.
   sed -i -e "s/\#\(secrets\):/\1:/" $DOMAIN_RESOURCE_FILE
-  sed -i -e "s/\#\(opss\):/\1:/" $DOMAIN_RESOURCE_FILE
-  sed -i -e "s/\#\(walletPasswordSecret\):/\1:/" $DOMAIN_RESOURCE_FILE
-  sed -i -e "s/\#\(introspectorJobActiveDeadlineSeconds\):/\1:/" $DOMAIN_RESOURCE_FILE
 fi
