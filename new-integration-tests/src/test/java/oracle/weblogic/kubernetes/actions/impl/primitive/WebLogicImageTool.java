@@ -5,15 +5,14 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.List;
 
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWDTParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWITParams;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -22,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  */
 
 public class WebLogicImageTool {
+  private static final LoggingFacade logger = LoggingFactory.getLogger(WebLogicImageTool.class);
 
   private WITParams params;
 

@@ -251,9 +251,7 @@ public class Kubernetes implements LoggedTest {
     }
 
     if (response.getObject() != null) {
-      logger.info(
-          "Received after-deletion status of the requested object, will be deleting "
-              + "pod in background!");
+      logger.info("Received after-deletion status of the requested object, will be deleting pod in background!");
     }
 
     return true;
@@ -351,8 +349,7 @@ public class Kubernetes implements LoggedTest {
 
     if (response.getObject() != null) {
       logger.info(
-          "Received after-deletion status of the requested object, will be deleting namespace"
-              + " in background!");
+          "Received after-deletion status of the requested object, will be deleting namespace in background!");
     }
 
     return true;
