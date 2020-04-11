@@ -416,6 +416,179 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
   }
 
   /**
+   * Create a domain without a JDBC DS using model in image and having configmap
+   * in the domain.yaml before deploying the domain. After deploying the domain crd,
+   * re-create the configmap with multiple model files that define a JDBC DataSource.
+   * Each model file overlaps the value of JDBC DS property oracle.net.CONNECT_TIMEOUT
+   * Update the domain crd to change domain restartVersion to reload the model,
+   * generate new config and initiate a rolling restart. The test verifies that loading order
+   * of model files follows WDT rules and the model file loaded last take precedence
+   */
+  @Test
+  public void testMiiMultiModelFilesLoadingOrderName() {
+    Assumptions.assumeTrue(QUICKTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    boolean testCompletedSuccessfully = false;
+    final String connTimeout = "5203";
+    Domain domain = null;
+
+    try {
+      logTestBegin(testMethodName);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Creating Domain & waiting for the script to complete execution");
+
+      // create domain w/o JDBC DS using the image created by MII
+      boolean createDS = false;
+      domain = createDomainUsingMii(createDS);
+      Assertions.assertNotNull(domain, "Failed to create a domain");
+
+      // copy model files that contains JDBC DS to a dir to re-create cm
+      final String destDir = getResultDir() + "/samples/model-in-image-update-lon";
+      String[] modelFiles =
+          {"now.jdbc.10.yaml",
+              "jdbc.20.yaml",
+              "new.jdbc.10.yaml",
+              "model.jdbc.yaml",
+              "model.jdbc.properties",
+              "cm.jdbc.yaml"};
+
+      copyTestModelFiles(destDir, modelFiles);
+
+      // re-create cm to update config and verify cm is created successfylly
+      wdtConfigUpdate(destDir, domain);
+
+      // update domain yaml with restartVersion,
+      // apply the domain yaml and verify domain restarted successfully
+      modifyDomainYamlWithRestartVersion(domain, domainNS);
+
+      // verify that JNDI name exists by checking updated config file on server pod
+      String jdbcDsStr = getJndiName(domain);
+      Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
+          "JDBC DS wasn't updated");
+      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
+
+      // get JDBC DS prop values via WLST on server pod
+      String jdbcResourceData = getJdbcResources(destDir, domain);
+
+      // verify that JDBC DS is updated, loading order of model files
+      // follows WDT rules and overlapped connection timeout value is
+      // from the last loaded model file, jdbc.20.yaml
+      LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
+      final String[] jdbcResourcesToVerify =
+          {"datasource.name.1=" + dsName,
+              "datasource.connectionTimeout.1=" + connTimeout};
+      for (String prop : jdbcResourcesToVerify) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
+
+      testCompletedSuccessfully = true;
+    } catch (Exception ex) {
+      Assertions.fail("FAILED - " + testMethodName);
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        try {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        } catch (Exception ex) {
+          LoggerHelper.getLocal().log(Level.INFO, "Failed to delete domain\n " + ex.getMessage());
+        }
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create a domain without a JDBC DS using model in image and having configmap
+   * in the domain.yaml before deploying the domain. After deploying the domain crd,
+   * re-create the image and configmap with multiple model files that define a JDBC DataSource.
+   * Each model file overlaps the value of JDBC DS property oracle.net.CONNECT_TIMEOUT
+   * Update the domain crd to change domain restartVersion to reload the model,
+   * generate new config and initiate a rolling restart. The test verifies
+   * that the last model file loaded by configMap take precedence
+   */
+  @Test
+  public void testMiiMultiModelFilesLoadingOrderCm() {
+    Assumptions.assumeTrue(QUICKTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    boolean testCompletedSuccessfully = false;
+    final String connTimeout = "5200";
+    Domain domain = null;
+
+    try {
+      logTestBegin(testMethodName);
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Creating Domain & waiting for the script to complete execution");
+
+      // create domain w/o JDBC DS using the image created by MII
+      boolean createDS = false;
+      domain = createDomainUsingMii(createDS);
+      Assertions.assertNotNull(domain, "Failed to create a domain");
+
+      // update image by defining model and property files with JDBC DS
+      // in the image and verify image created successfully
+      Map<String, Object> domainMap = domain.getDomainMap();
+      final String imageName = (String) domainMap.get("image");
+      final String wdtModelFile = "model.jdbc.image.yaml";
+      final String wdtModelPropFile = "model.jdbc.image.properties";
+      createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
+
+      // copy model files that contains JDBC DS to a dir to re-create cm
+      final String destDir = getResultDir() + "/samples/model-in-image-update-lon";
+      String[] modelFiles =
+          {"cm.jdbc.yaml",
+              "model.jdbc.yaml",
+              "model.jdbc.properties"};
+      copyTestModelFiles(destDir, modelFiles);
+
+      // re-create cm by defining model and property files with overlapped JDBC DS
+      // and verify cm is created successfylly
+      wdtConfigUpdate(destDir, domain);
+
+      // update domain yaml with restartVersion,
+      // apply the domain yaml and verify domain restarted successfully
+      modifyDomainYamlWithRestartVersion(domain, domainNS);
+
+      // verify that JNDI name exists by checking updated config file on server pod
+      String jdbcDsStr = getJndiName(domain);
+      Assertions.assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
+          "JDBC DS wasn't updated");
+      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
+
+      // get JDBC DS prop values via WLST on server pod
+      String jdbcResourceData = getJdbcResources(destDir, domain);
+
+      // verify that JDBC DS is updated, loading order of model files
+      // follows WDT rules and overlapped connection timeout value is
+      // from the last loaded model file, model.jdbc.yaml
+      LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
+      final String[] jdbcResourcesToVerify =
+          {"datasource.name.1=" + dsName,
+              "datasource.connectionTimeout.1=" + connTimeout};
+      for (String prop : jdbcResourcesToVerify) {
+        Assertions.assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
+        LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
+      }
+
+      testCompletedSuccessfully = true;
+    } catch (Exception ex) {
+      Assertions.fail("FAILED - " + testMethodName);
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        try {
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        } catch (Exception ex) {
+          LoggerHelper.getLocal().log(Level.INFO, "Failed to delete domain\n " + ex.getMessage());
+        }
+      }
+    }
+
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
+  /**
    * Create a domain using model in image and having configmap in the domain.yaml
    * The model file has predeployed application and a JDBC DataSource. After deploying
    * the domain crd, re-create the configmap with a model file that removes the JDBC
@@ -481,18 +654,27 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
   }
 
   private void copyTestModelFiles(String destDir) {
+    LoggerHelper.getLocal().log(Level.INFO, "Copying Model files");
+
+    String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
+
+    copyTestModelFiles(destDir, modelFiles);
+  }
+
+  private void copyTestModelFiles(String destDir, String[] modelFiles) {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
     String origDir = BaseTest.getProjectRoot()
         + "/integration-tests/src/test/resources/model-in-image";
-    final String modelFile = "model.jdbc.yaml";
-    final String propFile = "model.jdbc.properties";
 
     try {
       Files.deleteIfExists(Paths.get(destDir));
       Files.createDirectories(Paths.get(destDir));
 
-      TestUtils.copyFile(origDir + "/" + modelFile, destDir + "/" + modelFile);
-      TestUtils.copyFile(origDir + "/" + propFile, destDir + "/" + propFile);
+      for (String modelFile : modelFiles) {
+        TestUtils.copyFile(origDir + "/" + modelFile, destDir + "/" + modelFile);
+        LoggerHelper.getLocal().log(Level.INFO, "Copied <" + origDir
+            + "/" + modelFile + "> to <" + destDir + "/" + modelFile + ">");
+      }
     } catch (Exception ex) {
       ex.printStackTrace();
       Assertions.fail("Failed to copy model files", ex.getCause());
