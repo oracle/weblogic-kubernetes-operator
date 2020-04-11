@@ -93,8 +93,8 @@ class ItSimpleDomainValidation implements LoggedTest {
     final String serviceAccountName = namespace + "-sa";
     final V1ServiceAccount serviceAccount = assertDoesNotThrow(
         () -> Kubernetes.createServiceAccount(new V1ServiceAccount()
-        .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
-    logger.info("Created service account: " + serviceAccount.getMetadata().getName());
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
+    logger.info("Created service account: {0}", serviceAccount.getMetadata().getName());
 
     // create the domain CR
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
