@@ -3,11 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -54,74 +49,41 @@ class ItSimpleDomainValidation implements LoggedTest {
         "Failed to create unique namespace due to ApiException");
     logger.info(String.format("Got a new namespace called %s", namespace));
 
-    // create a persistent volume claim
-    final String storageClassName = domainUID + "-weblogic-domain-storage-class";
+    // create persistent volume and persistent volume claim
     final String pvcName = domainUID + "-pvc"; // name of the persistent volume claim
     final String pvName = domainUID + "-pv"; // name of the persistent volume
-    HashMap<String, String> labels = new HashMap();
-    labels.put("weblogic.resourceVersion", "domain-v2");
-    labels.put("weblogic.domainUID", domainUID); // label it with domain uid
-    final List<String> accessMode = new ArrayList();
-    accessMode.add("ReadWriteMany"); // access mode of the persistent volume claim
-    final String storage = "10Gi";
-    final String volumeMode = "Filesystem";
-    final String volumeName = domainUID + "-weblogic-pv"; // volume name
-    final String pvPath = System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume";
-    final String persistentVolumeReclaimPolicy = "Recycle"; // one of Recycle, Retain, Delete
-    Quantity maxClaims = Quantity.fromString(storage);
-    Map<String, Quantity> capacity = new HashMap<>();
-    capacity.put("storage", maxClaims); // capacity requirements
 
-    logger.info("creating a persistent volume claim");
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim();
-
-    // build metadata object
     V1ObjectMeta pvcmetadata = new V1ObjectMetaBuilder()
-        .withName(pvcName) // set PVC name
-        .withNamespace(namespace) // set PVC namespace
-        .withLabels(labels) // set PVC labels
-        .build();
-
-    // build spec object
-    V1PersistentVolumeClaimSpec pvcspec = new V1PersistentVolumeClaimSpec();
-    // set spec storageclassname, accessModes and volumeName
-    pvcspec.setAccessModes(accessMode);
-    pvcspec.setStorageClassName(storageClassName);
-    pvcspec.setVolumeName(volumeName);
-    // build resource requirements object
-    V1ResourceRequirements resources = new V1ResourceRequirements();
-    resources.setRequests(capacity);
-    pvcspec.setResources(resources);
-
-    // set the matadata and spec objects
-    v1pvc.setMetadata(pvcmetadata);
-    v1pvc.setSpec(pvcspec);
-
+        .withName(pvcName)
+        .withNamespace(namespace)
+        .build()
+        .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+        .putLabelsItem("weblogic.domainUID", domainUID);
+    V1PersistentVolumeClaimSpec pvcspec = new V1PersistentVolumeClaimSpec()
+        .addAccessModesItem("ReadWriteMany")
+        .storageClassName(domainUID + "-weblogic-domain-storage-class")
+        .volumeName(domainUID + "-weblogic-pv")
+        .resources(new V1ResourceRequirements()
+            .putRequestsItem("storage", Quantity.fromString("10Gi")));
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(pvcspec)
+        .metadata(pvcmetadata);
     boolean success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolumeClaim(v1pvc)
     );
     assertTrue(success, "PersistentVolumeClaim creation failed");
 
-    logger.info("creating a persistent volume");
-    V1PersistentVolume v1pv = new V1PersistentVolume();
-
-    // build spec object
-    V1PersistentVolumeSpec pvspec = new V1PersistentVolumeSpec();
-    // set spec accessModes, storageclassname, persistentVolumeReclaimPolicy, volumeMode, capacity
-    pvspec.setAccessModes(accessMode);
-    pvspec.setStorageClassName(storageClassName);
-    pvspec.setPersistentVolumeReclaimPolicy(persistentVolumeReclaimPolicy);
-    pvspec.setVolumeMode(volumeMode);
-    pvspec.setCapacity(capacity);
-    // set pv path
-    V1HostPathVolumeSource hostPath = new V1HostPathVolumeSource();
-    hostPath.setPath(pvPath);
-    pvspec.setHostPath(hostPath);
-    //set metadata, spec
-    pvcmetadata.setName(pvName);
-    v1pv.setMetadata(pvcmetadata);
-    v1pv.setSpec(pvspec);
-
+    V1PersistentVolumeSpec pvspec = new V1PersistentVolumeSpec()
+        .addAccessModesItem("ReadWriteMany")
+        .storageClassName(domainUID + "-weblogic-domain-storage-class")
+        .volumeMode("Filesystem")
+        .putCapacityItem("storage", Quantity.fromString("10Gi"))
+        .persistentVolumeReclaimPolicy("Recycle")
+        .hostPath(new V1HostPathVolumeSource()
+            .type(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume"));
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(pvspec)
+        .metadata(pvcmetadata);
     success  = assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(v1pv)
       );
