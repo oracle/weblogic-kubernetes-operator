@@ -30,11 +30,12 @@ set -eu
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 source $WORKDIR/env.sh
 
 echo "@@"
-echo "@@ Info: Staging configmap files from SCRIPTDIR/configmap to WORKDIR/configmap"
+echo "@@ Info: Staging configmap files from SCRIPTDIR/sample-configmap to WORKDIR/configmap"
 echo "@@"
 
 mkdir -p ${WORKDIR}/configmap
-cp $SCRIPTDIR/configmap/* $WORKDIR/configmap/*
+cp $SCRIPTDIR/sample-configmap/* $WORKDIR/configmap

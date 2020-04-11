@@ -2,6 +2,8 @@
 
 # TBD comment doc
 
+# TBD add NAMESPACE/NAME/UID for domain
+
 # MII SAMPLE defaults specific to the test scripts in this directory
 # For more defaults so $WORKDIR/env.sh
 

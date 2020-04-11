@@ -28,76 +28,42 @@ else
   exit 1
 fi
 
-# these env vars are directly used by the sample scripts
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 
-export WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-export WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+doCommand -c set -e
 
-# these env vars for the db, and are only used if WDT_DOMAIN_TYPE is JRF
+doCommand -c SRCDIR=$SRCDIR
+doCommand -c TESTDIR=$TESTDIR
+doCommand -c MIISAMPLEDIR=$MIISAMPLEDIR
+doCommand -c DBSAMPLEDIR=$DBSAMPLEDIR
 
-if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  DB_NAMESPACE=${DB_NAMESPACE:-default}
-  DB_NODE_PORT=${DB_NODE_PORT:-30011}
-  DB_IMAGE_NAME=${DB_IMAGE_NAME:-container-registry.oracle.com/database/enterprise}
-  DB_IMAGE_TAG=${DB_IMAGE_TAG:-12.2.0.1-slim}
-  DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-store}
-fi
+doCommand -c source \$TESTDIR/env.sh
 
-# load customized env vars for this test, if any
+# must export following as sample scripts use these values
 
-source $TESTDIR/env.sh
-
-# check that WORKDIR ends in "model-in-image-sample-work-dir" as a safety feature for this test
-# (we're going to rm -fr a directory, and rm -fr is safer without it relying on env vars)
+doCommand -c export WORKDIR=$WORKDIR
+doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
 
 if [ ! "$(basename $WORKDIR)" = "model-in-image-sample-work-dir" ]; then
+  # check that WORKDIR ends in "model-in-image-sample-work-dir" as a safety feature for this test
+  # (we're going to rm -fr a directory, and rm -fr is safer without it relying on env vars)
   trace "Error: This test requires WORKDIR to end in 'model-in-image-sample-work-dir'. WORKDIR='$WORKDIR'."
   exit 1
 fi
 
-trace "TESTDIR=$TESTDIR"
-trace "SRCDIR=$SRCDIR"
-trace "MIISAMPLEDIR=$MIISAMPLEDIR"
-trace "WORKDIR=$WORKDIR"
-trace "WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE"
+doCommand -c mkdir -p \$WORKDIR
+doCommand -c cd \$WORKDIR/..
+doCommand -c rm -fr ./model-in-image-sample-work-dir
 
-if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  trace "DBSAMPLEDIR=$DBSAMPLEDIR"
-  trace "DB_NAMESPACE=$DB_NAMESPACE"
-  trace "DB_NODE_PORT=$DB_NODE_PORT"
-  trace "DB_IMAGE_NAME=$DB_IMAGE_NAME"
-  trace "DB_IMAGE_TAG=$DB_IMAGE_TAG"
-  trace "DB_IMAGE_PULL_SECRET=$DB_IMAGE_PULL_SECRET"
-fi
+doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
 
-if [ $DRY_RUN ]; then
-  cat << EOF
-dryrun: set -e
-dryrun: TESTDIR=$TESTDIR
-dryrun: SRCDIR=$SRCDIR
-dryrun: MIISAMPLEDIR=$MIISAMPLEDIR
-dryrun: DBSAMPLEDIR=$DBSAMPLEDIR
-dryrun: export WORKDIR=$WORKDIR
-dryrun: export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
-dryrun: source \$TESTDIR/env.sh
-dryrun: mkdir -p \$WORKDIR
-dryrun: cd \$WORKDIR/..
-dryrun: rm -fr ./model-in-image-sample-work-dir
-EOF
-else
-  mkdir -p $WORKDIR
-  cd $WORKDIR/..
-  rm -fr ./model-in-image-sample-work-dir
-  mkdir -p $WORKDIR/command_out
-  cleanDanglingDockerImages # TBD is this multi-user safe?
-fi
+[ ! $DRY_RUN ] && cleanDanglingDockerImages # TBD is this multi-user safe?
 
 # TBD note that start-db (and maybe stop-db) seem to alter files right inside the source tree - 
 #     this should be fixed to have a WORKDIR or similar, and means that they aren't suitable for multi-user/multi-ns environments
 #     also, the db ideally should use a secret for its credentials - is that possible?
 
-
-doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
 
 if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   doCommand  "\$DBSAMPLEDIR/stop-db-service.sh -n ${DB_NAMESPACE}"

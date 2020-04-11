@@ -62,14 +62,14 @@ rm -f $WORKDIR/model/archive1.zip
 
 # avoid using an env var in an 'rm -fr' for safety reasons
 cd $WORKDIR
-rm -fr ./sample-app-stage
+rm -fr ./app
 
-cp -r $SCRIPTDIR/sample-app $WORKDIR/sample-app-stage
+cp -r $SCRIPTDIR/sample-app $WORKDIR/app
 
-cd $WORKDIR/sample-app-stage/wlsdeploy/applications
+cd $WORKDIR/app/wlsdeploy/applications
 jar cvfM sample-app.ear *
 
-cd $WORKDIR/sample-app-stage
+cd $WORKDIR/app
 zip ${WORKDIR}/model/archive1.zip wlsdeploy/applications/sample-app.ear wlsdeploy/config/amimemappings.properties
 
 
