@@ -116,7 +116,7 @@ Developers interested in this project are encouraged to read the [Developer guid
 
 Documentation for APIs:
 
-* The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see [Use the operator's REST services]({{< relref "/userguide/managing-operators/using-the-operator/the-rest-api.md#use-the-operator-s-rest-services" >}}).
+* The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see [Use the operator's REST services]({{< relref "/userguide/managing-operators/using-the-operator/the-rest-api#use-the-operators-rest-services" >}}).
 
 * See the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
