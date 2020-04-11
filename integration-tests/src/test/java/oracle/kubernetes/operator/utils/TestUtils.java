@@ -951,7 +951,9 @@ public class TestUtils {
 
     String operatorCert = getExternalOperatorCertificate(operator);
     kubectlcp(operatorCert, "operator.cert.pem", "curl", operator.getOperatorNamespace());
-    command = " kubectl exec curl -- " + restUrl + " -n " + operator.getOperatorNamespace();
+    command = " kubectl -n "
+            + operator.getOperatorNamespace()
+            + " exec curl -- " + restUrl;
     result = ExecCommand.exec(command, true);
     if (result.exitValue() != 0) {
       throw new Exception("Couldn't execute rest command " + result.stderr());
@@ -963,7 +965,9 @@ public class TestUtils {
               + result.stdout()
               + " : "
               + result.stderr());
-      command = " kubectl exec curl -- cat curl.out" + " -n " + operator.getOperatorNamespace();
+      command = " kubectl -n "
+              + operator.getOperatorNamespace()
+              + "exec curl -- cat curl.out";
       result = ExecCommand.exec(command, true);
       if (result.exitValue() != 0) {
         throw new Exception("Couldn't find curl.out file " + result.stderr());
