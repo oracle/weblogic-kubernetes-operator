@@ -80,10 +80,10 @@ class ItSimpleDomainValidation implements LoggedTest {
         .putCapacityItem("storage", Quantity.fromString("10Gi"))
         .persistentVolumeReclaimPolicy("Recycle")
         .hostPath(new V1HostPathVolumeSource()
-            .type(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume"));
+            .path(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume"));
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(pvspec)
-        .metadata(pvcmetadata);
+        .metadata(pvcmetadata.name(pvName));
     success  = assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(v1pv)
       );
