@@ -26,7 +26,7 @@
 #                   hosted test files (default true).
 #
 #   FAST_DELETE     Set to "--grace-period=1 --timeout=1" to speedup
-#                   deletes and skip phase 2.
+#                   deletes and skip phase 2. Default is "--timeout=60s"
 #
 # Dry run option:
 #
@@ -497,6 +497,7 @@ function fail {
   exit 1
 }
 
+FAST_DELETE=${FAST_DELETE:-timeout=60s}
 
 echo "@@ `timestamp` RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
 
@@ -599,7 +600,7 @@ g_arg3="logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-
 # Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort
 #
 
-[ -z "$FAST_DELETE" ] && genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -wait
+genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -wait
 
 #
 # Phase 2: "friendly" kubectl delete left over artifacts individually
