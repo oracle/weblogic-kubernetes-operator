@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Configure RCU schema based on schemaPreifix and rcuDatabaseURL
@@ -18,12 +18,14 @@ function usage {
   echo "  -p FMW Infrastructure ImagePull Secret (optional) "
   echo "      (default: docker-store) "
   echo "  -i FMW Infrastructure Image (optional) "
-  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) "
+  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3) "
+  echo "  -n Configurable Kubernetes NameSpace for RCU Schema (optional)"
+  echo "      (default: default) "
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:s:d:p:i:t:" opt; do
+while getopts ":h:s:d:p:i:t:n:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
     ;;
@@ -34,6 +36,8 @@ while getopts ":h:s:d:p:i:t:" opt; do
     p) pullsecret="${OPTARG}"
     ;;
     i) fmwimage="${OPTARG}"
+    ;;
+    n) namespace="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -63,7 +67,21 @@ if [ -z ${fmwimage} ]; then
  fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
 fi
 
-echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}]"
+if [ -z ${namespace} ]; then
+  namespace="default"
+fi
+
+echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}] namespace[${namespace}]"
+
+echo "Checking Status for NameSpace [$namespace]"
+domns=`kubectl get ns ${namespace} | grep ${namespace} | awk '{print $1}'`
+if [ -z ${domns} ]; then
+ echo "Adding NameSpace[$namespace] to Kubernetes Cluster"
+ kubectl create namespace ${namespace}
+ sleep 5
+else
+ echo "Skipping the NameSpace[$namespace] Creation ..."
+fi
 
 #kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
 # Modify the ImagePullSecret based on input
@@ -71,23 +89,24 @@ sed -i -e '$d' ${scriptDir}/common/rcu.yaml
 echo '           - name: docker-store' >> ${scriptDir}/common/rcu.yaml
 sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
 sed -i -e "s?image:.*?image: ${fmwimage}?g" ${scriptDir}/common/rcu.yaml
+sed -i -e "s?namespace:.*?namespace: ${namespace}?g" ${scriptDir}/common/rcu.yaml
 kubectl apply -f ${scriptDir}/common/rcu.yaml
 
 # Make sure the rcu deployment Pod is RUNNING
-checkPod rcu default
-checkPodState rcu default "1/1"
+checkPod rcu ${namespace}
+checkPodState rcu ${namespace} "1/1"
 sleep 5
-kubectl get po/rcu 
+kubectl get po/rcu -n ${namespace}
 
 # Generate the default password files for rcu command
 echo "Oradoc_db1" > pwd.txt
 echo "Oradoc_db1" >> pwd.txt
 
-kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/createRepository.sh' < ${scriptDir}/common/createRepository.sh 
-kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt 
+kubectl -n ${namespace} cp ${scriptDir}/common/createRepository.sh  rcu:/u01/oracle
+kubectl -n ${namespace} cp pwd.txt rcu:/u01/oracle
 rm -rf createRepository.sh pwd.txt
 
-kubectl exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
+kubectl -n ${namespace} exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not create the RCU Repository";

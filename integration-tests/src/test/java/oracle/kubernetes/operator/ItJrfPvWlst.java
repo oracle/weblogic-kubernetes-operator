@@ -32,6 +32,9 @@ public class ItJrfPvWlst extends BaseTest {
   private static boolean testCompletedSuccessfully;
   private static String testClassName;
   private static StringBuffer namespaceList;
+  private static int dbPort;
+  private static String dbNamespace;
+  private static String dbUrl;
 
   /**
   * This method gets called only once before any of the test methods are executed. It does the
@@ -67,10 +70,17 @@ public class ItJrfPvWlst extends BaseTest {
           true);
       //delete leftover pods caused by test being aborted
       DbUtils.deleteRcuPod(getResultDir());
-      DbUtils.stopOracleDB(getResultDir());
+      DbUtils.deleteDbPod(getResultDir());
        
-      DbUtils.startOracleDB(getResultDir());
-      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix);
+      dbNamespace = "db" + String.valueOf(getNewSuffixCount());
+      dbPort = 30011 + getNewSuffixCount();
+      dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
+      LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
+          + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl);
+      
+      DbUtils.createDockerRegistrySecret(dbNamespace);
+      DbUtils.startOracleDB(getResultDir(), String.valueOf(dbPort), dbNamespace);
+      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl, dbNamespace);
     
       // create operator1
       if (operator1 == null) {
@@ -88,7 +98,7 @@ public class ItJrfPvWlst extends BaseTest {
   @AfterEach
   public void unPrepare() throws Exception {
     DbUtils.deleteRcuPod(getResultDir());
-    DbUtils.stopOracleDB(getResultDir());
+    DbUtils.deleteDbPod(getResultDir());
   }
   
   /**
@@ -122,13 +132,12 @@ public class ItJrfPvWlst extends BaseTest {
         Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
         domainMap.put("namespace", domainNS);
         domainMap.put("initialManagedServerReplicas", new Integer("2"));
-        //domainMap.put(
-        //    "image", getfmwImageName() + ":" + getfmwImageTag());
         domainMap.put("clusterName", "infra-cluster");
         domainMap.put("managedServerNameBase", "infraserver");
         domainMap.put("domainHomeSourceType", "PersistentVolume");
         domainMap.put("rcuSchemaPrefix", "jrfdomain");
-        domainMap.put("rcuDatabaseURL", "oracle-db.default.svc.cluster.local:1521/devpdb.k8s");
+        LoggerHelper.getLocal().log(Level.INFO, "DEBUG " + testClassName + "domain: dbUrl: " + dbUrl);
+        domainMap.put("rcuDatabaseURL", dbUrl);
         domainUid = (String) domainMap.get("domainUID");
         LoggerHelper.getLocal().log(Level.INFO,
             "Creating and verifying the domain creation with domainUid: " + domainUid);

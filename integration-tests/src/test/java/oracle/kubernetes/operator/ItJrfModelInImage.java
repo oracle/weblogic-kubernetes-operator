@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.DbUtils;
-import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JrfDomain;
@@ -45,9 +44,12 @@ public class ItJrfModelInImage extends MiiBaseTest {
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static String rcuSchemaPrefix = "jrfmii";
-  private static String rcuDatabaseURL = "oracle-db.default.svc.cluster.local:1521/devpdb.k8s";
+  //private static String rcuDatabaseURL = "oracle-db.default.svc.cluster.local:1521/devpdb.k8s";
   private static String rcuSchemaPass = "Oradoc_db1";
   private static String walletPassword = "welcome1";
+  private static int dbPort;
+  private static String dbNamespace;
+  private static String dbUrl;
   
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -84,10 +86,17 @@ public class ItJrfModelInImage extends MiiBaseTest {
             true);
     //delete leftover pods caused by test being aborted
     DbUtils.deleteRcuPod(getResultDir());
-    DbUtils.stopOracleDB(getResultDir());
+    DbUtils.deleteDbPod(getResultDir());
          
-    DbUtils.startOracleDB(getResultDir());
-    DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix);
+    dbNamespace = "db" + String.valueOf(getNewSuffixCount());
+    dbPort = 30011 + getNewSuffixCount();
+    dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
+    LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
+        + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort);
+    
+    DbUtils.createDockerRegistrySecret(dbNamespace);
+    DbUtils.startOracleDB(getResultDir(), String.valueOf(dbPort), dbNamespace);
+    DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl, dbNamespace);
 
     // create operator1
     if (operator == null) {
@@ -104,7 +113,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
   @AfterEach
   public void unPrepare() throws Exception {
     DbUtils.deleteRcuPod(getResultDir());
-    DbUtils.stopOracleDB(getResultDir());
+    DbUtils.deleteDbPod(getResultDir());
   }
 
   /**
@@ -146,14 +155,15 @@ public class ItJrfModelInImage extends MiiBaseTest {
       domainMap.put("wdtModelPropertiesFile", "./model.properties");
       domainMap.put("domainHomeImageBase", BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag());
       domainMap.put("rcuSchemaPrefix", rcuSchemaPrefix);
-      domainMap.put("rcuDatabaseURL", rcuDatabaseURL);
+      LoggerHelper.getLocal().log(Level.INFO, "DEBUG " + testClassName + "domain: dbUrl: " + dbUrl);
+      domainMap.put("rcuDatabaseURL", dbUrl);
       domainMap.put("wdtDomainType", "JRF");
       domainMap.put("introspectorJobActiveDeadlineSeconds", "300");
       
       String domainUid = (String)domainMap.get("domainUID");
       String namespace = (String)domainMap.get("namespace");
       Secret rcuAccess = new RcuSecret(namespace, domainUid + "-rcu-access", 
-          rcuSchemaPrefix, rcuSchemaPass, rcuDatabaseURL);
+          rcuSchemaPrefix, rcuSchemaPass, dbUrl);
       Secret walletPass = new WalletSecret(namespace, domainUid 
           + "-opss-wallet-password-secret", walletPassword);
       
@@ -229,12 +239,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
     TestUtils.exec(cmd, true);
   }
   
-  /**
-   * Create a Kubernetes secret and label the secret with domainUid. This secret is used for
-   * weblogicCredentialsSecretName in the domain inputs.
-   *
-   * @throws Exception when the kubectl create secret command fails or label secret fails
-   */
   /*private void createSecret(String domainNS, String domainUid, String secretName) throws Exception {
     Secret secret =
         new Secret(

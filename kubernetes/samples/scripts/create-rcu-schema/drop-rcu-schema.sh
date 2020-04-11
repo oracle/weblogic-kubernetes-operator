@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -16,17 +16,21 @@ function usage {
   echo "      (supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb) "
   echo "  -d Oracle Database URL"
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
+  echo "  -n Configurable Kubernetes NameSpace for RCU Schema (optional)"
+  echo "      (default: default) "
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:s:d:t:" opt; do
+while getopts ":h:s:d:t:n:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
     ;;
     t) rcuType="${OPTARG}"
     ;;
     d) dburl="${OPTARG}"
+    ;;
+    n) namespace="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -48,7 +52,10 @@ if [ -z ${rcuType} ]; then
   rcuType="fmw"
 fi
 
-rcupod=`kubectl get po | grep rcu | cut -f1 -d " " `
+if [ -z ${namespace} ]; then
+  namespace="default"
+  
+rcupod=`kubectl get po -n ${namespace} | grep rcu | cut -f1 -d " " `
 if [ -z ${rcupod} ]; then
   echo "RCU deployment pod not found in [default] NameSpace"
   exit -2
@@ -71,5 +78,5 @@ if [ $? != 0  ]; then
  exit -3;
 fi
 
-kubectl delete pod rcu
-checkPodDelete rcu default
+kubectl delete pod rcu -n ${namespace}
+checkPodDelete rcu ${namespace}

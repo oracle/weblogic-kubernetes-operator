@@ -52,21 +52,24 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when creating Oracle DB pod and service
    */
-  public static void startOracleDB(String scriptsDir) throws Exception {
+  public static void startOracleDB(String scriptsDir, String dbPort, String dbNamespace) throws Exception {
     String cmd1 = "sh "
         + scriptsDir
-        + "/scripts/create-oracle-db-service/start-db-service.sh -i "
-        + BaseTest.getOracledbImageName() + ":" + BaseTest.getOracledbImageTag();
+        + "/scripts/create-oracle-db-service/start-db-service.sh"
+        + " -i " + BaseTest.getOracledbImageName() + ":" + BaseTest.getOracledbImageTag()
+        + " -p " + dbPort
+        + " -n " + dbNamespace;;
     TestUtils.exec(cmd1, true);
-    String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
+    String cmd2 = "kubectl get pod" + " -n " + dbNamespace + " | grep oracle-db | cut -f1 -d \" \" ";
+    logger.info("DEBUG: command to get DB pod: " + cmd2);
     ExecResult result = TestUtils.exec(cmd2);
     String podName = result.stdout();
 
-    logger.info("DEBUG: DB podname=" + podName);
-    TestUtils.checkPodReady(podName, "default");
+    logger.info("DEBUG: DB podname=" + podName + " namespace: " + dbNamespace);
+    TestUtils.checkPodReady(podName, dbNamespace);
 
     // check the db is ready to use
-    String cmd3 = "kubectl logs " + podName + " -n " + "default";
+    String cmd3 = "kubectl logs " + podName + " -n " + dbNamespace;
     TestUtils.checkCmdInLoop(cmd3, "The database is ready for use", podName);
   
   }
@@ -76,10 +79,11 @@ public class DbUtils {
    *
    * @throws Exception - if any error occurs when dropping Oracle DB service
    */
-  public static void stopOracleDB(String scriptsDir) throws Exception {
+  public static void stopOracleDB(String scriptsDir, String dbNamespace) throws Exception {
     String cmd = "sh " 
         + scriptsDir
-        + "/scripts/create-oracle-db-service/stop-db-service.sh";
+        + "/scripts/create-oracle-db-service/stop-db-service.sh"
+        + " -n " + dbNamespace;
     TestUtils.exec(cmd, true);
   }
   
@@ -88,25 +92,66 @@ public class DbUtils {
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when creating Oracle rcu pod
    */
-  public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
-    String cmd = "sh " 
+  public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix, 
+      String dbUrl, String dbNamespace) throws Exception {
+    String cmd;
+    if (dbUrl == null) {
+      cmd = "sh " 
         + scriptsDir
         + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
         + rcuSchemaPrefix
-        + " -i "
-        + BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag();
+        + " -i " + BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag()
+        + " -n " + dbNamespace;
+    } else {
+      cmd = "sh " 
+          + scriptsDir
+          + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
+          + rcuSchemaPrefix
+          + " -d "
+          + dbUrl
+          + " -i " + BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag()
+          + " -n " + dbNamespace;
+    }
     TestUtils.exec(cmd, true);
   }
+  
+  /**
+   * Create Docker Registry Secret for the DB namespace.
+   *
+   * @throws Exception when the kubectl create secret command fails
+   */
+  public static void createDockerRegistrySecret(String namespace) throws Exception {
+    String secret = System.getenv("IMAGE_PULL_SECRET_FMWINFRA");
+    if (secret == null) {
+      secret = "docker-store";
+    }
+    
+    String ocrserver = System.getenv("OCR_SERVER");
+    if (ocrserver == null) {
+      ocrserver = "container-registry.oracle.com";
+    }
+
+    TestUtils.createDockerRegistrySecret(
+        secret,
+        ocrserver,
+        System.getenv("OCR_USERNAME"),
+        System.getenv("OCR_PASSWORD"),
+        System.getenv("OCR_USERNAME") + "@oracle.com",
+        namespace);
+  }
+
   
   /**
    * drop Oracle rcu schema.
    * @param rcuSchemaPrefix - rcu SchemaPrefixe
    * @throws Exception - if any error occurs when dropping rcu schema
    */
-  public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix) throws Exception {
+  public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix, String dbNamespace) throws Exception {
     String cmd = "sh " 
         + scriptsDir
-        + "/scripts/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
+        + "/scripts/create-rcu-schema/drop-rcu-schema.sh "
+        + " -s " + rcuSchemaPrefix
+        + " -n " + dbNamespace;
     TestUtils.exec(cmd, true);
   }
   
@@ -119,6 +164,18 @@ public class DbUtils {
     String cmd = "kubectl delete -f " 
         + scriptsDir
         + "/scripts/create-rcu-schema/common/rcu.yaml --ignore-not-found";
+    TestUtils.exec(cmd, true);
+  }
+  
+  /**
+   * delete DB pod.
+   *
+   * @throws Exception - if any error occurs when deleting DB pod
+   */
+  public static void deleteDbPod(String scriptsDir) throws Exception {
+    String cmd = "kubectl delete -f " 
+        + scriptsDir
+        + "/scripts/create-oracle-db-service/common/oracle.db.yaml --ignore-not-found";
     TestUtils.exec(cmd, true);
   }
 
