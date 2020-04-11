@@ -18,6 +18,7 @@ import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -65,6 +66,8 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progre
  */
 @SuppressWarnings("WeakerAccess")
 public class DomainStatusUpdater {
+  static final int HTTP_UNPROCESSABLE_ENTITY = 422;
+
   public static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPresence";
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
   public static final String SERVERS_READY_REASON = "ServersReady";
@@ -126,7 +129,14 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createFailedStep(CallResponse<?> callResponse, Step next) {
-    FailureStatusSource failure = UnrecoverableErrorBuilder.fromException(callResponse.getE());
+    FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
+
+    LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
+    ApiException apiException = callResponse.getE();
+    if (apiException != null) {
+      LOGGER.fine(MessageKeys.EXCEPTION, apiException);
+    }
+
     return createFailedStep(failure.getReason(), failure.getMessage(), next);
   }
 
@@ -178,7 +188,7 @@ public class DomainStatusUpdater {
     private Step createDomainStatusPatchStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
       JsonPatchBuilder builder = Json.createPatchBuilder();
       newStatus.createPatchFrom(builder, context.getStatus());
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
+      LOGGER.fine(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
 
       return new CallBuilder().patchDomainAsync(
             context.getDomainName(),
@@ -216,7 +226,8 @@ public class DomainStatusUpdater {
     }
 
     private boolean isPatchFailure(CallResponse<Domain> callResponse) {
-      return callResponse.getStatusCode() == HTTP_INTERNAL_ERROR;
+      return callResponse.getStatusCode() == HTTP_INTERNAL_ERROR
+          || callResponse.getStatusCode() == HTTP_UNPROCESSABLE_ENTITY;
     }
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {

@@ -83,6 +83,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     this.fieldSelector = fieldSelector;
     this.labelSelector = labelSelector;
     this.resourceVersion = resourceVersion;
+
+    // TODO: RJE: consider reimplementing the connection between the response and request steps using just
+    // elements in the packet so that all step implementations are stateless.
     next.setPrevious(this);
   }
 
@@ -109,6 +112,10 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   @Override
   protected String getDetail() {
     return requestParams.call;
+  }
+
+  public RequestParams getRequestParams() {
+    return requestParams;
   }
 
   @Override
@@ -160,7 +167,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                     ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
                   if (didResume.compareAndSet(false, true)) {
                     if (statusCode != CallBuilder.NOT_FOUND) {
-                      LOGGER.info(
+                      LOGGER.fine(
                           MessageKeys.ASYNC_FAILURE,
                           identityHash(),
                           ae.getMessage(),
@@ -184,7 +191,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                             Component.createFor(
                                 RetryStrategy.class,
                                 r,
-                                CallResponse.createFailure(ae, statusCode).withResponseHeaders(responseHeaders)));
+                                CallResponse.createFailure(requestParams, ae, statusCode)
+                                    .withResponseHeaders(responseHeaders)));
                     fiber.resume(packet);
                   }
                 }
@@ -201,7 +209,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                         .put(
                             RESPONSE_COMPONENT_NAME,
                             Component.createFor(
-                                CallResponse.createSuccess(result, statusCode).withResponseHeaders(responseHeaders)));
+                                CallResponse.createSuccess(requestParams, result, statusCode)
+                                    .withResponseHeaders(responseHeaders)));
                     fiber.resume(packet);
                   }
                 }
@@ -316,7 +325,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         if (statusCode == 0 && retryCount <= maxRetryCount) {
           na.invoke(Optional.ofNullable(conflictStep).orElse(retryStep), packet);
         } else {
-          LOGGER.info(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
+          LOGGER.fine(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
           na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
         }
         return na;
@@ -328,7 +337,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         // exponential back-off
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
 
-        LOGGER.info(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
+        LOGGER.fine(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
         NextAction na = new NextAction();
         na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
         return na;

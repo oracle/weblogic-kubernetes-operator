@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.logging;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.ResourceBundle;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -652,6 +653,36 @@ public class LoggingFacade {
   }
 
   /**
+   * Accessor for the resource bundle backing this logger.
+   * @return the bundle
+   */
+  public ResourceBundle getResourceBundle() {
+    for (Logger l = getUnderlyingLogger(); l != null; l = l.getParent()) {
+      ResourceBundle rb = l.getResourceBundle();
+      if (rb != null) {
+        return rb;
+      }
+    }
+    throw new AssertionError(formatMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND));
+  }
+
+  /**
+   * Formats message based on string loaded from the resource bundle backing this logger.
+   * @param msgId Message id
+   * @param params Parameters to message formatting
+   * @return Formatted message
+   */
+  public String formatMessage(String msgId, Object... params) {
+    if (params == null || params.length == 0) {
+      return getResourceBundle().getString(msgId);
+    }
+
+    String msg = getResourceBundle().getString(msgId);
+    MessageFormat formatter = new MessageFormat(msg);
+    return formatter.format(params);
+  }
+
+  /**
    * Obtains caller details, class name and method, to be provided to the actual Logger. This code
    * is adapted from ODLLogRecord, which should yield consistency in reporting using PlatformLogger
    * versus a raw (ODL) Logger. JDK Logger does something similar but utilizes native methods
@@ -679,7 +710,7 @@ public class LoggingFacade {
   }
 
   /** Holds caller details obtained by inference. */
-  class CallerDetails {
+  static class CallerDetails {
     String clazz;
     String method;
   }

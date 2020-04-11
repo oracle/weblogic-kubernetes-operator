@@ -308,7 +308,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
     @Override
     void logWaiting(String name) {
-      LOGGER.info(MessageKeys.WAITING_FOR_JOB_READY, name);
+      LOGGER.fine(MessageKeys.WAITING_FOR_JOB_READY, name);
     }
   }
 

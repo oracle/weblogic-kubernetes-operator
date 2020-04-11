@@ -8,6 +8,7 @@ import java.util.Optional;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -24,8 +25,9 @@ import oracle.kubernetes.operator.work.Step;
  */
 public abstract class ResponseStep<T> extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final Step conflictStep;
-  private Step previousStep = null;
+  private AsyncRequestStep previousStep = null;
 
   /** Constructor specifying no next step. */
   public ResponseStep() {
@@ -52,7 +54,7 @@ public abstract class ResponseStep<T> extends Step {
     this.conflictStep = conflictStep;
   }
 
-  public final void setPrevious(Step previousStep) {
+  public final void setPrevious(AsyncRequestStep previousStep) {
     this.previousStep = previousStep;
   }
 
@@ -111,7 +113,7 @@ public abstract class ResponseStep<T> extends Step {
    * @param callResponse the response from the call
    * @return Next action for retry or null, if no retry is warranted
    */
-  private NextAction doPotentialRetry(Step conflictStep,Packet packet, CallResponse<T> callResponse) {
+  private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
     if (retryStrategy != null) {
       return retryStrategy.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode());
@@ -154,7 +156,7 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   protected NextAction onFailureNoRetry(Packet packet, CallResponse<T> callResponse) {
-    return doTerminate(callResponse.getE(), packet);
+    return doTerminate(UnrecoverableErrorBuilder.createExceptionFromFailedCall(callResponse), packet);
   }
 
   protected boolean isNotAuthorizedOrForbidden(CallResponse<T> callResponse) {

@@ -104,6 +104,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String SELF_SUBJECT_RULES_REVIEW = "SelfSubjectRulesReview";
   public static final String TOKEN_REVIEW = "TokenReview";
 
+  private static RequestParams REQUEST_PARAMS
+      = new RequestParams("testcall", "junit", "testName", "body");
+
   private Map<String, DataRepository<?>> repositories = new HashMap<>();
   private Map<Class<?>, String> dataTypes = new HashMap<>();
   private Failure failure;
@@ -938,23 +941,23 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private <T> CallResponse<T> createResponse(T callResult) {
-      return CallResponse.createSuccess(callResult, HTTP_OK);
+      return CallResponse.createSuccess(REQUEST_PARAMS, callResult, HTTP_OK);
     }
 
     private CallResponse<?> createResponse(NotFoundException e) {
-      return CallResponse.createFailure(new ApiException(e), HTTP_NOT_FOUND);
+      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(e), HTTP_NOT_FOUND);
     }
 
     private CallResponse<?> createResponse(HttpErrorException e) {
-      return CallResponse.createFailure(e.getApiException(), e.getApiException().getCode());
+      return CallResponse.createFailure(REQUEST_PARAMS, e.getApiException(), e.getApiException().getCode());
     }
 
     private CallResponse<?> createResponse(JsonException e) {
-      return CallResponse.createFailure(new ApiException(e), HTTP_INTERNAL_ERROR);
+      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(e), HTTP_INTERNAL_ERROR);
     }
 
     private CallResponse<?> createResponse(Throwable t) {
-      return CallResponse.createFailure(new ApiException(t), HTTP_UNAVAILABLE);
+      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(t), HTTP_UNAVAILABLE);
     }
   }
 
