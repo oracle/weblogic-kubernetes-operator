@@ -7,7 +7,7 @@ domainInfo:
     ServerStartMode: 'prod'
 
 topology:
-    Name: '@@ENV:DOMAIN_NAME@@'
+    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
     AdminServerName: 'admin-server'
     Cluster:
         'cluster-1':

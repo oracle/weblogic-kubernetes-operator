@@ -49,8 +49,8 @@ spec:
   serverPod:
     # an (optional) list of environment variable to be set on the servers
     env:
-    - name: DOMAIN_NAME
-      value: "@@DOMAIN_NAME@@"
+    - name: CUSTOM_DOMAIN_NAME
+      value: "@@CUSTOM_DOMAIN_NAME@@"
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
@@ -95,8 +95,8 @@ spec:
     # secrets that are referenced by model yaml macros
     
     secrets:
-      -name: @@DOMAIN_UID@@-rcu-access 
-      #-name: @@DOMAIN_UID@@-datasource-secret
+    - @@DOMAIN_UID@@-rcu-access 
+    #- @@DOMAIN_UID@@-datasource-secret
     
     # increase the introspector job active timeout value for JRF use cases
     introspectorJobActiveDeadlineSeconds: 300

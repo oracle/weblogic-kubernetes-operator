@@ -132,7 +132,7 @@ ${IMGTOOL} update \
   --fromImage $BASE_IMAGE_NAME:$BASE_IMAGE_TAG \
   ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \
   ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \
-  ${MODEL_ARCHIVE_VALUES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \
+  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \
   --wdtModelOnly \
   --wdtVersion myversion \
   --wdtDomainType ${WDT_DOMAIN_TYPE}

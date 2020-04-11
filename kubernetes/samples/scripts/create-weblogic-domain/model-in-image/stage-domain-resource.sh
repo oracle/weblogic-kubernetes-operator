@@ -13,7 +13,7 @@
 #   WORKDIR                  - Working directory for the sample with at least
 #                              10g of space. Defaults to 
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
-#   DOMAIN_NAME              - defaults to 'domain1'
+#   CUSTOM_DOMAIN_NAME       - defaults to 'domain1'
 #   DOMAIN_UID               - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE         - defaults to '${DOMAIN_UID}-ns'
 #   MODEL_IMAGE_NAME         - defaults to 'model-in-image'
@@ -25,6 +25,8 @@
 
 set -eu
 
+set -x
+
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
@@ -32,15 +34,17 @@ echo "@@ Info: Running '$(basename "$0")'."
 echo "@@ Info: WORKDIR='$WORKDIR'."
 
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
-DOMAIN_NAME=${DOMAIN_NAME:-domain1}
+CUSTOM_DOMAIN_NAME=${CUSTOM_DOMAIN_NAME:-domain1}
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
+# TBD change default of configmapdir, plus document above
+CONFIGMAPDIR=${CONFIGMAPDIR:-$WORKDIR/configmap}
 
 source ${WORKDIR}/env.sh
 
-if [ -z "${DOMAIN_RESOURCE_TEMPLATE:-} ]; then
+if [ -z "${DOMAIN_RESOURCE_TEMPLATE:-}" ]; then
   case "$WDT_DOMAIN_TYPE" in
     WLS|RestrictedJRF) DOMAIN_RESOURCE_TEMPLATE="${SCRIPTDIR}/sample-domain-resource-wls/k8s-domain.yaml.template" ;;
     JRF)               DOMAIN_RESOURCE_TEMPLATE="${SCRIPTDIR}/sample-domain-resource-jrf/k8s-domain.yaml.template" ;;
@@ -54,11 +58,12 @@ echo "@@ Info: Creating domain resource file '${DOMAIN_RESOURCE_FILE}' from '${D
 
 cp ${DOMAIN_RESOURCE_TEMPLATE} ${DOMAIN_RESOURCE_FILE}
 
-for template_var in WDT_DOMAIN_TYPE DOMAIN_NAME DOMAIN_UID DOMAIN_NAMESPACE MODEL_IMAGE_NAME MODEL_IMAGE_TAG; do
+for template_var in WDT_DOMAIN_TYPE CUSTOM_DOMAIN_NAME DOMAIN_UID DOMAIN_NAMESPACE MODEL_IMAGE_NAME MODEL_IMAGE_TAG; do
   sed -i -e "s;@@${template_var}@@;${!template_var};" $DOMAIN_RESOURCE_FILE
 done
 
 if [ ! -z "${CONFIGMAPDIR:-}" ]; then
   # Since CONFIGMAPDIR is set, then assume we're going to deploy and use the model.configuration.configMap.
   sed -i -e "s/\#\(secrets\):/\1:/" $DOMAIN_RESOURCE_FILE
+  sed -i -e "s/\#\(-.*datasource-secret\)/\1/" $DOMAIN_RESOURCE_FILE
 fi

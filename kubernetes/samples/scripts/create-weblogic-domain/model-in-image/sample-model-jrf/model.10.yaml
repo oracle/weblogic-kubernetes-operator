@@ -12,7 +12,7 @@ domainInfo:
 
 topology:
     AdminServerName: 'admin-server'
-    Name: '@@ENV:DOMAIN_NAME@@'
+    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
     Cluster:
         'cluster-1':
     Server:

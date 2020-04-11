@@ -49,8 +49,8 @@ spec:
   serverPod:
     # an (optional) list of environment variable to be set on the servers
     env:
-    - name: DOMAIN_NAME
-      value: "@@DOMAIN_NAME@@"
+    - name: CUSTOM_DOMAIN_NAME
+      value: "@@CUSTOM_DOMAIN_NAME@@"
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
@@ -92,7 +92,7 @@ spec:
 
     # Secrets that are referenced by model yaml macros
     #secrets:
-    #  -name: @@DOMAIN_UID@@-datasource-secret
+    #- @@DOMAIN_UID@@-datasource-secret
     
     model:
       # Optional configmap for additional models and variable files

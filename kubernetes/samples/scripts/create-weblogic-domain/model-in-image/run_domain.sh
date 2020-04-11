@@ -30,6 +30,7 @@ echo "@@ Info: Running '$(basename "$0")'."
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
+# TBD change default of configmapdir
 CONFIGMAPDIR=${CONFIGMAPDIR:-$WORKDIR/configmap}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 RCUDB_NAMESPACE=${RCUDB_NAMESPACE:-default}
@@ -75,6 +76,13 @@ echo "@@ Info: Creating model runtime encryption secret"
 $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-runtime-encryption-secret \
   -l password=$(uuidgen).$SECONDS.$PPID.$RANDOM
 
+# TBD only create hte datasource secret when demo'ing adding the datasource
+echo "@@ Info: Creating datasource secret"
+$SCRIPTDIR/util-create-secret.sh \
+  -n ${DOMAIN_NAMESPACE} \
+  -s ${DOMAIN_UID}-datasource-secret \
+  -l password=Oradoc_db1 \
+  -l url=jdbc:oracle:thin:@oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
 echo "@@ Info: Creating sample wdt configmap (optional)"
 $SCRIPTDIR/util-create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${CONFIGMAPDIR}

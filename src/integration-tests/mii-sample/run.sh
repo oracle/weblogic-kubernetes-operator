@@ -75,7 +75,9 @@ doCommand  "\$TESTDIR/deploy-wl-operator.sh"
 doCommand  "\$TESTDIR/deploy-traefik.sh"
 doCommand  "\$MIISAMPLEDIR/stage-workdir.sh"
 doCommand  "\$MIISAMPLEDIR/build.sh"
+
 doCommand  "\$MIISAMPLEDIR/run_domain.sh"
+
 doCommand  "\$MIISAMPLEDIR/util-wl-pod-wait.sh 3"
 
 trace "Woo hoo! Finished without errors!"

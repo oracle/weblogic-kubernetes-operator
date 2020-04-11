@@ -10,7 +10,7 @@
 #
 #   - It builds the 'SCRIPTDIR/sample-app' application 'ear' file, and puts the ear into
 #     'WORKDIR/model/archive1.zip' along with the application's model mime mappings 
-#     file 'WORKDIR/sample-app/wlsdeploy/config/amimemappings.properties'.
+#     file 'WORKDIR/app/wlsdeploy/config/amimemappings.properties'.
 #
 #   - It copies WDT model files that contain WebLogic configuration from
 #     'SCRIPTDIR/sample-model-jrf' or 'SCRIPTDIR/sample-model-wls'

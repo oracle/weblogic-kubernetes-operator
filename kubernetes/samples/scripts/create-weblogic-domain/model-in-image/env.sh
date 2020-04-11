@@ -74,7 +74,7 @@
 
 # ::: Domain Name
 #  Default is domain1.
-# export DOMAIN_NAME=
+# export CUSTOM_DOMAIN_NAME=
 
 # ::: Domain UID
 #  Default is sample-domain1.
