@@ -7,14 +7,14 @@ domainInfo:
     ServerStartMode: 'prod'
 
 topology:
-    Name: "wls-domain1"
+    Name: "domain1"
     AdminServerName: "admin-server"
     Cluster:
         "cluster-1":
             DynamicServers:
                 ServerTemplate:  "cluster-1-template"
                 ServerNamePrefix: "managed-server"
-                DynamicClusterSize: 5
+                DynamicClusterSize: 2
                 MaxDynamicClusterSize: 5
                 CalculatedListenPorts: false
     Server:
@@ -23,4 +23,4 @@ topology:
     ServerTemplate:
         "cluster-1-template":
             Cluster: "cluster-1"
-            ListenPort : '@@PROP:MANSVR_PORT@@'
+            ListenPort : 8001
