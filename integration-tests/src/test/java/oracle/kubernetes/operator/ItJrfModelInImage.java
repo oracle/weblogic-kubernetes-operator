@@ -15,6 +15,7 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.DbUtils;
 import oracle.kubernetes.operator.utils.DomainCrd;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -89,6 +90,9 @@ public class ItJrfModelInImage extends MiiBaseTest {
     DbUtils.deleteDbPod(getResultDir());
          
     dbNamespace = "db" + String.valueOf(getNewSuffixCount());
+    String command = "kubectl create namespace " + dbNamespace;
+    LoggerHelper.getLocal().log(Level.INFO, "Created namespace " + dbNamespace);
+    ExecCommand.exec(command);
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
     LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
