@@ -145,16 +145,18 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
     RetryStrategy r = retry;
 
-    LOGGER.fine(
-        MessageKeys.ASYNC_REQUEST,
-        identityHash(),
-        requestParams.call,
-        requestParams.namespace,
-        requestParams.name,
-        requestParams.body,
-        fieldSelector,
-        labelSelector,
-        resourceVersion);
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine(
+          MessageKeys.ASYNC_REQUEST,
+          identityHash(),
+          requestParams.call,
+          requestParams.namespace,
+          requestParams.name,
+          requestParams.body != null ? LoggingFactory.getJson().serialize(requestParams.body) : "",
+          fieldSelector,
+          labelSelector,
+          resourceVersion);
+    }
 
     AtomicBoolean didResume = new AtomicBoolean(false);
     ApiClient client = helper.take();
@@ -167,20 +169,24 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                     ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
                   if (didResume.compareAndSet(false, true)) {
                     if (statusCode != CallBuilder.NOT_FOUND) {
-                      LOGGER.fine(
-                          MessageKeys.ASYNC_FAILURE,
-                          identityHash(),
-                          ae.getMessage(),
-                          statusCode,
-                          responseHeaders,
-                          requestParams.call,
-                          requestParams.namespace,
-                          requestParams.name,
-                          requestParams.body,
-                          fieldSelector,
-                          labelSelector,
-                          resourceVersion,
-                          ae.getResponseBody());
+                      if (LOGGER.isFineEnabled()) {
+                        LOGGER.fine(
+                            MessageKeys.ASYNC_FAILURE,
+                            identityHash(),
+                            ae.getMessage(),
+                            statusCode,
+                            responseHeaders,
+                            requestParams.call,
+                            requestParams.namespace,
+                            requestParams.name,
+                            requestParams.body != null
+                                ? LoggingFactory.getJson().serialize(requestParams.body)
+                                : "",
+                            fieldSelector,
+                            labelSelector,
+                            resourceVersion,
+                            ae.getResponseBody());
+                      }
                     }
 
                     helper.recycle(client);
@@ -201,7 +207,13 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                 public void onSuccess(
                     T result, int statusCode, Map<String, List<String>> responseHeaders) {
                   if (didResume.compareAndSet(false, true)) {
-                    LOGGER.fine(ASYNC_SUCCESS, identityHash(), requestParams.call, result, statusCode, responseHeaders);
+                    LOGGER.fine(
+                        ASYNC_SUCCESS,
+                        identityHash(),
+                        requestParams.call,
+                        result,
+                        statusCode,
+                        responseHeaders);
 
                     helper.recycle(client);
                     packet
@@ -229,16 +241,20 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                         try {
                           cc.cancel();
                         } finally {
-                          LOGGER.fine(
-                              MessageKeys.ASYNC_TIMEOUT,
-                              identityHash(),
-                              requestParams.call,
-                              requestParams.namespace,
-                              requestParams.name,
-                              requestParams.body,
-                              fieldSelector,
-                              labelSelector,
-                              resourceVersion);
+                          if (LOGGER.isFineEnabled()) {
+                            LOGGER.fine(
+                                MessageKeys.ASYNC_TIMEOUT,
+                                identityHash(),
+                                requestParams.call,
+                                requestParams.namespace,
+                                requestParams.name,
+                                requestParams.body != null
+                                    ? LoggingFactory.getJson().serialize(requestParams.body)
+                                    : "",
+                                fieldSelector,
+                                labelSelector,
+                                resourceVersion);
+                          }
                           packet
                               .getComponents()
                               .put(
@@ -251,7 +267,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                     timeoutSeconds,
                     TimeUnit.SECONDS);
           } catch (Throwable t) {
-            String responseBody = (t instanceof ApiException) ? ((ApiException) t).getResponseBody() : "";
+            String responseBody =
+                (t instanceof ApiException) ? ((ApiException) t).getResponseBody() : "";
             LOGGER.warning(
                 MessageKeys.ASYNC_FAILURE,
                 t.getMessage(),
@@ -260,7 +277,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                 requestParams,
                 requestParams.namespace,
                 requestParams.name,
-                requestParams.body,
+                requestParams.body != null
+                    ? LoggingFactory.getJson().serialize(requestParams.body)
+                    : "",
                 fieldSelector,
                 labelSelector,
                 resourceVersion,
