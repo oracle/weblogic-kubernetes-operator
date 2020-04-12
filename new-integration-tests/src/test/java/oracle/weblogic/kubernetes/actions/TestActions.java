@@ -25,6 +25,7 @@ import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
@@ -408,6 +409,17 @@ public class TestActions {
    */
   public static boolean helmList(HelmParams params) {
     return Helm.list(params);
+  }
+
+  // ------------------------ Docker --------------------------------------
+
+  /**
+   * Delete docker image.
+   * @param image image name:image tag
+   * @return true if delete image is successful
+   */
+  public static boolean deleteImage(String image) {
+    return Docker.deleteImage(image);
   }
 
   // ------------------------ where does this go  -------------------------
