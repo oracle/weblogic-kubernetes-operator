@@ -211,6 +211,19 @@ deleteDomains() {
   local dn
   local domain_crd=domains.weblogic.oracle
   local count=0
+
+  echo "@@ `timestamp` Info: Setting /tmp/diefast on every WL pod to speedup its demise."
+
+  if [ "$DRY_RUN" = "true" ]; then
+    kubectl --all-namespaces=true get pods -l weblogic.serverName \
+      -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
+      | awk '{ system("echo @@ dryrun: kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+  else
+    kubectl --all-namespaces=true get pods -l weblogic.serverName \
+      -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
+      | awk '{ system("set -x ; kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+  fi
+
   echo "@@ `timestamp` Info: About to delete each domain."
   if [ $(kubectl get crd $domain_crd --ignore-not-found | grep $domain_crd | wc -l) = 1 ]; then
     for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
