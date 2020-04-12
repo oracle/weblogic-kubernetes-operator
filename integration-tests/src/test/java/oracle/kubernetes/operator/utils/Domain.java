@@ -178,16 +178,16 @@ public class Domain {
     }
 
     // using nodePort for now to access console, will be changed to t3channelport
-    if (exposeAdminNodePort) {
+    if (exposeAdminNodePort && !BaseTest.OKE_CLUSTER) {
       String cmd = "curl --silent --noproxy " + getHostNameForCurl()
-          + " http://" + getHostNameForCurl();
-      if (!BaseTest.OKE_CLUSTER) {
-        cmd = cmd + ":" + getNodePort();
-      }
-      cmd = cmd   + "/console/login/LoginForm.jsp --user "
+          + " http://" + getHostNameForCurl()
+          + ":"
+          + getNodePort()
+          + "/console/login/LoginForm.jsp --user "
           + BaseTest.getUsername() + ":" + BaseTest.getPassword()
           + " --write-out %{http_code} -o /dev/null";
       callWebAppAndWaitTillReady(cmd);
+
     }
 
   }
