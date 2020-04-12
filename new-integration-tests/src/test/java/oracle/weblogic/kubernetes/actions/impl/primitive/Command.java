@@ -5,15 +5,16 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.IOException;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
  * The common functionality of Installer and WebLogicImageTool
  */
 public class Command {
+  private static final LoggingFacade logger = LoggingFactory.getLogger(Command.class);
 
   private CommandParams params;
 
@@ -39,18 +40,15 @@ public class Command {
   }
 
   public boolean executeAndVerify() {
-    logger.info("Executing command " + params.command());
+    logger.info("Executing command {0}", params.command());
     try {
       ExecResult result = ExecCommand.exec(
           params.command(), 
           params.redirect(),
           params.env());
       return result.exitValue() == 0;
-    } catch (IOException ioe) {
-      logger.warning("Failed too run the command due to " + ioe.getMessage());
-      return false;
-    } catch (InterruptedException ie) {
-      logger.warning("Failed too run the command due to " + ie.getMessage());
+    } catch (IOException | InterruptedException ie) {
+      logger.warning("Failed to run the command due to {0}", ie.getMessage());
       return false;
     }
   }
