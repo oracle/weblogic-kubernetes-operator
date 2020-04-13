@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
@@ -34,9 +36,11 @@ public class DomainValidationSteps {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SECRETS = "secrets";
+  private static final String CONFIGMAPS = "configmaps";
 
   public static Step createDomainValidationSteps(String namespace, Step next) {
-    return Step.chain(createListSecretsStep(namespace), new DomainValidationStep(next));
+    return Step.chain(createListSecretsStep(namespace), createListConfigMapsStep(namespace),
+              new DomainValidationStep(next));
   }
 
   private static Step createListSecretsStep(String domainNamespace) {
@@ -52,6 +56,19 @@ public class DomainValidationSteps {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1SecretList> callResponse) {
       packet.put(SECRETS, callResponse.getResult().getItems());
+      return doNext(packet);
+    }
+  }
+
+  private static Step createListConfigMapsStep(String domainNamespace) {
+    return new CallBuilder().listConfigMapsAsync(domainNamespace, new ListConfigMapsResponseStep());
+  }
+
+  static class ListConfigMapsResponseStep extends DefaultResponseStep<V1ConfigMapList> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
+      packet.put(CONFIGMAPS, callResponse.getResult().getItems());
       return doNext(packet);
     }
   }
@@ -147,13 +164,27 @@ public class DomainValidationSteps {
       return hasMatchingMetadata(secret.getMetadata(), name, namespace);
     }
 
-    private boolean hasMatchingMetadata(V1ObjectMeta metadata, String name, String namespace) {
-      return Objects.equals(name, metadata.getName()) && Objects.equals(namespace, metadata.getNamespace());
-    }
-
     @SuppressWarnings("unchecked")
     private List<V1Secret> getSecrets(Packet packet) {
       return (List<V1Secret>) packet.get(SECRETS);
+    }
+
+    @Override
+    public boolean isConfigMapExists(String name, String namespace) {
+      return getConfigMaps(packet).stream().anyMatch(s -> isSpecifiedConfigMap(s, name, namespace));
+    }
+
+    boolean isSpecifiedConfigMap(V1ConfigMap configmap, String name, String namespace) {
+      return hasMatchingMetadata(configmap.getMetadata(), name, namespace);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<V1ConfigMap> getConfigMaps(Packet packet) {
+      return (List<V1ConfigMap>) packet.get(CONFIGMAPS);
+    }
+
+    private boolean hasMatchingMetadata(V1ObjectMeta metadata, String name, String namespace) {
+      return Objects.equals(name, metadata.getName()) && Objects.equals(namespace, metadata.getNamespace());
     }
   }
 }

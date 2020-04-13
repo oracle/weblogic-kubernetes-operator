@@ -16,33 +16,32 @@ You can access most of the REST services using `GET`, for example:
 
 All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  Callers should pass in the `Accept:/application/json` header.
 
-To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example when you POST to the `/scale` endpoint).  The value is an arbitrary name such as `MyClient`. For example, when using `curl`:
+To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example, when you POST to the `/scale` endpoint).  The value is an arbitrary name such as `MyClient`. For example, when using `curl`:
 
 ```
 curl ... -H X-Requested-By:MyClient ... -X POST .../scaling
 ```
 
 If you do not pass in the `X-Requested-By` header, then you'll get a 400 (bad request) response without any details explaining why the request is bad.
-The `X-Requested-By` header is not needed for requests that only read, for example when you GET any of the operator's REST endpoints.
+The `X-Requested-By` header is not needed for requests that only read, for example, when you GET any of the operator's REST endpoints.
 
 Before using the sample script below, you must:
 
-* Update it to ensure it has the correct service account, namespaces, etc., and it points to the `values.yaml`
+* Update it to ensure it has the correct service account, namespaces, and such, and it points to the `values.yaml`
   that you used to install the operator (so that it can get the certificates).
 * Add your operator's certificate to your operating system's trust store (see below).
 * If you are using a self-signed certificate and your client is macOS, you may need to update the version of `curl`
   you have installed.  The version of CURL that ships with macOS High Sierra (`curl 7.54.0 (x86_64-apple-darwin17.0)
   libcurl/7.54.0 LibreSSL/2.0.20 zlib/1.2.11 nghttp2/1.24.0`) has known issues with self-signed certificates.  Oracle
-  recommends `curl 7.63.0 (x86_64-apple-darwin17.7.0) libcurl/7.63.0 SecureTransport zlib/1.2.11` which can be installed
+  recommends `curl 7.63.0 (x86_64-apple-darwin17.7.0) libcurl/7.63.0 SecureTransport zlib/1.2.11`, which can be installed
   with `brew install curl`.
 
 #### How to add your certificate to your operating system trust store
 
 For macOS, find the certificate in Finder, and double-click on it.  This will add it to your keystore and open Keychain
-Access.  Find the certificate in Keychain Access and double-click on it to open the details.  Open the "Trust" pull-down menu and set the value of "When using this certificate" to "Always Trust", then close the detail window and enter your
-password when prompted.
+Access.  Find the certificate in Keychain Access and double-click on it to open the details.  Open the "Trust" pull-down menu and set the value of "When using this certificate" to "Always Trust", then close the detail window. Enter your password when prompted.
 
-For Oracle Linux, run the script below once to copy the certificate into `/tmp/operator.cert.pem` then run these
+For Oracle Linux, run the script below, once to copy the certificate into `/tmp/operator.cert.pem`, then run these
 commands to add the certificate to the trust store:
 
 ```
@@ -51,13 +50,13 @@ $ sudo update-ca-trust enable; sudo update-ca-trust extract
 $ openssl x509 -noout -hash -in /tmp/operator.cert.pem
 $ sudo ln -s /etc/pki/ca-trust/source/anchors/operator.cert.pem /etc/pki/tls/certs/e242d2da.0
 ```
-In the final command, the filename `e242d2da.0` should be the output of the previous command plus the suffix `.0`.
+In the final command, the file name `e242d2da.0` should be the output of the previous command plus the suffix `.0`.
 
-Please consult your operating system's documentation (or Google) for other operating systems.
+For other operating systems, consult your operating system's documentation (or Google).
 
 #### Sample operator REST client script
 
-Here is a small sample BASH script that may help to prepare the necessary token, certificates, and such, to call the
+Here is a small, sample BASH script that may help to prepare the necessary token, certificates, and such, to call the
 operator's REST services.  Please read the important caveats above before using this script:
 
 ```
@@ -95,7 +94,7 @@ cat curl.out | jq .
 You can use the `-k` option to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`), but this is insecure.
 {{% /notice %}}
 
-To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debugging information in addition to the response.  Here is an example of the output of this script:
+To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debugging information, in addition to the response.  Here is an example of the output of this script:
 
 ```
 $ ./rest.sh kubernetes001 operator/latest/domains/domain1/clusters

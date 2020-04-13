@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -19,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -101,6 +103,19 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWebLogicCredentialsSecretName();
   }
 
+  String getOpssWalletPasswordSecretName() {
+    return getDomain().getOpssWalletPasswordSecret();
+  }
+
+  String getOpssWalletFileSecretName() {
+    return getDomain().getOpssWalletFileSecret();
+  }
+
+  String getRuntimeEncryptionSecretName() {
+    return getDomain().getRuntimeEncryptionSecret();
+  }
+
+
   // ----------------------- step methods ------------------------------
 
   abstract List<V1Volume> getAdditionalVolumes();
@@ -135,10 +150,17 @@ public abstract class JobStepContext extends BasePodStepContext {
     return NODEMGR_HOME;
   }
 
-
   protected String getDataHome() {
     String dataHome = getDomain().getDataHome();
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
+  }
+
+  protected String getWdtDomainType() {
+    return getDomain().getWdtDomainType();
+  }
+
+  protected String getDomainHomeSourceType() {
+    return getDomain().getDomainHomeSourceType();
   }
 
   private boolean isIstioEnabled() {
@@ -169,7 +191,16 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getConfigOverrides();
   }
 
+  private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
+    return Optional.ofNullable(getDomain().getIntrospectorJobActiveDeadlineSeconds())
+        .orElse(podTuning.introspectorJobActiveDeadlineSeconds);
+  }
+
   // ---------------------- model methods ------------------------------
+
+  String getWdtConfigMap() {
+    return getDomain().getWdtConfigMap();
+  }
 
   private ResponseStep<V1Job> createResponse(Step next) {
     return new CreateResponseStep(next);
@@ -191,7 +222,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
-    return podTuning.introspectorJobActiveDeadlineSeconds
+    return getIntrospectorJobActiveDeadlineSeconds(podTuning)
           + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 
@@ -236,7 +267,21 @@ public abstract class JobStepContext extends BasePodStepContext {
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
-                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
+                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
+            .addVolumesItem(
+                new V1Volume()
+                    .name("mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+                    .configMap(getIntrospectMD5VolumeSource()));
+    if (getOpssWalletPasswordSecretVolume() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
+          getOpssWalletPasswordSecretVolume()));
+    }
+    if (getOpssWalletFileSecretName() != null) {
+      podSpec.addVolumesItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
+              getOpssWalletFileSecretVolume()));
+    }
+
+    podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -255,15 +300,39 @@ public abstract class JobStepContext extends BasePodStepContext {
                   .name(getConfigOverrides() + "-volume")
                   .configMap(getOverridesVolumeSource(getConfigOverrides())));
     }
-
+    // For WDT
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+        podSpec.addVolumesItem(
+            new V1Volume()
+                .name(getWdtConfigMap() + "-volume")
+                .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
+      }
+      podSpec.addVolumesItem(
+          new V1Volume()
+              .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
+              .secret(getRuntimeEncryptionSecretVolume()));
+    }
     return podSpec;
   }
 
   protected V1Container createContainer(TuningParameters tuningParameters) {
     V1Container container = super.createContainer(tuningParameters)
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+        .addVolumeMountsItem(
+          volumeMount(
+              "mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
+              "/weblogic-operator/introspectormii")
+              .readOnly(false));
 
+    if (getOpssWalletPasswordSecretVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_KEYPASSPHRASE_VOLUME, OPSS_KEY_MOUNT_PATH));
+    }
+    if (getOpssWalletFileSecretVolume() != null) {
+      container.addVolumeMountsItem(readOnlyVolumeMount(OPSS_WALLETFILE_VOLUME, OPSS_WALLETFILE_MOUNT_PATH));
+    }
+    
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
     }
@@ -279,6 +348,18 @@ public abstract class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(
                   secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
+
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+        container.addVolumeMountsItem(
+            readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
+      }
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
+              RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
+
+    }
+
     return container;
   }
 
@@ -306,10 +387,49 @@ public abstract class JobStepContext extends BasePodStepContext {
           .defaultMode(420);
   }
 
+  private V1SecretVolumeSource getRuntimeEncryptionSecretVolume() {
+    V1SecretVolumeSource result = new V1SecretVolumeSource()
+          .secretName(getRuntimeEncryptionSecretName())
+          .defaultMode(420);
+    result.setOptional(true);
+    return result;
+  }
+
+  private V1SecretVolumeSource getOpssWalletPasswordSecretVolume() {
+    if (getOpssWalletPasswordSecretName() != null) {
+      V1SecretVolumeSource result =  new V1SecretVolumeSource()
+          .secretName(getOpssWalletPasswordSecretName())
+          .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
+  }
+
+  private V1SecretVolumeSource getOpssWalletFileSecretVolume() {
+    if (getOpssWalletFileSecretName() != null) {
+      V1SecretVolumeSource result =  new V1SecretVolumeSource()
+              .secretName(getOpssWalletFileSecretName())
+              .defaultMode(420);
+      result.setOptional(true);
+      return result;
+    }
+    return null;
+  }
+
   private V1ConfigMapVolumeSource getConfigMapVolumeSource() {
     return new V1ConfigMapVolumeSource()
           .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
           .defaultMode(ALL_READ_AND_EXECUTE);
+  }
+
+  protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
+    V1ConfigMapVolumeSource result =
+        new V1ConfigMapVolumeSource()
+            .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+            .defaultMode(ALL_READ_AND_EXECUTE);
+    result.setOptional(true);
+    return result;
   }
 
   private V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
@@ -347,5 +467,13 @@ public abstract class JobStepContext extends BasePodStepContext {
       }
       return doNext(packet);
     }
+  }
+
+  protected V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {
+    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
+  }
+
+  protected V1ConfigMapVolumeSource getOpssKeyWalletVolumeSource(String name) {
+    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 }

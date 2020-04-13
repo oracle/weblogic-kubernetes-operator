@@ -31,7 +31,7 @@ public class SitConfig extends BaseTest {
   //protected static String jdbcUrl;
   protected static final String JDBC_DRIVER_NEW = "com.mysql.cj.jdbc.Driver";
   protected static final String JDBC_DRIVER_OLD = "com.mysql.jdbc.Driver";
-  protected static final String PS3_TAG = "12.2.1.3";
+  protected static final String PS4_TAG = "12.2.1.4";
   protected static String JDBC_RES_SCRIPT;
   protected static final String oldSecret = "test-secrets";
   protected static final String newSecret = "test-secrets-new";
@@ -69,19 +69,6 @@ public class SitConfig extends BaseTest {
     Domain domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
     return domain;
-  }
-
-  /**
-   * Destroys the domain.
-   *
-   * @throws Exception when domain destruction fails
-   */
-  protected static void destroySitConfigDomain(Domain domain) throws Exception {
-    if (domain != null) {
-      LoggerHelper.getLocal().log(Level.INFO, "Destroying domain...");
-      domain.destroy();
-      domain.deleteImage();
-    }
   }
 
   /**
@@ -178,7 +165,7 @@ public class SitConfig extends BaseTest {
       content = content.replaceAll("JDBC_URL", jdbcUrl);
       content = content.replaceAll(oldSecret, secretName);
       content = content.replaceAll("customsitconfigdomain", domainNS);
-      if (getWeblogicImageTag().contains(PS3_TAG)) {
+      if (getWeblogicImageTag().contains(PS4_TAG)) {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
       path = Paths.get(dstDir, file);
@@ -514,7 +501,7 @@ public class SitConfig extends BaseTest {
 
     content = content.replaceAll("JDBC_URL", jdbcUrl);
     content = content.replaceAll("DOMAINUID", domain.getDomainUid());
-    if (getWeblogicImageTag().contains(PS3_TAG)) {
+    if (getWeblogicImageTag().contains(PS4_TAG)) {
       content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
     }
     String testresultDir = (String)domain.getDomainMap().get("resultDir");
