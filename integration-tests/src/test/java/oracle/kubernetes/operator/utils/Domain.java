@@ -391,42 +391,41 @@ public class Domain {
    * @throws Exception If failed to access admin server REST endpoint
    */
   public void verifyAdminServerExternalService(String username, String password) throws Exception {
+    if (!BaseTest.OKE_CLUSTER) {
+      LoggerHelper.getLocal().log(Level.INFO, "Inside verifyAdminServerExternalService");
+      if (exposeAdminNodePort) {
+        String nodePortHost = getHostNameForCurl();
+        String nodePort = getNodePort();
+        LoggerHelper.getLocal().log(Level.INFO,
+                "nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
-    // LoggerHelper.getLocal().log(Level.INFO, "Inside verifyAdminServerExternalService");
-    if (exposeAdminNodePort) {
-      String nodePortHost = getHostNameForCurl();
-      String nodePort = getNodePort();
-      LoggerHelper.getLocal().log(Level.INFO,
-          "nodePortHost " + nodePortHost + " nodePort " + nodePort);
+        StringBuffer cmd = new StringBuffer();
+        cmd.append("curl --silent --show-error --noproxy ")
+                .append(nodePortHost)
+                .append(" http://")
+                .append(nodePortHost)
+                .append(":")
+                .append(nodePort)
+                .append("/management/weblogic/latest/serverRuntime")
+                .append(" --user ")
+                .append(username)
+                .append(":")
+                .append(password)
+                .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
 
-      StringBuffer cmd = new StringBuffer();
-      cmd.append("curl --silent --show-error --noproxy ")
-              .append(nodePortHost)
-              .append(" http://")
-              .append(nodePortHost);
-      if (!BaseTest.OKE_CLUSTER) {
-        cmd.append(":")
-                .append(nodePort);
+        LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
+        ExecResult result = TestUtils.exec(cmd.toString());
+        String output = result.stdout().trim();
+        LoggerHelper.getLocal().log(Level.INFO, "output " + output);
+        if (!output.equals("200")) {
+          throw new RuntimeException(
+                  "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
+                          + output);
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO,
+                "exposeAdminNodePort is false, can not test adminNodePort");
       }
-      cmd.append("/management/weblogic/latest/serverRuntime")
-          .append(" --user ")
-          .append(username)
-          .append(":")
-          .append(password)
-          .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
-
-      LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
-      ExecResult result = TestUtils.exec(cmd.toString());
-      String output = result.stdout().trim();
-      LoggerHelper.getLocal().log(Level.INFO, "output " + output);
-      if (!output.equals("200")) {
-        throw new RuntimeException(
-            "FAILURE: accessing admin server REST endpoint did not return 200 status code, "
-                + output);
-      }
-    } else {
-      LoggerHelper.getLocal().log(Level.INFO,
-          "exposeAdminNodePort is false, can not test adminNodePort");
     }
   }
 

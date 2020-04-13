@@ -569,7 +569,9 @@ public class BaseTest {
           .append(getProjectRoot())
           .append("/integration-tests/src/test/resources/statedump.sh");
       LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
-
+      if (OKE_CLUSTER) {
+        TestUtils.deleteDomainHomeDirOke();
+      }
       // renew lease before callin statedump.sh
       TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
