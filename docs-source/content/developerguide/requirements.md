@@ -13,7 +13,7 @@ In addition to the requirements listed in the [User guide]({{< relref "/userguid
 
 The operator is written primarily in Java, BASH shell scripts, and WLST scripts.  
 
-Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support, or accept pull requests to add support, for other operating systems.
+Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support, or accept pull requests to add support for other operating systems.
 
 #### Obtaining the operator source code
 

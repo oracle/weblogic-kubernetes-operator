@@ -13,7 +13,7 @@ various approaches.  We can start by asking ourselves questions like these:
 - *Can you make the desired change with a configuration override or Model in Image config map?*  
 
   When your domain home source type is Domain in PV or Domain in Image,
-  the WebLogic Server Kubernetes Operator allows you to inject a number of [configuration
+  the operator allows you to inject a number of [configuration
   overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}})
   into your pods before starting any servers in the domain.  
 
@@ -64,7 +64,7 @@ various approaches.  We can start by asking ourselves questions like these:
 
   If you need to make an update in a lower layer, then you will need to rebuild that
   layer and all of the layers above it.  This means that you will need to rebuild the
-  domain layer.  In the case of Model-in-Image, you will need to determine if you need to
+  domain layer.  In the case of Model in Image, you will need to determine if you need to
   keep the same domain encryption keys.
 
 The diagram below summarizes these concerns in a decision tree for the “domain-in-image” case:

@@ -25,7 +25,7 @@ To limit the amount of time spent on attempting to delete domain resources, use 
 The option must be followed by an integer that represents the total number of seconds
 that will be spent attempting to delete resources. The default number of seconds is 120.
 
-The optional option `-t` shows what the script will delete without executing the deletion.
+The optional `-t` option shows what the script will delete without executing the deletion.
 
 To see the help associated with the script:
 ```

@@ -9,7 +9,7 @@ description = "Steps for creating and deploying Model in Image images and their 
 
 #### Contents
 
-   - [WebLogic Kubernetes Operator](#1-weblogic-kubernetes-operator)
+   - [WebLogic Server Kubernetes Operator](#1-weblogic-server-kubernetes-operator)
    - [WebLogic Server image](#2-weblogic-server-image)
    - [Optional WDT model config map](#3-optional-wdt-model-config-map)
    - [Required runtime encryption secret](#4-required-runtime-encryption-secret)
@@ -21,7 +21,7 @@ description = "Steps for creating and deploying Model in Image images and their 
 
 Here's what's needed to create and deploy a typical Model in Image domain. These items do not need to be created in order.
 
-#### 1. WebLogic Kubernetes Operator
+#### 1. WebLogic Server Kubernetes Operator
 
 Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 
@@ -35,9 +35,9 @@ After you have a base image, Model in Image requires layering the following dire
 
 | Directory                | Contents                           | Extension   |
 | ------------------------ | ---------------------------------- | ----------- |
-| `/u01/wdt/models`         | Optional domain model YAML files   | .yaml       |
-| `/u01/wdt/models`         | Optional model variable files      | .properties |
-| `/u01/wdt/models`         | Optional application archives      | .zip        |
+| `/u01/wdt/models`         | Optional domain model YAML files   | `.yaml`       |
+| `/u01/wdt/models`         | Optional model variable files      | `.properties` |
+| `/u01/wdt/models`         | Optional application archives      | `.zip`        |
 | `/u01/wdt/weblogic-deploy`| Unzipped WebLogic deploy install   |             |
 
 There are two methods for layering Model in Image artifacts on top of a base image:
@@ -46,7 +46,7 @@ There are two methods for layering Model in Image artifacts on top of a base ima
 
   - **WebLogic Image Tool**: Use the convenient [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool (WIT) has built-in options for embedding WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach. For an example, see the sample's `build_image_model.sh` file in the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image` directory.
 
-For a discussion of model file syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
+For more information about model file syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
 
 #### 3. Optional WDT model config map
 
@@ -70,9 +70,9 @@ See [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-f
 
 #### 4. Required runtime encryption secret
 
-Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime config map or log. The `password` that you set can safely change any time after you've fully shut down a domain but must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
+Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime config map or log. You can safely change the `password` that you set, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
 
-**NOTE**: Because the runtime encryption password does not need to be shared and only needs to exist for the life of a domain, you may want to use a password generator.
+**NOTE**: Because the runtime encryption password does not need to be shared and needs to exist only for the life of a domain, you may want to use a password generator.
 
 Example:
 
@@ -110,7 +110,7 @@ The following domain resource attributes are specific to Model in Image domains.
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#4-required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/type_def.md).|
 
-Notes:
+**Notes**:
 
  - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list of domain resource fields.
 
@@ -135,7 +135,7 @@ __Here are the required settings for Model in Image JRF domains:__
 
 - Set `configuration.opss.walletFileSecret` to reference a secret that contains your domain's OPSS wallet file in its `walletFile` key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its RCU database information. For more information, see [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}). This is an optional field for JRF domains, but must always be set if you want a restarted or migrated domain to access its RCU database information.
 
-- Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 300. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's RCU database tables), and because Model in Image creates your domain home for you using the introspection job.
+- Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 300 seconds. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's RCU database tables), and because Model in Image creates your domain home for you using the introspection job.
 
 - Define an `RCUDbInfo` stanza in your model. Access to an RCU database requires defining a `RCUDbInfo` stanza in your model's `domainInfo` stanza with the necessary information for accessing the domain's schema within the database. Usually this information should be supplied using a secret that you deploy and reference in your domain resource's `configuration.secrets` field. Here's an example `RCUDbInfo` stanza:
 

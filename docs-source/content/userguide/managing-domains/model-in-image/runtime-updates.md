@@ -24,9 +24,9 @@ If you want to make a WebLogic domain home configuration change to a running Mod
 
   - Specifying a new or updated WDT config map that contains model files and use your domain resource `configuration.model.configMap` field to reference the map.
 
-  - Supplying a new image with new and/or changed model files.
+  - Supplying a new image with new or changed model files.
 
-After changes are in place, you can tell the operator to load the changes and propagate them to a running domain by altering the domain resource's `image` or `restartVersion` attribute.
+After the changes are in place, you can tell the operator to load the changes and propagate them to a running domain by altering the domain resource's `image` or `restartVersion` attribute.
 
 #### Important notes
 
@@ -34,9 +34,9 @@ After changes are in place, you can tell the operator to load the changes and pr
 
  - If you specify multiple model files in your image or WDT config map, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
- - You can use the WDT Discover Domain Tool to help generate your model file updates. See [Using the WDT Discover Domain Tool](#using-the-wdt-discover-tool).
+ - You can use the WDT Discover Domain Tool to help generate your model file updates. See [Using the WDT Discover Domain Tool](#using-the-wdt-discover-domain-tool).
 
- - For simple ways to change `restartVersion`, see [Changing a domain resource 'restartVersion'](#changing-a-domain-resource-restartversion).
+ - For simple ways to change `restartVersion`, see [Changing a domain resource `restartVersion`](#changing-a-domain-resource-restartversion).
 
  - For a sample of adding a data source to a running domain, see [Example of adding a data source](#example-of-adding-a-data-source).
 
@@ -48,7 +48,7 @@ After changes are in place, you can tell the operator to load the changes and pr
 
 _Why is it necessary to specify updates using model files?_
 
-Similar to Domain in Image, if you make a direct runtime WebLogic configuration update of a Model in Image domain using the WebLogic console or WLST scripts, then the update is ephemeral. This is because the domain home is stored in an image directory which will not survive the restart of the owning pod.
+Similar to Domain in Image, if you make a direct runtime WebLogic configuration update of a Model in Image domain using the WebLogic Server Administration Console or WLST scripts, then the update is ephemeral. This is because the domain home is stored in an image directory which will not survive the restart of the owning pod.
 
 _How do Model in Image updates work during runtime?_
 
@@ -56,18 +56,18 @@ After you make a change to your domain resource `restartVersion` or `image` attr
 
 _Can we use custom configuration overrides to do the updates instead?_
 
-No. Custom configuration overrides, which are WebLogic configuration overrides specified using a domain resource `configuration.overridesConfigMap`, as described in [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}), aren't supported in combination with Model in Image. Model in Image will generate an error if custom overrides are specified. This should not be a concern because model file, secret, and/or model image updates are simpler and more flexible than custom configuration override updates. Unlike configuration overrides, the syntax for a model file update exactly matches the syntax for specifying your model file in the first place.
+No. Custom configuration overrides, which are WebLogic configuration overrides specified using a domain resource `configuration.overridesConfigMap`, as described in [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}), aren't supported in combination with Model in Image. Model in Image will generate an error if custom overrides are specified. This should not be a concern because model file, secret, or model image updates are simpler and more flexible than custom configuration override updates. Unlike configuration overrides, the syntax for a model file update exactly matches the syntax for specifying your model file in the first place.
 
 
 #### Supported and unsupported updates
 
- - You can add new MBeans or resources simply by specifying their corresponding model file YAML snippet along with their parent bean hierarchy. See [Example of adding a data source](#example-of-adding-a-datasource).
+ - You can add new MBeans or resources simply by specifying their corresponding model file YAML snippet along with their parent bean hierarchy. See [Example of adding a data source](#example-of-adding-a-data-source).
 
  - You can recreate, change, or add secrets that your model depends on. For example, you can change a database password secret.
 
  - You can change or add environment variables that your model macros may depend on (macros that use the `@@ENV:myenvvar@@` syntax).
 
- - You can remove a named MBean or resource by specifying a model file with a `!` symbol just before the bean or resource name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
+ - You can remove a named MBean or resource by specifying a model file with an exclamation point (`!`) symbol just before the bean or resource name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
 
    ```
    resources:
@@ -77,7 +77,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
    For more information, see [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling#declaring-named-mbeans-to-delete) in the WebLogic Deploying Tooling documentation.
 
- - You can add or alter an MBean attribute by specifying a YAML snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the max capacity of a data source named `mynewdatasource`:
+ - You can add or alter an MBean attribute by specifying a YAML snippet along with its parent bean hierarchy that references an existing MBean and the attribute. For example, to add or alter the maximum capacity of a data source named `mynewdatasource`:
 
    ```
    resources:
@@ -92,11 +92,11 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
  - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: (a) add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and (b) add another subsequent model file that fully defines the named bean/resource but without the attribute you want to delete.
 
- - There is no way to directly change the MBean name of an attribute. Instead, you can remove a named MBean using the '!' syntax as described above, and then add a new one as a replacement.
+ - There is no way to directly change the MBean name of an attribute. Instead, you can remove a named MBean using the `!` syntax as described above, and then add a new one as a replacement.
 
  - You cannot change the domain name at runtime.
 
- - The following types of runtime update configuration haven't been tested and are _not_ supported in the first release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
+ - The following types of runtime update configuration haven't been tested and are _not_ supported in this release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
    * Domain topology (cluster members)
    * Network channel listen address, port, and enabled configuration
    * Server and domain log locations
@@ -116,7 +116,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
      * Server and domain log locations -- use the `logHome` domain setting instead
      * Node Manager access credentials
 
-   Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the Network Access Point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
+   Note that it's OK, even expected, to override network access point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
 
 #### Changing a domain resource `restartVersion`
 
@@ -163,7 +163,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
     -model_file old.yaml \
     -variable_file old.properties
 
-  # (2) Now make some WebLogic config changes via the console or WLST.
+  # (2) Now make some WebLogic config changes using the console or WLST.
 
   # (3) Run discover for your existing domain home.
 
@@ -180,7 +180,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
   diff new.yaml old.yaml
   ```
 
-> Note: Remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands if your domain type isn't `WLS`.
+> **Note: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands.**
 
 #### Example of adding a data source
 
@@ -188,7 +188,7 @@ Here's an example script for adding a data source to a WebLogic cluster named `c
 
 This example references a database running in the `default` namespace that is accessed with the URL `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, user `sys as dba`, and password `Oradoc_db1`. Note that you can still add this data source even if there's no database running at this location.
 
-{{% notice note %}} If you already have a WDT config map deployed for your running domain, as is true for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, then you should ensure that any updated config map that you supply includes any needed files that were in the original WDT config map. For example, the Model in Image sample puts file(s) in a directory that it uses to stage its config map in `$WORKDIR/wdtconfigmap`.
+{{% notice note %}} If you already have a WDT config map deployed for your running domain, as is true for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, then you should ensure that any updated config map that you supply includes any needed files that were in the original WDT config map. For example, the Model in Image sample puts files in a directory that it uses to stage its config map in `$WORKDIR/wdtconfigmap`.
 {{% /notice %}}
 
 
@@ -302,7 +302,7 @@ This example references a database running in the `default` namespace that is ac
     ...
   ```
 
-The operator should then rerun the introspector and subsequently roll your domain's WebLogic pods one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
+The operator should then rerun the introspector job and subsequently roll your domain's WebLogic pods one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
 
   ```
   NAME                                         READY STATUS              RESTARTS   AGE
@@ -330,4 +330,4 @@ The operator should then rerun the introspector and subsequently roll your domai
   sample-domain1-managed-server1               1/1   Running             0          33s
   ```
 
-To debug problem updates` see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+To debug problem updates, see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
