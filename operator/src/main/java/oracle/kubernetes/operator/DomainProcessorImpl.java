@@ -449,11 +449,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
                           @Override
                           public void onThrowable(Packet packet, Throwable throwable) {
-                            if (throwable instanceof FailureStatusSourceException) {
-                              ((FailureStatusSourceException) throwable).log();
-                            } else {
-                              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                            }
+                            logThrowable(throwable);
                             loggingFilter.setFiltering(true);
                           }
                         });
@@ -464,6 +460,18 @@ public class DomainProcessorImpl implements DomainProcessor {
             main.initialShortDelay,
             main.initialShortDelay,
             TimeUnit.SECONDS));
+  }
+
+  private void logThrowable(Throwable throwable) {
+    if (throwable instanceof Step.MultiThrowable) {
+      for (Throwable t : ((Step.MultiThrowable) throwable).getThrowables()) {
+        logThrowable(t);
+      }
+    } else if (throwable instanceof FailureStatusSourceException) {
+      ((FailureStatusSourceException) throwable).log();
+    } else {
+      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+    }
   }
 
   /**
@@ -582,7 +590,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
-            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            logThrowable(throwable);
 
             gate.startFiberIfLastFiberMatches(
                 domainUid,
@@ -597,7 +605,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
                   @Override
                   public void onThrowable(Packet packet, Throwable throwable) {
-                    LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+                    logThrowable(throwable);
                   }
                 });
 
