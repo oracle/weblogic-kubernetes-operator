@@ -84,7 +84,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     this.labelSelector = labelSelector;
     this.resourceVersion = resourceVersion;
 
-    // TODO: RJE: consider reimplementing the connection between the response and request steps using just
+    // TODO, RJE: consider reimplementing the connection between the response and request steps using just
     // elements in the packet so that all step implementations are stateless.
     next.setPrevious(this);
   }

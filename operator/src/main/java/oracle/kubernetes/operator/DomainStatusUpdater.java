@@ -186,7 +186,10 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
       Domain oldDomain = context.getDomain();
       Domain newDomain = new Domain()
+          .withKind(KubernetesConstants.DOMAIN)
+          .withApiVersion(oldDomain.getApiVersion())
           .withMetadata(oldDomain.getMetadata())
+          .withSpec(null)
           .withStatus(newStatus);
 
       return new CallBuilder().replaceDomainStatusAsync(
@@ -205,10 +208,17 @@ public class DomainStatusUpdater {
     private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
 
-    public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep, DomainStatusUpdaterContext context, Step nextStep) {
+    public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep,
+                                     DomainStatusUpdaterContext context, Step nextStep) {
       super(nextStep);
       this.updaterStep = updaterStep;
       this.context = context;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      return doNext(packet);
     }
 
     @Override

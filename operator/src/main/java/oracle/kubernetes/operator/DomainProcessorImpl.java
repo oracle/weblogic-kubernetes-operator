@@ -498,6 +498,12 @@ public class DomainProcessorImpl implements DomainProcessor {
             LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUid);
             return;
           }
+
+          // TODO, RJE: now that we are switching to updating domain status using the separate
+          // status-specific endpoint, Kubernetes guarantees that changes to the main endpoint
+          // will only be for metadata and spec, so we can know that we have an important
+          // change just by looking at metadata.generation.
+
           // Has the spec actually changed? We will get watch events for status updates
           if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
             // nothing in the spec has changed, but status likely did; update current
