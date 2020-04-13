@@ -10,9 +10,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 public class AppParams {
 
   // Location of the source code. 
-  // This is the Name of the directory under resources/apps for an application
-  // Note: use "_" instead of "-" in app directory names because
-  // WDT does not like "-" to be in the name of an archive file
+  // This is the name of the directory under resources/apps for an application
   private String srcDir;
   
   // Whether the output of the command is redirected to system out
