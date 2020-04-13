@@ -26,7 +26,16 @@
 #   IMAGE_NAME, etc, all have defaults, or can be passed in.  See the 'export'
 #   calls in the implementation below for the complete list.
 #
-
+# Usage:
+#     For non Model In Image test
+#
+#         introspectTest.sh
+#
+#     For Model In Image test
+#
+#         export DOMAIN_SOURCE_TYPE=FromModel
+#         introspectTest.sh
+#
 #############################################################################
 #
 # Initialize basic globals
@@ -100,6 +109,20 @@ export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
 # whether this test run is expecting a domain validation error
 export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
 
+DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-PersistentVolume}
+export DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE}
+WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+export WDT_DOMAIN_TYPE
+if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
+  # Make sure the configmap and secrets are not optional
+  export MII_WDT_CONFIGMAP="false"
+  export MII_WDT_ENCRYPT_SECRET="false"
+else
+  # Make sure the configmap and secrets are optional
+  export MII_WDT_CONFIGMAP="true"
+  export MII_WDT_ENCRYPT_SECRET="true"
+fi
+
 #############################################################################
 #
 # End of setup! All that follows is implementation.
@@ -134,7 +157,7 @@ function cleanupMajor() {
   printdots_start
   FAST_DELETE="--grace-period=1 --timeout=1s" \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
-    ${test_home}/cleanup.out
+    ${test_home}/cleanup.out 2>&1
   status=$?
   printdots_end
 
@@ -213,6 +236,7 @@ createConfigMapFromDir() {
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
     weblogic.resourceVersion=domain-v2 \
+    weblogic.domainUID=$DOMAIN_UID \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
 
@@ -305,6 +329,11 @@ function deployCustomOverridesConfigMap() {
      ${SCRIPTPATH}/util_subst.sh -g ${filname} ${cmdir}/${bfilname}  || exit 1
   done
 
+  # We don't use overrides for MII
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    rm ${cmdir}/jdbc* ${cmdir}/diagnostics* ${cmdir}/config*
+  fi
+
   kubectl -n $NAMESPACE delete cm $cmname \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
@@ -335,7 +364,13 @@ function createTestRootPVDir() {
                              -l ${WEBLOGIC_IMAGE_PULL_POLICY} \
                              -f ${SCRIPTPATH}/createTestRoot.sh \
                              -c "sh /tmpmount/createTestRoot.sh ${DOMAIN_UID}" \
-                             || exit 1
+                              >  ${test_home}/util_krun.out 2>&1
+
+  if [ $? -ne 0 ]; then
+    trace "Error: Error creating physical directory. Output:"
+    cat ${test_home}/util_krun.out
+    exit 1
+  fi
 }
 
 #############################################################################
@@ -392,6 +427,72 @@ function deployCreateDomainJobPod() {
   # Wait for pod to come up successfully
 
   waitForPod $pod_name
+}
+
+#
+# Create the model in image docker image
+#
+function createMII_Image() {
+  trace "Info: Create MII Image"
+
+  mkdir -p ${test_home}/mii/workdir/models || exit 1
+  cp ${SCRIPTPATH}/mii/models/*  ${test_home}/mii/workdir/models || exit 1
+  cd ${test_home}/mii/workdir  || exit 1
+  echo "place holder" > dummy.txt || exit 1
+  zip ${test_home}/mii/workdir/models/archive.zip dummy.txt > /dev/null 2>&1 || exit 1
+
+  (
+  export WORKDIR=${test_home}/mii/workdir  || exit 1
+  export MODEL_IMAGE_TAG=it || exit 1
+  export MODEL_IMAGE_NAME=model-in-image || exit 1
+  export MODEL_IMAGE_BUILD="when-missing"
+
+  docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
+
+  tracen "Info: Downloading WDT and WIT"
+  printdots_start
+  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh \
+   > ${test_home}/miibuild_download.out 2>&1
+  local rc=$?
+  printdots_end
+  if [ $rc -ne 0 ] ; then
+    trace "Error: createMII_Image: download tools failed"
+    cat ${test_home}/miibuild_download.out
+    exit 1
+  fi
+
+  tracen "Info: Launching WIT to build the image"
+  printdots_start
+
+  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh \
+   > ${test_home}/miibuild_image.out  2>&1
+  local rc=$?
+  printdots_end
+
+  if [ $rc -ne 0 ] ; then
+    trace "Error: createMII_Image: build image failed"
+    cat ${test_home}/miibuild_image.out
+    exit 1
+  fi
+  ) || exit 1
+
+  export WEBLOGIC_IMAGE_NAME=model-in-image || exit 1
+  export WEBLOGIC_IMAGE_TAG=it || exit 1
+
+  kubectl -n $NAMESPACE delete configmap ${DOMAIN_UID}-wdt-config-map --ignore-not-found || exit 1
+  kubectl -n $NAMESPACE create configmap  ${DOMAIN_UID}-wdt-config-map \
+        --from-file=${SCRIPTPATH}/mii/wdtconfigmap | tracePipe "Info: kubectl output: "
+
+  kubectl -n $NAMESPACE label  configmap ${DOMAIN_UID}-wdt-config-map  weblogic.domainUID=$DOMAIN_UID \
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+
+  kubectl -n $NAMESPACE delete secret ${DOMAIN_UID}-runtime-encryption-secret --ignore-not-found || exit 1
+  kubectl -n $NAMESPACE create secret generic  ${DOMAIN_UID}-runtime-encryption-secret \
+        --from-literal=password=welcome1 | tracePipe "Info: kubectl output: "
+
+  kubectl -n $NAMESPACE label secret ${DOMAIN_UID}-runtime-encryption-secret weblogic.domainUID=$DOMAIN_UID \
+   2>&1 | tracePipe "Info: kubectl output: " || exit 1
+
 }
 
 #############################################################################
@@ -559,8 +660,8 @@ function deploySinglePodService() {
     export SERVICE_INTERNAL_PORT="${internal_port}"
     export SERVICE_EXTERNAL_PORT="${external_port}"
     export SERVICE_NAME=${service_name}
-    ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml} || exit 1
-  )
+    ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml}
+  ) || exit 1
 
   kubectl create -f ${target_yaml} \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
@@ -582,7 +683,7 @@ function deploySinglePodService() {
 
 #############################################################################
 #
-# Check if automatic overrides and custom overrides took effect on the admin pod
+# Check if automatic overrides and custom overrides took effect on the admin pod for non MII
 #
 
 function checkOverrides() {
@@ -594,8 +695,11 @@ function checkOverrides() {
 
   linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
-
-  if [ "$linecount" != "5" ]; then
+  local target_linecount=5
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    target_linecount=1
+  fi
+  if [ "$linecount" != "${target_linecount}" ]; then
     trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
@@ -606,9 +710,12 @@ function checkOverrides() {
   #
 
   trace "Info: Checking beans to see if sit-cfg took effect.  Input file '$test_home/checkBeans.input', output file '$test_home/checkBeans.out'."
-
+  local src_input_file=checkBeans.inputt
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
+    src_input_file=checkMIIBeans.inputt
+  fi
   rm -f ${test_home}/checkBeans.input
-  ${SCRIPTPATH}/util_subst.sh -g checkBeans.inputt ${test_home}/checkBeans.input || exit 1
+  ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
   tracen "Info: Waiting for WLST checkBeans.py to complete."
@@ -629,6 +736,7 @@ function checkOverrides() {
     exit 1
   fi
 }
+
 
 #############################################################################
 #
@@ -923,13 +1031,20 @@ deployCustomOverridesConfigMap
 kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
 kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
+        --from-literal=encryptd=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
+kubectl -n $NAMESPACE label secret my-secret weblogic.domainUID=$DOMAIN_UID 2>&1 | tracePipe "Info: kubectl output: " \
+  || exit 1
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
   deployMySQL
   deployWebLogic_PV_PVC_and_Secret
-  deployCreateDomainJobPod
+  if [ "${DOMAIN_SOURCE_TYPE}" == "FromModel" ] ; then
+    createMII_Image
+  else
+    deployCreateDomainJobPod
+  fi
 fi
 
 deployIntrospectJobPod

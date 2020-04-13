@@ -8,7 +8,7 @@ weight: 1
 
 #### Set up your Kubernetes cluster
 
-If you need help setting up a Kubernetes environment, check our [cheat sheet]({{< relref "/userguide/overview/k8s-setup.md" >}}).
+If you need help setting up a Kubernetes environment, check our [cheat sheet]({{< relref "/userguide/overview/k8s-setup#cheat-sheet-for-setting-up-kubernetes" >}}).
 
 After creating Kubernetes clusters, you can optionally:
 

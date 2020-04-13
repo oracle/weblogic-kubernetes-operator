@@ -16,10 +16,10 @@ description: "Important considerations for WebLogic domains in Kubernetes."
 
 #### Important considerations for WebLogic domains in Kubernetes
 
-Please be aware of the following important considerations for WebLogic domains running in Kubernetes:
+Be aware of the following important considerations for WebLogic domains running in Kubernetes:
 
 * _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome`, if specified; otherwise, a default location is determined by the `domainHomeSourceType` setting.
-  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/` and report an error if no domain is found or more than one domain is found.  
+  - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `Image` (the default), then the operator will assume that the domain home is a directory under `/u01/oracle/user_projects/domains/`, and report an error if no domain is found or more than one domain is found.  
   - If the domain resource `domainHome` field is not specified and `domainHomeSourceType` is `PersistentVolume`, then the operator will assume that the domain home is `/shared/domains/DOMAIN_UID`.
   - Finally, if the domain resource `domainHome` field is not specified and the `domainHomeSourceType` is `FromModel`, then the operator will assume that the domain home is `/u01/domains/DOMAIN_UID`.
 
@@ -27,7 +27,7 @@ Please be aware of the following important considerations for WebLogic domains r
   Oracle strongly recommends storing an image containing a WebLogic domain home (`domainHomeSourceType` is `Image`)
   as private in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such).
   A Docker image that contains a WebLogic domain has sensitive information including
-  keys and credentials that are used access external resources (for example, data source password).
+  keys and credentials that are used to access external resources (for example, the data source password).
   For more information, see
   [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
   {{% /notice %}}
@@ -46,13 +46,13 @@ Please be aware of the following important considerations for WebLogic domains r
   meet Kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
   configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).)
 
-* _Node Ports:_ If you choose to expose any WebLogic channels outside the Kubernetes cluster via a `NodePort`, for example, the
+* _Node Ports:_ If you choose to expose any WebLogic channels outside the Kubernetes cluster using a `NodePort`, for example, the
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
   unique port number across the entire Kubernetes cluster.  If you expose the administration port in each WebLogic domain in
-  the Kubernetes cluster, then each one must have a different port.  This is required because `NodePorts` are used to
+  the Kubernetes cluster, then each one must have a different port number.  This is required because `NodePorts` are used to
   expose channels outside the Kubernetes cluster.  
   {{% notice warning %}}
-  Exposing admin, RMI, or T3 capable channels via a Kubernetes `NodePort`
+  Exposing administrative, RMI, or T3 capable channels using a Kubernetes `NodePort`
   can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
   For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-channels">}}).
@@ -63,12 +63,12 @@ Please be aware of the following important considerations for WebLogic domains r
 
 * _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
-* _JVM Memory and Java Option Arguments:_ The following environment variables can be used to customize the JVM memory and Java options for both the WebLogic Managed Servers and Node Manager instances:
+* _JVM Memory and Java Option Arguments:_ The following environment variables can be used to customize the JVM memory and Java options for both the WebLogic Server Managed Servers and Node Manager instances:
 
     * `JAVA_OPTIONS` - Java options for starting WebLogic Server
-    * `USER_MEM_ARGS` - JVM mem args for starting WebLogic Server
-    * `NODEMGR_JAVA_OPTIONS` - Java options for starting Node Manager instance
-    * `NODEMGR_MEM_ARGS` - JVM mem args for starting Node Manager instance
+    * `USER_MEM_ARGS` - JVM memory arguments for starting WebLogic Server
+    * `NODEMGR_JAVA_OPTIONS` - Java options for starting a Node Manager instance
+    * `NODEMGR_MEM_ARGS` - JVM memory arguments for starting a Node Manager instance
 
     For more information, see [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
 
@@ -81,7 +81,7 @@ The following features are **not** certified or supported in this release:
 * Multitenancy
 * Production redeployment
 
-Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments.
+For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.
 
 
 ### Creating and managing WebLogic domains
@@ -90,7 +90,7 @@ You can locate a WebLogic domain either in a persistent volume (PV) or in a Dock
 For examples of each, see the [WebLogic Server Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
 
 If you want to create your own Docker images, for example, to choose a specific set of patches or to create a domain
-with a specific configuration and/or applications deployed, then you can create the domain custom resource
+with a specific configuration or applications deployed, then you can create the domain custom resource
 manually to deploy your domain.  This process is documented in [this
 sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}}).
 

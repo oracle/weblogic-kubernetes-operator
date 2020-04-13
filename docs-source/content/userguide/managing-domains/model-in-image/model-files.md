@@ -21,12 +21,12 @@ description = "Model file requirements, macros, and loading order."
 
 This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) documentation.
 
-{{% notice tip %}} The WDT 'discover tool' is particularly useful for generating model files from an existing domain home.
+{{% notice tip %}} The WDT [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) is particularly useful for generating model files from an existing domain home.
 {{% /notice %}}
 
 #### Sample model file
 
-Here's an example of a model `.yaml` file that defines a WebLogic Administration Server and dynamic cluster.
+Here's an example of a model `.yaml` file that defines a WebLogic Server Administration Server and dynamic cluster.
 
 ```
 domainInfo:
@@ -56,18 +56,18 @@ topology:
 
 Some notes about the sample model file:
  - It includes a WebLogic credentials stanza that is required by Model in Image.
- - It derives its domain name from the pre-defined environment variable `DOMAIN_UID` but note that this is not required.
+ - It derives its domain name from the pre-defined environment variable `DOMAIN_UID`, but note that this is not required.
  - For a description of model file macro references to secrets and environment variables, see [Model file macros](#model-file-macros).
 
 #### Important notes about Model in Image model files
 
 - Understand when to use model macros.
 
-  - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See **[Using secrets in model files](#using-secrets-in-model-files)**.
+  - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See [Using secrets in model files](#using-secrets-in-model-files).
 
-    - All password fields in a model should use a secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging. 
+    - All password fields in a model should use a secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging.
 
-    - Model files encrypted with the [WDT Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md) are not supported. Use secrets instead.
+    - Model files encrypted with the WDT [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md) are not supported. Use secrets instead.
 
   - You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your domain resource, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
 
@@ -108,11 +108,11 @@ jdbc-dev-urlprops.10.yaml
 z.yaml
 ```
 
-Then the combined model files list is passed to the `WebLogic Deploy Tool` as:
+Then the combined model files list is passed to the WebLogic Deploy Tool as:
 
 ```y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops.10.yaml```
 
-Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the `WebLogic Deploy Tool`.
+Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tool.
 
 #### Model file macros
 
@@ -128,7 +128,7 @@ You can use WDT model `@@SECRET` macros to reference the WebLogic administrator 
 
 For example, you can reference the WebLogic credential user name using `@@SECRET:__weblogic-credentials__:username@@`, and you can reference a custom secret `mysecret` with key `mykey` using `@@SECRET:mysecret:mykey@@`.
 
-Any secrets that are referenced by an `@@SECRET` macro must be deployed to the same namespace as your domain resource, and must be referenced in your domain resource using the `weblogicCredentialsSecret` and `configuration.secrets` fields. 
+Any secrets that are referenced by an `@@SECRET` macro must be deployed to the same namespace as your domain resource, and must be referenced in your domain resource using the `weblogicCredentialsSecret` and `configuration.secrets` fields.
 
 Here's a sample snippet from a domain resource that sets a `webLogicCredentialsSecret` and two custom secrets `my-custom-secret1` and `my-custom-secret2`.
 
@@ -144,13 +144,12 @@ Here's a sample snippet from a domain resource that sets a `webLogicCredentialsS
 
 ##### Using environment variables in model files
 
-You can reference operator environment variables in model files. This includes any that you define yourself in your domain resource, or the built-in `DOMAIN_UID` environment variable. 
+You can reference operator environment variables in model files. This includes any that you define yourself in your domain resource, or the built-in `DOMAIN_UID` environment variable.
 
 For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
 
 ##### Combining secrets and environment variables in model files
 
-You can embed an environment variable macro in a secret macro. This is useful for referencing secrets that you've named based on your domain's `domainUID`. 
+You can embed an environment variable macro in a secret macro. This is useful for referencing secrets that you've named based on your domain's `domainUID`.
 
 For example, if your `domainUID` is `domain1`, then the macro `@@SECRET:@@ENV:DOMAIN_UID@@-super-double-secret:mykey@@` resolves to the value stored in `mykey` for secret `domain1-super-double-secret`.
-
