@@ -686,8 +686,6 @@ public class Kubernetes implements LoggedTest {
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
 
     try {
-      KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.delete(namespace,
-          persistentVolumeClaim.getMetadata().getName());
       V1PersistentVolumeClaim pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
           namespace, // name of the Namespace
           persistentVolumeClaim, // persistent volume claim configuration data
