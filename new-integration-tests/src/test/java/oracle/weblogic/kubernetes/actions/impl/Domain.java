@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -60,5 +61,20 @@ public class Domain {
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUID,
       String namespace) throws ApiException {
     return Kubernetes.getDomainCustomResource(domainUID, namespace);
+  }
+
+  /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDomainCustomResource(String domainUID, String namespace, V1Patch patch,
+      String patchFormat) {
+    return Kubernetes.patchDomainCustomResource(domainUID, namespace, patch, patchFormat);
   }
 }
