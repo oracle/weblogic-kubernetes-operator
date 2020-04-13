@@ -53,40 +53,43 @@ class ItSimpleDomainValidation implements LoggedTest {
     final String pvcName = domainUID + "-pvc"; // name of the persistent volume claim
     final String pvName = domainUID + "-pv"; // name of the persistent volume
 
-    V1ObjectMeta pvcmetadata = new V1ObjectMetaBuilder()
-        .withName(pvcName)
-        .withNamespace(namespace)
-        .build()
-        .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-        .putLabelsItem("weblogic.domainUID", domainUID);
-    V1PersistentVolumeClaimSpec pvcspec = new V1PersistentVolumeClaimSpec()
-        .addAccessModesItem("ReadWriteMany")
-        .storageClassName(domainUID + "-weblogic-domain-storage-class")
-        .volumeName(domainUID + "-weblogic-pv")
-        .resources(new V1ResourceRequirements()
-            .putRequestsItem("storage", Quantity.fromString("10Gi")));
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(pvcspec)
-        .metadata(pvcmetadata);
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUID + "-weblogic-domain-storage-class")
+            .volumeName(domainUID + "-weblogic-pv")
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("10Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvcName)
+            .withNamespace(namespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUID", domainUID));
+
     boolean success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolumeClaim(v1pvc)
     );
     assertTrue(success, "PersistentVolumeClaim creation failed");
 
-    V1PersistentVolumeSpec pvspec = new V1PersistentVolumeSpec()
-        .addAccessModesItem("ReadWriteMany")
-        .storageClassName(domainUID + "-weblogic-domain-storage-class")
-        .volumeMode("Filesystem")
-        .putCapacityItem("storage", Quantity.fromString("10Gi"))
-        .persistentVolumeReclaimPolicy("Recycle")
-        .hostPath(new V1HostPathVolumeSource()
-            .path(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume"));
     V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(pvspec)
-        .metadata(pvcmetadata.name(pvName));
-    success  = assertDoesNotThrow(
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUID + "-weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("10Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume")))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvName)
+            .withNamespace(namespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUID", domainUID));
+    success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(v1pv)
-      );
+    );
     assertTrue(success, "PersistentVolume creation failed");
 
     // Create a service account for the unique namespace
@@ -130,9 +133,7 @@ class ItSimpleDomainValidation implements LoggedTest {
         .until(domainExists(domainUID, "v7", namespace));
 
     // wait for the admin server pod to exist
-
     // wait for the managed servers to exist
-
     // Delete domain custom resource
     assertDoesNotThrow(
         () -> deleteDomainCustomResource(domainUID, namespace)
