@@ -41,7 +41,7 @@ printdots_inner() {
     [ "$start_pids" = "$end_pids" ] || break
 
     # if too much time has passed, then exit
-    [ $((SECONDS-begin_sec)) -lt 120 ] || break
+    [ $((SECONDS-begin_sec)) -lt 180 ] || break
 
     # if parent deleted our temp file, then exit
     [ -f "$dotsfile" ] || break
