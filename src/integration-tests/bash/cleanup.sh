@@ -26,7 +26,9 @@
 #                   hosted test files (default true).
 #
 #   FAST_DELETE     Set to "--grace-period=1 --timeout=1" to speedup
-#                   deletes and skip phase 2. Default is "--timeout=60s"
+#                   deletes. Default is "--timeout=60s"
+#
+#   BG_DELETE       Run deletes in background. Default is 'true'.
 #
 # Dry run option:
 #
@@ -82,6 +84,8 @@ USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
 DRY_RUN="false"
+BG_DELETE="${BG_DELETE:-true}"
+
 [ "$1" = "-dryrun" ] && DRY_RUN="true"
 
 echo @@ `timestamp` Starting cleanup.
@@ -94,16 +98,26 @@ if [ ! "$1" = "" ] && [ ! "$1" = "-dryrun" ]; then
   exit 1
 fi
 
-function fail {
-  echo @@ `timestamp` cleanup.sh: Error "$@"
-  exit 1
+# wait for current jobs to finish, and kill any remaining after $1 seconds, default is 15 seconds
+function jobWaitAndKill {
+  local job_timeout=${1:-15}
+  echo "@@ `timestamp` Info: jobWaitAndKill: Waiting up to $job_timeout seconds for $(jobs -rp | wc -w) background delete jobs to finish."
+  local start_seconds=$SECONDS
+  while [ $((SECONDS - start_seconds)) -le $job_timeout ] && [ $(jobs -rp | wc -w) -gt 0 ] ; do
+    sleep 0.1
+  done
+  echo "@@ `timestamp` Info: jobWaitAndKill: Done waiting after $((SECONDS - start_seconds)) seconds, killing $(jobs -rp | wc -w) remaining jobs."
+  [ ! -z "$(jobs -rp)" ] && kill -9 $(jobs -rp)
 }
 
 # use for kubectl delete of a specific name, exits silently if nothing found via 'get'
 # usage: doDeleteByName [-n foobar] kind name
 function doDeleteByName {
 
-  local tmpfile="/tmp/$(basename $0).doDeleteByName.$PPID.$SECONDS"
+  # sneaky way to get current pid that works in ancient MacOS bash 3
+  local mypid=$(bash -c "echo \$PPID")
+
+  local tmpfile="/tmp/$(basename $0).doDeleteByName.$PPID.$mypid.$SECONDS"
 
   kubectl get "$@" -o=jsonpath='{.items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
@@ -125,7 +139,10 @@ function doDeleteByName {
 # usage: doDeleteByRange [-n foobar] kind -l labelexpression -l labelexpression ...
 function doDeleteByRange {
 
-  local tmpfile="/tmp/$(basename $0).doDeleteByRange.$PPID.$SECONDS"
+  # sneaky way to get current pid that works in ancient MacOS bash 3
+  local mypid=$(bash -c "echo \$PPID")
+
+  local tmpfile="/tmp/$(basename $0).doDeleteByRange.$PPID.$mypid.$SECONDS"
 
   kubectl get "$@" -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
@@ -162,7 +179,7 @@ waitForWebLogicPods() {
       break
     fi
     echo -n " $((SECONDS - STARTSEC))/$pod_count_int/$pod_count_wls"
-    sleep 2
+    sleep 0.5
   done
   echo
 
@@ -195,7 +212,7 @@ waitForLabelPods() {
     else
       echo "@@ `timestamp` There are $total running pods with label $LABEL_SELECTOR: $pods".
     fi
-    sleep 3
+    sleep 0.5
     mnow=`date +%s`
   done
 
@@ -245,8 +262,13 @@ deleteOperators() {
   local ns
   for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
-    doDeleteByRange -n $ns deployments -l weblogic.operatorName
+    if [ "$BG_DELETE" = "true" ]; then
+      doDeleteByRange -n $ns deployments -l weblogic.operatorName &
+    else
+      doDeleteByRange -n $ns deployments -l weblogic.operatorName
+    fi
   done
+  [ "$BG_DELETE" = "true" ] && jobWaitAndKill
 }
 
 # delete all WL pods
@@ -255,11 +277,19 @@ deleteWebLogicPods() {
   local ns
   for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
-    # WLS pods
-    doDeleteByRange -n $ns pods -l weblogic.serverName
-    # Introspector pods
-    doDeleteByRange -n $ns pods -l weblogic.domainUID -l job-name
+    if [ "$BG_DELETE" = "true" ]; then
+      # WLS pods
+      doDeleteByRange -n $ns pods -l weblogic.serverName &
+      # Introspector pods
+      doDeleteByRange -n $ns pods -l weblogic.domainUID -l job-name &
+    else
+      # WLS pods
+      doDeleteByRange -n $ns pods -l weblogic.serverName
+      # Introspector pods
+      doDeleteByRange -n $ns pods -l weblogic.domainUID -l job-name
+    fi
   done
+  [ "$BG_DELETE" = "true" ] && jobWaitAndKill
 }
 
 # delete everything with label $LABEL_SELECTOR
@@ -303,8 +333,14 @@ function deleteLabel {
   #
 
   cat $1 | while read line; do
-    doDeleteByName $line
+    if [ "$BG_DELETE" = "true" ]; then
+      doDeleteByName $line &
+    else
+      doDeleteByName $line
+    fi
   done
+
+  [ "$BG_DELETE" = "true" ] && jobWaitAndKill
 
   #
   # finally, let's wait for pods with label $LABEL_SELECTOR to exit
@@ -473,15 +509,25 @@ function genericDelete {
       if [ ${artcount_yes} -gt 0 ]; then
         cat "$resfile_yes" | while read line; do
           local args="`echo \"$line\" | awk '{ print " " $2 " -n " $1  }'`"
-          doDeleteByName $args
+          if [ "$BG_DELETE" = "true" ]; then
+            doDeleteByName $args &
+          else
+            doDeleteByName $args
+          fi
         done
       fi
 
       if [ ${artcount_no} -gt 0 ]; then
         cat "$resfile_no" | while read line; do
-          doDeleteByName $line
+          if [ "$BG_DELETE" = "true" ]; then
+            doDeleteByName $line &
+          else
+            doDeleteByName $line
+          fi
         done
       fi
+
+      [ "$BG_DELETE" = "true" ] && jobWaitAndKill
 
       if [ "$mode" = "-forceDelete" ]; then
         FAST_DELETE="$fast_delete_orig"
@@ -498,65 +544,23 @@ function genericDelete {
       break
     fi
 
-    sleep 5
+    sleep 0.5
   done
 
   return 1
 }
 
+# if helm is installed, delete all helm releases
+function deleteHelmReleases {
+  [ ! -x "$(command -v helm)" ] && return
 
-function fail {
-  echo @@ `timestamp` cleanup.sh: Error "$@"
-  exit 1
-}
-
-FAST_DELETE=${FAST_DELETE:---timeout=60s}
-
-echo "@@ `timestamp` RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
-
-mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
-
-#
-# Phase -3: Delete every domain, then wait for their pods to go away
-#
-
-deleteDomains
-
-if [ "$DRY_RUN" = "true" ]; then
-  waitForWebLogicPods 10
-else
-  waitForWebLogicPods 60
-fi
-
-#
-# Phase -2: Delete every operator deployment
-#
-
-deleteOperators
-
-#
-# Phase -1: Delete every WL pod, including introspector pods, then wait for the pods to go away
-#  (If the operators were healthy when domains were deleted above, there should be no pods, but just in case.)
-#
-
-deleteWebLogicPods
-
-if [ "$DRY_RUN" = "true" ]; then
-  waitForWebLogicPods 10
-else
-  waitForWebLogicPods 60
-fi
-
-#
-# Phase 0: if helm is installed, delete all installed helm charts
-#
-
-if [ -x "$(command -v helm)" ]; then
   helm version --short --client  | grep v2
   [[ $? == 0 ]] && HELM_VERSION=V2
   [[ $? == 1 ]] && HELM_VERSION=V3
-  echo "Detected Helm Version [$(helm version --short --client)]"
+  echo "@@ `timestamp` Detected Helm Version [$(helm version --short --client)]"
+
   echo @@ `timestamp` Deleting installed helm charts
+
   if [ "$HELM_VERSION" == "V2" ]; then
    helm list --short | while read helm_name; do
    if [ ! "$DRY_RUN" = "true" ]; then
@@ -590,7 +594,51 @@ if [ -x "$(command -v helm)" ]; then
     # kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
     # kubectl $FAST_DELETE -n kube-system delete serviceaccount tiller --ignore-not-found=true
   fi
+}
+
+
+FAST_DELETE=${FAST_DELETE:---timeout=60s}
+
+echo "@@ `timestamp` RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
+
+mkdir -p $TMP_DIR || exit 1
+
+#
+# Phase -3: Delete every domain, then wait for their pods to go away
+#
+
+deleteDomains
+
+if [ "$DRY_RUN" = "true" ]; then
+  waitForWebLogicPods 10
+else
+  waitForWebLogicPods 60
 fi
+
+#
+# Phase -2: Delete every operator deployment
+#
+
+deleteOperators
+
+#
+# Phase -1: Delete every WL pod, including introspector pods, then wait for the pods to go away
+#  (If the operators were healthy when domains were deleted above, there should be no pods, but just in case.)
+#
+
+deleteWebLogicPods
+
+if [ "$DRY_RUN" = "true" ]; then
+  waitForWebLogicPods 10
+else
+  waitForWebLogicPods 60
+fi
+
+#
+# Phase 0: if helm is installed, delete all installed helm releases
+#
+
+deleteHelmReleases
 
 #
 # Phase 1, try an orderly mass delete, in order of type, looking for Operator related labels
@@ -613,7 +661,8 @@ g_arg3="logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-
 # Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort
 #
 
-genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -wait
+# TBD: Commenting out. Assume no longer needed as previous phase already has waits for labeled pods
+# genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -wait
 
 #
 # Phase 2: "friendly" kubectl delete left over artifacts individually
