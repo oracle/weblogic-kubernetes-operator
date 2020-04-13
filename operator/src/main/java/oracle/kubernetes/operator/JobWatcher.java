@@ -321,7 +321,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     }
 
     public String toString() {
-      return LOGGER.getFormattedMessage(
+      return LOGGER.formatMessage(
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
           job.getMetadata().getName(),
           job.getSpec().getActiveDeadlineSeconds(),

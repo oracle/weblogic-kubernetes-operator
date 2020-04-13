@@ -638,21 +638,6 @@ public class LoggingFacade {
   }
 
   /**
-   * Returns a formatted message.
-   *
-   * @param msg the message to be formatted, which is key to the resource bundle
-   * @param args parameters to the message
-   * @return A formatted message
-   */
-  public String getFormattedMessage(String msg, Object... args) {
-    try {
-      return MessageFormat.format(logger.getResourceBundle().getString(msg), args);
-    } catch (Exception ex) {
-      return msg;
-    }
-  }
-
-  /**
    * Accessor for the resource bundle backing this logger.
    * @return the bundle
    */
