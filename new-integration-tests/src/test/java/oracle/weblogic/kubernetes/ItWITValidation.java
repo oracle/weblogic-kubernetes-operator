@@ -29,9 +29,6 @@ class ItWITValidation implements LoggedTest {
   private static final String IMAGE_NAME = "test-mii-image-2";
   private static final String IMAGE_TAG = "v1";
   
-  // Name of the directory under resources/apps for an application
-  // Note: use "_" instead of "-" in app directories names because
-  // WDT does not like "-" to be in the name of an archive file
   private static final String APP_NAME = "sample_app";
   
   @Test
