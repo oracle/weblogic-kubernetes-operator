@@ -145,8 +145,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
     RetryStrategy r = retry;
 
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine(
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer(
           MessageKeys.ASYNC_REQUEST,
           identityHash(),
           requestParams.call,
@@ -207,13 +207,15 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                 public void onSuccess(
                     T result, int statusCode, Map<String, List<String>> responseHeaders) {
                   if (didResume.compareAndSet(false, true)) {
-                    LOGGER.fine(
-                        ASYNC_SUCCESS,
-                        identityHash(),
-                        requestParams.call,
-                        result,
-                        statusCode,
-                        responseHeaders);
+                    if (LOGGER.isFinerEnabled()) {
+                      LOGGER.finer(
+                          ASYNC_SUCCESS,
+                          identityHash(),
+                          requestParams.call,
+                          result,
+                          statusCode,
+                          responseHeaders);
+                    }
 
                     helper.recycle(client);
                     packet
@@ -241,8 +243,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
                         try {
                           cc.cancel();
                         } finally {
-                          if (LOGGER.isFineEnabled()) {
-                            LOGGER.fine(
+                          if (LOGGER.isFinerEnabled()) {
+                            LOGGER.finer(
                                 MessageKeys.ASYNC_TIMEOUT,
                                 identityHash(),
                                 requestParams.call,
@@ -344,7 +346,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         if (statusCode == 0 && retryCount <= maxRetryCount) {
           na.invoke(Optional.ofNullable(conflictStep).orElse(retryStep), packet);
         } else {
-          LOGGER.fine(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
+          LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
           na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
         }
         return na;
@@ -356,7 +358,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         // exponential back-off
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
 
-        LOGGER.fine(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
+        LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
         NextAction na = new NextAction();
         na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
         return na;

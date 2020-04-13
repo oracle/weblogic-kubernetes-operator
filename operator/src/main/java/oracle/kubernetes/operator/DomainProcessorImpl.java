@@ -253,7 +253,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       case "DELETED":
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
         if (removed && info.isNotDeleting() && !info.isServerPodBeingDeleted(serverName)) {
-          LOGGER.fine(MessageKeys.POD_DELETED, domainUid, getNamespace(pod), serverName);
+          LOGGER.info(MessageKeys.POD_DELETED, domainUid, getNamespace(pod), serverName);
           makeRightDomainPresence(info, true, false, true);
         }
         break;
@@ -384,7 +384,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       case "ADDED":
         d = item.object;
         domainUid = d.getDomainUid();
-        LOGGER.fine(MessageKeys.WATCH_DOMAIN, domainUid);
+        LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUid);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, false, true);
         break;
       case "MODIFIED":
@@ -396,7 +396,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       case "DELETED":
         d = item.object;
         domainUid = d.getDomainUid();
-        LOGGER.fine(MessageKeys.WATCH_DOMAIN_DELETED, domainUid);
+        LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUid);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, true, true);
         break;
 
@@ -528,7 +528,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     String domainUid = info.getDomainUid();
     Domain dom = info.getDomain();
     if (isDeleting || delegate.isNamespaceRunning(ns)) {
-      LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUid);
+      LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, domainUid);
       Step strategy =
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));

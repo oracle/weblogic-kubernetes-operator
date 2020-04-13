@@ -119,7 +119,7 @@ public abstract class ResponseStep<T> extends Step {
       return retryStrategy.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode());
     }
 
-    LOGGER.warning(MessageKeys.ASYNC_NO_RETRY,
+    LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
         callResponse.getExceptionString(),
         callResponse.getStatusCode(),
         callResponse.getHeadersString());
