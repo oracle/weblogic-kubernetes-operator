@@ -11,6 +11,8 @@ VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
 DefaultVoyagerVersion=10.0.0
 
+set -x
+
 HELM_VERSION=$(helm version --short --client)
 
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
