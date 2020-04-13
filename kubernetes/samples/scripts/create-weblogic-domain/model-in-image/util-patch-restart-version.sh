@@ -58,4 +58,4 @@ echo "@@ Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' from
 kubectl -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
   -p='[{"op": "replace", "path": "/spec/restartVersion", "value": "'${nextRV}'" }]'
 
-echo "@@ To monitor the domain's pods, call 'kubectl -n ${DOMAIN_NAMESPACE} get pods --watch=true'."
+echo "@@ To monitor the domain's pods, call 'kubectl -n ${DOMAIN_NAMESPACE} get pods --watch=true --show-labels=true'. Expect the operator to restart the domain's pods until all of them have label 'weblogic.domainRestartVersion=\"$currentRV\"."

@@ -2,10 +2,8 @@
 
 #
 # TBD add doc at top of this script
-#     turn parms into -e (count) and -t seconds -n namespace -d domain_uid
-#
-# TBD modify to wait for an expected restart version - get the restart version from 
-#     the domain resource
+#     turn parms into -p count, -t seconds, -n namespace, -d domain_uid
+#     note that this script waits until all pods are ready and are at the domain's current restart version
 #
 
 set -eu
@@ -20,6 +18,8 @@ timeout_secs=${2:-240}
 cur_pods=0
 reported=0
 
+currentRV=`kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}'`
+
 while [ 1 -eq 1 ]; do
 
   # WL Server pods are the only pods with the weblogic.serverName label
@@ -28,12 +28,12 @@ while [ 1 -eq 1 ]; do
   # grep returns non-zero if it doesn't find anything (sigh), so disable error checking and cross-fingers...
 
   cur_pods=$(kubectl -n ${DOMAIN_NAMESPACE} get pods \
-                 -l weblogic.serverName,weblogic.domainUID=${DOMAIN_UID} \
+                 -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}",weblogic.domainRestartVersion="$currentRV" \
                  -o=jsonpath='{range .items[*]}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\n"}{end}' \
-             | grep true | wc -l)
+             | grep "true" | wc -l)
   set -e
 
-  out_str="for ready WebLogic pod count to reach '$expected'" 
+  out_str="for ready WebLogic pod count to reach '$expected' for restart version '$currentRV'"
   out_str+=", ns=$DOMAIN_NAMESPACE"
   out_str+=", domainUID=$DOMAIN_UID"
   out_str+=", timeout_secs='$timeout_secs'"
