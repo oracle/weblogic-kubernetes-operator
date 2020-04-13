@@ -37,6 +37,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties.
+   *
    * @throws Exception when the initialization fails.
    */
 
@@ -89,7 +90,10 @@ public class ItSitConfigDomainInPV extends SitConfig {
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
       ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
-      destroySitConfigDomain(domain);
+      LoggerHelper.getLocal().log(Level.INFO, "Deleting domain...");
+      if (domain != null) {
+        domain.destroy();
+      }
       if (operator1 != null) {
         LoggerHelper.getLocal().log(Level.INFO, "Destroying operator...");
         operator1.destroy();

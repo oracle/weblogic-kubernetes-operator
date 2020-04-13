@@ -37,7 +37,7 @@ The Docker tag `latest` is confusing - it does not actually mean the latest vers
 the image that was created or published in the registry; it just literally means
 whichever version the owner decided to call "latest".  Docker and Kubernetes make
 some assumptions about latest, and it is generally recommended to avoid using it and instead
-specify the actual version/tag that you really want.
+specify the actual version or tag that you really want.
 {{% /notice %}}
 
 First, Kubernetes will check to see if the requested image is available in the local
@@ -80,7 +80,7 @@ use the image.
 
 {{% notice note %}}
 Some registries may need a suffix making the `docker-server` something like `some.registry.com/v2`
-for example.  You will need to check with your registry provider's documentation to see if this is needed.
+for example.  You will need to check with your registry provider's documentation to determine if this is needed.
 {{% /notice %}}
 
 After the secret is created, you need to tell Kubernetes to use it.  This is done by adding
@@ -133,13 +133,13 @@ If you are not able to use a remote Docker registry, for example if your Kuberne
 in a secure network with no external access, you can manually copy the Docker images to the
 cluster instead.
 
-On the machine where you created the image, export it into a tar file using this command:
+On the machine where you created the image, export it into a TAR file using this command:
 
 ```
 docker save domain1:1.0 > domain1.tar
 ```
 
-Then copy that tar file to each worker node in your Kubernetes cluster and run this command
+Then copy that TAR file to each worker node in your Kubernetes cluster and run this command
 on each node:
 
 ```
