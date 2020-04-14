@@ -29,7 +29,7 @@ class ItWITValidation implements LoggedTest {
   private static final String IMAGE_NAME = "test-mii-image-2";
   private static final String IMAGE_TAG = "v1";
   
-  private static final String APP_NAME = "sample_app";
+  private static final String APP_NAME = "sample-app";
   
   @Test
   @DisplayName("Create a MII image")

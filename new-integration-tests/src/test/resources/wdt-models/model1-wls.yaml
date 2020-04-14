@@ -28,6 +28,6 @@ topology:
 appDeployments:
     Application:
         myear:
-            SourcePath: wlsdeploy/applications/sample_app.ear
+            SourcePath: "wlsdeploy/applications/sample-app.ear"
             ModuleType: ear
             Target: 'cluster-1'
