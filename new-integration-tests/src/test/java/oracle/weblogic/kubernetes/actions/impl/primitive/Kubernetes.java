@@ -229,10 +229,9 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List all deployments in a given namespace
-   *
-   * @param namespace
-   * @return V1DeploymentList
+   * List all deployments in a given namespace.
+   * @param namespace Namespace in which to list the deployments
+   * @return V1DeploymentList of deployments in the Kubernetes cluster
    */
   public static V1DeploymentList listDeployments(String namespace) {
     KubernetesApiResponse<V1DeploymentList> list = deploymentClient.list(namespace);
@@ -310,10 +309,9 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * A utility method to list all pods in given namespace and a label
-    This method can be used as diagnostic tool to get the details of pods.
+   * List all pods in given namespace.
    *
-   * @param namespace in which to list all pods
+   * @param namespace Namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
    * @throws ApiException when there is error in querying the cluster
    */
@@ -397,9 +395,8 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List of namespaces in the Kubernetes cluster.
-   *
-   * @return List of names of all namespaces in Kubernetes cluster
+   * List namespaces in the Kubernetes cluster.
+   * @return List of all Namespace names in the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
   public static List<String> listNamespaces() throws ApiException {
@@ -430,9 +427,8 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List of namespaces in the Kubernetes cluster as V1NamespaceList.
-   *
-   * @return V1NamespaceList in Kubernetes cluster
+   * List namespaces in the Kubernetes cluster as V1NamespaceList.
+   * @return V1NamespaceList of Namespace in the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1NamespaceList listNamespacesAsObjects() throws ApiException {
@@ -600,10 +596,9 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List Domain Custom Resources for a given namespace.
-   *
-   * @param namespace name of namespace
-   * @return List of Domain Custom Resources
+   * List Domain Custom Resources.
+   * @param namespace Namespace in which to list the domain
+   * @return DomainList of Domain Custom Resources
    */
   public static DomainList listDomains(String namespace) {
     KubernetesApiResponse<DomainList> response = crdClient.list(namespace);
@@ -654,10 +649,10 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List of Config Maps for given namespace.
+   * List Config Maps in the Kubernetes cluster.
    *
-   * @param namespace name of namespace for config map
-   * @return List of Config Maps
+   * @param namespace Namespace in which to query
+   * @return V1ConfigMapList of Config Maps
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1ConfigMapList listConfigMaps(String namespace) throws ApiException {
@@ -782,9 +777,9 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List secrets in a given namespace
-   * @param namespace
-   * @return V1SecretList
+   * List secrets in the Kubernetes cluster.
+   * @param namespace Namespace in which to query
+   * @return V1SecretList of secrets in the Kubernetes cluster
    */
   public static V1SecretList listSecrets(String namespace) {
     KubernetesApiResponse<V1SecretList> list = secretClient.list(namespace);
@@ -920,9 +915,8 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List all persistent volumes
-   *
-   * @return V1PersistentVolumeList
+   * List all persistent volumes in the Kubernetes cluster.
+   * @return V1PersistentVolumeList of Persistent Volumes in Kubernetes cluster
    */
   public static V1PersistentVolumeList listPersistenVolumes() {
     KubernetesApiResponse<V1PersistentVolumeList> list = pvClient.list();
@@ -930,9 +924,8 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List all persistent volume claims
-   *
-   * @return V1PersistentVolumeClaimList
+   * List all persistent volume claims in the Kubernetes cluster.
+   * @return V1PersistentVolumeClaimList of Persistent Volume Claims in Kubernetes cluster
    */
   public static V1PersistentVolumeClaimList listPersistenVolumeClaims() {
     KubernetesApiResponse<V1PersistentVolumeClaimList> list = pvcClient.list();
@@ -1010,10 +1003,10 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List all service accounts in a given namespace
+   * List all service accounts in the Kubernetes cluster.
    *
-   * @param namespace
-   * @return V1ServiceAccountList
+   * @param namespace Namespace in which to list all service accounts
+   * @return V1ServiceAccountList of service accounts
    */
   public static V1ServiceAccountList listServiceAccounts(String namespace) {
     KubernetesApiResponse<V1ServiceAccountList> list = serviceAccountClient.list(namespace);
@@ -1092,10 +1085,10 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- jobs ---------------------------
   /**
-   * List all jobs in a given namespace
+   * List all jobs in the Kubernetes cluster.
    *
-   * @param namespace
-   * @return V1JobList
+   * @param namespace in which to list the jobs
+   * @return V1JobList of jobs from Kubernetes cluster
    */
   public static V1JobList listJobs(String namespace) {
     KubernetesApiResponse<V1JobList> list = jobClient.list(namespace);
@@ -1104,10 +1097,10 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- resplica sets ---------------------------
   /**
-   * List all replica sets in a given namespace
+   * List all replica sets in the Kubernetes cluster.
    *
-   * @param namespace
-   * @return V1ReplicaSetList
+   * @param namespace in which to list the replica sets
+   * @return V1ReplicaSetList of replica sets
    */
   public static V1ReplicaSetList listReplicaSets(String namespace) {
     KubernetesApiResponse<V1ReplicaSetList> list = rsClient.list(namespace);
