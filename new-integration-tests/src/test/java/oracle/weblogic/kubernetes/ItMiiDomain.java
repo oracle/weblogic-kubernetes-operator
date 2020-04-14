@@ -157,7 +157,7 @@ class ItMiiDomain implements LoggedTest {
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-    waitForCondition(operatorIsRunning(opNamespace + "1"));
+    waitForCondition(operatorIsRunning(opNamespace));
 
   }
 
