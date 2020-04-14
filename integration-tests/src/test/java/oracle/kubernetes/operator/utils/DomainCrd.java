@@ -373,18 +373,6 @@ public class DomainCrd {
     modelNode.remove("runtimeEncryptionSecret");
     ((ObjectNode) modelNode).put("runtimeEncryptionSecret", secret);
   }
-  
-  /**
-   * Utility method to replace runtimeEncryptionSecret in domain.yaml
-   *
-   * @param secret , new secret to be replaced
-   * @throws JsonProcessingException when runtimeEncryptionSecret not available
-   */
-  public void unCommentoutWalletFileSecret(String secret) throws JsonProcessingException {
-    ObjectNode modelNode = (ObjectNode) getConfigModelNode();
-    modelNode.remove("#walletFileSecret");
-    ((ObjectNode) modelNode).put("walletFileSecret", secret);
-  }
 
   /** Gets the spec node entry from Domain CRD JSON tree. */
   private JsonNode getSpecNode() {

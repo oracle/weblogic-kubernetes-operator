@@ -18,7 +18,7 @@ function usage {
   echo "  -p FMW Infrastructure ImagePull Secret (optional) "
   echo "      (default: docker-store) "
   echo "  -i FMW Infrastructure Image (optional) "
-  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3) "
+  echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) "
   echo "  -n Configurable Kubernetes NameSpace for RCU Schema (optional)"
   echo "      (default: default) "
   echo "  -h Help"

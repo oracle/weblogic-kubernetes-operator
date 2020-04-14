@@ -3,7 +3,7 @@
 
 # This file need to appended into kubernetes/samples/scripts/common/domain-template.yaml
 
-  
+
   %MII_PREFIX%configuration:
     #secrets: [ %DOMAIN_UID%-rcu-access ]
   
@@ -19,7 +19,7 @@
      #
      # wdt domain type for model in image case
      # Valid WDT_DOMAIN_TYPE_VALUES are 'WLS', 'JRF', and 'RestrictedJRF'
-  
+
     %MII_PREFIX%    domainType: %WDT_DOMAIN_TYPE%
     %MII_PREFIX%    runtimeEncryptionSecret: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
 
