@@ -45,7 +45,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static String rcuSchemaPrefix = "jrfmii";
-  //private static String rcuDatabaseURL = "oracle-db.default.svc.cluster.local:1521/devpdb.k8s";
   private static String rcuSchemaPass = "Oradoc_db1";
   private static String walletPassword = "welcome1";
   private static int dbPort;
@@ -182,7 +181,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
       restoreWalletFileSecret(getResultDir(), domainUid, namespace, walletFileSecretName);
       
       //shutdown the domain
-      
       jrfdomain.shutdownUsingServerStartPolicy();
       
       String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + jrfdomain.getDomainUid()
@@ -242,21 +240,5 @@ public class ItJrfModelInImage extends MiiBaseTest {
         + secretName;
     TestUtils.exec(cmd, true);
   }
-  
-  /*private void createSecret(String domainNS, String domainUid, String secretName) throws Exception {
-    Secret secret =
-        new Secret(
-            domainNS,
-            secretName,
-            BaseTest.getUsername(),
-            BaseTest.getPassword());
-    //domainMap.put("weblogicCredentialsSecretName", secret.getSecretName());
-    final String labelCmd =
-        String.format(
-            "kubectl label secret %s weblogic.domainUID=%s -n %s",
-            secret.getSecretName(), domainUid, domainNS);
-    TestUtils.exec(labelCmd);
-  }*/
-  
-  
+   
 }
