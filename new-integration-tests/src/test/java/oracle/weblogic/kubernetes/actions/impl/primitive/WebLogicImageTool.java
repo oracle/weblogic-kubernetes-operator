@@ -13,8 +13,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWDTParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWITParams;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
@@ -26,15 +24,15 @@ public class WebLogicImageTool {
   private WITParams params;
 
   /**
-   * Set up the WITParams with the default values
-   * @return the instance of WITParams
+   * Create a WITParams with the default values.
+   * @return a WITParams instance
    */
   public static WITParams defaultWITParams() {
     return new WITParams().defaults();
   }
 
   /**
-   * Set up the WebLogicImageTool with given parameters
+   * Set up the WebLogicImageTool with given parameters.
    * @return the instance of WebLogicImageTool 
    */
   public static WebLogicImageTool withParams(WITParams params) {
@@ -47,40 +45,36 @@ public class WebLogicImageTool {
   }
 
   /**
-   * Create an image using the params using WIT update command
+   * Create an image using the params using WIT update command.
    * @return true if the command succeeds 
    */
   public boolean updateImage() {
     // download WIT if it is not in the expected location 
     if (!downloadWIT()) {
-      logger.warning("Failed to download or unzip WebLogic Image Tool");
       return false;
     } 
    
     // download WDT if it is not in the expected location 
     if (!downloadWDT()) {
-      logger.warning("Failed to download WebLogic Deploy Tool");
       return false;
     } 
 
     // delete the old cache entry for the WDT installer
     if (!deleteEntry()) {
-      logger.warning("Failed to delete cache entry in WebLogic Image Tool");
       return false;
     }
 
-    // add the cache entry for the WDT installer
+    // add the WDT installer that we just downloaded into WIT cache entry
     if (!addInstaller()) {
-      logger.warning("Failed to add installer to WebLogic Image Tool");
       return false;
     }
   
     return Command.withParams(
         defaultCommandParams()
-            .command(buildCommand())
+            .command(buildiWITCommand())
             .env(params.env())
             .redirect(params.redirect()))
-        .executeAndVerify();
+        .execute();
   }
   
   private boolean downloadWIT() {
@@ -97,7 +91,7 @@ public class WebLogicImageTool {
         .download();
   } 
   
-  private String buildCommand() {
+  private String buildiWITCommand() {
     String command = 
         IMAGE_TOOL 
         + " update "
@@ -143,12 +137,6 @@ public class WebLogicImageTool {
    * @return true if the command succeeds 
    */
   public boolean addInstaller() {
-    assertThatCode(
-        () -> checkFile(WDT_ZIP_PATH))
-        .as("Test if the WebLogic Deploy Tool installer exists")
-        .withFailMessage("Fialed to find WebLogic Deplyo Tool installer " + WDT_ZIP_PATH)
-        .doesNotThrowAnyException();
-    
     String command = String.format(
         "%s cache addInstaller --type wdt --version %s --path %s",
         IMAGE_TOOL,
@@ -160,8 +148,7 @@ public class WebLogicImageTool {
             .command(command)
             .env(params.env())
             .redirect(params.redirect()))
-        .executeAndVerify();
-
+        .execute();
   }
   
   /**
@@ -178,6 +165,6 @@ public class WebLogicImageTool {
             .command(command)
             .env(params.env())
             .redirect(params.redirect()))
-        .executeAndVerify();
+        .execute();
   }
 }
