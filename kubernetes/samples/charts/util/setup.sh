@@ -2,21 +2,20 @@
 # Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-#  This script is to create or delete Ingress controllers. We support two ingress controllers: traefik and voyager.
+# This script is to create or delete Ingress controllers. 
+# We support two ingress controllers: traefik and voyager.
 
-MYDIR="$(dirname "$(readlink -f "$0")")"
-VNAME=voyager-operator  # release name of Voyager
-TNAME=traefik-operator  # release name of Traefik
+UTILDIR="$(dirname "$(readlink -f "$0")")"
+VNAME=voyager-operator  # release name for Voyager
+TNAME=traefik-operator  # release name for Traefik
 VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
 DefaultVoyagerVersion=10.0.0
 
-set -x
-
 HELM_VERSION=$(helm version --short --client)
 
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
-   echo "Detected Helm Version [${HELM_VERSION}]"
+   echo "Detected helm version [${HELM_VERSION}]"
    v_list_args=""
    t_list_args=""
    v_helm_delete="helm delete --purge"
@@ -26,7 +25,7 @@ if [[ "$HELM_VERSION" =~ "v2" ]]; then
    helm_search_voyager="helm search repo | grep appscode/voyager"
    helm_search_traefik="helm search repo | grep stable/traefik"
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
-   echo "Detected Helm Version [${HELM_VERSION}]"
+   echo "Detected helm version [${HELM_VERSION}]"
    v_list_args="--namespace $VSPACE "
    t_list_args="--namespace $TSPACE "
    v_helm_delete="helm uninstall --keep-history --namespace $VSPACE "
@@ -36,7 +35,7 @@ elif [[ "$HELM_VERSION" =~ "v3" ]]; then
    helm_search_voyager="helm search appscode/voyager"
    helm_search_traefik="helm search stable/traefik"
 else
-    echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
+    echo "Detected unsupported helm version [${HELM_VERSION}]"
     exit 1
 fi
 
@@ -44,27 +43,25 @@ function createNameSpace() {
  ns=$1
  namespace=`kubectl get namespace ${ns} | grep ${ns} | awk '{print $1}'`
  if [ -z ${namespace} ]; then
-   echo "Adding NameSpace[$ns] to Kubernetes Cluster"
+   echo "Adding namespace[$ns] to kubernetes cluster"
    kubectl create namespace ${ns}
  fi
 }
 
 function createVoyager() {
   createNameSpace $VSPACE
-  echo "Creating Voyager operator on namespace 'voyager'."
-  echo
+  echo "Creating voyager operator on namespace ${VSPACE}"
 
   if [ "$(${helm_search_voyager} | grep voyager |  wc -l)" = 0 ]; then
-    echo "Add Appscode Chart Repository"
+    echo "Add appscode chart Repository"
     helm repo add appscode https://charts.appscode.com/stable/
     helm repo update
   else
-    echo "Appscode Chart Repository is already added."
+    echo "Appscode chart repository is already added."
   fi
-  echo
 
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 0 ]; then
-    echo "Installing Voyager Operator."
+    echo "Installing voyager operator."
     
     ${v_helm_install} --version ${VoyagerVersion}  \
       --namespace ${VSPACE} \
@@ -76,58 +73,58 @@ function createVoyager() {
   fi 
   echo
 
-  echo "Wait until Voyager operator running."
+  echo "Wait until voyager operator running."
   max=20
   count=0
-  while [ $count -lt $max ]; do
-    kubectl -n ${VSPACE} get pod
-    if [ "$(kubectl -n voyager get pod | grep voyager | awk '{ print $2 }')" = 1/1 ]; then
+  vpod==$(kubectl get po -n ${VSPACE} | grep voyager | awk '{print $1 }')
+  while test $count -lt $max; do
+    if test "$(kubectl get po -n ${VSPACE} | grep voyager | awk '{ print $2 }')" = 1/1; then
       echo "Voyager operator is running now."
       exit 0;
     fi
     count=`expr $count + 1`
     sleep 5
   done
-  echo "Error: Voyager operator failed to start."
+  echo "ERROR: Voyager operator failed to start."
+  kubectl describe po/${vpod} -n -n ${VSPACE}
   exit 1
-
 }
 
 function createTraefik() {
   createNameSpace $TSPACE
-  echo "Creating Traefik operator on namespace 'traefik'." 
-  echo
+  echo "Creating traefik operator on namespace ${TSPACE}" 
 
   if [ "$(${helm_search_traefik} | grep traefik |  wc -l)" = 0 ]; then
-    echo "Add K8SGoogle Chart Repository"
+    echo "Add K8SGoogle chart repository"
     helm repo add stable https://kubernetes-charts.storage.googleapis.com
     helm repo update
   else
-    echo "K8SGoogle Chart Repository is already added."
+    echo "K8SGoogle chart repository is already added."
   fi
 
-
   if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
-    echo "Installing Traefik Operator. ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml"
-    ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml
+    echo "Installing traefik operator."
+    ${t_helm_install} --namespace ${TSPACE} \
+      --values ${UTILDIR}/../traefik/values.yaml
   else
-    echo "Traefik Operator is already installed."
+    echo "Traefik operator is already installed."
   fi
   echo
 
-  echo "Wait until Traefik operator running."
+  echo "Wait until traefik operator running."
   max=20
   count=0
+  tpod=$(kubectl get po -n ${TSPACE} | grep traefik | awk '{print $1 }')
   while test $count -lt $max; do
-    kubectl -n traefik get pod
-    if test "$(kubectl -n ${TSPACE} get pod | grep traefik | awk '{ print $2 }')" = 1/1; then
+    if test "$(kubectl get po -n ${TSPACE} | grep traefik | awk '{ print $2 }')" = 1/1; then
       echo "Traefik operator is running now."
       exit 0;
     fi
     count=`expr $count + 1`
     sleep 5
   done
-  echo "Error: Traefik operator failed to start."
+  echo "ERROR: Traefik operator failed to start."
+  kubectl describe po/${tpod} -n -n ${TSPACE}
   exit 1
 }
 
@@ -141,7 +138,7 @@ function purgeCRDs() {
 
     # save objects
     if [ $total -gt 0 ]; then
-      echo "dumping ${crd} objects into ${crd}.yaml"
+      echo "Dumping ${crd} objects into ${crd}.yaml"
       kubectl get ${crd}.voyager.appscode.com --all-namespaces -o yaml >${crd}.yaml
     fi
 
@@ -151,7 +148,7 @@ function purgeCRDs() {
       # remove finalizers
       kubectl patch ${crd}.voyager.appscode.com $name -n $namespace -p '{"metadata":{"finalizers":[]}}' --type=merge
       # delete crd object
-      echo "deleting ${crd} $namespace/$name"
+      echo "Deleting ${crd} $namespace/$name"
       kubectl delete ${crd}.voyager.appscode.com $name -n $namespace
     done
 
@@ -164,26 +161,24 @@ function purgeCRDs() {
 
 function deleteVoyager() {
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 1 ]; then
-    echo "Deleting Voyager Operator. "
+    echo "Deleting voyager operator. "
     ${v_helm_delete} $VNAME 
     kubectl delete ns ${VSPACE}
     purgeCRDs
   else
     echo "Voyager operator has already been deleted" 
   fi
-  echo
 
   if [ "$(helm search appscode/voyager | grep voyager |  wc -l)" != 0 ]; then
-    echo "Remove Appscode Chart Repository."
+    echo "Remove appscode chart repository."
     helm repo remove appscode
   fi
-  echo
 
 }
 
 function deleteTraefik() {
   if [ "$(helm list ${t_list_args}| grep $TNAME |  wc -l)" = 1 ]; then
-    echo "Deleting Traefik operator." 
+    echo "Deleting traefik operator." 
     ${t_helm_delete} $TNAME
     kubectl delete ns ${TSPACE}
   else
@@ -198,7 +193,7 @@ function usage() {
 
 function main() {
   if [ "$#" -lt 2 ]; then
-    echo "[ERROR] Requires atleast 2 positional parameters"
+    echo "[ERROR] Requires at least 2 positional parameters"
     usage
   fi
 
@@ -207,7 +202,7 @@ function main() {
     usage
   fi
   if [ "$2" != traefik ] && [ "$2" != voyager ]; then
-    echo "[ERROR] The second  parameter MUST be either traefik  or voyager "
+    echo "[ERROR] The second  parameter MUST be either traefik or voyager "
     usage
   fi
 
@@ -216,7 +211,7 @@ function main() {
       createTraefik
     else
       VoyagerVersion="${3:-${DefaultVoyagerVersion}}"
-      echo "Selected Voyager Version [$VoyagerVersion]"
+      echo "Selected voyager version [$VoyagerVersion]"
       createVoyager
     fi
   else
