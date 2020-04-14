@@ -47,6 +47,8 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 
+import static io.kubernetes.client.util.Yaml.dump;
+
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
 // to run kubectl.
@@ -601,6 +603,27 @@ public class Kubernetes implements LoggedTest {
    * @return DomainList of Domain Custom Resources
    */
   public static DomainList listDomains(String namespace) {
+    Object listClusterCustomObject;
+    try {
+      listClusterCustomObject = customObjectsApi.listClusterCustomObject(
+          DOMAIN_GROUP, // custom resource's group name
+          DOMAIN_VERSION, // custom resource's version
+          DOMAIN_PLURAL, // custom resource's plural name
+          PRETTY, // pretty print
+          null, //conitnue fetching
+          null, // field selector
+          null, // label selector
+          null, // limit the number of objects to get
+          null, // resource version
+          TIMEOUT_SECONDS, // timeout
+          ALLOW_WATCH_BOOKMARKS // allow watch book marks
+      );
+      String dump = dump(listClusterCustomObject);
+      logger.info(dump);
+    } catch (ApiException ex) {
+      logger.severe(ex.getResponseBody());
+    }
+
     KubernetesApiResponse<DomainList> response = crdClient.list(namespace);
     return response != null ? response.getObject() : new DomainList();
   }

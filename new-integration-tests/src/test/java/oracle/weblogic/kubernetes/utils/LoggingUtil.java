@@ -149,7 +149,7 @@ public class LoggingUtil {
     // get replicasets
     writeToFile(Kubernetes.listReplicaSets(namespace), resultDir.toString(), namespace + "_rs.log");
     // get Domain
-    // writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_domain.log");
+    writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_domain.log");
     // get domain/operator pods
     V1PodList listPods = Kubernetes.listPods(namespace, null);
     List<V1Pod> domainPods = listPods.getItems();
