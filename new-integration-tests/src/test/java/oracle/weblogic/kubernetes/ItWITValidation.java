@@ -7,8 +7,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 
+import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
