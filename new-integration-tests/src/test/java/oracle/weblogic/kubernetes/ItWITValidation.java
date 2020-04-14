@@ -7,10 +7,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -21,11 +23,12 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @DisplayName("Simple validation of basic WIT functions")
+@ExtendWith(IntegrationTestWatcher.class)
 class ItWITValidation implements LoggedTest {
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String IMAGE_NAME = "test-mii-image-2";
   private static final String IMAGE_TAG = "v1";
-  
+
   @Test
   @DisplayName("Create a MII image")
   public void testCreatingMIIImage() {
@@ -49,9 +52,9 @@ class ItWITValidation implements LoggedTest {
             .wdtVersion("latest")
             .env(env)
             .redirect(true));
- 
+
     assertEquals(true, success, "Failed to create the image using WebLogic Deploy Tool");
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
-  } 
+  }
 }
 

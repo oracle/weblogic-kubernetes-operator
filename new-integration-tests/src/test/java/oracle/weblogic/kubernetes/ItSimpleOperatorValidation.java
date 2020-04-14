@@ -12,6 +12,7 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
+import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
 import org.junit.jupiter.api.AfterEach;
@@ -56,6 +57,7 @@ import static org.awaitility.Awaitility.with;
 @ExtendWith(Timing.class)
 // by implementing the LoggedTest, we will automatically get a logger injected and it
 // will also automatically log entry/exit messages for each test method.
+@ExtendWith(IntegrationTestWatcher.class)
 class ItSimpleOperatorValidation implements LoggedTest {
 
   private HelmParams opHelmParams = null;
