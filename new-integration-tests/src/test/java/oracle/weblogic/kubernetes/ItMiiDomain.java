@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -69,6 +70,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceReady;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -115,11 +117,11 @@ class ItMiiDomain implements LoggedTest {
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     opNamespace = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", opNamespace));
+    logger.info("Created a new namespace called {0}", opNamespace);
 
     logger.info("Creating unique namespace for Domain");
     domainNamespace = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", domainNamespace));
+    logger.info("Created a new namespace called {0}", domainNamespace);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
@@ -140,23 +142,23 @@ class ItMiiDomain implements LoggedTest {
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
-    logger.info(String.format("Installing Operator in namespace %s", opNamespace));
+    logger.info("Installing Operator in namespace {0}", opNamespace);
     // install Operator
     assertThat(installOperator(opParams))
         .as("Test installOperator returns true")
         .withFailMessage("installOperator() did not return true")
         .isTrue();
-    logger.info(String.format("Operator installed in namespace %s", opNamespace));
+    logger.info("Operator installed in namespace {0}", opNamespace);
 
     // list helm releases
-    logger.info(String.format("List helm releases in namespace %s", opNamespace));
+    logger.info("List helm releases in namespace {0}", opNamespace);
     assertThat(helmList(opHelmParams))
         .as("Test helmList returns true")
         .withFailMessage("helmList() did not return true")
         .isTrue();
 
     // check operator is running
-    logger.info(String.format("Check Operator pod is running in namespace %s", opNamespace));
+    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
     checkOperatorRunning(opNamespace);
 
   }
@@ -248,8 +250,8 @@ class ItMiiDomain implements LoggedTest {
                 .domainType("WLS")
                 .runtimeEncryptionSecret("encryptionsecret"))));
 
-    logger.info(String.format("Create domain custom resource for domainUID %s in namespace %s",
-              domainUID, domainNamespace));
+    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
+              domainUID, domainNamespace);
     boolean result = false;
     try {
       result = createDomainCustomResource(domain);
@@ -270,15 +272,14 @@ class ItMiiDomain implements LoggedTest {
         .isTrue();
 
     // wait for the domain to exist
-    logger.info(String.format("Check for domain custom resouce in namespace %s", domainNamespace));
+    logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
     with().pollDelay(30, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
-            condition -> logger.info(() ->
-                String.format(
-                    "Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
+            condition -> logger.info(
+                    "Waiting for domain to be running (elapsed time {0}ms, remaining time {0}ms)",
                     condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS())))
+                    condition.getRemainingTimeInMS()))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         .until(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
@@ -300,32 +301,55 @@ class ItMiiDomain implements LoggedTest {
 
     logger.info(" Managed Servers list size " + msList.size()); */
 
-    // check admin server pod exist, admin server name here should match with model.yaml
-    logger.info(String.format("Check for admin server pod %s existence in namespace %s",
-        domainUID + "-admin-server", domainNamespace));
-    checkPodCreated(domainUID + "-admin-server");
+    // check admin server pod exist, admin/managed server name here should match with model.yaml
+    String adminServerPodName = domainUID + "-admin-server";
+    String managedServerPrefix = domainUID + "-managed-server";
+    int replicaCount = 2;
+    logger.info("Check for admin server pod {0} existence in namespace {1}",
+        adminServerPodName, domainNamespace);
+    //checkPodCreated(adminServerPodName);
+    try {
+      waitForCondition(podExists(adminServerPodName, domainUID, domainNamespace));
+    } catch (ApiException e) {
+      logger.log(Level.INFO, "podExists failed with ", e);
+      assertThat(e)
+          .as("Test that podExists does not throw an exception")
+          .withFailMessage(String.format(
+              "pod %s doesn't exist in namespace %s", adminServerPodName, domainNamespace))
+          .isNotInstanceOf(ApiException.class);
+    }
 
-    // check managed server pods exists, managed server here should match with model.yaml
-    for (int i = 1; i <= 2; i++) {
+    // check managed server pods exists
+    for (int i = 1; i <= replicaCount; i++) {
       /* ManagedServer managedServer = (ManagedServer) msList.get(i);
       logger.info("Managed Server Name " + managedServer.serverName()); */
-      logger.info(String.format("Check for managed server pod %s existence in namespace %s",
-          domainUID + "-managed-server" + i, domainNamespace));
-      checkPodCreated(domainUID + "-managed-server" + i);
+      logger.info("Check for managed server pod {0} existence in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodCreated(managedServerPrefix + i);
     }
 
     // check admin server pod is running
-    logger.info(String.format("Wait for admin server pod %s to be ready in namespace %s",
-        domainUID + "-admin-server", domainNamespace));
-    checkPodRunning(domainUID + "-admin-server");
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodRunning(adminServerPodName);
 
     // check managed server pods are running
-    for (int i = 1; i <= 2; i++) {
-      logger.info(String.format("Wait for managed server pod %s to be ready in namespace %s",
-          domainUID + "-managed-server" + i, domainNamespace));
-      checkPodRunning(domainUID + "-managed-server" + i);
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodRunning(managedServerPrefix + i);
     }
 
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceCreated(adminServerPodName);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceCreated(managedServerPrefix + i);
+    }
 
   }
 
@@ -333,7 +357,7 @@ class ItMiiDomain implements LoggedTest {
   public void tearDown() {
 
     // Delete domain custom resource
-    logger.info(String.format("Delete domain custom resource in namespace %s", domainNamespace));
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
     assertThatCode(
         () -> deleteDomainCustomResource(domainUID, domainNamespace))
         .as("Test that deleteDomainCustomResource doesn not throw an exception")
@@ -356,7 +380,7 @@ class ItMiiDomain implements LoggedTest {
   @AfterAll
   public void tearDownAll() {
     // uninstall operator release
-    logger.info(String.format("Uninstall Operator in namespace %s", opNamespace));
+    logger.info("Uninstall Operator in namespace {0}", opNamespace);
     if (opHelmParams != null) {
       assertThat(uninstallOperator(opHelmParams))
           .as("Test uninstallOperator returns true")
@@ -365,7 +389,7 @@ class ItMiiDomain implements LoggedTest {
     }
 
     // Delete service account from unique opNamespace
-    logger.info(String.format("Delete service account in namespace %s", opNamespace));
+    logger.info("Delete service account in namespace {0}", opNamespace);
     if (serviceAccount != null) {
       assertThatCode(
           () -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
@@ -375,7 +399,7 @@ class ItMiiDomain implements LoggedTest {
           .doesNotThrowAnyException();
     }
     // Delete domain namespaces
-    logger.info(String.format("Deleting domain namespace %s", domainNamespace));
+    logger.info("Deleting domain namespace {0}", domainNamespace);
     if (domainNamespace != null) {
       assertThatCode(
           () -> deleteNamespace(domainNamespace))
@@ -386,7 +410,7 @@ class ItMiiDomain implements LoggedTest {
     }
 
     // Delete opNamespace
-    logger.info(String.format("Deleting Operator namespace %s", opNamespace));
+    logger.info("Deleting Operator namespace {0}", opNamespace);
     if (opNamespace != null) {
       assertThatCode(
           () -> deleteNamespace(opNamespace))
@@ -435,10 +459,10 @@ class ItMiiDomain implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         // this listener lets us report some status with each poll
         .conditionEvaluationListener(
-            condition -> logger.info(()
-                -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
+            condition -> logger.info(
+                 "Waiting for operator to be running (elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS())))
+                condition.getRemainingTimeInMS()))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
@@ -461,8 +485,8 @@ class ItMiiDomain implements LoggedTest {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
-    logger.info(String.format("Create image %s:%s using model directory %s",
-                imageName, MII_IMAGE_TAG, MODEL_DIR));
+    logger.info("Create image {0}:{1} using model directory {2}",
+                imageName, MII_IMAGE_TAG, MODEL_DIR);
     boolean success = createMIIImage(
         withWITParams()
             .modelImageName(imageName)
@@ -491,17 +515,16 @@ class ItMiiDomain implements LoggedTest {
       with().pollDelay(30, SECONDS)
             .and().with().pollInterval(10, SECONDS)
             .conditionEvaluationListener(
-                condition -> logger.info(() ->
-                    String.format(
-                        "Waiting for pod %s to be created in namespace %s (elapsed time %dms, remaining time %dms)",
+                condition -> logger.info(
+                        "Waiting for pod {0} to be created in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
                         podName,
                         domainNamespace,
                         condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS())))
+                        condition.getRemainingTimeInMS()))
             // and here we can set the maximum time we are prepared to wait
             .await().atMost(5, MINUTES)
             .until(podExists(podName, domainUID, domainNamespace));
-    } catch (Exception e) {
+    } catch (ApiException e) {
       logger.log(Level.INFO, "podExists failed with ", e);
       assertThat(e)
           .as("Test that podExists does not throw an exception")
@@ -518,20 +541,53 @@ class ItMiiDomain implements LoggedTest {
         () -> with().pollDelay(30, SECONDS)
             .and().with().pollInterval(10, SECONDS)
             .conditionEvaluationListener(
-                condition -> logger.info(() ->
-                    String.format(
-                        "Waiting for pod %s to be running in namespace %s (elapsed time %dms, remaining time %dms)",
+                condition -> logger.info(
+                        "Waiting for pod {0} to be running in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
                         podName,
                         domainNamespace,
                         condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS())))
+                        condition.getRemainingTimeInMS()))
             // and here we can set the maximum time we are prepared to wait
             .await().atMost(5, MINUTES)
             .until(podReady(podName, domainUID, domainNamespace)))
         .as("Test podReady returns true")
         .withFailMessage(String.format("Pod %s is not ready in namespace %s", podName, domainNamespace))
         .doesNotThrowAnyException();
+
   }
 
+
+  private void checkServiceCreated(String serviceName) {
+
+    assertThatCode(
+        () -> with().pollDelay(30, SECONDS)
+            .and().with().pollInterval(10, SECONDS)
+            .conditionEvaluationListener(
+                condition -> logger.info(
+                    "Waiting for service {0} to be running in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
+                    serviceName,
+                    domainNamespace,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            // and here we can set the maximum time we are prepared to wait
+            .await().atMost(5, MINUTES)
+            .until(serviceReady(serviceName, null, domainNamespace)))
+        .as("Test serviceReady returns true")
+        .withFailMessage(String.format("Service %s is not ready in namespace %s", serviceName, domainNamespace))
+        .doesNotThrowAnyException();
+  }
+
+  private void waitForCondition(Callable callable) {
+    with().pollDelay(30, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for a condition to be met (elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        // and here we can set the maximum time we are prepared to wait
+        .await().atMost(5, MINUTES)
+        .until(callable);
+  }
 
 }

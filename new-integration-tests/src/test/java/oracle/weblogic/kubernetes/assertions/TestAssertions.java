@@ -103,12 +103,14 @@ public class TestAssertions {
    * @return true if the service exists otherwise false
    * @throws ApiException when query fails
    */
-  public static boolean serviceReady(
+  public static Callable<Boolean>  serviceReady(
       String serviceName,
       Map<String, String> label,
       String namespace
   )throws ApiException {
-    return Kubernetes.doesServiceExist(serviceName, label, namespace);
+    return () -> {
+      return Kubernetes.doesServiceExist(serviceName, label, namespace);
+    };
   }
 
   /**
