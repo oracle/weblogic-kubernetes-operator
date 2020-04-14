@@ -1439,14 +1439,14 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void createMonitorTraefikLB() throws Exception {
     String cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh "
-            + "create traefik traefik-monitoring montesttraefikns"
+            + "create traefik traefik-monitoring montesttraefikns "
             + resourceExporterDir
             + "/../oke/traefikvalues.yaml";
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
     ExecResult result = ExecCommand.exec(cmdLb);
     if (result.exitValue() != 0) {
       if (!result.stderr().contains("release named monitoringtraefik already exists")) {
-        throw new RuntimeException(
+        throw new Exception(
                 "FAILURE: command to create load balancer "
                         + cmdLb
                         + " failed, returned "
@@ -1459,6 +1459,7 @@ public class ItMonitoringExporter extends BaseTest {
             + "| grep Ingress | awk '{print $3}'";
     result = TestUtils.exec(cmdip);
     LB_MONITORING_PUBLIC_IP = result.stdout().trim();
+    assertNotNull(LB_MONITORING_PUBLIC_IP, "Can't retreive External IP for traefik-monitoring");
     LoggerHelper.getLocal().log(Level.INFO,
             "Load Balancer MONITORING Public IP : " + LB_MONITORING_PUBLIC_IP);
     // apply new domain yaml and verify pod restart
