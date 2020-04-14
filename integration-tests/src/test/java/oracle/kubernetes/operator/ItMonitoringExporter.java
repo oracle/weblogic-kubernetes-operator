@@ -1438,6 +1438,9 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if fails to create or verify LB creation.
    */
   private static void createMonitorTraefikLB() throws Exception {
+    String crdCmd =
+            " kubectl create namespace " + monitoringNS;
+    TestUtils.exec(crdCmd);
     String cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh "
             + "create traefik traefik-monitoring montesttraefikns "
             + resourceExporterDir
@@ -1463,7 +1466,7 @@ public class ItMonitoringExporter extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO,
             "Load Balancer MONITORING Public IP : " + LB_MONITORING_PUBLIC_IP);
     // apply new domain yaml and verify pod restart
-    String crdCmd =
+    crdCmd =
             " kubectl apply -f " + resourceExporterDir + "/../oke/traefik-path-routing-monitoring.yaml";
     TestUtils.exec(crdCmd);
   }
