@@ -19,6 +19,10 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1Deployment;
+import io.kubernetes.client.openapi.models.V1DeploymentList;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
@@ -30,6 +34,8 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1ReplicaSet;
+import io.kubernetes.client.openapi.models.V1ReplicaSetList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -44,7 +50,6 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
 // to run kubectl.
-
 public class Kubernetes implements LoggedTest {
 
   public static Random RANDOM = new Random(System.currentTimeMillis());
@@ -64,10 +69,13 @@ public class Kubernetes implements LoggedTest {
   // Extended GenericKubernetesApi clients
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<Domain, DomainList> crdClient = null;
+  private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
+  private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
   private static GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient = null;
   private static GenericKubernetesApi<V1Pod, V1PodList> podClient = null;
   private static GenericKubernetesApi<V1PersistentVolume, V1PersistentVolumeList> pvClient = null;
   private static GenericKubernetesApi<V1PersistentVolumeClaim, V1PersistentVolumeClaimList> pvcClient = null;
+  private static GenericKubernetesApi<V1ReplicaSet, V1ReplicaSetList> rsClient = null;
   private static GenericKubernetesApi<V1Secret, V1SecretList> secretClient = null;
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
@@ -181,7 +189,6 @@ public class Kubernetes implements LoggedTest {
   }
 
   // ------------------------  deployments -----------------------------------
-
   public static boolean createDeployment(String deploymentYaml) {
     // do something with the command!!!
     return true;
@@ -191,8 +198,18 @@ public class Kubernetes implements LoggedTest {
     return new ArrayList();
   }
 
-  // --------------------------- pods -----------------------------------------
+  /**
+   * List all deployments in a given namespace
+   *
+   * @param namespace
+   * @return V1DeploymentList
+   */
+  public static V1DeploymentList listDeployments(String namespace) {
+    KubernetesApiResponse<V1DeploymentList> list = deploymentClient.list(namespace);
+    return list.getObject();
+  }
 
+  // --------------------------- pods -----------------------------------------
   /**
    * Get a pod's log.
    *
@@ -257,8 +274,32 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-  // --------------------------- namespaces -----------------------------------
+  /**
+   * A utility method to list all pods in given namespace and a label
+    This method can be used as diagnostic tool to get the details of pods.
+   *
+   * @param namespace in which to list all pods
+   * @param labelSelectors with which the pods are decorated
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+    V1PodList v1PodList
+        = coreV1Api.listNamespacedPod(
+            namespace, // namespace in which to look for the pods.
+            Boolean.FALSE.toString(), // pretty print output.
+            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+            null, // continue to query when there is more results to return.
+            null, // selector to restrict the list of returned objects by their fields
+            labelSelectors, // selector to restrict the list of returned objects by their labels.
+            null, // maximum number of responses to return for a list call.
+            null, // shows changes that occur after that particular version of a resource.
+            null, // Timeout for the list/watch call.
+            Boolean.FALSE // Watch for changes to the described resources.
+        );
+    return v1PodList;
+  }
 
+  // --------------------------- namespaces -----------------------------------
   /**
    * Create a Kubernetes namespace.
    *
@@ -331,6 +372,28 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * List of namespaces in the Kubernetes cluster as V1NamespaceList.
+   *
+   * @return V1NamespaceList in Kubernetes cluster
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1NamespaceList listNamespacesAsObjects() throws ApiException {
+    V1NamespaceList namespaceList = coreV1Api.listNamespace(
+        PRETTY, // pretty print output
+        ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+        null, // set when retrieving more results from the server
+        null, // selector to restrict the list of returned objects by their fields
+        null, // selector to restrict the list of returned objects by their labels
+        null, // maximum number of responses to return for a list call
+        RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+        TIMEOUT_SECONDS, // Timeout for the list/watch call
+        false // Watch for changes to the described resources
+    );
+
+    return namespaceList;
+  }
+
+  /**
    * Delete a namespace for the given name.
    *
    * @param name name of namespace
@@ -356,7 +419,6 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------
-
   /**
    * Create a Domain Custom Resource.
    *
@@ -409,14 +471,14 @@ public class Kubernetes implements LoggedTest {
     if (!response.isSuccess()) {
       logger.warning(
           "Failed to delete Domain Custom Resource '" + domainUID + "' from namespace: "
-              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-              + "domain custom resource in background!");
+          + "domain custom resource in background!");
     }
 
     return true;
@@ -473,7 +535,6 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- config map ---------------------------
-
   /**
    * Create a Kubernetes Config Map.
    *
@@ -504,7 +565,7 @@ public class Kubernetes implements LoggedTest {
         configMap, // config map configuration data
         PRETTY, // pretty print output
         null, // indicates that modifications should not be persisted
-        null  // name associated with the actor or entity that is making these changes
+        null // name associated with the actor or entity that is making these changes
     );
 
     return true;
@@ -514,7 +575,7 @@ public class Kubernetes implements LoggedTest {
    * List of Config Maps for given namespace.
    *
    * @param namespace name of namespace for config map
-   * @return List  of Config Maps
+   * @return List of Config Maps
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1ConfigMapList listConfigMaps(String namespace) throws ApiException {
@@ -556,14 +617,13 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-              + "config map in background!");
+          + "config map in background!");
     }
 
     return true;
   }
 
   // --------------------------- secret ---------------------------
-
   /**
    * Create a Kubernetes Secret.
    *
@@ -621,19 +681,27 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-              + "secret in background!");
+          + "secret in background!");
     }
 
     return true;
   }
 
-  // --------------------------- pv/pvc ---------------------------
+  /**
+   * List secrets in a given namespace
+   * @param namespace
+   * @return V1SecretList
+   */
+  public static V1SecretList listSecrets(String namespace) {
+    KubernetesApiResponse<V1SecretList> list = secretClient.list(namespace);
+    return list.getObject();
+  }
 
+  // --------------------------- pv/pvc ---------------------------
   /**
    * Create a Kubernetes Persistent Volume.
    *
-   * @param persistentVolume V1PersistentVolume object containing persistent volume
-   *     configuration data
+   * @param persistentVolume V1PersistentVolume object containing persistent volume configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -656,8 +724,8 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create a Kubernetes Persistent Volume Claim.
    *
-   * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes
-   *     persistent volume claim configuration data
+   * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes persistent volume claim
+   * configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -690,7 +758,6 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-
   /**
    * Delete the Kubernetes Persistent Volume.
    *
@@ -711,7 +778,7 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-              + "persistent volume in background!");
+          + "persistent volume in background!");
     }
 
     return true;
@@ -733,21 +800,40 @@ public class Kubernetes implements LoggedTest {
     if (!response.isSuccess()) {
       logger.warning(
           "Failed to delete persistent volume claim '" + name + "' from namespace: "
-              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-              + "persistent volume claim in background!");
+          + "persistent volume claim in background!");
     }
 
     return true;
   }
 
-  // --------------------------- service account ---------------------------
+  /**
+   * List all persistent volumes
+   *
+   * @return V1PersistentVolumeList
+   */
+  public static V1PersistentVolumeList listPersistenVolumes() {
+    KubernetesApiResponse<V1PersistentVolumeList> list = pvClient.list();
+    return list.getObject();
+  }
 
+  /**
+   * List all persistent volume claims
+   *
+   * @return V1PersistentVolumeClaimList
+   */
+  public static V1PersistentVolumeClaimList listPersistenVolumeClaims() {
+    KubernetesApiResponse<V1PersistentVolumeClaimList> list = pvcClient.list();
+    return list.getObject();
+  }
+
+  // --------------------------- service account ---------------------------
   /**
    * Create a Kubernetes Service Account.
    *
@@ -806,12 +892,22 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-              + "service account in background!");
+          + "service account in background!");
     }
 
     return true;
   }
 
+  /**
+   * List all service accounts in a given namespace
+   *
+   * @param namespace
+   * @return V1ServiceAccountList
+   */
+  public static V1ServiceAccountList listServiceAccounts(String namespace) {
+    KubernetesApiResponse<V1ServiceAccountList> list = serviceAccountClient.list(namespace);
+    return list.getObject();
+  }
   // --------------------------- Services ---------------------------
 
   /**
@@ -871,11 +967,33 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-              + "service in background!");
+          + "service in background!");
     }
 
     return true;
   }
 
-  //------------------------
+  // --------------------------- jobs ---------------------------
+  /**
+   * List all jobs in a given namespace
+   *
+   * @param namespace
+   * @return V1JobList
+   */
+  public static V1JobList listJobs(String namespace) {
+    KubernetesApiResponse<V1JobList> list = jobClient.list(namespace);
+    return list.getObject();
+  }
+
+  // --------------------------- resplica sets ---------------------------
+  /**
+   * List all replica sets in a given namespace
+   *
+   * @param namespace
+   * @return V1ReplicaSetList
+   */
+  public static V1ReplicaSetList listReplicaSets(String namespace) {
+    KubernetesApiResponse<V1ReplicaSetList> list = rsClient.list(namespace);
+    return list.getObject();
+  }
 }
