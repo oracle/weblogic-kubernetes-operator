@@ -166,7 +166,7 @@ public class ItMonitoringExporter extends BaseTest {
         domain.buildDeployJavaAppInPod(
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
         setupPv();
-        if(BaseTest.OKE_CLUSTER) {
+        if (BaseTest.OKE_CLUSTER) {
           createMonitorTraefikLB();
         }
         installPrometheusGrafanaWebHookMySqlCoordinator();
@@ -204,7 +204,7 @@ public class ItMonitoringExporter extends BaseTest {
       }
       try {
         uninstallWebHookPrometheusGrafanaMySql();
-        if(BaseTest.OKE_CLUSTER) {
+        if (BaseTest.OKE_CLUSTER) {
           deleteMonitorTraefikLB();
         }
       } catch (Exception ex) {
@@ -1034,16 +1034,16 @@ public class ItMonitoringExporter extends BaseTest {
     } else {
       Files.createDirectories(Paths.get(pvDir));
     }
-    if(BaseTest.OKE_CLUSTER) {
-      TestUtils.copyFile( resourceExporterDir + "/../oke/okemysql.yaml",
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.copyFile(resourceExporterDir + "/../oke/okemysql.yaml",
               monitoringExporterEndToEndDir + "/mysql/mysql.yaml");
-      TestUtils.copyFile( resourceExporterDir + "/../oke/mysqlpersistence.yaml",
+      TestUtils.copyFile(resourceExporterDir + "/../oke/mysqlpersistence.yaml",
               monitoringExporterEndToEndDir + "/mysql/persistence.yaml");
-      TestUtils.copyFile( resourceExporterDir + "/../oke/prompersistence.yaml",
+      TestUtils.copyFile(resourceExporterDir + "/../oke/prompersistence.yaml",
               monitoringExporterEndToEndDir + "/prometheus/persistence.yaml");
-      TestUtils.copyFile( resourceExporterDir + "/../oke/alert-prompersistence.yaml",
+      TestUtils.copyFile(resourceExporterDir + "/../oke/alert-prompersistence.yaml",
               monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml");
-      TestUtils.copyFile( resourceExporterDir + "/../oke/grafanavalues.yaml",
+      TestUtils.copyFile(resourceExporterDir + "/../oke/grafanavalues.yaml",
               monitoringExporterEndToEndDir + "/grafana/values.yaml");
     } else {
       replaceStringInFile(
@@ -1381,7 +1381,7 @@ public class ItMonitoringExporter extends BaseTest {
       throws Exception {
     // url
     String url = myhost + ":" + prometheusPort;
-    if(BaseTest.OKE_CLUSTER) {
+    if (BaseTest.OKE_CLUSTER) {
       url = LB_MONITORING_PUBLIC_IP;
     }
     StringBuffer testAppUrl = new StringBuffer("http://");
