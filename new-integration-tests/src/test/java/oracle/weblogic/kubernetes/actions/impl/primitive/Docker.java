@@ -7,6 +7,35 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 public class Docker {
 
   /**
+   * Log in to a Docker registry.
+   * @param registryName registry name
+   * @param username user
+   * @param password password
+   * @return true if successfull
+   */
+  public static boolean login(String registryName, String username, String password) {
+    String cmdToExecute = String.format("docker login %s -u %s -p \"%s\"",
+        registryName, username, password);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .executeAndVerify();
+  }
+
+  /**
+   * Push an image to a registry
+   * @param image image
+   * @return true if successfull
+   */
+  public static boolean push(String image) {
+    String cmdToExecute = String.format("docker push %s", image);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .executeAndVerify();
+  }
+
+  /**
    * Delete docker image.
    * @param image image name:image tag
    * @return true if delete image is successful

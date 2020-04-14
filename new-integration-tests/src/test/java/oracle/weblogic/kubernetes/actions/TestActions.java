@@ -223,6 +223,7 @@ public class TestActions {
 
   // ------------------------ Docker image  -------------------------
 
+
   /**
    * Create a WITParams that contains the parameters for executing a WIT command.
    *
@@ -412,6 +413,26 @@ public class TestActions {
   }
 
   // ------------------------ Docker --------------------------------------
+
+  /**
+   * Log in to a Docker registry.
+   * @param registryName registry name
+   * @param username user
+   * @param password password
+   * @return true if successfull
+   */
+  public static boolean dockerLogin(String registryName, String username, String password) {
+    return Docker.login(registryName, username, password);
+  }
+
+  /**
+   * Push an image to a registry
+   * @param image image
+   * @return true if successfull
+   */
+  public static boolean dockerPush(String image) {
+    return Docker.push(image);
+  }
 
   /**
    * Delete docker image.

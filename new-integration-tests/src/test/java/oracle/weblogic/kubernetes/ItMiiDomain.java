@@ -27,7 +27,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
-//import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -60,7 +59,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
-//import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
@@ -75,7 +75,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // Test to install Operator, create model in image domain and verify the domain
 // has started successfully
@@ -100,7 +99,6 @@ class ItMiiDomain implements LoggedTest {
   // domain constants
   private static final String DOMAIN_VERSION = "v7";
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
-  private static final String DOMAIN_HOME_SOURCE_TYPE = "FromModel";
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -142,8 +140,8 @@ class ItMiiDomain implements LoggedTest {
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
-    logger.info("Installing Operator in namespace {0}", opNamespace);
     // install Operator
+    logger.info("Installing Operator in namespace {0}", opNamespace);
     assertThat(installOperator(opParams))
         .as("Test installOperator returns true")
         .withFailMessage("installOperator() did not return true")
@@ -159,7 +157,7 @@ class ItMiiDomain implements LoggedTest {
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-    checkOperatorRunning(opNamespace);
+    waitForCondition(operatorIsRunning(opNamespace + "1"));
 
   }
 
@@ -174,43 +172,26 @@ class ItMiiDomain implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testCreateMiiDomain() {
+    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
+    final String adminServerPodName = domainUID + "-admin-server";
+    final String managedServerPrefix = domainUID + "-managed-server";
+    final int replicaCount = 2;
 
     // create image with model files
     miiImage = createImage();
 
-    // To Do: push the image to OCIR to make the test work in multi node cluster
+    // push the image to OCIR to make the test work in multi node cluster
+    pushImageToOCIR(miiImage);
 
     // create secret for admin credentials
-    Map<String, String> secretMap = new HashMap();
-    secretMap.put("username", "weblogic");
-    secretMap.put("password", "welcome1");
-
     logger.info("Create secret for admin credentials");
-    assertThatCode(
-        () -> createSecret(new V1Secret()
-                  .metadata(new V1ObjectMeta()
-                    .name("weblogic-credentials")
-                    .namespace(domainNamespace))
-                  .stringData(secretMap)))
-        .as("Test createSecret returns true")
-        .withFailMessage("Create secret failed while creating secret for admin credentials")
-        .doesNotThrowAnyException();
+    String adminSecretName = "weblogic-credentials";
+    createSecretForDomain(adminSecretName, "weblogic", "welcome1");
 
     // create encryption secret
-    Map<String, String> encryptionSecretMap = new HashMap();
-    encryptionSecretMap.put("username", "weblogicenc");
-    encryptionSecretMap.put("password", "welcome1enc");
-
     logger.info("Create encryption secret");
-    assertThatCode(
-        () -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                .name("encryptionsecret")
-                .namespace(domainNamespace))
-            .stringData(encryptionSecretMap)))
-        .as("Test createSecret returns true")
-        .withFailMessage("Create secret failed while creating encryption secret")
-        .doesNotThrowAnyException();
+    String encryptionSecretName = "encryptionsecret";
+    createSecretForDomain(encryptionSecretName, "weblogicenc", "weblogicenc");
 
     // create the domain CR
     Domain domain = new Domain()
@@ -221,10 +202,10 @@ class ItMiiDomain implements LoggedTest {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUID)
-            .domainHomeSourceType(DOMAIN_HOME_SOURCE_TYPE)
+            .domainHomeSourceType("FromModel")
             .image(miiImage)
             .webLogicCredentialsSecret(new V1SecretReference()
-                .name("weblogic-credentials")
+                .name(adminSecretName)
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
@@ -243,86 +224,29 @@ class ItMiiDomain implements LoggedTest {
                         .nodePort(30711))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
-                .replicas(2)
+                .replicas(replicaCount)
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
-                .domainType("WLS")
-                .runtimeEncryptionSecret("encryptionsecret"))));
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))));
 
     logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
-              domainUID, domainNamespace);
-    boolean result = false;
-    try {
-      result = createDomainCustomResource(domain);
-    } catch (Exception e) {
-      logger.log(Level.INFO, "createDomainCustomResource failed with ", e);
-      assertThat(e)
-          .as("Test that createDomainCustomResource does not throw an exception")
-          .withFailMessage(String.format(
-              "Could not create domain custom resource for domainUID %s in namespace %s",
-              domainUID, domainNamespace))
-          .isNotInstanceOf(ApiException.class);
-    }
-    assertThat(result)
-        .as("Test createDomainCustomResource returns true")
-        .withFailMessage(String.format(
-            "Create domain custom resource failed for domainUID %s in namespace %s",
-            domainUID, domainNamespace))
-        .isTrue();
+        domainUID, domainNamespace);
+    createDomain(domain);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
-    with().pollDelay(30, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                    "Waiting for domain to be running (elapsed time {0}ms, remaining time {0}ms)",
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-        // and here we can set the maximum time we are prepared to wait
-        .await().atMost(5, MINUTES)
-        .until(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
+    waitForCondition(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
 
-    /*
-    // get domain custom resource
-    try {
-      domain = getDomainCustomResource(domainUID, domainNamespace);
-    } catch (Exception e) {
-      logger.log(Level.INFO, "getDomainCustomResource failed with ", e);
-      assertThat(e)
-          .as("Test that getDomainCustomResource does not throw an exception")
-          .withFailMessage(String.format(
-              "Could not get the domain custom resource for domainUID %s in namespace %s",
-                domainUID, domainNamespace))
-          .isNotInstanceOf(ApiException.class);
-    }
-    List<ManagedServer> msList = domain.spec().managedServers();
 
-    logger.info(" Managed Servers list size " + msList.size()); */
-
-    // check admin server pod exist, admin/managed server name here should match with model.yaml
-    String adminServerPodName = domainUID + "-admin-server";
-    String managedServerPrefix = domainUID + "-managed-server";
-    int replicaCount = 2;
+    // check admin server pod exist
     logger.info("Check for admin server pod {0} existence in namespace {1}",
         adminServerPodName, domainNamespace);
-    //checkPodCreated(adminServerPodName);
-    try {
-      waitForCondition(podExists(adminServerPodName, domainUID, domainNamespace));
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "podExists failed with ", e);
-      assertThat(e)
-          .as("Test that podExists does not throw an exception")
-          .withFailMessage(String.format(
-              "pod %s doesn't exist in namespace %s", adminServerPodName, domainNamespace))
-          .isNotInstanceOf(ApiException.class);
-    }
+    checkPodCreated(adminServerPodName);
 
     // check managed server pods exists
     for (int i = 1; i <= replicaCount; i++) {
-      /* ManagedServer managedServer = (ManagedServer) msList.get(i);
-      logger.info("Managed Server Name " + managedServer.serverName()); */
       logger.info("Check for managed server pod {0} existence in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodCreated(managedServerPrefix + i);
@@ -430,11 +354,15 @@ class ItMiiDomain implements LoggedTest {
                 .namespace(namespace)
                 .name(serviceAccountName));
 
-    assertThatCode(
-        () -> createServiceAccount(serviceAccount))
-        .as("Test that createServiceAccount doesn not throw an exception")
-        .withFailMessage("createServiceAccount() threw an exception")
-        .doesNotThrowAnyException();
+    try {
+      createServiceAccount(serviceAccount);
+    } catch (ApiException e) {
+      logger.log(Level.INFO, "createServiceAccount failed with ", e);
+      assertThat(e)
+          .as("Test that createServiceAccount does not throw an exception")
+          .withFailMessage(String.format("Failed to create service account %s", serviceAccountName))
+          .isNotInstanceOf(ApiException.class);
+    }
     return serviceAccountName;
   }
 
@@ -442,7 +370,7 @@ class ItMiiDomain implements LoggedTest {
     String namespace = null;
     try {
       namespace = createUniqueNamespace();
-    } catch (Exception e) {
+    } catch (ApiException e) {
       logger.log(Level.INFO, "createUniqueNamespace failed with ", e);
       assertThat(e)
           .as("Test that createUniqueNamespace does not throw an exception")
@@ -450,23 +378,6 @@ class ItMiiDomain implements LoggedTest {
           .isNotInstanceOf(ApiException.class);
     }
     return namespace;
-  }
-
-  private static void checkOperatorRunning(String namespace) {
-    // check if the operator is running.
-    with().pollDelay(30, SECONDS)
-        // we check again every 10 seconds.
-        .and().with().pollInterval(10, SECONDS)
-        // this listener lets us report some status with each poll
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                 "Waiting for operator to be running (elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        // and here we can set the maximum time we are prepared to wait
-        .await().atMost(5, MINUTES)
-        // operatorIsRunning() is one of our custom, reusable assertions
-        .until(operatorIsRunning(opNamespace));
   }
 
   private String createImage() {
@@ -486,8 +397,8 @@ class ItMiiDomain implements LoggedTest {
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using model directory {2}",
-                imageName, MII_IMAGE_TAG, MODEL_DIR);
-    boolean success = createMIIImage(
+        imageName, MII_IMAGE_TAG, MODEL_DIR);
+    boolean result = createMIIImage(
         withWITParams()
             .modelImageName(imageName)
             .modelImageTag(MII_IMAGE_TAG)
@@ -496,8 +407,10 @@ class ItMiiDomain implements LoggedTest {
             .env(env)
             .redirect(true));
 
-
-    assertEquals(true, success, "Failed to create the image using WebLogic Deploy Tool");
+    assertThat(result)
+        .as("Check createMIIImage() returns true")
+        .withFailMessage(String.format("Failed to create the image %s using WebLogic Image Tool", imageName))
+        .isTrue();
 
     // check image exists
     assertThat(dockerImageExists(imageName, MII_IMAGE_TAG))
@@ -505,25 +418,80 @@ class ItMiiDomain implements LoggedTest {
         .withFailMessage(String.format("Image %s doesn't exist", imageName + ":" + MII_IMAGE_TAG))
         .isTrue();
 
-
     return imageName + ":" + MII_IMAGE_TAG;
   }
 
-  private void checkPodCreated(String podName) {
+  private void pushImageToOCIR(String image) {
+    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
+        && System.getenv("REPO_PASSWORD") != null) {
+      String repoRegistry = System.getenv("REPO_REGISTRY");
+      String repoUserName = System.getenv("REPO_USERNAME");
+      String repoPassword = System.getenv("REPO_PASSWORD");
+
+      logger.info("Push image {0} to OCIR", image);
+      assertThat(dockerLogin(repoRegistry, repoUserName, repoPassword))
+          .as("Test dockerLogin returns true")
+          .withFailMessage("docker login failed")
+          .isTrue();
+
+      assertThat(dockerPush(image))
+          .as("Test dockerPush returns true")
+          .withFailMessage(String.format("docker push failed for image %s", image))
+          .isTrue();
+
+      //TO Do: Create docker registry secret
+    }
+  }
+
+  private void createSecretForDomain(String secretName, String username, String password) {
+    Map<String, String> secretMap = new HashMap();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
 
     try {
-      with().pollDelay(30, SECONDS)
-            .and().with().pollInterval(10, SECONDS)
-            .conditionEvaluationListener(
-                condition -> logger.info(
-                        "Waiting for pod {0} to be created in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
-                        podName,
-                        domainNamespace,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-            // and here we can set the maximum time we are prepared to wait
-            .await().atMost(5, MINUTES)
-            .until(podExists(podName, domainUID, domainNamespace));
+      assertThat(createSecret(new V1Secret()
+          .metadata(new V1ObjectMeta()
+              .name(secretName)
+              .namespace(domainNamespace))
+          .stringData(secretMap)))
+          .as("Test createSecret returns true")
+          .withFailMessage("createSecret failed")
+          .isTrue();
+    } catch (ApiException e) {
+      logger.log(Level.INFO, "createSecret failed with ", e);
+      assertThat(e)
+          .as("Test that createSecret does not throw an exception")
+          .withFailMessage(String.format("Create secret %s failed while creating secret "
+              + "for admin credentials", secretName))
+          .isNotInstanceOf(ApiException.class);
+    }
+  }
+
+  private void createDomain(Domain domain) {
+    boolean result = false;
+    try {
+      result = createDomainCustomResource(domain);
+    } catch (ApiException e) {
+      logger.log(Level.INFO, "createDomainCustomResource failed with ", e);
+      assertThat(e)
+          .as("Test that createDomainCustomResource does not throw an exception")
+          .withFailMessage(String.format(
+              "Could not create domain custom resource for domainUID %s in namespace %s",
+              domainUID, domainNamespace))
+          .isNotInstanceOf(ApiException.class);
+    }
+    assertThat(result)
+        .as("Test createDomainCustomResource returns true")
+        .withFailMessage(String.format(
+            "Create domain custom resource failed for domainUID %s in namespace %s",
+            domainUID, domainNamespace))
+        .isTrue();
+
+  }
+
+  private void checkPodCreated(String podName) {
+    try {
+      waitForCondition(podExists(podName, domainUID, domainNamespace));
     } catch (ApiException e) {
       logger.log(Level.INFO, "podExists failed with ", e);
       assertThat(e)
@@ -532,52 +500,35 @@ class ItMiiDomain implements LoggedTest {
               "pod %s doesn't exist in namespace %s", podName, domainNamespace))
           .isNotInstanceOf(ApiException.class);
     }
-
   }
 
   private void checkPodRunning(String podName) {
-
-    assertThatCode(
-        () -> with().pollDelay(30, SECONDS)
-            .and().with().pollInterval(10, SECONDS)
-            .conditionEvaluationListener(
-                condition -> logger.info(
-                        "Waiting for pod {0} to be running in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
-                        podName,
-                        domainNamespace,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-            // and here we can set the maximum time we are prepared to wait
-            .await().atMost(5, MINUTES)
-            .until(podReady(podName, domainUID, domainNamespace)))
-        .as("Test podReady returns true")
-        .withFailMessage(String.format("Pod %s is not ready in namespace %s", podName, domainNamespace))
-        .doesNotThrowAnyException();
-
+    try {
+      waitForCondition(podReady(podName, domainUID, domainNamespace));
+    } catch (ApiException e) {
+      logger.log(Level.INFO, "podReady failed with ", e);
+      assertThat(e)
+          .as("Test that podReady does not throw an exception")
+          .withFailMessage(String.format(
+              "pod %s is not ready in namespace %s", podName, domainNamespace))
+          .isNotInstanceOf(ApiException.class);
+    }
   }
-
 
   private void checkServiceCreated(String serviceName) {
-
-    assertThatCode(
-        () -> with().pollDelay(30, SECONDS)
-            .and().with().pollInterval(10, SECONDS)
-            .conditionEvaluationListener(
-                condition -> logger.info(
-                    "Waiting for service {0} to be running in namespace {1} (elapsed time {2}ms, remaining time {3}ms)",
-                    serviceName,
-                    domainNamespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            // and here we can set the maximum time we are prepared to wait
-            .await().atMost(5, MINUTES)
-            .until(serviceReady(serviceName, null, domainNamespace)))
-        .as("Test serviceReady returns true")
-        .withFailMessage(String.format("Service %s is not ready in namespace %s", serviceName, domainNamespace))
-        .doesNotThrowAnyException();
+    try {
+      waitForCondition(serviceReady(serviceName, null, domainNamespace));
+    } catch (ApiException e) {
+      logger.log(Level.INFO, "podExists failed with ", e);
+      assertThat(e)
+          .as("Test that podExists does not throw an exception")
+          .withFailMessage(String.format(
+              "Service %s is not ready in namespace %s", serviceName, domainNamespace))
+          .isNotInstanceOf(ApiException.class);
+    }
   }
 
-  private void waitForCondition(Callable callable) {
+  private static void waitForCondition(Callable callable) {
     with().pollDelay(30, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
