@@ -24,27 +24,42 @@ import oracle.weblogic.kubernetes.annotations.NamespaceList;
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
+/**
+ * A utility class to collect log messages from Kubernetes cluster.
+ */
 public class LoggingUtil {
 
-  private static final String DIAG_LOGS_DIR = System.getProperty("java.io.tmpdir");
+  private static final String LOGS_DIR = System.getProperty("java.io.tmpdir");
 
-  public static void collectLogs(Object itInstance) throws
-      IllegalArgumentException,
-      IllegalAccessException,
-      ApiException {
+  /**
+   * A utility method to collect logs for current running test object.
+   * @param itInstance the integration test instance
+   */
+  public static void collectLogs(Object itInstance) {
     logger.info("Collecting logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
       Path resultDir = Files.createDirectories(
-          Paths.get(DIAG_LOGS_DIR, itInstance.getClass().getSimpleName(), resultDirExt));
+          Paths.get(LOGS_DIR, itInstance.getClass().getSimpleName(),
+              resultDirExt));
       for (var namespace : LoggingUtil.getNamespaceList(itInstance)) {
         LoggingUtil.generateLog((String) namespace, resultDir);
       }
-    } catch (IOException ex) {
+    } catch (IllegalArgumentException | IllegalAccessException | IOException ex) {
       logger.warning(ex.getMessage());
+    } catch (ApiException ex) {
+      logger.warning(ex.getResponseBody());
     }
   }
 
+  /**
+   * A utility method to introspect the test instance and collect all namespace fields used by the test.
+   * @param itInstance the integration test instance
+   * @return Set of namespaces used by the tests
+   * @throws IllegalArgumentException when test instance access to the fields fails
+   * @throws IllegalAccessException when test instance access to the fields fails
+   * @throws ApiException when accessing the Kubernetes cluster for artifacts fails
+   */
   public static Set getNamespaceList(Object itInstance)
       throws IllegalArgumentException, IllegalAccessException, ApiException {
     Set<String> namespaceFields;
@@ -53,23 +68,44 @@ public class LoggingUtil {
     return namespaceFields;
   }
 
+  /**
+   * This utility method gets all the declared String field values in the test class,
+   * gets another list of namespaces existing in the Kubernetes cluster and gets
+   * the intersectioin of these 2 Sets.
+   * <p>
+   * This method doesnot need the test classes to decorate their fields with any annotations.
+   * @param itInstance the integration test instance
+   * @return Set of namespaces used by the tests and that exists in the Kubernetes cluster
+   * @throws IllegalArgumentException when test instance access to the fields fails
+   * @throws IllegalAccessException when test instance access to the fields fails
+   * @throws ApiException when accessing the Kubernetes cluster for artifacts fails
+   */
   public static Set getNSListIntersecting(Object itInstance)
       throws IllegalArgumentException, IllegalAccessException, ApiException {
-    Set<String> stringList = new HashSet<>();
+    Set<String> stringFiledList = new HashSet<>();
     for (Field field : itInstance.getClass().getDeclaredFields()) {
       field.setAccessible(true);
       if (String.class.isAssignableFrom(field.getType())) {
         if (field.get(itInstance) != null) {
-          stringList.add((String) field.get(itInstance));
+          stringFiledList.add((String) field.get(itInstance));
         }
       }
     }
-    logger.info("String set before: \n {0}", stringList.toString());
-    stringList.retainAll(getNSFromK8s());
-    logger.info("String set after: \n {0}", stringList.toString());
-    return stringList;
+    stringFiledList.retainAll(getNSFromK8s());
+    return stringFiledList;
   }
 
+  /**
+   * This utility method gets all the declared String field values with annotation @NamespaceList
+   * in the test class.
+   * <p>
+   * This method does need the test classes to decorate their fields with @NamespaceList.
+   * @param itInstance the integration test instance
+   * @return Set of namespaces used by the tests.
+   * @throws IllegalArgumentException when test instance access to the fields fails
+   * @throws IllegalAccessException when test instance access to the fields fails
+   * @throws ApiException when accessing the Kubernetes cluster for artifacts fails
+   */
   public static Set getNSListTagged(Object itInstance)
       throws IllegalArgumentException, IllegalAccessException, ApiException {
     Set<String> namespaceFields = new HashSet<>();
@@ -85,6 +121,13 @@ public class LoggingUtil {
     return namespaceFields;
   }
 
+  /**
+   * Utility method to query the Kubernetes cluster with given namespace to get the various artifacts.
+   * @param namespace in which to query cluster for artifacts
+   * @param resultDir existing directory to place the written log files
+   * @throws IOException when writing log files fails
+   * @throws ApiException when Kubernetes cluster query fails
+   */
   public static void generateLog(String namespace, Path resultDir) throws IOException, ApiException {
     logger.info("Collecting logs for namespace : {0}", namespace);
     // get service accounts
@@ -117,6 +160,13 @@ public class LoggingUtil {
     }
   }
 
+  /**
+   * Method to write files.
+   * @param obj to write to the file as YAML
+   * @param resultDir directory for the log location
+   * @param fileName name of the log file to write
+   * @throws IOException when write fails
+   */
   private static void writeToFile(Object obj, String resultDir, String fileName) throws IOException {
     if (obj != null) {
       logger.info("Generating {0}", Paths.get(resultDir, fileName));
@@ -126,7 +176,12 @@ public class LoggingUtil {
     }
   }
 
-  private static Set<String> getNSFromK8s() throws ApiException {
+  /**
+   * A util method to query the Kubernetes cluster to all all namespaces existing.
+   * @return Set of namespaces from the Kubernetes cluster
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static Set<String> getNSFromK8s() throws ApiException {
     Set<String> namespaceFields = new HashSet<>();
     for (var iterator
         = Kubernetes.listNamespacesAsObjects().getItems().iterator();
