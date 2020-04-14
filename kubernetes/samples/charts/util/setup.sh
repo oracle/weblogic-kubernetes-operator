@@ -12,8 +12,6 @@ VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
 DefaultVoyagerVersion=10.0.0
 
-set -x
-
 HELM_VERSION=$(helm version --short --client)
 
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
@@ -53,6 +51,7 @@ function createNameSpace() {
 function createVoyager() {
   createNameSpace $VSPACE
   echo "Creating voyager operator on namespace ${VSPACE}"
+  echo
 
   if [ "$(${helm_search_voyager} | grep voyager |  wc -l)" = 0 ]; then
     echo "Add appscode chart Repository"
@@ -64,30 +63,29 @@ function createVoyager() {
 
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 0 ]; then
     echo "Installing voyager operator."
-    
     ${v_helm_install} --version ${VoyagerVersion}  \
       --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
       --set ingressClass=voyager
   else
-    echo "Voyager operator is already installed."
+    echo "Voyager operator is already installed, so skipping the installation"
   fi 
   echo
 
-  echo "Wait until voyager operator running."
+  echo "Wait until voyager operator pod is running."
   max=20
   count=0
   vpod==$(kubectl get po -n ${VSPACE} | grep voyager | awk '{print $1 }')
   while test $count -lt $max; do
     if test "$(kubectl get po -n ${VSPACE} | grep voyager | awk '{ print $2 }')" = 1/1; then
-      echo "Voyager operator is running now."
+      echo "Voyager operator pod is running now."
       exit 0;
     fi
     count=`expr $count + 1`
     sleep 5
   done
-  echo "ERROR: Voyager operator failed to start."
+  echo "ERROR: Voyager operator pod failed to start."
   kubectl describe pod/${vpod}  -n ${VSPACE}
   exit 1
 }
@@ -109,23 +107,23 @@ function createTraefik() {
     ${t_helm_install} --namespace ${TSPACE} \
       --values ${UTILDIR}/../traefik/values.yaml
   else
-    echo "Traefik operator is already installed."
+    echo "Traefik operator is already installed, so skipping the installation"
   fi
   echo
 
-  echo "Wait until traefik operator running."
+  echo "Wait until traefik operator pod is running."
   max=20
   count=0
   tpod=$(kubectl get po -n ${TSPACE} | grep traefik | awk '{print $1 }')
   while test $count -lt $max; do
     if test "$(kubectl get po -n ${TSPACE} | grep traefik | awk '{ print $2 }')" = 1/1; then
-      echo "Traefik operator is running now."
+      echo "Traefik operator pod is running now."
       exit 0;
     fi
     count=`expr $count + 1`
     sleep 5
   done
-  echo "ERROR: Traefik operator failed to start."
+  echo "ERROR: Traefik operator pod failed to start."
   echo
   kubectl describe pod/${tpod} -n ${TSPACE}
   exit 1
