@@ -68,7 +68,8 @@ class ItSimpleDomainValidation implements LoggedTest {
             .putLabelsItem("weblogic.domainUID", domainUID));
 
     boolean success = assertDoesNotThrow(
-        () -> TestActions.createPersistentVolumeClaim(v1pvc)
+        () -> TestActions.createPersistentVolumeClaim(v1pvc),
+        "Persistent volume claim creation failed, look at the log for failure ApiException responsebody"
     );
     assertTrue(success, "PersistentVolumeClaim creation failed");
 
@@ -88,7 +89,8 @@ class ItSimpleDomainValidation implements LoggedTest {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUID", domainUID));
     success = assertDoesNotThrow(
-        () -> TestActions.createPersistentVolume(v1pv)
+        () -> TestActions.createPersistentVolume(v1pv),
+        "Persistent volume creation failed, look at the log for failure ApiException responsebody"
     );
     assertTrue(success, "PersistentVolume creation failed");
 
@@ -149,9 +151,13 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     // Delete the persistent volume claim and persistent volume
     assertDoesNotThrow(
-        () -> Kubernetes.deletePvc(pvcName, namespace));
+        () -> Kubernetes.deletePvc(pvcName, namespace),
+        "Persistent volume claim deletion failed, look at the log for failure ApiException responsebody"
+    );
     assertDoesNotThrow(
-        () -> Kubernetes.deletePv(pvName));
+        () -> Kubernetes.deletePv(pvName),
+        "Persistent volume deletion failed, look at the log for failure ApiException responsebody"
+    );
 
     // Delete namespace
     assertDoesNotThrow(

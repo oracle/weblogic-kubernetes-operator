@@ -682,7 +682,7 @@ public class Kubernetes implements LoggedTest {
       throw new IllegalArgumentException(
           "'namespace' field in the metadata cannot be null when calling createPvc()");
     }
-    logger.info("creating persistent volume claim" + persistentVolumeClaim.getMetadata().getName());
+    logger.info("creating persistent volume claim {0}", persistentVolumeClaim.getMetadata().getName());
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
 
     try {
