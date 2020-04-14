@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -169,7 +170,7 @@ public class Domain {
   }
 
   /**
-   * verify pods are created.
+   * Verify pods are created.
    *
    * @throws RuntimeException if pod is not in running state
    */
@@ -178,7 +179,7 @@ public class Domain {
   }
    
   /**
-   * verify pods are created.
+   * Verify pods are created.
    *
    * @param maxIterations max iteration count
    * @throws RuntimeException if pod is not in running state
@@ -205,16 +206,16 @@ public class Domain {
   }
 
   /**
-   * verify services are created.
+   * Verify services are created.
    *
-   * @throws Exception exception
+   * @throws Exception if service not created
    */
   public void verifyServicesCreated() throws Exception {
     verifyServicesCreated(false);
   }
   
   /**
-   * verify services are created.
+   * Verify services are created.
    * 
    * @param maxIterations max iteration counts
    *
@@ -225,7 +226,7 @@ public class Domain {
   }
 
   /**
-   * verify services are created.
+   * Verify services are created.
    *
    * @param precreateService - if true check services are created for configuredManagedServerCount
    *                         number of servers else check for initialManagedServerReplicas number of servers
@@ -265,7 +266,7 @@ public class Domain {
   }
   
   /**
-   * verify services are created.
+   * Verify services are created.
    *
    * @param precreateService - if true check services are created for configuredManagedServerCount
    *                         number of servers else check for initialManagedServerReplicas number of servers
@@ -286,7 +287,7 @@ public class Domain {
   }
   
   /**
-   * verify servers are ready.
+   * Verify servers are ready.
    * 
    * @param maxIterations max iterations count
    *
@@ -360,11 +361,11 @@ public class Domain {
   }
 
   /**
-   * verify nodeport by accessing admin REST endpoint.
+   * Verify nodeport by accessing admin REST endpoint.
    *
    * @param username username
    * @param password password
-   * @throws Exception exception
+   * @throws Exception If failed to access admin server REST endpoint
    */
   public void verifyAdminServerExternalService(String username, String password) throws Exception {
 
@@ -409,7 +410,7 @@ public class Domain {
    * @param protocol protocol
    * @param port     port
    * @param path     path
-   * @throws Exception exception
+   * @throws Exception If can't find channel port
    */
   public void verifyHasClusterServiceChannelPort(String protocol, int port, String path)
       throws Exception {
@@ -477,9 +478,9 @@ public class Domain {
   }
 
   /**
-   * deploy webapp using nodehost and nodeport.
+   * Deploy webapp using nodehost and nodeport.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to deploy the app
    */
   public void deployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
@@ -511,9 +512,9 @@ public class Domain {
   }
 
   /**
-   * undeploy webapp using nodehost and nodeport.
+   * Undeploy webapp using nodehost and nodeport.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to undeploy the app
    */
   public void undeployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
@@ -542,11 +543,11 @@ public class Domain {
 
 
   /**
-   * deploy webapp using t3 channel port for wlst.
+   * Deploy webapp using t3 channel port for wlst.
    *
    * @param webappName       webappName
    * @param appLocationInPod appLocation
-   * @throws Exception exception
+   * @throws Exception if failed to undeploy the app
    */
   public void undeployWebAppViaWlst(
       String webappName,
@@ -556,12 +557,12 @@ public class Domain {
   }
 
   /**
-   * undeploy webapp using adminPort or t3 channel port.
+   * Undeploy webapp using adminPort or t3 channel port.
    *
    * @param webappName           webappName
    * @param appLocationInPod     appLocationInPod
    * @param useAdminPortToDeploy useAdminPortToDeploy
-   * @throws Exception exception
+   * @throws Exception if failed to undeploy app
    */
   public void undeployWebAppViaWlst(
       String webappName,
@@ -602,13 +603,13 @@ public class Domain {
   }
 
   /**
-   * deploy webapp using t3 channel port for wlst.
+   * Deploy webapp using t3 channel port for wlst.
    *
    * @param webappName     webappName
    * @param webappLocation webappLocation
    * @param username       username
    * @param password       password
-   * @throws Exception exception
+   * @throws Exception if deployment failed
    */
   public void deployWebAppViaWlst(
       String webappName,
@@ -621,7 +622,7 @@ public class Domain {
   }
 
   /**
-   * deploy webapp using adminPort or t3 channel port.
+   * Deploy webapp using adminPort or t3 channel port.
    *
    * @param webappName           webappName
    * @param webappLocation       webappLocation
@@ -629,7 +630,7 @@ public class Domain {
    * @param username             username
    * @param password             password
    * @param useAdminPortToDeploy useAdminPortToDeploy
-   * @throws Exception exception
+   * @throws Exception If deployment failed
    */
   public void deployWebAppViaWlst(
       String webappName,
@@ -681,7 +682,7 @@ public class Domain {
    * Creates a Connection Factory using JMS.
    *
    * @return connection factory.
-   * @throws Exception exception
+   * @throws Exception If failed to create the factory
    */
   public ConnectionFactory createJmsConnectionFactory() throws Exception {
     Hashtable<String, String> env = new Hashtable<>();
@@ -702,7 +703,7 @@ public class Domain {
    * Test http load balancing using loadBalancerWebPort.
    *
    * @param webappName webappName
-   * @throws Exception exception
+   * @throws Exception If failed to verify LB
    */
   public void verifyWebAppLoadBalancing(String webappName) throws Exception {
     // webapp is deployed with t3channelport, so check if that is true
@@ -715,11 +716,11 @@ public class Domain {
   }
 
   /**
-   * call webapp and verify load balancing by checking server name in the response.
+   * Call webapp and verify load balancing by checking server name in the response.
    *
    * @param webappName        webappName
    * @param verifyLoadBalance verifyLoadBalance
-   * @throws Exception exception
+   * @throws Exception If failed to access the application or verify LB
    */
   public void callWebAppAndVerifyLoadBalancing(String webappName, boolean verifyLoadBalance)
       throws Exception {
@@ -755,9 +756,9 @@ public class Domain {
   }
 
   /**
-   * create domain crd.
+   * Create domain crd.
    *
-   * @throws Exception exception
+   * @throws Exception If failed to create domain crd
    */
   public void create() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl create -f ");
@@ -774,9 +775,9 @@ public class Domain {
   }
 
   /**
-   * delete domain crd using yaml.
+   * Delete domain crd using yaml.
    *
-   * @throws Exception exception
+   * @throws Exception If failed to delete crd
    */
   public void destroy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -806,9 +807,9 @@ public class Domain {
   }
 
   /**
-   * delete domain using domain name.
+   * Delete domain using domain name.
    *
-   * @throws Exception exception
+   * @throws Exception If failed to delete domain
    */
   public void shutdown() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -818,9 +819,9 @@ public class Domain {
   }
 
   /**
-   * shutdown domain by setting serverStartPolicy to NEVER.
+   * Shutdown domain by setting serverStartPolicy to NEVER.
    *
-   * @throws Exception exception
+   * @throws Exception If failed to shutdown the server
    */
   public void shutdownUsingServerStartPolicy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -830,9 +831,9 @@ public class Domain {
   }
 
   /**
-   * restart domain by setting serverStartPolicy to IF_NEEDED.
+   * Restart domain by setting serverStartPolicy to IF_NEEDED.
    *
-   * @throws Exception exception
+   * @throws Exception If failed to restart
    */
   public void restartUsingServerStartPolicy() throws Exception {
     String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
@@ -842,9 +843,9 @@ public class Domain {
   }
 
   /**
-   * add precreateService true in domain.yaml.
+   * Add precreateService true in domain.yaml.
    *
-   * @throws Exception exception
+   * @throws Exception If failed to verify that precreate service is created
    */
   public void enablePrecreateService() throws Exception {
     String patchStr = "'{\"spec\":{\"serverService\":{\"precreateService\":true}}}'";
@@ -853,10 +854,10 @@ public class Domain {
   }
 
   /**
-   * verify domain is deleted.
+   * Verify domain is deleted.
    *
    * @param replicas replicas
-   * @throws Exception exception
+   * @throws Exception If domain is not deleted
    */
   public void verifyDomainDeleted(int replicas) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Inside verifyDomainDeleted, replicas " + replicas);
@@ -901,7 +902,7 @@ public class Domain {
   }
 
   /**
-   * delete PVC and check PV status.
+   * Delete PVC and check PV status.
    * @param jobName job name
    * @throws Exception on failure
    */
@@ -930,9 +931,9 @@ public class Domain {
   }
 
   /**
-   * create domain on existing directory.
+   * Create domain on existing directory.
    *
-   * @throws Exception exception
+   * @throws Exception if domain job does not fail when domain home dir exists
    */
   public void createDomainOnExistingDirectory() throws Exception {
 
@@ -982,9 +983,9 @@ public class Domain {
   }
 
   /**
-   * access admin console using load balancer web port for Apache load balancer.
+   * Access admin console using load balancer web port for Apache load balancer.
    *
-   * @throws Exception exception
+   * @throws Exception If failed to access the console via LB
    */
   public void verifyAdminConsoleViaLB() throws Exception {
     if (!loadBalancer.equals("APACHE")) {
@@ -1069,7 +1070,7 @@ public class Domain {
    *
    * @param clusterName cluster name
    * @return number of server addresses
-   * @throws Exception exception
+   * @throws Exception If failed to retrieve cluster svc
    */
   public int getNumberOfServersInClusterServiceEndpoint(String clusterName) throws Exception {
     StringBuffer cmd = new StringBuffer();
@@ -1391,9 +1392,9 @@ public class Domain {
   }
 
   /**
-   * verify that managed server pods get restarted.
+   * Verify that managed server pods get restarted.
    *
-   * @throws Exception exception
+   * @throws Exception if failed to verify managed server to restart
    */
   public void verifyManagedServersRestarted() throws Exception {
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
@@ -1581,8 +1582,9 @@ public class Domain {
     //create configmap for MII
     createMiiConfigMap("miiConfigMap", "miiConfigMapFileOrDir");
 
-    // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
+    // write configOverride, shutdownOptionsOverrides and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
+        || domainMap.containsKey("shutdownOptionsOverrides")
         || !createDomainResource) {
       appendToDomainYamlAndCreate();
     }
@@ -2005,7 +2007,7 @@ public class Domain {
   }
 
   /**
-   * Append configOverrides and configOverrideSecrets section to the generated domain.yaml and
+   * Append configOverrides, shutdownOptionsOverrides and configOverrideSecrets section to the generated domain.yaml and
    * create the domain crd by calling kubectl create on the generated domain.yaml.
    *
    * @throws Exception if any error occurs writing to the file or if could not run kubectl create
@@ -2031,13 +2033,54 @@ public class Domain {
       Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
     }
 
+    if (domainMap.containsKey("shutdownOptionsOverrides")) {
+      Map<String, Object> shutdownProps = (Map<String, Object>)domainMap.get("shutdownOptionsOverrides");
+      DomainCrd crd = new DomainCrd(domainYaml);
+      if (shutdownProps.containsKey("cluster")) {
+        List<Map<String, Object>> shutdownPropsClusters = (List<Map<String, Object>>)shutdownProps.get("cluster");
+        for (Map<String, Object> shutdownPropsCluster : shutdownPropsClusters) {
+          for (Map.Entry<String, Object> entry : shutdownPropsCluster.entrySet()) {
+            crd.addShutdownOptionsToCluster(entry.getKey(),(Map<String, Object>)entry.getValue());
+
+          }
+        }
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with cluster level shutdownoptions");
+      }
+      if (shutdownProps.containsKey("server")) {
+        List<Map<String, Object>> shutdownPropsServers = (List<Map<String, Object>>)shutdownProps.get("server");
+        for (Map<String, Object> shutdownPropsServer : shutdownPropsServers) {
+          for (Map.Entry<String, Object> entry : shutdownPropsServer.entrySet()) {
+            crd.addShutDownOptionToMS(entry.getKey(),(Map<String, Object>)entry.getValue());
+          }
+        }
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with server level shutdownoptions");
+      }
+      if (shutdownProps.containsKey("domain")) {
+        Map<String, Object> shutdownPropsDomain = (Map<String, Object>)shutdownProps.get("domain");
+        crd.addShutdownOptionToDomain(shutdownPropsDomain);
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with domain level shutdownoptions");
+      }
+      if (shutdownProps.containsKey("env")) {
+        Map<String, String> shutdownPropsEnv = (Map<String, String>)shutdownProps.get("env");
+        crd.addEnvOption(shutdownPropsEnv);
+        LoggerHelper.getLocal().log(Level.INFO, "domain.yaml is modified with env level shutdownoptions");
+      }
+
+      Charset charset = StandardCharsets.UTF_8;
+      Path path = Paths.get(domainYaml);
+      String modYaml = crd.getYamlTree();
+      Files.write(path, modYaml.getBytes(charset));
+      LoggerHelper.getLocal().log(Level.INFO, "Shutdown options are added to domain.yaml ");
+
+    }
+
     String command = "kubectl create -f " + domainYaml;
     ExecResult result = TestUtils.exec(command);
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + result.stdout().trim());
   }
 
   /**
-   * hostname for curl.
+   * Hostname for curl.
    * @return hostname
    * @throws Exception on failure
    */
@@ -2149,7 +2192,9 @@ public class Domain {
 
     // skip executing yaml if configOverrides or domain in image
     if (!domainMap.containsKey("configOverrides")
-        && !domainMap.containsKey("domainHomeImageBase") && createDomainResource) {
+        && !domainMap.containsKey("domainHomeImageBase")
+        && !domainMap.containsKey("shutdownOptionsOverrides")
+        && createDomainResource) {
       createDomainScriptCmd.append(" -e ");
     }
 
@@ -2204,7 +2249,7 @@ public class Domain {
    * Shut down a ms by setting serverStartPolicy to NEVER.
    *
    * @param msName - a managed server name to be stopped
-   * @throws Exception exception
+   * @throws Exception If fails to shutdown the server
    */
   public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "About to shutdown managed server <" + msName + ">");
@@ -2221,7 +2266,7 @@ public class Domain {
    * Restart a ms by setting serverStartPolicy to IF_NEEDED.
    *
    * @param msName - a managed server name to be started
-   * @throws Exception exception
+   * @throws Exception If fails to restart the server
    */
   public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "About to restart managed server <" + msName + "> ");
@@ -2244,7 +2289,7 @@ public class Domain {
    * @param username   - weblogic user name
    * @param password   - weblogc password
    * @param args       - optional args to add for script if needed
-   * @throws Exception exception
+   * @throws Exception If fails to execute the script
    */
   public void callShellScriptToBuildDeployAppInPod(
       String webappName, String scriptName, String username, String password, String... args)
@@ -2315,7 +2360,7 @@ public class Domain {
    * @param successMarker   output string from script that indicates success
    * @param scriptPathInPod - bash script path name in the pod
    * @param args            - optional args to add for script if needed
-   * @throws Exception exception
+   * @throws Exception If shell script fails to execute
    */
   public void callShellScriptInAdminPod(
       String successMarker, String scriptPathInPod, String... args)
@@ -2361,10 +2406,10 @@ public class Domain {
 
 
   /**
-   * create config map and label with domainUid and create secret used in custom situational
+   * Create config map and label with domainUid and create secret used in custom situational
    * configuration which contains hostname, db user, db password.
    *
-   * @throws Exception when any of the kubectl commands to create config map, label, secret fails or
+   * @throws Exception When any of the kubectl commands to create config map, label, secret fails or
    *                   if could not run them
    */
   private void createConfigMapAndSecretForSitConfig() throws Exception {
@@ -2425,7 +2470,7 @@ public class Domain {
    * @param password   - weblogc password
    * @param args       - by default, a WAR file is created for a Web App and a EAR file is created for EJB
    *                   App. this varargs gives a client a chance to change EJB's archive extenyion to JAR
-   * @throws Exception exception
+   * @throws Exception If failed to build or deploy the app
    */
   public void buildDeployJavaAppInPod(
       String appName, String scriptName, String username, String password, String... args)
@@ -2504,9 +2549,9 @@ public class Domain {
   }
 
   /**
-   * write server pod logs
+   * Write server pod logs.
    *
-   * @throws Exception exception
+   * @throws Exception If can't retrieve the logs
    */
   public void logServerPods() throws Exception {
     // check admin pod

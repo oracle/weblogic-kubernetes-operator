@@ -80,12 +80,13 @@ public class DomainSpec extends BaseConfiguration {
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
-   * The in-pod name of the directory to store the domain, node manager, server logs, and server
-   * .out files in.
+   * The in-pod name of the directory to store the domain, Node Manager, server logs, server
+   * .out, and HTTP access log files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, node manager, server logs, "
-          + "and server  *.out files. Defaults to /shared/logs/<domainUID>. Ignored if logHomeEnabled is false.")
+      "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
+          + "server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
+          + "Ignored if logHomeEnabled is false.")
   private String logHome;
 
   /**
@@ -110,8 +111,15 @@ public class DomainSpec extends BaseConfiguration {
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), the server .out file will be included in the pod's stdout.")
+  @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
+
+  /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
+   *  if {@link #logHomeEnabled} is true. Default is true. */
+  @Description("If true (the default), then server HTTP access log files will be written to the same "
+      + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
+      + "the directory configured in the WebLogic domain home configuration.")
+  private Boolean httpAccessLogInLogHome;
 
   /**
    * The WebLogic Docker image.
@@ -491,6 +499,24 @@ public class DomainSpec extends BaseConfiguration {
 
   public DomainSpec withIncludeServerOutInPodLog(boolean includeServerOutInPodLog) {
     this.includeServerOutInPodLog = includeServerOutInPodLog;
+    return this;
+  }
+
+  /**
+   * Whether to write server HTTP access log files to the directory specified in
+   * {@link #logHome} if {@link #logHomeEnabled} is true.
+   *
+   * @return true if server HTTP access log files should be included in the directory
+   *     specified in {@link #logHome}, false if server HTTP access log files should be written
+   *     to the directory as configured in the WebLogic domain home configuration
+   */
+  boolean getHttpAccessLogInLogHome() {
+    return Optional.ofNullable(httpAccessLogInLogHome)
+        .orElse(KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME);
+  }
+
+  public DomainSpec withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
+    this.httpAccessLogInLogHome = httpAccessLogInLogHome;
     return this;
   }
 

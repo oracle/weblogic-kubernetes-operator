@@ -1203,6 +1203,10 @@ window.onload = function() {
             "FromModel"
           ]
         },
+        "httpAccessLogInLogHome": {
+          "description": "If true (the default), then server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain home configuration.",
+          "type": "boolean"
+        },
         "webLogicCredentialsSecret": {
           "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namespace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
@@ -1212,11 +1216,11 @@ window.onload = function() {
           "$ref": "#/definitions/AdminServer"
         },
         "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files. Defaults to /shared/logs/\u003cdomainUID\u003e. Ignored if logHomeEnabled is false.",
+          "description": "The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if logHomeEnabled is false.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
-          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
+          "description": "If true (the default), then the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
         },
         "clusters": {

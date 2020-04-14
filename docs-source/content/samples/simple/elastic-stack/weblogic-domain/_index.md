@@ -18,7 +18,7 @@ Here's the general mechanism for how this works:
 
 ##### Sample code
 
-The samples in this document assume an existing domain is being edited.  However, all changes to the domain YAML can be performed before the domain is created.
+The samples in this document assume an existing domain is being edited.  However, all changes to the domain YAML file can be performed before the domain is created.
 
 For sample purposes, this document will assume a domain with the following attributes is being configured:
 
@@ -39,7 +39,7 @@ The domain log files must be written to a volume that can be shared between the 
 
 * `logHome` must be a path that can be shared between containers
 * `logHomeEnabled` must be set to `true` so that the logs will be written outside the pod and persist across pod restarts
-* A `volume` must be defined that the log files will reside on.  In the example, `emptyDir` is a volume that gets created empty when a Pod is created.  It will persist across pod restarts but deleting the pod would delete the `emptyDir` content.
+* A `volume` must be defined on which the log files will reside.  In the example, `emptyDir` is a volume that gets created empty when a pod is created.  It will persist across pod restarts but deleting the pod would delete the `emptyDir` content.
 * The `volumeMounts` mounts the named volume created with `emptyDir` and establishes the base path for accessing the volume.
 
 **NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
@@ -121,7 +121,7 @@ data:
         format12 / <(?<messageID>(.*?))>/
         format13 / <(?<message>(.*?))>/
         # use the timestamp field in the message as the timestamp
-        # instead of the time the message was actually read 
+        # instead of the time the message was actually read
         time_key timestamp
         keep_time_key true
       </parse>
@@ -135,7 +135,7 @@ data:
       index_name "#{ENV['DOMAIN_UID']}"
       scheme https
       ssl_version TLSv1_2
-      key_name timestamp 
+      key_name timestamp
       types timestamp:time
       # inject the @timestamp special field (as type time) into the record
       # so you will be able to do time based queries.

@@ -8,7 +8,7 @@ pre = "<b> </b>"
 
 Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
 
-1. Create the domain namespace(s).  One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
+1. Create the domain namespace or namespaces.  One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
 
     ```
     $ kubectl create namespace domain-namespace-1
@@ -30,11 +30,11 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
 
     * Replace `domain-namespace-1` with the namespace that the domain will be in.
     * Replace `domain1-weblogic-credentials` with the name of the secret.  The operator expects the secret name to be
-      the `domainUID` followed by the literal string `-weblogic-credentials` and many of the samples assume this name.
+      the `domainUID` followed by the literal string `-weblogic-credentials`, and many of the samples assume this name.
     * Replace the string `username` in the third line with the user name for the administrative user.
     * Replace the string `password` in the fourth line with the password.
 
 1. Optionally, [create a PV & persistent volume claim (PVC)]({{< relref "/samples/simple/storage/_index.md" >}}) which can hold the domain home, logs, and application binaries.
    Even if you put your domain in a Docker image, you may want to put the logs on a persistent volume so that they are available after the pods terminate.
    This may be instead of, or as well as, other approaches like streaming logs into Elasticsearch.
-1. Optionally, [configure load balancer(s)](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/README.md) to manage access to any WebLogic clusters.
+1. Optionally, [configure load balancer](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/README.md) to manage access to any WebLogic clusters.
