@@ -1,0 +1,100 @@
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: %DOMAIN_UID%-update-weblogic-sample-domain-job
+  namespace: %NAMESPACE%
+spec:
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        weblogic.resourceVersion: domain-v2
+        weblogic.domainUID: %DOMAIN_UID%
+        weblogic.domainName: %DOMAIN_NAME%
+        app: %DOMAIN_UID%-update-weblogic-sample-domain-job
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: fix-pvc-owner
+          image: %WEBLOGIC_IMAGE%
+          command: ["sh", "-c", "chown -R 1000:1000 %DOMAIN_ROOT_DIR%"]
+          volumeMounts:
+          - name: weblogic-sample-domain-storage-volume
+            mountPath: %DOMAIN_ROOT_DIR%
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+      containers:
+        - name: update-weblogic-sample-domain-job
+          image: %WEBLOGIC_IMAGE%
+          imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
+          ports:
+            - containerPort: 7001
+          volumeMounts:
+          - mountPath: %CREATE_DOMAIN_SCRIPT_DIR%
+            name: update-weblogic-sample-domain-job-cm-volume
+          - mountPath: %DOMAIN_ROOT_DIR%
+            name: weblogic-sample-domain-storage-volume
+          - mountPath: /weblogic-operator/secrets
+            name: weblogic-credentials-volume
+          command: ["/bin/sh"]
+          args: ["%CREATE_DOMAIN_SCRIPT_DIR%/%CREATE_DOMAIN_SCRIPT%"]
+          env:
+            - name: DOMAIN_UID
+              value: "%DOMAIN_UID%"
+            - name: DOMAIN_NAME
+              value: "%DOMAIN_NAME%"
+            - name: ADMIN_SERVER_NAME
+              value: "%ADMIN_SERVER_NAME%"
+            - name: ADMIN_SERVER_NAME_SVC
+              value: "%ADMIN_SERVER_NAME_SVC%"
+            - name: ADMIN_PORT
+              value: "%ADMIN_PORT%"
+            - name: CLUSTER_NAME
+              value: "%CLUSTER_NAME%"
+            - name: CLUSTER_TYPE
+              value: "DYNAMIC"
+            - name: T3_CHANNEL_PORT
+              value: "%T3_CHANNEL_PORT%"
+            - name: T3_PUBLIC_ADDRESS
+              value: "%T3_PUBLIC_ADDRESS%"
+            - name: MANAGED_SERVER_NAME_BASE_SVC
+              value: "%MANAGED_SERVER_NAME_BASE_SVC%"
+            - name: MANAGED_SERVER_NAME_BASE
+              value: "%MANAGED_SERVER_NAME_BASE%"
+            - name: CONFIGURED_MANAGED_SERVER_COUNT
+              value: "%CONFIGURED_MANAGED_SERVER_COUNT%"
+            - name: MANAGED_SERVER_PORT
+              value: "%MANAGED_SERVER_PORT%"
+            - name: PRODUCTION_MODE_ENABLED
+              value: "%PRODUCTION_MODE_ENABLED%"
+            - name: CREATE_DOMAIN_SCRIPT_DIR
+              value: "%CREATE_DOMAIN_SCRIPT_DIR%"
+            - name: DOMAIN_ROOT_DIR
+              value: "%DOMAIN_ROOT_DIR%"
+            - name: DOMAIN_HOME_DIR
+              value: "%DOMAIN_HOME%"
+            - name: DOMAIN_LOGS_DIR
+              value: "%DOMAIN_ROOT_DIR%/logs/%DOMAIN_UID%"
+            - name: ISTIO_ENABLED
+              value: "%ISTIO_ENABLED%"
+            - name: ISTIO_READINESS_PORT
+              value: "%ISTIO_READINESS_PORT%"
+            - name: WDT_VERSION
+              value: %WDT_VERSION%
+      volumes:
+        - name: update-weblogic-sample-domain-job-cm-volume
+          configMap:
+            name: %DOMAIN_UID%-update-weblogic-sample-domain-job-cm
+        - name: weblogic-sample-domain-storage-volume
+          persistentVolumeClaim:
+            claimName: %DOMAIN_PVC_NAME%
+        - name: weblogic-credentials-volume
+          secret:
+            secretName: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
+      %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+      %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%

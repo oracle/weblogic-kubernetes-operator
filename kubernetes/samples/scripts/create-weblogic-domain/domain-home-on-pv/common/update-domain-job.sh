@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 function exitIfError {
@@ -17,10 +17,9 @@ script=${CREATE_DOMAIN_SCRIPT_DIR}/create-domain-script.sh
 
 checkCreateDomainScript $script
 checkDomainSecret
-prepareDomainHomeDir
 
 # Execute the script to create the domain
-source $script create
+source $script update
 exitIfError $? "ERROR: $script failed."
 
 # DON'T REMOVE THIS

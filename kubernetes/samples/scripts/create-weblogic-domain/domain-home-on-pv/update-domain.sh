@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -79,7 +79,7 @@ function initOutputDir {
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  #removeFileIfExists ${domainOutputDir}/${valuesInputFile}
+  removeFileIfExists ${domainOutputDir}/${valuesInputFile}
   removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
   removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
@@ -99,7 +99,6 @@ function initialize {
   if [ -z "${valuesInputFile}" ]; then
     validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml)."
   else
-  
     checkInputFiles
     #if [ ! -f ${valuesInputFile} ]; then
     #  validationError "Unable to locate the input parameters file ${valuesInputFile}"
@@ -110,7 +109,7 @@ function initialize {
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
   fi
 
-  createJobInput="${scriptDir}/create-domain-job-template.yaml"
+  createJobInput="${scriptDir}/update-domain-job-template.yaml"
   if [ ! -f ${createJobInput} ]; then
     validationError "The template file ${createJobInput} for creating a WebLogic domain was not found"
   fi
@@ -155,18 +154,17 @@ function createDomainConfigmap {
   # this inputs file can be used by the scripts, such as WDT, that creates the WebLogic
   # domain in the job.
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
-  #echo domainName: $domainName >> ${externalFilesTmpDir}/${valuesInputFile}
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
    bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
   fi
  
   # Now that we have the model file in the domainoutputdir/tmp,
-  # we can add the kubernetes section to the model file. 
+  # we can add the kubernetes section to the model file.
   updateModelFile
 
   # create the configmap and label it properly
-  local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
+  local cmName=${domainUID}-update-weblogic-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run -o yaml | kubectl apply -f -
 
   echo Checking the configmap $cmName was created
@@ -184,35 +182,34 @@ function createDomainConfigmap {
 #
 # Function to run the job that creates the domain
 #
-function createDomainHome {
+function updateDomainHome {
 
   # create the config map for the job
   createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  CONTAINER_NAME="create-weblogic-sample-domain-job"
+  CONTAINER_NAME="update-weblogic-sample-domain-job"
   JOB_NAME="${domainUID}-${CONTAINER_NAME}"
   deleteK8sObj job $JOB_NAME ${createJobOutput}
 
-  echo Creating the domain by creating the job ${createJobOutput}
+  echo update the domain by creating the job ${createJobOutput}
   kubectl create -f ${createJobOutput}
 
   POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
   echo "Waiting for results to be available from $POD_NAME"
   kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
-  #echo "Fetching results"
   sleep 30
   max=30
   count=0
-  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
-  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domaincreate.yaml"
+  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
+  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domainupdate.yaml"
   while [ $? -eq 1 -a $count -lt $max ]; do
     sleep 5
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
+    #kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
     count=`expr $count + 1`
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domaincreate.yaml"
+    kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domainupdate.yaml"
   done
-  kubectl cp $POD_NAME:/shared/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
+  kubectl cp $POD_NAME:/shared/wdt/domainupdate.yaml ${domainOutputDir}/domain.yaml
   touch donee
   kubectl cp donee $POD_NAME:/shared/wdt/
   rm -rf donee
@@ -281,7 +278,6 @@ function printSummary {
   fi
   echo "The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
-  #echo "  ${domainOutputDir}/${valuesInputFile}"
   echo "  ${createJobOutput}"
   echo "  ${dcrOutput}"
   echo ""
@@ -289,5 +285,5 @@ function printSummary {
 }
 
 # Perform the sequence of steps to create a domain
-createDomain false
+updateDomain false
 
