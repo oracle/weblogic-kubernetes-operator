@@ -16,8 +16,11 @@ function tracen() {
 function cleanDanglingDockerImages() {
   trace "Cleaning dangling docker images (if any)."
   if [ ! -z "$(docker images -f "dangling=true" -q)" ]; then
+    # TBD do we need the rmi command  if we do the prunes below?
     docker rmi -f $(docker images -f "dangling=true" -q)
   fi
+  docker container prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
+  docker image prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
 }
 
 # doCommand()

@@ -19,7 +19,7 @@ set -eu
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
-# This step downloads the latest WebLogic Deploy Tool and WebLogic Image Tool in the current directory
+# This step downloads the latest WebLogic Deploy Tool and WebLogic Image Tool to WORKDIR.
 # If this is run behind a proxy, then environment variables http_proxy and https_proxy must be set.
 
 $SCRIPTDIR/stage-tooling.sh
@@ -28,14 +28,9 @@ $SCRIPTDIR/stage-tooling.sh
 
 $SCRIPTDIR/stage-model.sh
 
-# This step obtains a base image using a docker pull (WebLogic with patches).
-
-$SCRIPTDIR/stage-base-image.sh
-
-# This step builds a model image. By default, it builds in the 
-# base image setup by ./stage-base-iamge.sh, embeds the
-# model files in WORKDIR/model that was setup by ./stage-model.sh and embeds the 
-# WebLogic Deploy Tool that was downloaded by ./stage-tooling.sh.
+# This step builds a model image. It pulls a base image if there isn't already
+# a local base image, and, by default, builds the model image using model files from
+# ./stage-model.sh plus tooling that was downloaded by ./stage-tooling.sh.
 
 $SCRIPTDIR/build-model-image.sh
 

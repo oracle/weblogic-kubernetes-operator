@@ -2,19 +2,19 @@
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-#  This script uses the WebLogic Image Tool to build a Docker image with model in image
-#  artifacts. By default, it uses the base image obtained earlier with stage-base-image.sh,
-#  and it gets model files from the WORKDIR/model directory that was setup by the stage-model.sh script.
+# 
+#  Summary:
 #
-#  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG. 
+#    This script builds a model image. It pulls a base image if there isn't already
+#    a local base image, and, by default, builds the model image using model files from
+#    ./stage-model.sh plus tooling that was downloaded by ./stage-tooling.sh.
 #
 #  Assumptions:
 #
-#    This script should be called by build.sh.
-#    The WebLogic Image Tool is downloaded to WORKDIR/weblogic-image-tool.zip (see ./stage-tooling.sh).
-#    The WebLogic Deploy Tool is downloaded to WORKDIR/weblogic-deploy-tooling.zip (see ./stage-tooling.sh).
-#    Model files have been staged in the "WORKDIR/model" directory (see ./stage-model.sh) or
-#    MODEL_DIR has been explicitly set to point to a different location.
+#    - The WebLogic Image Tool zip is 'WORKDIR/weblogic-image-tool.zip' and the WebLogic
+#      Deploy Tool zip is 'WORKDIR/weblogic-deploy-tooling.zip' (see ./stage-tooling.sh).
+#    - Model files have been staged in the 'WORKDIR/model' directory (see ./stage-model.sh) or
+#      MODEL_DIR has been explicitly set to point to a different location.
 #
 #  Optional environment variables:
 #
@@ -24,7 +24,7 @@
 #
 #    MODEL_DIR:
 #      Location of the model .zip, .properties, and .yaml files
-#      that will be copied in to the model image.  Default is 'WORKDIR/model'
+#      that will be copied to the model image.  Default is 'WORKDIR/model'
 #      which is populated by the ./stage-model.sh script.
 #
 #    MODEL_YAML_FILES, MODEL_ARCHIVE_FILES, MODEL_VARIABLES_FILES:
@@ -32,14 +32,21 @@
 #      locations to override the corresponding .yaml, .zip, and .properties
 #      files normally obtained from MODEL_DIR.
 #
+#    MODEL_IMAGE_BUILD:
+#      Set to 'when-changed' (default) or 'always'. Default behavior is to skip
+#      image build if there's an existing model image with the same specified
+#      model, tooling, and base image as the previous run.
+#
+#    BASE_IMAGE_NAME, BASE_IMAGE_TAG:
+#      The base image name defaults to 
+#         'container-registry.oracle.com/middleware/weblogic'
+#      for the 'WLS' domain type, and otherwise defaults to 
+#         'container-registry.oracle.com/middleware/fmw-infrastructure'. 
+#      The tag defaults to '12.2.1.4'.
+#
 #    WDT_DOMAIN_TYPE   - WLS (default), RestrictedJRF, or JRF
-#    BASE_IMAGE_NAME   - defaults to container-registry.oracle.com/middleware/weblogic for
-#                        the 'WLS' domain type, and otherwise defaults to
-#                        container-registry.oracle.com/middleware/fmw-infrastructure
-#    BASE_IMAGE_TAG    - defaults to 12.2.1.4
 #    MODEL_IMAGE_NAME  - defaults to 'model-in-image'
 #    MODEL_IMAGE_TAG   - defaults to 'v1'
-#    MODEL_IMAGE_BUILD - 'when-missing' or 'always' (default)
 #
 
 set -eu
@@ -65,25 +72,14 @@ case "$WDT_DOMAIN_TYPE" in
   *)
     echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1 ;;
 esac
-
 BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
+BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
-MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
+MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 
-if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
-   [ "`docker images $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG`" = "1" ]; then
-  echo @@
-  echo "@@ Info: --------------------------------------------------------------------------------------------------"
-  echo "@@ Info: NOTE!!!                                                                                           "
-  echo "@@ Info:   Skipping model image build because image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG' already exists.   "
-  echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.                             "
-  echo "@@ Info: --------------------------------------------------------------------------------------------------"
-  echo @@
-  sleep 3
-  exit 0
-fi
+MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
 
 echo @@
 echo @@ Info: Obtaining model files
@@ -97,6 +93,56 @@ MODEL_VARIABLE_FILES="${MODEL_VARIABLE_FILES:-$(ls $MODEL_DIR/*.properties | xar
 echo @@ MODEL_YAML_FILES=${MODEL_YAML_FILES}
 echo @@ MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
 echo @@ MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
+echo @@
+echo @@ BASE_IMAGE_NAME=${BASE_IMAGE_NAME}
+echo @@ BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
+echo @@
+echo @@ MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
+echo @@ MODEL_IMAGE_TAG=${MODEL_IMAGE_NAME}
+echo @@
+
+#
+# Exit early if there's a current model image that has the same model files, tooling,
+# and base image.
+#
+
+function modelImageCksum {
+  (
+  set +e
+  echo "This file is used by the $(basename $0) script to determine if a model image rebuild is needed. The script checks if any of the following changed since the last run:"
+  md5sum weblogic-image-tool.zip
+  md5sum weblogic-deploy-tooling.zip
+  for file in ${MODEL_YAML_FILES} ${MODEL_ARCHIVE_FILES} ${MODEL_VARIABLE_FILES} ; do
+    md5sum $file
+  done
+  echo "Base docker image: $BASE_IMAGE $(docker images -q $BASE_IMAGE)"
+  echo "Model docker image: $MODEL_IMAGE $(docker images -q $MODEL_IMAGE)"
+  exit 0
+  )
+}
+
+cksum_file_orig=$WORKDIR/$(basename $0).cksum
+cksum_file_tmp=${cksum_file_orig}_tmp
+modelImageCksum > ${cksum_file_tmp} 2>&1
+
+if [ ! "$MODEL_IMAGE_BUILD" = "always" ]; then
+  if [ -e ${cksum_file_orig} ] && [ "$(cat ${cksum_file_tmp})" = "$(cat ${cksum_file_orig})" ]; then
+    rm ${cksum_file_tmp}
+    echo "@@"
+    echo "@@ Info: --------------------------------------------------------------------------------------------------"
+    echo "@@ Info: NOTE!!!                                                                                           "
+    echo "@@ Info:   Skipping model image build because existing model files, tool files, base image, and            "
+    echo "@@ Info:   model image are unchanged since the last build.                                                 "
+    echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.                             "
+    echo "@@ Info: --------------------------------------------------------------------------------------------------"
+    echo "@@"
+    echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Checksum for build is in 'WORKDIR/$(basename $0).cksum'."
+    echo "@@"
+    exit 0
+  fi
+fi
+
+rm -f ${cksum_file_orig} ${cksum_file_tmp}
 
 echo @@
 echo @@ Info: Setting up imagetool and populating its caches
@@ -111,12 +157,16 @@ IMGTOOL=${WORKDIR}/imagetool/bin/imagetool.sh
 export WLSIMG_CACHEDIR=${WORKDIR}/cache
 export WLSIMG_BLDDIR=${WORKDIR}
 
+set -x
+
 ${IMGTOOL} cache deleteEntry --key wdt_myversion
 ${IMGTOOL} cache addInstaller \
   --type wdt --version myversion --path ${WORKDIR}/weblogic-deploy-tooling.zip
 
+set +x
+
 echo "@@"
-echo "@@ Info: Starting model image build for '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'"
+echo "@@ Info: Starting model image build for '$MODEL_IMAGE'"
 echo "@@"
 
 #
@@ -127,12 +177,22 @@ echo "@@"
 
 # TBD test empty cases, even all three empty
 
+set -x
+
 ${IMGTOOL} update \
-  --tag $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG \
-  --fromImage $BASE_IMAGE_NAME:$BASE_IMAGE_TAG \
+  --tag $MODEL_IMAGE \
+  --fromImage $BASE_IMAGE \
   ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \
   ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \
   ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \
   --wdtModelOnly \
   --wdtVersion myversion \
   --wdtDomainType ${WDT_DOMAIN_TYPE}
+
+set +x
+
+modelImageCksum > ${cksum_file_orig} 2>&1
+
+echo "@@"
+echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Checksum for build is in 'WORKDIR/$(basename $0).cksum'."
+echo "@@"
