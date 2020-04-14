@@ -233,18 +233,24 @@ public class Kubernetes implements LoggedTest {
    */
   public static String getPodLog(String name, String namespace, String container)
       throws ApiException {
-    String log = coreV1Api.readNamespacedPodLog(
-        name, // name of the Pod
-        namespace, // name of the Namespace
-        container, // container for which to stream logs
-        null, //  true/false Follow the log stream of the pod
-        null, // number of bytes to read from the server before terminating the log output
-        PRETTY, // pretty print output
-        null, // true/false, Return previous terminated container logs
-        null, // relative time (seconds) before the current time from which to show logs
-        null, // number of lines from the end of the logs to show
-        null // true/false, add timestamp at the beginning of every line of log output
-    );
+    String log = null;
+    try {
+      log = coreV1Api.readNamespacedPodLog(
+          name, // name of the Pod
+          namespace, // name of the Namespace
+          container, // container for which to stream logs
+          null, //  true/false Follow the log stream of the pod
+          null, // number of bytes to read from the server before terminating the log output
+          PRETTY, // pretty print output
+          null, // true/false, Return previous terminated container logs
+          null, // relative time (seconds) before the current time from which to show logs
+          null, // number of lines from the end of the logs to show
+          null // true/false, add timestamp at the beginning of every line of log output
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return log;
   }
@@ -255,9 +261,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the pod
    * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deletePod(String name, String namespace) throws ApiException {
+  public static boolean deletePod(String name, String namespace) {
 
     KubernetesApiResponse<V1Pod> response = podClient.delete(namespace, name);
 
@@ -283,19 +288,25 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
-    V1PodList v1PodList
-        = coreV1Api.listNamespacedPod(
-            namespace, // namespace in which to look for the pods.
-            Boolean.FALSE.toString(), // pretty print output.
-            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-            null, // continue to query when there is more results to return.
-            null, // selector to restrict the list of returned objects by their fields
-            labelSelectors, // selector to restrict the list of returned objects by their labels.
-            null, // maximum number of responses to return for a list call.
-            null, // shows changes that occur after that particular version of a resource.
-            null, // Timeout for the list/watch call.
-            Boolean.FALSE // Watch for changes to the described resources.
-        );
+    V1PodList v1PodList = null;
+    try {
+      v1PodList
+          = coreV1Api.listNamespacedPod(
+              namespace, // namespace in which to look for the pods.
+              Boolean.FALSE.toString(), // pretty print output.
+              Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // continue to query when there is more results to return.
+              null, // selector to restrict the list of returned objects by their fields
+              labelSelectors, // selector to restrict the list of returned objects by their labels.
+              null, // maximum number of responses to return for a list call.
+              null, // shows changes that occur after that particular version of a resource.
+              null, // Timeout for the list/watch call.
+              Boolean.FALSE // Watch for changes to the described resources.
+          );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
     return v1PodList;
   }
 
@@ -311,12 +322,17 @@ public class Kubernetes implements LoggedTest {
     V1ObjectMeta meta = new V1ObjectMetaBuilder().withName(name).build();
     V1Namespace namespace = new V1NamespaceBuilder().withMetadata(meta).build();
 
-    namespace = coreV1Api.createNamespace(
-        namespace, // name of the Namespace
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // name associated with the actor or entity that is making these changes
-    );
+    try {
+      namespace = coreV1Api.createNamespace(
+          namespace, // name of the Namespace
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // name associated with the actor or entity that is making these changes
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }
@@ -334,12 +350,18 @@ public class Kubernetes implements LoggedTest {
           "Parameter 'namespace' cannot be null when calling createNamespace()");
     }
 
-    V1Namespace ns = coreV1Api.createNamespace(
-        namespace, // V1Namespace configuration data object
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // name associated with the actor or entity that is making these changes
-    );
+    V1Namespace ns = null;
+    try {
+      ns = coreV1Api.createNamespace(
+          namespace, // V1Namespace configuration data object
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // name associated with the actor or entity that is making these changes
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }
@@ -352,17 +374,23 @@ public class Kubernetes implements LoggedTest {
    */
   public static List<String> listNamespaces() throws ApiException {
     ArrayList<String> nameSpaces = new ArrayList<>();
-    V1NamespaceList namespaceList = coreV1Api.listNamespace(
-        PRETTY, // pretty print output
-        ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-        null, // set when retrieving more results from the server
-        null, // selector to restrict the list of returned objects by their fields
-        null, // selector to restrict the list of returned objects by their labels
-        null, // maximum number of responses to return for a list call
-        RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-        TIMEOUT_SECONDS, // Timeout for the list/watch call
-        false // Watch for changes to the described resources
-    );
+    V1NamespaceList namespaceList;
+    try {
+      namespaceList = coreV1Api.listNamespace(
+          PRETTY, // pretty print output
+          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+          null, // set when retrieving more results from the server
+          null, // selector to restrict the list of returned objects by their fields
+          null, // selector to restrict the list of returned objects by their labels
+          null, // maximum number of responses to return for a list call
+          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          TIMEOUT_SECONDS, // Timeout for the list/watch call
+          false // Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     for (V1Namespace namespace : namespaceList.getItems()) {
       nameSpaces.add(namespace.getMetadata().getName());
@@ -378,17 +406,23 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1NamespaceList listNamespacesAsObjects() throws ApiException {
-    V1NamespaceList namespaceList = coreV1Api.listNamespace(
-        PRETTY, // pretty print output
-        ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-        null, // set when retrieving more results from the server
-        null, // selector to restrict the list of returned objects by their fields
-        null, // selector to restrict the list of returned objects by their labels
-        null, // maximum number of responses to return for a list call
-        RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-        TIMEOUT_SECONDS, // Timeout for the list/watch call
-        false // Watch for changes to the described resources
-    );
+    V1NamespaceList namespaceList;
+    try {
+      namespaceList = coreV1Api.listNamespace(
+          PRETTY, // pretty print output
+          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+          null, // set when retrieving more results from the server
+          null, // selector to restrict the list of returned objects by their fields
+          null, // selector to restrict the list of returned objects by their labels
+          null, // maximum number of responses to return for a list call
+          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          TIMEOUT_SECONDS, // Timeout for the list/watch call
+          false // Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return namespaceList;
   }
@@ -432,14 +466,20 @@ public class Kubernetes implements LoggedTest {
 
     JsonElement json = convertToJson(domain);
 
-    Object response = customObjectsApi.createNamespacedCustomObject(
-        DOMAIN_GROUP, // custom resource's group name
-        DOMAIN_VERSION, // //custom resource's version
-        namespace, // custom resource's namespace
-        DOMAIN_PLURAL, // custom resource's plural name
-        json, // JSON schema of the Resource to create
-        null // pretty print output
-    );
+    Object response;
+    try {
+      response = customObjectsApi.createNamespacedCustomObject(
+          DOMAIN_GROUP, // custom resource's group name
+          DOMAIN_VERSION, // //custom resource's version
+          namespace, // custom resource's namespace
+          DOMAIN_PLURAL, // custom resource's plural name
+          json, // JSON schema of the Resource to create
+          null // pretty print output
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }
@@ -494,13 +534,19 @@ public class Kubernetes implements LoggedTest {
    */
   public static Domain getDomainCustomResource(String domainUID, String namespace)
       throws ApiException {
-    Object domain = customObjectsApi.getNamespacedCustomObject(
-        DOMAIN_GROUP, // custom resource's group name
-        DOMAIN_VERSION, // //custom resource's version
-        namespace, // custom resource's namespace
-        DOMAIN_PLURAL, // custom resource's plural name
-        domainUID // custom object's name
-    );
+    Object domain;
+    try {
+      domain = customObjectsApi.getNamespacedCustomObject(
+          DOMAIN_GROUP, // custom resource's group name
+          DOMAIN_VERSION, // //custom resource's version
+          namespace, // custom resource's namespace
+          DOMAIN_PLURAL, // custom resource's plural name
+          domainUID // custom object's name
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     if (domain != null) {
       return handleResponse(domain, Domain.class);
@@ -560,13 +606,19 @@ public class Kubernetes implements LoggedTest {
 
     String namespace = configMap.getMetadata().getNamespace();
 
-    V1ConfigMap cm = coreV1Api.createNamespacedConfigMap(
-        namespace, // config map's namespace
-        configMap, // config map configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // name associated with the actor or entity that is making these changes
-    );
+    V1ConfigMap cm;
+    try {
+      cm = coreV1Api.createNamespacedConfigMap(
+          namespace, // config map's namespace
+          configMap, // config map configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // name associated with the actor or entity that is making these changes
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }
@@ -580,18 +632,24 @@ public class Kubernetes implements LoggedTest {
    */
   public static V1ConfigMapList listConfigMaps(String namespace) throws ApiException {
 
-    V1ConfigMapList configMapList = coreV1Api.listNamespacedConfigMap(
-        namespace, // config map's namespace
-        PRETTY, // pretty print output
-        ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
-        null, // set when retrieving more results from the server
-        null, // selector to restrict the list of returned objects by their fields
-        null, // selector to restrict the list of returned objects by their labels
-        null, // maximum number of responses to return for a list call
-        RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
-        TIMEOUT_SECONDS, // Timeout for the list/watch call
-        false // Watch for changes to the described resources
-    );
+    V1ConfigMapList configMapList;
+    try {
+      configMapList = coreV1Api.listNamespacedConfigMap(
+          namespace, // config map's namespace
+          PRETTY, // pretty print output
+          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+          null, // set when retrieving more results from the server
+          null, // selector to restrict the list of returned objects by their fields
+          null, // selector to restrict the list of returned objects by their labels
+          null, // maximum number of responses to return for a list call
+          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          TIMEOUT_SECONDS, // Timeout for the list/watch call
+          false // Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return configMapList;
   }
@@ -649,13 +707,19 @@ public class Kubernetes implements LoggedTest {
 
     String namespace = secret.getMetadata().getNamespace();
 
-    V1Secret v1Secret = coreV1Api.createNamespacedSecret(
-        namespace, // name of the Namespace
-        secret, // secret configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // fieldManager is a name associated with the actor
-    );
+    V1Secret v1Secret;
+    try {
+      v1Secret = coreV1Api.createNamespacedSecret(
+          namespace, // name of the Namespace
+          secret, // secret configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }
@@ -711,12 +775,18 @@ public class Kubernetes implements LoggedTest {
           "Parameter 'persistentVolume' cannot be null when calling createPv()");
     }
 
-    V1PersistentVolume pv = coreV1Api.createPersistentVolume(
-        persistentVolume, // persistent volume configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // fieldManager is a name associated with the actor
-    );
+    V1PersistentVolume pv;
+    try {
+      pv = coreV1Api.createPersistentVolume(
+          persistentVolume, // persistent volume configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }
@@ -725,7 +795,7 @@ public class Kubernetes implements LoggedTest {
    * Create a Kubernetes Persistent Volume Claim.
    *
    * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes persistent volume claim
-   * configuration data
+    configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -747,13 +817,19 @@ public class Kubernetes implements LoggedTest {
 
     String namespace = persistentVolumeClaim.getMetadata().getNamespace();
 
-    V1PersistentVolumeClaim pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
-        namespace, // name of the Namespace
-        persistentVolumeClaim, // persistent volume claim configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // fieldManager is a name associated with the actor
-    );
+    V1PersistentVolumeClaim pvc;
+    try {
+      pvc = coreV1Api.createNamespacedPersistentVolumeClaim(
+          namespace, // name of the Namespace
+          persistentVolumeClaim, // persistent volume claim configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }
@@ -860,13 +936,18 @@ public class Kubernetes implements LoggedTest {
 
     String namespace = serviceAccount.getMetadata().getNamespace();
 
-    serviceAccount = coreV1Api.createNamespacedServiceAccount(
-        namespace, // name of the Namespace
-        serviceAccount, // service account configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // fieldManager is a name associated with the actor
-    );
+    try {
+      serviceAccount = coreV1Api.createNamespacedServiceAccount(
+          namespace, // name of the Namespace
+          serviceAccount, // service account configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return serviceAccount;
   }
@@ -935,13 +1016,19 @@ public class Kubernetes implements LoggedTest {
 
     String namespace = service.getMetadata().getNamespace();
 
-    V1Service svc = coreV1Api.createNamespacedService(
-        namespace, // name of the Namespace
-        service, // service configuration data
-        PRETTY, // pretty print output
-        null, // indicates that modifications should not be persisted
-        null // fieldManager is a name associated with the actor
-    );
+    V1Service svc;
+    try {
+      svc = coreV1Api.createNamespacedService(
+          namespace, // name of the Namespace
+          service, // service configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
 
     return true;
   }

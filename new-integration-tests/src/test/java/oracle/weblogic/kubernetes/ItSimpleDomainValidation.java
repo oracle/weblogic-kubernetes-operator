@@ -11,10 +11,13 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.NamespaceList;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
+import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -27,7 +30,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
 @IntegrationTest
+@ExtendWith(IntegrationTestWatcher.class)
 class ItSimpleDomainValidation implements LoggedTest {
+
+  @NamespaceList
+  public String namespace;
 
   @Test
   @DisplayName("Create a domain")
@@ -37,7 +44,7 @@ class ItSimpleDomainValidation implements LoggedTest {
     final String domainUID = "domain1";
 
     // get a new unique namespace
-    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
+    namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
         "Failed to create unique namespace due to ApiException");
     logger.info("Got a new namespace called {0}", namespace);
 
