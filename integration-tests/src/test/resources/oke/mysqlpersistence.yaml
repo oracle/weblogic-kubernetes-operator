@@ -1,0 +1,33 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload.
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pv-mysql
+  labels:
+    type: local
+spec:
+  storageClassName: oci-fss
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 10.0.10.6
+    path: "/marina-test"
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-mysql
+  namespace: default
+spec:
+  storageClassName: oci-fss
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  volumeName: pv-mysql

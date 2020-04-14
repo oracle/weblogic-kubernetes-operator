@@ -1,0 +1,33 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-alertmanager
+
+spec:
+  storageClassName: alertmanager
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 10.0.10.6
+    path: "/marina-test"
+    readOnly: false
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-alertmanager
+  namespace: default 
+
+spec:
+  storageClassName: alertmanager 
+  resources:
+    requests:
+      storage: 10Gi
+  accessModes:
+    - ReadWriteMany

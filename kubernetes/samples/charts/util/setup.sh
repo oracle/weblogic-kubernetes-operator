@@ -6,9 +6,10 @@
 
 MYDIR="$(dirname "$(readlink -f "$0")")"
 VNAME=voyager-operator  # release name of Voyager
-TNAME=traefik-operator  # release name of Traefik
+TNAME=${3:-traefik-operator}  # release name of Traefik
 VSPACE=voyager # NameSpace for Voyager
-TSPACE=traefik   # NameSpace for Traefik
+TSPACE=${4:-traefik}   # NameSpace for Traefik
+TVAL=${5:-${MYDIR}/../traefik/values.yaml}
 DefaultVoyagerVersion=10.0.0
 
 HELM_VERSION=$(helm version --short --client)
@@ -68,7 +69,7 @@ function createVoyager() {
 
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 0 ]; then
     echo "Installing Voyager Operator."
-    
+
     ${v_helm_install} --version ${VoyagerVersion}  \
       --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
@@ -76,7 +77,7 @@ function createVoyager() {
       --set ingressClass=voyager
   else
     echo "Voyager operator is already installed."
-  fi 
+  fi
   echo
 
   echo "Wait until Voyager operator running."
@@ -98,7 +99,7 @@ function createVoyager() {
 
 function createTraefik() {
   createNameSpace $TSPACE
-  echo "Creating Traefik operator on namespace 'traefik'." 
+  echo "Creating Traefik operator on namespace ${TSPACE}."
   echo
 
   if [ "$(${helm_search_traefik} | grep traefik |  wc -l)" = 0 ]; then
@@ -111,26 +112,26 @@ function createTraefik() {
 
 
   if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
-    echo "Installing Traefik Operator. ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml"
-    ${t_helm_install} --namespace ${TSPACE} --values ${MYDIR}/../traefik/values.yaml ${t_helm_extra_args}
+    echo "Installing ${TNAME}. ${t_helm_install} --namespace ${TSPACE} --values ${TVAL}"
+    ${t_helm_install} --namespace ${TSPACE} --values ${TVAL} ${t_helm_extra_args}
   else
-    echo "Traefik Operator is already installed."
+    echo "${TNAME} is already installed."
   fi
   echo
 
-  echo "Wait until Traefik operator running."
+  echo "Wait until ${TNAME} running."
   max=20
   count=0
   while test $count -lt $max; do
-    kubectl -n traefik get pod
-    if test "$(kubectl -n ${TSPACE} get pod | grep traefik | awk '{ print $2 }')" = 1/1; then
-      echo "Traefik operator is running now."
+    kubectl -n ${TSPACE} get pod
+    if test "$(kubectl -n ${TSPACE} get pod | grep ${TNAME} | awk '{ print $2 }')" = 1/1; then
+      echo "${TNAME} is running now."
       exit 0;
     fi
     count=`expr $count + 1`
     sleep 5
   done
-  echo "Error: Traefik operator failed to start."
+  echo "Error: ${TNAME} failed to start."
   exit 1
 }
 
@@ -168,11 +169,11 @@ function purgeCRDs() {
 function deleteVoyager() {
   if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 1 ]; then
     echo "Deleting Voyager Operator. "
-    ${v_helm_delete} $VNAME 
+    ${v_helm_delete} $VNAME
     kubectl delete ns ${VSPACE}
     purgeCRDs
   else
-    echo "Voyager operator has already been deleted" 
+    echo "Voyager operator has already been deleted"
   fi
   echo
 
@@ -186,16 +187,16 @@ function deleteVoyager() {
 
 function deleteTraefik() {
   if [ "$(helm list ${t_list_args}| grep $TNAME |  wc -l)" = 1 ]; then
-    echo "Deleting Traefik operator." 
+    echo "Deleting ${TNAME}."
     ${t_helm_delete} $TNAME
     kubectl delete ns ${TSPACE}
   else
-    echo "Traefik operator has already been deleted" 
+    echo "${TNAME} has already been deleted"
   fi
 }
 
 function usage() {
-  echo "usage: $0 create|delete traefik|voyager [voyager version]"
+  echo "usage: $0 create|delete  traefik [releasename] [namespace] [path to values.yaml]|voyager [voyager version]"
   exit 1
 }
 

@@ -177,12 +177,18 @@ public class TestUtils {
   /**
    * Checks that ExternalIP LB is created in OKE.
    *
+   * @param lbrelname - LB release name
+   * @param lbns - LB namespace
    * @throws Exception fails if not generated after MaxIterations number is reached.
    */
-  public static void checkLbExternalIpCreated() throws Exception {
+  public static void checkLbExternalIpCreated(String lbrelname, String lbns) throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get svc traefik-operator --namespace traefik -w ");
+    cmd.append("kubectl get svc ")
+            .append(lbrelname)
+            .append(" --namespace ")
+            .append(lbns)
+            .append(" -w ");
 
     // check for service
     while (i < BaseTest.getMaxIterationsPod()) {

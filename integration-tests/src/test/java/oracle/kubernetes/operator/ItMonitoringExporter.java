@@ -89,6 +89,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS2;
   private static String currentDateTime;
   private static final String monitoringNS = "monitortestns";
+  private static String LB_MONITORING_PUBLIC_IP;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -165,6 +166,9 @@ public class ItMonitoringExporter extends BaseTest {
         domain.buildDeployJavaAppInPod(
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
         setupPv();
+        if(BaseTest.OKE_CLUSTER) {
+          createMonitorTraefikLB();
+        }
         installPrometheusGrafanaWebHookMySqlCoordinator();
       }
       domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
@@ -200,6 +204,9 @@ public class ItMonitoringExporter extends BaseTest {
       }
       try {
         uninstallWebHookPrometheusGrafanaMySql();
+        if(BaseTest.OKE_CLUSTER) {
+          deleteMonitorTraefikLB();
+        }
       } catch (Exception ex) {
         LoggerHelper.getLocal().log(Level.INFO,
             "Exception caught while uninstalling webhook/prometheus/Grafana/Mysql " + ex.getMessage());
@@ -1027,14 +1034,28 @@ public class ItMonitoringExporter extends BaseTest {
     } else {
       Files.createDirectories(Paths.get(pvDir));
     }
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/mysql/persistence.yaml", "%PV_ROOT%", pvDir);
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "%PV_ROOT%", pvDir);
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
+    if(BaseTest.OKE_CLUSTER) {
+      TestUtils.copyFile( resourceExporterDir + "/../oke/okemysql.yaml",
+              monitoringExporterEndToEndDir + "/mysql/mysql.yaml");
+      TestUtils.copyFile( resourceExporterDir + "/../oke/mysqlpersistence.yaml",
+              monitoringExporterEndToEndDir + "/mysql/persistence.yaml");
+      TestUtils.copyFile( resourceExporterDir + "/../oke/prompersistence.yaml",
+              monitoringExporterEndToEndDir + "/prometheus/persistence.yaml");
+      TestUtils.copyFile( resourceExporterDir + "/../oke/alert-prompersistence.yaml",
+              monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml");
+      TestUtils.copyFile( resourceExporterDir + "/../oke/grafanavalues.yaml",
+              monitoringExporterEndToEndDir + "/grafana/values.yaml");
+    } else {
+      replaceStringInFile(
+              monitoringExporterEndToEndDir + "/mysql/persistence.yaml", "%PV_ROOT%", pvDir);
+      replaceStringInFile(
+              monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "%PV_ROOT%", pvDir);
+      replaceStringInFile(
+              monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
+      replaceStringInFile(
+              monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
+    }
+
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "monitoring", monitoringNS);
     replaceStringInFile(
@@ -1174,7 +1195,7 @@ public class ItMonitoringExporter extends BaseTest {
     grafanaPort = String.valueOf(31000 + getNewSuffixCount());
     replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
         "31000", grafanaPort);
-    
+
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
@@ -1218,13 +1239,16 @@ public class ItMonitoringExporter extends BaseTest {
     assertNotNull("Grafana pod was not created", podName);
     TestUtils.checkPodReady(podName, monitoringNS);
 
-    String myhost = domain.getHostNameForCurl();
+    String url = domain.getHostNameForCurl() + ":" + grafanaPort;
+    if (BaseTest.OKE_CLUSTER) {
+      url = LB_MONITORING_PUBLIC_IP;
+    }
     LoggerHelper.getLocal().log(Level.INFO, "installing grafana dashboard");
     crdCmd =
         " cd "
             + monitoringExporterEndToEndDir
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-            + "  -X POST http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/datasources/"
+            + "  -X POST http://admin:12345678@" + url + "/api/datasources/"
             + "  --data-binary @grafana/datasource.json";
     TestUtils.exec(crdCmd);
 
@@ -1232,14 +1256,14 @@ public class ItMonitoringExporter extends BaseTest {
         " cd "
             + monitoringExporterEndToEndDir
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-            + "  -X POST http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/dashboards/db/"
+            + "  -X POST http://admin:12345678@" + url + "/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
     crdCmd = " cd "
         + monitoringExporterEndToEndDir
         + " && "
         + "curl -v  -H 'Content-Type: application/json' "
-        + " -X GET http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/dashboards/db/weblogic-server-dashboard";
+        + " -X GET http://admin:12345678@" + url + "/api/dashboards/db/weblogic-server-dashboard";
     ExecResult result = ExecCommand.exec(crdCmd);
     assertTrue(result.stdout().contains("wls_jvm_uptime"));
     assertTrue(
@@ -1355,13 +1379,14 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static boolean checkMetricsViaPrometheus(String searchKey, String expectedVal)
       throws Exception {
-
     // url
+    String url = myhost + ":" + prometheusPort;
+    if(BaseTest.OKE_CLUSTER) {
+      url = LB_MONITORING_PUBLIC_IP;
+    }
     StringBuffer testAppUrl = new StringBuffer("http://");
     testAppUrl
-        .append(myhost)
-        .append(":")
-        .append(prometheusPort)
+        .append(url)
         .append("/api/v1/query?query=")
         .append(searchKey);
     // curl cmd to call webapp
@@ -1405,5 +1430,68 @@ public class ItMonitoringExporter extends BaseTest {
     Charset charset = StandardCharsets.UTF_8;
     Files.write(path, jsonAsYaml.getBytes(charset));
 
+  }
+
+  /**
+   * Method to create Load Balancer to access Prometheus and Grafana in OKE.
+   *
+   * @throws Exception if fails to create or verify LB creation.
+   */
+  private static void createMonitorTraefikLB() throws Exception {
+    String cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh "
+            + "create traefik traefik-monitoring montesttraefikns"
+            + resourceExporterDir
+            + "/../oke/traefikvalues.yaml";
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
+    ExecResult result = ExecCommand.exec(cmdLb);
+    if (result.exitValue() != 0) {
+      if (!result.stderr().contains("release named monitoringtraefik already exists")) {
+        throw new RuntimeException(
+                "FAILURE: command to create load balancer "
+                        + cmdLb
+                        + " failed, returned "
+                        + result.stdout()
+                        + result.stderr());
+      }
+    }
+    TestUtils.checkLbExternalIpCreated("traefik-monitoring","montesttraefikns");
+    String cmdip = "kubectl describe svc traefik-monitoring --namespace montesttraefikns "
+            + "| grep Ingress | awk '{print $3}'";
+    result = TestUtils.exec(cmdip);
+    LB_MONITORING_PUBLIC_IP = result.stdout().trim();
+    LoggerHelper.getLocal().log(Level.INFO,
+            "Load Balancer MONITORING Public IP : " + LB_MONITORING_PUBLIC_IP);
+    // apply new domain yaml and verify pod restart
+    String crdCmd =
+            " kubectl apply -f " + resourceExporterDir + "/../oke/traefik-path-routing-monitoring.yaml";
+    TestUtils.exec(crdCmd);
+  }
+
+  /**
+   * Method to delete Load Balancer to access Prometheus and Grafana in OKE.
+   *
+   * @throws Exception if fails to create or verify LB creation.
+   */
+  private static void deleteMonitorTraefikLB() throws Exception {
+    // delete ingress
+    String crdCmd =
+            " kubectl delete -f " + resourceExporterDir + "/../oke/traefik-path-routing-monitoring.yaml";
+    TestUtils.exec(crdCmd);
+
+    String cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh "
+            + "delete traefik monitoringtraefik montesttraefikns";
+
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
+    ExecResult result = ExecCommand.exec(cmdLb);
+    if (result.exitValue() != 0) {
+      if (!result.stderr().contains("release named traefik-operator can't be deleted")) {
+        throw new RuntimeException(
+                "FAILURE: command to delete load balancer "
+                        + cmdLb
+                        + " failed, returned "
+                        + result.stdout()
+                        + result.stderr());
+      }
+    }
   }
 }
