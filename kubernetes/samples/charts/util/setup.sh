@@ -12,6 +12,8 @@ VSPACE=voyager # NameSpace for Voyager
 TSPACE=traefik   # NameSpace for Traefik
 DefaultVoyagerVersion=10.0.0
 
+set -x
+
 HELM_VERSION=$(helm version --short --client)
 
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
@@ -86,7 +88,7 @@ function createVoyager() {
     sleep 5
   done
   echo "ERROR: Voyager operator failed to start."
-  kubectl describe po/${vpod} -n -n ${VSPACE}
+  kubectl describe pod/${vpod}  -n ${VSPACE}
   exit 1
 }
 
@@ -124,7 +126,8 @@ function createTraefik() {
     sleep 5
   done
   echo "ERROR: Traefik operator failed to start."
-  kubectl describe po/${tpod} -n -n ${TSPACE}
+  echo
+  kubectl describe pod/${tpod} -n ${TSPACE}
   exit 1
 }
 
