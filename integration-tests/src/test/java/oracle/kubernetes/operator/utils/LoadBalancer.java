@@ -37,7 +37,7 @@ public class LoadBalancer {
 
     if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
       String cmdLb = "";
-      if (! BaseTest.HELM_VERSION.equals("V2")) {
+      if (BaseTest.HELM_VERSION.equals("V2")) {
         cmdLb = "helm list traefik-operator | grep DEPLOYED";
       } else {
         cmdLb = "helm list --namespace traefik | grep traefik-operator | grep -i DEPLOYED";

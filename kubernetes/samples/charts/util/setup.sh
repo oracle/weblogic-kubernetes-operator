@@ -69,7 +69,7 @@ function createVoyager() {
       --set apiserver.enableValidatingWebhook=false \
       --set ingressClass=voyager
   else
-    echo "Voyager operator is already installed, so skipping the installation"
+    echo "Voyager operator is already installed."
   fi 
   echo
 
@@ -107,7 +107,7 @@ function createTraefik() {
     ${t_helm_install} --namespace ${TSPACE} \
       --values ${UTILDIR}/../traefik/values.yaml
   else
-    echo "Traefik operator is already installed, so skipping the installation"
+    echo "Traefik operator is already installed."
   fi
   echo
 
