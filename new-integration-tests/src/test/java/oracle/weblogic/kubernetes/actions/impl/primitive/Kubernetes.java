@@ -117,6 +117,26 @@ public class Kubernetes implements LoggedTest {
             apiClient //the api client
         );
 
+    deploymentClient =
+        new GenericKubernetesApi<>(
+            V1Deployment.class,  // the api type class
+            V1DeploymentList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "deployments", // the resource plural
+            apiClient //the api client
+        );
+
+    jobClient =
+        new GenericKubernetesApi<>(
+            V1Job.class,  // the api type class
+            V1JobList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "jobs", // the resource plural
+            apiClient //the api client
+        );
+
     namespaceClient =
         new GenericKubernetesApi<>(
             V1Namespace.class, // the api type class
@@ -154,6 +174,16 @@ public class Kubernetes implements LoggedTest {
             "", // the api group
             "v1", // the api version
             "persistentvolumeclaims", // the resource plural
+            apiClient //the api client
+        );
+
+    rsClient =
+        new GenericKubernetesApi<>(
+            V1ReplicaSet.class,  // the api type class
+            V1ReplicaSetList.class, // the api list type class
+            "", // the api group
+            "v1", // the api version
+            "replicasets", // the resource plural
             apiClient //the api client
         );
 

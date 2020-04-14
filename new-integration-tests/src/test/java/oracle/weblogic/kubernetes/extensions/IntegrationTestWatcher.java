@@ -8,8 +8,6 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
@@ -46,7 +44,6 @@ public class IntegrationTestWatcher  implements
 
   @Override
   public void beforeAll(ExtensionContext context) {
-    logger.info("beforeAll");
     className = context.getTestClass().get().getName();
     globalStore = context.getStore(Namespace.GLOBAL);
     globalStore.put("BEFOREALL", Boolean.FALSE);
@@ -59,7 +56,6 @@ public class IntegrationTestWatcher  implements
       Invocation<Void> invocation,
       ReflectiveInvocationContext<Method> invocationContext,
       ExtensionContext context) throws Throwable {
-    logger.info("interceptBeforeEachMethod");
     methodName = context.getRequiredTestMethod().getName();
     methodNamespace = Namespace.create(methodName);
     testStore = context.getStore(methodNamespace);
@@ -76,7 +72,6 @@ public class IntegrationTestWatcher  implements
   public void interceptTestMethod​(Invocation<Void> invocation,
       ReflectiveInvocationContext<Method> invocationContext,
       ExtensionContext context) throws Throwable {
-    logger.info("interceptTestMethod​");
     logger.info(getHeader("Ending beforeEach for ", className + "." + methodName, "-"));
     // if execution reaches here the beforeEach is succeeded.
     testStore.put("BEFOREEACH", Boolean.TRUE);
@@ -88,7 +83,6 @@ public class IntegrationTestWatcher  implements
 
   @Override
   public void handleTestExecutionException​(ExtensionContext context, Throwable throwable) throws Throwable {
-    logger.info("handleTestExecutionException​");
     testStore.put("TEST", Boolean.FALSE);
     logger.info(getHeader("Test failed   ", className + "." + methodName, "!"));
     logger.info("Collect logs...");
@@ -106,7 +100,6 @@ public class IntegrationTestWatcher  implements
       Invocation<Void> invocation,
       ReflectiveInvocationContext<Method> invocationContext,
       ExtensionContext context) throws Throwable {
-    logger.info("interceptAfterEachMethod");
     // if BEFOREEACH is false then beforeEach failed, test was not run
     if (!(Boolean) testStore.get("BEFOREEACH")) {
       logger.info("beforeEach failed for test " + className + "." + methodName);
@@ -128,7 +121,6 @@ public class IntegrationTestWatcher  implements
       Invocation<Void> invocation,
       ReflectiveInvocationContext<Method> invocationContext,
       ExtensionContext context) throws Throwable {
-    logger.info("interceptAfterAllMethod");
     logger.info(getHeader("Starting afterAll for  ", className, "-"));
     if (!(Boolean) globalStore.get("BEFOREALL")) {
       logger.info("beforeAll failed for class " + className);
@@ -140,7 +132,6 @@ public class IntegrationTestWatcher  implements
 
   @Override
   public void afterAll(ExtensionContext context) {
-    logger.info("afterAll");
     if (context.getExecutionException().isPresent()) {
       logger.info("Exception thrown, collecting logs...");
       collectLogs(context, "afterAll");
@@ -150,13 +141,11 @@ public class IntegrationTestWatcher  implements
 
   @Override
   public void testSuccessful(ExtensionContext extensionContext) {
-    logger.info("testSuccessful");
     logger.info(getHeader("Test passed  ", className + "." + methodName, "-"));
   }
 
   @Override
   public void testFailed(ExtensionContext context, Throwable throwable) {
-    logger.info("testFailed");
     // if both beforeEach and Test is passed then execution must have failed in afterEach
     if ((Boolean) testStore.get("BEFOREEACH") && (Boolean) testStore.get("TEST")) {
       logger.info("afterEach failed for test " + methodName);
@@ -175,14 +164,14 @@ public class IntegrationTestWatcher  implements
               extensionContext.getRequiredTestClass().getSimpleName(),
               getExtDir(failedStage)));
     } catch (IOException ex) {
-      Logger.getLogger(IntegrationTestWatcher.class.getName()).log(Level.SEVERE, null, ex);
+      logger.warning(ex.getMessage());
     }
     try {
       for (var namespace : LoggingUtil.getNamespaceList(extensionContext.getRequiredTestInstance())) {
         LoggingUtil.generateLog((String)namespace, resultDir);
       }
     } catch (IllegalArgumentException | IllegalAccessException | IOException | ApiException ex) {
-      Logger.getLogger(IntegrationTestWatcher.class.getName()).log(Level.SEVERE, null, ex);
+      logger.warning(ex.getMessage());
     }
   }
 

@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,25 +14,12 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1DeploymentList;
-import io.kubernetes.client.openapi.models.V1JobList;
-import io.kubernetes.client.openapi.models.V1NamespaceList;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1ReplicaSetList;
-import io.kubernetes.client.openapi.models.V1SecretList;
-import io.kubernetes.client.openapi.models.V1ServiceAccountList;
-import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.NamespaceList;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -54,17 +40,14 @@ public class LoggingUtil {
         LoggingUtil.generateLog((String) namespace, resultDir);
       }
     } catch (IOException ex) {
-      Logger.getLogger(IntegrationTestWatcher.class.getName()).log(Level.SEVERE, null, ex);
+      logger.warning(ex.getMessage());
     }
   }
 
   public static Set getNamespaceList(Object itInstance) throws IllegalArgumentException, IllegalAccessException {
     Set<String> namespaceFields = new HashSet<>();
-    for (Field field : itInstance.getClass().getFields()) {
-      if (Modifier.isPrivate(field.getModifiers())
-          || Modifier.isProtected(field.getModifiers())) {
-        field.setAccessible(true);
-      }
+    for (Field field : itInstance.getClass().getDeclaredFields()) {
+      field.setAccessible(true);
       if (field.isAnnotationPresent(NamespaceList.class)) {
         namespaceFields.add((String) field.get(itInstance));
       }
@@ -74,69 +57,43 @@ public class LoggingUtil {
 
   public static void generateLog(String namespace, Path resultDir) throws IOException, ApiException {
     logger.info("Collecting logs for namespace :" + namespace);
-    logger.info("Writing the logs in :" + resultDir.toString());
-
     // get service accounts
-    V1ServiceAccountList listServiceAccounts = Kubernetes.listServiceAccounts(namespace);
-    Files.write(Paths.get(resultDir.toString(), namespace + "_sa.log"),
-        dump(listServiceAccounts).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir.toString(), namespace + "_sa.log");
     // get namespaces
-    V1NamespaceList listNamespaces = Kubernetes.listNamespacesAsObjects();
-    Files.write(Paths.get(resultDir.toString(), namespace + "_ns.log"),
-        dump(listNamespaces).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listNamespacesAsObjects(), resultDir.toString(), namespace + "_ns.log");
     // get pv
-    V1PersistentVolumeList listPersistenVolumes = Kubernetes.listPersistenVolumes();
-    Files.write(Paths.get(resultDir.toString(), namespace + "_pv.log"),
-        dump(listPersistenVolumes).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listPersistenVolumes(), resultDir.toString(), namespace + "_pv.log");
     // get pvc
-    V1PersistentVolumeClaimList listPersistenVolumeClaims = Kubernetes.listPersistenVolumeClaims();
-    Files.write(Paths.get(resultDir.toString(), namespace + "_pvc.log"),
-        dump(listPersistenVolumeClaims).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listPersistenVolumeClaims(), resultDir.toString(), namespace + "_pvc.log");
     // get secrets
-    V1SecretList listSecrets = Kubernetes.listSecrets(namespace);
-    Files.write(Paths.get(resultDir.toString(), namespace + "_secrets.log"),
-        dump(listSecrets).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listSecrets(namespace), resultDir.toString(), namespace + "_secrets.log");
     // get configmaps
-    V1ConfigMapList listConfigMaps = Kubernetes.listConfigMaps(namespace);
-    Files.write(Paths.get(resultDir.toString(), namespace + "_cm.log"),
-        dump(listConfigMaps).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listConfigMaps(namespace), resultDir.toString(), namespace + "_cm.log");
     // get jobs
-    V1JobList listJobs = Kubernetes.listJobs(namespace);
-    Files.write(Paths.get(resultDir.toString(), namespace + "_jobs.log"),
-        dump(listJobs).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listJobs(namespace), resultDir.toString(), namespace + "_jobs.log");
     // get deployments
-    V1DeploymentList listDeployments = Kubernetes.listDeployments(namespace);
-    Files.write(Paths.get(resultDir.toString(), namespace + "_deploy.log"),
-        dump(listDeployments).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listDeployments(namespace), resultDir.toString(), namespace + "_deploy.log");
     // get replicasets
-    V1ReplicaSetList listReplicaSets = Kubernetes.listReplicaSets(namespace);
-    Files.write(Paths.get(resultDir.toString(), namespace + "_rs.log"),
-        dump(listReplicaSets).getBytes(StandardCharsets.UTF_8)
-    );
+    writeToFile(Kubernetes.listReplicaSets(namespace), resultDir.toString(), namespace + "_rs.log");
     // get Domain
-    DomainList listDomains = Kubernetes.listDomains(namespace);
-    Files.write(Paths.get(resultDir.toString(), namespace + "_domain.log"),
-        dump(listDomains).getBytes(StandardCharsets.UTF_8)
-    );
-    // get domain pods
+    // writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_domain.log");
+    // get domain/operator pods
     V1PodList listPods = Kubernetes.listPods(namespace, null);
     List<V1Pod> domainPods = listPods.getItems();
     for (V1Pod pod : domainPods) {
       String podName = pod.getMetadata().getName();
       String podLog = Kubernetes.getPodLog(podName, namespace);
-      Files.write(Paths.get(resultDir.toString(), namespace + podName + ".log"),
-          dump(podLog).getBytes(StandardCharsets.UTF_8)
+      writeToFile(podLog, resultDir.toString(), namespace + podName + ".log");
+    }
+  }
+
+  private static void writeToFile(Object obj, String resultDir, String fileName) throws IOException {
+    if (obj != null) {
+      logger.info("Generating " + Paths.get(resultDir, fileName));
+      Files.write(Paths.get(resultDir, fileName),
+          dump(obj).getBytes(StandardCharsets.UTF_8)
       );
     }
-
   }
 
 }
