@@ -5,8 +5,15 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.apache.commons.io.FileUtils.cleanDirectory;
 
 /**
  * The utility class for file operations.
@@ -22,7 +29,7 @@ public class FileUtils {
    */
   public static void checkDirectory(String dir) {
     File file = new File(dir);
-    if (!file.isDirectory()) {
+    if (!(file.exists() && file.isDirectory())) {
       file.mkdirs();
       logger.info("Made a new dir " + dir);
     }
@@ -54,5 +61,51 @@ public class FileUtils {
       return true;
     }
     return false;
+  }
+  
+  /**
+   * Remove the contents of the given directory.
+   *
+   * @param dir the directory to be cleaned up
+   */
+  public static void cleanupDirectory(String dir) throws IOException {
+    File file = new File(dir);
+    logger.info("Cleaning up directory " + dir);
+    if (!file.exists()) {
+      // nothing to do
+      return;
+    }
+
+    if (!file.isDirectory()) {
+      throw new IllegalArgumentException("The parameter " + dir + " should be a directory.");
+    }
+    cleanDirectory(file);
+
+  }
+  
+  /**
+   * Copy files from source directory to destination directory.
+   *
+   * @param srcDir source directory
+   * @param destDir target directory
+   * @throws IOException if the operation encounters an issue
+   */
+  public static void copyFolder(String srcDir, String destDir) throws IOException {
+    Path srcPath = Paths.get(srcDir);
+    Path destPath = Paths.get(destDir);
+    try (Stream<Path> stream = Files.walk(srcPath)) {
+      stream.forEach(source -> {
+        try {
+          copy(source, destPath.resolve(srcPath.relativize(source)));
+        } catch (IOException e) {
+          // cannot throw non runtime exception. the caller checks throwable
+          throw new RuntimeException("Failed to copy file " + source);
+        }
+      });
+    }
+  }
+  
+  private static void copy(Path source, Path dest) throws IOException {
+    Files.copy(source, dest, REPLACE_EXISTING);
   }
 }
