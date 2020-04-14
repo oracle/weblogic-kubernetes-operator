@@ -28,9 +28,9 @@ class ItWITValidation implements LoggedTest {
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String IMAGE_NAME = "test-mii-image-2";
   private static final String IMAGE_TAG = "v1";
-  
+
   private static final String APP_NAME = "sample-app";
-  
+
   @Test
   @DisplayName("Create a MII image")
   public void testCreatingMIIImage() {
@@ -53,7 +53,7 @@ class ItWITValidation implements LoggedTest {
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
     List<String> archiveList = Collections.singletonList(zipFile);
-    
+  
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap();
@@ -74,7 +74,7 @@ class ItWITValidation implements LoggedTest {
         .as("Test the Docker image creation has succeeded")
         .withFailMessage("Failed to create the image using WebLogic Image Tool")
         .isTrue();
-    
+  
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
   } 
 }

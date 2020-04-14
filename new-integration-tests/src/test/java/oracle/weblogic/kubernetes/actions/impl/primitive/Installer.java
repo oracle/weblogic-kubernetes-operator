@@ -63,7 +63,7 @@ public class Installer {
   }
 
   /**
-   * Set up the installer with given parameters
+   * Set up the installer with given parameters.
    * @return an installer instance 
    */
   public static Installer withParams(InstallParams params) {

@@ -149,7 +149,6 @@ public class WebLogicImageTool {
             .env(params.env())
             .redirect(params.redirect()))
         .execute();
-
   }
   
   /**

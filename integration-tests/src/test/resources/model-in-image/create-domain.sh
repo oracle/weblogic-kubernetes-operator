@@ -193,10 +193,6 @@ function createDomainHome {
   #if [ "$?" != "0" ]; then
   #  fail "Copy of model properties file ${wdtModelPropertiesFile} failed."
   #fi
-  # base image should have been pulled already
-  if [ ! "`docker images ${domainHomeImageBase} | awk '{ print $1 ":" $2 }' | grep -c ${domainHomeImageBase}`" = "1" ]; then
-    fail "Base image ${domainHomeImageBase} doesn't exist"
-  fi
 
   cd ${miiWorkDir}
   echo @@ Info: Setting up imagetool and populating its caches
