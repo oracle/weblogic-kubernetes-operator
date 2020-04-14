@@ -32,6 +32,7 @@ public class LoggingUtil {
       IllegalArgumentException,
       IllegalAccessException,
       ApiException {
+    logger.info("Collecting logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
       Path resultDir = Files.createDirectories(
@@ -44,19 +45,48 @@ public class LoggingUtil {
     }
   }
 
-  public static Set getNamespaceList(Object itInstance) throws IllegalArgumentException, IllegalAccessException {
+  public static Set getNamespaceList(Object itInstance)
+      throws IllegalArgumentException, IllegalAccessException, ApiException {
+    Set<String> namespaceFields;
+    namespaceFields = getNSListIntersecting(itInstance);
+    namespaceFields = getNSListTagged(itInstance);
+    return namespaceFields;
+  }
+
+  public static Set getNSListIntersecting(Object itInstance)
+      throws IllegalArgumentException, IllegalAccessException, ApiException {
+    Set<String> stringList = new HashSet<>();
+    for (Field field : itInstance.getClass().getDeclaredFields()) {
+      field.setAccessible(true);
+      if (String.class.isAssignableFrom(field.getType())) {
+        if (field.get(itInstance) != null) {
+          stringList.add((String) field.get(itInstance));
+        }
+      }
+    }
+    logger.info("String set before: \n {0}", stringList.toString());
+    stringList.retainAll(getNSFromK8s());
+    logger.info("String set after: \n {0}", stringList.toString());
+    return stringList;
+  }
+
+  public static Set getNSListTagged(Object itInstance)
+      throws IllegalArgumentException, IllegalAccessException, ApiException {
     Set<String> namespaceFields = new HashSet<>();
     for (Field field : itInstance.getClass().getDeclaredFields()) {
       field.setAccessible(true);
       if (field.isAnnotationPresent(NamespaceList.class)) {
-        namespaceFields.add((String) field.get(itInstance));
+        if (field.get(itInstance) != null) {
+          namespaceFields.add((String) field.get(itInstance));
+        }
       }
     }
+    logger.info("Tagged namespace set : \n {0}", namespaceFields.toString());
     return namespaceFields;
   }
 
   public static void generateLog(String namespace, Path resultDir) throws IOException, ApiException {
-    logger.info("Collecting logs for namespace :" + namespace);
+    logger.info("Collecting logs for namespace : {0}", namespace);
     // get service accounts
     writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir.toString(), namespace + "_sa.log");
     // get namespaces
@@ -89,11 +119,24 @@ public class LoggingUtil {
 
   private static void writeToFile(Object obj, String resultDir, String fileName) throws IOException {
     if (obj != null) {
-      logger.info("Generating " + Paths.get(resultDir, fileName));
+      logger.info("Generating {0}", Paths.get(resultDir, fileName));
       Files.write(Paths.get(resultDir, fileName),
           dump(obj).getBytes(StandardCharsets.UTF_8)
       );
     }
+  }
+
+  private static Set<String> getNSFromK8s() throws ApiException {
+    Set<String> namespaceFields = new HashSet<>();
+    for (var iterator
+        = Kubernetes.listNamespacesAsObjects().getItems().iterator();
+        iterator.hasNext();) {
+      String name = iterator.next().getMetadata().getName();
+      if (name != null) {
+        namespaceFields.add(name);
+      }
+    }
+    return namespaceFields;
   }
 
 }
