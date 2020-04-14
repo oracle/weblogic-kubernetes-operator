@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,6 +61,10 @@ public class LoggingUtil {
   public static Set getNamespaceList(Object itInstance) throws IllegalArgumentException, IllegalAccessException {
     Set<String> namespaceFields = new HashSet<>();
     for (Field field : itInstance.getClass().getFields()) {
+      if (Modifier.isPrivate(field.getModifiers())
+          || Modifier.isProtected(field.getModifiers())) {
+        field.setAccessible(true);
+      }
       if (field.isAnnotationPresent(NamespaceList.class)) {
         namespaceFields.add((String) field.get(itInstance));
       }

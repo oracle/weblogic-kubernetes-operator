@@ -10,6 +10,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.NamespaceList;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
@@ -62,8 +63,11 @@ class ItSimpleOperatorValidation implements LoggedTest {
 
   private HelmParams opHelmParams = null;
   private V1ServiceAccount serviceAccount = null;
+  @NamespaceList
   private String opNamespace = null;
+  @NamespaceList
   private String domainNamespace1 = null;
+  @NamespaceList
   private String domainNamespace2 = null;
 
 

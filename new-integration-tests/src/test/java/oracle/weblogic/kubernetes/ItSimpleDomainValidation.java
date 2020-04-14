@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItSimpleDomainValidation implements LoggedTest {
 
   @NamespaceList
-  public String namespace;
+  private String namespace;
 
   @Test
   @DisplayName("Create a domain")
