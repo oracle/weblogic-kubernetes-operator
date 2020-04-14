@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
@@ -37,6 +38,7 @@ public class IntegrationTestWatcher  implements
     BeforeEachCallback,
     AfterEachCallback,
     InvocationInterceptor,
+    BeforeTestExecutionCallback,
     TestExecutionExceptionHandler,
     LifecycleMethodExecutionExceptionHandler {
 
@@ -52,10 +54,17 @@ public class IntegrationTestWatcher  implements
    */
   @Override
   public void beforeAll(ExtensionContext context) {
+    className = context.getRequiredTestClass().getName();
     logger.info(getHeader("Starting Test Suite   ", className, "+"));
     logger.info(getHeader("Starting beforeAll for ", className, "-"));
   }
 
+  /**
+   * 
+   * @param context
+   * @param throwable
+   * @throws Throwable
+   */
   @Override
   public void handleBeforeAllMethodExecutionException​(ExtensionContext context, Throwable throwable)
       throws Throwable {
@@ -66,7 +75,7 @@ public class IntegrationTestWatcher  implements
   @Override
   public void beforeEach(ExtensionContext context) {
     methodName = context.getRequiredTestMethod().getName();
-    logger.info(getHeader("Starting afterEach for ", className + "." + methodName, "-"));
+    logger.info(getHeader("Starting beforeEach for ", className + "." + methodName, "-"));
   }
 
   @Override
@@ -74,6 +83,11 @@ public class IntegrationTestWatcher  implements
       throws Throwable {
     logger.info(getHeader("BeforeEach failed   ", className + "." + methodName, "!"));
     collectLogs(context, "beforeEach");
+  }
+
+  @Override
+  public void beforeTestExecution(ExtensionContext context) {
+    logger.info(getHeader("Ending beoforeEach for ", className + "." + methodName, "-"));
   }
 
   /**
@@ -102,8 +116,16 @@ public class IntegrationTestWatcher  implements
   }
 
   @Override
+  public void interceptAfterEachMethod​(InvocationInterceptor.Invocation<Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext) throws Throwable {
+    logger.info(getHeader("Starting afterEach  ", className + "." + methodName, "-"));
+    invocation.proceed();
+  }
+
+  @Override
   public void afterEach(ExtensionContext context) {
-    logger.info(getHeader("Startng afterEach for ", className + "." + methodName, "-"));
+    logger.info(getHeader("Ending afterEach for ", className + "." + methodName, "-"));
   }
 
   @Override
@@ -111,6 +133,14 @@ public class IntegrationTestWatcher  implements
       throws Throwable {
     logger.info(getHeader("AfterEach failed   ", className + "." + methodName, "!"));
     collectLogs(context, "afterEach");
+  }
+
+  @Override
+  public void interceptAfterAllMethod​(InvocationInterceptor.Invocation<Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext) throws Throwable {
+    logger.info(getHeader("Starting afterAll  ", className, "-"));
+    invocation.proceed();
   }
 
   @Override
@@ -123,11 +153,13 @@ public class IntegrationTestWatcher  implements
   public void handleAfterAllMethodExecutionException​(ExtensionContext context, Throwable throwable)
       throws Throwable {
     logger.info(getHeader("AfterAll failed   ", className, "!"));
+    logger.info(throwable.getMessage());
     collectLogs(context, "afterAll");
 
   }
 
   private void collectLogs(ExtensionContext extensionContext, String failedStage) {
+    logger.info("Collecting logs...");
     Path resultDir = null;
     try {
       resultDir = Files.createDirectories(
