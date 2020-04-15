@@ -26,7 +26,9 @@
 #                   hosted test files (default true).
 #
 #   FAST_DELETE     Set to "--grace-period=1 --timeout=1" to speedup
-#                   deletes and skip phase 2.
+#                   deletes. Default is "--timeout=60s"
+#
+#   BG_DELETE       Run deletes in background. Default is 'true'.
 #
 # Dry run option:
 #
@@ -39,29 +41,33 @@
 #
 # The cleanup runs in phases:
 #
-#   Phase -3: Delete all domains
+#   Phase -3: Delete all domains and wait up to 60 seconds for pods to exit
 #
 #   Phase -2: Delete all operator deployments
 #
-#   Phase -1: Delete all WL and introspector pods
+#   Phase -1: Delete all WL and introspector pods and wait up to 60 seconds
+#             for pods to exit
 #
 #   Phase 0:  If helm is installed, helm delete all helm charts.
 #             Possibly also delete tiller (see SHARED_CLUSTER env var above.)
 #             TBD tiller delete is disabled
 #
-#   Phase 1:  Delete test kubernetes artifacts with labels.
+#   Phase 1:  Delete any remaining test kubernetes artifacts with labels
+#             in an ordered fashion (pods before pv, etc).
+#             Then wait up to 15 seconds for deletes to finish.
 #
-#   Phase 2:  Wait 15 seconds to see if previous phase succeeded, and
-#             if not, repeatedly search for all test related kubectl
+#   Phase 2:  Repeatedly search for all test related kubectl
 #             artifacts and try delete them directly for up to 60 more
 #             seconds.
 #
-#   Phase 3:  Use a kubernetes job to delete the PV directories
+#   Phase 3:  Repeat phase 2 with '--force=true --grace-period=0'.
+#
+#   Phase 4:  Use a kubernetes job to delete the PV directories
 #             on the kubernetes cluster.
 #
-#   Phase 4:  Delete the local test output directory.
+#   Phase 5:  Delete the local test output directory.
 #
-#   Phase 5:  If we own a lease, then release it on a failure.
+#   Phase 6:  If we own a lease, then release it on a failure.
 #             (See optional LEASE_ID env var above.)
 #
 
@@ -78,6 +84,8 @@ USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
 DRY_RUN="false"
+BG_DELETE="${BG_DELETE:-true}"
+
 [ "$1" = "-dryrun" ] && DRY_RUN="true"
 
 echo @@ `timestamp` Starting cleanup.
@@ -90,16 +98,26 @@ if [ ! "$1" = "" ] && [ ! "$1" = "-dryrun" ]; then
   exit 1
 fi
 
-function fail {
-  echo @@ `timestamp` cleanup.sh: Error "$@"
-  exit 1
+# wait for current jobs to finish, and kill any remaining after $1 seconds, default is 15 seconds
+function jobWaitAndKill {
+  local job_timeout=${1:-15}
+  echo "@@ `timestamp` Info: jobWaitAndKill: Waiting up to $job_timeout seconds for $(jobs -rp | wc -w) background delete jobs to finish."
+  local start_seconds=$SECONDS
+  while [ $((SECONDS - start_seconds)) -le $job_timeout ] && [ $(jobs -rp | wc -w) -gt 0 ] ; do
+    sleep 0.1
+  done
+  echo "@@ `timestamp` Info: jobWaitAndKill: Done waiting after $((SECONDS - start_seconds)) seconds, killing $(jobs -rp | wc -w) remaining jobs."
+  [ ! -z "$(jobs -rp)" ] && kill -9 $(jobs -rp)
 }
 
 # use for kubectl delete of a specific name, exits silently if nothing found via 'get'
 # usage: doDeleteByName [-n foobar] kind name
 function doDeleteByName {
 
-  local tmpfile="/tmp/$(basename $0).doDeleteByName.$PPID.$SECONDS"
+  # sneaky way to get current pid that works in ancient MacOS bash 3
+  local mypid=$(bash -c "echo \$PPID")
+
+  local tmpfile="/tmp/$(basename $0).doDeleteByName.$PPID.$mypid.$SECONDS"
 
   kubectl get "$@" -o=jsonpath='{.items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
@@ -121,7 +139,10 @@ function doDeleteByName {
 # usage: doDeleteByRange [-n foobar] kind -l labelexpression -l labelexpression ...
 function doDeleteByRange {
 
-  local tmpfile="/tmp/$(basename $0).doDeleteByRange.$PPID.$SECONDS"
+  # sneaky way to get current pid that works in ancient MacOS bash 3
+  local mypid=$(bash -c "echo \$PPID")
+
+  local tmpfile="/tmp/$(basename $0).doDeleteByRange.$PPID.$mypid.$SECONDS"
 
   kubectl get "$@" -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
@@ -158,7 +179,7 @@ waitForWebLogicPods() {
       break
     fi
     echo -n " $((SECONDS - STARTSEC))/$pod_count_int/$pod_count_wls"
-    sleep 2
+    sleep 0.5
   done
   echo
 
@@ -191,7 +212,7 @@ waitForLabelPods() {
     else
       echo "@@ `timestamp` There are $total running pods with label $LABEL_SELECTOR: $pods".
     fi
-    sleep 3
+    sleep 0.5
     mnow=`date +%s`
   done
 
@@ -207,6 +228,19 @@ deleteDomains() {
   local dn
   local domain_crd=domains.weblogic.oracle
   local count=0
+
+  echo "@@ `timestamp` Info: Setting /tmp/diefast on every WL pod to speedup its demise."
+
+  if [ "$DRY_RUN" = "true" ]; then
+    kubectl --all-namespaces=true get pods -l weblogic.serverName \
+      -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
+      | awk '{ system("echo @@ dryrun: kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+  else
+    kubectl --all-namespaces=true get pods -l weblogic.serverName \
+      -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
+      | awk '{ system("set -x ; kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+  fi
+
   echo "@@ `timestamp` Info: About to delete each domain."
   if [ $(kubectl get crd $domain_crd --ignore-not-found | grep $domain_crd | wc -l) = 1 ]; then
     for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
@@ -228,8 +262,13 @@ deleteOperators() {
   local ns
   for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
-    doDeleteByRange -n $ns deployments -l weblogic.operatorName
+    if [ "$BG_DELETE" = "true" ]; then
+      doDeleteByRange -n $ns deployments -l weblogic.operatorName &
+    else
+      doDeleteByRange -n $ns deployments -l weblogic.operatorName
+    fi
   done
+  [ "$BG_DELETE" = "true" ] && jobWaitAndKill
 }
 
 # delete all WL pods
@@ -238,11 +277,19 @@ deleteWebLogicPods() {
   local ns
   for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
-    # WLS pods
-    doDeleteByRange -n $ns pods -l weblogic.serverName
-    # Introspector pods
-    doDeleteByRange -n $ns pods -l weblogic.domainUID -l job-name
+    if [ "$BG_DELETE" = "true" ]; then
+      # WLS pods
+      doDeleteByRange -n $ns pods -l weblogic.serverName &
+      # Introspector pods
+      doDeleteByRange -n $ns pods -l weblogic.domainUID -l job-name &
+    else
+      # WLS pods
+      doDeleteByRange -n $ns pods -l weblogic.serverName
+      # Introspector pods
+      doDeleteByRange -n $ns pods -l weblogic.domainUID -l job-name
+    fi
   done
+  [ "$BG_DELETE" = "true" ] && jobWaitAndKill
 }
 
 # delete everything with label $LABEL_SELECTOR
@@ -286,8 +333,14 @@ function deleteLabel {
   #
 
   cat $1 | while read line; do
-    doDeleteByName $line
+    if [ "$BG_DELETE" = "true" ]; then
+      doDeleteByName $line &
+    else
+      doDeleteByName $line
+    fi
   done
+
+  [ "$BG_DELETE" = "true" ] && jobWaitAndKill
 
   #
   # finally, let's wait for pods with label $LABEL_SELECTOR to exit
@@ -358,7 +411,7 @@ function deleteByTypeAndLabel {
 
 # function genericDelete
 #
-#   This function is a 'generic kubernetes delete' that takes three arguments:
+#   This function is a 'generic kubernetes delete' that takes four arguments:
 #
 #     arg1:  Comma separated list of types of kubernetes namespaced types to search/delete.
 #            example: "all,cm,pvc,ns,roles,rolebindings,secrets"
@@ -371,116 +424,184 @@ function deleteByTypeAndLabel {
 #            or more of the keywords are delete candidates.
 #            example:  "logstash|kibana|elastisearch|weblogic|elk|domain"
 #
-#   It runs in two stages:
-#     In the first, wait to see if artifacts delete on their own.
-#     In the second, try to delete any leftovers.
+#     arg4:  Action to take.
+#
+#            -wait:             Wait 15 seconds for objects to exit on their own.
+#
+#            -friendlyDelete:   Repeatedly delete objects using default delete
+#                               for no more than 60 seconds total.
+#
+#            -forceDelete:      Try delete objects using "--force=true" and
+#                               "--grace-period=0" for no more than 60 seconds total. 
+#                               Note that this is incompatible with "FAST_DELETE" so 
+#                               FAST_DELETE is overridden in this path.
 #
 function genericDelete {
 
-  for iteration in first second; do
-    # In the first iteration, we wait to see if artifacts delete.
-    # in the second iteration, we try to delete any leftovers.
+  local mode="$4"
 
-    if [ "$iteration" = "first" ]; then
+  if [ "$mode" = "-wait" ]; then
+    local maxwaitsecs=15
+  else
+    if [ "$DRY_RUN" = "true" ]; then
       local maxwaitsecs=15
     else
-      if [ "$DRY_RUN" = "true" ]; then
-        local maxwaitsecs=15
-      else
-        local maxwaitsecs=60
-      fi
+      local maxwaitsecs=60
+    fi
+  fi
+
+  echo "@@ `timestamp` In genericDelete with mode '$mode'"
+  echo "@@ `timestamp` Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
+
+  local artcount_no
+  local artcount_yes
+  local artcount_total
+  local resfile_no
+  local resfile_yes
+
+  local mstart=`date +%s`
+
+  while : ; do
+    resfile_no="$TMP_DIR/kinv_filtered_nonamespace.out.tmp"
+    resfile_yes="$TMP_DIR/kinv_filtered_yesnamespace.out.tmp"
+
+    # leftover namespaced artifacts
+    kubectl get $1 \
+        -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
+        --all-namespaces=true 2>&1 \
+        | egrep -e "($3)" | sort > $resfile_yes 2>&1
+    artcount_yes="`cat $resfile_yes | wc -l`"
+
+    # leftover non-namespaced artifacts
+    kubectl get $2 \
+        -o=jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
+        --all-namespaces=true 2>&1 \
+        | egrep -e "($3)" | sort > $resfile_no 2>&1
+    artcount_no="`cat $resfile_no | wc -l`"
+
+    artcount_total=$((artcount_yes + artcount_no))
+
+    mnow=`date +%s`
+
+    if [ $((artcount_total)) -eq 0 ]; then
+      echo "@@ `timestamp` No artifacts found."
+      return 0
     fi
 
-    echo "@@ `timestamp` Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
+    if [ "$mode" = "-wait" ]; then
+      # just wait to see if artifacts go away on there own
 
-    local artcount_no
-    local artcount_yes
-    local artcount_total
-    local resfile_no
-    local resfile_yes
+      echo "@@ `timestamp` Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
 
-    local mstart=`date +%s`
+      cat $resfile_yes | awk '{ print "n=" $1 " " $2 }'
+      cat $resfile_no | awk '{ print $1 }'
 
-    while : ; do
-      resfile_no="$TMP_DIR/kinv_filtered_nonamespace.out.tmp"
-      resfile_yes="$TMP_DIR/kinv_filtered_yesnamespace.out.tmp"
+    else
+      # try to delete remaining artifacts
 
-      # leftover namespaced artifacts
-      kubectl get $1 \
-          -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
-          --all-namespaces=true 2>&1 \
-          | egrep -e "($3)" | sort > $resfile_yes 2>&1
-      artcount_yes="`cat $resfile_yes | wc -l`"
+      echo "@@ `timestamp` Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
 
-      # leftover non-namespaced artifacts
-      kubectl get $2 \
-          -o=jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
-          --all-namespaces=true 2>&1 \
-          | egrep -e "($3)" | sort > $resfile_no 2>&1
-      artcount_no="`cat $resfile_no | wc -l`"
-
-      artcount_total=$((artcount_yes + artcount_no))
-
-      mnow=`date +%s`
-
-      if [ $((artcount_total)) -eq 0 ]; then
-        echo "@@ `timestamp` No artifacts found."
-        return 0
+      if [ "$mode" = "-forceDelete" ]; then
+        local fast_delete_orig="$FAST_DELETE"
+        FAST_DELETE="--force=true --grace-period=0"
       fi
 
-      if [ "$iteration" = "first" ] && [ "$FAST_DELETE" = "" ]; then
-        # in the first iteration we just wait to see if artifacts go away on there own
-
-        echo "@@ `timestamp` Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
-
-        cat $resfile_yes | awk '{ print "n=" $1 " " $2 }'
-        cat $resfile_no | awk '{ print $1 }'
-
-      else
-        # in the second thirty seconds we try to delete remaining artifacts
-
-        echo "@@ `timestamp` Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
-
-        if [ ${artcount_yes} -gt 0 ]; then
-          cat "$resfile_yes" | while read line; do
-            local args="`echo \"$line\" | awk '{ print " " $2 " -n " $1  }'`"
+      if [ ${artcount_yes} -gt 0 ]; then
+        cat "$resfile_yes" | while read line; do
+          local args="`echo \"$line\" | awk '{ print " " $2 " -n " $1  }'`"
+          if [ "$BG_DELETE" = "true" ]; then
+            doDeleteByName $args &
+          else
             doDeleteByName $args
-          done
-        fi
+          fi
+        done
+      fi
 
-        if [ ${artcount_no} -gt 0 ]; then
-          cat "$resfile_no" | while read line; do
+      if [ ${artcount_no} -gt 0 ]; then
+        cat "$resfile_no" | while read line; do
+          if [ "$BG_DELETE" = "true" ]; then
+            doDeleteByName $line &
+          else
             doDeleteByName $line
-          done
-        fi
-
+          fi
+        done
       fi
 
-      if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
-        if [ "$iteration" = "first" ]; then
-          echo "@@ `timestamp` Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
-        else
-          echo "@@ `timestamp` Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
-        fi
-        break
+      [ "$BG_DELETE" = "true" ] && jobWaitAndKill
+
+      if [ "$mode" = "-forceDelete" ]; then
+        FAST_DELETE="$fast_delete_orig"
       fi
 
-      sleep 5
-    done
+    fi
+
+    if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
+      if [ "$mode" = "-wait" ]; then
+        echo "@@ `timestamp` Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
+      else
+        echo "@@ `timestamp` Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
+      fi
+      break
+    fi
+
+    sleep 0.5
   done
+
   return 1
 }
 
+# if helm is installed, delete all helm releases
+function deleteHelmReleases {
+  [ ! -x "$(command -v helm)" ] && return
 
-function fail {
-  echo @@ `timestamp` cleanup.sh: Error "$@"
-  exit 1
+  helm version --short --client  | grep v2
+  [[ $? == 0 ]] && HELM_VERSION=V2
+  [[ $? == 1 ]] && HELM_VERSION=V3
+  echo "@@ `timestamp` Detected Helm Version [$(helm version --short --client)]"
+
+  echo @@ `timestamp` Deleting installed helm charts
+
+  if [ "$HELM_VERSION" == "V2" ]; then
+   helm list --short | while read helm_name; do
+   if [ ! "$DRY_RUN" = "true" ]; then
+   (
+     set -x
+     helm delete --purge  $helm_name
+    )
+   else
+     echo @@ `timestamp` Info: DRYRUN: helm delete --purge  $helm_name
+   fi
+   done
+  fi
+
+  if [ "$HELM_VERSION" == "V3" ]; then
+    if [ ! "$DRY_RUN" = "true" ]; then
+    (
+      set -x
+      helm list --all-namespaces | grep -v NAME | awk '{system("helm uninstall " $1 " --namespace " $2)}'
+    )
+    else
+      echo @@ `timestamp` Info: DRYRUN: helm uninstall
+      helm list --all-namespaces | grep -v NAME | awk '{print "DRYRUN: helm uninstall " $1 " --namespace " $2}'
+   fi
+  fi
+
+  # cleanup tiller artifacts
+  if [ "$SHARED_CLUSTER" = "true" ]; then
+    echo @@ `timestamp` Skipping tiller delete.
+    # TBD: According to MarkN no Tiller delete is needed.
+    # kubectl $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
+    # kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
+    # kubectl $FAST_DELETE -n kube-system delete serviceaccount tiller --ignore-not-found=true
+  fi
 }
 
 
+FAST_DELETE=${FAST_DELETE:---timeout=60s}
+
 echo "@@ `timestamp` RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
 
-mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
+mkdir -p $TMP_DIR || exit 1
 
 #
 # Phase -3: Delete every domain, then wait for their pods to go away
@@ -514,49 +635,10 @@ else
 fi
 
 #
-# Phase 0: if helm is installed, delete all installed helm charts
+# Phase 0: if helm is installed, delete all installed helm releases
 #
 
-if [ -x "$(command -v helm)" ]; then
-  helm version --short --client  | grep v2
-  [[ $? == 0 ]] && HELM_VERSION=V2
-  [[ $? == 1 ]] && HELM_VERSION=V3
-  echo "Detected Helm Version [$(helm version --short --client)]"
-  echo @@ `timestamp` Deleting installed helm charts
-  if [ "$HELM_VERSION" == "V2" ]; then
-   helm list --short | while read helm_name; do
-   if [ ! "$DRY_RUN" = "true" ]; then
-   (
-     set -x
-     helm delete --purge  $helm_name
-    )
-   else
-     echo @@ `timestamp` Info: DRYRUN: helm delete --purge  $helm_name
-   fi
-   done
-  fi
-
-  if [ "$HELM_VERSION" == "V3" ]; then
-    if [ ! "$DRY_RUN" = "true" ]; then
-    (
-      set -x
-      helm list --all-namespaces | grep -v NAME | awk '{system("helm uninstall " $1 " --namespace " $2)}'
-    )
-    else
-      echo @@ `timestamp` Info: DRYRUN: helm uninstall
-      helm list --all-namespaces | grep -v NAME | awk '{print $1 "\t" $2)}'
-   fi
-  fi
-
-  # cleanup tiller artifacts
-  if [ "$SHARED_CLUSTER" = "true" ]; then
-    echo @@ `timestamp` Skipping tiller delete.
-    # TBD: According to MarkN no Tiller delete is needed.
-    # kubectl $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
-    # kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
-    # kubectl $FAST_DELETE -n kube-system delete serviceaccount tiller --ignore-not-found=true
-  fi
-fi
+deleteHelmReleases
 
 #
 # Phase 1, try an orderly mass delete, in order of type, looking for Operator related labels
@@ -565,20 +647,40 @@ fi
 deleteByTypeAndLabel
 
 #
-#   Phase 1 (continued):  wait to see if artifacts dissappear naturally due phase 1 effort
-#   Phase 2: kubectl delete left over artifacts individually in no specific order
-#            (Try a generic delete in case there are some leftover resources.)
-# arguments
-#   arg1 - namespaced kubernetes artifacts
-#   arg2 - non-namespaced artifacts
-#   arg3 - keywords in deletable artifacts
+# arguments for genericDelete
+#   g_arg1 - namespaced kubernetes artifacts
+#   g_arg2 - non-namespaced artifacts
+#   g_arg3 - keywords in deletable artifacts
+#
 
-echo @@ `timestamp` Starting genericDelete
-genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns"
+g_arg1="all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress"
+g_arg2="crd,pv,ns,clusterroles,clusterrolebindings"
+g_arg3="logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns"
+
+#
+# Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort
+#
+
+# TBD: Commenting out. Assume no longer needed as previous phase already has waits for labeled pods
+# genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -wait
+
+#
+# Phase 2: "friendly" kubectl delete left over artifacts individually
+#          in no specific order for up to 60 seconds
+#
+
+genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -friendlyDelete
+
+#
+# Phase 3: "--force=true --grace-period=0" kubectl delete left over artifacts individually
+#          in no specific order for up to 60 seconds
+#
+
+genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -forceDelete
 SUCCESS="$?"
 
 #
-# Phase 3: Delete pv host directories.
+# Phase 4: Delete pv host directories.
 #
 
 if [ "${DELETE_FILES:-true}" = "true" ] && [ "$DRY_RUN" = "false" ]; then

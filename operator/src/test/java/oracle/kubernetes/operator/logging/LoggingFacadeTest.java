@@ -123,20 +123,14 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifyGetFormattedMessage_withArgs_returnsFormattedMessage() {
-    assertThat(loggingFacade.getFormattedMessage(MessageKeys.CYCLING_SERVERS, "domain1", "list1"),
+    assertThat(loggingFacade.formatMessage(MessageKeys.CYCLING_SERVERS, "domain1", "list1"),
         is("Cycling of servers for Domain with UID domain1 in the list list1 now"));
   }
 
   @Test
   public void verifyGetFormattedMessage_withNoArgs_returnsFormattedMessage() {
-    assertThat(loggingFacade.getFormattedMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND),
+    assertThat(loggingFacade.formatMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND),
         is("Could not find the resource bundle"));
-  }
-
-  @Test
-  public void verifyGetFormattedMessage_withNonExistingKey_returnsOriginalMessage() {
-    assertThat(loggingFacade.getFormattedMessage("Not a key"),
-        is("Not a key"));
   }
 
   static class MockLogger extends Logger {
