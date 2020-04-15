@@ -45,6 +45,9 @@ public class IntegrationTestWatcher implements
 
   private String className;
   private String methodName;
+  /**
+   * Directory to store logs.
+   */
   private static final String LOGS_DIR = System.getProperty("java.io.tmpdir");
 
   /**
@@ -237,7 +240,7 @@ public class IntegrationTestWatcher implements
   /**
    * Gets the extension name for the directory based on where the test failed.
    * @param failedStage the test execution failed stage
-   * @return extension directory name
+   * @return String extension directory name
    */
   private String getExtDir(String failedStage) {
     String ext;

@@ -12,12 +12,9 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.NamespaceList;
 
@@ -25,14 +22,22 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
- * A utility class to collect log messages from Kubernetes cluster.
+ * A utility class to collect artifacts data from Kubernetes cluster.
  */
 public class LoggingUtil {
 
+  /**
+   * Directory to store logs.
+   */
   private static final String LOGS_DIR = System.getProperty("java.io.tmpdir");
 
   /**
-   * A utility method to collect logs for current running test object.
+   * Collect Kubernetes cluster artifacts data for current running test object. This method can be called anywhere in
+   * the test by passing the test instance object.
+   * <p>
+   * Artifacts in the namespace used by the tests are collected from the
+   * Kubernetes cluster and dumped in the LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP.
+   *
    * @param itInstance the integration test instance
    */
   public static void collectLogs(Object itInstance) {
@@ -53,9 +58,11 @@ public class LoggingUtil {
   }
 
   /**
-   * A utility method to introspect the test instance and collect all namespace fields used by the test.
+   *
+   * Collects all Kubernetes namespace fields used by the test.
+   *
    * @param itInstance the integration test instance
-   * @return Set of namespaces used by the tests
+   * @return Set of namespaces used by the integration test
    * @throws IllegalArgumentException when test instance access to the fields fails
    * @throws IllegalAccessException when test instance access to the fields fails
    * @throws ApiException when accessing the Kubernetes cluster for artifacts fails
@@ -69,11 +76,11 @@ public class LoggingUtil {
   }
 
   /**
-   * This utility method gets all the declared String field values in the test class,
-   * gets another list of namespaces existing in the Kubernetes cluster and gets
-   * the intersectioin of these 2 Sets.
+   * This utility method gets all the declared String field values in the test class, gets another list of namespaces
+   * existing in the Kubernetes cluster and gets the intersection of these 2 Sets.
    * <p>
-   * This method doesnot need the test classes to decorate their fields with any annotations.
+   * This method does not need the test classes to decorate their fields with any annotations.
+   *
    * @param itInstance the integration test instance
    * @return Set of namespaces used by the tests and that exists in the Kubernetes cluster
    * @throws IllegalArgumentException when test instance access to the fields fails
@@ -92,14 +99,14 @@ public class LoggingUtil {
       }
     }
     stringFiledList.retainAll(getNSFromK8s());
+    logger.info("Namespace list %s", stringFiledList);
     return stringFiledList;
   }
 
   /**
-   * This utility method gets all the declared String field values with annotation @NamespaceList
-   * in the test class.
+   * This utility method gets all the declared String field values with annotation @NamespaceList in the test class.
    * <p>
-   * This method does need the test classes to decorate their fields with @NamespaceList.
+   * This method does need the test classes to decorate their namespace fields with @NamespaceList.
    * @param itInstance the integration test instance
    * @return Set of namespaces used by the tests.
    * @throws IllegalArgumentException when test instance access to the fields fails
@@ -117,14 +124,15 @@ public class LoggingUtil {
         }
       }
     }
-    logger.info("Tagged namespace set : \n {0}", namespaceFields.toString());
+    logger.info("Namespace list %s", namespaceFields);
     return namespaceFields;
   }
 
   /**
-   * Utility method to query the Kubernetes cluster with given namespace to get the various artifacts.
+   * Queries the Kubernetes cluster with given namespace to get the various artifacts and writes it the resultDir.
+   *
    * @param namespace in which to query cluster for artifacts
-   * @param resultDir existing directory to place the written log files
+   * @param resultDir existing directory to write log files
    * @throws IOException when writing log files fails
    * @throws ApiException when Kubernetes cluster query fails
    */
@@ -151,19 +159,20 @@ public class LoggingUtil {
     // get Domain
     writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_domain.log");
     // get domain/operator pods
-    V1PodList listPods = Kubernetes.listPods(namespace, null);
-    List<V1Pod> domainPods = listPods.getItems();
-    for (V1Pod pod : domainPods) {
-      String podName = pod.getMetadata().getName();
-      String podLog = Kubernetes.getPodLog(podName, namespace);
-      writeToFile(podLog, resultDir.toString(), namespace + podName + ".log");
+    for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
+      if (pod.getMetadata() != null) {
+        writeToFile(Kubernetes.getPodLog(pod.getMetadata().getName(), namespace),
+            resultDir.toString(),
+            namespace + pod.getMetadata().getName() + ".log");
+      }
     }
   }
 
   /**
-   * Method to write files.
+   * Write file fileName in resultDir.
+   *
    * @param obj to write to the file as YAML
-   * @param resultDir directory for the log location
+   * @param resultDir directory in which to write the file
    * @param fileName name of the log file to write
    * @throws IOException when write fails
    */
@@ -177,7 +186,8 @@ public class LoggingUtil {
   }
 
   /**
-   * A util method to query the Kubernetes cluster to all all namespaces existing.
+   * Query the Kubernetes cluster to get all existing namespace objects.
+   *
    * @return Set of namespaces from the Kubernetes cluster
    * @throws ApiException when Kubernetes cluster query fails
    */

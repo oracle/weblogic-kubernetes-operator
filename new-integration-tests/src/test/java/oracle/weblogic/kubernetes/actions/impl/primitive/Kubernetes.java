@@ -226,10 +226,6 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-  public static List listDeployments() {
-    return new ArrayList();
-  }
-
   /**
    * List all deployments in a given namespace.
    * @param namespace Namespace in which to list the deployments
