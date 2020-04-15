@@ -95,8 +95,7 @@ class ItMiiDomain implements LoggedTest {
 
   // mii constants
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
-  private static final String MII_IMAGE_NAME_PREFIX = "mii-image-";
-  private static final String MII_IMAGE_TAG = "v1";
+  private static final String MII_IMAGE_NAME = "mii-image";
   private static final String APP_NAME = "sample-app";
 
   // domain constants
@@ -382,8 +381,7 @@ class ItMiiDomain implements LoggedTest {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
-    String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
-    final String imageName = MII_IMAGE_NAME_PREFIX + currentDateTime;
+    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
 
     // build the model file list
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
@@ -409,11 +407,11 @@ class ItMiiDomain implements LoggedTest {
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using model directory {2}",
-        imageName, MII_IMAGE_TAG, MODEL_DIR);
+        MII_IMAGE_NAME, imageTag, MODEL_DIR);
     boolean result = createMIIImage(
         defaultWITParams()
-            .modelImageName(imageName)
-            .modelImageTag(MII_IMAGE_TAG)
+            .modelImageName(MII_IMAGE_NAME)
+            .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
             .wdtVersion("latest")
@@ -422,16 +420,16 @@ class ItMiiDomain implements LoggedTest {
 
     assertThat(result)
         .as("Check createMIIImage() returns true")
-        .withFailMessage(String.format("Failed to create the image %s using WebLogic Image Tool", imageName))
+        .withFailMessage(String.format("Failed to create the image %s using WebLogic Image Tool", MII_IMAGE_NAME))
         .isTrue();
 
     // check image exists
-    assertThat(dockerImageExists(imageName, MII_IMAGE_TAG))
+    assertThat(dockerImageExists(MII_IMAGE_NAME, imageTag))
         .as("Check dockerImageExists() returns true")
-        .withFailMessage(String.format("Image %s doesn't exist", imageName + ":" + MII_IMAGE_TAG))
+        .withFailMessage(String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag))
         .isTrue();
 
-    return imageName + ":" + MII_IMAGE_TAG;
+    return MII_IMAGE_NAME + ":" + imageTag;
   }
 
   private void pushImageToOCIR(String image) {
