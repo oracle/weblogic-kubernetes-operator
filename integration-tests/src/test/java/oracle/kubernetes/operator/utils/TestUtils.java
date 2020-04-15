@@ -2246,16 +2246,18 @@ public class TestUtils {
 
     try {
       deleteDomainHomeDirOke("");
+      String resourceDir = BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/oke/";
       StringBuffer cmdLine = new StringBuffer()
               .append(" kubectl delete -f ")
-              .append(BaseTest.getResultRootDir())
-              .append("cleanupokepvc.yaml");
+              .append(resourceDir)
+              .append("cleanupokepvctest.yaml");
 
       ExecCommand.exec(cmdLine.toString());
       cmdLine = new StringBuffer()
               .append(" kubectl delete -f ")
-              .append(BaseTest.getResultRootDir())
-              .append("cleanupokepv.yaml");
+              .append(resourceDir)
+              .append("cleanupokepvtest.yaml");
       ExecCommand.exec(cmdLine.toString());
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
@@ -2270,9 +2272,9 @@ public class TestUtils {
   public static void deleteDomainHomeDirOke(String domainUid) throws Exception {
 
     String resourceDir = BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/oke";
-    String pvYaml = BaseTest.getResultRootDir() + "cleanupokepv.yaml";
-    String pvcYaml = BaseTest.getResultRootDir() + "cleanupokepvc.yaml";
+            + "/integration-tests/src/test/resources/oke/";
+    String pvYaml = resourceDir + "/cleanupoketestpv.yaml";
+    String pvcYaml = resourceDir + "/cleanupoketestpvc.yaml";
     String cmd = " kubectl create ns cleanupoke";
     ExecCommand.exec(cmd);
     TestUtils.copyFile(resourceDir + "cleanupokepv.yaml",pvYaml);
