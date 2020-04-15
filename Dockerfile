@@ -28,24 +28,25 @@ ENV JAVA_URL https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/release
 
 # Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
-	curl -fL -o /openjdk.tgz "$JAVA_URL"; \
-	mkdir -p "$JAVA_HOME"; \
-	tar --extract --file /openjdk.tgz --directory "$JAVA_HOME" --strip-components 1; \
-	rm /openjdk.tgz; \
-	mkdir /usr/java; \
-	ln -sfT "$JAVA_HOME" /usr/java/default; \
-	ln -sfT "$JAVA_HOME" /usr/java/latest; \
-	for bin in "$JAVA_HOME/bin/"*; do \
-		base="$(basename "$bin")"; \
-		[ ! -e "/usr/bin/$base" ]; \
-		alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
-	done; \
-	java -Xshare:dump; \
-	groupadd -g 1000 oracle; \
+    curl -fL -o /openjdk.tgz "$JAVA_URL"; \
+    mkdir -p "$JAVA_HOME"; \
+    tar --extract --file /openjdk.tgz --directory "$JAVA_HOME" --strip-components 1; \
+    rm /openjdk.tgz; \
+    mkdir /usr/java; \
+    ln -sfT "$JAVA_HOME" /usr/java/default; \
+    ln -sfT "$JAVA_HOME" /usr/java/latest; \
+    for bin in "$JAVA_HOME/bin/"*; do \
+        base="$(basename "$bin")"; \
+        [ ! -e "/usr/bin/$base" ]; \
+        alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
+    done; \
+    java -Xshare:dump; \
+    groupadd -g 1000 oracle; \
     useradd -d /operator -M -s /bin/bash -g 1000 -u 1000 oracle; \
     mkdir -p /operator/lib; \
     mkdir /logs; \
     chown -R 1000:1000 /operator /logs
+
 USER 1000
 
 COPY src/scripts/* /operator/
