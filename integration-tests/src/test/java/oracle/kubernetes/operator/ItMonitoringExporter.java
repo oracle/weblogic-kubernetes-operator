@@ -176,7 +176,7 @@ public class ItMonitoringExporter extends BaseTest {
         if (BaseTest.OKE_CLUSTER) {
           cleanUpPvDirOke();
           LB_PROMETHEUS_PUBLIC_IP =createMonitorTraefikLB("monitoring");
-          LB_GRAFANA_PUBLIC_IP = LB_PROMETHEUS_PUBLIC_IP
+          LB_GRAFANA_PUBLIC_IP = LB_PROMETHEUS_PUBLIC_IP;
         }
         installPrometheusGrafanaWebHookMySqlCoordinator();
       }
