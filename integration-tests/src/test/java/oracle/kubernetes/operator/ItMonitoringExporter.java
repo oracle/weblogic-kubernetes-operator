@@ -89,7 +89,8 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS2;
   private static String currentDateTime;
   private static final String monitoringNS = "monitortestns";
-  private static String LB_MONITORING_PUBLIC_IP;
+  private static String LB_PROMETHEUS_PUBLIC_IP;
+  private static String LB_GRAFANA_PUBLIC_IP;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -174,7 +175,8 @@ public class ItMonitoringExporter extends BaseTest {
         setupPv();
         if (BaseTest.OKE_CLUSTER) {
           cleanUpPvDirOke();
-          createMonitorTraefikLB();
+          LB_PROMETHEUS_PUBLIC_IP =createMonitorTraefikLB("monitoring");
+          LB_GRAFANA_PUBLIC_IP = LB_PROMETHEUS_PUBLIC_IP
         }
         installPrometheusGrafanaWebHookMySqlCoordinator();
       }
@@ -1259,7 +1261,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     String url = domain.getHostNameForCurl() + ":" + grafanaPort;
     if (BaseTest.OKE_CLUSTER) {
-      url = LB_MONITORING_PUBLIC_IP;
+      url = LB_GRAFANA_PUBLIC_IP;
     }
     LoggerHelper.getLocal().log(Level.INFO, "installing grafana dashboard");
     crdCmd =
@@ -1400,7 +1402,7 @@ public class ItMonitoringExporter extends BaseTest {
     // url
     String url = myhost + ":" + prometheusPort;
     if (BaseTest.OKE_CLUSTER) {
-      url = LB_MONITORING_PUBLIC_IP;
+      url = LB_PROMETHEUS_PUBLIC_IP;
     }
     StringBuffer testAppUrl = new StringBuffer("http://");
     testAppUrl
@@ -1453,20 +1455,24 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Method to create Load Balancer to access Prometheus and Grafana in OKE.
    *
+   * @param chartName  name for traefik LB (prometheus|grafana)
+   * @return external IP for Load Balancer
    * @throws Exception if fails to create or verify LB creation.
    */
-  private static void createMonitorTraefikLB() throws Exception {
+  private static String createMonitorTraefikLB(String chartName) throws Exception {
     String crdCmd =
             " kubectl create namespace " + monitoringNS;
     TestUtils.exec(crdCmd);
     String cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh "
-            + "create traefik traefik-monitoring montesttraefikns "
+            + "create traefik traefik-"
+            + chartName
+            + " montesttraefikns "
             + resourceExporterDir
             + "/../oke/traefikvalues.yaml";
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
     ExecResult result = ExecCommand.exec(cmdLb);
     if (result.exitValue() != 0) {
-      if (!result.stderr().contains("release named monitoringtraefik already exists")) {
+      if (!result.stderr().contains("release named " + chartName + " already exists")) {
         throw new Exception(
                 "FAILURE: command to create load balancer "
                         + cmdLb
@@ -1475,18 +1481,20 @@ public class ItMonitoringExporter extends BaseTest {
                         + result.stderr());
       }
     }
-    TestUtils.checkLbExternalIpCreated("traefik-monitoring","montesttraefikns");
-    String cmdip = "kubectl describe svc traefik-monitoring --namespace montesttraefikns "
+    TestUtils.checkLbExternalIpCreated(chartName,"montesttraefikns");
+    String cmdip = "kubectl describe svc "
+            + chartName + " --namespace montesttraefikns "
             + "| grep Ingress | awk '{print $3}'";
     result = TestUtils.exec(cmdip);
-    LB_MONITORING_PUBLIC_IP = result.stdout().trim();
-    assertNotNull(LB_MONITORING_PUBLIC_IP, "Can't retreive External IP for traefik-monitoring");
+    String LB_MONITORING_PUBLIC_IP = result.stdout().trim();
+    assertNotNull(LB_MONITORING_PUBLIC_IP, "Can't retreive External IP for " + chartName);
     LoggerHelper.getLocal().log(Level.INFO,
             "Load Balancer MONITORING Public IP : " + LB_MONITORING_PUBLIC_IP);
     // apply new domain yaml and verify pod restart
     crdCmd =
             " kubectl apply -f " + resourceExporterDir + "/../oke/traefik-path-routing-monitoring.yaml";
     TestUtils.exec(crdCmd);
+    return LB_MONITORING_PUBLIC_IP;
   }
 
   /**
@@ -1552,7 +1560,7 @@ public class ItMonitoringExporter extends BaseTest {
       cmdRemove.append(BaseTest.getProjectRoot())
               .append("/src/integration-tests/bash/krun.sh -t 240 -m ")
               .append("cleanupoke-weblogic-sample-pvc:/shared/")
-              .append(" -n cleanupoke -c \"rm -rf /shared/*");
+              .append(" -n cleanupoke -c \"rm -rf /shared/* \"");
 
       LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmdRemove.toString());
       result = ExecCommand.exec(cmdRemove.toString());

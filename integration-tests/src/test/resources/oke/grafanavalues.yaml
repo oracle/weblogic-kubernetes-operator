@@ -3,7 +3,6 @@
 
 persistence:
   enabled: true
-  existingClaim: pvc-grafana
 service:
   type: ClusterIP
   port: 80

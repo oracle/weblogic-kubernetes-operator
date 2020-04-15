@@ -16,7 +16,11 @@ spec:
             backend:
               serviceName: prometheus-server
               servicePort: 80
-          - path: /
+          - path: /api/datasources/
             backend:
               serviceName: grafana
               servicePort: 80
+          - path: /api/dashboards/
+              backend:
+                serviceName: grafana
+                servicePort: 80
