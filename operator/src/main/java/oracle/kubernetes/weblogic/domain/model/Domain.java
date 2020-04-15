@@ -347,6 +347,18 @@ public class Domain {
   }
 
   /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
+   * @param status Status
+   * @return this instance
+   */
+  public Domain withStatus(DomainStatus status) {
+    this.status = status;
+    return this;
+  }
+
+  /**
    * Name of the secret containing WebLogic startup credentials username and password.
    *
    * @return the secret name

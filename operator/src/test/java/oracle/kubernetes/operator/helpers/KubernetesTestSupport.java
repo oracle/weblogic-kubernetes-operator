@@ -5,6 +5,8 @@ package oracle.kubernetes.operator.helpers;
 
 import java.io.StringReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,6 +105,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String SELF_SUBJECT_ACCESS_REVIEW = "SelfSubjectAccessReview";
   public static final String SELF_SUBJECT_RULES_REVIEW = "SelfSubjectRulesReview";
   public static final String TOKEN_REVIEW = "TokenReview";
+
+  private static RequestParams REQUEST_PARAMS
+      = new RequestParams("testcall", "junit", "testName", "body");
 
   private Map<String, DataRepository<?>> repositories = new HashMap<>();
   private Map<Class<?>, String> dataTypes = new HashMap<>();
@@ -220,9 +225,17 @@ public class KubernetesTestSupport extends FiberTestSupport {
     this.addCreationTimestamp = addCreationTimestamp;
   }
 
+  private DataRepository<?> selectRepository(String resourceType) {
+    String key = resourceType;
+    if (key.endsWith("Status")) {
+      key = key.substring(0, key.length() - 6);
+    }
+    return repositories.get(key);
+  }
+
   @SuppressWarnings("unchecked")
   public <T> List<T> getResources(String resourceType) {
-    return ((DataRepository<T>) repositories.get(resourceType)).getResources();
+    return ((DataRepository<T>) selectRepository(resourceType)).getResources();
   }
 
   /**
@@ -263,11 +276,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   public void doOnCreate(String resourceType, Consumer<?> consumer) {
-    repositories.get(resourceType).addCreateAction(consumer);
+    selectRepository(resourceType).addCreateAction(consumer);
   }
 
   public void doOnUpdate(String resourceType, Consumer<?> consumer) {
-    repositories.get(resourceType).addUpdateAction(consumer);
+    selectRepository(resourceType).addUpdateAction(consumer);
   }
 
   /**
@@ -363,6 +376,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
       @Override
       <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.replaceResource(dataRepository);
+      }
+    },
+    replaceStatus {
+      @Override
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
+        return callContext.replaceResourceStatus(dataRepository);
       }
     },
     list {
@@ -628,6 +647,25 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return resource;
     }
 
+    T replaceResourceStatus(String name, T resource) {
+      setName(resource, name);
+
+      T current = data.get(name);
+      if (current == null) {
+        throw new IllegalStateException();
+      }
+      try {
+        Method getMethod = current.getClass().getMethod("getStatus");
+        current.getClass().getMethod("setStatus", getMethod.getReturnType())
+            .invoke(current, getMethod.invoke(resource));
+      } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+        e.printStackTrace();
+      }
+
+      onUpdateActions.forEach(a -> a.accept(current));
+      return current;
+    }
+
     V1Status deleteResource(String name, String namespace) {
       if (!hasElementWithName(name)) {
         throw new NotFoundException(getResourceName(), name, namespace);
@@ -785,6 +823,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
+    T replaceResourceStatus(String name, T resource) {
+      return inNamespace(getMetadata(resource).getNamespace()).replaceResourceStatus(name, resource);
+    }
+
+    @Override
     V1Status deleteResource(String name, String namespace) {
       return inNamespace(namespace).deleteResource(name, namespace);
     }
@@ -841,7 +884,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private void parseCallName(String callName) {
       int i = indexOfFirstCapital(callName);
       resourceType = callName.substring(i);
-      operation = Operation.valueOf(callName.substring(0, i));
+      String operationName = callName.substring(0, i);
+      if (callName.endsWith("Status")) {
+        operationName = operationName + "Status";
+      }
+      operation = Operation.valueOf(operationName);
 
       if (isDeleteCollection()) {
         selectDeleteCollectionOperation();
@@ -872,7 +919,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         throw failure.getException();
       }
 
-      return operation.execute(this, repositories.get(resourceType));
+      return operation.execute(this, selectRepository(resourceType));
     }
 
     @SuppressWarnings("unchecked")
@@ -883,6 +930,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     @SuppressWarnings("unchecked")
     private <T> T replaceResource(DataRepository<T> dataRepository) {
       return dataRepository.replaceResource(requestParams.name, (T) requestParams.body);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T replaceResourceStatus(DataRepository<T> dataRepository) {
+      return dataRepository.replaceResourceStatus(requestParams.name, (T) requestParams.body);
     }
 
     private <T> V1Status deleteResource(DataRepository<T> dataRepository) {
@@ -938,23 +990,23 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private <T> CallResponse<T> createResponse(T callResult) {
-      return CallResponse.createSuccess(callResult, HTTP_OK);
+      return CallResponse.createSuccess(REQUEST_PARAMS, callResult, HTTP_OK);
     }
 
     private CallResponse<?> createResponse(NotFoundException e) {
-      return CallResponse.createFailure(new ApiException(e), HTTP_NOT_FOUND);
+      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(e), HTTP_NOT_FOUND);
     }
 
     private CallResponse<?> createResponse(HttpErrorException e) {
-      return CallResponse.createFailure(e.getApiException(), e.getApiException().getCode());
+      return CallResponse.createFailure(REQUEST_PARAMS, e.getApiException(), e.getApiException().getCode());
     }
 
     private CallResponse<?> createResponse(JsonException e) {
-      return CallResponse.createFailure(new ApiException(e), HTTP_INTERNAL_ERROR);
+      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(e), HTTP_INTERNAL_ERROR);
     }
 
     private CallResponse<?> createResponse(Throwable t) {
-      return CallResponse.createFailure(new ApiException(t), HTTP_UNAVAILABLE);
+      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(t), HTTP_UNAVAILABLE);
     }
   }
 

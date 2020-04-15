@@ -379,7 +379,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
-      LOGGER.info(
+      LOGGER.fine(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
           AnnotationHelper.getDebugString(getPodModel()));

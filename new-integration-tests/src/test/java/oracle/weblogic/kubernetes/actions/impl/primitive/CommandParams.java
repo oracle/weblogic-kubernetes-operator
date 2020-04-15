@@ -6,12 +6,12 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.util.Map;
 
 /**
- * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
+ * Contains the parameters for executing a command.
  */
 
 public class CommandParams {
 
-  // the command to execute
+  // The command to execute
   private String command;
  
   // The env variables that are needed for running a command

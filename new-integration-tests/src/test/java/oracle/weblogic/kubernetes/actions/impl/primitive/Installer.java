@@ -33,8 +33,8 @@ public class Installer {
   private InstallParams params;
   
   /**
-   * Set up the installer with default values for WDT
-   * @return the InstallParams instance 
+   * Create an InstallParams with the default values for WDT.
+   * @return an InstallParams instance 
    */
   public static InstallParams defaultInstallWDTParams() {
     return new InstallParams()
@@ -48,8 +48,8 @@ public class Installer {
   } 
   
   /**
-   * Set up the installer with default values for WIT
-   * @return the InstallParams instance 
+   * Create an InstallParams with the default values for WIT.
+   * @return an InstallParams instance 
    */
   public static InstallParams defaultInstallWITParams() {
     return new InstallParams()
@@ -63,8 +63,8 @@ public class Installer {
   }
 
   /**
-   * Set up the installer with given parameters
-   * @return the installer instance 
+   * Set up the installer with given parameters.
+   * @return an installer instance 
    */
   public static Installer withParams(InstallParams params) {
     return new Installer().params(params);
@@ -80,26 +80,26 @@ public class Installer {
    * @return true if the command succeeds 
    */
   public boolean download() {
-    boolean downloadResult = true;
-    boolean unzipResult = true;
+    boolean downloadSucceeded = true;
+    boolean unzipSucceeded = true;
     if (params.verify()
         && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
-      logger.info("File " + params.fileName() + " already exists.");
+      logger.info("File {0} already exists.", params.fileName());
     } else {
       checkDirectory(DOWNLOAD_DIR);
-      downloadResult = Command.withParams(
+      downloadSucceeded = Command.withParams(
           defaultCommandParams() 
               .command(buildDownloadCommand())
               .redirect(params.redirect()))
-          .executeAndVerify();
+          .execute();
     }
     if (params.unzip()) {
       // only unzip WIT once
-      if (!(doesFileExist(IMAGE_TOOL))) { 
-        unzipResult = unzip();
+      if (!(doesFileExist(IMAGE_TOOL))) {
+        unzipSucceeded = unzip();
       }
     }
-    return downloadResult && unzipResult;
+    return downloadSucceeded && unzipSucceeded;
   }
 
   private boolean unzip() {
@@ -109,7 +109,7 @@ public class Installer {
         defaultCommandParams()  
             .command(command)
             .redirect(false))
-        .executeAndVerify();
+        .execute();
   }
 
   private String buildDownloadCommand() {

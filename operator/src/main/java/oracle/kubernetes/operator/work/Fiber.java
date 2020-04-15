@@ -134,9 +134,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     this.completionCallback = completionCallback;
 
     if (status.get() == NOT_COMPLETE) {
-      if (LOGGER.isFineEnabled()) {
+      LOGGER.finer("{0} started", getName());
+      if (LOGGER.isFinestEnabled()) {
         breadCrumbs = new ArrayList<>();
-        LOGGER.fine("{0} started", getName());
       }
 
       owner.addRunnable(this);
@@ -216,8 +216,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       throw new IllegalArgumentException();
     }
 
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} terminated", getName());
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer("{0} terminated", getName());
     }
 
     lock.lock();
@@ -270,8 +270,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       return false;
     }
 
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", getName());
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer("{0} cancelled", getName());
     }
 
     // synchronized(this) is used as Thread running Fiber will be holding lock
@@ -475,8 +475,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       if (s == CANCELLED
           || (s == NOT_COMPLETE
               && (na.throwable != null || (na.next == null && na.kind != Kind.SUSPEND)))) {
-        if (LOGGER.isFineEnabled()) {
-          LOGGER.fine("{0} completed", getName());
+        if (LOGGER.isFinerEnabled()) {
+          LOGGER.finer("{0} completed", getName());
         }
 
         recordBreadCrumb();
@@ -489,7 +489,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
             }
           }
         } catch (Throwable t) {
-          LOGGER.warning(MessageKeys.EXCEPTION, t);
+          LOGGER.fine(MessageKeys.EXCEPTION, t);
         } finally {
           status.compareAndSet(NOT_COMPLETE, DONE);
           condition.signalAll();
@@ -583,7 +583,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         return false;
       }
 
-      LOGGER.fine(CURRENT_STEPS, na.next);
+      LOGGER.finer(CURRENT_STEPS, na.next);
 
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer(
@@ -711,8 +711,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     // Mark fiber as cancelled, if not already done
     status.compareAndSet(NOT_COMPLETE, CANCELLED);
 
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", getName());
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer("{0} cancelled", getName());
     }
 
     AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating
@@ -778,8 +778,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         StringBuilder sb = new StringBuilder();
         writeBreadCrumb(sb);
 
-        if (LOGGER.isFineEnabled()) {
-          LOGGER.fine("{0} bread crumb: {1}", getName(), sb.toString());
+        if (LOGGER.isFinestEnabled()) {
+          LOGGER.finest("{0} bread crumb: {1}", getName(), sb.toString());
         }
         breadCrumbs = null;
       }
