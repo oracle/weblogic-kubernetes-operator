@@ -15,7 +15,7 @@ spec:
     - ReadWriteMany
   nfs:
     server: 10.0.10.6
-    path: "/marina-test"
+    path: "/ci-oke-mysql"
     readOnly: false
 ---
 apiVersion: v1

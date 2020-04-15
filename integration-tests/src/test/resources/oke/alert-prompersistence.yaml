@@ -7,14 +7,14 @@ metadata:
   name: pv-alertmanager
 
 spec:
-  storageClassName: alertmanager
+  storageClassName: alermanager
   capacity:
     storage: 10Gi
   accessModes:
     - ReadWriteMany
   nfs:
     server: 10.0.10.6
-    path: "/marina-test"
+    path: "/ci-oke-alertprom"
     readOnly: false
 
 ---
@@ -25,7 +25,7 @@ metadata:
   namespace: monitortestns
 
 spec:
-  storageClassName: alertmanager 
+  storageClassName: alertmanager
   resources:
     requests:
       storage: 10Gi

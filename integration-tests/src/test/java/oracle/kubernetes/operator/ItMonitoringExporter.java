@@ -174,7 +174,9 @@ public class ItMonitoringExporter extends BaseTest {
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
         setupPv();
         if (BaseTest.OKE_CLUSTER) {
-          cleanUpPvDirOke();
+          cleanUpPvDirOke("/ci-oke-mysql");
+          cleanUpPvDirOke("/ci-oke-prom");
+          cleanUpPvDirOke("/ci-oke-alertprom");
           LB_PROMETHEUS_PUBLIC_IP = createMonitorTraefikLB("monitoring");
           LB_GRAFANA_PUBLIC_IP = LB_PROMETHEUS_PUBLIC_IP;
         }
@@ -1529,7 +1531,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Run script to delete pv dirs in oke.
    */
-  public static void cleanUpPvDirOke() {
+  public static void cleanUpPvDirOke(String fssPath) {
 
     try {
       String cmd = " kubectl create ns cleanupoke";
@@ -1541,18 +1543,18 @@ public class ItMonitoringExporter extends BaseTest {
               + "/integration-tests/src/test/resources/oke/cleanupokepvc.yaml";
       String okepvcYaml = monitoringExporterDir + "/cleanupokepvc.yaml";
       TestUtils.copyFile(pvYaml, okepvYaml);
-      TestUtils.replaceStringInFile(okepvYaml, "NFS_SERVER", "10.0.10.6");
-      TestUtils.replaceStringInFile(okepvYaml, "FSS_DIR", "/marina-test");
-      TestUtils.replaceStringInFile(okepvYaml, "weblogic-sample", "monitoring");
       TestUtils.copyFile(pvcYaml, okepvcYaml);
+      TestUtils.replaceStringInFile(okepvYaml, "NFS_SERVER", "10.0.10.6");
+      TestUtils.replaceStringInFile(okepvYaml, "FSS_DIR", fssPath);
+      TestUtils.replaceStringInFile(okepvYaml, "weblogic-sample", "monitoring");;
       TestUtils.replaceStringInFile(okepvcYaml, "weblogic-sample", "monitoring");
 
 
-      cmd = " kubectl apply -f " + pvYaml;
+      cmd = " kubectl apply -f " + okepvYaml;
       ExecResult result = ExecCommand.exec(cmd);
       LoggerHelper.getLocal().log(
               Level.INFO, "created  pv to cleanup nfs mounted dirs " + result.stdout());
-      cmd = " kubectl apply -f " + pvcYaml;
+      cmd = " kubectl apply -f " + okepvcYaml;
       result = ExecCommand.exec(cmd);
       LoggerHelper.getLocal().log(
               Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout());
@@ -1575,12 +1577,12 @@ public class ItMonitoringExporter extends BaseTest {
 
       StringBuffer cmdLine = new StringBuffer()
               .append(" kubectl delete -f ")
-              .append(pvcYaml);
+              .append(okepvcYaml);
 
       ExecCommand.exec(cmdLine.toString());
       cmdLine = new StringBuffer()
               .append(" kubectl delete -f ")
-              .append(pvYaml);
+              .append(okepvYaml);
       ExecCommand.exec(cmdLine.toString());
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
