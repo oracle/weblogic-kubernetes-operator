@@ -2245,19 +2245,18 @@ public class TestUtils {
   public static void deleteDomainHomeDirOke() {
 
     try {
-      String pvYaml = BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/oke/cleanupokepv.yaml";
-      replaceStringInFile(pvYaml, "NFS_SERVER", BaseTest.NFS_SERVER);
-      replaceStringInFile(pvYaml, "FSS_DIR", BaseTest.FSS_DIR);
       deleteDomainHomeDirOke("");
       StringBuffer cmdLine = new StringBuffer()
               .append(" kubectl delete -f ")
-              .append(BaseTest.getProjectRoot())
-              .append("/integration-tests/src/test/resources/oke");
-      String cmd = cmdLine.toString() + "/cleanupokepvc.yaml";
-      ExecCommand.exec(cmd);
-      cmd = cmdLine.toString() + "/cleanupokepv.yaml";
-      ExecCommand.exec(cmd);
+              .append(BaseTest.getResultRootDir())
+              .append("cleanupokepvc.yaml");
+
+      ExecCommand.exec(cmdLine.toString());
+      cmdLine = new StringBuffer()
+              .append(" kubectl delete -f ")
+              .append(BaseTest.getResultRootDir())
+              .append("cleanupokepv.yaml");
+      ExecCommand.exec(cmdLine.toString());
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
     }
@@ -2272,14 +2271,20 @@ public class TestUtils {
 
     String resourceDir = BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/oke";
+    String pvYaml = BaseTest.getResultRootDir() + "cleanupokepv.yaml";
+    String pvcYaml = BaseTest.getResultRootDir() + "cleanupokepvc.yaml";
     String cmd = " kubectl create ns cleanupoke";
-    ExecResult result = ExecCommand.exec(cmd);
+    ExecCommand.exec(cmd);
+    TestUtils.copyFile(resourceDir + "cleanupokepv.yaml",pvYaml);
+    TestUtils.copyFile(resourceDir + "cleanupokepvc.yaml",pvcYaml);
+    replaceStringInFile(pvYaml, "NFS_SERVER", BaseTest.NFS_SERVER);
+    replaceStringInFile(pvYaml, "FSS_DIR", BaseTest.FSS_DIR);
 
-    cmd = " kubectl apply -f " + resourceDir + "/cleanupokepv.yaml";
-    result = ExecCommand.exec(cmd);
+    cmd = " kubectl apply -f " + pvYaml;
+    ExecResult result = ExecCommand.exec(cmd);
     LoggerHelper.getLocal().log(
             Level.INFO, "created  pv to cleanup nfs mounted dirs " + result.stdout());
-    cmd = " kubectl apply -f " + resourceDir + "/cleanupokepvc.yaml";
+    cmd = " kubectl apply -f " + pvcYaml;
     result = ExecCommand.exec(cmd);
     LoggerHelper.getLocal().log(
             Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout());

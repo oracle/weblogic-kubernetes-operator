@@ -167,6 +167,7 @@ public class ItMonitoringExporter extends BaseTest {
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
         setupPv();
         if (BaseTest.OKE_CLUSTER) {
+          cleanUpPvDirOke();
           createMonitorTraefikLB();
         }
         installPrometheusGrafanaWebHookMySqlCoordinator();
@@ -1186,16 +1187,27 @@ public class ItMonitoringExporter extends BaseTest {
   private static void installPrometheusGrafanaWebHookMySqlCoordinator() throws Exception {
     prometheusPort = "30500";
     String crdCmd = " cp " + resourceExporterDir + "/promvalues.yaml"
-        + " " + monitoringExporterEndToEndDir
-        + "/prometheus/promvalues.yaml";
-    TestUtils.exec(crdCmd, true);
-    String promalertmanagerPort = String.valueOf(32500 + getNewSuffixCount());
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/promvalues.yaml", "32500", promalertmanagerPort);
-    grafanaPort = String.valueOf(31000 + getNewSuffixCount());
-    replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
-        "31000", grafanaPort);
+            + " " + monitoringExporterEndToEndDir
+            + "/prometheus/promvalues.yaml";
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.copyFile(resourceExporterDir + "/../oke/okepromvalues.yaml",
+              monitoringExporterEndToEndDir
+                      + "/prometheus/promvalues.yaml");
+      TestUtils.copyFile(resourceExporterDir + "/../oke/grafanavalues.yaml",
+              monitoringExporterEndToEndDir
+                      + "/grafana/values.yaml");
+    } else {
+      TestUtils.copyFile(resourceExporterDir + "/promvalues.yaml",
+              monitoringExporterEndToEndDir
+                      + "/prometheus/promvalues.yaml");
 
+      String promalertmanagerPort = String.valueOf(32500 + getNewSuffixCount());
+      replaceStringInFile(
+              monitoringExporterEndToEndDir + "/prometheus/promvalues.yaml", "32500", promalertmanagerPort);
+      grafanaPort = String.valueOf(31000 + getNewSuffixCount());
+      replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
+              "31000", grafanaPort);
+    }
     executeShelScript(
         resourceExporterDir,
         monitoringExporterScriptDir,
@@ -1496,6 +1508,67 @@ public class ItMonitoringExporter extends BaseTest {
                         + result.stdout()
                         + result.stderr());
       }
+    }
+  }
+
+  /**
+   * Run script to delete pv dirs in oke.
+   */
+  public static void cleanUpPvDirOke() {
+
+    try {
+      String cmd = " kubectl create ns cleanupoke";
+      ExecCommand.exec(cmd);
+      String pvYaml = BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/oke/cleanupokepv.yaml";
+      String okepvYaml = monitoringExporterDir + "/cleanupokepv.yaml";
+      String pvcYaml = BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/oke/cleanupokepvc.yaml";
+      String okepvcYaml = monitoringExporterDir + "/cleanupokepvc.yaml";
+      TestUtils.copyFile(pvYaml, okepvYaml);
+      TestUtils.replaceStringInFile(okepvYaml, "NFS_SERVER", "10.0.10.6");
+      TestUtils.replaceStringInFile(okepvYaml, "FSS_DIR", "/marina-test");
+      TestUtils.replaceStringInFile(okepvYaml, "weblogic-sample", "monitoring");
+      TestUtils.copyFile(pvcYaml, okepvcYaml);
+      TestUtils.replaceStringInFile(okepvcYaml, "weblogic-sample", "monitoring");
+
+
+      cmd = " kubectl apply -f " + pvYaml;
+      ExecResult result = ExecCommand.exec(cmd);
+      LoggerHelper.getLocal().log(
+              Level.INFO, "created  pv to cleanup nfs mounted dirs " + result.stdout());
+      cmd = " kubectl apply -f " + pvcYaml;
+      result = ExecCommand.exec(cmd);
+      LoggerHelper.getLocal().log(
+              Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout());
+
+      StringBuffer cmdRemove = new StringBuffer();
+      cmdRemove.append(BaseTest.getProjectRoot())
+              .append("/src/integration-tests/bash/krun.sh -t 240 -m ")
+              .append("cleanupoke-weblogic-sample-pvc:/shared/")
+              .append(" -n cleanupoke -c \"rm -rf /shared/*");
+
+      LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmdRemove.toString());
+      result = ExecCommand.exec(cmdRemove.toString());
+      if (result.exitValue() != 0) {
+        //retry
+        result = ExecCommand.exec(cmdRemove.toString());
+      }
+      LoggerHelper.getLocal().log(
+              Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
+
+
+      StringBuffer cmdLine = new StringBuffer()
+              .append(" kubectl delete -f ")
+              .append(pvcYaml);
+
+      ExecCommand.exec(cmdLine.toString());
+      cmdLine = new StringBuffer()
+              .append(" kubectl delete -f ")
+              .append(pvYaml);
+      ExecCommand.exec(cmdLine.toString());
+    } catch (Exception ex) {
+      LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
     }
   }
 }
