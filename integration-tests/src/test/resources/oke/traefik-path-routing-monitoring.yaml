@@ -21,6 +21,6 @@ spec:
               serviceName: grafana
               servicePort: 80
           - path: /api/dashboards/
-              backend:
-                serviceName: grafana
-                servicePort: 80
+            backend:
+              serviceName: grafana
+              servicePort: 80

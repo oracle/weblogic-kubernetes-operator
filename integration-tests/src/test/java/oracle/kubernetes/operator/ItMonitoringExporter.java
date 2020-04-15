@@ -1402,6 +1402,7 @@ public class ItMonitoringExporter extends BaseTest {
     // url
     String url = myhost + ":" + prometheusPort;
     if (BaseTest.OKE_CLUSTER) {
+      assertNotNull(LB_PROMETHEUS_PUBLIC_IP, "Prometheus LB External IP is undefined");
       url = LB_PROMETHEUS_PUBLIC_IP;
     }
     StringBuffer testAppUrl = new StringBuffer("http://");
@@ -1559,7 +1560,7 @@ public class ItMonitoringExporter extends BaseTest {
       StringBuffer cmdRemove = new StringBuffer();
       cmdRemove.append(BaseTest.getProjectRoot())
               .append("/src/integration-tests/bash/krun.sh -t 240 -m ")
-              .append("cleanupoke-weblogic-sample-pvc:/shared/")
+              .append("cleanupoke-monitoring-pvc:/shared/")
               .append(" -n cleanupoke -c \"rm -rf /shared/* \"");
 
       LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmdRemove.toString());
