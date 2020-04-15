@@ -152,7 +152,13 @@ public class ItMonitoringExporter extends BaseTest {
         domain.verifyDomainCreated();
 
         myhost = domain.getHostNameForCurl();
-        exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
+        StringBuffer exportStr = new StringBuffer();
+        exportStr.append("http://" + myhost);
+        if (!BaseTest.OKE_CLUSTER) {
+          exportStr.append(":" + domain.getLoadBalancerWebPort());
+        }
+        exportStr.append("/wls-exporter/");
+        exporterUrl = exportStr.toString();
         LoggerHelper.getLocal().log(Level.INFO, "LB_TYPE is set to: " + System.getenv("LB_TYPE"));
         boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
         if (isTraefik) {
