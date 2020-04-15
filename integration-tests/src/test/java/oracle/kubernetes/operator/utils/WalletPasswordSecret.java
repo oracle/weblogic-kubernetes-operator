@@ -5,11 +5,20 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Level;
 
-public class WalletSecret extends Secret {
+import org.junit.jupiter.api.Assertions;
+
+public class WalletPasswordSecret extends Secret {
   
   private String walletPassword;
   
-  public WalletSecret(String namespace, String secretName, String walletPassword)throws Exception {
+  /**
+   * Construct WalletPassword secret.
+   * @param namespace namespace that this secret is in
+   * @param secretName secret name
+   * @param walletPassword wallet password
+   * @throws Exception on failure
+   */
+  public WalletPasswordSecret(String namespace, String secretName, String walletPassword)throws Exception {
     this.namespace = namespace;
     this.secretName = secretName;
     this.walletPassword = walletPassword;
@@ -28,8 +37,13 @@ public class WalletSecret extends Secret {
         + this.walletPassword;
             
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
-    ExecResult result = TestUtils.exec(command);
-    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
+    try {
+      ExecResult result = TestUtils.exec(command);
+      LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to excute command.\n", ex.getCause());
+    } 
   }
   
   public String getwalletPassword() {
@@ -39,7 +53,12 @@ public class WalletSecret extends Secret {
   private void deleteSecret() throws Exception {
     String command = "kubectl -n " + namespace + " delete secret " + secretName;
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
-    ExecCommand.exec(command);
+    try {
+      ExecCommand.exec(command);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to excute command.\n", ex.getCause());
+    } 
   }
 
 }

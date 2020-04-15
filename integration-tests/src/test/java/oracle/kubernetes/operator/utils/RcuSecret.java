@@ -5,6 +5,8 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Level;
 
+import org.junit.jupiter.api.Assertions;
+
 public class RcuSecret extends Secret {
 
   private String sysUsername;
@@ -101,8 +103,14 @@ public class RcuSecret extends Secret {
             + this.rcuConnection;
             
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
-    ExecResult result = TestUtils.exec(command);
-    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
+    
+    try {
+      ExecResult result = TestUtils.exec(command);
+      LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to excute command.\n", ex.getCause());
+    }     
   }
 
   public String getSysUsername() {

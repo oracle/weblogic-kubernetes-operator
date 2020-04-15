@@ -24,7 +24,7 @@ import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.RcuSecret;
 import oracle.kubernetes.operator.utils.Secret;
 import oracle.kubernetes.operator.utils.TestUtils;
-import oracle.kubernetes.operator.utils.WalletSecret;
+import oracle.kubernetes.operator.utils.WalletPasswordSecret;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -122,7 +122,8 @@ public class ItJrfModelInImage extends MiiBaseTest {
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception exception
+   * @throws Exception when errors while running statedump.sh or cleanup.sh
+   *         scripts or while renewing the lease for shared cluster run
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
@@ -137,8 +138,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
    * changing serverStartPolicy to "NEVER". Enable walletFileSecret in the domain yaml file and start the domain 
    * with the modified domain yaml file.
    *
-   * @throwsRuntimeException if pods/services of the domain are not created or WLS is not running during the first 
-   *                         and the second domain startup 
+   * @throws Exception when test fails 
    */
   @Test
   public void testReuseRCU2Deployments() throws Exception {
@@ -165,17 +165,21 @@ public class ItJrfModelInImage extends MiiBaseTest {
       
       String domainUid = (String)domainMap.get("domainUID");
       String namespace = (String)domainMap.get("namespace");
+      
+      //create rcuAccess secret and walletPassword secret
       Secret rcuAccess = new RcuSecret(namespace, domainUid + "-rcu-access", 
           rcuSchemaPrefix, rcuSchemaPass, dbUrl);
-      Secret walletPass = new WalletSecret(namespace, domainUid 
+      Secret walletPass = new WalletPasswordSecret(namespace, domainUid 
           + "-opss-wallet-password-secret", walletPassword);
       
       domainMap.put("secrets", rcuAccess);
       domainMap.put("walletPasswordSecret", walletPass);
       
       jrfdomain = new JrfDomain(domainMap);
+      
       jrfdomain.verifyDomainCreated();
       
+      //save and restore walletFile secret
       saveWalletFileSecret(getResultDir(), domainUid, namespace);
       String walletFileSecretName = domainUid + "-opss-walletfile-secret";
       restoreWalletFileSecret(getResultDir(), domainUid, namespace, walletFileSecretName);
@@ -183,6 +187,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       //shutdown the domain
       jrfdomain.shutdownUsingServerStartPolicy();
       
+      //modify the original domain to enable walletFileSecret
       String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + jrfdomain.getDomainUid()
           + "/domain.yaml"; 
       DomainCrd crd = new DomainCrd(originalYaml);
@@ -198,7 +203,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
       
-      //Apply the new yaml to update the domain crd
+      //Use the new yaml to startup the domain
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
@@ -206,6 +211,9 @@ public class ItJrfModelInImage extends MiiBaseTest {
       jrfdomain.verifyDomainCreated();
       testCompletedSuccessfully = true;
 
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("FAILED - " + testMethodName);
     } finally {
       if (jrfdomain != null && (JENKINS || testCompletedSuccessfully)) {
         LoggerHelper.getLocal().log(Level.INFO, "DONE!!!");
@@ -224,7 +232,12 @@ public class ItJrfModelInImage extends MiiBaseTest {
         + " -n "
         + nameSpace
         + " -s";
-    TestUtils.exec(cmd, true);
+    try {
+      TestUtils.exec(cmd, true);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to excute command.\n", ex.getCause());
+    }   
   }
   
   private static void restoreWalletFileSecret(String scriptsDir, String domainUid, String nameSpace, 
@@ -238,7 +251,12 @@ public class ItJrfModelInImage extends MiiBaseTest {
         + " -r"
         + " -ws "
         + secretName;
-    TestUtils.exec(cmd, true);
+    try {
+      TestUtils.exec(cmd, true);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to excute command.\n", ex.getCause());
+    }   
   }
    
 }
