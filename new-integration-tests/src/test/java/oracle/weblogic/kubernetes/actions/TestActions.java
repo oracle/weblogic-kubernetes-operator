@@ -27,6 +27,7 @@ import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
@@ -436,6 +437,37 @@ public class TestActions {
         AppBuilder
             .withParams(params)
             .build();
+  }
+
+  // ------------------------ Docker --------------------------------------
+
+  /**
+   * Log in to a Docker registry.
+   * @param registryName registry name
+   * @param username user
+   * @param password password
+   * @return true if successfull
+   */
+  public static boolean dockerLogin(String registryName, String username, String password) {
+    return Docker.login(registryName, username, password);
+  }
+
+  /**
+   * Push an image to a registry
+   * @param image image
+   * @return true if successfull
+   */
+  public static boolean dockerPush(String image) {
+    return Docker.push(image);
+  }
+
+  /**
+   * Delete docker image.
+   * @param image image name:image tag
+   * @return true if delete image is successful
+   */
+  public static boolean deleteImage(String image) {
+    return Docker.deleteImage(image);
   }
 
   // ------------------------ where does this go  -------------------------
