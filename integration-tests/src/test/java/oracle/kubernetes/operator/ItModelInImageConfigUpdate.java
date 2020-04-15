@@ -200,6 +200,11 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       final String wdtModelPropFile = "model.jdbc.properties";
       createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
 
+      // push the image to docker repository
+      if (BaseTest.SHARED_CLUSTER) {
+        TestUtils.loginAndPushImageToOcir(imageName);
+      }
+
       // update domain yaml with new image tag and
       // apply the domain yaml, verify domain rolling-restarted successfully
       modifyDomainYamlWithImageName(domain, domainNS, imageName);
@@ -379,6 +384,11 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       final String wdtModelFile = "model.jdbc.yaml";
       final String wdtModelPropFile = "model.jdbc.properties";
       createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
+
+      // push the image to docker repository
+      if (BaseTest.SHARED_CLUSTER) {
+        TestUtils.loginAndPushImageToOcir(imageName);
+      }
 
       // update domain yaml with new image tag and
       // apply the domain yaml, verify domain rolling-restarted
