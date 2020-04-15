@@ -422,7 +422,7 @@ public class ConfigMapHelper {
           packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
           data.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
         }
-        LOGGER.info(
+        LOGGER.fine(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
             wlsDomainConfig);
@@ -592,7 +592,7 @@ public class ConfigMapHelper {
     }
 
     protected void logConfigMapDeleted() {
-      LOGGER.info(getConfigMapDeletedMessageKey());
+      LOGGER.fine(getConfigMapDeletedMessageKey());
     }
 
     private Step deleteSitConfigMap(Step next) {
