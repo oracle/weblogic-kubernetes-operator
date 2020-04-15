@@ -69,11 +69,11 @@ public final class RequestParams {
       sb.append(LOGGER.formatMessage(MessageKeys.REQUEST_PARAMS_IN_NS, namespace));
     }
     if (name != null) {
-      sb.append(namespace != null ? ", " : " ");
+      sb.append((namespace != null) ? ", " : " ");
       sb.append(LOGGER.formatMessage(MessageKeys.REQUEST_PARAMS_FOR_NAME, name));
     }
     if (includeBody && body != null) {
-      sb.append(namespace != null || name != null ? ", " : " ");
+      sb.append((namespace != null || name != null) ? ", " : " ");
       sb.append(LOGGER.formatMessage(MessageKeys.REQUEST_PARAMS_WITH, LoggingFactory.getJson().serialize(body)));
     }
     return sb.toString();
