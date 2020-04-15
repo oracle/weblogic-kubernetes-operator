@@ -50,7 +50,7 @@ public class Certificates {
     try {
       return new String(Files.readAllBytes(GET_PATH.apply(path)));
     } catch (IOException e) {
-      LOGGER.info(failureMessage, path);
+      LOGGER.warning(failureMessage, path);
       return null;
     }
   }
