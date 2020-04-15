@@ -1486,15 +1486,15 @@ public class ItMonitoringExporter extends BaseTest {
             + chartName + " --namespace montesttraefikns "
             + "| grep Ingress | awk '{print $3}'";
     result = TestUtils.exec(cmdip);
-    String LB_MONITORING_PUBLIC_IP = result.stdout().trim();
-    assertNotNull(LB_MONITORING_PUBLIC_IP, "Can't retreive External IP for " + chartName);
+    String lbPublicIP = result.stdout().trim();
+    assertNotNull(lbPublicIP, "Can't retreive External IP for " + chartName);
     LoggerHelper.getLocal().log(Level.INFO,
-            "Load Balancer MONITORING Public IP : " + LB_MONITORING_PUBLIC_IP);
+            "Load Balancer MONITORING Public IP : " + lbPublicIP);
     // apply new domain yaml and verify pod restart
     crdCmd =
             " kubectl apply -f " + resourceExporterDir + "/../oke/traefik-path-routing-monitoring.yaml";
     TestUtils.exec(crdCmd);
-    return LB_MONITORING_PUBLIC_IP;
+    return lbPublicIP;
   }
 
   /**
