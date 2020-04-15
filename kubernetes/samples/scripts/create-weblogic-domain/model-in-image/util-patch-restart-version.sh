@@ -7,15 +7,16 @@ function usage() {
 
   cat << EOF
 
-  This is a helper script for patching the restart version of a deployed domain
-  resource. This will initiate a rolling restart of the resource's WebLogic pods.
+  This is a helper script for changing the 'spec.restartVersion' field
+  of a deployed domain. This change will cause the operator to initiate
+  a rolling restart of the resource's WebLogic pods.
  
   Usage:
  
-    $(basename $0) [-n mynamespace] [-d mydomainuid] -s mysecretname [-l key1=val1] [-l key2=val2] [-f key=fileloc ]...
+    $(basename $0) [-n mynamespace] [-d mydomainuid]
   
-    -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-    -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
+    -d <domain_uid>     : Default is \$DOMAIN_UID if set, 'sample-domain1' otherwise.
+    -n <namespace>      : Default is \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
     -?                  : This help.
    
 EOF
@@ -48,6 +49,7 @@ while [ ! "$1" = "" ]; do
 done
 
 set -eu
+set -o pipefail
 
 currentRV=`kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}'`
 

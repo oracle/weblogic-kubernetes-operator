@@ -15,9 +15,10 @@
 #
 
 set -eu
+set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-echo "@@ Info: Running '$(basename "$0")'."
+source $SCRIPTDIR/env-init.sh
 
 # This step downloads the latest WebLogic Deploy Tool and WebLogic Image Tool to WORKDIR.
 # If this is run behind a proxy, then environment variables http_proxy and https_proxy must be set.

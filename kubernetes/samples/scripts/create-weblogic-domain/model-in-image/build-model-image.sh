@@ -5,14 +5,15 @@
 # 
 #  Summary:
 #
-#    This script builds a model image. It pulls a base image if there isn't already
-#    a local base image, and, by default, builds the model image using model files from
-#    ./stage-model.sh plus tooling that was downloaded by ./stage-tooling.sh.
+#    This script builds a model image using the WebLogic Image Tool. The tool pulls a base
+#    image if there isn't already a local base image. This script, by default, builds the
+#    model image with model files from ./stage-model.sh plus tooling downloaded by ./stage-tooling.sh.
 #
 #  Assumptions:
 #
 #    - The WebLogic Image Tool zip is 'WORKDIR/weblogic-image-tool.zip' and the WebLogic
 #      Deploy Tool zip is 'WORKDIR/weblogic-deploy-tooling.zip' (see ./stage-tooling.sh).
+#
 #    - Model files have been staged in the 'WORKDIR/model' directory (see ./stage-model.sh) or
 #      MODEL_DIR has been explicitly set to point to a different location.
 #
@@ -27,15 +28,13 @@
 #      that will be copied to the model image.  Default is 'WORKDIR/model'
 #      which is populated by the ./stage-model.sh script.
 #
-#    MODEL_YAML_FILES, MODEL_ARCHIVE_FILES, MODEL_VARIABLES_FILES:
-#      Optionally, set one or more of these with comma-separated lists of file
-#      locations to override the corresponding .yaml, .zip, and .properties
-#      files normally obtained from MODEL_DIR.
-#
 #    MODEL_IMAGE_BUILD:
 #      Set to 'when-changed' (default) or 'always'. Default behavior is to skip
 #      the image build if the docker image BASE_IMAGE_NAME:BASE_IMAGE_TAG is
 #      found in the local docker image cache.
+#
+#    WDT_DOMAIN_TYPE
+#      'WLS' (default), 'RestrictedJRF', or 'JRF'.
 #
 #    BASE_IMAGE_NAME, BASE_IMAGE_TAG:
 #      The base image name defaults to 
@@ -44,48 +43,24 @@
 #         'container-registry.oracle.com/middleware/fmw-infrastructure'. 
 #      The tag defaults to '12.2.1.4'.
 #
-#    WDT_DOMAIN_TYPE   - WLS (default), RestrictedJRF, or JRF
-#    MODEL_IMAGE_NAME  - defaults to 'model-in-image'
-#    MODEL_IMAGE_TAG   - defaults to 'v1'
+#    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG:
+#      Defaults to 'model-in-image' and 'v1'.
 #
 
 set -eu
+set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-echo "@@ Info: Running '$(basename "$0")'."
-
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-
-echo "@@ Info: WORKDIR='$WORKDIR'."
-
-source ${WORKDIR}/env.sh
+source $SCRIPTDIR/env-init.sh
 
 cd ${WORKDIR}
 
-WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+MODEL_YAML_FILES="$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
+MODEL_ARCHIVE_FILES="$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"
+MODEL_VARIABLE_FILES="$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
 
-case "$WDT_DOMAIN_TYPE" in
-  WLS)
-    BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-container-registry.oracle.com/middleware/weblogic}" ;;
-  JRF|RestrictedJRF)
-    BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-container-registry.oracle.com/middleware/fmw-infrastructure}" ;;
-  *)
-    echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1 ;;
-esac
-BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
-BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
-
-MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
-MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
-MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
-
-MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
-
-MODEL_DIR=${MODEL_DIR:-$WORKDIR/model}
-MODEL_YAML_FILES="${MODEL_YAML_FILES:-$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')}"
-MODEL_ARCHIVE_FILES="${MODEL_ARCHIVE_FILES:-$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')}"
-MODEL_VARIABLE_FILES="${MODEL_VARIABLE_FILES:-$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')}"
-
+echo @@ Info: WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
+echo @@ Info: MODEL_DIR=${MODEL_DIR}
 echo @@ Info: MODEL_YAML_FILES=${MODEL_YAML_FILES}
 echo @@ Info: MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
 echo @@ Info: MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
@@ -94,15 +69,15 @@ echo @@ Info: BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
 echo @@ Info: MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
 echo @@ Info: MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG}
 echo @@ Info: MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD}
-echo @@ Info: WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 
-if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && [ ! -z "$(docker images -q $MODEL_IMAGE)" ]; then
-  echo @@
-  echo "@@ Info: --------------------------------------------------------------------------------------------------"
-  echo "@@ Info: NOTE!!!                                                                                           "
-  echo "@@ Info:   Skipping model image build because '$MODEL_IMAGE' found in docker images.                       "
-  echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.                             "
-  echo "@@ Info: --------------------------------------------------------------------------------------------------"
+if [ ! "$MODEL_IMAGE_BUILD" = "always" ] \
+   && [ ! -z "$(docker images -q $MODEL_IMAGE)" ]; then
+  echo "@@"
+  echo "@@ Info: ----------------------------------------------------------------------------"
+  echo "@@ Info: NOTE!!!                                                                     "
+  echo "@@ Info:   Skipping model image build because '$MODEL_IMAGE' found in docker images. "
+  echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.       "
+  echo "@@ Info: ----------------------------------------------------------------------------"
   echo "@@"
   exit 0
 fi

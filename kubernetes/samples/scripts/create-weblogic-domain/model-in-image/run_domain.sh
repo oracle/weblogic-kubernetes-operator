@@ -13,36 +13,21 @@
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
-#   CONFIGMAPDIR              - defaults to '${WORKDIR}/configmap' (a directory populated by stage-configmap.sh)
+#   CONFIGMAP_DIR             - defaults to '${WORKDIR}/configmap' (a directory populated by stage-configmap.sh)
 #   MODEL_IMAGE_NAME          - defaults to 'model-in-image'
 #   MODEL_IMAGE_TAG           - defaults to 'v1'
 #   DOMAIN_RESOURCE_TEMPLATE  - use this file for a domain resource template instead
 #                               of k8s-domain.yaml.template
 #   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
-#   RCUDB_NAMESPACE           - default (default)
+#   DB_NAMESPACE              - default (default)
 #
 
 set -eu
+set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-echo "@@ Info: Running '$(basename "$0")'."
 
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
-# TBD change default of configmapdir
-CONFIGMAPDIR=${CONFIGMAPDIR:-$WORKDIR/configmap}
-WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
-RCUDB_NAMESPACE=${RCUDB_NAMESPACE:-default}
-
-echo "@@ Info: WORKDIR='$WORKDIR'."
-
-source ${WORKDIR}/env.sh
-
-case "${WDT_DOMAIN_TYPE}" in
-  WLS|JRF|RestrictedJRF) ;;
-  *) echo "Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'." && exit 1
-esac
+source $SCRIPTDIR/env-init.sh
 
 echo "@@ Info: Deleting weblogic domain '${DOMAIN_UID}' if it already exists"
 ( set -x
@@ -65,7 +50,7 @@ if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-rcu-access \
     -l rcu_prefix=FMW1 \
     -l rcu_schema_password=Oradoc_db1 \
-    -l rcu_db_conn_string=oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
+    -l rcu_db_conn_string=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
   echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
   $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
@@ -82,10 +67,10 @@ $SCRIPTDIR/util-create-secret.sh \
   -n ${DOMAIN_NAMESPACE} \
   -s ${DOMAIN_UID}-datasource-secret \
   -l password=Oradoc_db1 \
-  -l url=jdbc:oracle:thin:@oracle-db.${RCUDB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
+  -l url=jdbc:oracle:thin:@oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
 
 echo "@@ Info: Creating sample wdt configmap (optional)"
-$SCRIPTDIR/util-create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${CONFIGMAPDIR}
+$SCRIPTDIR/util-create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${CONFIGMAP_DIR}
 
 
 echo "@@ Info: Creating domain resource yaml '$WORKDIR/k8s-domain.yaml'."

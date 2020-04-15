@@ -4,48 +4,34 @@
 
 #
 # This script downloads the latest WebLogic Deploy Tool and WebLogic Image Tool 
-# to the WORKDIR directory.
+# to the WORKDIR directory by default.
 #
-# Optional environment variables:
+# Optional environment variables (see 'env-custom.sh' for more details):
 #
 #    WORKDIR 
-#      working directory for the sample with at least 10g of space
-#      defaults to /tmp/$USER/model-in-image-sample-work-dir
+#      Working directory for the sample with at least 10g of space
+#      defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 #    http_proxy https_proxy
-#      If running behind a proxy, then set as needed to allow curl access to github.com.
+#      If running behind a proxy, then set as needed to allow curl access
+#      to github.com.
 #
 #    DOWNLOAD_WDT DOWNLOAD_WIT
 #      Default to 'when-missing'. Set to 'always' to force download even
-#      if local installer zip is missing.  TBD rename to 'FORCE' and add "-force" support?
+#      if local installer zip is missing.
 #
 #    WDT_INSTALLER_URL WIT_INSTALLER_URL
 #      Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
 #      and 'https://github.com/oracle/weblogic-image-tool/releases/latest' respectively.
+#      To override an installer URL, see 'env-custom.sh' for an example.
 #
-#      To override an installer URL, export the URL env to point to a specific zip file, for example:
-#      export WDT_INSTALLER_URL=https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.7.0/weblogic-deploy.zip
-#
-
-set -o pipefail
 
 set -eu
+set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-echo "@@ Info: Running '$(basename "$0")'."
+source $SCRIPTDIR/env-init.sh
 
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-
-source $WORKDIR/env.sh
-
-DOWNLOAD_WIT=${DOWNLOAD_WIT:-when-missing}
-DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
-WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
-WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
-
-echo "@@ Info: WORKDIR='$WORKDIR'."
-
-mkdir -p ${WORKDIR}
 cd ${WORKDIR}
 
 download_zip() {

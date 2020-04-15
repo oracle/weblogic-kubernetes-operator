@@ -33,7 +33,6 @@ done
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 
 doCommand -c set -e
 

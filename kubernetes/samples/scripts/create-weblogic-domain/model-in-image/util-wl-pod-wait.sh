@@ -1,7 +1,9 @@
 #!/bin/bash
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# TBD add doc at top of this script
+# TBD add doc here
 #     turn parms into -p count, -t seconds, -n namespace, -d domain_uid
 #     note that this script waits until all pods are ready and are at the domain's current restart version
 #
@@ -24,13 +26,14 @@ while [ 1 -eq 1 ]; do
 
   # WL Server pods are the only pods with the weblogic.serverName label
 
-  set +e
   # grep returns non-zero if it doesn't find anything (sigh), so disable error checking and cross-fingers...
-
-  cur_pods=$(kubectl -n ${DOMAIN_NAMESPACE} get pods \
-                 -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}",weblogic.domainRestartVersion="$currentRV" \
-                 -o=jsonpath='{range .items[*]}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\n"}{end}' \
-             | grep "true" | wc -l)
+  set +e
+  cur_pods=$(
+    kubectl -n ${DOMAIN_NAMESPACE} get pods \
+      -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}",weblogic.domainRestartVersion="$currentRV" \
+      -o=jsonpath='{range .items[*]}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\n"}{end}' \
+    | grep "true" | wc -l \
+  )
   set -e
 
   out_str="for ready WebLogic pod count to reach '$expected' for restart version '$currentRV'"

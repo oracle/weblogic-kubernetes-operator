@@ -25,6 +25,7 @@ EOF
 }
 
 set -e
+set -o pipefail
 
 DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
 DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}"
