@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -38,10 +41,15 @@ public class MiiBaseTest extends BaseTest {
     domainMap.put("logHomeOnPV", "true");
     //domainMap.put("wdtDomainType", "WLS");
 
+    // To get unique image name
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
+
     if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-modelinimage-" + suffixCount + ":latest");
+      domainMap.put("image", prefix.toLowerCase() + "-modelinimage:" + currentDateTime);
     } else {
-      domainMap.put("image", "modelinimage-" + suffixCount + ":latest");
+      domainMap.put("image", "modelinimage:" + currentDateTime);
     }
     return domainMap;
   }

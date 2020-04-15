@@ -1060,10 +1060,9 @@ public class BaseTest {
     String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
 
     if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-dominimage-"
-          + suffixCount + ":" + currentDateTime);
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage:" + currentDateTime);
     } else {
-      domainMap.put("image", "dominimage-" + suffixCount + ":" + currentDateTime);
+      domainMap.put("image", "dominimage:" + currentDateTime);
     }
     return domainMap;
   }
