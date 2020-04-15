@@ -12,17 +12,6 @@ function tracen() {
   echo -n @@ "[$(timestamp)]" "[$(basename $0):${BASH_LINENO[0]}]:" "$@"
 }
 
-# TBD consult with Derek - this probably isn't safe!
-function cleanDanglingDockerImages() {
-  trace "Cleaning dangling docker images (if any)."
-  if [ ! -z "$(docker images -f "dangling=true" -q)" ]; then
-    # TBD do we need the rmi command  if we do the prunes below?
-    docker rmi -f $(docker images -f "dangling=true" -q)
-  fi
-  docker container prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
-  docker image prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
-}
-
 # doCommand()
 #
 #  if DRY_RUN is not set
@@ -35,7 +24,7 @@ function cleanDanglingDockerImages() {
 #    - if command fails, prints out an Error and exits non-zero
 #    - if command succeeds, exits zero
 #
-#  if DRY_RUN is set
+#  if DRY_RUN is set to 'true'
 #    - echos command to stdout prepended with 'dryrun: '
 #
 #  This function expects -e, -u, and -o pipefail to be set. If not, it returns 1.
@@ -63,7 +52,7 @@ function doCommand() {
 
   local command="$@"
 
-  if [ ${DRY_RUN:-} ]; then
+  if [ "${DRY_RUN:-}" = "true" ]; then
     echo "dryrun: $command"
     return
   fi

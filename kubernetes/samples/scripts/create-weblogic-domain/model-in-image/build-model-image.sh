@@ -34,8 +34,8 @@
 #
 #    MODEL_IMAGE_BUILD:
 #      Set to 'when-changed' (default) or 'always'. Default behavior is to skip
-#      image build if there's an existing model image with the same specified
-#      model, tooling, and base image as the previous run.
+#      the image build if the docker image BASE_IMAGE_NAME:BASE_IMAGE_TAG is
+#      found in the local docker image cache.
 #
 #    BASE_IMAGE_NAME, BASE_IMAGE_TAG:
 #      The base image name defaults to 
@@ -81,68 +81,31 @@ MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
 
-echo @@
-echo @@ Info: Obtaining model files
-echo @@
-
 MODEL_DIR=${MODEL_DIR:-$WORKDIR/model}
 MODEL_YAML_FILES="${MODEL_YAML_FILES:-$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')}"
 MODEL_ARCHIVE_FILES="${MODEL_ARCHIVE_FILES:-$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')}"
 MODEL_VARIABLE_FILES="${MODEL_VARIABLE_FILES:-$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')}"
 
-echo @@ MODEL_YAML_FILES=${MODEL_YAML_FILES}
-echo @@ MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
-echo @@ MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
-echo @@
-echo @@ BASE_IMAGE_NAME=${BASE_IMAGE_NAME}
-echo @@ BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
-echo @@
-echo @@ MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
-echo @@ MODEL_IMAGE_TAG=${MODEL_IMAGE_NAME}
-echo @@
+echo @@ Info: MODEL_YAML_FILES=${MODEL_YAML_FILES}
+echo @@ Info: MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
+echo @@ Info: MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
+echo @@ Info: BASE_IMAGE_NAME=${BASE_IMAGE_NAME}
+echo @@ Info: BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
+echo @@ Info: MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
+echo @@ Info: MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG}
+echo @@ Info: MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD}
+echo @@ Info: WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 
-#
-# Exit early if there's a current model image that has the same model files, tooling,
-# and base image.
-#
-
-function modelImageCksum {
-  (
-  set +e
-  echo "This file is used by the $(basename $0) script to determine if a model image rebuild is needed. The script checks if any of the following changed since the last run:"
-  md5sum weblogic-image-tool.zip
-  md5sum weblogic-deploy-tooling.zip
-  for file in ${MODEL_YAML_FILES} ${MODEL_ARCHIVE_FILES} ${MODEL_VARIABLE_FILES} ; do
-    md5sum $file
-  done
-  echo "Base docker image: $BASE_IMAGE $(docker images -q $BASE_IMAGE)"
-  echo "Model docker image: $MODEL_IMAGE $(docker images -q $MODEL_IMAGE)"
+if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && [ ! -z "$(docker images -q $MODEL_IMAGE)" ]; then
+  echo @@
+  echo "@@ Info: --------------------------------------------------------------------------------------------------"
+  echo "@@ Info: NOTE!!!                                                                                           "
+  echo "@@ Info:   Skipping model image build because '$MODEL_IMAGE' found in docker images.                       "
+  echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.                             "
+  echo "@@ Info: --------------------------------------------------------------------------------------------------"
+  echo "@@"
   exit 0
-  )
-}
-
-cksum_file_orig=$WORKDIR/$(basename $0).cksum
-cksum_file_tmp=${cksum_file_orig}_tmp
-modelImageCksum > ${cksum_file_tmp} 2>&1
-
-if [ ! "$MODEL_IMAGE_BUILD" = "always" ]; then
-  if [ -e ${cksum_file_orig} ] && [ "$(cat ${cksum_file_tmp})" = "$(cat ${cksum_file_orig})" ]; then
-    rm ${cksum_file_tmp}
-    echo "@@"
-    echo "@@ Info: --------------------------------------------------------------------------------------------------"
-    echo "@@ Info: NOTE!!!                                                                                           "
-    echo "@@ Info:   Skipping model image build because existing model files, tool files, base image, and            "
-    echo "@@ Info:   model image are unchanged since the last build.                                                 "
-    echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.                             "
-    echo "@@ Info: --------------------------------------------------------------------------------------------------"
-    echo "@@"
-    echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Checksum for build is in 'WORKDIR/$(basename $0).cksum'."
-    echo "@@"
-    exit 0
-  fi
 fi
-
-rm -f ${cksum_file_orig} ${cksum_file_tmp}
 
 echo @@
 echo @@ Info: Setting up imagetool and populating its caches
@@ -190,8 +153,6 @@ ${IMGTOOL} update \
   --wdtDomainType ${WDT_DOMAIN_TYPE}
 
 set +x
-
-modelImageCksum > ${cksum_file_orig} 2>&1
 
 echo "@@"
 echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Checksum for build is in 'WORKDIR/$(basename $0).cksum'."

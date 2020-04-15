@@ -19,17 +19,21 @@ source $TESTDIR/util-misc.sh
 
 trace "Running end to end MII sample test."
 
-if [ "${1:-}" = "" ]; then
-  DRY_RUN="${DRY_RUN:-}"
-elif [ "${1}" = "-dryrun" ]; then
-  DRY_RUN="true"
-else
-  trace "Error: Unrecognized parameter '${1}'."
-  exit 1
-fi
+DRY_RUN=false
+DO_CLEAN=true
+
+while [ ! -z "${1:-}" ]; do
+  case "${1}" in
+    -dryrun) DRY_RUN="true" ;;
+    -skipclean) DO_CLEAN="false" ;;
+    *) trace "Error: Unrecognized parameter '${1}'."; exit 1; ;;
+  esac
+  shift
+done
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 
 doCommand -c set -e
 
@@ -54,16 +58,26 @@ fi
 
 doCommand -c mkdir -p \$WORKDIR
 doCommand -c cd \$WORKDIR/..
-doCommand -c rm -fr ./model-in-image-sample-work-dir
 
-doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
+if [ "$DO_CLEAN" = "true" ]; then
+  doCommand -c rm -fr ./model-in-image-sample-work-dir
+  doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
+fi
 
-[ ! $DRY_RUN ] && cleanDanglingDockerImages # TBD is this multi-user safe?
+if [ ! "$DRY_RUN" = "true" ]; then
+  # TBD this is not multi-user safe
+  trace "Cleaning dangling docker images (if any)."
+  #if [ ! -z "$(docker images -f "dangling=true" -q)" ]; then
+    # TBD do we need the rmi command  if we do the prunes below?
+  #  docker rmi -f $(docker images -f "dangling=true" -q)
+  #fi
+  docker container prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
+  docker image prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
+fi
 
 # TBD note that start-db (and maybe stop-db) seem to alter files right inside the source tree - 
 #     this should be fixed to have a WORKDIR or similar, and means that they aren't suitable for multi-user/multi-ns environments
 #     also, the db ideally should use a secret for its credentials - is that possible?
-
 
 if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   doCommand  "\$DBSAMPLEDIR/stop-db-service.sh -n ${DB_NAMESPACE}"
@@ -73,8 +87,23 @@ fi
 doCommand  "\$TESTDIR/build-wl-operator.sh" 
 doCommand  "\$TESTDIR/deploy-wl-operator.sh"
 doCommand  "\$TESTDIR/deploy-traefik.sh"
+
 doCommand  "\$MIISAMPLEDIR/stage-workdir.sh"
-doCommand  "\$MIISAMPLEDIR/build.sh"
+doCommand  "\$MIISAMPLEDIR/stage-tooling.sh"
+doCommand  "\$MIISAMPLEDIR/stage-model.sh"
+
+$TESTDIR/util-model-image-md5.sh model-image-current.md5 
+if [ -e "$WORKDIR/model-image-orig.md5" ] \
+   && [ "$(cat $WORKDIR/model-image-orig.md5)" = "$(cat $WORKDIR/model-image-current.md5)" ]; then
+  trace "Info: Skipping model image build! MD5s still the same."
+else
+  doCommand  -c "export MODEL_IMAGE_BUILD=always"
+  doCommand  "\$MIISAMPLEDIR/build-model-image.sh"
+  $TESTDIR/util-model-image-md5.sh model-image-orig.md5 
+fi
+rm $WORKDIR/model-image-current.md5
+
+doCommand  "\$MIISAMPLEDIR/stage-configmap.sh"
 
 doCommand  "\$MIISAMPLEDIR/run_domain.sh"
 
