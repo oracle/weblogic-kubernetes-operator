@@ -3,15 +3,12 @@
 
 package oracle.kubernetes.operator.rest;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
@@ -117,7 +114,7 @@ public class RestBackendImpl implements RestBackend {
 
   private String getNamespace(String domainUid) {
     if (domainUid == null) {
-      throw new AssertionError(formatMessage(MessageKeys.NULL_DOMAIN_UID));
+      throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_DOMAIN_UID));
     }
 
     return getNamespace(domainUid, getDomainsList());
@@ -125,7 +122,7 @@ public class RestBackendImpl implements RestBackend {
 
   private String getNamespace(String domainUid, List<Domain> domains) {
     if (domainUid == null) {
-      throw new AssertionError(formatMessage(MessageKeys.NULL_DOMAIN_UID));
+      throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_DOMAIN_UID));
     }
     Domain domain = findDomain(domainUid, domains);
     return domain.getMetadata().getNamespace();
@@ -135,7 +132,7 @@ public class RestBackendImpl implements RestBackend {
     LOGGER.entering();
     V1TokenReviewStatus status = atn.check(principal, accessToken);
     if (status == null) {
-      throw new AssertionError(formatMessage(MessageKeys.NULL_TOKEN_REVIEW_STATUS));
+      throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_TOKEN_REVIEW_STATUS));
     }
     String error = status.getError();
     if (error != null) {
@@ -151,7 +148,7 @@ public class RestBackendImpl implements RestBackend {
     }
     userInfo = status.getUser();
     if (userInfo == null) {
-      throw new AssertionError(formatMessage(MessageKeys.NULL_USER_INFO, status));
+      throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_USER_INFO, status));
     }
     LOGGER.exiting(userInfo);
     return userInfo;
@@ -199,7 +196,7 @@ public class RestBackendImpl implements RestBackend {
   public Set<String> getClusters(String domainUid) {
     LOGGER.entering(domainUid);
     if (!isDomainUid(domainUid)) {
-      throw new AssertionError(formatMessage(MessageKeys.INVALID_DOMAIN_UID, domainUid));
+      throw new AssertionError(LOGGER.formatMessage(MessageKeys.INVALID_DOMAIN_UID, domainUid));
     }
     authorize(domainUid, Operation.get);
 
@@ -335,7 +332,7 @@ public class RestBackendImpl implements RestBackend {
 
   private WebApplicationException createWebApplicationException(
       Status status, String msgId, Object... params) {
-    String msg = formatMessage(msgId, params);
+    String msg = LOGGER.formatMessage(msgId, params);
     return createWebApplicationException(status, msg);
   }
 
@@ -349,26 +346,6 @@ public class RestBackendImpl implements RestBackend {
       rb.entity(msg);
     }
     return new WebApplicationException(rb.build());
-  }
-
-  private String formatMessage(String msgId, Object... params) {
-    if (params == null || params.length == 0) {
-      return getResourceBundle().getString(msgId);
-    }
-
-    String msg = getResourceBundle().getString(msgId);
-    MessageFormat formatter = new MessageFormat(msg);
-    return formatter.format(params);
-  }
-
-  private ResourceBundle getResourceBundle() {
-    for (Logger l = LOGGER.getUnderlyingLogger(); l != null; l = l.getParent()) {
-      ResourceBundle rb = l.getResourceBundle();
-      if (rb != null) {
-        return rb;
-      }
-    }
-    throw new AssertionError(formatMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND));
   }
 
   interface TopologyRetriever {
