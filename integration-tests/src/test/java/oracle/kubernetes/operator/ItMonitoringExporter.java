@@ -1481,7 +1481,7 @@ public class ItMonitoringExporter extends BaseTest {
                         + result.stderr());
       }
     }
-    TestUtils.checkLbExternalIpCreated(chartName,"montesttraefikns");
+    TestUtils.checkLbExternalIpCreated("traefik-" + chartName,"montesttraefikns");
     String cmdip = "kubectl describe svc traefik-"
             + chartName + " --namespace montesttraefikns "
             + "| grep Ingress | awk '{print $3}'";
