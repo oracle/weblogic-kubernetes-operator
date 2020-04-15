@@ -75,7 +75,8 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     boolean success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolumeClaim(v1pvc),
-        "Persistent volume claim creation failed, look at the log for failure ApiException responsebody"
+        "Persistent volume claim creation failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success, "PersistentVolumeClaim creation failed");
 
@@ -96,7 +97,8 @@ class ItSimpleDomainValidation implements LoggedTest {
             .putLabelsItem("weblogic.domainUID", domainUID));
     success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(v1pv),
-        "Persistent volume creation failed, look at the log for failure ApiException responsebody"
+        "Persistent volume creation failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success, "PersistentVolume creation failed");
 
@@ -117,7 +119,8 @@ class ItSimpleDomainValidation implements LoggedTest {
         .spec(domainSpec);
     success = assertDoesNotThrow(
         () -> createDomainCustomResource(domain),
-        "Domain failed to be created, look at the log for failure ApiException responsebody"
+        "Domain failed to be created, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success);
 
@@ -141,7 +144,8 @@ class ItSimpleDomainValidation implements LoggedTest {
     // Delete domain custom resource
     assertDoesNotThrow(
         () -> deleteDomainCustomResource(domainUID, namespace),
-        "Domain failed to be deleted, look at the log for failure ApiException responsebody"
+        "Domain failed to be deleted, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     logger.info("Deleted Domain Custom Resource {0} from {1}", domainUID, namespace);
 
@@ -149,7 +153,8 @@ class ItSimpleDomainValidation implements LoggedTest {
     assertDoesNotThrow(
         () -> Kubernetes.deleteServiceAccount(serviceAccount.getMetadata().getName(),
             serviceAccount.getMetadata().getNamespace()),
-        "Aervice account failed to be deleted, look at the log for failure ApiException responsebody"
+        "Aervice account failed to be deleted, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
         + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
@@ -157,17 +162,21 @@ class ItSimpleDomainValidation implements LoggedTest {
     // Delete the persistent volume claim and persistent volume
     assertDoesNotThrow(
         () -> Kubernetes.deletePvc(pvcName, namespace),
-        "Persistent volume claim deletion failed, look at the log for failure ApiException responsebody"
+        "Persistent volume claim deletion failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertDoesNotThrow(
         () -> Kubernetes.deletePv(pvName),
-        "Persistent volume deletion failed, look at the log for failure ApiException responsebody"
+        "Persistent volume deletion failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
 
     // Delete namespace
     assertDoesNotThrow(
         () -> TestActions.deleteNamespace(namespace),
-        "Namespace failed to be deleted, look at the log for failure ApiException responsebody");
+        "Namespace failed to be deleted, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
+    );
     logger.info("Deleted namespace: {0}", namespace);
   }
 
