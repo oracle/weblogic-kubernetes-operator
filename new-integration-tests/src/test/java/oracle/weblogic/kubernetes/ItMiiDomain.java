@@ -38,7 +38,6 @@ import oracle.weblogic.kubernetes.extensions.Timing;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -124,7 +123,7 @@ class ItMiiDomain implements LoggedTest {
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     String serviceAccountName = createSA(opNamespace);
-    logger.info("Created service account: " + serviceAccountName);
+    logger.info("Created service account: {0}", serviceAccountName);
 
     // helm install parameters
     opHelmParams = new HelmParams()
@@ -159,11 +158,6 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
     waitForCondition(operatorIsRunning(opNamespace));
 
-  }
-
-  @BeforeEach
-  public void init() {
-    // create unique namespace for domain and do operator upgrade?
   }
 
   @Test
