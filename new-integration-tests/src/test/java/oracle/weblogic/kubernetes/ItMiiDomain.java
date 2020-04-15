@@ -88,8 +88,8 @@ class ItMiiDomain implements LoggedTest {
   private static final String OPERATOR_CHART_DIR =
       "../kubernetes/charts/weblogic-operator";
   private static final String OPERATOR_IMAGE =
-      //"weblogic-kubernetes-operator:latest";
-      "phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop";
+      "oracle/weblogic-kubernetes-operator:3.0.0";
+  //"phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop";
 
   // mii constants
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
