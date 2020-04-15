@@ -369,7 +369,7 @@ public class JobHelper {
     }
 
     void logJobDeleted(String domainUid, String namespace, String jobName) {
-      LOGGER.info(getJobDeletedMessageKey(), domainUid, namespace, jobName);
+      LOGGER.fine(getJobDeletedMessageKey(), domainUid, namespace, jobName);
     }
 
     private Step deleteJob(Packet packet, Step next) {
