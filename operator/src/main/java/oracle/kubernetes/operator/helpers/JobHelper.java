@@ -66,11 +66,62 @@ public class JobHelper {
     LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    return topology == null || isBringingUpNewDomain(info);
+    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(packet, info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
     return runningServersCount(info) == 0 && creatingServers(info);
+  }
+
+  private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
+    if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
+
+      final String currentPodRestartVersion = info.getDomain().getRestartVersion();
+      final String currentPodIntrospectVersion = info.getDomain().getIntrospectVersion();
+      final String configMapRestartVersion = (String) packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
+      final String configMapIntrospectVersion = (String) packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+      final String configMapSpecHash = (String) packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+      final String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
+          .getSpec().getImage()));
+
+      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
+      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
+      LOGGER.finest("JobHelper.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
+      LOGGER.finest("JobHelper.isModelInImageUpdate configMapIntrospectVersion " + configMapIntrospectVersion);
+
+      // If either one is set, check for differences and decide to run intropsect job
+
+      if (currentPodIntrospectVersion != null
+            && !currentPodIntrospectVersion.equals(configMapIntrospectVersion)) {
+        LOGGER.fine("JobHelper: currentPodIntrospect version different from configmap");
+        return true;
+      }
+
+      if (currentPodRestartVersion != null
+            && !currentPodRestartVersion.equals(configMapRestartVersion)) {
+        LOGGER.fine("JobHelper: currentPodRestartVersion version different from configmap");
+        return true;
+      }
+
+      if (configMapRestartVersion != null
+          && !configMapRestartVersion.equals(currentPodRestartVersion)) {
+        LOGGER.fine("JobHelper: configMapRestartVersion version different from configmap");
+        return true;
+      }
+
+      if (configMapIntrospectVersion != null
+          && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
+        LOGGER.fine("JobHelper: configMapIntrospectVersion version different ");
+        return true;
+      }
+
+      if (!currentImageSpecHash.equals(configMapSpecHash)) {
+        LOGGER.fine("JobHelper: currentImageSpecHash version different from configmap");
+        return true;
+      }
+
+    }
+    return false;
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
@@ -166,10 +217,15 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
+    private final DomainPresenceInfo info;
 
-    DomainIntrospectorJobStepContext(Packet packet) {
+    // domainTopology is null if this is 1st time we're running job for this domain
+    private final WlsDomainConfig domainTopology;
+
+    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
       super(packet);
-
+      this.info = info;
+      this.domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       init();
     }
 
@@ -204,6 +260,26 @@ public class JobHelper {
       return getDomain().getSpec().getAdditionalVolumeMounts();
     }
 
+    private String getAsName() {
+      return domainTopology.getAdminServerName();
+    }
+
+    private Integer getAsPort() {
+      return domainTopology
+          .getServerConfig(getAsName())
+          .getLocalAdminProtocolChannelPort();
+    }
+
+    private boolean isLocalAdminProtocolChannelSecure() {
+      return domainTopology
+          .getServerConfig(getAsName())
+          .isLocalAdminProtocolChannelSecure();
+    }
+
+    private String getAsServiceName() {
+      return LegalNames.toServerServiceName(getDomainUid(), getAsName());
+    }
+
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       // Pod for introspector job would use same environment variables as for admin server
@@ -215,12 +291,36 @@ public class JobHelper {
       addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
       addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
       addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
+      addEnvVar(vars, ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, getHttpAccessLogInLogHome());
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
+      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
+      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
+      addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
+      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType());
+
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
         addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
+      }
+
+      if (domainTopology != null) {
+        // The domainTopology != null when the job is rerun for the same domain. In which
+        // case we should now know how to contact the admin server, the admin server may
+        // already be running, and the job may want to contact the admin server.
+
+        addEnvVar(vars, "ADMIN_NAME", getAsName());
+        addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+        if (isLocalAdminProtocolChannelSecure()) {
+          addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+        }
+        addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
+
+        // TBD Tom Barnes, Johnny Shum
+        //     Do we need to pass to the jobwhether the admin server (or any pods)
+        //     are already running?
       }
 
       return vars;
@@ -237,7 +337,7 @@ public class JobHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
+        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
 
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 

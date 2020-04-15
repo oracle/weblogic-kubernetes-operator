@@ -28,9 +28,11 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -67,16 +69,27 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
+
   final WlsServerConfig scan;
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
+  private String miiModelSecretsHash;
+  private String miiDomainZipHash;
+  private String domainRestartVersion;
+  private String domainIntrospectVersion;
+  private String domainImageName;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    miiModelSecretsHash = (String)packet.get(ProcessingConstants.SECRETS_HASH);
+    miiDomainZipHash = (String)packet.get(ProcessingConstants.DOMAIN_HASH);
+    domainIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
+    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
+    domainImageName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
@@ -120,6 +133,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String getDomainResourceName() {
     return info.getDomain().getMetadata().getName();
+  }
+
+  private String getDomainHomeSourceType() {
+    return getDomain().getDomainHomeSourceType();
   }
 
   String getPodName() {
@@ -178,6 +195,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String isIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
+  }
+
+  private String getRuntimeEncryptionSecret() {
+    return getDomain().getRuntimeEncryptionSecret();
   }
 
   private List<V1ContainerPort> getContainerPorts() {
@@ -481,7 +502,16 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected V1ObjectMeta createMetadata() {
-    V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+    final V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+
+    LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from INIT "
+        + domainRestartVersion);
+    LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from INIT "
+        + domainIntrospectVersion);
+    LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from serverspec "
+        + getServerSpec().getDomainRestartVersion());
+    LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from spec "
+        + getDomain().getIntrospectVersion());
     metadata
         .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
@@ -490,10 +520,21 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
         .putLabelsItem(
             LabelConstants.DOMAINRESTARTVERSION_LABEL, getServerSpec().getDomainRestartVersion())
+        .putLabelsItem(LabelConstants.DOMAININTROSPECTVERSION_LABEL, getDomain().getIntrospectVersion())
         .putLabelsItem(
             LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
+
+    if (miiDomainZipHash != null) {
+      String formattedLabel = String.format("md5.%s.md5", miiDomainZipHash.replace("\n",""));
+      metadata.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, formattedLabel);
+    }
+
+    if (miiModelSecretsHash != null) {
+      String formattedLabel = String.format("md5.%s.md5", miiModelSecretsHash.replace("\n", ""));
+      metadata.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, formattedLabel);
+    }
 
     // Add prometheus annotations. This will overwrite any custom annotations with same name.
     AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort());
@@ -508,7 +549,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
-
     return podSpec;
   }
 
@@ -522,6 +562,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
     volumes.addAll(getServerSpec().getAdditionalVolumes());
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      volumes.add(createRuntimeEncryptionSecretVolume());
+    }
+
     return volumes;
   }
 
@@ -538,8 +582,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
-
     return v1Container;
+  }
+
+  private V1VolumeMount createRuntimeEncryptionSecretVolumeMount() {
+    return new V1VolumeMount().name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
+        .mountPath(RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH).readOnly(true);
   }
 
   protected String getContainerName() {
@@ -557,7 +605,20 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
+    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+      mounts.add(createRuntimeEncryptionSecretVolumeMount());
+    }
     return mounts;
+  }
+
+  private V1Volume createRuntimeEncryptionSecretVolume() {
+    return new V1Volume()
+        .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
+        .secret(getRuntimeEncryptionSecretVolumeSource(getRuntimeEncryptionSecret()));
+  }
+
+  private V1SecretVolumeSource getRuntimeEncryptionSecretVolumeSource(String name) {
+    return new V1SecretVolumeSource().secretName(name).defaultMode(420);
   }
 
   /**

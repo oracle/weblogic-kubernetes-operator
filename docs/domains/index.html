@@ -1088,6 +1088,34 @@ window.onload = function() {
         }
       }
     },
+    "Configuration": {
+      "type": "object",
+      "properties": {
+        "opss": {
+          "description": "Configuration for OPSS security.",
+          "$ref": "#/definitions/Opss"
+        },
+        "model": {
+          "description": "Model in image model files and properties.",
+          "$ref": "#/definitions/Model"
+        },
+        "secrets": {
+          "description": "A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified it overrides the value of spec.configOverrideSecrets.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overridesConfigMap": {
+          "description": "The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides.",
+          "type": "string"
+        },
+        "introspectorJobActiveDeadlineSeconds": {
+          "description": "The introspector job timeout value in seconds. If this field is specified it overrides the Operator\u0027s config map data.introspectorJobActiveDeadlineSeconds value.",
+          "type": "number"
+        }
+      }
+    },
     "DateTime": {
       "format": "date-time",
       "type": "string"
@@ -1130,6 +1158,78 @@ window.onload = function() {
       "description": "DomainSpec is a description of a domain.",
       "type": "object",
       "properties": {
+        "configuration": {
+          "description": "Models and overrides affecting the WebLogic domain configuration.",
+          "$ref": "#/definitions/Configuration"
+        },
+        "configOverrideSecrets": {
+          "deprecated": "true",
+          "description": "Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified. A list of names of the secrets for optional WebLogic configuration overrides.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "imagePullSecrets": {
+          "description": "A list of image pull secrets for the WebLogic Docker image.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+          }
+        },
+        "domainUID": {
+          "pattern": "^[a-z0-9-.]{1,253}$",
+          "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
+          "type": "string"
+        },
+        "experimental": {
+          "description": "Experimental feature configurations.",
+          "$ref": "#/definitions/Experimental"
+        },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerService"
+        },
+        "domainHome": {
+          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/\u003cdomainUID\u003e if domainHomeSourceType is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if domainHomeSourceType is FromModel.",
+          "type": "string"
+        },
+        "domainHomeSourceType": {
+          "description": "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is contained in the Docker image specified by the image field. PersistentVolume indicates that the domain home file system is located on a persistent volume.  FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. If this field is specified it overrides the value of domainHomeInImage. If both fields are unspecified then domainHomeSourceType defaults to Image.",
+          "type": "string",
+          "enum": [
+            "Image",
+            "PersistentVolume",
+            "FromModel"
+          ]
+        },
+        "httpAccessLogInLogHome": {
+          "description": "If true (the default), then server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain home configuration.",
+          "type": "boolean"
+        },
+        "webLogicCredentialsSecret": {
+          "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namespace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+        },
+        "adminServer": {
+          "description": "Configuration for the Administration Server.",
+          "$ref": "#/definitions/AdminServer"
+        },
+        "logHome": {
+          "description": "The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if logHomeEnabled is false.",
+          "type": "string"
+        },
+        "includeServerOutInPodLog": {
+          "description": "If true (the default), then the server .out file will be included in the pod\u0027s stdout.",
+          "type": "boolean"
+        },
+        "clusters": {
+          "description": "Configuration for the clusters.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Cluster"
+          }
+        },
         "serverStartState": {
           "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
@@ -1139,7 +1239,7 @@ window.onload = function() {
           ]
         },
         "image": {
-          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.",
+          "description": "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -1156,32 +1256,10 @@ window.onload = function() {
           "type": "number",
           "minimum": 0.0
         },
-        "configOverrideSecrets": {
-          "description": "A list of names of the secrets for optional WebLogic configuration overrides.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "imagePullSecrets": {
-          "description": "A list of image pull secrets for the WebLogic Docker image.",
-          "type": "array",
-          "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
-          }
-        },
         "domainHomeInImage": {
-          "description": "True if this domain\u0027s home is defined in the Docker image for the domain. Defaults to true.",
+          "deprecated": "true",
+          "description": "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified. True indicates that the domain home file system is contained in the Docker image specified by the image field. False indicates that the domain home file system is located on a persistent volume.",
           "type": "boolean"
-        },
-        "domainUID": {
-          "pattern": "^[a-z0-9-.]{1,253}$",
-          "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
-          "type": "string"
-        },
-        "experimental": {
-          "description": "Experimental feature configurations.",
-          "$ref": "#/definitions/Experimental"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
@@ -1196,58 +1274,32 @@ window.onload = function() {
           "description": "If present, every time this value is updated the operator will restart the required servers.",
           "type": "string"
         },
+        "introspectVersion": {
+          "description": "If present, every time this value is updated, the operator will start introspect domain job",
+          "type": "string"
+        },
         "dataHome": {
           "description": "An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") then the data storage directories are determined from the WebLogic domain home configuration.",
           "type": "string"
         },
         "configOverrides": {
-          "description": "The name of the config map for optional WebLogic configuration overrides.",
-          "type": "string"
-        },
-        "serverService": {
-          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
-          "$ref": "#/definitions/ServerService"
-        },
-        "domainHome": {
-          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.",
+          "deprecated": "true",
+          "description": "Deprecated. Use configuration.overridesConfigMap instead. Ignored if configuration.overridesConfigMap is specified. The name of the config map for optional WebLogic configuration overrides.",
           "type": "string"
         },
         "logHomeEnabled": {
-          "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true. ",
+          "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.",
           "type": "boolean"
-        },
-        "webLogicCredentialsSecret": {
-          "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namespace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
-        },
-        "adminServer": {
-          "description": "Configuration for the Administration Server.",
-          "$ref": "#/definitions/AdminServer"
         },
         "serverPod": {
           "description": "Configuration affecting server pods.",
           "$ref": "#/definitions/ServerPod"
-        },
-        "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
-          "type": "string"
-        },
-        "includeServerOutInPodLog": {
-          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
-          "type": "boolean"
         },
         "managedServers": {
           "description": "Configuration for individual Managed Servers.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/ManagedServer"
-          }
-        },
-        "clusters": {
-          "description": "Configuration for the clusters.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Cluster"
           }
         }
       }
@@ -1376,6 +1428,41 @@ window.onload = function() {
     "Map": {
       "type": "object",
       "properties": {}
+    },
+    "Model": {
+      "type": "object",
+      "properties": {
+        "runtimeEncryptionSecret": {
+          "description": "Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.",
+          "type": "string"
+        },
+        "domainType": {
+          "description": "WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
+          "type": "string",
+          "enum": [
+            "WLS",
+            "RestrictedJRF",
+            "JRF"
+          ]
+        },
+        "configMap": {
+          "description": "WDT config map name.",
+          "type": "string"
+        }
+      }
+    },
+    "Opss": {
+      "type": "object",
+      "properties": {
+        "walletFileSecret": {
+          "description": "Secret containing the OPSS key wallet file.",
+          "type": "string"
+        },
+        "walletPasswordSecret": {
+          "description": "Secret containing OPSS key passphrase.",
+          "type": "string"
+        }
+      }
     },
     "ProbeTuning": {
       "type": "object",

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # -----------------
@@ -20,7 +20,7 @@
 #                   given lease on a failure.
 #
 #   SHARED_CLUSTER  Set this to true if you want cleanup to delete tiller
-#                   TBD tiller delete is disabled 
+#                   TBD tiller delete is disabled
 #
 #   DELETE_FILES    Delete local test files, and launch a job to delete PV
 #                   hosted test files (default true).
@@ -28,7 +28,7 @@
 #   FAST_DELETE     Set to "--grace-period=1 --timeout=1" to speedup
 #                   deletes and skip phase 2.
 #
-# Dry run option: 
+# Dry run option:
 #
 #   To show what the script would do without actually doing
 #   any deletes pass "-dryrun" as the first parameter.
@@ -40,21 +40,21 @@
 # The cleanup runs in phases:
 #
 #   Phase -3: Delete all domains
-#  
+#
 #   Phase -2: Delete all operator deployments
-# 
+#
 #   Phase -1: Delete all WL and introspector pods
 #
 #   Phase 0:  If helm is installed, helm delete all helm charts.
 #             Possibly also delete tiller (see SHARED_CLUSTER env var above.)
-#             TBD tiller delete is disabled 
+#             TBD tiller delete is disabled
 #
 #   Phase 1:  Delete test kubernetes artifacts with labels.
 #
 #   Phase 2:  Wait 15 seconds to see if previous phase succeeded, and
 #             if not, repeatedly search for all test related kubectl
 #             artifacts and try delete them directly for up to 60 more
-#             seconds. 
+#             seconds.
 #
 #   Phase 3:  Use a kubernetes job to delete the PV directories
 #             on the kubernetes cluster.
@@ -87,7 +87,7 @@ source $PROJECT_ROOT/kubernetes/internal/utility.sh
 
 if [ ! "$1" = "" ] && [ ! "$1" = "-dryrun" ]; then
   echo "@@ `timestamp` Usage: '$(basename $0) [-dryrun]'. Pass -dryrun to skip deletes."
-  exit 1  
+  exit 1
 fi
 
 function fail {
@@ -109,11 +109,11 @@ function doDeleteByName {
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
   echo @@ `timestamp` doDeleteByName $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
-  cat $tmpfile 
+  cat $tmpfile
   rm $tmpfile
 
   if [ ! "$DRY_RUN" = true ]; then
-    kubectl $FAST_DELETE delete "$@" --ignore-not-found 
+    kubectl $FAST_DELETE delete "$@" --ignore-not-found
   fi
 }
 
@@ -131,11 +131,11 @@ function doDeleteByRange {
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
   echo @@ `timestamp` doDeleteByRange $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
-  cat $tmpfile 
+  cat $tmpfile
   rm $tmpfile
 
   if [ ! "$DRY_RUN" = true ]; then
-    kubectl $FAST_DELETE delete "$@" --ignore-not-found 
+    kubectl $FAST_DELETE delete "$@" --ignore-not-found
   fi
 }
 
@@ -286,7 +286,7 @@ function deleteLabel {
   #
 
   cat $1 | while read line; do
-    doDeleteByName $line 
+    doDeleteByName $line
   done
 
   #
@@ -346,7 +346,7 @@ function deleteByTypeAndLabel {
 
   rm -f $tempfile-0
   rm -f $tempfile-1
-  
+
   if [ "$HANDLE_VOYAGER" = "true" ]; then
     if [ ! "$DRY_RUN" = "true" ]; then
       echo @@ `timestamp` Deleting voyager controller.
@@ -542,8 +542,8 @@ if [ -x "$(command -v helm)" ]; then
       set -x
       helm list --all-namespaces | grep -v NAME | awk '{system("helm uninstall " $1 " --namespace " $2)}'
     )
-    else 
-      echo @@ `timestamp` Info: DRYRUN: helm uninstall 
+    else
+      echo @@ `timestamp` Info: DRYRUN: helm uninstall
       helm list --all-namespaces | grep -v NAME | awk '{print $1 "\t" $2)}'
    fi
   fi
@@ -559,7 +559,7 @@ if [ -x "$(command -v helm)" ]; then
 fi
 
 #
-# Phase 1, try an orderly mass delete, in order of type, looking for Operator related labels 
+# Phase 1, try an orderly mass delete, in order of type, looking for Operator related labels
 #
 
 deleteByTypeAndLabel
@@ -591,7 +591,7 @@ if [ "${DELETE_FILES:-true}" = "true" ] && [ "$DRY_RUN" = "false" ]; then
   [ "$?" = "0" ] || SUCCESS="1"
   echo @@ `timestamp` SUCCESS=$SUCCESS
 
-  # Delete old test files owned by the current user.  
+  # Delete old test files owned by the current user.
 
   echo @@ `timestamp` Deleting local $RESULT_DIR contents.
   rm -fr $RESULT_ROOT/*/acceptance_test_tmp
@@ -619,4 +619,3 @@ fi
 
 echo @@ `timestamp` Exiting with status $SUCCESS
 exit $SUCCESS
-

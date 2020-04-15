@@ -19,8 +19,10 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -46,8 +48,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.")
+          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
+          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
   private String domainHome;
 
   /**
@@ -77,12 +80,13 @@ public class DomainSpec extends BaseConfiguration {
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
-   * The in-pod name of the directory to store the domain, node manager, server logs, and server
-   * .out files in.
+   * The in-pod name of the directory to store the domain, Node Manager, server logs, server
+   * .out, and HTTP access log files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, node manager, server logs, "
-          + "and server  *.out files")
+      "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
+          + "server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
+          + "Ignored if logHomeEnabled is false.")
   private String logHome;
 
   /**
@@ -92,8 +96,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeInImage is false. "
-          + "Defaults to false if domainHomeInImage is true. ")
+          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
@@ -108,17 +111,24 @@ public class DomainSpec extends BaseConfiguration {
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), the server .out file will be included in the pod's stdout.")
+  @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
+
+  /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
+   *  if {@link #logHomeEnabled} is true. Default is true. */
+  @Description("If true (the default), then server HTTP access log files will be written to the same "
+      + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
+      + "the directory configured in the WebLogic domain home configuration.")
+  private Boolean httpAccessLogInLogHome;
 
   /**
    * The WebLogic Docker image.
    *
-   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3
+   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeInImage is true; "
-          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.")
+      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
   /**
@@ -161,16 +171,46 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
+  @Deprecated
   @Description(
-      "True if this domain's home is defined in the Docker image for the domain. Defaults to true.")
+      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
+          + " True indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. False indicates that the domain home file system is located"
+          + " on a persistent volume.")
   private Boolean domainHomeInImage;
+
+  @EnumClass(value = DomainSourceType.class)
+  @Description(
+      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
+          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
+          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
+          + " and managed by the operator based on a WDT domain model."
+          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
+          + " unspecified then domainHomeSourceType defaults to Image.")
+  private String domainHomeSourceType;
+
+  /**
+   * Tells the operator to start the introspect domain job.
+   *
+   * @since 3.0.0
+   */
+  @Description(
+      "If present, every time this value is updated, the operator will start introspect domain job")
+  private String introspectVersion;
+
+  @Description("Models and overrides affecting the WebLogic domain configuration.")
+  private Configuration configuration;
 
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
    * @since 2.0
    */
-  @Description("The name of the config map for optional WebLogic configuration overrides.")
+  @Deprecated
+  @Description("Deprecated. Use configuration.overridesConfigMap instead."
+      + " Ignored if configuration.overridesConfigMap is specified."
+      + " The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
@@ -178,7 +218,9 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
+  @Deprecated
+  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
+      + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
   /**
@@ -205,7 +247,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
-  @SuppressWarnings("unused")
   @Description("Experimental feature configurations.")
   private Experimental experimental;
 
@@ -335,6 +376,18 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  /**
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * contain keys names 'username' and 'password'. Required.
+   *
+   * @param opssKeyPassPhrase WebLogic startup credentials secret
+   * @return this
+   */
+  public DomainSpec withOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
+    this.webLogicCredentialsSecret = opssKeyPassPhrase;
+    return this;
+  }
+
   @Nullable
   public String getImage() {
     return image;
@@ -401,8 +454,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @return log home enabled
    */
-  boolean isLogHomeEnabled() {
-    return Optional.ofNullable(logHomeEnabled).orElse(!isDomainHomeInImage());
+  Boolean isLogHomeEnabled() {
+    return logHomeEnabled;
   }
 
   /**
@@ -411,7 +464,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @param logHomeEnabled log home enabled
    */
-  public void setLogHomeEnabled(boolean logHomeEnabled) {
+  public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
   }
 
@@ -450,13 +503,31 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Whether to write server HTTP access log files to the directory specified in
+   * {@link #logHome} if {@link #logHomeEnabled} is true.
+   *
+   * @return true if server HTTP access log files should be included in the directory
+   *     specified in {@link #logHome}, false if server HTTP access log files should be written
+   *     to the directory as configured in the WebLogic domain home configuration
+   */
+  boolean getHttpAccessLogInLogHome() {
+    return Optional.ofNullable(httpAccessLogInLogHome)
+        .orElse(KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME);
+  }
+
+  public DomainSpec withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
+    this.httpAccessLogInLogHome = httpAccessLogInLogHome;
+    return this;
+  }
+
+  /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
    *
    * @return true or false
    * @since 2.0
    */
-  boolean isDomainHomeInImage() {
-    return Optional.ofNullable(domainHomeInImage).orElse(true);
+  Boolean isDomainHomeInImage() {
+    return domainHomeInImage;
   }
 
   /**
@@ -470,6 +541,45 @@ public class DomainSpec extends BaseConfiguration {
 
   public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
     setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  public String getDomainHomeSourceType() {
+    return domainHomeSourceType;
+  }
+
+  public void setDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+  }
+
+  public DomainSpec withDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
+    return this;
+  }
+
+  public String getIntrospectVersion() {
+    return introspectVersion;
+  }
+
+  public void setIntrospectVersionn(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+  }
+
+  public DomainSpec withIntrospectVersion(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+    return this;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
+
+  public DomainSpec withConfiguration(Configuration configuration) {
+    this.configuration = configuration;
     return this;
   }
 
@@ -552,6 +662,49 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(8888);
   }
 
+  String getWdtDomainType() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getDomainType)
+        .orElse(ModelInImageDomainType.WLS.toString());
+  }
+
+  String getOpssWalletPasswordSecret() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getOpss)
+        .map(Opss::getWalletPasswordSecret)
+        .orElse(null);
+  }
+
+  /**
+   * Get OPSS wallet file secret.
+   * @return wallet file secret
+   */
+  public String getOpssWalletFileSecret() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getOpss)
+        .map(Opss::getWalletFileSecret)
+        .orElse(null);
+  }
+
+  String getRuntimeEncryptionSecret() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getRuntimeEncryptionSecret)
+        .orElse(null);
+  }
+
+  /**
+   * Get WDT config map.
+   * @return config map name
+   */
+  public String getWdtConfigMap() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getConfigMap)
+        .orElse(null);
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -560,6 +713,9 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainUID", domainUid)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
+            .append("domainHomeSourceType", domainHomeSourceType)
+            .append("introspectVersion", introspectVersion)
+            .append("configuration", configuration)
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
@@ -587,6 +743,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid)
             .append(domainHome)
             .append(domainHomeInImage)
+            .append(domainHomeSourceType)
+            .append(introspectVersion)
+            .append(configuration)
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
             .append(image)
@@ -622,6 +781,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(domainHomeSourceType, rhs.domainHomeSourceType)
+            .append(introspectVersion, rhs.introspectVersion)
+            .append(configuration, rhs.configuration)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)
@@ -637,7 +799,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(experimental, rhs.experimental);
-
     return builder.isEquals();
   }
 

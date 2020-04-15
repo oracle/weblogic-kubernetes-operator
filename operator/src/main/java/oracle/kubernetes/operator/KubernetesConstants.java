@@ -5,7 +5,7 @@ package oracle.kubernetes.operator;
 
 /** Kubernetes constants. */
 public interface KubernetesConstants {
-  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.3";
+  String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
   String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
   String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();
   String LATEST_IMAGE_SUFFIX = ":latest";
@@ -23,6 +23,7 @@ public interface KubernetesConstants {
   String DOMAIN_SCALE_PATH = DOMAIN_SPECIFIC_PATH + "/scale";
   String DOMAIN_STATUS_PATH = DOMAIN_SPECIFIC_PATH + "/status";
 
+  boolean DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME = true;
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
   String CONTAINER_NAME = "weblogic-server";

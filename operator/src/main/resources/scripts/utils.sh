@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -199,6 +199,14 @@ function tracePipe() {
 }
 
 # 
+# traceTiming
+#   purpose: specially decorated trace statements for timing measurements
+#
+function traceTiming() {
+  [ "${TRACE_TIMING^^}" = "TRUE" ] && trace INFO "TIMING: ""$@"
+}
+
+# 
 # checkEnv [-q] envvar1 envvar2 ...
 #
 #   purpose: Check and trace the values of the provided env vars.
@@ -267,7 +275,8 @@ function traceEnv() {
     MW_HOME \
     NODEMGR_HOME \
     INTROSPECT_HOME \
-    PATH
+    PATH \
+    TRACE_TIMING
   do
     echo "    ${env_var}='${!env_var}'"
   done

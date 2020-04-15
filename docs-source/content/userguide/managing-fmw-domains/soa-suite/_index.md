@@ -41,7 +41,7 @@ This document provides details about the special considerations for deploying an
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.
 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
-[model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
+[domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
 
 #### Prerequisites for SOA Suite domains
 
@@ -110,8 +110,8 @@ For the Fusion Middleware Infrastructure image, you must install the [required p
 
 
   ```bash
-    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109
-    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109  oracle/fmw-infrastructure:12.2.1.3
+    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316
+    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316  oracle/fmw-infrastructure:12.2.1.3
   ```
 
 {{% notice warning %}}

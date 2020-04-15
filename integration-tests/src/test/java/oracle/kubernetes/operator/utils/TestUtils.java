@@ -42,14 +42,26 @@ public class TestUtils {
    *
    * @param podName  pod name
    * @param domainNS namespace
-   * @throws Exception exception
+   * @throws RuntimeException if pod is not ready and output doesn't contain 1/1
    */
   public static void checkPodReady(String podName, String domainNS) throws Exception {
+    checkPodReady(podName, domainNS, BaseTest.getMaxIterationsPod());    
+  }
+  
+  /**
+   * Checks if pod is ready.
+   *
+   * @param podName  pod name
+   * @param domainNS namespace
+   * @param maxIterations  max iterations count
+   * @throws RuntimeException if pod is not ready and output doesn't contain 1/1
+   */
+  public static void checkPodReady(String podName, String domainNS, int maxIterations) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for admin pod
-    checkCmdInLoop(cmd.toString(), "1/1", podName);
+    checkCmdInLoop(cmd.toString(), "1/1", podName, maxIterations);
   }
 
   /**
@@ -74,14 +86,27 @@ public class TestUtils {
    *
    * @param podName  - pod name
    * @param domainNS - domain namespace name
+   * @Exception RuntimeException if pod is not in Running state
    */
   public static void checkPodCreated(String podName, String domainNS) throws Exception {
+    checkPodCreated(podName, domainNS, BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * Checks that pod is created.
+   *
+   * @param podName  - pod name
+   * @param domainNS - domain namespace name
+   * @param maxIterations max iterations count
+   * @throws Exception RuntimeException if pod is not in Running state 
+   */
+  public static void checkPodCreated(String podName, String domainNS, int maxIterations) throws Exception {
 
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for pod to be running
-    checkCmdInLoop(cmd.toString(), "Running", podName);
+    checkCmdInLoop(cmd.toString(), "Running", podName, maxIterations);
   }
 
   /**
@@ -154,15 +179,27 @@ public class TestUtils {
    *
    * @param serviceName service name
    * @param domainNS    namespace
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
   public static void checkServiceCreated(String serviceName, String domainNS) throws Exception {
+    checkServiceCreated(serviceName, domainNS,BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * Checks that service is created.
+   *
+   * @param serviceName service name
+   * @param domainNS    namespace
+   * @param maxIterations max iterations count
+   * @throws RuntimeException if service is not created
+   */
+  public static void checkServiceCreated(String serviceName, String domainNS, int maxIterations) throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
 
     // check for service
-    while (i < BaseTest.getMaxIterationsPod()) {
+    while (i < maxIterations) {
       ExecResult result = ExecCommand.exec(cmd.toString());
 
       // service might not have been created
@@ -171,14 +208,14 @@ public class TestUtils {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        if (i == (maxIterations - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
         LoggerHelper.getLocal().log(Level.INFO,
             "Service is not created Ite ["
                 + i
                 + "/"
-                + BaseTest.getMaxIterationsPod()
+                + maxIterations
                 + "], sleeping "
                 + BaseTest.getWaitTimePod()
                 + " seconds more");
@@ -190,6 +227,7 @@ public class TestUtils {
       }
     }
   }
+
 
   /**
    * Creates input file.
@@ -1603,12 +1641,25 @@ public class TestUtils {
    * @param cmd command
    * @param matchStr matcher
    * @param k8sObjName object name
-   * @throws Exception on failure
+   * @throws RuntimeException if pod output does not contain match string defined by caller
    */
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
+    checkCmdInLoop(cmd, matchStr, k8sObjName, BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * check command in loop.
+   * @param cmd command
+   * @param matchStr matcher
+   * @param k8sObjName object name
+   * @param maxIterationsPod pod max iteration count
+   * @throws RuntimeException if pod output does not contain match string defined by caller
+   */
+  public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName, int maxIterationsPod)
+      throws Exception {
     int i = 0;
-    while (i < BaseTest.getMaxIterationsPod()) {
+    while (i < maxIterationsPod) {
       ExecResult result = ExecCommand.exec(cmd);
 
       // loop command till condition
@@ -1616,7 +1667,7 @@ public class TestUtils {
           || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException(
               "FAILURE: Timeout - pod " + k8sObjName + " output does not contain '" + matchStr + "'");
         }
@@ -1626,7 +1677,7 @@ public class TestUtils {
                 + "  output does not contain '" + matchStr + "'  Iteration ["
                 + i
                 + "/"
-                + BaseTest.getMaxIterationsPod()
+                + maxIterationsPod
                 + "], sleeping "
                 + BaseTest.getWaitTimePod()
                 + " seconds more");
@@ -1699,6 +1750,7 @@ public class TestUtils {
       }
     }
   }
+  
 
   /**
    * create yaml file with changed property.
@@ -1981,7 +2033,37 @@ public class TestUtils {
   }
 
   /**
-   * Utility method to find CreationTimeStamp for a Pod
+   * create configmap in the given namespace. Also creates label.
+   * @param cmName config map name
+   * @param fileOrDirPath File path
+   * @param namespace namespace
+   * @throws Exception on failure
+   */
+  public static void createConfigMap(String cmName, String fileOrDirPath,
+                                     String namespace, String label) throws Exception {
+    String cmd = "kubectl -n " + namespace
+        + " delete configmap " + cmName
+        + " --ignore-not-found";
+    TestUtils.exec(cmd);
+
+    cmd = "kubectl -n " + namespace
+        + " create configmap " + cmName
+        + " --from-file=" + fileOrDirPath;
+    TestUtils.exec(cmd, true);
+
+    // create label for configmap
+    cmd =
+        "kubectl -n "
+            + namespace
+            + " label cm "
+            + cmName
+            + " "
+            + label;
+    TestUtils.exec(cmd);
+  }
+
+  /**
+   * Utility method to find CreationTimeStamp for a Pod.
    * @param namespace namespace for the pod
    * @param pod       name of the pod
    * @return creationTimestamp of the Pod 
@@ -1998,7 +2080,7 @@ public class TestUtils {
   }
 
   /**
-   * Utility method to find DeletionTimestamp for a Pod
+   * Utility method to find DeletionTimestamp for a Pod.
    * @param namespace namespace for the pod
    * @param pod       name of the pod
    * @return deletionTimestamp of the Pod 

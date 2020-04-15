@@ -4,17 +4,17 @@ date: 2019-08-15T13:30:04-04:00
 weight: 1
 ---
 
-### Overview
+#### Overview
 
 WebLogic Server Kubernetes Operator version 2.3 and later includes experimental support for Istio 1.2.2 and later.
 This support allows you to run the operator itself, and WebLogic domains managed by
-the operator with Istio sidecar injection enabled.  It will allow you to use
+the operator, with Istio sidecar injection enabled.  It will allow you to use
 Istio gateways and virtual services to access applications deployed in these domains.
-If your applications have suitable tracing code in them, you will also be able to
+If your applications have suitable tracing code in them, then you will also be able to
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
-### Limitations
+#### Limitations
 
 The current experimental support for Istio has these limitations:
 
@@ -27,7 +27,7 @@ The current experimental support for Istio has these limitations:
 * Support is provided only for domains with a single dynamic cluster.
   Multiple clusters and configured clusters are not currently supported.
 
-### Using the operator with experimental Istio support
+#### Using the operator with experimental Istio support
 
 You can deploy the operator into a namespace which has Istio automatic sidecar
 injection enabled.  Before installing the operator, create the namespace you
@@ -51,7 +51,7 @@ $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yam
 
 In the second command, change `weblogic-operator-xxx-xxx` to the name of your pod.
 
-### Creating a domain with experimental Istio support
+#### Creating a domain with experimental Istio support
 
 You can configure your domains to run with Istio automatic sidecar injection enabled.
 Before creating your domain, create the namespace you wish to run the domain in,
@@ -73,7 +73,7 @@ because the `create-domain.sh` script makes the necessary adjustments to the dom
 to make it work in an Istio environment.
 
 ```
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain2
@@ -93,7 +93,7 @@ To enable the experimental Istio support, you must include the `istio` section
 and you must set `enabled: true` as shown.  The `readniessPort` is optional
 and defaults to `8888` if not provided.  
 
-#### How Istio-enabled domains differ from regular domains
+##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on pods.  When you enable Istio support, the
 domain on persistent volume sample scripts will make the following adjustments
@@ -108,31 +108,31 @@ to your domain in order to satisy Istio's requirements:
       you specified as the admin port, with only the LDAP protocol enabled.
     * Create a channel called `istio-T3Channel` with listen
       address `127.0.0.1` and the port you specified as the T3 port.
-* In the server template that is used to create managed servers in clusters:
+* In the server template that is used to create Managed Servers in clusters:
     * Create a channel called `istio-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting) and the public address
-      set to the Kubernetes service for the managed server.
+      set to the Kubernetes service for the Managed Server.
     * Create a channel called `istio-t3` with listen address `127.0.0.1` and the port
       you specified as the admin port and the public address
-      set to the Kubernetes service for the managed server.
+      set to the Kubernetes service for the Managed Server.
     * Create a channel called `istio-cluster` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the CLUSTER_BROADCAST protocol enabled,
-      and the public address set to the Kubernetes service for the managed server.
+      and the public address set to the Kubernetes service for the Managed Server.
     * Create a channel called `istio-http` with listen address `127.0.0.1:31111` and the
-      public address set to the Kubernetes service for the managed server. Note that `31111`
+      public address set to the Kubernetes service for the Managed Server. Note that `31111`
       is the Istio proxy (envoy) port.
 * The create domain job will be configured to disable injection of the Istio sidecar.
 
 Additionally, when the experimental Istio support is enabled for a domain, the operator will
 ensure that the Istio sidecar is not injected into the introspector job's pods.
 
-### Exposing applications in Istio-enabled domains
+#### Exposing applications in Istio-enabled domains
 
 When a domain is running with the experimental Istio support, you should use the Istio
 gateway to provide external access to applications, instead of using an Ingress
 controller like Traefik.  Using the Istio gateway will enable you to view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
-the cluster, i.e. the Istio gateway.
+the cluster, for example, the Istio gateway.
 
 To configure external access to your domain, you need to create an Istio `gateway` and
 `virtualservice` as shown in the example below:
@@ -184,7 +184,7 @@ the namespace `domain1`.
 
 For more information about providing Ingress using Istio, refer to the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
 
-### Traffic management
+#### Traffic management
 
 Istio provides traffic management capabilities, including the ability to
 visualize traffic in Kiali.  You do not need to change your applications to use
@@ -200,14 +200,14 @@ flowing:
 * To a second domain called `bobs-bookstore`.
 
 In this example you can see how the traffic flows to the cluster services and
-then to the individual managed servers.
+then to the individual Managed Servers.
 
 ![Traffic visualization with Kiali](/weblogic-kubernetes-operator/images/kiali.png)
 
 You can learn more about [Istio traffic management](https://istio.io/docs/concepts/traffic-management/)
 in their documentation.
 
-### Distributed tracing
+#### Distributed tracing
 
 Istio provides distributed tracing capabilities, including the ability to view
 traces in Jaeger.  In order to use distributed tracing though, you will need to

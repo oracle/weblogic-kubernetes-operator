@@ -25,7 +25,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
@@ -220,6 +222,14 @@ public class Domain {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
+  public String getRestartVersion() {
+    return spec.getRestartVersion();
+  }
+
+  public String getIntrospectVersion() {
+    return spec.getIntrospectVersion();
+  }
+
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
     return spec.getEffectiveConfigurationFactory(apiVersion, getResourceVersion());
   }
@@ -346,6 +356,33 @@ public class Domain {
   }
 
   /**
+   * Reference to secret opss key passphrase.
+   *
+   * @return opss key passphrase
+   */
+  public String getOpssWalletPasswordSecret() {
+    return spec.getOpssWalletPasswordSecret();
+  }
+
+  /**
+   * Returns the opss wallet file secret.
+   *
+   * @return opss wallet file secret.
+   */
+  public String getOpssWalletFileSecret() {
+    return spec.getOpssWalletFileSecret();
+  }
+
+  /**
+   * Reference to runtime encryption secret.
+   *
+   * @return runtime encryption secret
+   */
+  public String getRuntimeEncryptionSecret() {
+    return spec.getRuntimeEncryptionSecret();
+  }
+
+  /**
    * Returns the domain unique identifier.
    *
    * @return domain UID
@@ -369,15 +406,39 @@ public class Domain {
   }
 
   boolean isLogHomeEnabled() {
-    return spec.isLogHomeEnabled();
+    return Optional.ofNullable(spec.isLogHomeEnabled())
+        .orElse(DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType()));
   }
 
   public String getDataHome() {
     return spec.getDataHome();
   }
 
+  public String getWdtDomainType() {
+    return spec.getWdtDomainType();
+  }
+
   public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
+  }
+
+  /**
+   * Get domain home source type.
+   * @return source type
+   */
+  public String getDomainHomeSourceType() {
+    return Optional.ofNullable(spec.getDomainHomeSourceType()).orElseGet(
+        () -> getModel() != null ? DomainSourceType.FromModel.toString()
+            : (Optional.ofNullable(spec.isDomainHomeInImage())
+            .orElse(true) ? DomainSourceType.Image.toString() : DomainSourceType.PersistentVolume.toString()));
+  }
+
+  public Model getModel() {
+    return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getModel).orElse(null);
+  }
+
+  public boolean isHttpAccessLogInLogHome() {
+    return spec.getHttpAccessLogInLogHome();
   }
 
   boolean isDomainHomeInImage() {
@@ -392,6 +453,10 @@ public class Domain {
     return spec.getIstioReadinessPort();
   }
 
+  public boolean isDomainSourceFromModel(String type) {
+    return DomainSourceType.FromModel.toString().equals(type);
+  }
+
   /**
    * Returns the domain home.
    *
@@ -403,10 +468,13 @@ public class Domain {
     if (spec.getDomainHome() != null) {
       return spec.getDomainHome();
     }
-    if (spec.isDomainHomeInImage()) {
+    if (DomainSourceType.Image.toString().equals(getDomainHomeSourceType())) {
       return "/u01/oracle/user_projects/domains";
+    } else if (DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType())) {
+      return "/shared/domains/" + getDomainUid();
+    } else { // FromModel
+      return "/u01/domains/" + getDomainUid();
     }
-    return "/shared/domains/" + getDomainUid();
   }
 
   public boolean isShuttingDown() {
@@ -428,7 +496,22 @@ public class Domain {
    * @return name of the config map
    */
   public String getConfigOverrides() {
-    return spec.getConfigOverrides();
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getOverridesConfigMap).orElse(spec.getConfigOverrides());
+  }
+
+  /**
+   * Returns the value of the introspector job active deadline.
+   *
+   * @return value of the deadline in seconds.
+   */
+  public Long getIntrospectorJobActiveDeadlineSeconds() {
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getIntrospectorJobActiveDeadlineSeconds).orElse(null);
+  }
+
+  public String getWdtConfigMap() {
+    return spec.getWdtConfigMap();
   }
 
   /**
@@ -437,8 +520,10 @@ public class Domain {
    * @return list of Kubernetes secret names
    */
   public List<String> getConfigOverrideSecrets() {
-    return spec.getConfigOverrideSecrets();
+    return Optional.ofNullable(spec.getConfiguration())
+        .map(Configuration::getSecrets).orElse(spec.getConfigOverrideSecrets());
   }
+
 
   @Override
   public String toString() {
@@ -495,7 +580,9 @@ public class Domain {
       addUnmappedLogHome();
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
+      addIllegalSitConfigForMii();
       verifyNoAlternateSecretNamespaceSpecified();
+      addMissingModelConfigMap(kubernetesResources);
 
       return failures;
     }
@@ -573,6 +660,13 @@ public class Domain {
       }
     }
 
+    private void addIllegalSitConfigForMii() {
+      if (isDomainSourceFromModel(getDomainHomeSourceType())
+          && getConfigOverrides() != null) {
+        failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
+      }
+    }
+
     private void addReservedEnvironmentVariables() {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
@@ -625,19 +719,32 @@ public class Domain {
       for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.ConfigOverride);
       }
+
+      verifySecretExists(resourceLookup, getOpssWalletPasswordSecret(), SecretType.OpssWalletPassword);
+      verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OpssWalletFile);
+
+      if (isDomainSourceFromModel(getDomainHomeSourceType())) {
+        if (getRuntimeEncryptionSecret() == null) {
+          failures.add(DomainValidationMessages.missingRequiredSecret(
+              "spec.configuration.model.runtimeEncryptionSecret"));
+        } else {
+          verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RuntimeEncryption);
+        }
+        if (ModelInImageDomainType.JRF.toString().equals(getWdtDomainType()) 
+            && getOpssWalletPasswordSecret() == null) {
+          failures.add(DomainValidationMessages.missingRequiredOpssSecret(
+              "spec.configuration.opss.walletPasswordSecret"));
+        }
+      }
     }
 
     private List<V1LocalObjectReference> getImagePullSecrets() {
       return spec.getImagePullSecrets();
     }
 
-    private List<String> getConfigOverrideSecrets() {
-      return spec.getConfigOverrideSecrets();
-    }
-
     @SuppressWarnings("SameParameterValue")
     private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
-      if (!resources.isSecretExists(secretName, getNamespace())) {
+      if (secretName != null && !resources.isSecretExists(secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
       }
     }
@@ -652,6 +759,18 @@ public class Domain {
       return Optional.ofNullable(spec.getWebLogicCredentialsSecret())
           .map(V1SecretReference::getNamespace)
           .orElse(getNamespace());
+    }
+
+    private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
+      verifyModelConfigMapExists(resourceLookup, getWdtConfigMap());
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
+      if (isDomainSourceFromModel(getDomainHomeSourceType())
+          && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
+      }
     }
 
   }

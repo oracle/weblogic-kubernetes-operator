@@ -75,9 +75,16 @@ weblogicCredentialsSecretName: soainfra-domain-credentials
 # The default is true.
 includeServerOutInPodLog: true
 
-# The in-pod location for domain log, server logs, server out, and node manager log files
-# If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
+# The in-pod location for domain log, server logs, server out, Node Manager log, and
+# HTTP access log files. If not specified, the value is derived from the domainUID as
+# /shared/logs/<domainUID>.
 logHome: /u01/oracle/user_projects/domains/logs/soainfra
+
+# Set this value to 'false' to have HTTP access log files written to the directory 
+# configured in the WebLogic domain home.
+# The default is 'true', which means HTTP access log files will be written to
+# the logHome directory.
+httpAccessLogInLogHome: true
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012

@@ -275,11 +275,12 @@ public class DomainStatus {
   /**
    * Status of WebLogic servers in this domain.
    *
-   * @return servers
+   * @return a sorted list of ServerStatus containing status of WebLogic servers in this domain
    */
   public List<ServerStatus> getServers() {
-    servers.sort(Comparator.naturalOrder());
-    return servers;
+    List<ServerStatus> sortedServers = new ArrayList<>(servers);
+    sortedServers.sort(Comparator.naturalOrder());
+    return sortedServers;
   }
 
   /**
@@ -326,9 +327,15 @@ public class DomainStatus {
     return this;
   }
 
+  /**
+   * Status of WebLogic clusters in this domain.
+   *
+   * @return a sorted list of ClusterStatus containing status of WebLogic clusters in this domain
+   */
   public List<ClusterStatus> getClusters() {
-    clusters.sort(Comparator.naturalOrder());
-    return clusters;
+    List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
+    sortedClusters.sort(Comparator.naturalOrder());
+    return sortedClusters;
   }
 
   /**
