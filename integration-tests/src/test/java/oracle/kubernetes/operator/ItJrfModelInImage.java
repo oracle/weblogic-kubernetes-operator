@@ -44,7 +44,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
   private static String domainNS;
   private static String testClassName;
   private static StringBuffer namespaceList;
-  private static String rcuSchemaPrefix = "jrfmii";
+  private static String rcuSchemaPrefix = "jrfrcu";
   private static String rcuSchemaPass = "Oradoc_db1";
   private static String walletPassword = "welcome1";
   private static int dbPort;
@@ -177,7 +177,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       
       jrfdomain = new JrfDomain(domainMap);
       
-      jrfdomain.verifyDomainCreated(80);
+      jrfdomain.verifyDomainCreated(40);
       
       //save and restore walletFile secret
       saveWalletFileSecret(getResultDir(), domainUid, namespace);
@@ -208,7 +208,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
       
-      jrfdomain.verifyDomainCreated(80);
+      jrfdomain.verifyDomainCreated(40);
       testCompletedSuccessfully = true;
 
     } catch (Exception ex) {
