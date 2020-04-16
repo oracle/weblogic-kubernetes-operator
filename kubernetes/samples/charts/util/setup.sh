@@ -70,6 +70,7 @@ function createVoyager() {
       --set ingressClass=voyager
   else
     echo "Voyager operator is already installed."
+    exit 0;
   fi 
   echo
 
@@ -108,6 +109,7 @@ function createTraefik() {
       --values ${UTILDIR}/../traefik/values.yaml
   else
     echo "Traefik operator is already installed."
+    exit 0;
   fi
   echo
 
