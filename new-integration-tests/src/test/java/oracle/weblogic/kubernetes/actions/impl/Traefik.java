@@ -36,7 +36,13 @@ public class Traefik {
     return Helm.uninstall(params);
   }
 
+  /**
+   * Create a ingress per domain
+   * @param valuesYaml
+   * @return true on success, false otherwise
+   */
   public static boolean createIngress(String valuesYaml) {
+
     return true;
   }
 }

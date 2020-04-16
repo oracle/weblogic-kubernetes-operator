@@ -49,16 +49,27 @@ public class Helm {
     String chartRef = helmParams.getChartDir();
 
     // use repo url as chart reference if provided
-    if (helmParams.getChartName() != null && helmParams.getRepoUrl() != null) {
-      Helm.addRepo(helmParams.getChartName(), helmParams.getRepoUrl());
-      chartRef = helmParams.getRepoUrl();
+    if (helmParams.getRepoUrl() != null && helmParams.getChartName() != null) {
+      if (helmParams.getRepoName() != null) {
+        // call 'helm repo add <repo_name> <repo_url>' first to add the repo
+        addRepo(helmParams.getRepoName(), helmParams.getRepoUrl());
+        chartRef = helmParams.getRepoName() + "/" + helmParams.getChartName();
+      } else {
+        chartRef = helmParams.getChartName() + " --repo " + helmParams.getRepoUrl();
+      }
     }
 
     logger.fine("Installing a chart in namespace {0} using chart reference {1}", namespace, chartRef);
 
     // build helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
-        helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
+            helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
+
+    // if we have chart values file
+    String chartValuesFile = helmParams.getChartValuesFile();
+    if (chartValuesFile != null) {
+      installCmd = installCmd + " --values " + chartValuesFile;
+    }
 
     // add override chart values
     installCmd = installCmd + valuesToString(chartValues);
@@ -100,7 +111,7 @@ public class Helm {
     logger.fine("Upgrading a release in namespace {0} using chart reference {1}", namespace, chartDir);
 
     // build helm upgrade command
-    String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s ",
+    String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s --reuse-values",
         params.getReleaseName(), chartDir, params.getNamespace());
 
     // add override chart values
@@ -149,14 +160,43 @@ public class Helm {
     return exec(String.format("helm list -n %s", params.getNamespace()));
   }
 
+  public static boolean getExpectedValues(HelmParams params, String expectedValue) {
+    // assertions for required parameters
+    assertThat(params.getReleaseName())
+            .as("make sure release name is not empty or null")
+            .isNotNull()
+            .isNotEmpty();
+    assertThat(params.getNamespace())
+            .as("make sure namespace is not empty or null")
+            .isNotNull()
+            .isNotEmpty();
+
+    String helmCmd = String.format("helm get values %1s -n %2s", params.getReleaseName(), params.getNamespace());
+    ExecResult result;
+    logger.info("Running command - \n" + helmCmd);
+
+    try {
+      result = ExecCommand.exec(helmCmd, true);
+      if (result.exitValue() != 0) {
+        logger.info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
+        return false;
+      }
+    } catch (Exception e) {
+      logger.info("Got exception, command failed with errors " + e.getMessage());
+      return false;
+    }
+
+    return result.stdout().contains(expectedValue);
+  }
+
   /**
    * Add a chart repository.
-   * @param chartName the name of the chart
+   * @param repoName the name of the repo
    * @param repoUrl reposiroty url
    * @return true on success, false otherwise
    */
-  public static boolean addRepo(String chartName, String repoUrl) {
-    String addRepoCmd = "helm add repo " + chartName + " " + repoUrl;
+  public static boolean addRepo(String repoName, String repoUrl) {
+    String addRepoCmd = "helm repo add " + repoName + " " + repoUrl;
     return exec(addRepoCmd);
   }
 

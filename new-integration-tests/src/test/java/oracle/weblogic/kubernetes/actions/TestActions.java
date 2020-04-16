@@ -176,6 +176,26 @@ public class TestActions {
     return Traefik.createIngress(valuesYaml);
   }
 
+  /**
+   * Upgrade Traefik release
+   *
+   * @param params parameters for helm values
+   * @return true on success, false otherwise
+   */
+  public static boolean upgradeTraefik(TraefikParams params) {
+    return Traefik.upgrade(params);
+  }
+
+  /**
+   * Uninstall the Traefik release.
+   *
+   * @param params the parameters to helm uninstall command, release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallTraefik(HelmParams params) {
+    return Traefik.uninstall(params);
+  }
+
   // -------------------------  namespaces -------------------------------
 
   /**
@@ -411,7 +431,11 @@ public class TestActions {
   public static boolean helmList(HelmParams params) {
     return Helm.list(params);
   }
-  
+
+  public static boolean helmGetExpectedValues(HelmParams params, String expectedValue) {
+    return Helm.getExpectedValues(params, expectedValue);
+  }
+
   // ------------------------ Application Builder  -------------------------
 
   /**

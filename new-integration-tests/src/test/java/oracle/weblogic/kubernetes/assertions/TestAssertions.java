@@ -10,8 +10,8 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.WITAssertion;
-
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -26,6 +26,16 @@ public class TestAssertions {
    */
   public static Callable<Boolean> operatorIsRunning(String namespace) {
     return Operator.isRunning(namespace);
+  }
+
+  /**
+   * Check if Traefik is running.
+   *
+   * @param namespace in which is traefik is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> traefikIsRunning(String namespace) {
+    return Traefik.isRunning(namespace);
   }
 
   /**

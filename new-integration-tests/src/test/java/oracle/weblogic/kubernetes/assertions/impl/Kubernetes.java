@@ -134,6 +134,26 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a Traefik pod running in a given namespace.
+   * The method assumes the traefik pod name to starts with "traefik-operator-"
+   * and decorated with label "app=traefik"
+   * @param namespace in which to check for the pod existence
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isTraefikPodRunning(String namespace) throws ApiException {
+    boolean status = false;
+    String labelSelector = "app=traefik";
+    V1Pod pod = getPod(namespace, labelSelector, "traefik-operator-");
+    if (pod != null) {
+      status = pod.getStatus().getPhase().equals(RUNNING);
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
    * Returns the V1Pod object given the following parameters.
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
