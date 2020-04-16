@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
@@ -162,6 +163,16 @@ public class TestAssertions {
    */
   public static boolean dockerImageExists(String imageName, String imageTag) {
     return WITAssertion.doesImageExist(imageName, imageTag);
+  }
+
+  /**
+   * Check if an application can be accessed within a managed server pod.
+   * @param imageName the name of the image to be checked
+   * @param imageTag  the tag of the image to be checked
+   * @return true if the image does exist, false otherwise
+   */
+  public static boolean appAccessibleInPod(String ns, String port, String appPath, String expectedStr) {
+    return Application.appAccessibleInPod(ns, port, appPath, expectedStr);
   }
 
 }

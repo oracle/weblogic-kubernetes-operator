@@ -6,11 +6,12 @@ package oracle.weblogic.kubernetes.actions.impl;
 import java.io.IOException;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
@@ -20,6 +21,8 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
  */
 
 public class AppBuilder {
+  private static final LoggingFacade logger = LoggingFactory.getLogger(AppBuilder.class);
+
   private static final String ARCHIVE_SRC_DIR = ARCHIVE_DIR + "/wlsdeploy/applications";
   
   private AppParams params;
@@ -54,20 +57,22 @@ public class AppBuilder {
     try {
       cleanupDirectory(ARCHIVE_DIR);
       checkDirectory(ARCHIVE_SRC_DIR);
-      copyFolder(
-          APP_DIR + "/" + params.srcDir(), 
-          ARCHIVE_SRC_DIR);
-    } catch (IOException ioe) {    
-      logger.warning("Failed to get the directory " + ARCHIVE_DIR + " ready");
+      for (String item: params.srcDirList()) {
+        copyFolder(
+            APP_DIR + "/" + item, 
+            ARCHIVE_SRC_DIR);
+      }
+    } catch (IOException | RuntimeException e) {    
+      logger.info("Failed to get the directory " + ARCHIVE_DIR + " ready", e);
       return false;
     }
 
     // build the app archive 
-    String jarPath = String.format("%s.ear", params.srcDir());
+    String jarPath = String.format("%s.ear", params.appName());
     boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
     
     // build a zip file that can be passed to WIT
-    String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.srcDir());
+    String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());
     boolean zipBuilt = buildZipArchive(zipPath, ARCHIVE_DIR);
 
     return jarBuilt && zipBuilt;
@@ -108,7 +113,7 @@ public class AppBuilder {
         "cd %s ; zip %s wlsdeploy/applications/%s.ear ", 
         srcDir, 
         zipPath,  
-        params.srcDir());
+        params.appName());
 
     return Command.withParams(
         defaultCommandParams()
