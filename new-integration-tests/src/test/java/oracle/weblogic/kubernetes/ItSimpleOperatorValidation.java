@@ -137,7 +137,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // will not.
     // in this example, we first wait 30 seconds, since it is unlikely this operation
     // will complete in less than 30 seconds, then we check if the operator is running.
-    with().pollDelay(30, SECONDS)
+    with().pollDelay(2, SECONDS)
         // we check again every 10 seconds.
         .and().with().pollInterval(10, SECONDS)
         // this listener lets us report some status with each poll
