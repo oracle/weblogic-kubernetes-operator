@@ -11,7 +11,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -35,6 +34,7 @@ import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -78,8 +78,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
 
-// Test to install Operator, create model in image domain and verify the domain
-// has started successfully
+// Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
 @ExtendWith(Timing.class)
@@ -106,14 +105,22 @@ class ItMiiDomain implements LoggedTest {
   private static V1ServiceAccount serviceAccount = null;
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static ConditionFactory withStandardRetryPolicy = null;
+
   private String domainUID = "domain1";
   private String miiImage = null;
+
 
   /**
    * Install Operator.
    */
   @BeforeAll
   public static void initAll() {
+    // create standard, reusbale retry/backoff policy
+    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(5, MINUTES).await();
+
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     opNamespace = createNamespace();
@@ -159,7 +166,14 @@ class ItMiiDomain implements LoggedTest {
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-    waitForCondition(operatorIsRunning(opNamespace));
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for operator to be running in namespace {0} "
+                  + "(elapsed time {1}ms, remaining time {2}ms)",
+                opNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(operatorIsRunning(opNamespace));
 
   }
 
@@ -234,7 +248,15 @@ class ItMiiDomain implements LoggedTest {
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
-    waitForCondition(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                  + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUID,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
 
 
     // check admin server pod exist
@@ -502,7 +524,15 @@ class ItMiiDomain implements LoggedTest {
 
   private void checkPodCreated(String podName) {
     try {
-      waitForCondition(podExists(podName, domainUID, domainNamespace));
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
+                  + "(elapsed time {2}ms, remaining time {3}ms)",
+                  podName,
+                  domainNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(podExists(podName, domainUID, domainNamespace));
     } catch (ApiException e) {
       logger.log(Level.INFO, "podExists failed with ", e);
       assertThat(e)
@@ -515,7 +545,15 @@ class ItMiiDomain implements LoggedTest {
 
   private void checkPodRunning(String podName) {
     try {
-      waitForCondition(podReady(podName, domainUID, domainNamespace));
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
+                  + "(elapsed time {2}ms, remaining time {3}ms)",
+                  podName,
+                  domainNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(podReady(podName, domainUID, domainNamespace));
     } catch (ApiException e) {
       logger.log(Level.INFO, "podReady failed with ", e);
       assertThat(e)
@@ -528,7 +566,15 @@ class ItMiiDomain implements LoggedTest {
 
   private void checkServiceCreated(String serviceName) {
     try {
-      waitForCondition(serviceReady(serviceName, null, domainNamespace));
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                  serviceName,
+                  domainNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(serviceReady(serviceName, null, domainNamespace));
     } catch (ApiException e) {
       logger.log(Level.INFO, "podExists failed with ", e);
       assertThat(e)
@@ -537,19 +583,6 @@ class ItMiiDomain implements LoggedTest {
               "Service %s is not ready in namespace %s", serviceName, domainNamespace))
           .isNotInstanceOf(ApiException.class);
     }
-  }
-
-  private static void waitForCondition(Callable callable) {
-    with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for a condition to be met (elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        // and here we can set the maximum time we are prepared to wait
-        .await().atMost(5, MINUTES)
-        .until(callable);
   }
 
 }

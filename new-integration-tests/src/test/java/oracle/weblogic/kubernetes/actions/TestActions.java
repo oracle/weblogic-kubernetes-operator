@@ -453,8 +453,8 @@ public class TestActions {
   }
 
   /**
-   * Push an image to a registry
-   * @param image image
+   * Push an image to a registry.
+   * @param image fully qualified docker image, image name:image tag
    * @return true if successfull
    */
   public static boolean dockerPush(String image) {
