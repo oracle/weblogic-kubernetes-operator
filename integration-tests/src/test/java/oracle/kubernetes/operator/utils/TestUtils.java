@@ -2245,20 +2245,7 @@ public class TestUtils {
   public static void deleteDomainHomeDirOke() {
 
     try {
-      deleteDomainHomeDirOke("");
-      String resourceDir = BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/oke/";
-      StringBuffer cmdLine = new StringBuffer()
-              .append(" kubectl delete -f ")
-              .append(resourceDir)
-              .append("cleanupokepvctest.yaml");
-
-      ExecCommand.exec(cmdLine.toString());
-      cmdLine = new StringBuffer()
-              .append(" kubectl delete -f ")
-              .append(resourceDir)
-              .append("cleanupokepvtest.yaml");
-      ExecCommand.exec(cmdLine.toString());
+      deleteDomainHomeDirOke("deleteall");
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
     }
@@ -2273,14 +2260,16 @@ public class TestUtils {
 
     String resourceDir = BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/oke/";
-    String pvYaml = resourceDir + "/cleanupoketestpv.yaml";
-    String pvcYaml = resourceDir + "/cleanupoketestpvc.yaml";
+    String pvYaml = resourceDir + "cleanupokepv" + domainUid + ".yaml";
+    String pvcYaml = resourceDir + "cleanupokepvc" + domainUid + ".yaml";
     String cmd = " kubectl create ns cleanupoke";
     ExecCommand.exec(cmd);
     TestUtils.copyFile(resourceDir + "cleanupokepv.yaml",pvYaml);
     TestUtils.copyFile(resourceDir + "cleanupokepvc.yaml",pvcYaml);
     replaceStringInFile(pvYaml, "NFS_SERVER", BaseTest.NFS_SERVER);
     replaceStringInFile(pvYaml, "FSS_DIR", BaseTest.FSS_DIR);
+    replaceStringInFile(pvYaml, "UID", domainUid);
+    replaceStringInFile(pvcYaml, "UID", domainUid);
 
     cmd = " kubectl apply -f " + pvYaml;
     ExecResult result = ExecCommand.exec(cmd);
@@ -2293,9 +2282,11 @@ public class TestUtils {
     StringBuffer cmdRemove = new StringBuffer();
     cmdRemove.append(BaseTest.getProjectRoot())
             .append("/src/integration-tests/bash/krun.sh -t 240 -m ")
-            .append("cleanupoke-weblogic-sample-pvc:/shared/")
+            .append("cleanupoke-")
+            .append(domainUid)
+            .append("-pvc:/shared/")
             .append(" -n cleanupoke -c \"rm -rf ");
-    if (domainUid.equals("")) {
+    if (domainUid.equals("deleteall")) {
       cmdRemove.append("/shared/logs/* ")
               .append("/shared/wdt/* ")
               .append("/shared/domains/*\"");
@@ -2312,6 +2303,16 @@ public class TestUtils {
     }
     LoggerHelper.getLocal().log(
             Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
+
+    StringBuffer cmdLine = new StringBuffer()
+            .append(" kubectl delete -f ")
+            .append(pvcYaml);
+
+    ExecCommand.exec(cmdLine.toString());
+    cmdLine = new StringBuffer()
+            .append(" kubectl delete -f ")
+            .append(pvYaml);
+    ExecCommand.exec(cmdLine.toString());
   }
 
   /**

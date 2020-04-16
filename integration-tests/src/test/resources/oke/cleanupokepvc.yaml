@@ -4,13 +4,13 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: cleanupoke-weblogic-sample-pvc
+  name: cleanupoke-UID-pvc
   namespace: cleanupoke
   labels:
     weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: cleanupoke
+    weblogic.domainUID: UID
 spec:
-  storageClassName: cleanupoke-weblogic-sample-storage-class
+  storageClassName: cleanupoke-UID-storage-class
   accessModes:
     - ReadWriteMany
   resources:

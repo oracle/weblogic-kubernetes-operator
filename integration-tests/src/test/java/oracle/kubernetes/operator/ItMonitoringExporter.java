@@ -1546,8 +1546,8 @@ public class ItMonitoringExporter extends BaseTest {
       TestUtils.copyFile(pvcYaml, okepvcYaml);
       TestUtils.replaceStringInFile(okepvYaml, "NFS_SERVER", "10.0.10.6");
       TestUtils.replaceStringInFile(okepvYaml, "FSS_DIR", fssPath);
-      TestUtils.replaceStringInFile(okepvYaml, "weblogic-sample", "monitoring");;
-      TestUtils.replaceStringInFile(okepvcYaml, "weblogic-sample", "monitoring");
+      TestUtils.replaceStringInFile(okepvYaml, "UID", "monitoring");;
+      TestUtils.replaceStringInFile(okepvcYaml, "UID", "monitoring");
 
 
       cmd = " kubectl apply -f " + okepvYaml;
