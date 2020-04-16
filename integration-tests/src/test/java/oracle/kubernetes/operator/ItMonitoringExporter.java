@@ -1496,7 +1496,18 @@ public class ItMonitoringExporter extends BaseTest {
     // apply new domain yaml and verify pod restart
     crdCmd =
             " kubectl apply -f " + resourceExporterDir + "/../oke/traefik-path-routing-monitoring.yaml";
-    TestUtils.exec(crdCmd);
+    result = TestUtils.exec(crdCmd);
+    LoggerHelper.getLocal().log(Level.INFO,
+            "Created Monitoring LB Path Route " + result.stdout());
+    if (result.exitValue() != 0) {
+      throw new Exception(
+              "FAILURE: command to create load balancer monitoring path routing failed"
+                      + cmdLb
+                      + " failed, returned "
+                      + result.stdout()
+                      + result.stderr());
+
+    }
     return lbPublicIP;
   }
 
