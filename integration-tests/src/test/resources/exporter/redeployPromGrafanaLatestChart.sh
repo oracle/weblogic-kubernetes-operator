@@ -12,18 +12,18 @@ if [[ "$HELM_VERSION" =~ "v2" ]]; then
    helm delete --purge grafana
    helm delete --purge prometheus
 elif [[ "$HELM_VERSION" =~ "v3" ]]; then
-   helm uninstall grafana  --namespace monitoring
-   helm uninstall prometheus  --namespace monitoring
+   helm uninstall grafana  --namespace monitortestns
+   helm uninstall prometheus  --namespace monitortestns
 else
     echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
     exit 1
 fi
 
 export appname=grafana
-for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitortestns --force --grace-period=0 --ignore-not-found; done
 
 export appname=prometheus
-for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitortestns --force --grace-period=0 --ignore-not-found; done
 
 sed -i "s/${domainNS2};${domainNS2}/${domainNS1};${domainNS1}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 if [[ "$HELM_VERSION" =~ "v2" ]]; then

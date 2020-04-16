@@ -13,7 +13,7 @@ export appname=grafana
 for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
 
 kubectl --namespace monitortestns create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
-if [[ ! $OKE_CLUSTER ] || [ ${OKE_CLUSTER} = "true" ]]; then
+if [[ ! $OKE_CLUSTER ] || [ ${OKE_CLUSTER} = "false" ]]; then
   kubectl apply -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 fi
 echo "Detected Helm Version [${HELM_VERSION}]"
