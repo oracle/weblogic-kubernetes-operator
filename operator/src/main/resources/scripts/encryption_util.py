@@ -13,9 +13,11 @@
 #
 
 from oracle.weblogic.deploy.encrypt import EncryptionUtils
+from oracle.weblogic.deploy.encrypt import EncryptionException
 from java.lang import String
 import sys, os, traceback
 from java.lang import System
+import utils
 
 def decrypt_file(cipher_text, password, outputfile):
       try:
@@ -26,10 +28,12 @@ def decrypt_file(cipher_text, password, outputfile):
         fh.write(str(restored_text))
         fh.close()
         System.exit(0)
-      except:
-          exc_type, exc_obj, exc_tb = sys.exc_info()
-          eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
-          print eeString
+      except EncryptionException, e:
+          trace("SEVERE", "Error in decrypting secret artifact: %s" % e.getCause())
+          System.exit(-1)
+      except Exception, all:
+          # catch all including jypthon
+          trace("SEVERE", "Error in decrypting secret artifact: %s" % all)
           System.exit(-1)
 
 def encrypt_file(clear_text, password, outputfile):
@@ -41,10 +45,12 @@ def encrypt_file(clear_text, password, outputfile):
         fh.write(str(encrypted_text))
         fh.close()
         System.exit(0)
-      except:
-          exc_type, exc_obj, exc_tb = sys.exc_info()
-          eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
-          print eeString
+      except EncryptionException, e:
+          trace("SEVERE", "Error in encrypting secret artifact: %s" % e.getCause())
+          System.exit(-1)
+      except Exception, all:
+          # catch all including jypthon
+          trace("SEVERE", "Error in encrypting secret artifact: %s" % all)
           System.exit(-1)
 
 if __name__ == "__main__":

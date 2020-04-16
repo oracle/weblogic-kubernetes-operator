@@ -703,7 +703,7 @@ function contain_returncode() {
 #   4 -  output file
 #
 function encrypt_decrypt_model() {
-  trace "Entering encrypt_wdtmodel"
+  trace "Entering encrypt_wdtmodel $1"
 
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
   local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
@@ -716,12 +716,14 @@ function encrypt_decrypt_model() {
     ${SCRIPTPATH}/encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "WDT Failed to encrypt_decrypt_model failure. Check logs for error."
+    trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
+    "described in runtimeEncryptionSecret in the domain resource has been changed since the creation of the domain. " \
+    " You can either reset the password to the original one and try again or delete the domain and recreates it."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exitOrLoop
   fi
 
-  trace "Exiting encrypt_wdtmodel"
+  trace "Exiting encrypt_wdtmodel  $1"
 }
 
 # encrypt_decrypt_domain_secret
@@ -732,7 +734,7 @@ function encrypt_decrypt_model() {
 #   4 -  output file
 
 function encrypt_decrypt_domain_secret() {
-  trace "Entering encrypt_decrypt_domain_secret"
+  trace "Entering encrypt_decrypt_domain_secret $1"
   # Do not use trap for this startServer.sh fail for some not zero function call
 
   local tmp_output="/tmp/tmp_encrypt_decrypt_output.file"
