@@ -951,7 +951,9 @@ public class TestUtils {
 
     String command = "kubectl apply -f " + curlPath;
     ExecResult result = ExecCommand.exec(command);
-    LoggerHelper.getLocal().log(Level.INFO, "Create curl pod in namespace " + operator.getOperatorNamespace() + " : " + result.stdout());
+    LoggerHelper.getLocal().log(Level.INFO, "Create curl pod in namespace "
+            + operator.getOperatorNamespace() + " : "
+            + result.stdout());
     if (result.exitValue() != 0) {
       throw new Exception("Couldn't create pod " + result.stderr());
     }
