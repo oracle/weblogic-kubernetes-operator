@@ -146,6 +146,7 @@ public class LoadBalancer {
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" traefik-operator")
        .append(" stable/traefik ")
+       .append(" --debug ")
        .append("--namespace traefik ")
        .append("--reuse-values ")
        .append("--set ")
@@ -268,6 +269,7 @@ public class LoadBalancer {
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" voyager-operator")
         .append(" appscode/voyager ")
+        .append("--debug ")
         .append("--namespace voyager ")
         .append("--reuse-values ")
         .append("--set ")
