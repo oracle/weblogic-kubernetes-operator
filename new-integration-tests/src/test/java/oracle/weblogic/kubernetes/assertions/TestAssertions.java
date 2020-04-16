@@ -103,7 +103,7 @@ public class TestAssertions {
    * @return true if the service exists otherwise false
    * @throws ApiException when query fails
    */
-  public static Callable<Boolean> serviceReady(
+  public static Callable<Boolean> serviceExists(
       String serviceName,
       Map<String, String> label,
       String namespace

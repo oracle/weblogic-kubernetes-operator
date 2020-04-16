@@ -6,15 +6,16 @@ package oracle.weblogic.kubernetes;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
-import io.kubernetes.client.openapi.ApiException;
+import com.google.gson.JsonObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
@@ -72,11 +73,11 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -108,8 +109,12 @@ class ItMiiDomain implements LoggedTest {
   private static ConditionFactory withStandardRetryPolicy = null;
 
   private String domainUID = "domain1";
+  private String repoSecretName = "reposecret";
   private String miiImage = null;
-
+  private String repoRegistry = "dummy";
+  private String repoUserName = "dummy";
+  private String repoPassword = "dummy";
+  private String repoEmail = "dummy";
 
   /**
    * Install Operator.
@@ -123,16 +128,23 @@ class ItMiiDomain implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    opNamespace = createNamespace();
+    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
+        "Failed to create unique namespace due to ApiException");
     logger.info("Created a new namespace called {0}", opNamespace);
 
     logger.info("Creating unique namespace for Domain");
-    domainNamespace = createNamespace();
+    domainNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
+        "Failed to create unique namespace due to ApiException");
     logger.info("Created a new namespace called {0}", domainNamespace);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
-    String serviceAccountName = createSA(opNamespace);
+    String serviceAccountName = opNamespace + "-sa";
+    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
+        .metadata(
+            new V1ObjectMeta()
+                .namespace(opNamespace)
+                .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
     // helm install parameters
@@ -151,25 +163,20 @@ class ItMiiDomain implements LoggedTest {
 
     // install Operator
     logger.info("Installing Operator in namespace {0}", opNamespace);
-    assertThat(installOperator(opParams))
-        .as("Test installOperator returns true")
-        .withFailMessage("installOperator() did not return true")
-        .isTrue();
+    assertTrue(installOperator(opParams),
+        String.format("Operator install failed in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
     // list helm releases
     logger.info("List helm releases in namespace {0}", opNamespace);
-    assertThat(helmList(opHelmParams))
-        .as("Test helmList returns true")
-        .withFailMessage("helmList() did not return true")
-        .isTrue();
+    helmList(opHelmParams);
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                  + "(elapsed time {1}ms, remaining time {2}ms)",
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
                 opNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
@@ -189,20 +196,65 @@ class ItMiiDomain implements LoggedTest {
     final int replicaCount = 2;
 
     // create image with model files
-    miiImage = createImage();
+    miiImage = createImageAndVerify();
 
     // push the image to OCIR to make the test work in multi node cluster
-    pushImageToOCIR(miiImage);
+    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
+        && System.getenv("REPO_PASSWORD") != null && System.getenv("REPO_EMAIL") != null) {
+      repoRegistry = System.getenv("REPO_REGISTRY");
+      repoUserName = System.getenv("REPO_USERNAME");
+      repoPassword = System.getenv("REPO_PASSWORD");
+      repoEmail = System.getenv("REPO_EMAIL");
+
+      logger.info("docker login");
+      assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
+
+      logger.info("docker push image {0} to OCIR", miiImage);
+      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
+    }
+
+    // create docker registry secret in the domain namespace to pull the image from OCIR
+    JsonObject dockerConfigJsonObject = getDockerConfigJson(
+        repoUserName, repoPassword, repoEmail, repoRegistry);
+    String dockerConfigJson = dockerConfigJsonObject.toString();
+
+    // Create the V1Secret configuration
+    V1Secret repoSecret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(repoSecretName)
+            .namespace(domainNamespace))
+        .type("kubernetes.io/dockerconfigjson")
+        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
+        String.format("createSecret failed for %s", repoSecretName));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createSecretForDomain(adminSecretName, "weblogic", "welcome1");
+    Map<String, String> adminSecretMap = new HashMap();
+    adminSecretMap.put("username", "weblogic");
+    adminSecretMap.put("password", "welcome1");
+    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(adminSecretName)
+            .namespace(domainNamespace))
+        .stringData(adminSecretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    createSecretForDomain(encryptionSecretName, "weblogicenc", "weblogicenc");
+    Map<String, String> encryptionSecretMap = new HashMap();
+    encryptionSecretMap.put("username", "weblogicenc");
+    encryptionSecretMap.put("password", "weblogicenc");
+    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(encryptionSecretName)
+            .namespace(domainNamespace))
+        .stringData(encryptionSecretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", encryptionSecretName));
 
     // create the domain CR
     Domain domain = new Domain()
@@ -215,6 +267,8 @@ class ItMiiDomain implements LoggedTest {
             .domainUid(domainUID)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -244,14 +298,19 @@ class ItMiiDomain implements LoggedTest {
 
     logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
         domainUID, domainNamespace);
-    createDomain(domain);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUID, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUID, domainNamespace));
+
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                  + "(elapsed time {2}ms, remaining time {3}ms)",
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
                 domainUID,
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
@@ -301,12 +360,8 @@ class ItMiiDomain implements LoggedTest {
 
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertThatCode(
-        () -> deleteDomainCustomResource(domainUID, domainNamespace))
-        .as("Test that deleteDomainCustomResource doesn not throw an exception")
-        .withFailMessage("delete domain custom resource failed")
-        .doesNotThrowAnyException();
-
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID, domainNamespace),
+        "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
 
     // delete the domain image created for the test
@@ -325,81 +380,34 @@ class ItMiiDomain implements LoggedTest {
     // uninstall operator release
     logger.info("Uninstall Operator in namespace {0}", opNamespace);
     if (opHelmParams != null) {
-      assertThat(uninstallOperator(opHelmParams))
-          .as("Test uninstallOperator returns true")
-          .withFailMessage("uninstallOperator() did not return true")
-          .isTrue();
+      uninstallOperator(opHelmParams);
     }
-
     // Delete service account from unique opNamespace
     logger.info("Delete service account in namespace {0}", opNamespace);
     if (serviceAccount != null) {
-      assertThatCode(
-          () -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
-              serviceAccount.getMetadata().getNamespace()))
-          .as("Test that deleteServiceAccount doesn not throw an exception")
-          .withFailMessage("deleteServiceAccount() threw an exception")
-          .doesNotThrowAnyException();
+      assertDoesNotThrow(() -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
+              serviceAccount.getMetadata().getNamespace()),
+              "deleteServiceAccount failed with ApiException");
     }
     // Delete domain namespaces
     logger.info("Deleting domain namespace {0}", domainNamespace);
     if (domainNamespace != null) {
-      assertThatCode(
-          () -> deleteNamespace(domainNamespace))
-          .as("Test that deleteNamespace doesn not throw an exception")
-          .withFailMessage("deleteNamespace() threw an exception")
-          .doesNotThrowAnyException();
+      assertDoesNotThrow(() -> deleteNamespace(domainNamespace),
+          "deleteNamespace failed with ApiException");
       logger.info("Deleted namespace: " + domainNamespace);
     }
 
     // Delete opNamespace
     logger.info("Deleting Operator namespace {0}", opNamespace);
     if (opNamespace != null) {
-      assertThatCode(
-          () -> deleteNamespace(opNamespace))
-          .as("Test that deleteNamespace doesn not throw an exception")
-          .withFailMessage("deleteNamespace() threw an exception")
-          .doesNotThrowAnyException();
+      assertDoesNotThrow(() -> deleteNamespace(opNamespace),
+          "deleteNamespace failed with ApiException");
       logger.info("Deleted namespace: " + opNamespace);
     }
 
   }
 
-  private static String createSA(String namespace) {
-    final String serviceAccountName = namespace + "-sa";
-    serviceAccount = new V1ServiceAccount()
-        .metadata(
-            new V1ObjectMeta()
-                .namespace(namespace)
-                .name(serviceAccountName));
-
-    try {
-      createServiceAccount(serviceAccount);
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "createServiceAccount failed with ", e);
-      assertThat(e)
-          .as("Test that createServiceAccount does not throw an exception")
-          .withFailMessage(String.format("Failed to create service account %s", serviceAccountName))
-          .isNotInstanceOf(ApiException.class);
-    }
-    return serviceAccountName;
-  }
-
-  private static String createNamespace() {
-    String namespace = null;
-    try {
-      namespace = createUniqueNamespace();
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "createUniqueNamespace failed with ", e);
-      assertThat(e)
-          .as("Test that createUniqueNamespace does not throw an exception")
-          .withFailMessage("createUniqueNamespace() threw an unexpected exception")
-          .isNotInstanceOf(ApiException.class);
-    }
-    return namespace;
-  }
-
-  private String createImage() {
+  private String createImageAndVerify() {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
@@ -409,14 +417,8 @@ class ItMiiDomain implements LoggedTest {
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
     // build an application archive using what is in resources/apps/APP_NAME
-    boolean archiveBuilt = buildAppArchive(
-        defaultAppParams()
-            .srcDir(APP_NAME));
-
-    assertThat(archiveBuilt)
-        .as("Create an app archive")
-        .withFailMessage("Failed to create app archive for " + APP_NAME)
-        .isTrue();
+    assertTrue(buildAppArchive(defaultAppParams()
+        .srcDir(APP_NAME)), String.format("Failed to create app archive for %s", APP_NAME));
 
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
@@ -440,149 +442,74 @@ class ItMiiDomain implements LoggedTest {
             .env(env)
             .redirect(true));
 
-    assertThat(result)
-        .as("Check createMIIImage() returns true")
-        .withFailMessage(String.format("Failed to create the image %s using WebLogic Image Tool", MII_IMAGE_NAME))
-        .isTrue();
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", MII_IMAGE_NAME));
 
     // check image exists
-    assertThat(dockerImageExists(MII_IMAGE_NAME, imageTag))
-        .as("Check dockerImageExists() returns true")
-        .withFailMessage(String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag))
-        .isTrue();
+    assertTrue(dockerImageExists(MII_IMAGE_NAME, imageTag),
+        String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag));
 
     return MII_IMAGE_NAME + ":" + imageTag;
   }
 
-  private void pushImageToOCIR(String image) {
-    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
-        && System.getenv("REPO_PASSWORD") != null) {
-      String repoRegistry = System.getenv("REPO_REGISTRY");
-      String repoUserName = System.getenv("REPO_USERNAME");
-      String repoPassword = System.getenv("REPO_PASSWORD");
-
-      logger.info("Push image {0} to OCIR", image);
-      assertThat(dockerLogin(repoRegistry, repoUserName, repoPassword))
-          .as("Test dockerLogin returns true")
-          .withFailMessage("docker login failed")
-          .isTrue();
-
-      assertThat(dockerPush(image))
-          .as("Test dockerPush returns true")
-          .withFailMessage(String.format("docker push failed for image %s", image))
-          .isTrue();
-
-      //TO Do: Create docker registry secret
-    }
-  }
-
-  private void createSecretForDomain(String secretName, String username, String password) {
-    Map<String, String> secretMap = new HashMap();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-
-    try {
-      assertThat(createSecret(new V1Secret()
-          .metadata(new V1ObjectMeta()
-              .name(secretName)
-              .namespace(domainNamespace))
-          .stringData(secretMap)))
-          .as("Test createSecret returns true")
-          .withFailMessage("createSecret failed")
-          .isTrue();
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "createSecret failed with ", e);
-      assertThat(e)
-          .as("Test that createSecret does not throw an exception")
-          .withFailMessage(String.format("Create secret %s failed while creating secret "
-              + "for admin credentials", secretName))
-          .isNotInstanceOf(ApiException.class);
-    }
-  }
-
-  private void createDomain(Domain domain) {
-    boolean result = false;
-    try {
-      result = createDomainCustomResource(domain);
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "createDomainCustomResource failed with ", e);
-      assertThat(e)
-          .as("Test that createDomainCustomResource does not throw an exception")
-          .withFailMessage(String.format(
-              "Could not create domain custom resource for domainUID %s in namespace %s",
-              domainUID, domainNamespace))
-          .isNotInstanceOf(ApiException.class);
-    }
-    assertThat(result)
-        .as("Test createDomainCustomResource returns true")
-        .withFailMessage(String.format(
-            "Create domain custom resource failed for domainUID %s in namespace %s",
-            domainUID, domainNamespace))
-        .isTrue();
-
-  }
 
   private void checkPodCreated(String podName) {
-    try {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
-                  + "(elapsed time {2}ms, remaining time {3}ms)",
-                  podName,
-                  domainNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(podExists(podName, domainUID, domainNamespace));
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "podExists failed with ", e);
-      assertThat(e)
-          .as("Test that podExists does not throw an exception")
-          .withFailMessage(String.format(
-              "pod %s doesn't exist in namespace %s", podName, domainNamespace))
-          .isNotInstanceOf(ApiException.class);
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podExists(podName, domainUID, domainNamespace),
+            String.format("podExists failed with ApiException for %s in namespace in %s",
+                podName, domainNamespace)));
+
   }
 
   private void checkPodRunning(String podName) {
-    try {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
-                  + "(elapsed time {2}ms, remaining time {3}ms)",
-                  podName,
-                  domainNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(podReady(podName, domainUID, domainNamespace));
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "podReady failed with ", e);
-      assertThat(e)
-          .as("Test that podReady does not throw an exception")
-          .withFailMessage(String.format(
-              "pod %s is not ready in namespace %s", podName, domainNamespace))
-          .isNotInstanceOf(ApiException.class);
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podReady(podName, domainUID, domainNamespace),
+            String.format(
+                "pod %s is not ready in namespace %s", podName, domainNamespace)));
+
   }
 
   private void checkServiceCreated(String serviceName) {
-    try {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
-                  serviceName,
-                  domainNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(serviceReady(serviceName, null, domainNamespace));
-    } catch (ApiException e) {
-      logger.log(Level.INFO, "podExists failed with ", e);
-      assertThat(e)
-          .as("Test that podExists does not throw an exception")
-          .withFailMessage(String.format(
-              "Service %s is not ready in namespace %s", serviceName, domainNamespace))
-          .isNotInstanceOf(ApiException.class);
-    }
+                serviceName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
+            String.format(
+                "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
+
   }
 
+  private static JsonObject getDockerConfigJson(String username, String password, String email, String registry) {
+    JsonObject authObject = new JsonObject();
+    authObject.addProperty("username", username);
+    authObject.addProperty("password", password);
+    authObject.addProperty("email", email);
+    String auth = username + ":" + password;
+    String authEncoded = Base64.getEncoder().encodeToString(auth.getBytes());
+    System.out.println("auth encoded: " + authEncoded);
+    authObject.addProperty("auth", authEncoded);
+    JsonObject registryObject = new JsonObject();
+    registryObject.add(registry, authObject);
+    JsonObject configJsonObject = new JsonObject();
+    configJsonObject.add("auths", registryObject);
+    return configJsonObject;
+  }
 }
