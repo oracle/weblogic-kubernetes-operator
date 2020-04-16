@@ -2300,7 +2300,9 @@ public class TestUtils {
     cmd = cmdRemove.toString();
     LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
     result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
+    LoggerHelper.getLocal().log(
+            Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
+    if (result.exitValue() != 0 && !(result.stderr()).contains("No such file or directory")) {
       //retry
       result = ExecCommand.exec(cmd);
     }
