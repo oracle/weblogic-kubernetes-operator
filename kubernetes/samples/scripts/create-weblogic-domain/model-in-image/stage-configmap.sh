@@ -5,8 +5,9 @@
 #
 # This script stages wdt model files from './sample-configmap' 
 # to 'WORKDIR/configmap' for future inclusion in a Kubernetes
-# configmap that is referenced by the  domain resource
-# 'configuration.model.configMap' field.
+# configmap that is optionally referenced by the  domain resource
+# 'configuration.model.configMap' field. By default,
+# the './create-configmap.sh' uses 'WORKDIR/configmap'.
 #
 # Optionally set these environment variables:
 #
@@ -18,12 +19,7 @@
 #
 #   If you want to specify your own model files for a config map, then
 #   you don't need to run this script. See CONFIGMAP_DIR in 
-#   'create-model-configmap.sh'
-#
-#   - Set the CONFIGMAP_DIR env var to indicate the location of your
-#     wdt config map files prior to creating your wdt config
-#     map (see ./run_domain.sh), and prior to defining your domain
-#     resource (see ./stage-domain-resource.sh).
+#   'create-configmap.sh'
 #
 
 set -eu

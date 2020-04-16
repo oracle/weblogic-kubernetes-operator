@@ -38,12 +38,12 @@
 
 # export BASE_IMAGE_TAG=
 # ::: Base image tag.
-#  Defaults to 12.2.1.4. Used by the ./build-model-image.sh script. 
+#  Defaults to 12.2.1.4. Used by the './build-model-image.sh' script. 
 
 # export MODEL_IMAGE_BUILD=
 # ::: When to build model image.
-#  Set to 'when-missing' (default) to tell ./build-model-image.sh to skip
-#  building a model image when MODEL_IMAGE_NAME:MODEL_IMAGE_TAG  already
+#  Set to 'when-missing' (default) to tell './build-model-image.sh' to skip
+#  building a model image when MODEL_IMAGE_NAME:MODEL_IMAGE_TAG already
 #  exists in your docker image cache. Set to 'always' to always build.
 
 # export MODEL_IMAGE_NAME=
@@ -61,14 +61,22 @@
 # ::: Location of staged model files.
 #  Location of staged model .zip, .properties, and .yaml files that are
 #  copied into the model image by the './build-model-image.sh' script.
-#  Default is 'WORKDIR/model' which is populated by the ./stage-model.sh script.
+#  Default is 'WORKDIR/model' which is populated by the './stage-model.sh' script.
+
+# export INCLUDE_CONFIGMAP
+# ::: Tell sample to include a configuration.model.configMap
+#  Used by './stage-domain-resource.sh' to add a reference to a configMap
+#  in the domain resource, and to add a configuration.model.secrets reference
+#  to a secret that's used by the configMap. Also used by 'create-secrets.sh' to
+#  deploy a secret the configMap uses. See also CONFIGMAP_DIR.
+#  Valid values are 'false' (default), and 'true'.
 
 # export CONFIGMAP_DIR=
 # ::: Configmap model files.
 #  Location of staged model files that will be loaded at runtime from
 #  a configmap specified by the domain resource. Default is 'WORKDIR/configmap'
-#  which is populated by the './stage-configmap.sh' script.
-#  TBD document relationship to create-model-configmap.sh, etc
+#  which is populated by the './stage-configmap.sh' script. Used by
+#  'create-configmap.sh'.  See also INCLUDE_CONFIGMAP.
 
 # export DOWNLOAD_WDT=
 # ::: When to download the WDT installer zip.
@@ -94,14 +102,13 @@
 #  Set to zip loc to download specific version, for example:
 #   'https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.1/imagetool.zip'
 #  TBD update example version above to correspond to lateste and greatest version
-#  Defaults to https://github.com/oracle/weblogic-image-tool/releases/latest
+#  Defaults to 'https://github.com/oracle/weblogic-image-tool/releases/latest'
 
 # export DOMAIN_RESOURCE_TEMPLATE=
 # ::: Domain resource template
 #  Used by './stage-domain-resource.sh' as a template for generating a domain
 #  resource yaml file in WORKDIR.
-#  Defaults to 'sample-domain-resource-wls/k8s-domain.yaml.template' for the WLS
-#  and RestrictedJRF WDT_DOMAIN_TYPE. For the JRF WDT_DOMAIN_TYPE, the default
+#  Defaults to 'sample-domain-resource-wls/k8s-domain.yaml.template' for the 'WLS'
+#  and 'RestrictedJRF' WDT_DOMAIN_TYPE. For the 'JRF' WDT_DOMAIN_TYPE, the default
 #  is 'sample-domain-resource-jrf/k8s-domain.yaml.template'.
-
 

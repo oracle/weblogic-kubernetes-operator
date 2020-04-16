@@ -19,6 +19,11 @@
 #   WDT_DOMAIN_TYPE          - WLS (default), RestrictedJRF, or JRF
 #   DOMAIN_RESOURCE_TEMPLATE - use this file for a domain resource template instead
 #                              of k8s-domain.yaml.template 
+#   INCLUDE_CONFIGMAP        - defaults to 'false'
+#                              Set to true to uncomment the template's
+#                              'model.configuration.configMap' reference,
+#                              and to uncomment the secret that's referenced
+#                              by the model file in this config map.
 
 set -eu
 set -o pipefail
@@ -42,9 +47,10 @@ do
   sed -i -e "s;@@${template_var}@@;${!template_var};" $DOMAIN_RESOURCE_FILE
 done
 
-# TBD
-if [ ! -z "${CONFIGMAP_DIR:-}" ]; then
-  # Since CONFIGMAPDIR is set, then assume we're going to deploy and use the model.configuration.configMap.
-  sed -i -e "s/\#\(secrets\):/\1:/" $DOMAIN_RESOURCE_FILE
+if [ "${INCLUDE_CONFIGMAP}" = "true" ]; then
+  # we're going to deploy and use the model.configuration.configMap, and this
+  # configmap depends on a secret
+  set -i -e "s/\#\(configmap\):\1:/"           $DOMAIN_RESOURCE_FILE
+  sed -i -e "s/\#\(secrets\):/\1:/"            $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(-.*datasource-secret\)/\1/" $DOMAIN_RESOURCE_FILE
 fi

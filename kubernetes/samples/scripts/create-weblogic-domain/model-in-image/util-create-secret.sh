@@ -37,8 +37,8 @@ SECRET_NAME=""
 LITERALS=""
 FILENAMES=""
 
-while [ ! "$1" = "" ]; do
-  if [ ! "$1" = "-?" ] && [ "$2" = "" ]; then
+while [ ! "${1:-}" = "" ]; do
+  if [ ! "$1" = "-?" ] && [ "${2:-}" = "" ]; then
     echo "Syntax Error. Pass '-?' for usage."
     exit 1
   fi

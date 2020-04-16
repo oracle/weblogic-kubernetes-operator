@@ -5,12 +5,12 @@
 # TBD add NAMESPACE/NAME/UID for domain
 
 # MII SAMPLE defaults specific to the test scripts in this directory
-# For more defaults so $WORKDIR/env.sh
+# For more defaults see custom-env.sh
 
 # ::: Directory for sample's temp files
 #  should have 10GB? of space
 #  default is '/tmp/$USER/model-in-image-sample-work-dir
-# export WORKDIR=
+export WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
 # ::: Operator settings
 #  Defaults are 'sample-weblogic-operator', '${OPER_NAME}-ns', '${OPER_NAME}-sa', 'weblogic-kubernetes-operator', and 'test'
@@ -21,12 +21,11 @@
 # export OPER_IMAGE_TAG=
 
 # ::: DB Settings (needed if WDT_DOMAIN_TYPE is JRF)
-#  Defaults are 'default', 30011, 'container-registry.oracle.com/database/enterprise', and '12.2.0.1-slim', and 'docker-secret'
-# export DB_NAMESPACE=
-# export DB_NODE_PORT=
-# export DB_IMAGE_NAME=
-# export DB_IMAGE_TAG=
-# export DB_IMAGE_PULL_SECRET=
+export DB_NAMESPACE=${DB_NAMESPACE:-default}
+export DB_NODE_PORT=${DB_NODE_PORT:-30011}
+export DB_IMAGE_NAME=${DB_IMAGE_NAME:-container-registry.oracle.com/database/enterprise}
+export DB_IMAGE_TAG=${DB_IMAGE_TAG:-12.2.0.1-slim}
+export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 
 # ::: Traefik name and namespace
 #  Defaults are 'traefik-operator' and '${TRAEFIK_NAME}-ns'

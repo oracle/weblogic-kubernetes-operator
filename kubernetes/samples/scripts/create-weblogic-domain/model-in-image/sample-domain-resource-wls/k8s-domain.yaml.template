@@ -96,7 +96,7 @@ spec:
     
     model:
       # Optional configmap for additional models and variable files
-      configMap: @@DOMAIN_UID@@-wdt-config-map
+      #configMap: @@DOMAIN_UID@@-wdt-config-map
 
       # Valid wdt domain types are 'WLS', 'JRF', and 'RestrictedJRF'
       domainType: "@@WDT_DOMAIN_TYPE@@"
