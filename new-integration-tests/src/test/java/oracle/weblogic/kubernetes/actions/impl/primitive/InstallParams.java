@@ -3,6 +3,10 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+
 /**
  * Contains the parameters for installing the WebLogic Image Tool or WebLogic Deploy Tool.
  */
@@ -29,6 +33,8 @@ public class InstallParams {
   
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
+  
+  private final static String TMP_FILE_NAME = "temp-download-file";
 
   public InstallParams defaults() {
     return this;
@@ -49,7 +55,7 @@ public class InstallParams {
   }
 
   public String version() {
-    return version;
+    return getActualVersion(version);
   }
 
   public InstallParams location(String location) {
@@ -96,4 +102,36 @@ public class InstallParams {
   public String fileName() {
     return fileName;
   }
+  
+  private String getActualVersion(String version) {
+    if (version == null || version.equalsIgnoreCase("Latest")) {
+      String command = String.format(
+          "curl -fL %s/releases/release/latest -o %s/%s", 
+          location(), 
+          version(),
+          DOWNLOAD_DIR,
+          TMP_FILE_NAME);
+      
+      boolean getLatest = Command.withParams(defaultCommandParams().command(command)).execute();
+      command = String.format("cat $tempfile | grep 'releases/download'");
+          // "cat $tempfile | grep 'releases/download' | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\/ -f 6"); 
+      
+      boolean getVersion = Command.withParams(
+          defaultCommandParams()
+              .command(command)
+              .saveStdOut(true))
+          .execute();
+      if (getLatest && getVersion) {
+        String ver = param.stdOut();
+    	int index = ver.lastIndexOf("/");
+    	ver = ver.substring(index+1);
+    	ver.substring(ver.indexOf("/"));
+        return ver;
+      } else {
+        return null;
+      }
+    }
+    return version;
+  }
+
 }

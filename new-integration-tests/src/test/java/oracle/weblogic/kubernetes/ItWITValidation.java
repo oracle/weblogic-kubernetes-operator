@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -66,7 +67,7 @@ class ItWITValidation implements LoggedTest {
             .modelImageTag(IMAGE_TAG)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
-            .wdtVersion("latest")
+            .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
  

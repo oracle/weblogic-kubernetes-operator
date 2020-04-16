@@ -5,6 +5,9 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.File;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
+
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
@@ -17,7 +20,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExist;
 
@@ -29,6 +31,8 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExist;
  */
 
 public class Installer {
+  private static final LoggingFacade logger = LoggingFactory.getLogger(Installer.class);
+
 
   private InstallParams params;
   
