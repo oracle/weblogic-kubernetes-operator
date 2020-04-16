@@ -55,7 +55,7 @@ public class TestAssertions {
   /**
    * Check if a Kubernetes pod exists in any state in the given namespace.
    *
-   * @param podName name of the pod to check for
+   * @param podName   name of the pod to check for
    * @param domainUID UID of WebLogic domain in which the pod exists
    * @param namespace in which the pod exists
    * @return true if the pod exists in the namespace otherwise false
@@ -69,7 +69,7 @@ public class TestAssertions {
   /**
    * Check if a Kubernetes pod is in running/ready state.
    *
-   * @param podName name of the pod to check for
+   * @param podName   name of the pod to check for
    * @param domainUID WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
@@ -83,7 +83,7 @@ public class TestAssertions {
   /**
    * Check if a pod given by the podName is in Terminating state.
    *
-   * @param podName name of the pod to check for Terminating status
+   * @param podName   name of the pod to check for Terminating status
    * @param domainUID WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is terminating otherwise false
@@ -98,17 +98,19 @@ public class TestAssertions {
    * Check is a service exists in given namespace.
    *
    * @param serviceName the name of the service to check for
-   * @param label a Map of key value pairs the service is decorated with
-   * @param namespace in which the service is running
+   * @param label       a Map of key value pairs the service is decorated with
+   * @param namespace   in which the service is running
    * @return true if the service exists otherwise false
    * @throws ApiException when query fails
    */
-  public static boolean serviceReady(
+  public static Callable<Boolean> serviceExists(
       String serviceName,
       Map<String, String> label,
       String namespace
-  )throws ApiException {
-    return Kubernetes.doesServiceExist(serviceName, label, namespace);
+  ) throws ApiException {
+    return () -> {
+      return Kubernetes.doesServiceExist(serviceName, label, namespace);
+    };
   }
 
   /**
@@ -153,9 +155,10 @@ public class TestAssertions {
   public static boolean adminNodePortAccessible(String domainUID, String namespace) {
     return Domain.adminNodePortAccessible(domainUID, namespace);
   }
-  
+
   /**
    * Check if a Docker image exists.
+   *
    * @param imageName the name of the image to be checked
    * @param imageTag  the tag of the image to be checked
    * @return true if the image does exist, false otherwise

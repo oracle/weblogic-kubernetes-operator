@@ -125,7 +125,7 @@ class ItSimpleDomainValidation implements LoggedTest {
     assertTrue(success);
 
     // wait for the domain to exist
-    with().pollDelay(30, SECONDS)
+    with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
             condition -> logger.info(
