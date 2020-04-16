@@ -53,7 +53,6 @@ public class Kubernetes {
    */
   public static boolean doesPodExist(String namespace, String domainUid, String podName) throws ApiException {
     boolean podExist = false;
-    logger.info("Checking if the pod exists in namespace");
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
@@ -75,7 +74,6 @@ public class Kubernetes {
    */
   public static boolean isPodRunning(String namespace, String domainUid, String podName) throws ApiException {
     boolean status = false;
-    logger.info("Checking if the pod running in namespace");
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
