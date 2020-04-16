@@ -177,7 +177,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       
       jrfdomain = new JrfDomain(domainMap);
       
-      jrfdomain.verifyDomainCreated();
+      jrfdomain.verifyDomainCreated(80);
       
       //save and restore walletFile secret
       saveWalletFileSecret(getResultDir(), domainUid, namespace);
@@ -208,7 +208,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
       
-      jrfdomain.verifyDomainCreated();
+      jrfdomain.verifyDomainCreated(80);
       testCompletedSuccessfully = true;
 
     } catch (Exception ex) {
