@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.HashMap;
+
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
@@ -38,11 +40,28 @@ public class Traefik {
 
   /**
    * Create a ingress per domain
-   * @param valuesYaml
+   * @param params the params to helm install command, releaseName, chartDir and WLS domain namespace
+   * @param domainUID the weblogic domainUID to create the ingress
+   * @param traefikHostname the hostname for the ingress
    * @return true on success, false otherwise
    */
-  public static boolean createIngress(String valuesYaml) {
+  public static boolean createIngress(HelmParams params, String domainUID, String traefikHostname) {
+    HashMap<String, Object> values = new HashMap();
+    values.put("wlsDomain.domainUID", domainUID);
+    values.put("traefik.hostname", traefikHostname);
 
+    Helm.install(params, values);
     return true;
   }
+
+  /**
+   * Uninstall Ingress on a wls domain namespace
+   * @param params the parameters to helm uninstall command, including release name and wls domain namespace containing
+   *               the ingress
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallIngress(HelmParams params) {
+    return Helm.uninstall(params);
+  }
+
 }

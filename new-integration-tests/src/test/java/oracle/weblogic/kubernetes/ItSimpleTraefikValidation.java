@@ -20,11 +20,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmGetExpectedValues;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeTraefik;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.traefikIsRunning;
@@ -40,6 +42,7 @@ import static org.awaitility.Awaitility.with;
 class ItSimpleTraefikValidation implements LoggedTest {
 
   private HelmParams tfHelmParams = null;
+  private HelmParams ingressParam = null;
   private String tfNamespace = null;
   private String domainNamespace1 = null;
 
@@ -133,8 +136,34 @@ class ItSimpleTraefikValidation implements LoggedTest {
             .isTrue();
   }
 
+  @Test
+  @Order(2)
+  @DisplayName("Create a ingress per domain")
+  public void testCreatingIngress() {
+    // helm install parameters for ingress
+    ingressParam = new HelmParams()
+            .releaseName("sample-domain1-ingress")
+            .namespace(domainNamespace1)
+            .chartDir("../kubernetes/samples/charts/ingress-per-domain");
+
+    assertThat(createIngress(ingressParam, "sample-domain1", "sample-domain1.org"))
+            .as("Test createIngress returns true")
+            .withFailMessage("createIngress() did not return true")
+            .isTrue();
+    logger.info(String.format("ingress is upgraded in namespace %s", domainNamespace1));
+
+  }
+
   @AfterAll
   public void tearDown() {
+
+    // uninstall ingress
+    if (ingressParam != null) {
+      assertThat(uninstallIngress(ingressParam))
+              .as("Test uninstallIngress returns true")
+              .withFailMessage("uninstallIngress() did not return true")
+              .isTrue();
+    }
 
     // uninstall traefik release
     if (tfHelmParams != null) {

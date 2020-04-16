@@ -168,13 +168,14 @@ public class TestActions {
   }
 
   /**
-   * Create Treafik Ingress.
-   *
-   * @param valuesYaml values yaml file to be used
-   * @return true on success, false otherwise
+   * Create Traefik Ingress
+   * @param params - the params to helm install command, including release name, chartDir and wls domain namespace
+   * @param domainUID - weblogic domainUID to create the ingress
+   * @param traefikHostname - the hostname for the ingress
+   * @return
    */
-  public static boolean createIngress(String valuesYaml) {
-    return Traefik.createIngress(valuesYaml);
+  public static boolean createIngress(HelmParams params, String domainUID, String traefikHostname) {
+    return Traefik.createIngress(params, domainUID, traefikHostname);
   }
 
   /**
@@ -195,6 +196,16 @@ public class TestActions {
    */
   public static boolean uninstallTraefik(HelmParams params) {
     return Traefik.uninstall(params);
+  }
+
+  /**
+   * Uninstall the ingress
+   * @param params the parameters to helm uninstall command, including release name and wls domain namespace containing
+   *               the ingress
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallIngress(HelmParams params) {
+    return Traefik.uninstallIngress(params);
   }
 
   // -------------------------  namespaces -------------------------------
