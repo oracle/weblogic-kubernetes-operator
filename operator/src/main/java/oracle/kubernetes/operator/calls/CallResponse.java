@@ -10,21 +10,22 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.ApiException;
 
 public final class CallResponse<T> {
+  private final RequestParams requestParams;
   private final T result;
   private final ApiException ex;
   private final int statusCode;
   private Map<String, List<String>> responseHeaders;
 
-  public static <R> CallResponse createSuccess(R result, int statusCode) {
-    return new CallResponse<>(result, null, statusCode);
+  public static <R> CallResponse<R> createSuccess(RequestParams requestParams, R result, int statusCode) {
+    return new CallResponse<>(requestParams,  result, null, statusCode);
   }
 
-  public static CallResponse createFailure(ApiException ex, int statusCode) {
-    return new CallResponse<Void>(null, ex, statusCode);
+  public static CallResponse<Void> createFailure(RequestParams requestParams, ApiException ex, int statusCode) {
+    return new CallResponse<Void>(requestParams, null, ex, statusCode);
   }
 
   public static <R> CallResponse<R> createNull() {
-    return new CallResponse<>(null, null, 0);
+    return new CallResponse<R>(null, null, null, 0);
   }
 
   CallResponse<T> withResponseHeaders(Map<String, List<String>> responseHeaders) {
@@ -35,11 +36,13 @@ public final class CallResponse<T> {
   /**
    * Constructor for CallResponse.
    *
+   * @param requestParams Request parameters
    * @param result Result
    * @param ex API exception
    * @param statusCode Status code
    */
-  private CallResponse(T result, ApiException ex, int statusCode) {
+  private CallResponse(RequestParams requestParams, T result, ApiException ex, int statusCode) {
+    this.requestParams = requestParams;
     this.result = result;
     this.ex = ex;
     this.statusCode = statusCode;
@@ -47,6 +50,10 @@ public final class CallResponse<T> {
 
   public boolean isFailure() {
     return ex != null;
+  }
+
+  public RequestParams getRequestParams() {
+    return requestParams;
   }
 
   public T getResult() {
@@ -68,4 +75,5 @@ public final class CallResponse<T> {
   public String getHeadersString() {
     return Optional.ofNullable(responseHeaders).map(Object::toString).orElse("");
   }
+  
 }

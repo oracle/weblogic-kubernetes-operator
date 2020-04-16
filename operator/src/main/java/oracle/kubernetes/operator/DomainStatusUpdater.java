@@ -14,10 +14,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
 
-import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -47,7 +45,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -126,7 +123,14 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createFailedStep(CallResponse<?> callResponse, Step next) {
-    FailureStatusSource failure = UnrecoverableErrorBuilder.fromException(callResponse.getE());
+    FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
+
+    LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
+    ApiException apiException = callResponse.getE();
+    if (apiException != null) {
+      LOGGER.fine(MessageKeys.EXCEPTION, apiException);
+    }
+
     return createFailedStep(failure.getReason(), failure.getMessage(), next);
   }
 
@@ -172,51 +176,59 @@ public class DomainStatusUpdater {
 
       return context.isStatusChanged(newStatus)
             ? doNext(packet)
-            : doNext(createDomainStatusPatchStep(context, newStatus), packet);
+            : doNext(createDomainStatusReplaceStep(context, newStatus), packet);
     }
 
-    private Step createDomainStatusPatchStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
-      JsonPatchBuilder builder = Json.createPatchBuilder();
-      newStatus.createPatchFrom(builder, context.getStatus());
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
+    private Step createDomainStatusReplaceStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
+      LOGGER.fine(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
+      Domain oldDomain = context.getDomain();
+      Domain newDomain = new Domain()
+          .withKind(KubernetesConstants.DOMAIN)
+          .withApiVersion(oldDomain.getApiVersion())
+          .withMetadata(oldDomain.getMetadata())
+          .withSpec(null)
+          .withStatus(newStatus);
 
-      return new CallBuilder().patchDomainAsync(
+      return new CallBuilder().replaceDomainStatusAsync(
             context.getDomainName(),
             context.getNamespace(),
-            new V1Patch(builder.build().toString()),
+            newDomain,
             createResponseStep(context, getNext()));
     }
 
     private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context, Step next) {
-      return new PatchResponseStep(this, context, next);
+      return new StatusReplaceResponseStep(this, context, next);
     }
   }
 
-  static class PatchResponseStep extends DefaultResponseStep<Domain> {
+  static class StatusReplaceResponseStep extends DefaultResponseStep<Domain> {
     private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
 
-    public PatchResponseStep(DomainStatusUpdaterStep updaterStep, DomainStatusUpdaterContext context, Step nextStep) {
+    public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep,
+                                     DomainStatusUpdaterContext context, Step nextStep) {
       super(nextStep);
       this.updaterStep = updaterStep;
       this.context = context;
     }
 
     @Override
-    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-      if (!isPatchFailure(callResponse)) {
-        return super.onFailure(packet, callResponse);
-      }
+    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      return doNext(packet);
+    }
 
-      return doNext(createRetry(context, getNext()), packet);
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
+        return super.onFailure(packet, callResponse);
+      } else {
+        return onFailure(createRetry(context, getNext()), packet, callResponse);
+      }
     }
 
     public Step createRetry(DomainStatusUpdaterContext context, Step next) {
       return Step.chain(createDomainRefreshStep(context), updaterStep, next);
-    }
-
-    private boolean isPatchFailure(CallResponse<Domain> callResponse) {
-      return callResponse.getStatusCode() == HTTP_INTERNAL_ERROR;
     }
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {

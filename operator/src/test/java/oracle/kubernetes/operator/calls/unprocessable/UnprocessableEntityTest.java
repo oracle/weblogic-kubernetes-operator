@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.calls.unprocessable;
 import java.util.Collections;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.RequestParams;
 import org.junit.Test;
 
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -32,6 +34,8 @@ public class UnprocessableEntityTest {
          + "\"reason\":\"Invalid\",\"details\":{\"name\":" + quoted(NAME) + ",\"kind\":" + quoted(KIND) + ","
          + "\"causes\":[{" + CAUSE + "}]},"
          + "\"code\":422}\n";
+  private static RequestParams REQUEST_PARAMS
+      = new RequestParams("testcall", "junit", "testName", "body");
 
   private static String escape(String s) {
     return s.replaceAll("\"", "\\\\\"");
@@ -55,7 +59,8 @@ public class UnprocessableEntityTest {
   public void extractReasonFromException() {
     ApiException exception = new ApiException(HTTP_UNPROCESSABLE_ENTITY, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
-    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromException(exception);
+    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromFailedCall(
+        CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
 
     assertThat(builder.getReason(), equalTo("FieldValueNotFound"));
   }
@@ -64,9 +69,10 @@ public class UnprocessableEntityTest {
   public void extractMessageFromException() {
     ApiException exception = new ApiException(HTTP_UNPROCESSABLE_ENTITY, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
-    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromException(exception);
+    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromFailedCall(
+        CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
 
-    assertThat(builder.getMessage(), equalTo(MESSAGE_1));
+    assertThat(builder.getMessage(), equalTo("testcall in namespace junit, for testName: " + MESSAGE_1));
   }
 
   @Test
@@ -76,9 +82,10 @@ public class UnprocessableEntityTest {
         .withMessage("This explanation")
         .build();
 
-    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromException(exception);
+    UnprocessableEntityBuilder builder = UnprocessableEntityBuilder.fromFailedCall(
+        CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
 
     assertThat(builder.getReason(), equalTo("SomethingWrong"));
-    assertThat(builder.getMessage(), equalTo("This explanation"));
+    assertThat(builder.getMessage(), equalTo("testcall in namespace junit, for testName: This explanation"));
   }
 }

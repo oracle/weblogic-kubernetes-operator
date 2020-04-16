@@ -34,6 +34,7 @@ while getopts "t:" optname; do
 done
 
 IMAGE_NAME=${name:-oracle/weblogic-kubernetes-operator:3.0.0}
+SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # Proxy settings
 PROXY_SETTINGS=""
@@ -64,7 +65,7 @@ echo "Building image '$IMAGE_NAME' ..."
 
 # BUILD THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
-docker build $PROXY_SETTINGS -t $IMAGE_NAME -f Dockerfile . || {
+docker build $PROXY_SETTINGS -t $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
   echo "There was an error building the image."
   exit 1
 }
