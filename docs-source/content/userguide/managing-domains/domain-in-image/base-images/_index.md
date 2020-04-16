@@ -64,7 +64,7 @@ using the Oracle Single Sign-On authentication service. If you do not already ha
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.
 
-The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 image, which does not require any patches.
+The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.
 
 First, you will need to log in to the Oracle Container Registry:
 
