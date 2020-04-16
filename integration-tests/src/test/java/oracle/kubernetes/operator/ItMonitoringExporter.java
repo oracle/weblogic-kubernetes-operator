@@ -938,7 +938,9 @@ public class ItMonitoringExporter extends BaseTest {
     int i = 0;
     while (i < 4) {
       result = ExecCommand.exec(cmd.toString());
-      LoggerHelper.getLocal().log(Level.INFO, " Result output" + result.stdout());
+      LoggerHelper.getLocal().log(Level.INFO, " Result output for " + cmd.toString()
+              + " : "
+              + result.stdout());
       if (result.exitValue() == 0) {
         LoggerHelper.getLocal().log(Level.INFO, result.stdout());
         podName = result.stdout().trim();
@@ -948,7 +950,7 @@ public class ItMonitoringExporter extends BaseTest {
         i++;
       }
     }
-    assertNotNull(labelExp + " was not created, can't find running pod ", podName);
+    assertNotNull(podName, labelExp + " was not created, can't find running pod ");
     return podName;
   }
 
@@ -1258,7 +1260,6 @@ public class ItMonitoringExporter extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
     String podName = getPodName("app=grafana", monitoringNS);
-    assertNotNull("Grafana pod was not created", podName);
     TestUtils.checkPodReady(podName, monitoringNS);
 
     String url = domain.getHostNameForCurl() + ":" + grafanaPort;

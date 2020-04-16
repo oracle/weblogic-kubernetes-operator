@@ -298,12 +298,6 @@ public class BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
       TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
           + pvRoot + "\"", true);
-    } else {
-      //for shared cluster and oke switch to Always policy
-      TestUtils.replaceStringInFile(BaseTest.getProjectRoot()
-                      + "/src/integration-tests/bash/krun.sh",
-              "IfNotPresent",
-              "Always");
     }
 
     // create resultRoot, PVRoot, etc
