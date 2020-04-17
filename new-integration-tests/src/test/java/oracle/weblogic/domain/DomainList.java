@@ -91,6 +91,14 @@ public class DomainList {
     return items;
   }
 
+  public List<Domain> getItems() {
+    return items;
+  }
+
+  public void setItems(List<Domain> items) {
+    this.items = items;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
