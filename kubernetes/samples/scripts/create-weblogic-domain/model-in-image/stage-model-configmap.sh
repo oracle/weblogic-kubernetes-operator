@@ -7,7 +7,7 @@
 # to 'WORKDIR/configmap' for future inclusion in a Kubernetes
 # configmap that is optionally referenced by the  domain resource
 # 'configuration.model.configMap' field. By default,
-# the './create-configmap.sh' uses 'WORKDIR/configmap'.
+# the './create-model-configmap.sh' uses 'WORKDIR/configmap'.
 #
 # Optionally set these environment variables:
 #
@@ -19,7 +19,7 @@
 #
 #   If you want to specify your own model files for a config map, then
 #   you don't need to run this script. See CONFIGMAP_DIR in 
-#   'create-configmap.sh'
+#   'create-model-configmap.sh'
 #
 
 set -eu

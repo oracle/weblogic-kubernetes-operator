@@ -1,9 +1,14 @@
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# This file sets the defaults for this sample's scripts, loads
-# WORKDIR/custom-env.sh, and does other actions that are common
+# This file sets the defaults for this sample's scripts, loads 
+# WORKDIR/custom-env.sh (which may contain customized values
+# set by the user), and does other actions that are common
 # to all of the sample's scripts.
+#
+# Assumption:
+#   WORKDIR already exists.  See 'stage-workdir.sh'.
+#
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
@@ -54,6 +59,8 @@ MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
 MODEL_DIR=${MODEL_DIR:-$WORKDIR/model}
 
+echo "@@"
+echo "@@ ######################################################################"
 echo "@@ Info: Running '$(basename "$0")'."
 echo "@@ Info: WORKDIR='$WORKDIR'."
 echo "@@ Info: SCRIPTDIR='$SCRIPTDIR'."

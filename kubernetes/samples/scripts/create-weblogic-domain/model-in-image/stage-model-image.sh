@@ -44,11 +44,18 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+#
+# delete old model files in WORKDIR/model, if any
 # avoid using an env var in an 'rm -fr' for safety reasons
+#
+
 cd ${WORKDIR}
 rm -fr ./model
-
 mkdir -p ${WORKDIR}/model
+
+#
+# copy model yaml and properties from sample to WORKDIR/model
+#
 
 echo "@@ Info: Staging wdt model yaml and properties from SCRIPTDIR to directory WORKDIR/model"
 
@@ -59,17 +66,32 @@ esac
 
 echo "@@ Info: Staging sample app model archive from SCRIPTDIR/sample-app to WORKDIR/model/archive1.zip"
 
+#
+# copy app source to $WORKDIR/app
+#
+
 if [ ! -d $WORKDIR/app ]; then
   cp -r $SCRIPTDIR/sample-app $WORKDIR/app
 fi
 
+#
+# build app
+#
+
 cd $WORKDIR/app/wlsdeploy/applications
 jar cvfM sample-app.ear *
+
+#
+# archive app and put archive in WORKDIR/model/archive1.zip
+#
 
 cd $WORKDIR/app
 zip ${WORKDIR}/model/archive1.zip \
     wlsdeploy/applications/sample-app.ear \
     wlsdeploy/config/amimemappings.properties
 
-# TBD split this finer grained
-#        build app
+# TBD split app build into separate dirs to make it finer grained?
+#        stage app   --> app/src
+#        build app   --> app/build
+#        archive app --> app/archive1.zip
+#     split app into separate scripts too?

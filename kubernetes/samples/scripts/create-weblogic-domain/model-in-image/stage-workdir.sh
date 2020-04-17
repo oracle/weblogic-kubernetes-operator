@@ -8,9 +8,10 @@
 # already in the directory.
 #
 # Once the working directory is setup, the other sample scripts will
-# use this directory for their files. To customize sample variables,
-# export the variables and/or modify 'WORKDIR/env-custom.sh' prior to running
-# other scripts from this sample.
+# use this directory for their files. 
+#
+# To customize sample variables, export the variables prior to running 
+# sample scripts, and/or modify 'WORKDIR/env-custom.sh'.
 #
 # Optional environment variable used by this script:
 #
@@ -19,11 +20,14 @@
 #      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 
+echo "@@"
+echo "@@ ######################################################################"
+echo "@@ Info: Running '$(basename "$0")'."
+
 set -eu
 set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-echo "@@ Info: Running '$(basename "$0")'."
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 

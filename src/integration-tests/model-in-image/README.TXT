@@ -1,4 +1,5 @@
-TBD update and copyright
+TBD this needs a heavy update and copyright
+TBD add app checks to test (curl the app, ,check if DS deployed, etc)
 
 These are wrapper scripts for running the WL Operator MII sample.  To use:
 

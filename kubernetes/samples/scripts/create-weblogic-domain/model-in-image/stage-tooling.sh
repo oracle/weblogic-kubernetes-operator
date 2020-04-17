@@ -3,8 +3,9 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This script downloads the latest WebLogic Deploy Tool and WebLogic Image Tool 
-# to the WORKDIR directory by default.
+# This script downloads the latest version of the WebLogic Deploy Tooling
+# and of the WebLogic Image Tool to WORKDIR/weblogic-deploy-tooling.zip
+# and WORKDIR/weblogic-image-tool.zip by default.
 #
 # Optional environment variables (see 'env-custom.sh' for more details):
 #
@@ -18,7 +19,7 @@
 #
 #    DOWNLOAD_WDT DOWNLOAD_WIT
 #      Default to 'when-missing'. Set to 'always' to force download even
-#      if local installer zip is missing.
+#      if local installer zip already exists.
 #
 #    WDT_INSTALLER_URL WIT_INSTALLER_URL
 #      Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'

@@ -49,7 +49,7 @@ done
 
 if [ "${INCLUDE_CONFIGMAP}" = "true" ]; then
   # we're going to deploy and use the model.configuration.configMap, and this
-  # configmap depends on a secret
+  # configmap depends on the datasource-secret.
   set -i -e "s/\#\(configmap\):\1:/"           $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(secrets\):/\1:/"            $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(-.*datasource-secret\)/\1/" $DOMAIN_RESOURCE_FILE

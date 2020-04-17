@@ -113,11 +113,11 @@ while [ 1 -eq 1 ]; do
   fi
 
   #
-  # If 'expected' = 0, get the current number of pods regardless of there
+  # If 'expected' = 0, get the current number of pods regardless of their
   # restart version or ready state. If "expected != 0" get the number
   # of ready pods at the current domain resource restart version.
-  # Note that grep returns non-zero if it doesn't find anything (sigh), 
-  # so we disable error checking and cross-fingers...
+  # (Note that grep returns non-zero if it doesn't find anything (sigh), 
+  # so we disable error checking and cross-fingers...)
   #
 
   set +e
@@ -126,13 +126,13 @@ while [ 1 -eq 1 ]; do
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}",weblogic.domainRestartVersion="$currentRV" \
         -o=jsonpath='{range .items[*]}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\n"}{end}' \
         | grep "true" | wc -l ) 
-    out_str="for ready WebLogic pod count to reach '$expected' for restart version '$currentRV'"
+    out_str="Waiting for exactly '$expected' WebLogic pods to reach ready state and restart version '$currentRV'"
   else
     cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
         -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
         | wc -l ) 
-    out_str="for WebLogic pod count to reach '0'"
+    out_str="Waiting for WebLogic pod count to reach '0'"
   fi
 
   #
@@ -147,7 +147,7 @@ while [ 1 -eq 1 ]; do
   out_str+=", cur_seconds='$SECONDS'"
 
   if [ $reported -eq 0 ]; then
-    echo -n "@@ Info: Waiting $out_str:"
+    echo -n "@@ Info: $out_str:"
     reported=1
   else
     echo -n " $cur_pods"

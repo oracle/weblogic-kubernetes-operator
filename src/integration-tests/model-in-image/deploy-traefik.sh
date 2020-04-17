@@ -22,25 +22,9 @@ admin_name=admin-server
 admin_service_name=${DOMAIN_UID}-${admin_name}
 admin_service_name=$(tr [A-Z_] [a-z-] <<< $admin_service_name)
 
-function finishUp() {
-  kubectl delete -f ${WORKDIR}/traefik-ingress-${cluster_service_name}.yaml --ignore-not-found
-  kubectl apply  -f ${WORKDIR}/traefik-ingress-${cluster_service_name}.yaml
-
-  kubectl delete -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml --ignore-not-found
-  kubectl apply  -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml
-
-  helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.orig 2>&1
-
-  # TBD this assumes the k8s cluster includes the test host:
-  echo "@@"
-  echo "@@ Info: The WebLogic console should now be available at 'http://$(hostname).$(dnsdomainname):30305/console' (weblogic/welcome1)."
-  echo "@@ Info: The sample app should now be available at 'http://$(hostname).$(dnsdomainname):30305/TBD'"
-  echo "@@"
-}
-
 #
-# Do not re-install traefik if it's up and running and it has the same external ports and namespace values
-# Instead re-apply the ingress files and exit
+# Helm uninstall then install traefik
+# Skip if it's up and running and it has the same external ports and namespace values
 #
 
 if [ -e $WORKDIR/traefik-values.orig ]; then
@@ -49,36 +33,30 @@ if [ -e $WORKDIR/traefik-values.orig ]; then
     echo "@@"
     echo "@@ Traefik already installed. Skipping uninstall/install."
     echo "@@"
-    finishUp
-    exit
   fi
+else
+  set +e
+
+  helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
+  kubectl create namespace $TRAEFIK_NAMESPACE
+  kubectl create namespace $DOMAIN_NAMESPACE
+
+  set -eu
+
+  cd ${SRCDIR}
+
+  # you only need to add the repo once, but we do it every time for simplicity
+  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+
+  helm install ${TRAEFIK_NAME} stable/traefik \
+    --namespace $TRAEFIK_NAMESPACE \
+    --values kubernetes/samples/charts/traefik/values.yaml \
+    --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
+    --wait
 fi
 
 #
-# helm uninstall then install traefik
-#
-
-set +e
-
-helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
-kubectl create namespace $TRAEFIK_NAMESPACE
-kubectl create namespace $DOMAIN_NAMESPACE
-
-set -eu
-
-cd ${SRCDIR}
-
-# you only need to add the repo once, but we do it every time for simplicity
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
-
-helm install ${TRAEFIK_NAME} stable/traefik \
-  --namespace $TRAEFIK_NAMESPACE \
-  --values kubernetes/samples/charts/traefik/values.yaml \
-  --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
-  --wait
-
-#
-# setup ingress for cluster-1
+# Stage ingress yaml for cluster-1
 #
 
 cat << EOF > ${WORKDIR}/traefik-ingress-${cluster_service_name}.yaml
@@ -104,7 +82,7 @@ spec:
 EOF
 
 #
-# setup ingress for console on admin server
+# Stage ingress yaml for console on admin server
 #
 
 cat << EOF > ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml
@@ -127,6 +105,26 @@ spec:
 
 EOF
 
+#
+# Deploy Traefik ingresses
+#
 
-finishUp
+kubectl delete -f ${WORKDIR}/traefik-ingress-${cluster_service_name}.yaml --ignore-not-found
+kubectl apply  -f ${WORKDIR}/traefik-ingress-${cluster_service_name}.yaml
 
+kubectl delete -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml --ignore-not-found
+kubectl apply  -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml
+
+#
+# Save Traefik settings (we will check this if this script is run again)
+#
+
+helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.orig 2>&1
+
+# TBD this assumes the k8s cluster includes the test host:
+echo "@@"
+echo "@@ Info: The WebLogic console should now be available at 'http://$(hostname).$(dnsdomainname):30305/console' (weblogic/welcome1)."
+echo "@@ Info: The sample app should now be available at 'http://$(hostname).$(dnsdomainname):30305/TBD'"
+echo "@@"
+
+# TBD should the ingress setup be moved to the sample?

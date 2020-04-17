@@ -5,17 +5,20 @@
 # 
 #  Summary:
 #
-#    This script builds a model image using the WebLogic Image Tool. The tool pulls a base
-#    image if there isn't already a local base image. This script, by default, builds the
-#    model image with model files from ./stage-model.sh plus tooling downloaded by ./stage-tooling.sh.
+#    This script builds a model image using the WebLogic Image Tool. The
+#    tool pulls a base image if there isn't already a local base image.
+#    This script, by default, builds the model image with model files from
+#    './stage-model-image.sh' plus tooling downloaded by './stage-tooling.sh.'.
 #
 #  Assumptions:
 #
-#    - The WebLogic Image Tool zip is 'WORKDIR/weblogic-image-tool.zip' and the WebLogic
-#      Deploy Tool zip is 'WORKDIR/weblogic-deploy-tooling.zip' (see ./stage-tooling.sh).
+#    - The WebLogic Image Tool zip is 'WORKDIR/weblogic-image-tool.zip' and
+#      the WebLogic Deploy Tool zip is 'WORKDIR/weblogic-deploy-tooling.zip'
+#      (see './stage-tooling.sh').
 #
-#    - Model files have been staged in the 'WORKDIR/model' directory (see ./stage-model.sh) or
-#      MODEL_DIR has been explicitly set to point to a different location.
+#    - Model files have been staged in the 'WORKDIR/model' directory
+#      (see './stage-model-image.sh') or MODEL_DIR has been explicitly set to
+#      point to a different location.
 #
 #  Optional environment variables:
 #
@@ -26,12 +29,12 @@
 #    MODEL_DIR:
 #      Location of the model .zip, .properties, and .yaml files
 #      that will be copied to the model image.  Default is 'WORKDIR/model'
-#      which is populated by the ./stage-model.sh script.
+#      which is populated by the './stage-model-image.sh' script.
 #
 #    MODEL_IMAGE_BUILD:
-#      Set to 'when-changed' (default) or 'always'. Default behavior is to skip
-#      the image build if the docker image BASE_IMAGE_NAME:BASE_IMAGE_TAG is
-#      found in the local docker image cache.
+#      Set to 'when-changed' (default) or 'always'. Default behavior is to
+#      exit without building if the docker image BASE_IMAGE_NAME:BASE_IMAGE_TAG
+#      is found in the local docker image cache.
 #
 #    WDT_DOMAIN_TYPE
 #      'WLS' (default), 'RestrictedJRF', or 'JRF'.
@@ -86,14 +89,15 @@ echo @@
 echo @@ Info: Setting up imagetool and populating its caches
 echo @@
 
-mkdir -p cache
+mkdir -p imagetool/cache
+mkdir -p imagetool/bld
 unzip -o weblogic-image-tool.zip
 
 IMGTOOL=${WORKDIR}/imagetool/bin/imagetool.sh
 
 # The image tool uses the WLSIMG_CACHEDIR and WLSIMG_BLDIR env vars:
-export WLSIMG_CACHEDIR=${WORKDIR}/cache
-export WLSIMG_BLDDIR=${WORKDIR}
+export WLSIMG_CACHEDIR=${WORKDIR}/imagetool/cache
+export WLSIMG_BLDDIR=${WORKDIR}/imagetool/bld
 
 set -x
 

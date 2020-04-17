@@ -2,7 +2,10 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# TBD doc
+#
+# TBD add doc here
+# TBD add a usage
+#
 # doc new 'DRY_RUN' to
 # doc that 'JRF' starts DB
 
@@ -115,7 +118,7 @@ doCommand  "\$TESTDIR/deploy-traefik.sh"
 doCommand  -c "export INCLUDE_CONFIGMAP=false"
 doCommand  "\$MIISAMPLEDIR/stage-workdir.sh"
 doCommand  "\$MIISAMPLEDIR/stage-tooling.sh"
-doCommand  "\$MIISAMPLEDIR/stage-model.sh"
+doCommand  "\$MIISAMPLEDIR/stage-model-image.sh"
 doCommand  "\$MIISAMPLEDIR/build-model-image.sh"
 doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
 doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
@@ -128,9 +131,9 @@ doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 
 doCommand  -c "export INCLUDE_CONFIGMAP=true"
 doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
-doCommand  "\$MIISAMPLEDIR/stage-configmap.sh"
+doCommand  "\$MIISAMPLEDIR/stage-model-configmap.sh"
 doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
-doCommand  "\$MIISAMPLEDIR/create-configmap.sh"
+doCommand  "\$MIISAMPLEDIR/create-model-configmap.sh"
 doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh"
 doCommand  "\$MIISAMPLEDIR/util-patch-restart-version.sh"
 doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
