@@ -62,8 +62,8 @@ public class Command {
             result);
       }
       return result.exitValue() == 0;
-    } catch (IOException | InterruptedException e) {
-      logger.severe("The command execution failed", e);
+    } catch (IOException | InterruptedException ie) {
+      logger.severe("The command execution failed", ie);
       return false;
     }
   }
