@@ -46,12 +46,25 @@ public class Command {
           params.command(), 
           params.redirect(),
           params.env());
-      if (result.exitValue() != 0) {
-        logger.warning("The command execution failed with the result: {0}", result);
+      if (params.saveStdOut()) {
+        params.stdOut(result.stdout());
+      }
+
+      // check both exitValue and stderr since sometimes the exitValue was 0 even when
+      // the test execution failed.
+      if (params.redirect()
+          && (result.exitValue() != 0 
+              || result.stderr() != null 
+                  && result.stderr().length() != 0)
+                  && !result.stderr().contains("INFO")
+                  && result.stderr().contains("error")) {
+        logger.warning("The command execution might have failed because it returns something in the stderr: {0}.",
+            result);
       }
       return result.exitValue() == 0;
-    } catch (IOException | InterruptedException ie) {
-      logger.warning("The command execution failed due to {0}", ie.getMessage());
+    } catch (IOException | InterruptedException e) {
+      logger.severe("The command execution failed", e);
+      e.printStackTrace();
       return false;
     }
   }
