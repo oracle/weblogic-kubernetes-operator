@@ -27,6 +27,14 @@ public class Istio {
     return this.enabled;
   }
 
+  public Boolean getEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(Boolean enabled) {
+    this.enabled = enabled;
+  }
+
   public Istio readinessPort(Integer readinessPort) {
     this.readinessPort = readinessPort;
     return this;
@@ -36,12 +44,18 @@ public class Istio {
     return this.readinessPort;
   }
 
+  public Integer getReadinessPort() {
+    return readinessPort;
+  }
+
+  public void setReadinessPort(Integer readinessPort) {
+    this.readinessPort = readinessPort;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
-        new ToStringBuilder(this)
-            .append("enabled", enabled)
-            .append("readinessPort", readinessPort);
+        new ToStringBuilder(this).append("enabled", enabled).append("readinessPort", readinessPort);
 
     return builder.toString();
   }
@@ -64,11 +78,8 @@ public class Istio {
     }
     Istio rhs = (Istio) other;
     EqualsBuilder builder =
-        new EqualsBuilder()
-            .append(enabled, rhs.enabled)
-            .append(readinessPort, rhs.readinessPort);
+        new EqualsBuilder().append(enabled, rhs.enabled).append(readinessPort, rhs.readinessPort);
 
     return builder.isEquals();
   }
-
 }

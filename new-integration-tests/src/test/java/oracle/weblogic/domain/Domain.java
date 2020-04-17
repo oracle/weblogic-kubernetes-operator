@@ -10,8 +10,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description =
-    "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
+@ApiModel(
+    description =
+        "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
 
   @ApiModelProperty("The API version for the Domain.")
@@ -38,6 +39,14 @@ public class Domain {
     return apiVersion;
   }
 
+  public String getApiVersion() {
+    return apiVersion;
+  }
+
+  public void setApiVersion(String apiVersion) {
+    this.apiVersion = apiVersion;
+  }
+
   public Domain kind(String kind) {
     this.kind = kind;
     return this;
@@ -45,6 +54,14 @@ public class Domain {
 
   public String kind() {
     return kind;
+  }
+
+  public String getKind() {
+    return kind;
+  }
+
+  public void setKind(String kind) {
+    this.kind = kind;
   }
 
   public Domain metadata(V1ObjectMeta metadata) {
@@ -56,6 +73,14 @@ public class Domain {
     return metadata;
   }
 
+  public V1ObjectMeta getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata(V1ObjectMeta metadata) {
+    this.metadata = metadata;
+  }
+
   public Domain spec(DomainSpec spec) {
     this.spec = spec;
     return this;
@@ -65,6 +90,14 @@ public class Domain {
     return spec;
   }
 
+  public DomainSpec getSpec() {
+    return spec;
+  }
+
+  public void setSpec(DomainSpec spec) {
+    this.spec = spec;
+  }
+
   public Domain status(DomainStatus status) {
     this.status = status;
     return this;
@@ -72,6 +105,14 @@ public class Domain {
 
   public DomainStatus status() {
     return status;
+  }
+
+  public DomainStatus getStatus() {
+    return status;
+  }
+
+  public void setStatus(DomainStatus status) {
+    this.status = status;
   }
 
   @Override
@@ -114,5 +155,4 @@ public class Domain {
         .append(status, rhs.status)
         .isEquals();
   }
-
 }
