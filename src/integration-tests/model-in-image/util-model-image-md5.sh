@@ -1,4 +1,10 @@
-# TBD doc/copyright
+#!/bin/bash
+
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# TBD remove this file if we're not using it anymore
+# TBD doc
 
 # gets md5s of
 #  - all files in WORKDIR/model directory after recursively expanding archives to a temporary directory

@@ -50,7 +50,6 @@ download_zip() {
     echo "@@             To force a download, 'export $DOWNLOAD_VAR_NAME=always'.   "
     echo "@@ -----------------------------------------------------------------------"
     echo "@@"
-    sleep 2
     return
   fi
 

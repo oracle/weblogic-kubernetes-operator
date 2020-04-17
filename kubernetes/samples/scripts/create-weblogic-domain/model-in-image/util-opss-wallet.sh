@@ -19,6 +19,9 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
+
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 WALLET_FILE=${WALLET_FILE:-./ewallet.p12}

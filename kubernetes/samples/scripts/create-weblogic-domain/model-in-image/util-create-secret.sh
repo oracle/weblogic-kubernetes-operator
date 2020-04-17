@@ -31,6 +31,9 @@ EOF
 set -e
 set -o pipefail
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
+
 DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
 NAMESPACE="${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}"
 SECRET_NAME=""

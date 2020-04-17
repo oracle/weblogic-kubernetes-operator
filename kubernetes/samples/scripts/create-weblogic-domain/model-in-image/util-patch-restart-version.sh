@@ -24,6 +24,9 @@ EOF
 
 set -e
 
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
+
 DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
 DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}"
 
@@ -55,9 +58,13 @@ currentRV=`kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='
 
 nextRV=$((currentRV + 1))
 
-echo "@@ Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' from restartVersion='${currentRV}' to restartVersion='${nextRV}'."
+echo "@@ Info: Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' from restartVersion='${currentRV}' to restartVersion='${nextRV}'."
 
 kubectl -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
   -p='[{"op": "replace", "path": "/spec/restartVersion", "value": "'${nextRV}'" }]'
 
-echo "@@ To monitor the domain's pods, call 'kubectl -n ${DOMAIN_NAMESPACE} get pods --watch=true --show-labels=true'. Expect the operator to restart the domain's pods until all of them have label 'weblogic.domainRestartVersion=\"$currentRV\"."
+echo "@@"
+echo "@@ Info: Domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' successfully patched!"
+echo "@@"
+echo "@@ Info: To monitor the domain's pods, call 'kubectl -n ${DOMAIN_NAMESPACE} get pods --watch=true --show-labels=true'. Expect the operator to restart the domain's pods until all of them have label 'weblogic.domainRestartVersion=\"$nextRV\"."
+echo "@@"

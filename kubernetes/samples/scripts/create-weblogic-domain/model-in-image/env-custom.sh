@@ -1,8 +1,14 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# This file is copied to WORKDIR by 'stage-workdir.sh'. It can be modified
-# to customize the behavior of the other scripts in this sample.
+# Description:
+#   This file can be modified to customize the behavior of the
+#   other scripts in this sample.
+#
+#   It is copied to WORKDIR from the sample directory by 'stage-workdir.sh',
+#   and is automatically loaded from its WORKDIR location by every script
+#   in this sample (except for 'stage-workdir.sh' and 'util-*.sh').
+# 
 
 # export DOMAIN_UID=
 # ::: Domain UID
@@ -112,6 +118,5 @@
 #  Defaults to 'sample-domain-resource-wls/k8s-domain.yaml.template' for the 'WLS'
 #  and 'RestrictedJRF' WDT_DOMAIN_TYPE. For the 'JRF' WDT_DOMAIN_TYPE, the default
 #  is 'sample-domain-resource-jrf/k8s-domain.yaml.template'.
-
 
 # TBD add DB_NAMESPACE

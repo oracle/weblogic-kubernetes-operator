@@ -59,6 +59,8 @@ MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
 MODEL_DIR=${MODEL_DIR:-$WORKDIR/model}
 
+INCLUDE_CONFIGMAP=${INCLUDE_CONFIGMAP:-false}
+
 echo "@@"
 echo "@@ ######################################################################"
 echo "@@ Info: Running '$(basename "$0")'."

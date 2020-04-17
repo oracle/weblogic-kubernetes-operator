@@ -1,4 +1,9 @@
-# TBD doc/copyright
+#!/bin/bash
+
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# TBD doc
 
 TESTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
@@ -28,31 +33,39 @@ admin_service_name=$(tr [A-Z_] [a-z-] <<< $admin_service_name)
 #
 
 if [ -e $WORKDIR/traefik-values.orig ]; then
+  set +e
   helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.cur 2>&1
-  if [ "$(cat $WORKDIR/traefik-values.cur)" = "$(cat $WORKDIR/traefik-values.orig)" ]; then
+  res=$?
+  set -e
+  echo ${DOMAIN_NAMESPACE} >> $WORKDIR/traefik-values.cur
+  if [ $res -eq 0 ] \
+     && [ -e "$WORKDIR/traefik-values.orig" ] \
+     && [ "$(cat $WORKDIR/traefik-values.cur)" = "$(cat $WORKDIR/traefik-values.orig)" ]; then
     echo "@@"
     echo "@@ Traefik already installed. Skipping uninstall/install."
     echo "@@"
+  else
+    set +e
+    helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
+    kubectl create namespace $TRAEFIK_NAMESPACE
+    kubectl create namespace $DOMAIN_NAMESPACE
+    set -e
+
+    cd ${SRCDIR}
+
+    # you only need to add the repo once, but we do it every time for simplicity
+    helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+
+    helm install ${TRAEFIK_NAME} stable/traefik \
+      --namespace $TRAEFIK_NAMESPACE \
+      --values kubernetes/samples/charts/traefik/values.yaml \
+      --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
+      --wait
+
+    # Save Traefik settings (we will check this if this script is run again)
+    helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.orig 2>&1
+    echo ${DOMAIN_NAMESPACE} >> $WORKDIR/traefik-values.orig
   fi
-else
-  set +e
-
-  helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
-  kubectl create namespace $TRAEFIK_NAMESPACE
-  kubectl create namespace $DOMAIN_NAMESPACE
-
-  set -eu
-
-  cd ${SRCDIR}
-
-  # you only need to add the repo once, but we do it every time for simplicity
-  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
-
-  helm install ${TRAEFIK_NAME} stable/traefik \
-    --namespace $TRAEFIK_NAMESPACE \
-    --values kubernetes/samples/charts/traefik/values.yaml \
-    --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
-    --wait
 fi
 
 #
@@ -114,12 +127,6 @@ kubectl apply  -f ${WORKDIR}/traefik-ingress-${cluster_service_name}.yaml
 
 kubectl delete -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml --ignore-not-found
 kubectl apply  -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml
-
-#
-# Save Traefik settings (we will check this if this script is run again)
-#
-
-helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.orig 2>&1
 
 # TBD this assumes the k8s cluster includes the test host:
 echo "@@"

@@ -1,11 +1,13 @@
-# TBD copyright
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # TBD comment doc
 
-# TBD add NAMESPACE/NAME/UID for domain
-
 # MII SAMPLE defaults specific to the test scripts in this directory
 # For more defaults see custom-env.sh
+
+# TBD add NAMESPACE/NAME/UID for domain
+
 
 # ::: Directory for sample's temp files
 #  should have 10GB? of space
