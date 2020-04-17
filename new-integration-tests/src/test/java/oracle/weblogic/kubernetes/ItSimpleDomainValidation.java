@@ -3,8 +3,15 @@
 
 package oracle.weblogic.kubernetes;
 
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
@@ -20,6 +27,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
@@ -49,6 +58,53 @@ class ItSimpleDomainValidation implements LoggedTest {
             .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccount.getMetadata().getName());
 
+    // create persistent volume and persistent volume claim
+    final String pvcName = domainUID + "-pvc"; // name of the persistent volume claim
+    final String pvName = domainUID + "-pv"; // name of the persistent volume
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUID + "-weblogic-domain-storage-class")
+            .volumeName(domainUID + "-weblogic-pv")
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("10Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvcName)
+            .withNamespace(namespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUID", domainUID));
+
+    boolean success = assertDoesNotThrow(
+        () -> TestActions.createPersistentVolumeClaim(v1pvc),
+        "Persistent volume claim creation failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
+    );
+    assertTrue(success, "PersistentVolumeClaim creation failed");
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUID + "-weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("10Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .hostPath(new V1HostPathVolumeSource()
+                .path(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume")))
+                .metadata(new V1ObjectMetaBuilder()
+            .withName(pvName)
+            .withNamespace(namespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUID", domainUID));
+    success = assertDoesNotThrow(
+        () -> TestActions.createPersistentVolume(v1pv),
+        "Persistent volume creation failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
+    );
+    assertTrue(success, "PersistentVolume creation failed");
+
     // create the domain CR
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
         .withName(domainUID)
@@ -64,13 +120,15 @@ class ItSimpleDomainValidation implements LoggedTest {
         .kind("Domain")
         .metadata(metadata)
         .spec(domainSpec);
-    boolean success = assertDoesNotThrow(
-        () -> createDomainCustomResource(domain)
+    success = assertDoesNotThrow(
+        () -> createDomainCustomResource(domain),
+        "Domain failed to be created, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success);
 
     // wait for the domain to exist
-    with().pollDelay(30, SECONDS)
+    with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
             condition -> logger.info(
@@ -87,18 +145,28 @@ class ItSimpleDomainValidation implements LoggedTest {
     // wait for the managed servers to exist
 
     // Delete domain custom resource
-    assertTrue(deleteDomainCustomResource(domainUID, namespace));
+    assertTrue(deleteDomainCustomResource(domainUID, namespace), "Domain failed to be deleted, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
     logger.info("Deleted Domain Custom Resource {0} from {1}", domainUID, namespace);
 
     // Delete service account from unique namespace
     assertTrue(deleteServiceAccount(serviceAccount.getMetadata().getName(),
-            serviceAccount.getMetadata().getNamespace()));
+        serviceAccount.getMetadata().getNamespace()), "Service account failed to be deleted, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
     logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
         + "\' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
-    // Delete namespace
-    assertTrue(TestActions.deleteNamespace(namespace));
+    // Delete the persistent volume claim and persistent volume
+    assertTrue(deletePersistentVolumeClaim(pvcName, namespace),
+        "Persistent volume claim deletion failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody");
 
+    assertTrue(deletePersistentVolume(pvName), "Persistent volume deletion failed, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
+
+    // Delete namespace
+    assertTrue(TestActions.deleteNamespace(namespace), "Namespace failed to be deleted, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
     logger.info("Deleted namespace: {0}", namespace);
   }
 
