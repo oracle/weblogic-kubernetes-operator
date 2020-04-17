@@ -92,7 +92,7 @@ public class Installer {
         && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
       logger.info("File {0} already exists.", params.fileName());
     } else {
-      // check and make sure the DOWNLOAD_DIR exists; will create it if it is missing
+      // check and make sure DOWNLOAD_DIR exists; will create it if it is missing
       checkDirectory(DOWNLOAD_DIR);
       
       // we check if we get the version of the tool correctly first
@@ -138,6 +138,7 @@ public class Installer {
     return command;
   }
 
+  // Figure out the actual release number of the latest
   static String getActualVersionIfNeeded(
       String location,
       String type,
@@ -168,8 +169,8 @@ public class Installer {
           .command(command)
           .saveStdOut(true)
           .redirect(true);
-      boolean success = Command.withParams(params).execute();
-      if (success) {
+
+      if (Command.withParams(params).execute()) {
         return params.stdOut();
       } else {
         return null;

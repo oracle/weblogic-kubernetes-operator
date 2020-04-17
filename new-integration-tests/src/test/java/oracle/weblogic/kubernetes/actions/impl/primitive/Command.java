@@ -58,13 +58,12 @@ public class Command {
                   && result.stderr().length() != 0)
                   && !result.stderr().contains("INFO")
                   && result.stderr().contains("error")) {
-        logger.warning("The command execution might have failed because it returns something in the stderr: {0}.",
+        logger.warning("The command execution might have failed because it returned something in the stderr: {0}.",
             result);
       }
       return result.exitValue() == 0;
     } catch (IOException | InterruptedException e) {
       logger.severe("The command execution failed", e);
-      e.printStackTrace();
       return false;
     }
   }

@@ -29,7 +29,7 @@ public class InstallParams {
   
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
-  
+
   public InstallParams defaults() {
     return this;
   }
