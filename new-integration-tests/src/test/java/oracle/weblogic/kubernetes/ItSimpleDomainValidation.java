@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.List;
+
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -17,8 +19,8 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.annotations.ITNamespaces;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
-import oracle.weblogic.kubernetes.annotations.NamespaceList;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -38,22 +40,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Simple validation of basic domain functions")
 @IntegrationTest
 @ExtendWith(IntegrationTestWatcher.class)
+@ITNamespaces(numofns = 1)
 class ItSimpleDomainValidation implements LoggedTest {
-
-  @NamespaceList
-  private String namespace;
 
   @Test
   @DisplayName("Create a domain")
   @Slow
-  public void testCreatingDomain() {
+  public void testCreatingDomain(List namespaces) {
 
     final String domainUID = "domain1";
 
     // get a new unique namespace
-    namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Got a new namespace called {0}", namespace);
+    logger.info("Creating unique namespace for Operator");
+    String namespace = (String)namespaces.get(0);
 
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";

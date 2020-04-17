@@ -4,13 +4,14 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
+import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.annotations.NamespaceList;
+import oracle.weblogic.kubernetes.annotations.ITNamespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
@@ -59,15 +60,13 @@ import static org.awaitility.Awaitility.with;
 // by implementing the LoggedTest, we will automatically get a logger injected and it
 // will also automatically log entry/exit messages for each test method.
 @ExtendWith(IntegrationTestWatcher.class)
+@ITNamespaces(numofns = 3)
 class ItSimpleOperatorValidation implements LoggedTest {
 
   private HelmParams opHelmParams = null;
   private V1ServiceAccount serviceAccount = null;
-  @NamespaceList
   private String opNamespace = null;
-  @NamespaceList
   private String domainNamespace1 = null;
-  @NamespaceList
   private String domainNamespace2 = null;
 
 
@@ -78,22 +77,17 @@ class ItSimpleOperatorValidation implements LoggedTest {
   // like these two:
   @Slow
   @MustNotRunInParallel
-  public void testInstallingOperator() {
+  public void testInstallingOperator(List namespaces) {
     // this first example is an operation that we wait for.
     // installOperator() is one of our custom, reusable actions.
     // imagine that installOperator() will try to install the operator, by creating
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
 
-    // get a new unique opNamespace
-    opNamespace = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", opNamespace));
-
-    domainNamespace1 = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", domainNamespace1));
-
-    domainNamespace2 = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", domainNamespace2));
+    // get unique namespaces for operator and domains
+    opNamespace = (String)namespaces.get(0);
+    domainNamespace1 = (String)namespaces.get(1);
+    domainNamespace2 = (String)namespaces.get(2);
 
     // Create a service account for the unique opNamespace
     final String serviceAccountName = opNamespace + "-sa";

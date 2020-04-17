@@ -8,8 +8,11 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.annotations.ITNamespaces;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -19,11 +22,16 @@ import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.TestWatcher;
 
+import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * JUnit5 extension class to intercept test execution at various
@@ -40,15 +48,60 @@ public class IntegrationTestWatcher implements
     BeforeTestExecutionCallback,
     InvocationInterceptor,
     LifecycleMethodExecutionExceptionHandler,
+    ParameterResolver,
     TestExecutionExceptionHandler,
     TestWatcher {
 
   private String className;
   private String methodName;
+  private List namespaces = null;
+
   /**
    * Directory to store logs.
    */
   private static final String LOGS_DIR = System.getProperty("java.io.tmpdir");
+
+  /**
+   * Determine if this resolver supports resolution of an argument for the
+   * Parameter in the supplied ParameterContext for the supplied ExtensionContext.
+   * @param parameterContext the context for the parameter for which an argument should be resolved
+   * @param extensionContext the current extension context
+   * @return true if this resolver can resolve an argument for the parameter
+   * @throws ParameterResolutionException when parameter resolution fails
+   */
+  @Override
+  public boolean supportsParameter(ParameterContext parameterContext,
+      ExtensionContext extensionContext) throws ParameterResolutionException {
+    return parameterContext.getParameter().getType() == List.class;
+  }
+
+  /**
+   * Resolve an argument for the Parameter in the supplied ParameterContext for the supplied ExtensionContext.
+   * @param parameterContext the context for the parameter for which an argument should be resolved
+   * @param extensionContext the extension context for the Executable about to be invoked
+   * @return the resolved argument for the parameter
+   * @throws ParameterResolutionException Thrown if an error is encountered in the execution of a ParameterResolver.
+   */
+  @Override
+  public Object resolveParameter(ParameterContext parameterContext,
+      ExtensionContext extensionContext) throws ParameterResolutionException {
+    Object requiredTestInstance = extensionContext.getRequiredTestInstance();
+    List<String> namespaces = null;
+
+    if (requiredTestInstance.getClass().isAnnotationPresent(ITNamespaces.class)) {
+      ITNamespaces annotation = requiredTestInstance.getClass().getAnnotation(ITNamespaces.class);
+      logger.info("Creating {0} unique namespaces for the test", annotation.numofns());
+      namespaces = new ArrayList();
+      for (int i = 1; i <= annotation.numofns(); i++) {
+        String namespace = assertDoesNotThrow(() -> createUniqueNamespace(),
+            "Failed to create unique namespace due to ApiException");
+        namespaces.add(namespace);
+        logger.info("Created a new namespace called {0}", namespace);
+      }
+    }
+    this.namespaces = namespaces;
+    return namespaces;
+  }
 
   /**
    * Prints log messages to separate the beforeAll methods.
@@ -229,10 +282,10 @@ public class IntegrationTestWatcher implements
       logger.warning(ex.getMessage());
     }
     try {
-      for (var namespace : LoggingUtil.getNamespaceList(extensionContext.getRequiredTestInstance())) {
+      for (var namespace : namespaces) {
         LoggingUtil.generateLog((String)namespace, resultDir);
       }
-    } catch (IllegalArgumentException | IllegalAccessException | IOException | ApiException ex) {
+    } catch (IOException | ApiException ex) {
       logger.warning(ex.getMessage());
     }
   }

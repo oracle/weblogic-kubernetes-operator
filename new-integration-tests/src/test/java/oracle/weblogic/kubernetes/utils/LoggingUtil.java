@@ -4,19 +4,16 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
-import oracle.weblogic.kubernetes.annotations.NamespaceList;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -33,99 +30,29 @@ public class LoggingUtil {
 
   /**
    * Collect Kubernetes cluster artifacts data for current running test object. This method can be called anywhere in
-   * the test by passing the test instance object.
+   * the test by passing the test instance object and namespaces List.
    * <p>
-   * Artifacts in the namespace used by the tests are collected from the
-   * Kubernetes cluster and dumped in the LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP.
+   * Artifacts in the namespace used by the tests are collected from the Kubernetes cluster and dumped in the
+   * LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP.
    *
    * @param itInstance the integration test instance
+   * @param namespaces array list of namespaces used by the tests
    */
-  public static void collectLogs(Object itInstance) {
+  public static void collectLogs(Object itInstance, List namespaces) {
     logger.info("Collecting logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
       Path resultDir = Files.createDirectories(
           Paths.get(LOGS_DIR, itInstance.getClass().getSimpleName(),
               resultDirExt));
-      for (var namespace : LoggingUtil.getNamespaceList(itInstance)) {
+      for (var namespace : namespaces) {
         LoggingUtil.generateLog((String) namespace, resultDir);
       }
-    } catch (IllegalArgumentException | IllegalAccessException | IOException ex) {
+    } catch (IOException ex) {
       logger.warning(ex.getMessage());
     } catch (ApiException ex) {
       logger.warning(ex.getResponseBody());
     }
-  }
-
-  /**
-   *
-   * Collects all Kubernetes namespace fields used by the test.
-   *
-   * @param itInstance the integration test instance
-   * @return Set of namespaces used by the integration test
-   * @throws IllegalArgumentException when test instance access to the fields fails
-   * @throws IllegalAccessException when test instance access to the fields fails
-   * @throws ApiException when accessing the Kubernetes cluster for artifacts fails
-   */
-  public static Set getNamespaceList(Object itInstance)
-      throws IllegalArgumentException, IllegalAccessException, ApiException {
-    Set<String> namespaceFields;
-    namespaceFields = getNSListIntersecting(itInstance);
-    namespaceFields = getNSListTagged(itInstance);
-    return namespaceFields;
-  }
-
-  /**
-   * This utility method gets all the declared String field values in the test class, gets another list of namespaces
-   * existing in the Kubernetes cluster and gets the intersection of these 2 Sets.
-   * <p>
-   * This method does not need the test classes to decorate their fields with any annotations.
-   *
-   * @param itInstance the integration test instance
-   * @return Set of namespaces used by the tests and that exists in the Kubernetes cluster
-   * @throws IllegalArgumentException when test instance access to the fields fails
-   * @throws IllegalAccessException when test instance access to the fields fails
-   * @throws ApiException when accessing the Kubernetes cluster for artifacts fails
-   */
-  public static Set getNSListIntersecting(Object itInstance)
-      throws IllegalArgumentException, IllegalAccessException, ApiException {
-    Set<String> stringFiledList = new HashSet<>();
-    for (Field field : itInstance.getClass().getDeclaredFields()) {
-      field.setAccessible(true);
-      if (String.class.isAssignableFrom(field.getType())) {
-        if (field.get(itInstance) != null) {
-          stringFiledList.add((String) field.get(itInstance));
-        }
-      }
-    }
-    stringFiledList.retainAll(getNSFromK8s());
-    logger.info("Namespace list %s", stringFiledList);
-    return stringFiledList;
-  }
-
-  /**
-   * This utility method gets all the declared String field values with annotation @NamespaceList in the test class.
-   * <p>
-   * This method does need the test classes to decorate their namespace fields with @NamespaceList.
-   * @param itInstance the integration test instance
-   * @return Set of namespaces used by the tests.
-   * @throws IllegalArgumentException when test instance access to the fields fails
-   * @throws IllegalAccessException when test instance access to the fields fails
-   * @throws ApiException when accessing the Kubernetes cluster for artifacts fails
-   */
-  public static Set getNSListTagged(Object itInstance)
-      throws IllegalArgumentException, IllegalAccessException, ApiException {
-    Set<String> namespaceFields = new HashSet<>();
-    for (Field field : itInstance.getClass().getDeclaredFields()) {
-      field.setAccessible(true);
-      if (field.isAnnotationPresent(NamespaceList.class)) {
-        if (field.get(itInstance) != null) {
-          namespaceFields.add((String) field.get(itInstance));
-        }
-      }
-    }
-    logger.info("Namespace list %s", namespaceFields);
-    return namespaceFields;
   }
 
   /**
@@ -157,13 +84,13 @@ public class LoggingUtil {
     // get replicasets
     writeToFile(Kubernetes.listReplicaSets(namespace), resultDir.toString(), namespace + "_rs.log");
     // get Domain
-    writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_domain.log");
+    writeToFile(Kubernetes.getDomainObjects(), resultDir.toString(), namespace + "_domain.log");
     // get domain/operator pods
     for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
       if (pod.getMetadata() != null) {
         writeToFile(Kubernetes.getPodLog(pod.getMetadata().getName(), namespace),
             resultDir.toString(),
-            namespace + pod.getMetadata().getName() + ".log");
+            namespace + "_" + pod.getMetadata().getName() + ".log");
       }
     }
   }
@@ -183,25 +110,6 @@ public class LoggingUtil {
           dump(obj).getBytes(StandardCharsets.UTF_8)
       );
     }
-  }
-
-  /**
-   * Query the Kubernetes cluster to get all existing namespace objects.
-   *
-   * @return Set of namespaces from the Kubernetes cluster
-   * @throws ApiException when Kubernetes cluster query fails
-   */
-  public static Set<String> getNSFromK8s() throws ApiException {
-    Set<String> namespaceFields = new HashSet<>();
-    for (var iterator
-        = Kubernetes.listNamespacesAsObjects().getItems().iterator();
-        iterator.hasNext();) {
-      String name = iterator.next().getMetadata().getName();
-      if (name != null) {
-        namespaceFields.add(name);
-      }
-    }
-    return namespaceFields;
   }
 
 }

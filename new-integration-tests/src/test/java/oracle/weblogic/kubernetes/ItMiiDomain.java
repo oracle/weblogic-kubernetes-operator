@@ -31,8 +31,10 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.ITNamespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
+import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
@@ -56,7 +58,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWITParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -83,6 +84,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
 @ExtendWith(Timing.class)
+@ExtendWith(IntegrationTestWatcher.class)
+@ITNamespaces(numofns = 2)
 class ItMiiDomain implements LoggedTest {
 
   // operator constants
@@ -120,7 +123,7 @@ class ItMiiDomain implements LoggedTest {
    * Install Operator.
    */
   @BeforeAll
-  public static void initAll() {
+  public static void initAll(List namespaces) {
     // create standard, reusbale retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -128,14 +131,10 @@ class ItMiiDomain implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", opNamespace);
+    opNamespace = (String)namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
-    domainNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace);
+    domainNamespace = (String)namespaces.get(1);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
