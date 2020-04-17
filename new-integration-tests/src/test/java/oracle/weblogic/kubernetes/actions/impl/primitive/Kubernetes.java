@@ -603,8 +603,8 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Get domain objects in all namespaces.
-   * @return Object of Domain Custom Resources
+   * Get Domain Custom Resource objects in all namespaces.
+   * @return Object Domain Custom Resources object
    */
   public static Object getDomainObjects() {
     Object domainObjects = null;
@@ -623,7 +623,7 @@ public class Kubernetes implements LoggedTest {
           ALLOW_WATCH_BOOKMARKS // allow watch book marks
       );
     } catch (ApiException ex) {
-      logger.severe("Response Body", ex.getResponseBody());
+      logger.severe(ex.getResponseBody());
     }
     return domainObjects;
   }
@@ -1108,7 +1108,7 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- jobs ---------------------------
   /**
-   * List all jobs in the Kubernetes cluster.
+   * Get a list of all jobs in the given namespace.
    *
    * @param namespace in which to list the jobs
    * @return V1JobList of jobs from Kubernetes cluster
@@ -1120,7 +1120,7 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- resplica sets ---------------------------
   /**
-   * List all replica sets in the Kubernetes cluster.
+   * Get a list of all replica sets in the given namespace.
    *
    * @param namespace in which to list the replica sets
    * @return V1ReplicaSetList of replica sets

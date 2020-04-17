@@ -79,7 +79,7 @@ public class IntegrationTestWatcher implements
    * Resolve an argument for the Parameter in the supplied ParameterContext for the supplied ExtensionContext.
    * @param parameterContext the context for the parameter for which an argument should be resolved
    * @param extensionContext the extension context for the Executable about to be invoked
-   * @return the resolved argument for the parameter
+   * @return Object the resolved argument for the parameter
    * @throws ParameterResolutionException Thrown if an error is encountered in the execution of a ParameterResolver.
    */
   @Override
@@ -89,10 +89,10 @@ public class IntegrationTestWatcher implements
     List<String> namespaces = null;
 
     if (requiredTestInstance.getClass().isAnnotationPresent(ITNamespaces.class)) {
-      ITNamespaces annotation = requiredTestInstance.getClass().getAnnotation(ITNamespaces.class);
-      logger.info("Creating {0} unique namespaces for the test", annotation.numofns());
+      ITNamespaces itNsTag = requiredTestInstance.getClass().getAnnotation(ITNamespaces.class);
+      logger.info("Creating {0} unique namespaces for the test", itNsTag.numofns());
       namespaces = new ArrayList();
-      for (int i = 1; i <= annotation.numofns(); i++) {
+      for (int i = 1; i <= itNsTag.numofns(); i++) {
         String namespace = assertDoesNotThrow(() -> createUniqueNamespace(),
             "Failed to create unique namespace due to ApiException");
         namespaces.add(namespace);
@@ -115,7 +115,7 @@ public class IntegrationTestWatcher implements
   }
 
   /**
-   * Catches any exception thrown in beforeAll and collects logs.
+   * Gets called when any exception is thrown in beforeAll and collects logs.
    * @param context current extension context
    * @param throwable to handle
    * @throws Throwable in case of failures
@@ -138,7 +138,7 @@ public class IntegrationTestWatcher implements
   }
 
   /**
-   * Catches any exception thrown in beforeEach and collects logs.
+   * Gets called when any exception is thrown in beforeEach and collects logs.
    * @param context current extension context
    * @param throwable to handle
    * @throws Throwable in case of failures
@@ -151,7 +151,7 @@ public class IntegrationTestWatcher implements
   }
 
   /**
-   * Prints log messages to mark the end of beforeEach.
+   * Prints log messages to mark the end of beforeEach method.
    * @param context the current extension context
    */
   @Override
@@ -161,7 +161,7 @@ public class IntegrationTestWatcher implements
 
   /**
    * Intercept the invocation of a @Test method.
-   * Prints log messages to separate the test methods.
+   * Prints log messages to separate the test method logs.
    * @param invocation the invocation that is being intercepted
    * @param invocationContext  the context of the invocation that is being intercepted
    * @param context the current extension context
@@ -176,7 +176,7 @@ public class IntegrationTestWatcher implements
   }
 
   /**
-   * Catches any exception thrown in test and collects logs.
+   * Gets called when any exception is thrown in test and collects logs.
    * @param context current extension context
    * @param throwable to handle
    * @throws Throwable in case of failures
@@ -191,7 +191,7 @@ public class IntegrationTestWatcher implements
 
   /**
    * Intercept the invocation of a @AfterEach method.
-   * Prints log messages to separate the afterEach methods.
+   * Prints log messages to separate the afterEach method logs.
    * @param invocation the invocation that is being intercepted
    * @param invocationContext  the context of the invocation that is being intercepted
    * @param context the current extension context
@@ -215,7 +215,7 @@ public class IntegrationTestWatcher implements
   }
 
   /**
-   * Catches any exception thrown in afterEach and collects logs.
+   * Gets called when any exception is thrown in afterEach and collects logs.
    * @param context current extension context
    * @param throwable to handle
    * @throws Throwable in case of failures
@@ -233,7 +233,7 @@ public class IntegrationTestWatcher implements
    */
   @Override
   public void testSuccessful(ExtensionContext context) {
-    printHeader(String.format("Test passed %s.%s()", className, methodName), "+");
+    printHeader(String.format("Test PASSED %s.%s()", className, methodName), "+");
   }
 
   /**
@@ -248,7 +248,7 @@ public class IntegrationTestWatcher implements
 
   /**
    * Intercept the invocation of a @AfterAll method.
-   * Prints log messages to separate the afterAll methods.
+   * Prints log messages to separate the afterAll method logs.
    * @param invocation the invocation that is being intercepted
    * @param invocationContext  the context of the invocation that is being intercepted
    * @param context the current extension context
@@ -273,7 +273,7 @@ public class IntegrationTestWatcher implements
 
 
   /**
-   * Catches any exception thrown in afterAll and collects logs.
+   * Gets called when any exception is thrown in afterAll and collects logs.
    * @param context current extension context
    * @param throwable to handle
    * @throws Throwable in case of failures
@@ -286,7 +286,7 @@ public class IntegrationTestWatcher implements
   }
 
   /**
-   * A utility method to collect logs in every namespace used by the current running test.
+   * Collects logs in namespaces used by the current running test and writes in the LOGS_DIR.
    * @param extensionContext current extension context
    * @param failedStage the stage in which the test failed
    */
@@ -331,7 +331,7 @@ public class IntegrationTestWatcher implements
   }
 
   /**
-   * A utility to print start/end/failure messages highlighted.
+   * Print start/end/failure messages highlighted.
    * @param message to print
    * @param rc repeater string
    */

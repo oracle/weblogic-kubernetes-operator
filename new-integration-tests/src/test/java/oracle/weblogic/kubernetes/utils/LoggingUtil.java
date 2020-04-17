@@ -19,24 +19,23 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
- * A utility class to collect artifacts data from Kubernetes cluster.
+ * A utility class to collect logs for artifacts in Kubernetes cluster.
  */
 public class LoggingUtil {
 
   /**
-   * Directory to store logs.
+   * Directory to store logs. Needs to be changed to the parameter set in env or Jenkins.
    */
   private static final String LOGS_DIR = System.getProperty("java.io.tmpdir");
 
   /**
-   * Collect Kubernetes cluster artifacts data for current running test object. This method can be called anywhere in
-   * the test by passing the test instance object and namespaces List.
+   * Collect logs for artifacts in Kubernetes cluster for current running test object. This method can be called
+   * anywhere in the test by passing the test instance object and list namespaces.
    * <p>
-   * Artifacts in the namespace used by the tests are collected from the Kubernetes cluster and dumped in the
-   * LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP.
+   * The collected logs are written in the LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP directory.
    *
    * @param itInstance the integration test instance
-   * @param namespaces array list of namespaces used by the tests
+   * @param namespaces list of namespaces used by the test instance
    */
   public static void collectLogs(Object itInstance, List namespaces) {
     logger.info("Collecting logs...");
@@ -56,15 +55,15 @@ public class LoggingUtil {
   }
 
   /**
-   * Queries the Kubernetes cluster with given namespace to get the various artifacts and writes it the resultDir.
+   * Queries the Kubernetes cluster to get the logs for various artifacts and writes it to the resultDir.
    *
    * @param namespace in which to query cluster for artifacts
    * @param resultDir existing directory to write log files
-   * @throws IOException when writing log files fails
+   * @throws IOException when writing to log files fail
    * @throws ApiException when Kubernetes cluster query fails
    */
   public static void generateLog(String namespace, Path resultDir) throws IOException, ApiException {
-    logger.info("Collecting logs for namespace : {0}", namespace);
+    logger.info("Collecting logs in namespace : {0}", namespace);
     // get service accounts
     writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir.toString(), namespace + "_sa.log");
     // get namespaces
@@ -96,7 +95,7 @@ public class LoggingUtil {
   }
 
   /**
-   * Write file fileName in resultDir.
+   * Write the YAML representation of object to a file in the resultDir.
    *
    * @param obj to write to the file as YAML
    * @param resultDir directory in which to write the file
