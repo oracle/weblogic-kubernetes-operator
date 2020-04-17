@@ -53,46 +53,47 @@ public class ServerPod {
 
   @ApiModelProperty(
       "If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
-      + "are two special keywords which indicate the highest priorities with the former being the highest priority. "
-      + "Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod "
-      + "priority will be default or zero if there is no default.")
+          + "are two special keywords which indicate the highest priorities with the former being the highest "
+          + "priority. Any other name must be defined by creating a PriorityClass object with that name. If not "
+          + "specified, the pod priority will be default or zero if there is no default.")
   private String priorityClassName;
 
   @ApiModelProperty(
       "If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its "
-      + "containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More "
-      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md")
+          + "containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" "
+          + "More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md")
   private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
 
   @ApiModelProperty(
       "Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. "
-      + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy")
+          + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy")
   private String restartPolicy;
 
   @ApiModelProperty(
       "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
-      + "this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, "
-      + "the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the "
-      + "default runtime handler. More "
-      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an "
-      + "alpha feature and may change in the future.")
+          + "this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or "
+          + "empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that "
+          + "uses the default runtime handler. More "
+          + "info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an "
+          + "alpha feature and may change in the future.")
   private String runtimeClassName;
 
   @ApiModelProperty(
       "NodeName is a request to schedule this pod onto a specific node. If it is non-empty, the scheduler "
-      + "simply schedules this pod onto that node, assuming that it fits resource requirements.")
+          + "simply schedules this pod onto that node, assuming that it fits resource requirements.")
   private String nodeName;
 
   @ApiModelProperty(
       "If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be "
-      + "dispatched by default scheduler.")
+          + "dispatched by default scheduler.")
   private String schedulerName;
 
   @ApiModelProperty("If specified, the pod's tolerations.")
   private List<V1Toleration> tolerations = new ArrayList<>();
 
-  @ApiModelProperty("Name of the ServiceAccount to be used to run this pod. If it is not set, default "
-      + "ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.")
+  @ApiModelProperty(
+      "Name of the ServiceAccount to be used to run this pod. If it is not set, default "
+          + "ServiceAccount will be used. The ServiceAccount has to exist at the time the pod is created.")
   private String serviceAccountName;
 
   @ApiModelProperty("Memory and CPU minimum requirements and limits for the server.")
@@ -137,6 +138,14 @@ public class ServerPod {
     return this;
   }
 
+  public List<V1EnvVar> getEnv() {
+    return env;
+  }
+
+  public void setEnv(List<V1EnvVar> env) {
+    this.env = env;
+  }
+
   public ServerPod labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
@@ -152,6 +161,14 @@ public class ServerPod {
     }
     labels.put(key, labelsItem);
     return this;
+  }
+
+  public Map<String, String> getLabels() {
+    return labels;
+  }
+
+  public void setLabels(Map<String, String> labels) {
+    this.labels = labels;
   }
 
   public ServerPod annotations(Map<String, String> annotations) {
@@ -171,6 +188,14 @@ public class ServerPod {
     return this;
   }
 
+  public Map<String, String> getAnnotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(Map<String, String> annotations) {
+    this.annotations = annotations;
+  }
+
   public ServerPod livenessProve(ProbeTuning livenessProbe) {
     this.livenessProbe = livenessProbe;
     return this;
@@ -180,6 +205,14 @@ public class ServerPod {
     return livenessProbe;
   }
 
+  public ProbeTuning getLivenessProbe() {
+    return livenessProbe;
+  }
+
+  public void setLivenessProbe(ProbeTuning livenessProbe) {
+    this.livenessProbe = livenessProbe;
+  }
+
   public ServerPod readinessProbe(ProbeTuning readinessProbe) {
     this.readinessProbe = readinessProbe;
     return this;
@@ -187,6 +220,14 @@ public class ServerPod {
 
   public ProbeTuning readinessProbe() {
     return readinessProbe;
+  }
+
+  public ProbeTuning getReadinessProbe() {
+    return readinessProbe;
+  }
+
+  public void setReadinessProbe(ProbeTuning readinessProbe) {
+    this.readinessProbe = readinessProbe;
   }
 
   public ServerPod nodeSelector(Map<String, String> nodeSelector) {
@@ -206,6 +247,14 @@ public class ServerPod {
     return this;
   }
 
+  public Map<String, String> getNodeSelector() {
+    return nodeSelector;
+  }
+
+  public void setNodeSelector(Map<String, String> nodeSelector) {
+    this.nodeSelector = nodeSelector;
+  }
+
   public ServerPod affinity(V1Affinity affinity) {
     this.affinity = affinity;
     return this;
@@ -215,6 +264,14 @@ public class ServerPod {
     return affinity;
   }
 
+  public V1Affinity getAffinity() {
+    return affinity;
+  }
+
+  public void setAffinity(V1Affinity affinity) {
+    this.affinity = affinity;
+  }
+
   public ServerPod priorityClassName(String priorityClassName) {
     this.priorityClassName = priorityClassName;
     return this;
@@ -222,6 +279,14 @@ public class ServerPod {
 
   public String priorityClassName() {
     return priorityClassName;
+  }
+
+  public String getPriorityClassName() {
+    return priorityClassName;
+  }
+
+  public void setPriorityClassName(String priorityClassName) {
+    this.priorityClassName = priorityClassName;
   }
 
   public ServerPod readinessGates(List<V1PodReadinessGate> readinessGates) {
@@ -241,6 +306,14 @@ public class ServerPod {
     return this;
   }
 
+  public List<V1PodReadinessGate> getReadinessGates() {
+    return readinessGates;
+  }
+
+  public void setReadinessGates(List<V1PodReadinessGate> readinessGates) {
+    this.readinessGates = readinessGates;
+  }
+
   public ServerPod restartPolicy(String restartPolicy) {
     this.restartPolicy = restartPolicy;
     return this;
@@ -248,6 +321,14 @@ public class ServerPod {
 
   public String restartPolicy() {
     return restartPolicy;
+  }
+
+  public String getRestartPolicy() {
+    return restartPolicy;
+  }
+
+  public void setRestartPolicy(String restartPolicy) {
+    this.restartPolicy = restartPolicy;
   }
 
   public ServerPod runtimeClassName(String runtimeClassName) {
@@ -259,6 +340,14 @@ public class ServerPod {
     return runtimeClassName;
   }
 
+  public String getRuntimeClassName() {
+    return runtimeClassName;
+  }
+
+  public void setRuntimeClassName(String runtimeClassName) {
+    this.runtimeClassName = runtimeClassName;
+  }
+
   public ServerPod nodeName(String nodeName) {
     this.nodeName = nodeName;
     return this;
@@ -268,6 +357,14 @@ public class ServerPod {
     return nodeName;
   }
 
+  public String getNodeName() {
+    return nodeName;
+  }
+
+  public void setNodeName(String nodeName) {
+    this.nodeName = nodeName;
+  }
+
   public ServerPod schedulerName(String schedulerName) {
     this.schedulerName = schedulerName;
     return this;
@@ -275,6 +372,14 @@ public class ServerPod {
 
   public String schedulerName() {
     return schedulerName;
+  }
+
+  public String getSchedulerName() {
+    return schedulerName;
+  }
+
+  public void setSchedulerName(String schedulerName) {
+    this.schedulerName = schedulerName;
   }
 
   public ServerPod tolerations(List<V1Toleration> tolerations) {
@@ -294,6 +399,14 @@ public class ServerPod {
     return this;
   }
 
+  public List<V1Toleration> getTolerations() {
+    return tolerations;
+  }
+
+  public void setTolerations(List<V1Toleration> tolerations) {
+    this.tolerations = tolerations;
+  }
+
   public ServerPod serviceAccountName(String serviceAccountName) {
     this.serviceAccountName = serviceAccountName;
     return this;
@@ -301,6 +414,14 @@ public class ServerPod {
 
   public String serviceAccountName() {
     return serviceAccountName;
+  }
+
+  public String getServiceAccountName() {
+    return serviceAccountName;
+  }
+
+  public void setServiceAccountName(String serviceAccountName) {
+    this.serviceAccountName = serviceAccountName;
   }
 
   public ServerPod resources(V1ResourceRequirements resources) {
@@ -312,6 +433,14 @@ public class ServerPod {
     return resources;
   }
 
+  public V1ResourceRequirements getResources() {
+    return resources;
+  }
+
+  public void setResources(V1ResourceRequirements resources) {
+    this.resources = resources;
+  }
+
   public ServerPod podSecurityContext(V1PodSecurityContext podSecurityContext) {
     this.podSecurityContext = podSecurityContext;
     return this;
@@ -319,6 +448,14 @@ public class ServerPod {
 
   public V1PodSecurityContext podSecurityContext() {
     return podSecurityContext;
+  }
+
+  public V1PodSecurityContext getPodSecurityContext() {
+    return podSecurityContext;
+  }
+
+  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    this.podSecurityContext = podSecurityContext;
   }
 
   public ServerPod initContainers(List<V1Container> initContainers) {
@@ -338,6 +475,14 @@ public class ServerPod {
     return this;
   }
 
+  public List<V1Container> getInitContainers() {
+    return initContainers;
+  }
+
+  public void setInitContainers(List<V1Container> initContainers) {
+    this.initContainers = initContainers;
+  }
+
   public ServerPod containers(List<V1Container> containers) {
     this.containers = containers;
     return this;
@@ -355,6 +500,14 @@ public class ServerPod {
     return this;
   }
 
+  public List<V1Container> getContainers() {
+    return containers;
+  }
+
+  public void setContainers(List<V1Container> containers) {
+    this.containers = containers;
+  }
+
   public ServerPod shutdown(Shutdown shutdown) {
     this.shutdown = shutdown;
     return this;
@@ -364,6 +517,14 @@ public class ServerPod {
     return shutdown;
   }
 
+  public Shutdown getShutdown() {
+    return shutdown;
+  }
+
+  public void setShutdown(Shutdown shutdown) {
+    this.shutdown = shutdown;
+  }
+
   public ServerPod containerSecurityContext(V1SecurityContext containerSecurityContext) {
     this.containerSecurityContext = containerSecurityContext;
     return this;
@@ -371,6 +532,14 @@ public class ServerPod {
 
   public V1SecurityContext containerSecurityContext() {
     return containerSecurityContext;
+  }
+
+  public V1SecurityContext getContainerSecurityContext() {
+    return containerSecurityContext;
+  }
+
+  public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
+    this.containerSecurityContext = containerSecurityContext;
   }
 
   public ServerPod volumes(List<V1Volume> volumes) {
@@ -390,6 +559,14 @@ public class ServerPod {
     return this;
   }
 
+  public List<V1Volume> getVolumes() {
+    return volumes;
+  }
+
+  public void setVolumes(List<V1Volume> volumes) {
+    this.volumes = volumes;
+  }
+
   public ServerPod volumeMounts(List<V1VolumeMount> volumeMounts) {
     this.volumeMounts = volumeMounts;
     return this;
@@ -405,6 +582,14 @@ public class ServerPod {
     }
     volumeMounts.add(volumeMountsItem);
     return this;
+  }
+
+  public List<V1VolumeMount> getVolumeMounts() {
+    return volumeMounts;
+  }
+
+  public void setVolumeMounts(List<V1VolumeMount> volumeMounts) {
+    this.volumeMounts = volumeMounts;
   }
 
   @Override
@@ -501,5 +686,4 @@ public class ServerPod {
         .append(volumeMounts)
         .toHashCode();
   }
-
 }

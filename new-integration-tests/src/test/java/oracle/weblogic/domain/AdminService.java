@@ -15,11 +15,11 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description =
-    "AdminService describes which of the Administration Server's WebLogic admin channels should be exposed outside"
-        + " the Kubernetes cluster via a node port service.")
+@ApiModel(
+    description =
+        "AdminService describes which of the Administration Server's WebLogic admin channels should be exposed outside"
+            + " the Kubernetes cluster via a node port service.")
 public class AdminService {
-
   @ApiModelProperty(
       "Specifies which of the Administration Server's WebLogic channels should be exposed outside "
           + "the Kubernetes cluster via a node port service, along with the node port for "
@@ -50,6 +50,14 @@ public class AdminService {
     return this;
   }
 
+  public List<Channel> getChannels() {
+    return channels;
+  }
+
+  public void setChannels(List<Channel> channels) {
+    this.channels = channels;
+  }
+
   public AdminService labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
@@ -65,6 +73,14 @@ public class AdminService {
     }
     labels.put(key, labelsItem);
     return this;
+  }
+
+  public Map<String, String> getLabels() {
+    return labels;
+  }
+
+  public void setLabels(Map<String, String> labels) {
+    this.labels = labels;
   }
 
   public AdminService annotations(Map<String, String> annotations) {
@@ -84,6 +100,14 @@ public class AdminService {
     return this;
   }
 
+  public Map<String, String> getAnnotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(Map<String, String> annotations) {
+    this.annotations = annotations;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -95,11 +119,7 @@ public class AdminService {
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder()
-        .append(channels)
-        .append(labels)
-        .append(annotations)
-        .toHashCode();
+    return new HashCodeBuilder().append(channels).append(labels).append(annotations).toHashCode();
   }
 
   @Override
@@ -118,5 +138,4 @@ public class AdminService {
         .append(annotations, rhs.annotations)
         .isEquals();
   }
-
 }

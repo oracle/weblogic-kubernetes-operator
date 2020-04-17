@@ -10,7 +10,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
-@ApiModel(description = "DomainCondition contains details for the current condition of this domain.")
+@ApiModel(
+    description = "DomainCondition contains details for the current condition of this domain.")
 public class DomainCondition {
 
   @ApiModelProperty(
@@ -42,6 +43,14 @@ public class DomainCondition {
     return type;
   }
 
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
   public DomainCondition lastProbeTime(DateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
     return this;
@@ -49,6 +58,14 @@ public class DomainCondition {
 
   public DateTime lastProbeTime() {
     return lastProbeTime;
+  }
+
+  public DateTime getLastProbeTime() {
+    return lastProbeTime;
+  }
+
+  public void setLastProbeTime(DateTime lastProbeTime) {
+    this.lastProbeTime = lastProbeTime;
   }
 
   public DomainCondition lastTransitionTime(DateTime lastTransitionTime) {
@@ -60,6 +77,14 @@ public class DomainCondition {
     return lastTransitionTime;
   }
 
+  public DateTime getLastTransitionTime() {
+    return lastTransitionTime;
+  }
+
+  public void setLastTransitionTime(DateTime lastTransitionTime) {
+    this.lastTransitionTime = lastTransitionTime;
+  }
+
   public DomainCondition message(String message) {
     this.message = message;
     return this;
@@ -67,6 +92,14 @@ public class DomainCondition {
 
   public String message() {
     return message;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
   }
 
   public DomainCondition reason(String reason) {
@@ -78,6 +111,14 @@ public class DomainCondition {
     return reason;
   }
 
+  public String getReason() {
+    return reason;
+  }
+
+  public void setReason(String reason) {
+    this.reason = reason;
+  }
+
   public DomainCondition status(String status) {
     this.status = status;
     return this;
@@ -85,6 +126,14 @@ public class DomainCondition {
 
   public String status() {
     return status;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
   }
 
   @Override
@@ -130,5 +179,4 @@ public class DomainCondition {
         .append(status, rhs.status)
         .isEquals();
   }
-
 }
