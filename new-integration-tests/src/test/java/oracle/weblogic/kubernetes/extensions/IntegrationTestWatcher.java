@@ -228,6 +228,25 @@ public class IntegrationTestWatcher implements
   }
 
   /**
+   * Called when the test method is successful.
+   * @param context the current extension context
+   */
+  @Override
+  public void testSuccessful(ExtensionContext context) {
+    printHeader(String.format("Test passed %s.%s()", className, methodName), "+");
+  }
+
+  /**
+   * Called when the test method fails.
+   * @param context the current extension context
+   * @param cause of failures throwable
+   */
+  @Override
+  public void testFailed(ExtensionContext context, Throwable cause) {
+    printHeader(String.format("Test FAILED %s.%s()", className, methodName), "!");
+  }
+
+  /**
    * Intercept the invocation of a @AfterAll method.
    * Prints log messages to separate the afterAll methods.
    * @param invocation the invocation that is being intercepted
