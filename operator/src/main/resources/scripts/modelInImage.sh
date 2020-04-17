@@ -716,8 +716,9 @@ function encrypt_decrypt_model() {
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
-    "described in runtimeEncryptionSecret in the domain resource has been changed since the creation of the domain. " \
-    " You can either reset the password to the original one and try again or delete the domain and recreates it."
+    "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
+    "creation of the domain. You can either reset the password to the original one and try again or delete "\
+    "and recreate the domain."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exitOrLoop
   fi
@@ -756,8 +757,9 @@ function encrypt_decrypt_domain_secret() {
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
-    "described in runtimeEncryptionSecret in the domain resource has been changed since the creation of the domain. " \
-    " You can either reset the password to the original one and try again or delete the domain and recreates it."
+    "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
+    "creation of the domain. You can either reset the password to the original one and try again or delete "\
+    "and recreate the domain."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exitOrLoop
   fi
