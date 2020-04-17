@@ -19,10 +19,6 @@ public class DomainList {
   @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;
 
-  @ApiModelProperty(
-      "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
-  private List<Domain> items = new ArrayList<Domain>();
-
   @ApiModelProperty("The type of resource. Must be 'DomainList'.")
   private String kind;
 
@@ -30,6 +26,10 @@ public class DomainList {
       "Standard list metadata. "
           + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
   private V1ListMeta metadata;
+
+  @ApiModelProperty(
+      "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
+  private List<Domain> items = new ArrayList<Domain>();
 
   public DomainList apiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
@@ -40,13 +40,12 @@ public class DomainList {
     return apiVersion;
   }
 
-  public DomainList items(List<Domain> items) {
-    this.items = items;
-    return this;
+  public String getApiVersion() {
+    return apiVersion;
   }
 
-  public List<Domain> items() {
-    return items;
+  public void setApiVersion(String apiVersion) {
+    this.apiVersion = apiVersion;
   }
 
   public DomainList kind(String kind) {
@@ -58,6 +57,14 @@ public class DomainList {
     return kind;
   }
 
+  public String getKind() {
+    return kind;
+  }
+
+  public void setKind(String kind) {
+    this.kind = kind;
+  }
+
   public DomainList metadata(V1ListMeta metadata) {
     this.metadata = metadata;
     return this;
@@ -67,23 +74,48 @@ public class DomainList {
     return metadata;
   }
 
+  public V1ListMeta getMetadata() {
+    return metadata;
+  }
+
+  public void setMetadata(V1ListMeta metadata) {
+    this.metadata = metadata;
+  }
+
+  public DomainList items(List<Domain> items) {
+    this.items = items;
+    return this;
+  }
+
+  public List<Domain> items() {
+    return items;
+  }
+
+  public List<Domain> getItems() {
+    return items;
+  }
+
+  public void setItems(List<Domain> items) {
+    this.items = items;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("apiVersion", apiVersion)
-        .append("items", items)
         .append("kind", kind)
         .append("metadata", metadata)
+        .append("items", items)
         .toString();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(metadata)
         .append(apiVersion)
-        .append(items)
         .append(kind)
+        .append(metadata)
+        .append(items)
         .toHashCode();
   }
 
@@ -98,11 +130,10 @@ public class DomainList {
     }
     DomainList rhs = (DomainList) other;
     return new EqualsBuilder()
-        .append(metadata, rhs.metadata)
         .append(apiVersion, rhs.apiVersion)
-        .append(items, rhs.items)
         .append(kind, rhs.kind)
+        .append(metadata, rhs.metadata)
+        .append(items, rhs.items)
         .isEquals();
   }
-
 }
