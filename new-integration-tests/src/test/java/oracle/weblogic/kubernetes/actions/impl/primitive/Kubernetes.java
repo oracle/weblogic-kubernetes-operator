@@ -598,7 +598,12 @@ public class Kubernetes implements LoggedTest {
    * @return List of Domain Custom Resources
    */
   public static DomainList listDomains(String namespace) {
-    KubernetesApiResponse<DomainList> response = crdClient.list(namespace);
+    KubernetesApiResponse<DomainList> response = null;
+    try {
+      response = crdClient.list(namespace);
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+    }
     return response != null ? response.getObject() : new DomainList();
   }
 
