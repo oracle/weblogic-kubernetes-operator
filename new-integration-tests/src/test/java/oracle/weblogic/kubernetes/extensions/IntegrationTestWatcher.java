@@ -292,6 +292,11 @@ public class IntegrationTestWatcher implements
    */
   private void collectLogs(ExtensionContext extensionContext, String failedStage) {
     logger.info("Collecting logs...");
+    if (namespaces == null || namespaces.isEmpty()) {
+      logger.warning("Namespace list is empty, "
+          + "see if the test class is annotated with @ITNamespaces(numofns = <n>)");
+      return;
+    }
     Path resultDir = null;
     try {
       resultDir = Files.createDirectories(Paths.get(LOGS_DIR,
