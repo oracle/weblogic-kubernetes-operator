@@ -82,8 +82,11 @@ public class LoggingUtil {
     writeToFile(Kubernetes.listDeployments(namespace), resultDir.toString(), namespace + "_deploy.log");
     // get replicasets
     writeToFile(Kubernetes.listReplicaSets(namespace), resultDir.toString(), namespace + "_rs.log");
-    // get Domain
-    writeToFile(Kubernetes.getDomainObjects(), resultDir.toString(), namespace + "_domain.log");
+    // get all Domain objects in all namespaces
+    writeToFile(Kubernetes.getDomainObjects(), resultDir.toString(), "get_all_domains.log");
+    // get all Domain objects in given namespace
+    writeToFile(Kubernetes.getDomainObjects(namespace), resultDir.toString(), namespace + "_get_domains.log");
+    // writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_list_domains.log");
     // get domain/operator pods
     for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
       if (pod.getMetadata() != null) {
@@ -103,11 +106,14 @@ public class LoggingUtil {
    * @throws IOException when write fails
    */
   private static void writeToFile(Object obj, String resultDir, String fileName) throws IOException {
+    logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       logger.info("Generating {0}", Paths.get(resultDir, fileName));
       Files.write(Paths.get(resultDir, fileName),
           dump(obj).getBytes(StandardCharsets.UTF_8)
       );
+    } else {
+      logger.info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
     }
   }
 
