@@ -70,10 +70,9 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .chartName("traefik")
         .chartValuesFile(projectRoot + "/../kubernetes/samples/charts/traefik/values.yaml");
 
-    TraefikParams tfParams =
-        new TraefikParams()
-            .helmParams(tfHelmParams)
-            .nameSpaces("{" + tfNamespace + "}");
+    TraefikParams tfParams = new TraefikParams()
+        .helmParams(tfHelmParams)
+        .nameSpaces("{" + tfNamespace + "}");
 
     // install Traefik
     assertThat(installTraefik(tfParams))
@@ -95,7 +94,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
         // this listener lets us report some status with each poll
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for operator to be running (elapsed time {0}ms, remaining time {1}ms)",
+                "Waiting for traefik to be running (elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         // and here we can set the maximum time we are prepared to wait
@@ -118,10 +117,9 @@ class ItSimpleTraefikValidation implements LoggedTest {
             .namespace(tfNamespace)
             .chartDir("stable/traefik");
 
-    TraefikParams tfParams =
-            new TraefikParams()
-                    .helmParams(tfHelmParams)
-                    .nameSpaces("{" + tfNamespace + "," + domainNamespace1 + "}");
+    TraefikParams tfParams = new TraefikParams()
+            .helmParams(tfHelmParams)
+            .nameSpaces("{" + tfNamespace + "," + domainNamespace1 + "}");
 
     // upgrade Traefik
     assertThat(upgradeTraefik(tfParams))
@@ -137,7 +135,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   @Test
-  @Order(2)
+  @Order(3)
   @DisplayName("Create a ingress per domain")
   public void testCreatingIngress() {
     // helm install parameters for ingress
@@ -173,7 +171,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
           .isTrue();
     }
 
-    // Delete tfNamespace
+    // Delete traefik Namespace
     if (tfNamespace != null) {
       assertThatCode(
           () -> deleteNamespace(tfNamespace))

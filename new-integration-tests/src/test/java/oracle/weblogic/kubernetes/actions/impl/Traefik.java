@@ -56,8 +56,7 @@ public class Traefik {
 
   /**
    * Uninstall Ingress on a wls domain namespace
-   * @param params the parameters to helm uninstall command, including release name and wls domain namespace containing
-   *               the ingress
+   * @param params the parameters to helm uninstall command, release name and wls domain namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstallIngress(HelmParams params) {
