@@ -1558,8 +1558,8 @@ public class ItMonitoringExporter extends BaseTest {
       TestUtils.copyFile(pvcYaml, okepvcYaml);
       TestUtils.replaceStringInFile(okepvYaml, "NFS_SERVER", "10.0.10.6");
       TestUtils.replaceStringInFile(okepvYaml, "FSS_DIR", fssPath);
-      TestUtils.replaceStringInFile(okepvYaml, "UID", "monitoring");;
-      TestUtils.replaceStringInFile(okepvcYaml, "UID", "monitoring");
+      TestUtils.replaceStringInFile(okepvYaml, "TESTUID", "monitoring");;
+      TestUtils.replaceStringInFile(okepvcYaml, "TESTUID", "monitoring");
 
 
       cmd = " kubectl apply -f " + okepvYaml;
@@ -1573,7 +1573,7 @@ public class ItMonitoringExporter extends BaseTest {
 
       StringBuffer cmdRemove = new StringBuffer();
       cmdRemove.append(BaseTest.getProjectRoot())
-              .append("/src/integration-tests/bash/krun.sh -t 240 -m ")
+              .append("/src/integration-tests/bash/krun.sh -t 240 -l Always -p monitoringpod -m ")
               .append("cleanupoke-monitoring-pvc:/shared/")
               .append(" -n cleanupoke -c \"rm -rf /shared/* \"");
 

@@ -2250,7 +2250,7 @@ public class TestUtils {
     try {
       deleteDomainHomeDirOke("deleteall");
     } catch (Exception ex) {
-      LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
+      LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed " + ex.getMessage());
     }
   }
 
@@ -2271,8 +2271,8 @@ public class TestUtils {
     TestUtils.copyFile(resourceDir + "cleanupokepvc.yaml",pvcYaml);
     replaceStringInFile(pvYaml, "NFS_SERVER", BaseTest.NFS_SERVER);
     replaceStringInFile(pvYaml, "FSS_DIR", BaseTest.FSS_DIR);
-    replaceStringInFile(pvYaml, "UID", domainUid);
-    replaceStringInFile(pvcYaml, "UID", domainUid);
+    replaceStringInFile(pvYaml, "TESTUID", domainUid);
+    replaceStringInFile(pvcYaml, "TESTUID", domainUid);
 
     cmd = " kubectl apply -f " + pvYaml;
     ExecResult result = ExecCommand.exec(cmd);
@@ -2284,7 +2284,10 @@ public class TestUtils {
             Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout());
     StringBuffer cmdRemove = new StringBuffer();
     cmdRemove.append(BaseTest.getProjectRoot())
-            .append("/src/integration-tests/bash/krun.sh -t 240 -m ")
+            .append("/src/integration-tests/bash/krun.sh -t 240 -l Always ")
+            .append(" -p ")
+            .append(domainUid)
+            .append(" -m ")
             .append("cleanupoke-")
             .append(domainUid)
             .append("-pvc:/shared/")
@@ -2300,12 +2303,6 @@ public class TestUtils {
     cmd = cmdRemove.toString();
     LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
     result = ExecCommand.exec(cmd);
-    LoggerHelper.getLocal().log(
-            Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
-    if (result.exitValue() != 0 && !(result.stderr()).contains("No such file or directory")) {
-      //retry
-      result = ExecCommand.exec(cmd);
-    }
     LoggerHelper.getLocal().log(
             Level.INFO, "rm -rf output " + result.stdout() + " err " + result.stderr());
 

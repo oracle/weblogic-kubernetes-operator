@@ -4,12 +4,12 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: cleanupoke-UID-pv
+  name: cleanupoke-TESTUID-pv
   labels:
     weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: UID
+    weblogic.domainUID: TESTUID
 spec:
-  storageClassName: cleanupoke-UID-storage-class
+  storageClassName: cleanupoke-TESTUID-storage-class
   capacity:
     storage: 10Gi
   accessModes:
