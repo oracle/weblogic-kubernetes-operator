@@ -577,7 +577,6 @@ function generateMergedModel() {
   ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
   ret=$?
-  trace "RETURNING $ret"
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Failed: Validate Model Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
@@ -785,7 +784,7 @@ function error_handler() {
 
 function start_trap() {
     set -eE
-    trap 'error_handler $? $LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
+    trap 'error_handler $? $BASH_LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
 }
 
 function stop_trap() {

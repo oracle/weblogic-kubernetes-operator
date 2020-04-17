@@ -17,7 +17,7 @@ from oracle.weblogic.deploy.encrypt import EncryptionException
 from java.lang import String
 import sys, os, traceback
 from java.lang import System
-import utils
+from utils import trace
 
 def decrypt_file(cipher_text, password, outputfile):
       try:
