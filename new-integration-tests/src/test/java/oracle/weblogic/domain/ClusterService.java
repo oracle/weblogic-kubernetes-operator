@@ -38,6 +38,14 @@ public class ClusterService {
     return this;
   }
 
+  public Map<String, String> getLabels() {
+    return labels;
+  }
+
+  public void setLabels(Map<String, String> labels) {
+    this.labels = labels;
+  }
+
   public ClusterService annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
@@ -53,6 +61,14 @@ public class ClusterService {
     }
     annotations.put(key, annotationsItem);
     return this;
+  }
+
+  public Map<String, String> getAnnotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(Map<String, String> annotations) {
+    this.annotations = annotations;
   }
 
   @Override

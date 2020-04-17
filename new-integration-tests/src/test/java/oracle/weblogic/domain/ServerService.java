@@ -34,6 +34,14 @@ public class ServerService {
     return precreateService;
   }
 
+  public Boolean getPrecreateService() {
+    return precreateService;
+  }
+
+  public void setPrecreateService(Boolean precreateService) {
+    this.precreateService = precreateService;
+  }
+
   public ServerService labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
@@ -51,6 +59,14 @@ public class ServerService {
     return this;
   }
 
+  public Map<String, String> getLabels() {
+    return labels;
+  }
+
+  public void setLabels(Map<String, String> labels) {
+    this.labels = labels;
+  }
+
   public ServerService annotations(Map<String, String> annotations) {
     this.annotations = annotations;
     return this;
@@ -66,6 +82,14 @@ public class ServerService {
     }
     annotations.put(key, annotationsItem);
     return this;
+  }
+
+  public Map<String, String> getAnnotations() {
+    return annotations;
+  }
+
+  public void setAnnotations(Map<String, String> annotations) {
+    this.annotations = annotations;
   }
 
   @Override
@@ -102,5 +126,4 @@ public class ServerService {
         .append(annotations)
         .toHashCode();
   }
-
 }
