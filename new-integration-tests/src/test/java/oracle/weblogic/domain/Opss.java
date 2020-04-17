@@ -13,8 +13,7 @@ public class Opss {
   @ApiModelProperty("Secret containing the OPSS key wallet file.")
   private String walletFileSecret;
 
-  @ApiModelProperty(
-      "Secret containing OPSS key passphrase.")
+  @ApiModelProperty("Secret containing OPSS key passphrase.")
   private String walletPasswordSecret;
 
   public Opss walletFileSecret(String walletFileSecret) {
@@ -26,6 +25,14 @@ public class Opss {
     return this.walletFileSecret;
   }
 
+  public String getWalletFileSecret() {
+    return walletFileSecret;
+  }
+
+  public void setWalletFileSecret(String walletFileSecret) {
+    this.walletFileSecret = walletFileSecret;
+  }
+
   public Opss walletPasswordSecret(String walletPasswordSecret) {
     this.walletPasswordSecret = walletPasswordSecret;
     return this;
@@ -33,6 +40,14 @@ public class Opss {
 
   public String walletPasswordSecret() {
     return this.walletPasswordSecret;
+  }
+
+  public String getWalletPasswordSecret() {
+    return walletPasswordSecret;
+  }
+
+  public void setWalletPasswordSecret(String walletPasswordSecret) {
+    this.walletPasswordSecret = walletPasswordSecret;
   }
 
   @Override
@@ -47,9 +62,8 @@ public class Opss {
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder = new HashCodeBuilder()
-        .append(walletFileSecret)
-        .append(walletPasswordSecret);
+    HashCodeBuilder builder =
+        new HashCodeBuilder().append(walletFileSecret).append(walletPasswordSecret);
 
     return builder.toHashCode();
   }
@@ -71,5 +85,4 @@ public class Opss {
 
     return builder.isEquals();
   }
-
 }
