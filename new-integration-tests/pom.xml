@@ -31,6 +31,7 @@
         <assertj.core.version>3.15.0</assertj.core.version>
         <swagger-core-version>1.6.0</swagger-core-version>
         <client-java-version>8.0.0</client-java-version>
+        <commons.io.version>2.6</commons.io.version>
         <awaitility-version>4.0.2</awaitility-version>
         <skipITs>false</skipITs>
         <maven.compiler.source>11</maven.compiler.source>
@@ -91,6 +92,11 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+          <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -359,6 +365,11 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons.io.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -80,7 +80,7 @@ The operator can expose an external REST HTTPS interface which can be accessed f
 To enable the external REST interface, configure these values in a custom configuration file, or on the Helm command line:
 
 * Set `externalRestEnabled` to `true`.
-* Set `externalRestIdentitySecret` to the name of the kubernetes `tls secret` that contains the certificate(s) and private key.
+* Set `externalRestIdentitySecret` to the name of the Kubernetes `tls secret` that contains the certificates and private key.
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
 For more detailed information, see the [REST interface configuration]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#rest-interface-configuration">}}) values.
@@ -89,7 +89,7 @@ For more detailed information, see the [REST interface configuration]({{<relref 
 
 For testing purposes, the WebLogic Server Kubernetes Operator project provides a sample script
 that generates a self-signed certificate and private key for the operator external REST interface.
-The generated certificate and key is stored in a Kubernetes `tls secret` and the sample
+The generated certificate and key are stored in a Kubernetes `tls secret` and the sample
 script outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.
 
 {{% notice warning %}}

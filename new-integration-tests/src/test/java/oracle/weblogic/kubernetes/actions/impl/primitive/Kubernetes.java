@@ -106,16 +106,6 @@ public class Kubernetes implements LoggedTest {
             apiClient //the api client
         );
 
-    roleBindingClient =
-        new GenericKubernetesApi<>(
-            V1ClusterRoleBinding.class,  // the api type class
-            V1ClusterRoleBindingList.class, // the api list type class
-            "rbac.authorization.k8s.io", // the api group
-            "v1", // the api version
-            "clusterrolebindings", // the resource plural
-            apiClient //the api client
-        );
-
     crdClient =
         new GenericKubernetesApi<>(
             Domain.class,  // the api type class
@@ -163,6 +153,16 @@ public class Kubernetes implements LoggedTest {
             "", // the api group
             "v1", // the api version
             "persistentvolumeclaims", // the resource plural
+            apiClient //the api client
+        );
+
+    roleBindingClient =
+        new GenericKubernetesApi<>(
+            V1ClusterRoleBinding.class,  // the api type class
+            V1ClusterRoleBindingList.class, // the api list type class
+            "rbac.authorization.k8s.io", // the api group
+            "v1", // the api version
+            "clusterrolebindings", // the resource plural
             apiClient //the api client
         );
 

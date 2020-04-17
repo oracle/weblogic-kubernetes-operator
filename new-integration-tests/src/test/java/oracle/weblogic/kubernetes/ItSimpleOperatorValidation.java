@@ -142,10 +142,10 @@ class ItSimpleOperatorValidation implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         // this listener lets us report some status with each poll
         .conditionEvaluationListener(
-            condition -> logger.info(()
-                -> String.format("Waiting for operator to be running (elapsed time %dms, remaining time %dms)",
+            condition -> logger.info(
+                "Waiting for operator to be running (elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS())))
+                condition.getRemainingTimeInMS()))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
@@ -179,7 +179,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
           .as("Test that deleteNamespace doesn not throw an exception")
           .withFailMessage("deleteNamespace() threw an exception")
           .doesNotThrowAnyException();
-      logger.info("Deleted namespace: " + domainNamespace1);
+      logger.info("Deleted namespace: {0}", domainNamespace1);
     }
 
     if (domainNamespace2 != null) {
@@ -188,7 +188,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
           .as("Test that deleteNamespace doesn not throw an exception")
           .withFailMessage("deleteNamespace() threw an exception")
           .doesNotThrowAnyException();
-      logger.info("Deleted namespace: " + domainNamespace2);
+      logger.info("Deleted namespace: {0}", domainNamespace2);
     }
 
     // Delete opNamespace
@@ -198,7 +198,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
           .as("Test that deleteNamespace doesn not throw an exception")
           .withFailMessage("deleteNamespace() threw an exception")
           .doesNotThrowAnyException();
-      logger.info("Deleted namespace: " + opNamespace);
+      logger.info("Deleted namespace: {0}", opNamespace);
     }
 
   }

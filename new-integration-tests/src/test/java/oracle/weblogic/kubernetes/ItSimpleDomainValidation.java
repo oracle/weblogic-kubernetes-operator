@@ -40,14 +40,14 @@ class ItSimpleDomainValidation implements LoggedTest {
     // get a new unique namespace
     final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
         "Failed to create unique namespace due to ApiException");
-    logger.info(String.format("Got a new namespace called %s", namespace));
+    logger.info("Got a new namespace called {0}", namespace);
 
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";
     final V1ServiceAccount serviceAccount = assertDoesNotThrow(
         () -> Kubernetes.createServiceAccount(new V1ServiceAccount()
             .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
-    logger.info("Created service account: " + serviceAccount.getMetadata().getName());
+    logger.info("Created service account: {0}", serviceAccount.getMetadata().getName());
 
     // create the domain CR
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
@@ -73,11 +73,10 @@ class ItSimpleDomainValidation implements LoggedTest {
     with().pollDelay(30, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
-            condition -> logger.info(() ->
-                String.format(
-                    "Waiting for domain to be running (elapsed time %dms, remaining time %dms)",
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS())))
+            condition -> logger.info(
+                "Waiting for domain to be running (elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
@@ -89,17 +88,18 @@ class ItSimpleDomainValidation implements LoggedTest {
 
     // Delete domain custom resource
     assertTrue(deleteDomainCustomResource(domainUID, namespace));
-    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + namespace);
+    logger.info("Deleted Domain Custom Resource {0} from {1}", domainUID, namespace);
 
     // Delete service account from unique namespace
     assertTrue(deleteServiceAccount(serviceAccount.getMetadata().getName(),
             serviceAccount.getMetadata().getNamespace()));
-    logger.info("Deleted service account '" + serviceAccount.getMetadata().getName()
-        + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
+    logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
+        + "\' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
     // Delete namespace
     assertTrue(TestActions.deleteNamespace(namespace));
-    logger.info("Deleted namespace: " + namespace);
+
+    logger.info("Deleted namespace: {0}", namespace);
   }
 
 }

@@ -3,9 +3,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.Before;
@@ -74,7 +74,7 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
 
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, null));
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test

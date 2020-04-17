@@ -17,7 +17,7 @@ and WebLogic Server pods and services.
 
 Before you begin, read this document, [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
 
-The following prerequisites must be handled prior to running the create domain script:
+The following prerequisites must be met prior to running the create domain script:
 
 * Make sure the WebLogic Server Kubernetes Operator is running.
 * The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
@@ -102,7 +102,7 @@ The following parameters can be provided in the inputs file.
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
-| `adminPort` | Port number for the Administration Server inside the Kubernetes cluster. | `7001` |
+| `adminPort` | Port number of the Administration Server inside the Kubernetes cluster. | `7001` |
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
@@ -116,11 +116,11 @@ The following parameters can be provided in the inputs file.
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | WebLogic Docker image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. Refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
-| `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
+| `image` | WebLogic Docker image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
+| `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified. |  |
-| `includeServerOutInPodLog` | Boolean indicating whether to include the server .out to the pod's stdout. | `true` |
-| `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
+| `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
+| `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
 | `logHome` | The in-pod location for the domain log, server logs, server out, Node Manager log, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
@@ -129,9 +129,9 @@ The following parameters can be provided in the inputs file.
 | `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc`. | `domain1-weblogic-sample-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
 | `serverStartPolicy` | Determines which WebLogic Server instances will be started. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
-| `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
-| `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only: In a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. | If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster |
-| `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's user name and password. If not specified, then the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `domain1-weblogic-credentials` |
+| `t3ChannelPort` | Port for the T3 channel of the network access point. | `30012` |
+| `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only, in a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. | If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster. |
+| `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server user name and password. If not specified, then the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `domain1-weblogic-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | `docker-store-secret` |
 | `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas. | `domain1` |

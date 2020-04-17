@@ -42,6 +42,9 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  */
 class CallTestSupport {
 
+  private static RequestParams REQUEST_PARAMS
+      = new RequestParams("testcall", "junit", "testName", "body");
+
   private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
   private static String toString(RequestParams requestParams, AdditionalParams additionalParams) {
@@ -182,9 +185,9 @@ class CallTestSupport {
 
     CallResponse getCallResponse() {
       if (result == null) {
-        return CallResponse.createFailure(new ApiException(), status);
+        return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(), status);
       } else {
-        return CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK);
+        return CallResponse.createSuccess(REQUEST_PARAMS, result, HttpURLConnection.HTTP_OK);
       }
     }
 

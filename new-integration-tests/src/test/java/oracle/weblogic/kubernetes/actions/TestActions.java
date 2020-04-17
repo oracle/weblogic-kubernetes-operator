@@ -15,6 +15,8 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
@@ -242,7 +244,7 @@ public class TestActions {
    *
    * @return an instance of WITParams that contains the default values
    */
-  public static WITParams withWITParams() {
+  public static WITParams defaultWITParams() {
     return
         WebLogicImageTool.defaultWITParams();
   }
@@ -440,6 +442,32 @@ public class TestActions {
    */
   public static boolean helmList(HelmParams params) {
     return Helm.list(params);
+  }
+  
+  // ------------------------ Application Builder  -------------------------
+
+  /**
+   * Create an AppParams instance that contains the default values.
+   *
+   * @return an AppParams instance that contains the default values
+   */
+  public static AppParams defaultAppParams() {
+    return
+        AppBuilder.defaultAppParams();
+  }
+
+  /**
+   * Create an application archive that can be used by WebLogic Image Tool
+   * to create an image with the application for a model-in-image use case.
+   *
+   * @param params the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean buildAppArchive(AppParams params) {
+    return
+        AppBuilder
+            .withParams(params)
+            .build();
   }
 
   // ------------------------ where does this go  -------------------------

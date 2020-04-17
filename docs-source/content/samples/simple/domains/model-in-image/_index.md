@@ -2,10 +2,10 @@
 title: "Model in image"
 date: 2019-02-23T17:32:31-05:00
 weight: 4
-description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the operator automatically expands into a full domain home during runtime."
+description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the operator expands into a full domain home during runtime."
 ---
 
-### Contents
+#### Contents
 
   - [Introduction](#introduction)
   - [References](#references)
@@ -18,12 +18,12 @@ description: "Sample for supplying a WebLogic Deploy Tool (WDT) model that the o
   - [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image)
   - [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)
   - [Optionally test the sample application](#optionally-test-the-sample-application)
-  - [Optionally access the WebLogic Server Console](#optionally-access-the-weblogic-server-console)
+  - [Optionally access the WebLogic Server Administration Console](#optionally-access-the-weblogic-server-administration-console)
   - [Cleanup](#cleanup)
 
-### Introduction
+#### Introduction
 
-This sample demonstrates deploying a Model in Image domain home source type. Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, a Model in Image deployment uses a WebLogic Deploy Tool (WDT) model to specify your WebLogic configuration. 
+This sample demonstrates deploying a Model in Image domain home source type. Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, a Model in Image deployment uses a WebLogic Deploy Tool (WDT) model to specify your WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
@@ -43,16 +43,16 @@ There are three types of domains supported by Model in Image: a standard `WLS` d
 
 The `JRF` domain path through the sample includes additional steps for deploying an infrastructure database and initializing the database using the Repository Creation Utility (RCU) tool. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products such as Oracle Communications products.
 
-### References
+#### References
 
 To reference the relevant user documentation, see:
- - [Model in Image User Guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
+ - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
  - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
  - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 
 
 
-### Prerequisites for all domain types
+#### Prerequisites for all domain types
 
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 installation. (`JAVA_HOME` is used by the WebLogic Image Tool.)
 
@@ -64,9 +64,7 @@ To reference the relevant user documentation, see:
    git clone https://github.com/oracle/weblogic-kubernetes-operator.git
    export SRCDIR=$(pwd)/weblogic-kubernetes-operator
    ```
-
-   We will refer to this environment variable later in this document.
-
+   
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
 3. Create a sample directory environment variable `SAMPLEDIR` that references this sample's directory:
@@ -75,8 +73,6 @@ To reference the relevant user documentation, see:
    export SAMPLEDIR=${SRCDIR}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/
    ```
 
-   We will refer to this environment variable later in this document.
-
 4. Create an empty, temporary working directory with 10g of space, and store its location in the `WORKDIR` environment variable. For example:
 
    ```
@@ -84,7 +80,7 @@ To reference the relevant user documentation, see:
    export WORKDIR=$(pwd)
    ```
 
-   We will refer to this environment variable later in this document, and it is used by the sample scripts. If you do not set this environement variable, then the sample scripts will default to `/tmp/$USER/model-in-image-sample-work-dir` where `$USER` is your user name.
+    If you do not set this environment variable, then the sample scripts will default to `/tmp/$USER/model-in-image-sample-work-dir` where `$USER` is your user name.
 
 5. Deploy the operator and set up the operator to manage the namespace, `sample-domain1-ns`. Optionally, deploy a Traefik load balancer that manages the same namespace. For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
@@ -125,9 +121,9 @@ To reference the relevant user documentation, see:
 
 8. If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains).
 
-> __NOTE__: Skip to section [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if you're not using a `JRF` domain type.
+> __NOTE__: Skip to section [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if you're **not** using a `JRF` domain type.
 
-### Prerequisites for JRF domains
+#### Prerequisites for JRF domains
 
 > __NOTE__: This section is only required for demonstrating a `JRF` domain type. Skip this section and proceed to [Use the WebLogic Image Tool to create an image](#use-the-weblogic-image-tool-to-create-an-image) if your domain type is `WLS` or `RestrictedJRF`.
 
@@ -269,7 +265,7 @@ To reuse the wallet for subsequent redeployments or share the RCU tables between
 
 See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}) for instructions.
 
-### Use the WebLogic Image Tool to create an image
+#### Use the WebLogic Image Tool to create an image
 
 A Model in Image image must contain a WebLogic install, a WebLogic Deploy Tool install, and your WDT model files. You can use the sample `./build.sh` script to build this image, which will perform the following steps for you:
 
@@ -324,7 +320,7 @@ docker push my.remote.registry.com/model-in-image:v1
 
 ```
 
-This domain template file will be used in the next step ([Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)) when it creates your final domain resource file.
+  This domain template file will be used in [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources), when it creates your final domain resource file.
 
 5. Export the environment variables for the image name and tag using the same values in step 1:
 
@@ -333,18 +329,18 @@ export MODEL_IMAGE_NAME="my.remote.registry.com/model-in-image"
 export MODEL_IMAGE_TAG="v1"
 ```
 
-These environment variables will be used in the next step ([Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources)) when it creates your final domain resource file.
+These environment variables will be used in [Create and deploy your Kubernetes resources](#create-and-deploy-your-kubernetes-resources), when it creates your final domain resource file.
 
-### Create and deploy your Kubernetes resources
+#### Create and deploy your Kubernetes resources
 
 To deploy the sample operator domain and its required Kubernetes resources, use the sample script, `$SAMPLEDIR/run_domain.sh`, which will perform the following steps for you:
 
   - Deletes the domain with a `DomainUID` of `domain1` in the namespace, `sample-domain1-ns`, if it already exists.
   - Creates a secret containing your WebLogic administrator user name and password.
   - Creates a secret containing your Model in Image runtime encryption password:
-    - All model-in-image domains must supply a runtime encryption secret with a `password` value.
-    - It is used to encrypt configuration that is passed around internally by the Operator.
-    - The value must be kept private but can be arbitrary: you can optionally supply a different secret value every time you restart the domain.
+    - All Model in Image domains must supply a runtime encryption secret with a `password` value.
+    - It is used to encrypt configuration that is passed around internally by the operator.
+    - The value must be kept private but can be arbitrary; you can optionally supply a different secret value every time you restart the domain.
   - Creates secrets containing your RCU access URL, credentials, and prefix (these are unused unless the domain type is `JRF`).
   - Creates a config map containing an additional WDT model properties file, `$SAMPLEDIR/model1.20.properties`.
   - Generates a domain resource YAML file, `$WORKDIR/k8s-domain.yaml`, using `$SAMPLEDIR/k8s-domain.yaml.template`.
@@ -366,10 +362,10 @@ At the end, you should see log statements like:
 
   @@ Info: To watch pods start and get their status, run 'kubectl get pods -n sample-domain1-ns --watch' and ctrl-c when done watching.
 
-  @@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> Debugging' in the documentation.
+  @@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> ' in the documentation.
   ```
 
-If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector run and your WebLogic Server pods start. The output should look something like this:
+If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector job run and your WebLogic Server pods start. The output should look something like this:
 
   ```
   $ kubectl get pods -n sample-domain1-ns --watch
@@ -395,7 +391,7 @@ If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see 
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-### Optionally test the sample application
+#### Optionally test the sample application
 
 1. Ensure Traefik has been installed and is servicing external port 30305, as per [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
@@ -455,19 +451,19 @@ If you see an error, then consult [Debugging]({{< relref "/userguide/managing-do
 
    **Note**: If you're running on a remote Kubernetes cluster, then substitute `$(hostname).$(dnsdomainname)` with an external address suitable for contacting the cluster.
 
-### Optionally access the WebLogic Server Console
+#### Optionally access the WebLogic Server Administration Console
 
-{{% notice warning %}} This sample externally exposes the WebLogic Server Console using a plain text HTTP port. This is _not_ secure and should not be done in production deployments.
+{{% notice warning %}} This sample externally exposes the WebLogic Server Administration Console using a plain text HTTP port. This is _not_ secure and should not be done in production deployments.
 {{% /notice %}}
 
-You can add an Ingress rule to access the WebLogic Server Console from your local browser.
+You can add an Ingress rule to access the WebLogic Server Administration Console from your local browser.
 
 1. Find out the service name of the Administration Server and service port number.
 
    The service name follows the pattern `domainuid-adminservername`, all lower case, with a hyphen `-` substituted for each underscore `_`.
    The port number for administration traffic is configured in your WebLogic configuration (your model files), where the default is `7001`.
 
-   If your domain resource is deployed, then you can also find the information by getting the port number for the Administration Server's pod:
+   If your domain resource is deployed, then you can also find the information by getting the port number for the Administration Server pod:
 
 ```
 kubectl -n sample-domain1-ns get services
@@ -526,7 +522,7 @@ http://your-domain-host-address:30305/console
 The login credentials are `weblogic/welcome1`.
 
 
-### Cleanup
+#### Cleanup
 
 1. Delete the domain resource.
    ```
@@ -547,7 +543,7 @@ The login credentials are `weblogic/welcome1`.
    ${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
 
-4. If you have set up the Traefik Ingress rule to the WebLogic Server Console.
+4. If you have set up the Traefik Ingress rule to the WebLogic Server Administration Console.
    ```
    kubectl delete -f $WORKDIR/console-ingress.yaml
    ```

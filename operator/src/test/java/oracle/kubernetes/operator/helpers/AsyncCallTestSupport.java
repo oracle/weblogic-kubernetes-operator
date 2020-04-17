@@ -42,6 +42,9 @@ import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONE
 @SuppressWarnings("unused")
 public class AsyncCallTestSupport extends FiberTestSupport {
 
+  private static RequestParams REQUEST_PARAMS
+      = new RequestParams("testcall", "junit", "testName", "body");
+
   private CallTestSupport callTestSupport = new CallTestSupport();
 
   /**
@@ -135,7 +138,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
           .getComponents()
           .put(
               RESPONSE_COMPONENT_NAME,
-              Component.createFor(CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK)));
+              Component.createFor(CallResponse.createSuccess(REQUEST_PARAMS, result, HttpURLConnection.HTTP_OK)));
 
       return doNext(packet);
     }
@@ -155,7 +158,7 @@ public class AsyncCallTestSupport extends FiberTestSupport {
           .getComponents()
           .put(
               RESPONSE_COMPONENT_NAME,
-              Component.createFor(CallResponse.createFailure(new ApiException(), status)));
+              Component.createFor(CallResponse.createFailure(REQUEST_PARAMS, new ApiException(), status)));
 
       return doNext(packet);
     }
