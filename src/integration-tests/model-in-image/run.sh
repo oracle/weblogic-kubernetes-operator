@@ -27,6 +27,7 @@ trace "Running end to end MII sample test."
 DRY_RUN=false
 DO_CLEAN=true
 DO_DB=false
+DO_PATCH=true
 WDT_DOMAIN_TYPE=WLS
 
 while [ ! -z "${1:-}" ]; do
@@ -35,6 +36,7 @@ while [ ! -z "${1:-}" ]; do
     -noclean)   DO_CLEAN="false" ;;
     -db)        DO_DB="true" ;;
     -jrf)       WDT_DOMAIN_TYPE="JRF"; DO_DB="true"; ;;
+    -nopatch)   DO_PATCH="false" ;;
     *)          trace "Error: Unrecognized parameter '${1}'."; exit 1; ;;
   esac
   shift
@@ -61,12 +63,13 @@ if [ "$DO_CLEAN" = "true" ]; then
   # delete model image, if any, and dangling images
   if [ ! "$DRY_RUN" = "true" ]; then
     m_image="${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-v1}"
-    if [ ! -z "$(docker ls $m_image)"; then
+    if [ ! -z "$(docker images -q $m_image)" ]; then
       trace "Info: Forcing model image rebuild by removing old docker image '$m_image'!"
       docker image rm $m_image
     fi
 
-    # TBD this is not multi-user safe
+    # TBD cleaning dangling is not multi-user safe:
+
     trace "Cleaning dangling docker images (if any)."
     #if [ ! -z "$(docker images -f "dangling=true" -q)" ]; then
       # TBD do we need the rmi command  if we do the prunes below?
@@ -112,7 +115,7 @@ doCommand  "\$TESTDIR/deploy-wl-operator.sh"
 doCommand  "\$TESTDIR/deploy-traefik.sh"
 
 #
-# Deploy initial domain
+# Deploy initial domain and wait for its pods to be ready.
 #
 
 doCommand  -c "export INCLUDE_CONFIGMAP=false"
@@ -125,17 +128,22 @@ doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
 doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
 doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 
-#
-# Add datasource to the running domain
-#
+if [ "$DO_PATCH" = "true" ]; then
 
-doCommand  -c "export INCLUDE_CONFIGMAP=true"
-doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
-doCommand  "\$MIISAMPLEDIR/stage-model-configmap.sh"
-doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
-doCommand  "\$MIISAMPLEDIR/create-model-configmap.sh"
-doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh"
-doCommand  "\$MIISAMPLEDIR/util-patch-restart-version.sh"
-doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+  #
+  # Add datasource to the running domain, patch its
+  # restart version,  and wait for its pods to roll.
+  #
 
-trace "Woo hoo! Finished without errors!"
+  doCommand  -c "export INCLUDE_CONFIGMAP=true"
+  doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
+  doCommand  "\$MIISAMPLEDIR/stage-model-configmap.sh"
+  doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
+  doCommand  "\$MIISAMPLEDIR/create-model-configmap.sh"
+  doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh"
+  doCommand  "\$MIISAMPLEDIR/util-patch-restart-version.sh"
+  doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+
+fi
+
+trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."

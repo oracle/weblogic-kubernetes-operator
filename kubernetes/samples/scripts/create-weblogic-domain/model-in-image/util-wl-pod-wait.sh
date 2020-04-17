@@ -6,7 +6,9 @@
 # This is a utility script for waiting until a domain's pods have
 # all exited, or waiting until a domain's pods have all reached
 # the ready state plus have reached the domain's restart version.
-# It exits non-zero on a failure. See 'usage()' below for details.
+# It exits non-zero on a failure. 
+# 
+# See 'usage()' below for the command line and other details.
 #
 
 set -eu
@@ -87,6 +89,7 @@ fi
 
 cur_pods=0
 reported=0
+last_pod_count_secs=$SECONDS
 origRV="--not-known--"
 
 # Loop until we reach the desired pod count for pods at the desired restart version, or
@@ -152,8 +155,13 @@ while [ 1 -eq 1 ]; do
   if [ $reported -eq 0 ]; then
     echo -n "@@ Info: $out_str:"
     reported=1
-  else
     echo -n " $cur_pods"
+    last_pod_count_secs=$SECONDS
+
+  elif [ $((SECONDS - last_pod_count_secs)) -gt 10 ] || [ $cur_pods -eq $expected ]; then
+    echo -n " $cur_pods"
+    last_pod_count_secs=$SECONDS
+
   fi
 
   if [ $cur_pods -eq $expected ]; then
@@ -167,5 +175,5 @@ while [ 1 -eq 1 ]; do
     exit 1
   fi
 
-  sleep 3
+  sleep 1
 done
