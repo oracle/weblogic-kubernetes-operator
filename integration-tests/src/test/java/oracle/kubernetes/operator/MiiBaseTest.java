@@ -87,10 +87,11 @@ public class MiiBaseTest extends BaseTest {
   }
 
   /**
-   * Modify the domain yaml to change domain-level restart version.
-   * @param domainNS the domain namespace
-   * @param domainUid the domain UID
-   * @param versionNo restartVersion number of domain
+   * Create a new or update an existing image using model-in-image tool.
+   * @param domainMap a Java Map object that storing key and value pairs used to create the Domain
+   * @param imageName image name to be created or updated
+   * @param modelFile a model to describe a WebLogic Server domain configuration.
+   * @param modelPropFile a file to specify values of variable tokens declared in model file(s) at runtime
    */
   protected void createDomainImage(Map<String, Object> domainMap, String imageName,
                                    String modelFile, String modelPropFile) {
@@ -151,10 +152,10 @@ public class MiiBaseTest extends BaseTest {
   }
 
   /**
-   * Modify the domain yaml to change image name.
-   * @param domainNS the domain namespace
-   * @param domainUid the domain UID
-   * @param imageName image name
+   * Modify the domain yaml to change image name and verify the domain restarted.
+   * @param domain the Domain where to change the image name
+   * @param domainNS the domain namespace name
+   * @param imageName image name to be updated in the Domain
    */
   protected void modifyDomainYamlWithImageName(
       Domain domain, String domainNS, String imageName) {
@@ -196,7 +197,7 @@ public class MiiBaseTest extends BaseTest {
   /**
    * Modify the domain yaml to add reference to config map and change domain-level restart version.
    * @param cmName Config map name
-   * @param domain the domain
+   * @param domain the Domain where to add reference to config map and change domain-level restart version
    * @throws Exception on failure
    */
   public void modifyDomainYamlWithNewConfigMapAndDomainRestartVersion(
@@ -234,10 +235,9 @@ public class MiiBaseTest extends BaseTest {
   }
 
   /**
-   * Modify the domain yaml to change domain-level restart version.
-   * @param domainNS the domain namespace
-   * @param domainUid the domain UID
-   * @param versionNo restartVersion number of domain
+   * Modify the domain yaml to change domain-level restart version and verify the domain restarted.
+   * @param domain the Domain where to change domain-level restart version
+   * @param domainNS the domain namespace name
    */
   protected void modifyDomainYamlWithRestartVersion(Domain domain, String domainNS) {
     ExecResult result = null;
