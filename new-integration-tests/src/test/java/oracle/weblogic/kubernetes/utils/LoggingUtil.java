@@ -107,7 +107,6 @@ public class LoggingUtil {
   private static void writeToFile(Object obj, String resultDir, String fileName) throws IOException {
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
-      logger.info("Generating {0}", Paths.get(resultDir, fileName));
       Files.write(Paths.get(resultDir, fileName),
           dump(obj).getBytes(StandardCharsets.UTF_8)
       );
