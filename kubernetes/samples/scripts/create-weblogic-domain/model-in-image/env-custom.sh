@@ -113,3 +113,5 @@
 #  and 'RestrictedJRF' WDT_DOMAIN_TYPE. For the 'JRF' WDT_DOMAIN_TYPE, the default
 #  is 'sample-domain-resource-jrf/k8s-domain.yaml.template'.
 
+
+# TBD add DB_NAMESPACE

@@ -102,6 +102,10 @@ $SCRIPTDIR/create-domain-resource.sh -predelete
 
 $SCRIPTDIR/util-wl-pod-wait.sh -p 3
 
+#
+# TBD break this into two scripts, one for above, and one for below
+#
+
 #######################################################################
 # Add a datasource to the running domain via a model config map:
 #
