@@ -25,7 +25,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(description = "ServerPod describes the configuration for a Kubernetes pod for a server.")
-class ServerPod {
+public class ServerPod {
 
   @ApiModelProperty("A list of environment variables to add to a server.")
   private List<V1EnvVar> env = new ArrayList<>();

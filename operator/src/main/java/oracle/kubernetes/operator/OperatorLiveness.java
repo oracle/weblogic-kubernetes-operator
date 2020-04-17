@@ -26,7 +26,7 @@ public class OperatorLiveness implements Runnable {
       try {
         livenessFile.createNewFile();
       } catch (IOException ioe) {
-        LOGGER.info(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE);
+        LOGGER.warning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE);
       }
     }
     livenessFile.setLastModified(new Date().getTime());

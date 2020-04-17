@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -131,7 +132,7 @@ public class KubernetesTestSupportTest {
           new CallBuilder().createCustomResourceDefinitionAsync(createCrd("mycrd"), responseStep);
     testSupport.runSteps(steps);
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test
@@ -278,7 +279,7 @@ public class KubernetesTestSupportTest {
     TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().deletePodAsync("pod1", "ns2", null, responseStep));
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
     assertThat(responseStep.callResponse.getStatusCode(), equalTo(HTTP_BAD_REQUEST));
   }
 

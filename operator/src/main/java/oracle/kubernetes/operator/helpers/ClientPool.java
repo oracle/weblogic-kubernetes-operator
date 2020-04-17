@@ -89,7 +89,7 @@ public class ClientPool extends Pool<ApiClient> {
     }
 
     if (isFirst.compareAndSet(true, false)) {
-      LOGGER.info(MessageKeys.K8S_MASTER_URL, client != null ? client.getBasePath() : null);
+      LOGGER.fine(MessageKeys.K8S_MASTER_URL, client != null ? client.getBasePath() : null);
     }
 
     LOGGER.exiting(client);
