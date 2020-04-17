@@ -15,7 +15,9 @@ public class Cluster {
   @ApiModelProperty("The name of this cluster. Required")
   private String clusterName;
 
-  @ApiModelProperty(value = "The number of cluster members to run.", allowableValues = "range[0,infinity]")
+  @ApiModelProperty(
+      value = "The number of cluster members to run.",
+      allowableValues = "range[0,infinity]")
   private Integer replicas;
 
   @ApiModelProperty(
@@ -24,11 +26,13 @@ public class Cluster {
   private String serverStartPolicy;
 
   @ApiModelProperty(
-      value = "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
+      value =
+          "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
       allowableValues = "range[1,infinity]")
   private Integer maxUnavailable;
 
-  @ApiModelProperty("Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.")
+  @ApiModelProperty(
+      "Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.")
   private ClusterService clusterService;
 
   @ApiModelProperty("Configuration affecting server pods.")
@@ -57,6 +61,14 @@ public class Cluster {
     return clusterName;
   }
 
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
+  }
+
   public Cluster replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -64,6 +76,14 @@ public class Cluster {
 
   public Integer replicas() {
     return replicas;
+  }
+
+  public Integer getReplicas() {
+    return replicas;
+  }
+
+  public void setReplicas(Integer replicas) {
+    this.replicas = replicas;
   }
 
   public Cluster serverStartPolicy(String serverStartPolicy) {
@@ -75,6 +95,14 @@ public class Cluster {
     return serverStartPolicy;
   }
 
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
   public Cluster maxUnavailable(Integer maxUnavailable) {
     this.maxUnavailable = maxUnavailable;
     return this;
@@ -82,6 +110,14 @@ public class Cluster {
 
   public Integer maxUnavailable() {
     return maxUnavailable;
+  }
+
+  public Integer getMaxUnavailable() {
+    return maxUnavailable;
+  }
+
+  public void setMaxUnavailable(Integer maxUnavailable) {
+    this.maxUnavailable = maxUnavailable;
   }
 
   public Cluster clusterService(ClusterService clusterService) {
@@ -93,6 +129,14 @@ public class Cluster {
     return clusterService;
   }
 
+  public ClusterService getClusterService() {
+    return clusterService;
+  }
+
+  public void setClusterService(ClusterService clusterService) {
+    this.clusterService = clusterService;
+  }
+
   public Cluster serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
@@ -100,6 +144,22 @@ public class Cluster {
 
   public ServerPod serverPod() {
     return serverPod;
+  }
+
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
+  public ServerService getServerService() {
+    return serverService;
+  }
+
+  public void setServerService(ServerService serverService) {
+    this.serverService = serverService;
   }
 
   public Cluster serverStartState(String serverStartState) {
@@ -111,6 +171,14 @@ public class Cluster {
     return serverStartState;
   }
 
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
   public Cluster restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -118,6 +186,14 @@ public class Cluster {
 
   public String restartVersion() {
     return restartVersion;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -172,5 +248,4 @@ public class Cluster {
         .append(restartVersion)
         .toHashCode();
   }
-
 }

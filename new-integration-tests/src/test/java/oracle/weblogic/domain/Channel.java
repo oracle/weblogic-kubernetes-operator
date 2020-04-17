@@ -37,6 +37,14 @@ public class Channel {
     return channelName;
   }
 
+  public String getChannelName() {
+    return channelName;
+  }
+
+  public void setChannelName(String channelName) {
+    this.channelName = channelName;
+  }
+
   public Channel nodePort(Integer nodePort) {
     this.nodePort = nodePort;
     return this;
@@ -44,6 +52,14 @@ public class Channel {
 
   public Integer nodePort() {
     return nodePort;
+  }
+
+  public Integer getNodePort() {
+    return nodePort;
+  }
+
+  public void setNodePort(Integer nodePort) {
+    this.nodePort = nodePort;
   }
 
   @Override
@@ -74,5 +90,4 @@ public class Channel {
         .append(nodePort, rhs.nodePort)
         .isEquals();
   }
-
 }

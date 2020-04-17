@@ -22,20 +22,24 @@ public class Experimental {
     return this.istio;
   }
 
+  public Istio getIstio() {
+    return istio;
+  }
+
+  public void setIstio(Istio istio) {
+    this.istio = istio;
+  }
+
   @Override
   public String toString() {
-    ToStringBuilder builder =
-        new ToStringBuilder(this)
-            .append("istio", istio);
+    ToStringBuilder builder = new ToStringBuilder(this).append("istio", istio);
 
     return builder.toString();
   }
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder =
-        new HashCodeBuilder()
-            .append(istio);
+    HashCodeBuilder builder = new HashCodeBuilder().append(istio);
 
     return builder.toHashCode();
   }
@@ -50,11 +54,8 @@ public class Experimental {
       return false;
     }
     Experimental rhs = (Experimental) other;
-    EqualsBuilder builder =
-        new EqualsBuilder()
-            .append(istio, rhs.istio);
+    EqualsBuilder builder = new EqualsBuilder().append(istio, rhs.istio);
 
     return builder.isEquals();
   }
-
 }
