@@ -13,30 +13,9 @@ TSPACE=traefik   # NameSpace for Traefik
 DefaultVoyagerVersion=10.0.0
 
 HELM_VERSION=$(helm version --short --client)
-
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
-   echo "Detected helm version [${HELM_VERSION}]"
-   v_list_args=""
-   t_list_args=""
-   v_helm_delete="helm delete --purge"
-   t_helm_delete="helm delete --purge"
-   v_helm_install="helm install appscode/voyager --name $VNAME  "
-   t_helm_install="helm install stable/traefik --name $TNAME "
-   helm_search_voyager="helm search repo | grep appscode/voyager"
-   helm_search_traefik="helm search repo | grep stable/traefik"
-elif [[ "$HELM_VERSION" =~ "v3" ]]; then
-   echo "Detected helm version [${HELM_VERSION}]"
-   v_list_args="--namespace $VSPACE "
-   t_list_args="--namespace $TSPACE "
-   v_helm_delete="helm uninstall --keep-history --namespace $VSPACE "
-   t_helm_delete="helm uninstall --keep-history --namespace $TSPACE "
-   v_helm_install="helm install $VNAME appscode/voyager  "
-   t_helm_install="helm install $TNAME stable/traefik "
-   helm_search_voyager="helm search appscode/voyager"
-   helm_search_traefik="helm search stable/traefik"
-else
-    echo "Detected unsupported helm version [${HELM_VERSION}]"
-    exit 1
+  echo "Detected unsupported helm version [${HELM_VERSION}]"
+  exit -1
 fi
 
 function createNameSpace() {
@@ -53,7 +32,7 @@ function createVoyager() {
   echo "Creating voyager operator on namespace ${VSPACE}"
   echo
 
-  if [ "$(${helm_search_voyager} | grep voyager |  wc -l)" = 0 ]; then
+  if [ "$(helm search appscode/voyager | grep voyager |  wc -l)" = 0 ]; then
     echo "Add appscode chart Repository"
     helm repo add appscode https://charts.appscode.com/stable/
     helm repo update
@@ -61,9 +40,9 @@ function createVoyager() {
     echo "Appscode chart repository is already added."
   fi
 
-  if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 0 ]; then
+  if [ "$(helm list --namespace $VSPACE | grep $VNAME |  wc -l)" = 0 ]; then
     echo "Installing voyager operator."
-    ${v_helm_install} --version ${VoyagerVersion}  \
+    helm install $VNAME appscode/voyager --version ${VoyagerVersion}  \
       --namespace ${VSPACE} \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false \
@@ -95,7 +74,7 @@ function createTraefik() {
   createNameSpace $TSPACE
   echo "Creating traefik operator on namespace ${TSPACE}" 
 
-  if [ "$(${helm_search_traefik} | grep traefik |  wc -l)" = 0 ]; then
+  if [ "$(helm search stable/traefik | grep traefik |  wc -l)" = 0 ]; then
     echo "Add K8SGoogle chart repository"
     helm repo add stable https://kubernetes-charts.storage.googleapis.com
     helm repo update
@@ -103,9 +82,9 @@ function createTraefik() {
     echo "K8SGoogle chart repository is already added."
   fi
 
-  if [ "$(helm list ${t_list_args} | grep $TNAME |  wc -l)" = 0 ]; then
+  if [ "$(helm list --namespace $TSPACE | grep $TNAME |  wc -l)" = 0 ]; then
     echo "Installing traefik operator."
-    ${t_helm_install} --namespace ${TSPACE} \
+    helm install $TNAME stable/traefik --namespace ${TSPACE} \
       --values ${UTILDIR}/../traefik/values.yaml
   else
     echo "Traefik operator is already installed."
@@ -163,9 +142,9 @@ function purgeCRDs() {
 }
 
 function deleteVoyager() {
-  if [ "$(helm list ${v_list_args} | grep $VNAME |  wc -l)" = 1 ]; then
+  if [ "$(helm list --namespace $VSPACE | grep $VNAME |  wc -l)" = 1 ]; then
     echo "Deleting voyager operator. "
-    ${v_helm_delete} $VNAME 
+    helm uninstall --namespace $VSPACE $VNAME 
     kubectl delete ns ${VSPACE}
     purgeCRDs
   else
@@ -180,9 +159,9 @@ function deleteVoyager() {
 }
 
 function deleteTraefik() {
-  if [ "$(helm list ${t_list_args}| grep $TNAME |  wc -l)" = 1 ]; then
+  if [ "$(helm list --namespace $TSPACE | grep $TNAME |  wc -l)" = 1 ]; then
     echo "Deleting traefik operator." 
-    ${t_helm_delete} $TNAME
+    helm uninstall --namespace $TSPACE  $TNAME
     kubectl delete ns ${TSPACE}
   else
     echo "Traefik operator has already been deleted" 

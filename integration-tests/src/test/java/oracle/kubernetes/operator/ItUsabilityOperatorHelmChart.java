@@ -182,7 +182,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Install the operator with non-existing operator namespace.
+   * Install the operator with non pre-existing operator namespace.
    * The helm install command should fail.
    *
    * @throws Exception when helm install does not fail
@@ -206,7 +206,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     TestUtils.exec(command);
     try {
       operator.callHelmInstall();
-      throw new Exception("FAILURE: Helm install operator with not preexisted namespace ");
+      throw new Exception("FAILURE: Helm install operator with not pre-existing namespace ");
 
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "Helm install operator with not preexisted ns failed as expected");
@@ -245,12 +245,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
 
     } catch (Exception ex) {
       String cmdLb = "";
-      if (BaseTest.HELM_VERSION.equals("V2")) {
-        cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      }
-      if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
-      }
+      cmdLb = "helm list --failed --namespace " + opnamespace + " | grep " + oprelease;
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -423,12 +418,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + ex.getMessage());
       }
       String cmdLb = "";
-      if (BaseTest.HELM_VERSION.equals("V2")) {
-        cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      }
-      if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmdLb = "helm list --failed --namespace " + opnamespace + "  | grep " + oprelease;
-      }
+      cmdLb = "helm list --failed --namespace " + opnamespace + " | grep " + oprelease;
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
