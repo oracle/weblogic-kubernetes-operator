@@ -11,9 +11,11 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description = "ManagedServer represents the operator configuration for a single Managed Server.")
+@ApiModel(
+    description =
+        "ManagedServer represents the operator configuration for a single Managed Server.")
 public class ManagedServer {
-  
+
   @ApiModelProperty("The name of the Managed Server. Required.")
   private String serverName;
 
@@ -48,6 +50,14 @@ public class ManagedServer {
     return serverName;
   }
 
+  public String getServerName() {
+    return serverName;
+  }
+
+  public void setServerName(String serverName) {
+    this.serverName = serverName;
+  }
+
   public ManagedServer serverStartPolicy(String serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
     return this;
@@ -55,6 +65,14 @@ public class ManagedServer {
 
   public String serverStartPolicy() {
     return serverStartPolicy;
+  }
+
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 
   public ManagedServer serverPod(ServerPod serverPod) {
@@ -66,6 +84,31 @@ public class ManagedServer {
     return serverPod;
   }
 
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
+  public ManagedServer serverService(ServerService serverService) {
+    this.serverService = serverService;
+    return this;
+  }
+
+  public ServerService serverService() {
+    return serverService;
+  }
+
+  public ServerService getServerService() {
+    return serverService;
+  }
+
+  public void setServerService(ServerService serverService) {
+    this.serverService = serverService;
+  }
+
   public ManagedServer serverStartState(String serverStartState) {
     this.serverStartState = serverStartState;
     return this;
@@ -75,6 +118,14 @@ public class ManagedServer {
     return serverStartState;
   }
 
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
   public ManagedServer restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -82,6 +133,14 @@ public class ManagedServer {
 
   public String restartVersion() {
     return restartVersion;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -127,5 +186,4 @@ public class ManagedServer {
         .append(restartVersion)
         .toHashCode();
   }
-
 }
