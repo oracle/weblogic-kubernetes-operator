@@ -9,7 +9,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description = "AdminServer represents the operator configuration for the Administration Server.")
+@ApiModel(
+    description =
+        "AdminServer represents the operator configuration for the Administration Server.")
 public class AdminServer {
 
   @ApiModelProperty(
@@ -48,6 +50,14 @@ public class AdminServer {
     return adminService;
   }
 
+  public AdminService getAdminService() {
+    return adminService;
+  }
+
+  public void setAdminService(AdminService adminService) {
+    this.adminService = adminService;
+  }
+
   public AdminServer serverStartPolicy(String serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
     return this;
@@ -55,6 +65,14 @@ public class AdminServer {
 
   public String serverStartPolicy() {
     return serverStartPolicy;
+  }
+
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 
   public AdminServer serverPod(ServerPod serverPod) {
@@ -66,6 +84,14 @@ public class AdminServer {
     return serverPod;
   }
 
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
   public AdminServer serverStartState(String serverStartState) {
     this.serverStartState = serverStartState;
     return this;
@@ -75,6 +101,31 @@ public class AdminServer {
     return serverStartState;
   }
 
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
+  public AdminServer serverService(ServerService serverService) {
+    this.serverService = serverService;
+    return this;
+  }
+
+  public ServerService serverService() {
+    return serverService;
+  }
+
+  public ServerService getServerService() {
+    return serverService;
+  }
+
+  public void setServerService(ServerService serverService) {
+    this.serverService = serverService;
+  }
+
   public AdminServer restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -82,6 +133,14 @@ public class AdminServer {
 
   public String restartVersion() {
     return restartVersion;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -127,5 +186,4 @@ public class AdminServer {
         .append(restartVersion)
         .toHashCode();
   }
-
 }

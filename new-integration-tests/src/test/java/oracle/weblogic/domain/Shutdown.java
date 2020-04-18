@@ -13,8 +13,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Shutdown {
 
   @ApiModelProperty(
-      value = "Tells the operator how to shutdown server instances. Not required."
-          + " Defaults to graceful shutdown.",
+      value =
+          "Tells the operator how to shutdown server instances. Not required."
+              + " Defaults to graceful shutdown.",
       allowableValues = "Graceful, Forced")
   private String shutdownType;
 
@@ -37,6 +38,14 @@ public class Shutdown {
     return shutdownType;
   }
 
+  public String getShutdownType() {
+    return shutdownType;
+  }
+
+  public void setShutdownType(String shutdownType) {
+    this.shutdownType = shutdownType;
+  }
+
   public Shutdown timeoutSeconds(Long timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
     return this;
@@ -46,6 +55,14 @@ public class Shutdown {
     return timeoutSeconds;
   }
 
+  public Long getTimeoutSeconds() {
+    return timeoutSeconds;
+  }
+
+  public void setTimeoutSeconds(Long timeoutSeconds) {
+    this.timeoutSeconds = timeoutSeconds;
+  }
+
   public Shutdown ignoreSessions(Boolean ignoreSessions) {
     this.ignoreSessions = ignoreSessions;
     return this;
@@ -53,6 +70,14 @@ public class Shutdown {
 
   public Boolean ignoreSessions() {
     return ignoreSessions;
+  }
+
+  public Boolean getIgnoreSessions() {
+    return ignoreSessions;
+  }
+
+  public void setIgnoreSessions(Boolean ignoreSessions) {
+    this.ignoreSessions = ignoreSessions;
   }
 
   @Override
@@ -89,5 +114,4 @@ public class Shutdown {
         .append(ignoreSessions)
         .toHashCode();
   }
-
 }
