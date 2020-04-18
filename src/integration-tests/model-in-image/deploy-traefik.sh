@@ -32,40 +32,38 @@ admin_service_name=$(tr [A-Z_] [a-z-] <<< $admin_service_name)
 # Skip if it's up and running and it has the same external ports and namespace values
 #
 
-if [ -e $WORKDIR/traefik-values.orig ]; then
+set +e
+helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.cur 2>&1
+res=$?
+set -e
+echo ${DOMAIN_NAMESPACE} >> $WORKDIR/traefik-values.cur
+if [ $res -eq 0 ] \
+   && [ -e "$WORKDIR/traefik-values.orig" ] \
+   && [ "$(cat $WORKDIR/traefik-values.cur)" = "$(cat $WORKDIR/traefik-values.orig)" ]; then
+  echo "@@"
+  echo "@@ Traefik already installed. Skipping uninstall/install."
+  echo "@@"
+else
   set +e
-  helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.cur 2>&1
-  res=$?
+  helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
+  kubectl create namespace $TRAEFIK_NAMESPACE
+  kubectl create namespace $DOMAIN_NAMESPACE
   set -e
-  echo ${DOMAIN_NAMESPACE} >> $WORKDIR/traefik-values.cur
-  if [ $res -eq 0 ] \
-     && [ -e "$WORKDIR/traefik-values.orig" ] \
-     && [ "$(cat $WORKDIR/traefik-values.cur)" = "$(cat $WORKDIR/traefik-values.orig)" ]; then
-    echo "@@"
-    echo "@@ Traefik already installed. Skipping uninstall/install."
-    echo "@@"
-  else
-    set +e
-    helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
-    kubectl create namespace $TRAEFIK_NAMESPACE
-    kubectl create namespace $DOMAIN_NAMESPACE
-    set -e
 
-    cd ${SRCDIR}
+  cd ${SRCDIR}
 
-    # you only need to add the repo once, but we do it every time for simplicity
-    helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+  # you only need to add the repo once, but we do it every time for simplicity
+  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 
-    helm install ${TRAEFIK_NAME} stable/traefik \
-      --namespace $TRAEFIK_NAMESPACE \
-      --values kubernetes/samples/charts/traefik/values.yaml \
-      --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
-      --wait
+  helm install ${TRAEFIK_NAME} stable/traefik \
+    --namespace $TRAEFIK_NAMESPACE \
+    --values kubernetes/samples/charts/traefik/values.yaml \
+    --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
+    --wait
 
-    # Save Traefik settings (we will check this if this script is run again)
-    helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.orig 2>&1
-    echo ${DOMAIN_NAMESPACE} >> $WORKDIR/traefik-values.orig
-  fi
+  # Save Traefik settings (we will check this if this script is run again)
+  helm get values ${TRAEFIK_NAME} -n ${TRAEFIK_NAMESPACE} > $WORKDIR/traefik-values.orig 2>&1
+  echo ${DOMAIN_NAMESPACE} >> $WORKDIR/traefik-values.orig
 fi
 
 #
@@ -84,7 +82,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host: ${DOMAIN_UID}.org
+  - host:
     http:
       paths:
       - path: 
