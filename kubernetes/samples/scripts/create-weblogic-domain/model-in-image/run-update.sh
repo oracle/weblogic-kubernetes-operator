@@ -4,30 +4,19 @@
 
 # Usage: run-update.sh
 #
-# This script demonstrates the steps for updating a running domain
-# to include a new datasource by:
-#
-#   - deploying a configmap that contains a model file that
-#     defines the data source
-#
-#   - deploying a secret that contains a database URL and
-#     credentials referenced by macros in the model file
-#
-#   - updating the domain resource to reference the configmap
-#     and secret
-#
-#   - patching the domain with a new 'restart version' field to cause
-#     the operator to rerun the introspector job and generate
-#     new WebLogic configuration, and to subsequently roll
-#     the pods in the domains
-#
-#   - waiting for the WebLogic pods to all restart and reach
-#     the new 'restart version'
-#
-# This scripts assumes a domain has already been deployed once
-# using the 'run-main.sh' script.
+# This script demonstrates the steps for updating a running model
+# in image domain by deploying a model configmap that defines
+# a new datasource, deploying a new secret that's referenced by
+# the configmap, and finally by patching the domain resource
+# 'domain restart version'. If the domain is shutdown, then the
+# domain should restart, or if the domain is already running, then
+# it should roll.
 #
 # Prerequisites:
+#
+#    - The domain has already been staged to WORKDIR (such as via the 
+#      'run-main.sh' script). The domain may already be up and running,
+#      or it can be shutdown...
 #
 #    - Namespace DOMAIN_NAMESPACE exists (default 'sample-domain1-ns').
 #
@@ -39,10 +28,6 @@
 #
 #    - Optional deployment of traefik, where traefik is
 #      monitoring DOMAIN_NAMESPACE.
-#
-#    - The domain has already been deployed once using the 'run-main.sh' 
-#      script. The domain may already be up and running, or it can
-#      be shutdown...
 #
 # Optionally set the following env vars:
 #
@@ -62,6 +47,7 @@ set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
+
 export INCLUDE_CONFIGMAP=true #tells stage-domain-resource.sh and
                               #create-secrets.sh to account for configmap
 
@@ -79,16 +65,19 @@ $SCRIPTDIR/create-secrets.sh
 
 #######################################################################
 # Stage domain resource again (will uncomment references to the
-# config map and its secret). Then deploy it.
+# config map and its secret). Then redeploy it. If the domain
+# isn't already running this will cause the domain's introspector job
+# to run, but the subsequent call to 'patch' below will
+# interrupt this action and cause a (redundant) rerun of the job.
 
 $SCRIPTDIR/stage-domain-resource.sh
 $SCRIPTDIR/create-domain-resource.sh
 
 #######################################################################
 # Patch domain resource restart version. 
-#     This will force introspector to rerun and regenerate
-#     WebLogic config with the model files from the configmap, and 
-#     will also force a subsequent rolling restart.
+#     This will force introspector job to rerun and regenerate WebLogic
+#     config with the model files from the configmap. This will also
+#     force a subsequent rolling restart.
 
 $SCRIPTDIR/util-patch-restart-version.sh
 
@@ -97,6 +86,6 @@ $SCRIPTDIR/util-patch-restart-version.sh
 
 $SCRIPTDIR/util-wl-pod-wait.sh -p 3
 
-echo @@
-echo @@ Info: Viola! Script '$(basename $0)' completed successfully! All pods ready.
-echo @@
+echo "@@"
+echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."
+echo "@@"

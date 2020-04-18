@@ -97,6 +97,6 @@ $SCRIPTDIR/create-domain-resource.sh -predelete
 
 $SCRIPTDIR/util-wl-pod-wait.sh -p 3
 
-echo @@
-echo @@ Info: Viola! Script '$(basename $0)' completed successfully! All pods ready.
-echo @@
+echo "@@"
+echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."
+echo "@@"

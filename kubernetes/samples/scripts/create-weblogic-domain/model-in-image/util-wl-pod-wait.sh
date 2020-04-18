@@ -3,15 +3,14 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This is a utility script for waiting until a domain's pods have
-# all exited, or waiting until a domain's pods have all reached
-# the ready state plus have reached the domain's restart version.
+# This is a utility script that waits until a domain's pods have
+# all exited, or waits until a domain's pods have all reached
+# the ready state plus have have the domain resource's domain
+# restart version and the domain resource's image.
 # It exits non-zero on a failure. 
 # 
 # See 'usage()' below for the command line and other details.
 #
-
-# TBD Update to also wait for image to match up.
 
 set -eu
 set -o pipefail
@@ -35,13 +34,14 @@ function usage() {
   $(basename $0) [-n mynamespace] [-d mydomainuid] [-p pod_count] [-t timeout_secs ] 
 
     pod_count > 0: Wait until exactly 'pod_count' WebLogic pods for a domain
-                   are all (a) ready, and (b) have the same domain restartVersion
-                   as the current domain resource's restartVersion. Exits non-zero
-                   if 'timeout_secs' is reached before 'pod_count' is reached.
+                   are all (a) ready, (b) have the same domainRestartVersion
+                   as the current domain resource's domainRestartVersion, (c)
+                   have the same image as the current domain resource's image.
 
     pod_count = 0: Wait until there are no running WebLogic pods for a domain.
                    Exits non-zero if 'timeout_secs' is reached before a zero
-                   'pod_count' is reached.
+
+    Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
 
   Parameters:
 
@@ -93,6 +93,7 @@ cur_pods=0
 reported=0
 last_pod_count_secs=$SECONDS
 origRV="--not-known--"
+origImage="--not-known--"
 
 # Loop until we reach the desired pod count for pods at the desired restart version, or
 # until we reach the timeout.
@@ -106,41 +107,88 @@ while [ 1 -eq 1 ]; do
 
   set +e
   currentRV=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}' 2>&1)
-  [ ! $? -eq 0 ] && currentRV=""
+  if [ $? -ne 0 ]; then
+    if [ $expected -ne 0 ]; then
+      echo "@@ Error: Could not obtain 'spec.restartVersion' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed?"
+      exit 1
+    else
+      currentRV=''
+    fi
+  fi
+
+  currentImage=$(kubectl -n sample-domain1-ns get domain sample-domain1 -o=jsonpath='{.spec.image}' 2>&1)
+  if [ $? -ne 0 ]; then
+    if [ $expected -ne 0 ]; then
+      echo "@@ Error: Could not obtain 'spec.image' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed?"
+      exit 1
+    else
+      currentImage=''
+    fi
+  fi
   set -e
 
   #
-  # Force new reporting for the rare case where domain resource RV changed since we
-  # last reported.
+  # Force new reporting for the rare case where domain resource RV or 
+  # image changed since we last reported.
   #
 
-  if [ ! "$origRV" = "$currentRV" ]; then
+  if [ ! "$origRV" = "$currentRV" ] || [ ! "$origImage" = "$currentImage" ]; then
     [ "$reported" = "1" ] && echo
     reported=0
     origRV="$currentRV"
+    origImage="$currentImage"
   fi
 
   #
   # If 'expected' = 0, get the current number of pods regardless of their
-  # restart version or ready state. If "expected != 0" get the number
-  # of ready pods at the current domain resource restart version.
+  # restart version, image, or ready state. 
+  # 
+  # If "expected != 0" get the number of ready pods with the current domain
+  # resource restart version and image. 
+  #
   # (Note that grep returns non-zero if it doesn't find anything (sigh), 
   # so we disable error checking and cross-fingers...)
   #
 
-  set +e
-  if [ ! "$expected" = "0" ]; then
-    cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
-        -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}",weblogic.domainRestartVersion="$currentRV" \
-        -o=jsonpath='{range .items[*]}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\n"}{end}' \
-        | grep "true" | wc -l ) 
-    out_str="Waiting for exactly '$expected' WebLogic pods to reach ready state and restart version '$currentRV'"
-  else
+  if [ "$expected" = "0" ]; then
+
     cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
         -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
         | wc -l ) 
+
     out_str="Waiting for WebLogic pod count to reach '0'"
+
+  else
+
+    jpath=''
+    jpath+='{range .items[*]}'
+     jpath+='{" domainUID="}'
+     jpath+='{.metadata.labels.weblogic\.domainUID}'
+     jpath+='{" name="}'
+     jpath+='{.metadata.name}'
+     jpath+='{" domainRestartVersion="}'
+     jpath+='{.metadata.labels.weblogic\.domainRestartVersion}'
+     jpath+='{" image="}'
+     jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].image}'
+     jpath+='{" ready="}'
+     jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].ready}'
+     jpath+='{"\n"}'
+    jpath+='{end}'
+
+    grepExp="domainRestartVersion=$currentRV"
+    grepExp+=" image=$currentImage"
+    grepExp+=" ready=true"
+
+    set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
+    cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
+        -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
+        -o=jsonpath="$jpath" \
+        | grep "$grepExp" | wc -l )
+    set -e
+
+    out_str="Waiting for exactly '$expected' WebLogic pods to reach ready='true', image='$currentImage', and domainRestartVersion='$currentRV'"
+
   fi
 
   #
