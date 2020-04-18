@@ -27,6 +27,10 @@ admin_name=admin-server
 admin_service_name=${DOMAIN_UID}-${admin_name}
 admin_service_name=$(tr [A-Z_] [a-z-] <<< $admin_service_name)
 
+function kubehost() {
+  kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
+}
+
 #
 # Helm uninstall then install traefik
 # Skip if it's up and running and it has the same external ports and namespace values
@@ -128,8 +132,8 @@ kubectl apply  -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml
 
 # TBD this assumes the k8s cluster includes the test host:
 echo "@@"
-echo "@@ Info: The WebLogic console should now be available at 'http://$(hostname).$(dnsdomainname):30305/console' (weblogic/welcome1)."
-echo "@@ Info: The sample app should now be available at 'http://$(hostname).$(dnsdomainname):30305/TBD'"
+echo "@@ Info: The WebLogic console should now be available at 'http://$(hostname).$(dnsdomainname):30305/console' or 'http://$(kubehost):30305/console' (weblogic/welcome1)."
+echo "@@ Info: The sample app should now be available at 'http://$(hostname).$(dnsdomainname):30305/sample_war/index.jsp' or 'http://$(kubehost):30305/sample_war/index.jsp'"
 echo "@@"
 
 # TBD should the ingress setup be moved to the sample?

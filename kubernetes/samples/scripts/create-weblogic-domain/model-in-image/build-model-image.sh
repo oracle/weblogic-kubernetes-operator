@@ -134,5 +134,5 @@ ${IMGTOOL} update \
 set +x
 
 echo "@@"
-echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Checksum for build is in 'WORKDIR/$(basename $0).cksum'."
+echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=$SECONDS."
 echo "@@"

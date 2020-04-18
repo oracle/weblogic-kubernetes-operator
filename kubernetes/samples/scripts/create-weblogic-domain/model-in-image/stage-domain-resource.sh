@@ -4,7 +4,10 @@
 
 #
 # This is an example of how to configure a model-in-image domain resource.
-# This script creates $WORKDIR/k8s-domain.yaml from a template.
+#
+# This script creates '$WORKDIR/k8s-domain.yaml' from a template.
+#
+# Warning!!: '$WORKDIR/k8s-domain.yaml' is overwritten if it already exists.
 #
 # Optional environment variables (see custom-env.sh for details):
 #
@@ -54,3 +57,7 @@ if [ "${INCLUDE_CONFIGMAP}" = "true" ]; then
   sed -i -e "s/\#\(secrets\):/\1:/"            $DOMAIN_RESOURCE_FILE
   sed -i -e "s/\#\(-.*datasource-secret\)/\1/" $DOMAIN_RESOURCE_FILE
 fi
+
+# TBD maybe NOT redo the template if target already exists.
+#     note that that'd be confusing as INCLUDE_CONFIGMAP is a one-way street
+#

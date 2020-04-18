@@ -14,7 +14,7 @@
 #    (See 'INCLUDE_CONFIGMAP' in 'create-secrets.sh'.)
 #  - a domain resource references these secrets in
 #    configuration.model.secrets
-#    (See 'INCLUDE_CONFIGMAP' in 'create-domain-resource.sh'.)
+#    (See 'INCLUDE_CONFIGMAP' in 'stage-domain-resource.sh'.)
 #  - a domain resource references the configmap
 #    in configuration.model.configMap.
 #    (See 'INCLUDE_CONFIGMAP' in 'stage-domain-resource.sh')

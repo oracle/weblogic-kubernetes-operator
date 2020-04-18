@@ -22,6 +22,8 @@
 #   'create-model-configmap.sh'
 #
 
+# TBD have a '-force/always' option? Default to 'when-missing'?
+
 set -eu
 set -o pipefail
 

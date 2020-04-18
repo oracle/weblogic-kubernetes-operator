@@ -11,6 +11,8 @@
 # See 'usage()' below for the command line and other details.
 #
 
+# TBD Update to also wait for image to match up.
+
 set -eu
 set -o pipefail
 

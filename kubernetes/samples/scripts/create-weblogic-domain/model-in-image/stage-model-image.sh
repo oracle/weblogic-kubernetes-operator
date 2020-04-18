@@ -2,20 +2,21 @@
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# TBD doc we skip self already a WORKDIR/model dir.  Maybe add a -force option that deletes and recreates.
+# TBD should we skip self if there's already a WORKDIR/model dir?
+#     maybe have a 'when-missing/always' option?
 
 #
-# This script stages a wdt model to directory 'WORKDIR/model' for future inclusion
-# in a model-in-image image:
+# This script stages a wdt model to directory 'WORKDIR/model' for future
+# inclusion in a model-in-image image:
 #
 #   - It removes any existing files in 'WORKDIR/model'.
 #
-#   - It copies the 'SCRIPTDIR/sample-app' files to 'WORKDIR/app' if the 
-#     'WORKDIR/app' directory doesn't already exist.
+#   - It copies the 'SCRIPTDIR/sample-archive' directory tree to
+#     'WORKDIR/archive' if the 'WORKDIR/archive' directory doesn't 
+#     already exist. This tree contains an exploded ear jsp application.
 #
-#   - It builds the 'WORKDIR/sample-app' application 'ear' file, and puts the
-#     ear into a 'WORKDIR/model/archive1.zip' along with the application's model
-#     mime mappings file 'WORKDIR/app/wlsdeploy/config/amimemappings.properties'.
+#   - It zips the 'WORKDIR/archive' directory contents and puts
+#     the zip in 'WORKDIR/model/archive1.zip'.
 #
 #   - It copies WDT model files from 'SCRIPTDIR/sample-model-jrf' or
 #     'SCRIPTDIR/sample-model-wls' into 'WORKDIR/model'. It chooses the
@@ -53,45 +54,22 @@ cd ${WORKDIR}
 rm -fr ./model
 mkdir -p ${WORKDIR}/model
 
-#
-# copy model yaml and properties from sample to WORKDIR/model
-#
-
-echo "@@ Info: Staging wdt model yaml and properties from SCRIPTDIR to directory WORKDIR/model"
-
 case "$WDT_DOMAIN_TYPE" in 
-  WLS|RestrictedJRF) cp $SCRIPTDIR/sample-model-wls/* $WORKDIR/model ;;
-  JRF)               cp $SCRIPTDIR/sample-model-jrf/* $WORKDIR/model ;;
+  WLS|RestrictedJRF) srcdir=sample-model-wls ;;
+  JRF)               srcdir=sample-model-jrf ;;
 esac
 
-echo "@@ Info: Staging sample app model archive from SCRIPTDIR/sample-app to WORKDIR/model/archive1.zip"
+echo "@@ Info: Copying wdt model yaml and properties files from directory 'SCRIPTDIR/$srcdir' to directory 'WORKDIR/model'."
 
-#
-# copy app source to $WORKDIR/app
-#
+cp $SCRIPTDIR/$srcdir/* $WORKDIR/model
 
-if [ ! -d $WORKDIR/app ]; then
-  cp -r $SCRIPTDIR/sample-app $WORKDIR/app
+echo "@@ Info: Copying sample archive with an exploded ear jsp app from SCRIPTDIR to the 'WORKDIR/archive' directory."
+
+if [ ! -d $WORKDIR/archive ]; then
+  cp -r $SCRIPTDIR/sample-archive $WORKDIR/archive
 fi
 
-#
-# build app
-#
+echo "@@ Info: Zipping 'WORKDIR/archive' contents to 'WORKDIR/model/archive1.zip'."
 
-cd $WORKDIR/app/wlsdeploy/applications
-jar cvfM sample-app.ear *
-
-#
-# archive app and put archive in WORKDIR/model/archive1.zip
-#
-
-cd $WORKDIR/app
-zip ${WORKDIR}/model/archive1.zip \
-    wlsdeploy/applications/sample-app.ear \
-    wlsdeploy/config/amimemappings.properties
-
-# TBD split app build into separate dirs to make it finer grained?
-#        stage app   --> app/src
-#        build app   --> app/build
-#        archive app --> app/archive1.zip
-#     split app into separate scripts too?
+cd $WORKDIR/archive
+zip -r ../model/archive1.zip wlsdeploy

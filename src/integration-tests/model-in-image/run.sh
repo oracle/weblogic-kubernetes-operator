@@ -22,6 +22,8 @@ source $TESTDIR/util-dots.sh
 source $TESTDIR/util-misc.sh
 source $TESTDIR/env.sh
 
+m_image="${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-v1}"
+
 trace "Running end to end MII sample test."
 
 DRY_RUN=false
@@ -30,6 +32,32 @@ DO_DB=false
 DO_PATCH=true
 WDT_DOMAIN_TYPE=WLS
 
+function usage() {
+  cat << EOF
+
+  Usage: $(basename $0)
+
+  Optional args:
+
+    -dry      : Dry run - show but don't do.
+
+    -noclean  : Do not pre-delete image '$m_image', call
+                'cleanup.sh', or delete WORKDIR.
+                (Reuses artifacts from previous run.)
+
+    -jrf      : Run in JRF mode instead of WLS mode.
+                Note: this forces DB deployment.
+
+    -db       : Deploy Oracle DB.
+
+    -nopatch  : Skip testing a runtime update of 
+                model and the subsequent rolling upgrade.
+
+    -?        : This help.
+
+EOF
+}
+
 while [ ! -z "${1:-}" ]; do
   case "${1}" in
     -dry)       DRY_RUN="true" ;;
@@ -37,7 +65,8 @@ while [ ! -z "${1:-}" ]; do
     -db)        DO_DB="true" ;;
     -jrf)       WDT_DOMAIN_TYPE="JRF"; DO_DB="true"; ;;
     -nopatch)   DO_PATCH="false" ;;
-    *)          trace "Error: Unrecognized parameter '${1}'."; exit 1; ;;
+    -?)         usage; exit 0; ;;
+    *)          trace "Error: Unrecognized parameter '${1}', pass '-?' for usage."; exit 1; ;;
   esac
   shift
 done
@@ -62,7 +91,6 @@ if [ "$DO_CLEAN" = "true" ]; then
 
   # delete model image, if any, and dangling images
   if [ ! "$DRY_RUN" = "true" ]; then
-    m_image="${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-v1}"
     if [ ! -z "$(docker images -q $m_image)" ]; then
       trace "Info: Forcing model image rebuild by removing old docker image '$m_image'!"
       docker image rm $m_image
