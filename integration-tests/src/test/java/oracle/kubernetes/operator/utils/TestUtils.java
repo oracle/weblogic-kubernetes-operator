@@ -2295,10 +2295,14 @@ public class TestUtils {
     if (domainUid.equals("deleteall")) {
       cmdRemove.append("/shared/logs/* ")
               .append("/shared/wdt/* ")
-              .append("/shared/domains/*\"");
+              .append(" &&  for dir in \\`ls -l /shared/domains ")
+              .append("| grep ^d | awk '{print $9}'\\`; do rm -rf /shared/domains/$dir ; done \"");
     } else {
       cmdRemove.append("/shared/domains/")
-              .append(domainUid + "\"");
+              .append(domainUid)
+              .append(" &&  rm -rf /shared/logs/")
+              .append(domainUid)
+              .append("\"");
     }
     cmd = cmdRemove.toString();
     LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmd);
