@@ -55,7 +55,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * @throws Exception exception
+   * @throws Exception if initial setup fails 
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
@@ -68,9 +68,9 @@ public class ItJrfModelInImage extends MiiBaseTest {
 
   /**
    * This method gets called before every test. It creates the result/pv root directories
-   * for the test. Creates the operator and domain if its not running.
+   * for the test. Creates RCU schema, operator if its not running.
    *
-   * @throws Exception exception if result/pv/operator/domain creation fails
+   * @throws Exception exception if result/pv/operator/RCU schema creation fails
    */
   @BeforeEach
   public void prepare() throws Exception {
@@ -105,6 +105,11 @@ public class ItJrfModelInImage extends MiiBaseTest {
     }
   }
   
+  /**
+   * This method will run once after all test methods are finished. It delete both RCU and DB pods
+   *
+   * @throws Exception - if any error occurs
+   */
   @AfterEach
   public void unPrepare() throws Exception {
     DbUtils.deleteRcuPod(getResultDir());

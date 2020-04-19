@@ -140,7 +140,7 @@ public class DomainCrd {
   /**
    * A utility method to add attributes to opss node in domain.yaml.
    * 
-   *@param attributes - A HashMap of key value pairs
+   *@param attributes A HashMap of key value pairs
    */
   public void addObjectNodeToOpss(Map<String, String> attributes) {
 
@@ -365,7 +365,7 @@ public class DomainCrd {
   /**
    * Utility method to replace name of domain in domain.yaml
    *
-   * @param domain , new domain name to be replaced
+   * @param domain new domain name to be replaced
    * @throws JsonProcessingException when domain name not available
    */
   public void changeDomainName(String domain) throws JsonProcessingException {
@@ -377,7 +377,7 @@ public class DomainCrd {
   /**
    * Utility method to replace domainUID in domain.yaml
    *
-   * @param domainUID , domainUID to be replaced
+   * @param domainUID domainUID to be replaced
    * @throws JsonProcessingException when domainUID not available
    */
   public void changeDomainUID(String domainUID) throws JsonProcessingException {
@@ -389,7 +389,7 @@ public class DomainCrd {
   /**
    * Utility method to replace domainHome in domain.yaml
    *
-   * @param domainHome , new domainHome to be replaced
+   * @param domainHome new domainHome to be replaced
    * @throws JsonProcessingException when domainHome not available
    */
   public void changeDomainHome(String domainHome) throws JsonProcessingException {

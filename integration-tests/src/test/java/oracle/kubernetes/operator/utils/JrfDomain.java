@@ -8,8 +8,6 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.BaseTest;
 
-//import oracle.kubernetes.operator.BaseTest;
-
 /**
  * JRF Domain class with all the utility methods.
  */
@@ -71,16 +69,10 @@ public class JrfDomain extends Domain {
             BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag());
       }  
     }
-    /*if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
-      domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
-    } else {
-      domainMap.put("imagePullSecretName", "docker-store");
-    }*/
-
-    // update create-domain-script.sh if adminPortEnabled is true
-    //debug, remove
+   
     LoggerHelper.getLocal().log(Level.INFO,
         "JRF domain image: " + (String)domainMap.get("image"));
+    // update create-domain-script.sh if adminPortEnabled is true
     if (adminPortEnabled) {
       String createDomainScript =
           domainMap.get("resultDir")

@@ -111,7 +111,7 @@ public class DbUtils {
    * @param rcuSchemaPrefix rcu SchemaPrefixe
    * @param dbPort NodePort of DB
    * @param dbnamespace namesspace that DB instance is going to start
-   * @throws Exception - if any error occurs when creating Oracle rcu pod
+   * @throws Exception if any error occurs when creating Oracle rcu pod
    */
   public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix, 
       String dbUrl, String dbNamespace) throws Exception {
@@ -286,9 +286,9 @@ public class DbUtils {
   /**
    * Create a rcu pod to run rcu script.
    *
-   * @param rcuNamespace - namespace for rcu pod
-   * @return - rcu pod name
-   * @throws Exception - if any error occurs
+   * @param rcuNamespace namespace for rcu pod
+   * @return rcu pod name
+   * @throws Exception if any error occurs
    */
   public static String createRcuPod(String rcuNamespace) throws Exception {
     // create a rcu deployment
@@ -319,8 +319,8 @@ public class DbUtils {
   /**
    * Delete a namespace.
    *
-   * @param namespace - namespace to delete
-   * @throws Exception - if any error occurs
+   * @param namespace namespace to delete
+   * @throws Exception if any error occurs
    */
   public static void deleteNamespace(String namespace) throws Exception {
     if (!namespace.equalsIgnoreCase("default")) {
