@@ -64,6 +64,7 @@ To reference the relevant user documentation, see:
    git clone https://github.com/oracle/weblogic-kubernetes-operator.git
    export SRCDIR=$(pwd)/weblogic-kubernetes-operator
    ```
+
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
 3. Create a sample directory environment variable `SAMPLEDIR` that references this sample's directory:

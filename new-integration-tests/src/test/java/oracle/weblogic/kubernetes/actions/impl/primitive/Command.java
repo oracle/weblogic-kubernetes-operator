@@ -20,7 +20,7 @@ public class Command {
 
   /**
    * Create a CommandParams instance with the default values.
-   * @return a CommandParams instance
+   * @return a CommandParams instance 
    */
   public static CommandParams defaultCommandParams() {
     return new CommandParams().defaults();
@@ -28,7 +28,7 @@ public class Command {
 
   /**
    * Set up a command with given parameters.
-   * @return a command instance
+   * @return a command instance 
    */
   public static Command withParams(CommandParams params) {
     return new Command().params(params);
