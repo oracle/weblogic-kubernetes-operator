@@ -1682,6 +1682,7 @@ public class TestUtils {
             .append("-d ")
             .append(domainUid);
     TestUtils.exec(cmd.toString(), true);
+    /*
     if (BaseTest.OKE_CLUSTER) {
       String[] items = domainUid.split(",");
       for (String item : items) {
@@ -1689,6 +1690,7 @@ public class TestUtils {
         deleteDomainHomeDirOke(item);
       }
     }
+    */
   }
 
   /**
