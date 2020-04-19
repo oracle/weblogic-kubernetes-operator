@@ -18,6 +18,7 @@ public class RcuSecret extends Secret {
 
   /**
    * Construct RCU secret.
+   * 
    * @param namespace namespace
    * @param secretName secret name
    * @param username username
@@ -65,6 +66,7 @@ public class RcuSecret extends Secret {
   
   /**
    * Construct RCU secret.
+   * 
    * @param secretname secret name
    * @param rcuPrefix username
    * @param password password
@@ -109,7 +111,7 @@ public class RcuSecret extends Secret {
       LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
     } catch (Exception ex) {
       ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      Assertions.fail("Failed to create RCU access secret.\n", ex.getCause());
     }     
   }
 

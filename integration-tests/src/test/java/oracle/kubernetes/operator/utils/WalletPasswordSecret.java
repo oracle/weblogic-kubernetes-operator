@@ -13,6 +13,7 @@ public class WalletPasswordSecret extends Secret {
   
   /**
    * Construct WalletPassword secret.
+   * 
    * @param namespace namespace that this secret is in
    * @param secretName secret name
    * @param walletPassword wallet password
@@ -42,7 +43,7 @@ public class WalletPasswordSecret extends Secret {
       LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
     } catch (Exception ex) {
       ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      Assertions.fail("Failed to create walletPasswordSecret.\n", ex.getCause());
     } 
   }
   

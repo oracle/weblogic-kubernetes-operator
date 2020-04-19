@@ -164,11 +164,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       Secret walletPass = new WalletPasswordSecret(namespace, domainUid 
           + "-opss-wallet-password-secret", walletPassword);
       
-      //domainMap.put("secrets", rcuAccess);
-      //domainMap.put("walletPasswordSecret", walletPass);
-      
       jrfdomain = new JrfDomain(domainMap);
-      
       jrfdomain.verifyDomainCreated(40);
       
       //save and restore walletFile secret

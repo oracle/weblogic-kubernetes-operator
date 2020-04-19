@@ -21,7 +21,7 @@ public class DbUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   /**
-   * create oracle db pod in the k8s cluster.
+   * Create oracle db pod in the k8s cluster.
    *
    * @param dbPropsFile - db properties file
    * @return - OracleDB instance
@@ -49,11 +49,12 @@ public class DbUtils {
   }
   
   /**
-   * create Oracle DB pod and service in the k8s cluster default namespace.
+   * Create Oracle DB pod and service in the k8s cluster default namespace.
+   * 
    * @param scriptDir script dir
    * @param dbPort NodePort of DB
    * @param dbnamespace namesspace that DB instance is going to start
-   * @throws Exception - if any error occurs when creating Oracle DB pod and service
+   * @throws Exception if any error occurs when creating Oracle DB pod and service
    */
   public static void startOracleDB(String scriptsDir, String dbPort, String dbNamespace) throws Exception {
     String cmd1 = "sh "
@@ -84,7 +85,8 @@ public class DbUtils {
   }
   
   /**
-   * stop oracle service.
+   * Stop oracle service.
+   * 
    * @param scriptDir script dir
    * @param dbnamespace namespace that DB instance is going to stop
    * @throws Exception if any error occurs when dropping Oracle DB service
@@ -103,7 +105,8 @@ public class DbUtils {
   }
   
   /**
-   * create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * Create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * 
    * @param scriptDir script dir
    * @param rcuSchemaPrefix rcu SchemaPrefixe
    * @param dbPort NodePort of DB
@@ -141,6 +144,7 @@ public class DbUtils {
   
   /**
    * Create Docker Registry Secret for the DB namespace.
+   * 
    * @param namespace namespace where the docker registry secreted is going to create
    * @throws Exception when the kubectl create secret command fails
    */
@@ -165,12 +169,12 @@ public class DbUtils {
       ex.printStackTrace();
       Assertions.fail("Failed to excute command.\n", ex.getCause());
     } 
-    
   }
 
   
   /**
-   * drop Oracle rcu schema.
+   * Drop Oracle rcu schema.
+   * 
    * @param scriptDir script dir
    * @param rcuSchemaPrefix rcu SchemaPrefixe
    * @param dbnamespace namesspace that DB instance is going to start
@@ -192,7 +196,7 @@ public class DbUtils {
   }
   
   /**
-   * delete RCU pod.
+   * Delete RCU pod.
    *
    * @throws Exception - if any error occurs when deleting RCU pod
    */
@@ -204,7 +208,8 @@ public class DbUtils {
   }
   
   /**
-   * delete DB pod.
+   * Delete DB pod.
+   * 
    * @param scriptsDir script dir
    * @throws Exception if any error occurs when deleting DB pod
    */
@@ -222,7 +227,7 @@ public class DbUtils {
   }
 
   /**
-   * run RCU script to load database schema.
+   * Run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
    * @param inputYaml  - create domain input file
@@ -234,7 +239,7 @@ public class DbUtils {
   }
 
   /**
-   * run RCU script to load database schema.
+   * Run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
    * @param inputMap   - domain input map
@@ -247,7 +252,7 @@ public class DbUtils {
   }
 
   /**
-   * run RCU script to load database schema.
+   * Run RCU script to load database schema.
    *
    * @param rcuNamespace    - namespace for rcu pod
    * @param dbConnectString - db connect string to load the database schema
@@ -279,7 +284,7 @@ public class DbUtils {
   }
 
   /**
-   * create a rcu pod to run rcu script.
+   * Create a rcu pod to run rcu script.
    *
    * @param rcuNamespace - namespace for rcu pod
    * @return - rcu pod name
@@ -312,7 +317,7 @@ public class DbUtils {
   }
 
   /**
-   * delete a namespace.
+   * Delete a namespace.
    *
    * @param namespace - namespace to delete
    * @throws Exception - if any error occurs
@@ -329,7 +334,8 @@ public class DbUtils {
   }
 
   /**
-   * create a namespace.
+   * Create a namespace.
+   * 
    * @param namespace namespace to create
    * @throws Exception if any error occurs
    */
@@ -344,13 +350,14 @@ public class DbUtils {
         TestUtils.exec(cmd2, true);
       } catch (Exception ex) {
         ex.printStackTrace();
-        Assertions.fail("Failed to start DB and create namespace.");
+        Assertions.fail("Failed to create namespace.");
       }
     }
   }
   
   /**
-   * create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * Create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * 
    * @param scriptDir script dir
    * @param dbPort NodePort of DB
    * @param dbUrl URL of DB
