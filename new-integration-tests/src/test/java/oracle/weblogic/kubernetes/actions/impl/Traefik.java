@@ -10,7 +10,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 public class Traefik {
   /**
-   * install helm chart
+   * Install helm chart.
+   *
    * @param params the helm parameters like namespace, release name, repo url or chart dir,
    *               chart name and chart values to override
    * @return true on success, false otherwise
@@ -21,6 +22,7 @@ public class Traefik {
 
   /**
    * Upgrade a helm release.
+   *
    * @param params the helm parameters like namespace, release name, repo url or chart dir,
    *               chart name and chart values to override
    * @return true on success, false otherwise
@@ -31,6 +33,7 @@ public class Traefik {
 
   /**
    * Uninstall a helm release.
+   *
    * @param params the parameters to helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
@@ -39,7 +42,8 @@ public class Traefik {
   }
 
   /**
-   * Create a ingress per domain
+   * Create an ingress per domain.
+   *
    * @param params the params to helm install command, releaseName, chartDir and WLS domain namespace
    * @param domainUID the weblogic domainUID to create the ingress
    * @param traefikHostname the hostname for the ingress
@@ -55,7 +59,8 @@ public class Traefik {
   }
 
   /**
-   * Uninstall Ingress on a wls domain namespace
+   * Uninstall the ingress on a wls domain namespace.
+   *
    * @param params the parameters to helm uninstall command, release name and wls domain namespace
    * @return true on success, false otherwise
    */

@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -135,6 +136,7 @@ public class Kubernetes {
    * Checks if a Traefik pod running in a given namespace.
    * The method assumes the traefik pod name to starts with "traefik-operator-"
    * and decorated with label "app=traefik"
+   * 
    * @param namespace in which to check for the pod existence
    * @return true if pod exists and running otherwise false
    * @throws ApiException when there is error in querying the cluster
@@ -145,6 +147,34 @@ public class Kubernetes {
     V1Pod pod = getPod(namespace, labelSelector, "traefik-operator-");
     if (pod != null) {
       status = pod.getStatus().getPhase().equals(RUNNING);
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
+   * Check whether the traefik pod is ready.
+   *
+   * @param namespace in which the traefik pod is running
+   * @return true if the pod Ready status is true, false otherwise
+   * @throws ApiException
+   */
+  public static boolean isTraefikPodReady(String namespace) throws ApiException {
+    boolean status = false;
+    String labelSelector = "app=traefik";
+    V1Pod pod = getPod(namespace, labelSelector, "traefik-operator-");
+    if (pod != null) {
+
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
     } else {
       logger.info("Pod doesn't exist");
     }

@@ -32,12 +32,17 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
-
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
 // directly call the methods in the impl classes
 public class TestActions {
+
+  private static final LoggingFacade logger = LoggingFactory.getLogger(TestActions.class);
 
   // ----------------------   operator  ---------------------------------
 
@@ -168,18 +173,19 @@ public class TestActions {
   }
 
   /**
-   * Create Traefik Ingress
-   * @param params - the params to helm install command, including release name, chartDir and wls domain namespace
-   * @param domainUID - weblogic domainUID to create the ingress
-   * @param traefikHostname - the hostname for the ingress
-   * @return
+   * Create Traefik Ingress.
+   *
+   * @param params the params to helm install command, including release name, chartDir and wls domain namespace
+   * @param domainUID weblogic domainUID to create the ingress
+   * @param traefikHostname the hostname for the ingress
+   * @return true on success, false otherwise
    */
   public static boolean createIngress(HelmParams params, String domainUID, String traefikHostname) {
     return Traefik.createIngress(params, domainUID, traefikHostname);
   }
 
   /**
-   * Upgrade Traefik release
+   * Upgrade Traefik release.
    *
    * @param params parameters for helm values
    * @return true on success, false otherwise
@@ -199,7 +205,8 @@ public class TestActions {
   }
 
   /**
-   * Uninstall the ingress
+   * Uninstall the ingress.
+   *
    * @param params the parameters to helm uninstall command, including release name and wls domain namespace containing
    *               the ingress
    * @return true on success, false otherwise
@@ -444,10 +451,6 @@ public class TestActions {
     return Helm.list(params);
   }
 
-  public static boolean helmGetExpectedValues(HelmParams params, String expectedValue) {
-    return Helm.getExpectedValues(params, expectedValue);
-  }
-
   // ------------------------ Application Builder  -------------------------
 
   /**
@@ -522,4 +525,37 @@ public class TestActions {
                                           String username, String password, String target) {
     return true;
   }
+
+  // ------------------------ some utility method  -------------------------
+
+  /**
+   * Check running some command and returning expected value
+   *
+   * @param command the command to run
+   * @param expectedValue the expected value should return
+   * @return true on success, false otherwise
+   */
+  public static boolean getExpectedResult(String command, String expectedValue) {
+    logger.info("Running command - \n" + command);
+
+    ExecResult result;
+    try {
+      result = ExecCommand.exec(command);
+      if (result.exitValue() != 0) {
+        logger.info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
+        return false;
+      }
+    } catch (Exception e) {
+      logger.info("Got exception, command failed with errors " + e.getMessage());
+      return false;
+    }
+
+    if (!result.stdout().contains(expectedValue)) {
+      logger.info("Did not get the expected result, expected: " + expectedValue + ", got: " + result.stdout());
+      return false;
+    }
+
+    return true;
+  }
+
 }

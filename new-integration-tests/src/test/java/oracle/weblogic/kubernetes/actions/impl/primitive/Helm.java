@@ -160,35 +160,6 @@ public class Helm {
     return exec(String.format("helm list -n %s", params.getNamespace()));
   }
 
-  public static boolean getExpectedValues(HelmParams params, String expectedValue) {
-    // assertions for required parameters
-    assertThat(params.getReleaseName())
-            .as("make sure release name is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
-    assertThat(params.getNamespace())
-            .as("make sure namespace is not empty or null")
-            .isNotNull()
-            .isNotEmpty();
-
-    String helmCmd = String.format("helm get values %1s -n %2s", params.getReleaseName(), params.getNamespace());
-    ExecResult result;
-    logger.info("Running command - \n" + helmCmd);
-
-    try {
-      result = ExecCommand.exec(helmCmd, true);
-      if (result.exitValue() != 0) {
-        logger.info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
-        return false;
-      }
-    } catch (Exception e) {
-      logger.info("Got exception, command failed with errors " + e.getMessage());
-      return false;
-    }
-
-    return result.stdout().contains(expectedValue);
-  }
-
   /**
    * Add a chart repository.
    * @param repoName the name of the repo

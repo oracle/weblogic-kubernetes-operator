@@ -31,11 +31,21 @@ public class TestAssertions {
   /**
    * Check if Traefik is running.
    *
-   * @param namespace in which is traefik is running
+   * @param namespace in which the traefik is running
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> traefikIsRunning(String namespace) {
+  public static Callable<Boolean> isTraefikRunning(String namespace) {
     return Traefik.isRunning(namespace);
+  }
+
+  /**
+   * Check if Traefik is ready.
+   *
+   * @param namespace in which the traefik is running
+   * @return true if the traefik is ready, false otherwise
+   */
+  public static Callable<Boolean> isTraefikReady(String namespace) {
+    return Traefik.isReady(namespace);
   }
 
   /**

@@ -12,27 +12,13 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 public class TraefikParams {
 
-  // adding the params based on weblogic-kubernetes-operator/kubernetes/samples/charts/traefik/values.yaml
-  // you can add more values here
+  // only add the values which need to be updated here
+  // the default traefik values are here: https://github.com/helm/charts/blob/master/stable/traefik/values.yaml
   private static final String NAMESPACES = "kubernetes.namespaces";
-  private static final String NODEPORTS_HTTP = "service.nodePorts.http";
-  private static final String NODEPORTS_HTTPS = "service.nodePorts.https";
 
   // Adding some of the most commonly used params for now
-  private int nodePortsHttp;
-  private int nodePortsHttps;
   private String nameSpaces;
   private HelmParams helmParams;
-
-  public TraefikParams nodePortsHttp(int nodePortsHttp) {
-    this.nodePortsHttp = nodePortsHttp;
-    return this;
-  }
-
-  public TraefikParams nodePortsHttps(int nodePortsHttps) {
-    this.nodePortsHttps = nodePortsHttps;
-    return this;
-  }
 
   public TraefikParams nameSpaces(String nameSpaces) {
     this.nameSpaces = nameSpaces;
@@ -51,13 +37,6 @@ public class TraefikParams {
   public HashMap<String, Object> getValues() {
     HashMap<String, Object> values = new HashMap();
     values.put(NAMESPACES, nameSpaces);
-
-    if (nodePortsHttp > 0) {
-      values.put(NODEPORTS_HTTP, nodePortsHttp);
-    }
-    if (nodePortsHttps > 0) {
-      values.put(NODEPORTS_HTTPS, nodePortsHttps);
-    }
 
     values.values().removeIf(Objects::isNull);
     return values;

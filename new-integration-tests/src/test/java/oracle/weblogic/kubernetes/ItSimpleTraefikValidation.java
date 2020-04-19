@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
@@ -23,19 +22,19 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.helmGetExpectedValues;
-import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
+import static oracle.weblogic.kubernetes.actions.TestActions.getExpectedResult;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeTraefik;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.traefikIsRunning;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-// this is an example of a test suite (class) where the tests need to be run in a certain
-// order. this is controlled with the TestMethodOrder annotation
+
+// this is a simple traefik validation test
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of Traefik functions")
 @ExtendWith(Timing.class)
@@ -45,21 +44,20 @@ class ItSimpleTraefikValidation implements LoggedTest {
   private HelmParams ingressParam = null;
   private String tfNamespace = null;
   private String domainNamespace1 = null;
+  private String projectRoot = System.getProperty("user.dir");
 
   @Test
   @Order(1)
   @DisplayName("Install the Traefik")
-  // tags are used to filter which tests to run, we can define whatever tags we need,
-  // like these two:
   @Slow
   @MustNotRunInParallel
   public void testInstallingTraefik() {
 
-    // get a new unique traefik Namespace
-    tfNamespace = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", tfNamespace));
-
-    String projectRoot = System.getProperty("user.dir");
+    // create a new unique namespace for traefik
+    logger.info("Creating an unique namespace for Traefil");
+    tfNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
+            "Fail to create an unique namespace due to ApiException");
+    logger.info("Created a new namespace called {0}", tfNamespace);
 
     // helm install parameters
     tfHelmParams = new HelmParams()
@@ -79,27 +77,25 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .as("Test installTraefik returns true")
         .withFailMessage("installTraefik() did not return true")
         .isTrue();
-    logger.info(String.format("Traefik is installed in namespace %s", tfNamespace));
+    logger.info("Traefik is installed in namespace {0}", tfNamespace);
 
-    assertThat(helmList(tfHelmParams))
-        .as("Test helmList returns true")
-        .withFailMessage("helmList() did not return true")
+    // verify that the trafik is installed
+    String cmd = "helm ls -n " + tfNamespace;
+    assertThat(getExpectedResult(cmd, tfHelmParams.getReleaseName()))
+        .as("traefik is installed")
+        .withFailMessage("did not find traefik-operator in " + tfNamespace)
         .isTrue();
 
-    // waiting for an async operation to complete.
-    // we first wait 30 seconds, then we check if the traefik pod is running.
+    // first wait 30 seconds, then check if the traefik pod is ready.
     with().pollDelay(30, SECONDS)
-        // we check again every 10 seconds.
         .and().with().pollInterval(10, SECONDS)
-        // this listener lets us report some status with each poll
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for traefik to be running (elapsed time {0}ms, remaining time {1}ms)",
+                "Waiting for traefik to be ready (elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
-        .until(traefikIsRunning(tfNamespace));
+        .until(isTraefikReady(tfNamespace));
   }
 
   @Test
@@ -108,8 +104,10 @@ class ItSimpleTraefikValidation implements LoggedTest {
   public void testUpgradingTraefik() {
 
     // create a new unique namespace for wls domain
-    domainNamespace1 = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", domainNamespace1));
+    logger.info("Creating an unique namespace for wls domain");
+    domainNamespace1 = assertDoesNotThrow(() -> createUniqueNamespace(),
+            "Failed to create an unique namespace due to ApiException");
+    logger.info("Created a new namespace called {0}", domainNamespace1);
 
     // helm install parameters
     tfHelmParams = new HelmParams()
@@ -126,30 +124,38 @@ class ItSimpleTraefikValidation implements LoggedTest {
             .as("Test upgradeTraefik returns true")
             .withFailMessage("upgradeTraefik() did not return true")
             .isTrue();
-    logger.info(String.format("Traefik is upgraded in namespace %s", tfNamespace));
+    logger.info("Traefik is upgraded in namespace {0}", tfNamespace);
 
-    assertThat(helmGetExpectedValues(tfHelmParams, domainNamespace1))
-            .as("Test helmGetExpectedValues returns true")
-            .withFailMessage("helmGetExpectedValues() did not return true")
+    // verify the value of the release 'kubernetes.namespaces' got updated
+    String helmCmd = String.format("helm get values %1s -n %2s", tfHelmParams.getReleaseName(), tfNamespace);
+    assertThat(getExpectedResult(helmCmd, domainNamespace1))
+            .as("Get the expected value")
+            .withFailMessage("Did not get the expected value")
             .isTrue();
   }
 
   @Test
   @Order(3)
-  @DisplayName("Create a ingress per domain")
+  @DisplayName("Create an ingress per domain")
   public void testCreatingIngress() {
     // helm install parameters for ingress
     ingressParam = new HelmParams()
             .releaseName("sample-domain1-ingress")
             .namespace(domainNamespace1)
-            .chartDir("../kubernetes/samples/charts/ingress-per-domain");
+            .chartDir(projectRoot + "/../kubernetes/samples/charts/ingress-per-domain");
 
     assertThat(createIngress(ingressParam, "sample-domain1", "sample-domain1.org"))
             .as("Test createIngress returns true")
             .withFailMessage("createIngress() did not return true")
             .isTrue();
-    logger.info(String.format("ingress is upgraded in namespace %s", domainNamespace1));
+    logger.info("ingress is created in namespace {0}", domainNamespace1);
 
+    // check the ingress is created
+    String cmd = "kubectl get ingress -n " + domainNamespace1;
+    assertThat(getExpectedResult(cmd, "sample-domain1-traefik"))
+            .as("ingress is created")
+            .withFailMessage("ingress is not created in namespace " + domainNamespace1)
+            .isTrue();
   }
 
   @AfterAll
@@ -190,20 +196,6 @@ class ItSimpleTraefikValidation implements LoggedTest {
           .doesNotThrowAnyException();
       logger.info("Deleted namespace: {0}", domainNamespace1);
     }
-  }
-
-  private String createNamespace() {
-    String namespace = null;
-    try {
-      namespace = createUniqueNamespace();
-    } catch (Exception e) {
-      e.printStackTrace();
-      assertThat(e)
-          .as("Test that createUniqueNamespace does not throw an exception")
-          .withFailMessage("createUniqueNamespace() threw an unexpected exception")
-          .isNotInstanceOf(ApiException.class);
-    }
-    return namespace;
   }
 
 }
