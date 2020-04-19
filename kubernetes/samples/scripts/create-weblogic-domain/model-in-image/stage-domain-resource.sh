@@ -21,8 +21,8 @@
 #   MODEL_IMAGE_TAG          - defaults to 'v1'
 #   WDT_DOMAIN_TYPE          - WLS (default), RestrictedJRF, or JRF
 #   DOMAIN_RESOURCE_TEMPLATE - use this file for a domain resource template instead
-#                              of k8s-domain.yaml.template 
-#   INCLUDE_CONFIGMAP        - defaults to 'false'
+#                              of TBD/k8s-domain.yaml.template-TBD
+#   INCLUDE_MODEL_CONFIGMAP  - defaults to 'false'
 #                              Set to true to uncomment the template's
 #                              'model.configuration.configMap' reference,
 #                              and to uncomment the secret that's referenced
@@ -34,11 +34,11 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
-DOMAIN_RESOURCE_FILE=${WORKDIR}/k8s-domain.yaml
+domain_resource_file=${WORKDIR}/k8s-domain.yaml
 
-echo "@@ Info: Creating domain resource file '${DOMAIN_RESOURCE_FILE}' from '${DOMAIN_RESOURCE_TEMPLATE}'"
+echo "@@ Info: Creating domain resource file '${domain_resource_file}' from '${DOMAIN_RESOURCE_TEMPLATE}'"
 
-cp ${DOMAIN_RESOURCE_TEMPLATE} ${DOMAIN_RESOURCE_FILE}
+cp ${DOMAIN_RESOURCE_TEMPLATE} ${domain_resource_file}
 
 for template_var in WDT_DOMAIN_TYPE \
                     CUSTOM_DOMAIN_NAME \
@@ -47,17 +47,23 @@ for template_var in WDT_DOMAIN_TYPE \
                     MODEL_IMAGE_NAME \
                     MODEL_IMAGE_TAG
 do
-  sed -i -e "s;@@${template_var}@@;${!template_var};" $DOMAIN_RESOURCE_FILE
+  sed -i -e "s;@@${template_var}@@;${!template_var};" $domain_resource_file
 done
 
-if [ "${INCLUDE_CONFIGMAP}" = "true" ]; then
+if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # we're going to deploy and use the model.configuration.configMap, and this
   # configmap depends on the datasource-secret.
-  set -i -e "s/\#\(configmap\):\1:/"           $DOMAIN_RESOURCE_FILE
-  sed -i -e "s/\#\(secrets\):/\1:/"            $DOMAIN_RESOURCE_FILE
-  sed -i -e "s/\#\(-.*datasource-secret\)/\1/" $DOMAIN_RESOURCE_FILE
+  set -i -e "s/\#\(configmap\):\1:/"           $domain_resource_file
+  sed -i -e "s/\#\(secrets\):/\1:/"            $domain_resource_file
+  sed -i -e "s/\#\(-.*datasource-secret\)/\1/" $domain_resource_file
 fi
 
 # TBD maybe NOT redo the template if target already exists.
-#     note that that'd be confusing as INCLUDE_CONFIGMAP is a one-way street
-#
+#     note that that'd be confusing as INCLUDE_MODEL_CONFIGMAP is a one-way street
+
+# TBD add logic below and add DOMAIN_RESTART_VERSION to the template, env-custom, etc.
+# nextRV=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}' --ignore-not-found)
+# nextRV=$(echo $nextRV | sed 's/[^0-9]//')
+# nextRV=${nextRV:-0}
+# nextRV=$((nextRV + 1))
+# export DOMAIN_RESTART_VERSION=${DOMAIN_RESTART_VERSION:-$nextRV}

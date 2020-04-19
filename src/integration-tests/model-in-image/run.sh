@@ -156,6 +156,8 @@ doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
 doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
 doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 
+# TBD add a test of the deployed app
+
 if [ "$DO_PATCH" = "true" ]; then
 
   #
@@ -171,6 +173,8 @@ if [ "$DO_PATCH" = "true" ]; then
   doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh"
   doCommand  "\$MIISAMPLEDIR/util-patch-restart-version.sh"
   doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+
+# TBD add a test of the deployed app that confirms DS is running
 
 fi
 

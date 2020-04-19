@@ -130,7 +130,6 @@ kubectl apply  -f ${WORKDIR}/traefik-ingress-${cluster_service_name}.yaml
 kubectl delete -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml --ignore-not-found
 kubectl apply  -f ${WORKDIR}/traefik-ingress-console-${admin_service_name}.yaml
 
-# TBD this assumes the k8s cluster includes the test host:
 echo "@@"
 echo "@@ Info: The WebLogic console should now be available at 'http://$(hostname).$(dnsdomainname):30305/console' or 'http://$(kubehost):30305/console' (weblogic/welcome1)."
 echo "@@ Info: The sample app should now be available at 'http://$(hostname).$(dnsdomainname):30305/sample_war/index.jsp' or 'http://$(kubehost):30305/sample_war/index.jsp'"

@@ -86,7 +86,7 @@ if [ ! "$MODEL_IMAGE_BUILD" = "always" ] \
 fi
 
 echo @@
-echo @@ Info: Setting up imagetool and populating its caches
+echo @@ Info: Setting up imagetool and populating its cache with the WDT installer
 echo @@
 
 mkdir -p imagetool/cache
@@ -124,9 +124,9 @@ set -x
 ${IMGTOOL} update \
   --tag $MODEL_IMAGE \
   --fromImage $BASE_IMAGE \
-  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \
-  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \
-  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \
+  ${MODEL_YAML_FILES:+     --wdtModel     ${MODEL_YAML_FILES}} \
+  ${MODEL_VARIABLE_FILES:+ --wdtVariables ${MODEL_VARIABLE_FILES}} \
+  ${MODEL_ARCHIVE_FILES:+  --wdtArchive   ${MODEL_ARCHIVE_FILES}} \
   --wdtModelOnly \
   --wdtVersion myversion \
   --wdtDomainType ${WDT_DOMAIN_TYPE}

@@ -18,7 +18,7 @@ WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 
 if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
    && [ ! "$WDT_DOMAIN_TYPE" = "RestrictedJRF" ] \
-   && [ ! "$WDT_DOMAIN_TYPE" = "JFRF" ]; then
+   && [ ! "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'."
   exit 1
 fi
@@ -27,14 +27,9 @@ DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 CUSTOM_DOMAIN_NAME=${CUSTOM_DOMAIN_NAME:-domain1}
 
-CONFIGMAP_DIR=${CONFIGMAP_DIR:-$WORKDIR/configmap}
+MODEL_CONFIGMAP_DIR=${MODEL_CONFIGMAP_DIR:-$WORKDIR/model-configmap}
 
-if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  defaultDRTemplate="sample-domain-resource-jrf/k8s-domain.yaml.template"
-else
-  defaultDRTemplate="sample-domain-resource-wls/k8s-domain.yaml.template"
-fi
-DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/$defaultDRTemplate}"
+DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/sample-domain-resource/k8s-domain.yaml.template-$WDT_DOMAIN_TYPE}"
 
 DB_NAMESPACE=${DB_NAMESPACE:-default}
 
@@ -59,7 +54,7 @@ MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
 MODEL_DIR=${MODEL_DIR:-$WORKDIR/model}
 
-INCLUDE_CONFIGMAP=${INCLUDE_CONFIGMAP:-false}
+INCLUDE_MODEL_CONFIGMAP=${INCLUDE_MODEL_CONFIGMAP:-false}
 
 echo "@@"
 echo "@@ ######################################################################"

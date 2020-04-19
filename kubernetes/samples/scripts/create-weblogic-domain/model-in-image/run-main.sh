@@ -5,14 +5,17 @@
 #
 # Usage: run-main.sh 
 #
-# This script runs most of the sample. It creates a working directory
-# if there isn't already one created, downloads the WebLogic Deploy
-# Tooling and WebLogic Image Tool, stages and builds a model-in-image image, 
-# deploys secrets needed by the domain, stages and deploys a domain
-# resource that references the image, and finally waits for the
-# domain's pods to start. 
+# This script runs most of the sample and performs the following steps:
+#
+#   - Creates a working directory if there isn't already one created.
+#   - Downloads the WebLogic Deploy Tooling and WebLogic Image Tool.
+#   - Stages and builds a model-in-image image.
+#   - Deploys secrets needed by the domain.
+#   - Stages and deploys a domain resource that references the image.
+#   - And finally waits for the domain's pods to start. 
 #
 # Prerequisites:
+#
 #    - Namespace DOMAIN_NAMESPACE exists (default 'sample-domain1-ns').
 #
 #    - The WebLogic operator is deployed and monitoring DOMAIN_NAMESPACE.
@@ -21,7 +24,7 @@
 #      sample 'kubernetes/samples/scripts/create-oracle-db-service' with
 #      access as per the urls and credentials in 'create-secrets.sh'.
 #
-#    - Optional deployment of traefik, where traefik is
+#    - Optional deployment of Traefik, where Traefik is
 #      monitoring DOMAIN_NAMESPACE.
 #
 # Optionally set the following env vars:
@@ -42,6 +45,7 @@
 #     add check to see if Operator running and monitoring expected ns?
 #     add check to see if DB running in expected ns at expected port and responding to SQL commands?
 #     add check to see if Traefik is running?
+#
 
 set -eu
 set -o pipefail

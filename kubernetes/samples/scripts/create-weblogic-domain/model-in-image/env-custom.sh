@@ -7,7 +7,7 @@
 #
 #   It is copied to WORKDIR from the sample directory by 'stage-workdir.sh',
 #   and is automatically loaded from its WORKDIR location by every script
-#   in this sample (except for 'stage-workdir.sh' and 'util-*.sh').
+#   in this sample (except for 'stage-workdir.sh').
 # 
 
 # export DOMAIN_UID=
@@ -70,20 +70,21 @@
 #  Default is 'WORKDIR/model' which is populated by the 
 #  './stage-model-image.sh' script.
 
-# export INCLUDE_CONFIGMAP
+# export INCLUDE_MODEL_CONFIGMAP
 # ::: Tell sample to include a configuration.model.configMap
 #  Used by './stage-domain-resource.sh' to add a reference to a configMap
 #  in the domain resource, and to add a configuration.model.secrets reference
 #  to a secret that's used by the configMap. Also used by 'create-secrets.sh' to
-#  deploy a secret the configMap uses. See also CONFIGMAP_DIR.
+#  deploy a secret the configMap uses. See also MODEL_CONFIGMAP_DIR.
 #  Valid values are 'false' (default), and 'true'.
 
-# export CONFIGMAP_DIR=
+# export MODEL_CONFIGMAP_DIR=
 # ::: Configmap model files.
-#  Location of staged model files that will be loaded at runtime from
-#  a configmap specified by the domain resource. Default is 'WORKDIR/configmap'
-#  which is populated by the './stage-model-configmap.sh' script. Used by
-#  'create-model-configmap.sh'.  See also INCLUDE_CONFIGMAP.
+#  Location of staged model files that will be loaded at runtime from a
+#  configmap specified by the domain resource. Default is 
+#  'WORKDIR/model-configmap', which is populated by the 
+#  './stage-model-configmap.sh' script and used by
+#  'create-model-configmap.sh'.  See also INCLUDE_MODEL_CONFIGMAP.
 
 # export DOWNLOAD_WDT=
 # ::: When to download the WDT installer zip.
@@ -114,9 +115,7 @@
 # export DOMAIN_RESOURCE_TEMPLATE=
 # ::: Domain resource template
 #  Used by './stage-domain-resource.sh' as a template for generating a domain
-#  resource yaml file in WORKDIR.
-#  Defaults to 'sample-domain-resource-wls/k8s-domain.yaml.template' for the 'WLS'
-#  and 'RestrictedJRF' WDT_DOMAIN_TYPE. For the 'JRF' WDT_DOMAIN_TYPE, the default
-#  is 'sample-domain-resource-jrf/k8s-domain.yaml.template'.
+#  resource yaml file in WORKDIR. Defaults to 
+#  'sample-domain-resource/k8s-domain.yaml.template-WDT_DOMAIN_TYPE'
 
 # TBD add DB_NAMESPACE

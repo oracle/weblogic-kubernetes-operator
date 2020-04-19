@@ -3,11 +3,11 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This script stages wdt model files from './sample-configmap' 
-# to 'WORKDIR/configmap' for future inclusion in a Kubernetes
+# This script stages wdt model files from './sample-model-configmap' 
+# to 'WORKDIR/model-configmap' for future inclusion in a Kubernetes
 # configmap that is optionally referenced by the  domain resource
 # 'configuration.model.configMap' field. By default,
-# the './create-model-configmap.sh' uses 'WORKDIR/configmap'.
+# the './create-model-configmap.sh' uses 'WORKDIR/model-configmap'.
 #
 # Optionally set these environment variables:
 #
@@ -18,7 +18,7 @@
 # CUSTOMIZATION NOTE:
 #
 #   If you want to specify your own model files for a config map, then
-#   you don't need to run this script. See CONFIGMAP_DIR in 
+#   you don't need to run this script. See MODEL_CONFIGMAP_DIR in 
 #   'create-model-configmap.sh'
 #
 
@@ -31,9 +31,9 @@ SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
 echo "@@"
-echo "@@ Info: Staging configmap files from SCRIPTDIR/sample-configmap to WORKDIR/configmap"
+echo "@@ Info: Staging model configmap files from SCRIPTDIR/sample-model-configmap to WORKDIR/model-configmap"
 echo "@@"
 
-mkdir -p $WORKDIR/configmap
-rm -f $WORKDIR/configmap/*
-cp $SCRIPTDIR/sample-configmap/* $WORKDIR/configmap
+mkdir -p $WORKDIR/model-configmap
+rm -f $WORKDIR/model-configmap/*
+cp $SCRIPTDIR/sample-model-configmap/* $WORKDIR/model-configmap

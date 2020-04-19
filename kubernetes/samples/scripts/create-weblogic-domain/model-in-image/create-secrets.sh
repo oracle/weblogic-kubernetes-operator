@@ -14,7 +14,7 @@
 #   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
 #   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
 #   DB_NAMESPACE              - default (default)
-#   INCLUDE_CONFIGMAP         - 'true' if sample is deploying its
+#   INCLUDE_MODEL_CONFIGMAP   - 'true' if sample is deploying its
 #                               configuration.model.configMap
 #
 
@@ -76,7 +76,7 @@ fi
 # with an '@@SECRET' macro that references this datasource secret.
 #
 
-if [ "${INCLUDE_CONFIGMAP}" = "true" ]; then
+if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # this secret is referenced by the datasource in this sample's optional config.configMap
   echo "@@ Info: Creating datasource secret"
   $SCRIPTDIR/util-create-secret.sh \

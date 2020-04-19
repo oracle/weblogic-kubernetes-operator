@@ -18,9 +18,8 @@
 #   - It zips the 'WORKDIR/archive' directory contents and puts
 #     the zip in 'WORKDIR/model/archive1.zip'.
 #
-#   - It copies WDT model files from 'SCRIPTDIR/sample-model-jrf' or
-#     'SCRIPTDIR/sample-model-wls' into 'WORKDIR/model'. It chooses the
-#     source model file based on WDT_DOMAIN_TYPE.
+#   - It copies WDT model files from 'SCRIPTDIR/sample-model/WDT_DOMAIN_TYPE/*'
+#     into 'WORKDIR/model'. 
 #
 # Optionally set these environment variables:
 #
@@ -54,14 +53,9 @@ cd ${WORKDIR}
 rm -fr ./model
 mkdir -p ${WORKDIR}/model
 
-case "$WDT_DOMAIN_TYPE" in 
-  WLS|RestrictedJRF) srcdir=sample-model-wls ;;
-  JRF)               srcdir=sample-model-jrf ;;
-esac
+echo "@@ Info: Copying wdt model yaml and properties files from directory 'SCRIPTDIR/sample-model/$WDT_DOMAIN_TYPE' to directory 'WORKDIR/model'."
 
-echo "@@ Info: Copying wdt model yaml and properties files from directory 'SCRIPTDIR/$srcdir' to directory 'WORKDIR/model'."
-
-cp $SCRIPTDIR/$srcdir/* $WORKDIR/model
+cp $SCRIPTDIR/sample-model/$WDT_DOMAIN_TYPE/* $WORKDIR/model
 
 echo "@@ Info: Copying sample archive with an exploded ear jsp app from SCRIPTDIR to the 'WORKDIR/archive' directory."
 

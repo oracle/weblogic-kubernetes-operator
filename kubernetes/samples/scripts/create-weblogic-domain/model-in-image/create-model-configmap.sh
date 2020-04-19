@@ -3,21 +3,22 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# By default, this script deploys a configmap named '${DOMAIN_UID}-wdt-config-map'
-# from files in the 'WORKDIR/configmap' directory that were staged by 'stage-model-configmap.sh'.
+# By default, this script deploys a model configmap named
+# '${DOMAIN_UID}-wdt-config-map' from files in the 'WORKDIR/model-configmap'
+# directory that were staged by 'stage-model-configmap.sh'.
 #
-# If the 'CONFIGMAP_DIR' env var is customized, then this script instead deploys the
-# configmap from the given directory.
+# If the 'MODEL_CONFIGMAP_DIR' env var is customized, then this script
+# instead deploys the configmap from the given directory.
 #
 # Note that this config map is only loaded at runtime if:
 #  - its referenced secret(s) are deployed 
-#    (See 'INCLUDE_CONFIGMAP' in 'create-secrets.sh'.)
+#    (See 'INCLUDE_MODEL_CONFIGMAP' in 'create-secrets.sh'.)
 #  - a domain resource references these secrets in
 #    configuration.model.secrets
-#    (See 'INCLUDE_CONFIGMAP' in 'stage-domain-resource.sh'.)
+#    (See 'INCLUDE_MODEL_CONFIGMAP' in 'stage-domain-resource.sh'.)
 #  - a domain resource references the configmap
 #    in configuration.model.configMap.
-#    (See 'INCLUDE_CONFIGMAP' in 'stage-domain-resource.sh')
+#    (See 'INCLUDE_MODEL_CONFIGMAP' in 'stage-domain-resource.sh')
 #
 # Optional environment variables:
 #
@@ -26,7 +27,7 @@
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
-#   CONFIGMAP_DIR             - defaults to '${WORKDIR}/configmap' 
+#   MODEL_CONFIGMAP_DIR       - defaults to '${WORKDIR}/model-configmap' 
 #                               (a directory populated by stage-model-configmap.sh)
 #
 
@@ -35,4 +36,4 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
-$SCRIPTDIR/util-create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${CONFIGMAP_DIR}
+$SCRIPTDIR/util-create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${MODEL_CONFIGMAP_DIR}

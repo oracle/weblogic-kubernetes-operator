@@ -3,7 +3,12 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# Usage: See 'usage_exit()' function below.
+# This is a helper script that can save an OPSS key wallet from a
+# running domain's introspector configmap to a file, and/or restore
+# an OPSS key wallet file to a Kubernetes secret for use by a domain
+# that you're about to run.
+#
+# For command line details, pass '-?' or see 'usage_exit()' below.
 #
 # Defaults can optionally be changed via env vars:
 #

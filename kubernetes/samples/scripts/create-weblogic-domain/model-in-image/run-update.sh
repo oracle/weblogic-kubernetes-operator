@@ -48,12 +48,14 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 
-export INCLUDE_CONFIGMAP=true #tells stage-domain-resource.sh and
-                              #create-secrets.sh to account for configmap
+# Ensure stage-domain-resource.sh and create-secrets.sh 
+# account for the model configmap:
+
+export INCLUDE_MODEL_CONFIGMAP=true 
 
 #######################################################################
-# Stage model configmap from 'SCRIPTDIR/sample-configmap' to 
-# 'WORKDIR/configmap'. Then deploy it.
+# Stage model configmap from 'SCRIPTDIR/sample-model-configmap' to 
+# 'WORKDIR/model-configmap'. Then deploy it.
 
 $SCRIPTDIR/stage-model-configmap.sh
 $SCRIPTDIR/create-model-configmap.sh
@@ -76,8 +78,8 @@ $SCRIPTDIR/create-domain-resource.sh
 #######################################################################
 # Patch domain resource restart version. 
 #     This will force introspector job to rerun and regenerate WebLogic
-#     config with the model files from the configmap. This will also
-#     force a subsequent rolling restart.
+#     config with the model files from the model configmap. This will
+#     also force a subsequent rolling restart.
 
 $SCRIPTDIR/util-patch-restart-version.sh
 
