@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.DbUtils;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -69,23 +68,16 @@ public class ItJrfPvWlst extends BaseTest {
           + "/kubernetes/samples/scripts " 
           + getResultDir(),
           true);
-      //delete leftover pods caused by test being aborted
-      DbUtils.deleteRcuPod(getResultDir());
-      DbUtils.deleteDbPod(getResultDir());
-       
+      
+      //start DB and create RCU
       dbNamespace = "db" + String.valueOf(getNewSuffixCount());
-      String command = "kubectl create namespace " + dbNamespace;
-      LoggerHelper.getLocal().log(Level.INFO, "Created namespace " + dbNamespace);
-      ExecCommand.exec(command);
+      DbUtils.createNamespace(dbNamespace);
       dbPort = 30011 + getNewSuffixCount();
       dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
       LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
-          + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl);
+          + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort);
+      DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, rcuSchemaPrefix, dbNamespace);
       
-      DbUtils.createDockerRegistrySecret(dbNamespace);
-      DbUtils.startOracleDB(getResultDir(), String.valueOf(dbPort), dbNamespace);
-      DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl, dbNamespace);
-    
       // create operator1
       if (operator1 == null) {
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),

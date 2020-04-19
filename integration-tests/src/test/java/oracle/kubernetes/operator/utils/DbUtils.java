@@ -86,8 +86,8 @@ public class DbUtils {
   /**
    * stop oracle service.
    * @param scriptDir script dir
-   * @param dbnamespace namesspace that DB instance is going to start
-   * @throws Exception - if any error occurs when dropping Oracle DB service
+   * @param dbnamespace namespace that DB instance is going to stop
+   * @throws Exception if any error occurs when dropping Oracle DB service
    */
   public static void stopOracleDB(String scriptsDir, String dbNamespace) throws Exception {
     String cmd = "sh " 
@@ -141,7 +141,7 @@ public class DbUtils {
   
   /**
    * Create Docker Registry Secret for the DB namespace.
-   *
+   * @param namespace namespace where the docker registry secreted is going to create
    * @throws Exception when the kubectl create secret command fails
    */
   public static void createDockerRegistrySecret(String namespace) throws Exception {
@@ -149,12 +149,10 @@ public class DbUtils {
     if (secret == null) {
       secret = "docker-store";
     }
-    
     String ocrserver = System.getenv("OCR_SERVER");
     if (ocrserver == null) {
       ocrserver = "container-registry.oracle.com";
     }
- 
     try {
       TestUtils.createDockerRegistrySecret(
           secret,
@@ -176,7 +174,7 @@ public class DbUtils {
    * @param scriptDir script dir
    * @param rcuSchemaPrefix rcu SchemaPrefixe
    * @param dbnamespace namesspace that DB instance is going to start
-   * @throws Exception - if any error occurs when dropping rcu schema
+   * @throws Exception if any error occurs when dropping rcu schema
    */
   public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix, String dbNamespace) throws Exception {
     String cmd = "sh " 
@@ -208,7 +206,7 @@ public class DbUtils {
   /**
    * delete DB pod.
    * @param scriptsDir script dir
-   * @throws Exception - if any error occurs when deleting DB pod
+   * @throws Exception if any error occurs when deleting DB pod
    */
   public static void deleteDbPod(String scriptsDir) throws Exception {
     String cmd = "kubectl delete -f " 
@@ -332,15 +330,49 @@ public class DbUtils {
 
   /**
    * create a namespace.
-   *
-   * @param namespace - namespace to create
-   * @throws Exception - if any error occurs
+   * @param namespace namespace to create
+   * @throws Exception if any error occurs
    */
   public static void createNamespace(String namespace) throws Exception {
     if (!namespace.equalsIgnoreCase("default")) {
-      String command = "kubectl create ns " + namespace;
-      logger.info("Running " + command);
-      TestUtils.exec(command);
+      try {
+        String cmd1 = "kubectl delete ns " + namespace + " --ignore-not-found";
+        logger.info("Running " + cmd1);
+        TestUtils.exec(cmd1, true);
+        String cmd2 = "kubectl create ns " + namespace;
+        logger.info("Running " + cmd2);
+        TestUtils.exec(cmd2, true);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        Assertions.fail("Failed to start DB and create namespace.");
+      }
     }
   }
+  
+  /**
+   * create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * @param scriptDir script dir
+   * @param dbPort NodePort of DB
+   * @param dbUrl URL of DB
+   * @param rcuSchemaPrefix rcu SchemaPrefixe
+   * @param dbNamespace namesspace that DB instance is going to start
+   * @throws Exception if any error occurs when creating Oracle rcu pod
+   */
+  public static void createDbRcu(String scriptDir, int dbPort, String dbUrl, String rcuSchemaPrefix,
+      String dbNamespace) throws Exception {  
+    
+    try {  
+      //delete leftover pods caused by test being aborted
+      deleteRcuPod(scriptDir);
+      deleteDbPod(scriptDir);
+         
+      DbUtils.createDockerRegistrySecret(dbNamespace);
+      DbUtils.startOracleDB(scriptDir, String.valueOf(dbPort), dbNamespace);
+      DbUtils.createRcuSchema(scriptDir,rcuSchemaPrefix, dbUrl, dbNamespace);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      Assertions.fail("Failed to start DB and create RCU schema.\n", ex.getCause());
+    }
+  }
+
 }

@@ -15,7 +15,6 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.DbUtils;
 import oracle.kubernetes.operator.utils.DomainCrd;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.LoggerHelper;
@@ -84,23 +83,16 @@ public class ItJrfModelInImage extends MiiBaseTest {
             + "/kubernetes/samples/scripts " 
             + getResultDir(),
             true);
-    //delete leftover pods caused by test being aborted
-    DbUtils.deleteRcuPod(getResultDir());
-    DbUtils.deleteDbPod(getResultDir());
-         
+    
+    //start DB and create RCU
     dbNamespace = "db" + String.valueOf(getNewSuffixCount());
-    String command = "kubectl create namespace " + dbNamespace;
-    LoggerHelper.getLocal().log(Level.INFO, "Created namespace " + dbNamespace);
-    ExecCommand.exec(command);
+    DbUtils.createNamespace(dbNamespace);
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
     LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
         + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort);
+    DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, rcuSchemaPrefix, dbNamespace);
     
-    DbUtils.createDockerRegistrySecret(dbNamespace);
-    DbUtils.startOracleDB(getResultDir(), String.valueOf(dbPort), dbNamespace);
-    DbUtils.createRcuSchema(getResultDir(),rcuSchemaPrefix, dbUrl, dbNamespace);
-
     // create operator1
     if (operator == null) {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
@@ -134,9 +126,9 @@ public class ItJrfModelInImage extends MiiBaseTest {
   }
 
   /**
-   * Create and deploy a JRF domain using model in image. Save walletFileSecret and then shutdown the domain by 
-   * changing serverStartPolicy to "NEVER". Enable walletFileSecret in the domain yaml file and start the domain 
-   * with the modified domain yaml file.
+   * Create and deploy a JRF domain using model in image. Save and restore walletFileSecret. After shutting down 
+   * the domain, enable walletFileSecret in the domain yaml file. Restart the domain with the modified domain yaml 
+   * file that reuses the same RCU schema. Verify the restarted domain is in the good state.
    *
    * @throws Exception when test fails 
    */
@@ -172,8 +164,8 @@ public class ItJrfModelInImage extends MiiBaseTest {
       Secret walletPass = new WalletPasswordSecret(namespace, domainUid 
           + "-opss-wallet-password-secret", walletPassword);
       
-      domainMap.put("secrets", rcuAccess);
-      domainMap.put("walletPasswordSecret", walletPass);
+      //domainMap.put("secrets", rcuAccess);
+      //domainMap.put("walletPasswordSecret", walletPass);
       
       jrfdomain = new JrfDomain(domainMap);
       
@@ -224,13 +216,13 @@ public class ItJrfModelInImage extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
   
-  private static void saveWalletFileSecret(String scriptsDir, String domainUid, String nameSpace)throws Exception {
+  private static void saveWalletFileSecret(String scriptsDir, String domainUid, String namespace)throws Exception {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -d "
         + domainUid
         + " -n "
-        + nameSpace
+        + namespace
         + " -s";
     try {
       TestUtils.exec(cmd, true);
@@ -240,14 +232,14 @@ public class ItJrfModelInImage extends MiiBaseTest {
     }   
   }
   
-  private static void restoreWalletFileSecret(String scriptsDir, String domainUid, String nameSpace, 
+  private static void restoreWalletFileSecret(String scriptsDir, String domainUid, String namespace, 
       String secretName)throws Exception {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -d "
         + domainUid
         + " -n "
-        + nameSpace
+        + namespace
         + " -r"
         + " -ws "
         + secretName;
