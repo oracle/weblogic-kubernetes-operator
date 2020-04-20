@@ -97,7 +97,7 @@ class ItSimpleDomainValidation implements LoggedTest {
             .putCapacityItem("storage", Quantity.fromString("10Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .hostPath(new V1HostPathVolumeSource()
-                .path(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume")))
+                .path(System.getProperty("java.io.tmpdir") + "/" + domainUID + "-persistentVolume")))
                 .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .withNamespace(namespace)
