@@ -9,11 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -28,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Simple validation of basic WIT functions")
 @IntegrationTest
-@ExtendWith(IntegrationTestWatcher.class)
 class ItWITValidation implements LoggedTest {
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String IMAGE_NAME = "test-mii-image-2";

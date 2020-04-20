@@ -15,7 +15,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +22,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -38,6 +36,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRun
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 // this is a POC for a new way of writing tests.
@@ -56,7 +55,6 @@ import static org.awaitility.Awaitility.with;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of basic operator functions")
 @IntegrationTest
-@ExtendWith(IntegrationTestWatcher.class)
 class ItSimpleOperatorValidation implements LoggedTest {
 
   private HelmParams opHelmParams = null;
@@ -73,7 +71,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
   // like these two:
   @Slow
   @MustNotRunInParallel
-  public void testInstallingOperator(@Namespaces(3)List namespaces) {
+  public void testInstallingOperator(@Namespaces(3)List<String> namespaces) {
     // this first example is an operation that we wait for.
     // installOperator() is one of our custom, reusable actions.
     // imagine that installOperator() will try to install the operator, by creating
@@ -81,9 +79,12 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // successful or not.
 
     // get unique namespaces for operator and domains
-    opNamespace = (String)namespaces.get(0);
-    domainNamespace1 = (String)namespaces.get(1);
-    domainNamespace2 = (String)namespaces.get(2);
+    for (int i = 0; i < 3; i++) {
+      assertNotNull(namespaces.get(i), "Namespace " + i + "is null");
+    }
+    opNamespace = namespaces.get(0);
+    domainNamespace1 = namespaces.get(1);
+    domainNamespace2 = namespaces.get(2);
 
     // Create a service account for the unique opNamespace
     final String serviceAccountName = opNamespace + "-sa";

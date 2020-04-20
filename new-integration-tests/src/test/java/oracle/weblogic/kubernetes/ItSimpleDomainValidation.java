@@ -22,11 +22,9 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -35,24 +33,25 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
 //Every test class needs to tagged with this annotation for log collection and namespace creation.
 @IntegrationTest
-@ExtendWith(IntegrationTestWatcher.class)
 class ItSimpleDomainValidation implements LoggedTest {
 
   @Test
   @DisplayName("Create a domain")
   @Slow
-  public void testCreatingDomain(@Namespaces(1)List namespaces) {
+  public void testCreatingDomain(@Namespaces(1)List<String> namespaces) {
 
     final String domainUID = "domain1";
 
     // get a new unique namespace
     logger.info("Creating unique namespace for Operator");
-    String namespace = (String)namespaces.get(0);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    String namespace = namespaces.get(0);
 
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";

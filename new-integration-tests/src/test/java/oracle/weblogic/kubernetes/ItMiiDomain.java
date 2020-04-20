@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -46,7 +45,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -85,7 +83,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
 @IntegrationTest
-@ExtendWith(IntegrationTestWatcher.class)
 class ItMiiDomain implements LoggedTest {
 
   // operator constants
@@ -121,11 +118,11 @@ class ItMiiDomain implements LoggedTest {
 
   /**
    * Install Operator.
-   * @param namespaces namespace list created by the IntegrationTestWatcher by the
-   JUnit engine parameter resolution
+   * @param namespaces listof namespaces created by the IntegrationTestWatcher by the
+   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2)List namespaces) {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     // create standard, reusbale retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -133,12 +130,12 @@ class ItMiiDomain implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    assertNotNull(namespaces.get(0));
-    opNamespace = (String)namespaces.get(0);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
-    assertNotNull(namespaces.get(1));
-    domainNamespace = (String)namespaces.get(1);
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    domainNamespace = namespaces.get(1);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
