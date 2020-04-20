@@ -13,7 +13,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
-@ApiModel(description = "ServerHealth describes the current status and health of a specific WebLogic Server.")
+@ApiModel(
+    description =
+        "ServerHealth describes the current status and health of a specific WebLogic Server.")
 public class ServerHealth {
 
   @ApiModelProperty("RFC 3339 date and time at which the server started.")
@@ -38,6 +40,14 @@ public class ServerHealth {
     return activationTime;
   }
 
+  public DateTime getActivationTime() {
+    return activationTime;
+  }
+
+  public void setActivationTime(DateTime activationTime) {
+    this.activationTime = activationTime;
+  }
+
   public ServerHealth overallHealth(String overallHealth) {
     this.overallHealth = overallHealth;
     return this;
@@ -45,6 +55,14 @@ public class ServerHealth {
 
   public String overallHealth() {
     return overallHealth;
+  }
+
+  public String getOverallHealth() {
+    return overallHealth;
+  }
+
+  public void setOverallHealth(String overallHealth) {
+    this.overallHealth = overallHealth;
   }
 
   public ServerHealth subsystems(List<SubsystemHealth> subsystems) {
@@ -62,6 +80,14 @@ public class ServerHealth {
     }
     subsystems.add(subsystemsItem);
     return this;
+  }
+
+  public List<SubsystemHealth> getSubsystems() {
+    return subsystems;
+  }
+
+  public void setSubsystems(List<SubsystemHealth> subsystems) {
+    this.subsystems = subsystems;
   }
 
   @Override
@@ -98,5 +124,4 @@ public class ServerHealth {
         .append(subsystems, rhs.subsystems)
         .isEquals();
   }
-
 }

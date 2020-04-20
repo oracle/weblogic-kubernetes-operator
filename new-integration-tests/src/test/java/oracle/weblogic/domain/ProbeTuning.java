@@ -28,6 +28,14 @@ public class ProbeTuning {
     return initialDelaySeconds;
   }
 
+  public Integer getInitialDelaySeconds() {
+    return initialDelaySeconds;
+  }
+
+  public void setInitialDelaySeconds(Integer initialDelaySeconds) {
+    this.initialDelaySeconds = initialDelaySeconds;
+  }
+
   public ProbeTuning periodSeconds(Integer periodSeconds) {
     this.periodSeconds = periodSeconds;
     return this;
@@ -37,6 +45,14 @@ public class ProbeTuning {
     return periodSeconds;
   }
 
+  public Integer getPeriodSeconds() {
+    return periodSeconds;
+  }
+
+  public void setPeriodSeconds(Integer periodSeconds) {
+    this.periodSeconds = periodSeconds;
+  }
+
   public ProbeTuning timeoutSeconds(Integer timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
     return this;
@@ -44,6 +60,14 @@ public class ProbeTuning {
 
   public Integer timeoutSeconds() {
     return timeoutSeconds;
+  }
+
+  public Integer getTimeoutSeconds() {
+    return timeoutSeconds;
+  }
+
+  public void setTimeoutSeconds(Integer timeoutSeconds) {
+    this.timeoutSeconds = timeoutSeconds;
   }
 
   @Override
@@ -80,5 +104,4 @@ public class ProbeTuning {
         .append(timeoutSeconds)
         .toHashCode();
   }
-
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -19,8 +19,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class DomainSpec {
 
   @ApiModelProperty(
-      value = "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
-          + " Defaults to the value of metadata.name.",
+      value =
+          "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
+              + " Defaults to the value of metadata.name.",
       allowableValues = "pattern[^[a-z0-9-.]{1,253}$]")
   @SerializedName("domainUID")
   private String domainUid;
@@ -59,7 +60,8 @@ public class DomainSpec {
           + "then the data storage directories are determined from the WebLogic domain home configuration.")
   private String dataHome;
 
-  @ApiModelProperty("If true (the default), the server .out file will be included in the pod's stdout.")
+  @ApiModelProperty(
+      "If true (the default), the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
 
   @ApiModelProperty(
@@ -77,7 +79,8 @@ public class DomainSpec {
   private List<V1LocalObjectReference> imagePullSecrets = new ArrayList<>();
 
   @ApiModelProperty(
-      value = "The number of managed servers to run in any cluster that does not specify a replica count.",
+      value =
+          "The number of managed servers to run in any cluster that does not specify a replica count.",
       allowableValues = "range[0,infinity]")
   private Integer replicas;
 
@@ -107,14 +110,16 @@ public class DomainSpec {
   private Configuration configuration;
 
   @Deprecated
-  @ApiModelProperty("Deprecated. Use configuration.overridesConfigMap instead."
-      + " Ignored if configuration.overridesConfigMap is specified."
-      + " The name of the config map for optional WebLogic configuration overrides.")
+  @ApiModelProperty(
+      "Deprecated. Use configuration.overridesConfigMap instead."
+          + " Ignored if configuration.overridesConfigMap is specified."
+          + " The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   @Deprecated
-  @ApiModelProperty("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
-      + " A list of names of the secrets for optional WebLogic configuration overrides.")
+  @ApiModelProperty(
+      "Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
+          + " A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets = new ArrayList<>();
 
   @ApiModelProperty("Configuration for the Administration Server.")
@@ -155,6 +160,14 @@ public class DomainSpec {
     return domainUid;
   }
 
+  public String getDomainUid() {
+    return domainUid;
+  }
+
+  public void setDomainUid(String domainUid) {
+    this.domainUid = domainUid;
+  }
+
   public DomainSpec domainHome(String domainHome) {
     this.domainHome = domainHome;
     return this;
@@ -162,6 +175,14 @@ public class DomainSpec {
 
   public String domainHome() {
     return domainHome;
+  }
+
+  public String getDomainHome() {
+    return domainHome;
+  }
+
+  public void setDomainHome(String domainHome) {
+    this.domainHome = domainHome;
   }
 
   public DomainSpec serverStartPolicy(String serverStartPolicy) {
@@ -173,6 +194,14 @@ public class DomainSpec {
     return serverStartPolicy;
   }
 
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
   public DomainSpec webLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
@@ -180,6 +209,14 @@ public class DomainSpec {
 
   public V1SecretReference webLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
+  }
+
+  public V1SecretReference getWebLogicCredentialsSecret() {
+    return webLogicCredentialsSecret;
+  }
+
+  public void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
   public DomainSpec logHome(String logHome) {
@@ -191,6 +228,14 @@ public class DomainSpec {
     return logHome;
   }
 
+  public String getLogHome() {
+    return logHome;
+  }
+
+  public void setLogHome(String logHome) {
+    this.logHome = logHome;
+  }
+
   public DomainSpec logHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
     return this;
@@ -198,6 +243,14 @@ public class DomainSpec {
 
   public Boolean logHomeEnabled() {
     return logHomeEnabled;
+  }
+
+  public Boolean getLogHomeEnabled() {
+    return logHomeEnabled;
+  }
+
+  public void setLogHomeEnabled(Boolean logHomeEnabled) {
+    this.logHomeEnabled = logHomeEnabled;
   }
 
   public DomainSpec dataHome(String dataHome) {
@@ -209,6 +262,14 @@ public class DomainSpec {
     return dataHome;
   }
 
+  public String getDataHome() {
+    return dataHome;
+  }
+
+  public void setDataHome(String dataHome) {
+    this.dataHome = dataHome;
+  }
+
   public DomainSpec includeServerOutInPodLog(Boolean includeServerOutInPodLog) {
     this.includeServerOutInPodLog = includeServerOutInPodLog;
     return this;
@@ -216,6 +277,14 @@ public class DomainSpec {
 
   public Boolean includeServerOutInPodLog() {
     return includeServerOutInPodLog;
+  }
+
+  public Boolean getIncludeServerOutInPodLog() {
+    return includeServerOutInPodLog;
+  }
+
+  public void setIncludeServerOutInPodLog(Boolean includeServerOutInPodLog) {
+    this.includeServerOutInPodLog = includeServerOutInPodLog;
   }
 
   public DomainSpec image(String image) {
@@ -227,6 +296,14 @@ public class DomainSpec {
     return image;
   }
 
+  public String getImage() {
+    return image;
+  }
+
+  public void setImage(String image) {
+    this.image = image;
+  }
+
   public DomainSpec imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
@@ -234,6 +311,14 @@ public class DomainSpec {
 
   public String imagePullPolicy() {
     return imagePullPolicy;
+  }
+
+  public String getImagePullPolicy() {
+    return imagePullPolicy;
+  }
+
+  public void setImagePullPolicy(String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
   }
 
   public DomainSpec imagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
@@ -253,6 +338,14 @@ public class DomainSpec {
     return this;
   }
 
+  public List<V1LocalObjectReference> getImagePullSecrets() {
+    return imagePullSecrets;
+  }
+
+  public void setImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
+    this.imagePullSecrets = imagePullSecrets;
+  }
+
   public DomainSpec replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -260,6 +353,14 @@ public class DomainSpec {
 
   public Integer replicas() {
     return this.replicas;
+  }
+
+  public Integer getReplicas() {
+    return replicas;
+  }
+
+  public void setReplicas(Integer replicas) {
+    this.replicas = replicas;
   }
 
   public DomainSpec domainHomeInImage(Boolean domainHomeInImage) {
@@ -271,6 +372,14 @@ public class DomainSpec {
     return domainHomeInImage;
   }
 
+  public Boolean getDomainHomeInImage() {
+    return domainHomeInImage;
+  }
+
+  public void setDomainHomeInImage(Boolean domainHomeInImage) {
+    this.domainHomeInImage = domainHomeInImage;
+  }
+
   public DomainSpec domainHomeSourceType(String domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
     return this;
@@ -278,6 +387,14 @@ public class DomainSpec {
 
   public String domainHomeSourceType() {
     return domainHomeSourceType;
+  }
+
+  public String getDomainHomeSourceType() {
+    return domainHomeSourceType;
+  }
+
+  public void setDomainHomeSourceType(String domainHomeSourceType) {
+    this.domainHomeSourceType = domainHomeSourceType;
   }
 
   public DomainSpec introspectVersion(String introspectVersion) {
@@ -289,6 +406,14 @@ public class DomainSpec {
     return introspectVersion;
   }
 
+  public String getIntrospectVersion() {
+    return introspectVersion;
+  }
+
+  public void setIntrospectVersion(String introspectVersion) {
+    this.introspectVersion = introspectVersion;
+  }
+
   public DomainSpec configuration(Configuration configuration) {
     this.configuration = configuration;
     return this;
@@ -298,6 +423,14 @@ public class DomainSpec {
     return configuration;
   }
 
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
+
   public DomainSpec configOverrides(String configOverrides) {
     this.configOverrides = configOverrides;
     return this;
@@ -305,6 +438,14 @@ public class DomainSpec {
 
   public String configOverrides() {
     return configOverrides;
+  }
+
+  public String getConfigOverrides() {
+    return configOverrides;
+  }
+
+  public void setConfigOverrides(String configOverrides) {
+    this.configOverrides = configOverrides;
   }
 
   public DomainSpec configOverrideSecrets(List<String> configOverrideSecrets) {
@@ -324,6 +465,14 @@ public class DomainSpec {
     return this;
   }
 
+  public List<String> getConfigOverrideSecrets() {
+    return configOverrideSecrets;
+  }
+
+  public void setConfigOverrideSecrets(List<String> configOverrideSecrets) {
+    this.configOverrideSecrets = configOverrideSecrets;
+  }
+
   public DomainSpec adminServer(AdminServer adminServer) {
     this.adminServer = adminServer;
     return this;
@@ -331,6 +480,14 @@ public class DomainSpec {
 
   public AdminServer adminServer() {
     return adminServer;
+  }
+
+  public AdminServer getAdminServer() {
+    return adminServer;
+  }
+
+  public void setAdminServer(AdminServer adminServer) {
+    this.adminServer = adminServer;
   }
 
   public DomainSpec managedServers(List<ManagedServer> managedServers) {
@@ -350,6 +507,14 @@ public class DomainSpec {
     return this;
   }
 
+  public List<ManagedServer> getManagedServers() {
+    return managedServers;
+  }
+
+  public void setManagedServers(List<ManagedServer> managedServers) {
+    this.managedServers = managedServers;
+  }
+
   public DomainSpec clusters(List<Cluster> clusters) {
     this.clusters = clusters;
     return this;
@@ -367,6 +532,14 @@ public class DomainSpec {
     return this;
   }
 
+  public List<Cluster> getClusters() {
+    return clusters;
+  }
+
+  public void setClusters(List<Cluster> clusters) {
+    this.clusters = clusters;
+  }
+
   public DomainSpec experimental(Experimental experimental) {
     this.experimental = experimental;
     return this;
@@ -374,6 +547,14 @@ public class DomainSpec {
 
   public Experimental experimental() {
     return experimental;
+  }
+
+  public Experimental getExperimental() {
+    return experimental;
+  }
+
+  public void setExperimental(Experimental experimental) {
+    this.experimental = experimental;
   }
 
   public DomainSpec serverPod(ServerPod serverPod) {
@@ -385,6 +566,31 @@ public class DomainSpec {
     return serverPod;
   }
 
+  public ServerPod getServerPod() {
+    return serverPod;
+  }
+
+  public void setServerPod(ServerPod serverPod) {
+    this.serverPod = serverPod;
+  }
+
+  public DomainSpec serverService(ServerService serverService) {
+    this.serverService = serverService;
+    return this;
+  }
+
+  public ServerService serverService() {
+    return serverService;
+  }
+
+  public ServerService getServerService() {
+    return serverService;
+  }
+
+  public void setServerService(ServerService serverService) {
+    this.serverService = serverService;
+  }
+
   public DomainSpec serverStartState(String serverStartState) {
     this.serverStartState = serverStartState;
     return this;
@@ -394,6 +600,14 @@ public class DomainSpec {
     return serverStartState;
   }
 
+  public String getServerStartState() {
+    return serverStartState;
+  }
+
+  public void setServerStartState(String serverStartState) {
+    this.serverStartState = serverStartState;
+  }
+
   public DomainSpec restartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
     return this;
@@ -401,6 +615,14 @@ public class DomainSpec {
 
   public String restartVersion() {
     return restartVersion;
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -511,5 +733,4 @@ public class DomainSpec {
             .append(restartVersion, rhs.restartVersion);
     return builder.isEquals();
   }
-
 }
