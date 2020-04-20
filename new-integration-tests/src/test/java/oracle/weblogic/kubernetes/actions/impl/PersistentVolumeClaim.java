@@ -27,9 +27,8 @@ public class PersistentVolumeClaim {
    * @param name name of the Persistent Volume Claim
    * @param namespace name of the namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(String name, String namespace) throws ApiException {
+  public static boolean delete(String name, String namespace) {
     return Kubernetes.deletePvc(name, namespace);
   }
 }

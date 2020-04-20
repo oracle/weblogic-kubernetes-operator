@@ -27,9 +27,8 @@ public class ConfigMap {
    * @param name name of the Config Map
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(String name, String namespace) throws ApiException {
+  public static boolean delete(String name, String namespace) {
     return Kubernetes.deleteConfigMap(name, namespace);
   }
 }
