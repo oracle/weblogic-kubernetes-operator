@@ -81,7 +81,7 @@ public class Installer {
   }
 
   /**
-   * Download and install the tool using the params
+   * Download and install the tool using the params.
    * @return true if the command succeeds 
    */
   public boolean download() {
@@ -95,11 +95,11 @@ public class Installer {
       // check and make sure DOWNLOAD_DIR exists; will create it if it is missing
       checkDirectory(DOWNLOAD_DIR);
       
-      // we check if we get the version of the tool correctly first
+      // we check if we have got the version of the tool correctly before we download the installer
       if (params.version() == null 
-          || params.version().length() == 0
           || params.version().equalsIgnoreCase("latest")) {
-        logger.severe("Failed to get the latest version of {0}", params.type());
+        logger.severe("Failed to get the latest version of {0} because previous command execution failed.",
+            params.type());
         return false;
       }
       downloadSucceeded = Command.withParams(
@@ -138,7 +138,12 @@ public class Installer {
     return command;
   }
 
-  // Figure out the actual release number of the latest
+  /**
+   * Figure out the actual version number of the latest release of WDT or WIT if the version
+   * parameter is not specified or is specified as "latest". The passed in version value is
+   * return otherwise.
+   * @return the version number that is requested
+   */
   static String getActualVersionIfNeeded(
       String location,
       String type,

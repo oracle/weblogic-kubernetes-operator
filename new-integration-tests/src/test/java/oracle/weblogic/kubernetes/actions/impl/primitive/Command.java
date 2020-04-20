@@ -50,17 +50,11 @@ public class Command {
         params.stdOut(result.stdout());
       }
 
-      // check both exitValue and stderr since sometimes the exitValue was 0 even when
-      // the test execution failed.
-      if (params.redirect()
-          && (result.exitValue() != 0 
-              || result.stderr() != null 
-                  && result.stderr().length() != 0)
-                  && !result.stderr().contains("INFO")
-                  && result.stderr().contains("error")) {
-        logger.warning("The command execution might have failed because it returned something in the stderr: {0}.",
-            result);
-      }
+      // check exitValue to determine if the command execution has failed.
+      if (result.exitValue() != 0) {
+        logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+      } 
+
       return result.exitValue() == 0;
     } catch (IOException | InterruptedException ie) {
       logger.severe("The command execution failed", ie);

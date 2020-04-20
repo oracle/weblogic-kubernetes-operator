@@ -37,7 +37,7 @@ public class ExecResult {
   
   public String toString() {
     return String.format(
-        "Results: exitValue = %s, stdout = %s, stderr = %s", 
+        "ExecResult: exitValue = %s, stdout = %s, stderr = %s", 
         exitValue, 
         stdout, 
         stderr);
