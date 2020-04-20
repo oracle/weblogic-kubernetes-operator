@@ -91,6 +91,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     logTestBegin(testMethodName);
     Operator firstoperator = null;
     Operator secondoperator = null;
+    boolean gotException = false;
     try {
       LoggerHelper.getLocal().log(Level.INFO, "Checking if first operator is running, if not creating");
       Map<String, Object> operatorMap1 = createOperatorMap(getNewSuffixCount(), true, "usab");
@@ -121,6 +122,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
               RestCertType.SELF_SIGNED);
       secondoperator.callHelmInstall();
 
+    } catch (Exception ex) {
+      gotException = true;
+      LoggerHelper.getLocal().log(Level.INFO, "Got exception - " + testMethodName);
     } finally {
       if (firstoperator != null) {
         firstoperator.destroy();
@@ -130,6 +134,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       }
     }
 
+    Assertions.assertFalse(gotException, "Helm installation should success");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -182,9 +187,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Install the operator with non pre-existing operator namespace.
+   * Install the operator with non existing operator namespace.
    * The helm install command should fail.
-   *
+   * 
    * @throws Exception when helm install does not fail
    */
   @Test
@@ -194,6 +199,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
+    boolean gotException = true;
 
     operator =
         new Operator(
@@ -206,11 +212,11 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     TestUtils.exec(command);
     try {
       operator.callHelmInstall();
-      throw new Exception("FAILURE: Helm install operator with not pre-existing namespace ");
-
+      gotException = false;
     } catch (Exception ex) {
-      LoggerHelper.getLocal().log(Level.INFO, "Helm install operator with not preexisted ns failed as expected");
+      LoggerHelper.getLocal().log(Level.INFO, "Helm install operator with non existing namespace failed as expected");
     }
+    Assertions.assertTrue(gotException, "Helm install operator with non existing namespace should fail");
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
@@ -407,14 +413,14 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     try {
       operator2.callHelmInstall();
       throw new Exception(
-          "FAILURE: Helm install operator with duplicated rest port number ");
+          "FAILURE: Helm install operator with duplicate rest port number ");
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "Error message " + ex.getMessage());
       if (!ex.getMessage()
           .contains(
               "Service \"external-weblogic-operator-svc\" is invalid: spec.ports[0].nodePort: Invalid value:")) {
         throw new Exception(
-            "FAILURE: Helm install operator with duplicated rest port number does not report the expected message "
+            "FAILURE: Helm install operator with duplicate rest port number does not report the expected message "
                 + ex.getMessage());
       }
       String cmdLb = "";
@@ -423,7 +429,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new Exception(
-            "FAILURE: Helm install operator with dublicated Rest Port number ");
+            "FAILURE: Helm install operator with duplicate Rest Port number ");
       }
     } finally {
       if (operator1 != null) {
@@ -490,15 +496,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
                 + "externalRestEnabled does not report expected message "
                 + ex.getMessage());
       }
-    } finally {
-      //number++;
-    }
+    } 
     namespaceList.append(" ").append(operatorMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
 
   /**
-   * Install the operator with no override for domainNamespaces
+   * Install the operator with no override for domain namespaces
    * Remove domainNamespaces override completely 
    * Make sure the chart picks the default value as specified chart values.yaml.
    *
