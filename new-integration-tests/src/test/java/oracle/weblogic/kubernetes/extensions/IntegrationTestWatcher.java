@@ -57,6 +57,7 @@ public class IntegrationTestWatcher implements
   private String className;
   private String methodName;
   private List namespaces = null;
+  private static final String START_TIME = "start time";
 
   /**
    * Directory to store logs.
@@ -152,13 +153,10 @@ public class IntegrationTestWatcher implements
     collectLogs(context, "beforeEach");
   }
 
-
-  private static final String START_TIME = "start time";
-
   /**
-   * Prints log messages to mark the end of beforeEach method.
+   * Prints log messages to mark the beginning of test method execution.
    * @param context the current extension context
-   * @throws java.lang.Exception
+   * @throws Exception when store interaction fails
    */
 
   @Override
@@ -168,6 +166,11 @@ public class IntegrationTestWatcher implements
     getStore(context).put(START_TIME, System.currentTimeMillis());
   }
 
+  /**
+   * Prints log messages to mark the end of test method execution.
+   * @param context the current extension context
+   * @throws Exception when store interaction fails
+   */
   @Override
   public void afterTestExecution(ExtensionContext context) throws Exception {
     Method testMethod = context.getRequiredTestMethod();
