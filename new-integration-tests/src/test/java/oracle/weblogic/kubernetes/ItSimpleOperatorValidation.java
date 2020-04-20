@@ -71,7 +71,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
   // like these two:
   @Slow
   @MustNotRunInParallel
-  public void testInstallingOperator(@Namespaces(3)List<String> namespaces) {
+  public void testInstallingOperator(@Namespaces(3) List<String> namespaces) {
     // this first example is an operation that we wait for.
     // installOperator() is one of our custom, reusable actions.
     // imagine that installOperator() will try to install the operator, by creating

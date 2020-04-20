@@ -45,7 +45,7 @@ class ItSimpleDomainValidation implements LoggedTest {
   @Test
   @DisplayName("Create a domain")
   @Slow
-  public void testCreatingDomain(@Namespaces(1)List<String> namespaces) {
+  public void testCreatingDomain(@Namespaces(1) List<String> namespaces) {
 
     final String domainUID = "domain1";
 
