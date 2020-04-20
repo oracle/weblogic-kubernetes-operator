@@ -37,7 +37,7 @@ WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
 UPDATE_RCUPWD_FLAG=""
-WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom -skipWLSModuleScanning"
+WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 ROLLBACK_ERROR=3
