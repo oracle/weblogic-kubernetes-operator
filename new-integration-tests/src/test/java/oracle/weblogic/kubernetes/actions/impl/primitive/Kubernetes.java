@@ -270,7 +270,7 @@ public class Kubernetes implements LoggedTest {
           null, // true/false, Return previous terminated container logs
           null, // relative time (seconds) before the current time from which to show logs
           null, // number of lines from the end of the logs to show
-          null // true/false, add timestamp at the beginning of every line of log output
+          null // Boolean, add timestamp at the beginning of every line of log output
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
@@ -309,6 +309,7 @@ public class Kubernetes implements LoggedTest {
    *
    * @param namespace Namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
+   * @return V1PodList list of pods
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
@@ -603,6 +604,7 @@ public class Kubernetes implements LoggedTest {
       response = crdClient.list(namespace);
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
+      throw ex;
     }
     return response != null ? response.getObject() : new DomainList();
   }
