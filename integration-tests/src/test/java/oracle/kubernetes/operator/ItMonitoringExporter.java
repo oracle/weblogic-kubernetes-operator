@@ -89,8 +89,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS2;
   private static String currentDateTime;
   private static final String monitoringNS = "monitortestns";
-  private static String LB_PROMETHEUS_PUBLIC_IP;
-  private static String LB_GRAFANA_PUBLIC_IP;
+  private static String LB_MONITORING_PUBLIC_IP;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -177,8 +176,8 @@ public class ItMonitoringExporter extends BaseTest {
           cleanUpPvDirOke("/ci-oke-mysql");
           cleanUpPvDirOke("/ci-oke-prom");
           cleanUpPvDirOke("/ci-oke-alertprom");
-          LB_PROMETHEUS_PUBLIC_IP = createMonitorTraefikLB("monitoring");
-          LB_GRAFANA_PUBLIC_IP = LB_PROMETHEUS_PUBLIC_IP;
+          LB_MONITORING_PUBLIC_IP = createMonitorTraefikLB("monitoring");
+          LB_MONITORING_PUBLIC_IP = LB_MONITORING_PUBLIC_IP;
         }
         installPrometheusGrafanaWebHookMySqlCoordinator();
       }
@@ -417,6 +416,16 @@ public class ItMonitoringExporter extends BaseTest {
   @Test
   @Order(2)
   public void testBasicFunctionality() throws Exception {
+    if (BaseTest.OKE_CLUSTER) {
+      TestUtils.copyFile(resourceExporterDir + "/../oke/monexp-path-route.yaml",
+              monitoringExporterScriptDir + "/monexp-path-route.yaml");
+      TestUtils.replaceStringInFile(monitoringExporterScriptDir + "/monexp-path-route.yaml",
+              "%DOMAINUID%", domain.getDomainUid());
+      TestUtils.replaceStringInFile(monitoringExporterScriptDir + "/monexp-path-route.yaml",
+              "%DOMAIN_NAMESPACE%", domain.getDomainNs());
+      String cmd = "kubectl apply -f " + monitoringExporterScriptDir + "/monexp-path-route.yaml";
+      ExecCommand.exec(cmd, true);
+    }
     test01_CheckMetricsViaPrometheus();
     test02_ReplaceConfiguration();
     test03_AppendConfiguration();
@@ -1268,7 +1277,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     String url = domain.getHostNameForCurl() + ":" + grafanaPort;
     if (BaseTest.OKE_CLUSTER) {
-      url = LB_GRAFANA_PUBLIC_IP;
+      url = LB_MONITORING_PUBLIC_IP;
     }
     LoggerHelper.getLocal().log(Level.INFO, "installing grafana dashboard");
     crdCmd =
@@ -1409,8 +1418,8 @@ public class ItMonitoringExporter extends BaseTest {
     // url
     String url = myhost + ":" + prometheusPort;
     if (BaseTest.OKE_CLUSTER) {
-      assertNotNull(LB_PROMETHEUS_PUBLIC_IP, "Prometheus LB External IP is undefined");
-      url = LB_PROMETHEUS_PUBLIC_IP;
+      assertNotNull(LB_MONITORING_PUBLIC_IP, "Prometheus LB External IP is undefined");
+      url = LB_MONITORING_PUBLIC_IP;
     }
     StringBuffer testAppUrl = new StringBuffer("http://");
     testAppUrl
@@ -1490,9 +1499,13 @@ public class ItMonitoringExporter extends BaseTest {
       }
     }
     TestUtils.checkLbExternalIpCreated("traefik-" + chartName,"montesttraefikns");
-    String cmdip = "kubectl describe svc traefik-"
-            + chartName + " --namespace montesttraefikns "
-            + "| grep Ingress | awk '{print $3}'";
+    //String cmdip = "kubectl describe svc traefik-"
+    //       + chartName + " --namespace montesttraefikns "
+    //       + "| grep Ingress | awk '{print $3}'";
+
+    String cmdip = "kubectl get svc -namespace montesttraefikns "
+        + " -o jsonpath='{.items[?(@.metadata.name == \"traefik-"
+        + chartName + "\")].status.loadBalancer.ingress[0].ip}'";
     result = TestUtils.exec(cmdip);
     String lbPublicIP = result.stdout().trim();
     assertNotNull(lbPublicIP, "Can't retreive External IP for " + chartName);
@@ -1550,7 +1563,7 @@ public class ItMonitoringExporter extends BaseTest {
   public static void cleanUpPvDirOke(String fssPath) {
 
     try {
-      String cmd = " kubectl create ns cleanupoke";
+      String cmd = " kubectl create ns cleanupoketest";
       ExecCommand.exec(cmd);
       String pvYaml = BaseTest.getProjectRoot()
               + "/integration-tests/src/test/resources/oke/cleanupokepv.yaml";
@@ -1579,7 +1592,7 @@ public class ItMonitoringExporter extends BaseTest {
       cmdRemove.append(BaseTest.getProjectRoot())
               .append("/src/integration-tests/bash/krun.sh -t 460 -l Always -p monitoringpod -m ")
               .append("cleanupoke-monitoring-pvc:/shared/")
-              .append(" -n cleanupoke -c \"rm -rf /shared/* \"");
+              .append(" -n cleanupoketest -c \"rm -rf /shared/* \"");
 
       LoggerHelper.getLocal().log(Level.INFO, "Delete PVROOT by running " + cmdRemove.toString());
       result = ExecCommand.exec(cmdRemove.toString());

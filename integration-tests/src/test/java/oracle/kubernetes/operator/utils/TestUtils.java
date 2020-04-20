@@ -2267,7 +2267,7 @@ public class TestUtils {
             + "/integration-tests/src/test/resources/oke/";
     String pvYaml = resourceDir + "cleanupokepv" + domainUid + ".yaml";
     String pvcYaml = resourceDir + "cleanupokepvc" + domainUid + ".yaml";
-    String cmd = " kubectl create ns cleanupoke";
+    String cmd = " kubectl create ns cleanupoketest";
     ExecCommand.exec(cmd);
     TestUtils.copyFile(resourceDir + "cleanupokepv.yaml",pvYaml);
     TestUtils.copyFile(resourceDir + "cleanupokepvc.yaml",pvcYaml);
@@ -2293,7 +2293,7 @@ public class TestUtils {
             .append("cleanupoke-")
             .append(domainUid)
             .append("-pvc:/shared/")
-            .append(" -n cleanupoke -c \"rm -rf ");
+            .append(" -n cleanupoketest -c \"rm -rf ");
     if (domainUid.equals("deleteall")) {
       cmdRemove.append("/shared/logs/* ")
               .append("/shared/wdt/* ")

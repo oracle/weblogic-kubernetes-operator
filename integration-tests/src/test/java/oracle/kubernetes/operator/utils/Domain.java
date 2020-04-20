@@ -164,7 +164,10 @@ public class Domain {
         if (getLoadBalancerName().equalsIgnoreCase("TRAEFIK")) {
           //running in the loop to check if ExternalIP was assigned
           TestUtils.checkLbExternalIpCreated("traefik-operator","traefik");
-          String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
+          //String cmdip = "kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'";
+          String cmdip = "kubectl get svc -namespace traefik "
+          + " -o jsonpath='{.items[?(@.metadata.name == \"traefik-operator\")].status.loadBalancer.ingress[0].ip}'";
+
           result = TestUtils.exec(cmdip);
           BaseTest.LB_PUBLIC_IP = result.stdout().trim();
           LoggerHelper.getLocal().log(Level.INFO,

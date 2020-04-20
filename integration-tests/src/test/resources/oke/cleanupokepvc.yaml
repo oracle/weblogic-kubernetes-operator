@@ -5,7 +5,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: cleanupoke-TESTUID-pvc
-  namespace: cleanupoke
+  namespace: cleanupoketest
   labels:
     weblogic.resourceVersion: domain-v2
     weblogic.domainUID: TESTUID

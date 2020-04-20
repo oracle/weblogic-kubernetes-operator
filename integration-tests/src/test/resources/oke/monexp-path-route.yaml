@@ -1,0 +1,18 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-pathrouting-monexp
+  namespace: %DOMAIN_NAMESPACE%
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /wls-exporter
+            backend:
+              serviceName: %DOMAIN_UID%-cluster-cluster-1
+              servicePort: 8001
