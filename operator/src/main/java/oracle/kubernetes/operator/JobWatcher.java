@@ -243,6 +243,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     private WaitForJobReadyStep(V1Job job, Step next) {
       super(job, next);
       jobCreationTime = getCreationTime(job);
+      V1ObjectMeta metadata = job.getMetadata();
+      LOGGER.info(MessageKeys.JOB_CREATION_TIMESTAMP_MESSAGE, metadata.getName(),
+          metadata.getCreationTimestamp());
     }
 
     // A job is considered ready once it has either successfully completed, or been marked as failed.
