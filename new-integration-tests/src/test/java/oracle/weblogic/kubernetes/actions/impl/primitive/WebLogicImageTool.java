@@ -90,7 +90,7 @@ public class WebLogicImageTool {
         defaultInstallWDTParams())
         .download();
   } 
-  
+
   private String buildiWITCommand() {
     String command = 
         IMAGE_TOOL 

@@ -26,9 +26,8 @@ public class PersistentVolume {
    *
    * @param name name of the Persistent Volume
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(String name) throws ApiException {
+  public static boolean delete(String name) {
     return Kubernetes.deletePv(name);
   }
 }
