@@ -37,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
-//Every test class needs to tagged with this annotation for log collection and namespace creation.
+//Every test class needs to tagged with this annotation for log collection, diagnostic messages logging
+// and namespace creation.
 @IntegrationTest
 class ItSimpleDomainValidation implements LoggedTest {
 
