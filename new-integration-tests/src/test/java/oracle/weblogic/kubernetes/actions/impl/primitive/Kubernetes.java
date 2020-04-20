@@ -985,6 +985,16 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * List persistent volume claims in the namespace.
+   * @param namespace name of the namespace in which to list
+   * @return V1PersistentVolumeClaimList of Persistent Volume Claims in namespace
+   */
+  public static V1PersistentVolumeClaimList listPersistenVolumeClaims(String namespace) {
+    KubernetesApiResponse<V1PersistentVolumeClaimList> list = pvcClient.list(namespace);
+    return list.getObject();
+  }
+
+  /**
    * List all persistent volume claims in the Kubernetes cluster.
    * @return V1PersistentVolumeClaimList of Persistent Volume Claims in Kubernetes cluster
    */

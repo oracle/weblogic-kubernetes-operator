@@ -71,7 +71,7 @@ public class LoggingUtil {
     // get pv
     writeToFile(Kubernetes.listPersistenVolumes(), resultDir.toString(), namespace + "_pv.log");
     // get pvc
-    writeToFile(Kubernetes.listPersistenVolumeClaims(), resultDir.toString(), namespace + "_pvc.log");
+    writeToFile(Kubernetes.listPersistenVolumeClaims(namespace), resultDir.toString(), namespace + "_pvc.log");
     // get secrets
     writeToFile(Kubernetes.listSecrets(namespace), resultDir.toString(), namespace + "_secrets.log");
     // get configmaps
