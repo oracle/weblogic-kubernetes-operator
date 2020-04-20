@@ -24,9 +24,10 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 public class LoggingUtil {
 
   /**
-   * Directory to store logs. Needs to be changed to the parameter set in env or Jenkins.
+   * Directory to store logs.
    */
-  private static final String LOGS_DIR = System.getProperty("java.io.tmpdir");
+  private static final String LOGS_DIR = System.getProperty("RESULT_ROOT",
+        System.getProperty("java.io.tmpdir"));
 
   /**
    * Collect logs for artifacts in Kubernetes cluster for current running test object. This method can be called

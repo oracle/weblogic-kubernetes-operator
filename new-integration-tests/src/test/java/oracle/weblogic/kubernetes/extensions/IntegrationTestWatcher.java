@@ -62,7 +62,8 @@ public class IntegrationTestWatcher implements
   /**
    * Directory to store logs.
    */
-  private static final String LOGS_DIR = System.getProperty("java.io.tmpdir");
+  private static final String LOGS_DIR = System.getProperty("RESULT_ROOT",
+        System.getProperty("java.io.tmpdir"));
 
   /**
    * Determine if this resolver supports resolution of an argument for the
@@ -112,6 +113,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void beforeAll(ExtensionContext context) {
     className = context.getRequiredTestClass().getName();
+
     printHeader(String.format("Starting Test Suite %s", className), "+");
     printHeader(String.format("Starting beforeAll for %s", className), "-");
   }
