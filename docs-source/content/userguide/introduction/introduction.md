@@ -2,7 +2,7 @@
 title: "Get started"
 date: 2019-02-23T16:40:54-05:00
 weight: 1
-description: "Review the operator prerequisites."
+description: "Review the operator prerequisites and supported environments."
 ---
 
 An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances
