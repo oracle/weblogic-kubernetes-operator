@@ -989,12 +989,16 @@ public class ItMonitoringExporter extends BaseTest {
       String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
     // Get the first page
     HtmlPage page1 = webClient.getPage(exporterUrl);
-    if (page1 == null) {
+    int i = 0;
+    while (i < 5 && (page1 == null)) {
+      Thread.sleep(1000);
       //try again
       page1 = webClient.getPage(exporterUrl);
+      i++;
     }
-    assertNotNull(page1);
-    assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
+    assertNotNull(page1, "wls-exporter dashboard can't be reached");
+    assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."),
+            "wls-exporter dashboard is not loaded " + page1.asText());
 
     // Get the form that we are dealing with and within that form,
     // find the submit button and the field that we want to change.Generated form for cluster had
