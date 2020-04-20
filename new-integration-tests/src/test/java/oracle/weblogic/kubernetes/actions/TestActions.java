@@ -5,7 +5,9 @@ package oracle.weblogic.kubernetes.actions;
 
 import java.util.List;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -15,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
@@ -148,11 +151,24 @@ public class TestActions {
    * @param domainUID unique domain identifier
    * @param namespace name of namespace
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace)
-      throws ApiException {
+  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
     return Domain.deleteDomainCustomResource(domainUID, namespace);
+  }
+
+  /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDomainCustomResource(String domainUID, String namespace, V1Patch patch,
+      String patchFormat) {
+    return Domain.patchDomainCustomResource(domainUID, namespace, patch, patchFormat);
   }
 
   // ------------------------   ingress controller ----------------------
@@ -217,9 +233,8 @@ public class TestActions {
    *
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteNamespace(String namespace) throws ApiException {
+  public static boolean deleteNamespace(String namespace) {
     return Namespace.delete(namespace);
   }
 
@@ -267,10 +282,8 @@ public class TestActions {
    *
    * @param name name of the Persistent Volume
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deletePersistentVolume(String name)
-      throws ApiException {
+  public static boolean deletePersistentVolume(String name) {
     return PersistentVolume.delete(name);
   }
 
@@ -293,10 +306,8 @@ public class TestActions {
    * @param name name of the Persistent Volume Claim
    * @param namespace name of the namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deletePersistentVolumeClaim(String name, String namespace)
-      throws ApiException {
+  public static boolean deletePersistentVolumeClaim(String name, String namespace) {
     return PersistentVolumeClaim.delete(name, namespace);
   }
 
@@ -319,9 +330,8 @@ public class TestActions {
    * @param name name of the Secret
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteSecret(String name, String namespace) throws ApiException {
+  public static boolean deleteSecret(String name, String namespace) {
     return Secret.delete(name, namespace);
   }
 
@@ -345,9 +355,8 @@ public class TestActions {
    * @param name name of the Config Map
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteConfigMap(String name, String namespace) throws ApiException {
+  public static boolean deleteConfigMap(String name, String namespace) {
     return ConfigMap.delete(name, namespace);
   }
 
@@ -370,9 +379,8 @@ public class TestActions {
    * @param name name of the Service
    * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteService(String name, String namespace) throws ApiException {
+  public static boolean deleteService(String name, String namespace) {
     return Service.delete(name, namespace);
   }
 
@@ -395,10 +403,34 @@ public class TestActions {
    * @param name name of the Service Account
    * @param namespace name of namespace
    * @return true if successful, false otherwise
+   */
+  public static boolean deleteServiceAccount(String name, String namespace) {
+    return ServiceAccount.delete(name, namespace);
+  }
+
+  // ----------------------- Role-based access control (RBAC)   ---------------------------
+
+  /**
+   * Create a Cluster Role Binding.
+   *
+   * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
+   *     data
+   * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteServiceAccount(String name, String namespace) throws ApiException {
-    return ServiceAccount.delete(name, namespace);
+  public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
+      throws ApiException {
+    return ClusterRoleBinding.create(clusterRoleBinding);
+  }
+
+  /**
+   * Delete Cluster Role Binding.
+   *
+   * @param name name of cluster role binding
+   * @return true if successful, false otherwise
+   */
+  public static boolean deleteClusterRoleBinding(String name) {
+    return ClusterRoleBinding.delete(name);
   }
 
   // ----------------------- helm -----------------------------------
