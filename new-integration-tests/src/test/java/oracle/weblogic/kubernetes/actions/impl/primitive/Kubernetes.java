@@ -248,7 +248,12 @@ public class Kubernetes implements LoggedTest {
    */
   public static V1DeploymentList listDeployments(String namespace) {
     KubernetesApiResponse<V1DeploymentList> list = deploymentClient.list(namespace);
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list deployments, status code {0}", list.getHttpStatusCode());
+      return null;
+    }
   }
 
   // --------------------------- pods -----------------------------------------
@@ -954,7 +959,12 @@ public class Kubernetes implements LoggedTest {
    */
   public static V1SecretList listSecrets(String namespace) {
     KubernetesApiResponse<V1SecretList> list = secretClient.list(namespace);
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list secrets, status code {0}", list.getHttpStatusCode());
+      return null;
+    }
   }
 
   // --------------------------- pv/pvc ---------------------------
@@ -1086,9 +1096,42 @@ public class Kubernetes implements LoggedTest {
    * List all persistent volumes in the Kubernetes cluster.
    * @return V1PersistentVolumeList of Persistent Volumes in Kubernetes cluster
    */
-  public static V1PersistentVolumeList listPersistenVolumes() {
+  public static V1PersistentVolumeList listPersistentVolumes() {
     KubernetesApiResponse<V1PersistentVolumeList> list = pvClient.list();
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list Persistent Volumes,"
+          + " status code {0}", list.getHttpStatusCode());
+      return null;
+    }
+  }
+
+  /**
+   * List persistent volumes in the Kubernetes cluster based on the label.
+   * @param labels String containing the labels the PV is decorated with
+   * @return V1PersistentVolumeList list of Persistent Volumes
+   * @throws ApiException when listing fails
+   */
+  public static V1PersistentVolumeList listPersistentVolumes(String labels) throws ApiException {
+    V1PersistentVolumeList listPersistentVolume;
+    try {
+      listPersistentVolume = coreV1Api.listPersistentVolume(
+          PRETTY, // pretty print output
+          ALLOW_WATCH_BOOKMARKS, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+          null, // set when retrieving more results from the server
+          null, // selector to restrict the list of returned objects by their fields
+          labels, // selector to restrict the list of returned objects by their labels
+          null, // maximum number of responses to return for a list call
+          RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          TIMEOUT_SECONDS, // Timeout for the list/watch call
+          false // Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+    return listPersistentVolume;
   }
 
   /**
@@ -1096,18 +1139,30 @@ public class Kubernetes implements LoggedTest {
    * @param namespace name of the namespace in which to list
    * @return V1PersistentVolumeClaimList of Persistent Volume Claims in namespace
    */
-  public static V1PersistentVolumeClaimList listPersistenVolumeClaims(String namespace) {
+  public static V1PersistentVolumeClaimList listPersistentVolumeClaims(String namespace) {
     KubernetesApiResponse<V1PersistentVolumeClaimList> list = pvcClient.list(namespace);
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list Persistent Volumes claims,"
+          + " status code {0}", list.getHttpStatusCode());
+      return null;
+    }
   }
 
   /**
    * List all persistent volume claims in the Kubernetes cluster.
    * @return V1PersistentVolumeClaimList of Persistent Volume Claims in Kubernetes cluster
    */
-  public static V1PersistentVolumeClaimList listPersistenVolumeClaims() {
+  public static V1PersistentVolumeClaimList listPersistentVolumeClaims() {
     KubernetesApiResponse<V1PersistentVolumeClaimList> list = pvcClient.list();
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list Persistent Volumes claims,"
+          + "status code {0}", list.getHttpStatusCode());
+      return null;
+    }
   }
 
   // --------------------------- service account ---------------------------
@@ -1187,7 +1242,12 @@ public class Kubernetes implements LoggedTest {
    */
   public static V1ServiceAccountList listServiceAccounts(String namespace) {
     KubernetesApiResponse<V1ServiceAccountList> list = serviceAccountClient.list(namespace);
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list service accounts, status code {0}", list.getHttpStatusCode());
+      return null;
+    }
   }
   // --------------------------- Services ---------------------------
 
@@ -1268,7 +1328,12 @@ public class Kubernetes implements LoggedTest {
    */
   public static V1JobList listJobs(String namespace) {
     KubernetesApiResponse<V1JobList> list = jobClient.list(namespace);
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list jobs, status code {0}", list.getHttpStatusCode());
+      return null;
+    }
   }
 
   // --------------------------- resplica sets ---------------------------
@@ -1280,7 +1345,12 @@ public class Kubernetes implements LoggedTest {
    */
   public static V1ReplicaSetList listReplicaSets(String namespace) {
     KubernetesApiResponse<V1ReplicaSetList> list = rsClient.list(namespace);
-    return list.getObject();
+    if (list.isSuccess()) {
+      return list.getObject();
+    } else {
+      logger.warning("Failed to list replica sets, status code {0}", list.getHttpStatusCode());
+      return null;
+    }
   }
 
   // --------------------------- Role-based access control (RBAC)   ---------------------------

@@ -69,10 +69,18 @@ public class LoggingUtil {
     writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir.toString(), namespace + "_sa.log");
     // get namespaces
     writeToFile(Kubernetes.listNamespacesAsObjects(), resultDir.toString(), namespace + "_ns.log");
-    // get pv
-    writeToFile(Kubernetes.listPersistenVolumes(), resultDir.toString(), namespace + "_pv.log");
     // get pvc
-    writeToFile(Kubernetes.listPersistenVolumeClaims(namespace), resultDir.toString(), namespace + "_pvc.log");
+    writeToFile(Kubernetes.listPersistentVolumeClaims(namespace), resultDir.toString(), namespace + "_pvc.log");
+    // get pv based on the weblogic.domainUID in pvc
+    for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
+      if (pvc.getMetadata() != null
+          && pvc.getMetadata().getLabels() != null
+          && pvc.getMetadata().getLabels().get("weblogic.domainUID") != null) {
+        String label = pvc.getMetadata().getLabels().get("weblogic.domainUID");
+        writeToFile(Kubernetes.listPersistentVolumes(
+            String.format("weblogic.domainUID in (%s)", label)), resultDir.toString(), label + "_pv.log");
+      }
+    }
     // get secrets
     writeToFile(Kubernetes.listSecrets(namespace), resultDir.toString(), namespace + "_secrets.log");
     // get configmaps
