@@ -46,8 +46,9 @@ public class Command {
           params.command(), 
           params.redirect(),
           params.env());
-      if (params.saveStdOut()) {
-        params.stdOut(result.stdout());
+      if (params.saveResults()) {
+        params.stdout(result.stdout());
+        params.stderr(result.stderr());
       }
 
       // check exitValue to determine if the command execution has failed.

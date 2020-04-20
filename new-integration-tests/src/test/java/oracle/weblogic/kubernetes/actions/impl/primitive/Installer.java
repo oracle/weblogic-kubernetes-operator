@@ -95,13 +95,15 @@ public class Installer {
       // check and make sure DOWNLOAD_DIR exists; will create it if it is missing
       checkDirectory(DOWNLOAD_DIR);
       
-      // we check if we have got the version of the tool correctly before we download the installer
-      if (params.version() == null 
-          || params.version().equalsIgnoreCase("latest")) {
-        logger.severe("Failed to get the latest version of {0} because previous command execution failed.",
-            params.type());
+      // we are about to download the installer. We need to get the real version that is requested
+      boolean failedGetRealVersion;
+      try {
+        params.version(getActualVersionIfNeeded(params.location(), params.type(), params.version()));      
+      } catch (RuntimeException re) {
+        // already logged
         return false;
       }
+      
       downloadSucceeded = Command.withParams(
           defaultCommandParams() 
               .command(buildDownloadCommand())
@@ -140,15 +142,17 @@ public class Installer {
 
   /**
    * Figure out the actual version number of the latest release of WDT or WIT if the version
-   * parameter is not specified or is specified as "latest". The passed in version value is
-   * return otherwise.
-   * @return the version number that is requested
+   * parameter is not specified or is specified as "latest". Otherwise return the passed in
+   * version parameter itself.
+   * 
+   * @return the version number that is determined
+   * @throws RuntimeException if the operation failed for any reason
    */
-  static String getActualVersionIfNeeded(
+  private String getActualVersionIfNeeded(
       String location,
       String type,
       String version
-  ) {
+  ) throws RuntimeException {
     if (version == null || version.equalsIgnoreCase("latest")) {
       String command = String.format(
           "curl -fL %s/releases/latest -o %s/%s-%s", 
@@ -156,9 +160,21 @@ public class Installer {
           DOWNLOAD_DIR,
           type,
           TMP_FILE_NAME);
-      
-      if (!Command.withParams(defaultCommandParams().command(command)).execute()) {
-        return null;
+ 
+      CommandParams params = 
+          defaultCommandParams()
+              .command(command)
+              .saveResults(true);
+      if (!Command.withParams(params).execute()) {
+        RuntimeException exception =
+            new RuntimeException(String.format("Failed to get the latest %s release information.", type));
+        logger.severe(
+            String.format(
+                "Failed to get the latest %s release information. The stderr is %s",
+                type,
+                params.stderr()),
+            exception);
+        throw exception;
       }
 
       command = String.format(
@@ -169,16 +185,27 @@ public class Installer {
           " print a[2] }'", 
           " cut -d/ -f 6"); 
     
-      CommandParams params = 
+      params = 
           defaultCommandParams()
           .command(command)
-          .saveStdOut(true)
+          .saveResults(true)
           .redirect(true);
-
-      if (Command.withParams(params).execute()) {
-        return params.stdOut();
+ 
+      // the command is considered successful only if we have got back a real version number in params.stdout()
+      if (Command.withParams(params).execute()
+          && params.stdout() != null
+          && params.stdout().length() != 0) {
+        return params.stdout();
       } else {
-        return null;
+        RuntimeException exception =
+            new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
+        logger.severe(
+            String.format(
+                "Failed to get the version number of the requested %s release. The stderr is %s",
+                type,
+                params.stderr()),
+            exception);
+        throw exception;
       }
     }
     return version;

@@ -49,7 +49,6 @@ public class InstallParams {
   }
 
   public String version() {
-    version = Installer.getActualVersionIfNeeded(location, type, version);
     return version;
   }
 
