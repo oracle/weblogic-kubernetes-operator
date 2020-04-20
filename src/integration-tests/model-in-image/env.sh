@@ -1,13 +1,16 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# TBD comment doc
+#
+# This file defines env vars and env defaults for this test.
+#
+# For more env vars see '$MIISAMPLEDIR/custom-env.sh'.
+# (Especially DOMAIN_NAMESPACE, DOMAIN_NAME, and DOMAIN_UID.)
+#
 
-# MII SAMPLE defaults specific to the test scripts in this directory
-# For more defaults see custom-env.sh
-
-# TBD add NAMESPACE/NAME/UID for domain
-
+SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
+MIISAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image"
+DBSAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service"
 
 # ::: Directory for sample's temp files
 #  should have 10GB? of space

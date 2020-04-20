@@ -47,19 +47,19 @@ for template_var in WDT_DOMAIN_TYPE \
                     MODEL_IMAGE_NAME \
                     MODEL_IMAGE_TAG
 do
+  echo "@@ Info: ${template_var}=${!template_var}"
   sed -i -e "s;@@${template_var}@@;${!template_var};" $domain_resource_file
 done
+
+echo "@@ Info: INCLUDE_MODEL_CONFIGMAP=$INCLUDE_MODEL_CONFIGMAP"
 
 if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # we're going to deploy and use the model.configuration.configMap, and this
   # configmap depends on the datasource-secret.
-  set -i -e "s/\#\(configmap\):\1:/"           $domain_resource_file
-  sed -i -e "s/\#\(secrets\):/\1:/"            $domain_resource_file
-  sed -i -e "s/\#\(-.*datasource-secret\)/\1/" $domain_resource_file
+  sed -i -e "s;\#\(configMap:\);\1;"           $domain_resource_file
+  sed -i -e "s;\#\(secrets:\);\1;"             $domain_resource_file
+  sed -i -e "s;\#\(-.*datasource-secret\);\1;" $domain_resource_file
 fi
-
-# TBD maybe NOT redo the template if target already exists.
-#     note that that'd be confusing as INCLUDE_MODEL_CONFIGMAP is a one-way street
 
 # TBD add logic below and add DOMAIN_RESTART_VERSION to the template, env-custom, etc.
 # nextRV=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}' --ignore-not-found)

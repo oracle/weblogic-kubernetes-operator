@@ -2,21 +2,15 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+# This is a stand-alone test for testing the MII sample.
 #
-# TBD add doc here
-# TBD add a usage
-#
-# doc new 'DRY_RUN' to
-# doc that 'JRF' starts DB
+# See "usage()" below for usage.
 
 set -eu
 set -o pipefail
 trap '[ -z "$(jobs -pr)" ] || kill $(jobs -pr)' SIGINT SIGTERM EXIT
 
 TESTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
-MIISAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image"
-DBSAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service"
 
 source $TESTDIR/util-dots.sh
 source $TESTDIR/util-misc.sh
@@ -29,7 +23,8 @@ trace "Running end to end MII sample test."
 DRY_RUN=false
 DO_CLEAN=true
 DO_DB=false
-DO_PATCH=true
+DO_MAIN=true
+DO_UPDATE=true
 WDT_DOMAIN_TYPE=WLS
 
 function usage() {
@@ -41,17 +36,18 @@ function usage() {
 
     -dry      : Dry run - show but don't do.
 
-    -noclean  : Do not pre-delete image '$m_image', call
+    -noclean  : Do not pre-delete MII image '$m_image', call
                 'cleanup.sh', or delete WORKDIR.
                 (Reuses artifacts from previous run.)
 
     -jrf      : Run in JRF mode instead of WLS mode.
                 Note: this forces DB deployment.
 
-    -db       : Deploy Oracle DB.
+    -db       : Deploy Oracle DB. 
 
-    -nopatch  : Skip testing a runtime update of 
-                model and the subsequent rolling upgrade.
+    -nomain   : Skip main test.
+
+    -noupdate : Skip testing a runtime model update.
 
     -?        : This help.
 
@@ -64,17 +60,18 @@ while [ ! -z "${1:-}" ]; do
     -noclean)   DO_CLEAN="false" ;;
     -db)        DO_DB="true" ;;
     -jrf)       WDT_DOMAIN_TYPE="JRF"; DO_DB="true"; ;;
-    -nopatch)   DO_PATCH="false" ;;
+    -nomain)    DO_MAIN="false" ;;
+    -nopatch)   DO_UPDATE="false" ;;
     -?)         usage; exit 0; ;;
     *)          trace "Error: Unrecognized parameter '${1}', pass '-?' for usage."; exit 1; ;;
   esac
   shift
 done
 
+# We check that WORKDIR ends in "model-in-image-sample-work-dir" as a safety feature.
+# (We're going to 'rm -fr' this directory, and its safer to do that without relying on env vars).
 
 if [ ! "$(basename $WORKDIR)" = "model-in-image-sample-work-dir" ]; then
-  # check that WORKDIR ends in "model-in-image-sample-work-dir" as a safety feature for this test
-  # (we're going to rm -fr a directory, and rm -fr is safer without it relying on env vars)
   trace "Error: This test requires WORKDIR to end in 'model-in-image-sample-work-dir'. WORKDIR='$WORKDIR'."
   exit 1
 fi
@@ -142,30 +139,47 @@ fi
 doCommand  "\$TESTDIR/deploy-wl-operator.sh"
 doCommand  "\$TESTDIR/deploy-traefik.sh"
 
+
 #
-# Deploy initial domain and wait for its pods to be ready.
+# Deploy initial domain, wait for its pods to be ready, and test its cluster app
 #
 
-doCommand  -c "export INCLUDE_CONFIGMAP=false"
-doCommand  "\$MIISAMPLEDIR/stage-workdir.sh"
-doCommand  "\$MIISAMPLEDIR/stage-tooling.sh"
-doCommand  "\$MIISAMPLEDIR/stage-model-image.sh"
-doCommand  "\$MIISAMPLEDIR/build-model-image.sh"
-doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
-doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
-doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
-doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+if [ "$DO_MAIN" = "true" ]; then
 
-# TBD add a test of the deployed app
+  doCommand  -c "export INCLUDE_CONFIGMAP=false"
+  doCommand  "\$MIISAMPLEDIR/stage-workdir.sh"
+  doCommand  "\$MIISAMPLEDIR/stage-tooling.sh"
+  doCommand  "\$MIISAMPLEDIR/stage-model-image.sh"
+  doCommand  "\$MIISAMPLEDIR/build-model-image.sh"
+  doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
+  doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
+  doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
+  doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 
-if [ "$DO_PATCH" = "true" ]; then
+  # Cheat to speedup a subsequent roll/shutdown.
+  diefast
 
-  #
-  # Add datasource to the running domain, patch its
-  # restart version,  and wait for its pods to roll.
-  #
+  # TBD If JRF, TBD export wallet to $WORKDIR/somefile
 
-  doCommand  -c "export INCLUDE_CONFIGMAP=true"
+  [ ! "$DRY_RUN" = "true" ] && testapp internal "Hello World!"
+  [ ! "$DRY_RUN" = "true" ] && testapp traefik  "Hello World!"
+
+fi
+
+
+
+
+#
+# Add datasource to the running domain, patch its
+# restart version, wait for its pods to roll, and use
+# the test app to verify that the datasource deployed.
+#
+
+if [ "$DO_UPDATE" = "true" ]; then
+
+  # TBD If JRF, import wallet to wallet secret - is that a sufficient test? Or do we need to restart domain?
+
+  doCommand  -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
   doCommand  "\$MIISAMPLEDIR/stage-model-configmap.sh"
   doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
@@ -174,7 +188,11 @@ if [ "$DO_PATCH" = "true" ]; then
   doCommand  "\$MIISAMPLEDIR/util-patch-restart-version.sh"
   doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 
-# TBD add a test of the deployed app that confirms DS is running
+  # Cheat to speedup a subsequent roll/shutdown.
+  diefast
+
+  [ ! "$DRY_RUN" = "true" ] && testapp internal "mynewdatasource"
+  [ ! "$DRY_RUN" = "true" ] && testapp traefik  "mynewdatasource"
 
 fi
 
