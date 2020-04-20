@@ -134,6 +134,7 @@ public class ItPodsShutdown extends BaseTest {
 
     Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
     domainMap.put("namespace", domainNS);
+    domainMap.put("domainUID", domainNS + getNewSuffixCount());
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
     domainMap.put("shutdownOptionsOverrides",shutdownProps);
     LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainNS);
