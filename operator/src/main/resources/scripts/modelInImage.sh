@@ -723,7 +723,7 @@ function encrypt_decrypt_model() {
     exitOrLoop
   fi
 
-  trace "Exiting encrypt_wdtmodel  $1"
+  trace "Exiting encrypt_wdtmodel $1"
 }
 
 # encrypt_decrypt_domain_secret
