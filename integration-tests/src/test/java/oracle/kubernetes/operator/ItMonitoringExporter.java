@@ -1573,7 +1573,7 @@ public class ItMonitoringExporter extends BaseTest {
 
       StringBuffer cmdRemove = new StringBuffer();
       cmdRemove.append(BaseTest.getProjectRoot())
-              .append("/src/integration-tests/bash/krun.sh -t 240 -l Always -p monitoringpod -m ")
+              .append("/src/integration-tests/bash/krun.sh -t 460 -l Always -p monitoringpod -m ")
               .append("cleanupoke-monitoring-pvc:/shared/")
               .append(" -n cleanupoke -c \"rm -rf /shared/* \"");
 

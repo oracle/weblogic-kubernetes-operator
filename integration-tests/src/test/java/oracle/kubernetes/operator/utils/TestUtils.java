@@ -2286,7 +2286,7 @@ public class TestUtils {
             Level.INFO, "created  pvc to cleanup nfs mounted dirs " + result.stdout());
     StringBuffer cmdRemove = new StringBuffer();
     cmdRemove.append(BaseTest.getProjectRoot())
-            .append("/src/integration-tests/bash/krun.sh -t 240 -l Always ")
+            .append("/src/integration-tests/bash/krun.sh -t 460 -l Always ")
             .append(" -p ")
             .append(domainUid)
             .append(" -m ")
