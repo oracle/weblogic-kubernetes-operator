@@ -281,10 +281,10 @@ public class Kubernetes implements LoggedTest {
           name, // name of the Pod
           namespace, // name of the Namespace
           container, // container for which to stream logs
-          null, //  true/false Follow the log stream of the pod
+          null, //  Boolean Follow the log stream of the pod
           null, // number of bytes to read from the server before terminating the log output
           PRETTY, // pretty print output
-          null, // true/false, Return previous terminated container logs
+          null, // Boolean, Return previous terminated container logs
           null, // relative time (seconds) before the current time from which to show logs
           null, // number of lines from the end of the logs to show
           null // Boolean, add timestamp at the beginning of every line of log output
