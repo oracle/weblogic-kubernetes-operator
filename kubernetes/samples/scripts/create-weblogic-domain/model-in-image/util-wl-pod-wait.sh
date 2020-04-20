@@ -12,6 +12,9 @@
 # See 'usage()' below for the command line and other details.
 #
 
+# TBD Update to fail early and dump introspector log if
+#     introspector stays failed for more than N seconds?
+
 set -eu
 set -o pipefail
 
@@ -24,6 +27,8 @@ DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 expected=0
 timeout_secs=600
 syntax_error=false
+verbose=false
+report_interval=10
 
 function usage() {
 
@@ -31,14 +36,14 @@ function usage() {
 
   Usage:
 
-  $(basename $0) [-n mynamespace] [-d mydomainuid] [-p pod_count] [-t timeout_secs ] 
+  $(basename $0) [-n mynamespace] [-d mydomainuid] [-p pod_count] [-t timeout_secs ] [-v]
 
-    pod_count > 0: Wait until exactly 'pod_count' WebLogic pods for a domain
+    pod_count > 0: Wait until exactly 'pod_count' WebLogic server pods for a domain
                    are all (a) ready, (b) have the same domainRestartVersion
                    as the current domain resource's domainRestartVersion, (c)
                    have the same image as the current domain resource's image.
 
-    pod_count = 0: Wait until there are no running WebLogic pods for a domain.
+    pod_count = 0: Wait until there are no running WebLogic server pods for a domain.
                    Exits non-zero if 'timeout_secs' is reached before a zero
 
     Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
@@ -49,13 +54,14 @@ function usage() {
     -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
     -p <pod-count>      : Number of pods to wait for. Default is '$expected'.
     -t <timeout-secs>   : Defaults to '$timeout_secs'.
+    -v                  : Verbose. Show wl pods and introspector job state as when they change.
     -?                  : This help.
 
 EOF
 }
 
 while [ ! "${1:-}" = "" ]; do
-  if [ ! "$1" = "-?" ] && [ "${2:-}" = "" ]; then
+  if [ ! "$1" = "-?" ] && [ ! "$1" = "-v" ] && [ "${2:-}" = "" ]; then
     syntax_error=true
     break
   fi
@@ -74,6 +80,11 @@ while [ ! "${1:-}" = "" ]; do
           ''|*[!0-9]*) syntax_error=true ;;
         esac
         ;;
+    -v) verbose=true
+        report_interval=30
+        shift
+        continue
+        ;;
     -?) usage
         exit 0
         ;;
@@ -89,11 +100,41 @@ if [ "$syntax_error" = "true" ]; then
   exit 1
 fi
 
+function timestamp() {
+  date --utc '+%Y-%m-%dT%H:%M:%S'
+}
+
+tempfile() {
+  mktemp /tmp/$(basename "$0").$PPID.$(timestamp).XXXXXX
+}
+
+tmpfileorig=$(tempfile)
+tmpfilecur=$(tempfile)
+
+trap "rm -f $tmpfileorig $tmpfilecur" EXIT
+
 cur_pods=0
 reported=0
 last_pod_count_secs=$SECONDS
 origRV="--not-known--"
 origImage="--not-known--"
+
+# be careful! if changing jpath, then it must correspond with the regex below
+jpath=''
+jpath+='{range .items[*]}'
+  jpath+='{" name="}'
+  jpath+='{.metadata.name}'
+  jpath+='{" domainRestartVersion="}'
+  jpath+='{.metadata.labels.weblogic\.domainRestartVersion}'
+  jpath+='{" image="}'
+  jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].image}'
+  jpath+='{" ready="}'
+  jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].ready}'
+  jpath+='{" phase="}'
+  jpath+='{.status.phase}'
+  jpath+='{"\n"}'
+jpath+='{end}'
+
 
 # Loop until we reach the desired pod count for pods at the desired restart version, or
 # until we reach the timeout.
@@ -157,37 +198,22 @@ while [ 1 -eq 1 ]; do
         -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
         | wc -l ) 
 
-    out_str="Waiting for WebLogic pod count to reach '0'"
+    out_str="Waiting for WebLogic server pod count to reach '0'"
 
   else
 
-    jpath=''
-    jpath+='{range .items[*]}'
-     jpath+='{" domainUID="}'
-     jpath+='{.metadata.labels.weblogic\.domainUID}'
-     jpath+='{" name="}'
-     jpath+='{.metadata.name}'
-     jpath+='{" domainRestartVersion="}'
-     jpath+='{.metadata.labels.weblogic\.domainRestartVersion}'
-     jpath+='{" image="}'
-     jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].image}'
-     jpath+='{" ready="}'
-     jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].ready}'
-     jpath+='{"\n"}'
-    jpath+='{end}'
-
-    grepExp="domainRestartVersion=$currentRV"
-    grepExp+=" image=$currentImage"
-    grepExp+=" ready=true"
+    regex="domainRestartVersion=$currentRV"
+    regex+=" image=$currentImage"
+    regex+=" ready=true"
 
     set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
     cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
         -o=jsonpath="$jpath" \
-        | grep "$grepExp" | wc -l )
+        | grep "$regex" | wc -l )
     set -e
 
-    out_str="Waiting for exactly '$expected' WebLogic pods to reach ready='true', image='$currentImage', and domainRestartVersion='$currentRV'"
+    out_str="Waiting for exactly '$expected' WebLogic server pods to reach ready='true', image='$currentImage', and domainRestartVersion='$currentRV'"
 
   fi
 
@@ -202,20 +228,48 @@ while [ 1 -eq 1 ]; do
   out_str+=", cur_pods='$cur_pods'"
   out_str+=", cur_seconds='$SECONDS'"
 
-  if [ $reported -eq 0 ]; then
-    echo -n "@@ Info: $out_str:"
-    reported=1
-    echo -n " $cur_pods"
-    last_pod_count_secs=$SECONDS
+  if [ "$verbose" = "false" ]; then
+    if [ $reported -eq 0 ]; then
+      echo -n "@@ Info: $out_str:"
+      reported=1
+      echo -n " $cur_pods"
+      last_pod_count_secs=$SECONDS
+  
+    elif [ $((SECONDS - last_pod_count_secs)) -gt $report_interval ] \
+         || [ $cur_pods -eq $expected ]; then
+      echo -n " $cur_pods"
+      last_pod_count_secs=$SECONDS
 
-  elif [ $((SECONDS - last_pod_count_secs)) -gt 10 ] || [ $cur_pods -eq $expected ]; then
-    echo -n " $cur_pods"
-    last_pod_count_secs=$SECONDS
+    fi
+  else
 
+    kubectl -n ${DOMAIN_NAMESPACE} get pods \
+      -l weblogic.domainUID="${DOMAIN_UID}" \
+      -o=jsonpath="$jpath" > $tmpfilecur
+
+    set +e
+    diff -q $tmpfilecur $tmpfileorig 2>&1 > /dev/null
+    diff_res=$?
+    set -e
+    if [ ! $diff_res -eq 0 ] \
+       || [ $((SECONDS - last_pod_count_secs)) -gt $report_interval ] \
+       || [ $cur_pods -eq $expected ]; then
+      echo
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $out_str. Current Weblogic server and introspector pods:"
+      echo
+      cat $tmpfilecur
+      cp $tmpfilecur $tmpfileorig
+      last_pod_count_secs=$SECONDS
+    fi
   fi
 
   if [ $cur_pods -eq $expected ]; then
-    echo ". Total seconds=$SECONDS."
+    if [ ! "$verbose" = "true" ]; then
+      echo -n ". "
+    else
+      echo -n "@@ "
+    fi
+    echo "Success! Total seconds=$SECONDS."
     exit 0
   fi
 

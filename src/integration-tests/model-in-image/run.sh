@@ -61,7 +61,7 @@ while [ ! -z "${1:-}" ]; do
     -db)        DO_DB="true" ;;
     -jrf)       WDT_DOMAIN_TYPE="JRF"; DO_DB="true"; ;;
     -nomain)    DO_MAIN="false" ;;
-    -nopatch)   DO_UPDATE="false" ;;
+    -noupdate)  DO_UPDATE="false" ;;
     -?)         usage; exit 0; ;;
     *)          trace "Error: Unrecognized parameter '${1}', pass '-?' for usage."; exit 1; ;;
   esac
@@ -153,6 +153,7 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  "\$MIISAMPLEDIR/build-model-image.sh"
   doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
   doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
+  doCommand  "\$MIISAMPLEDIR/stage-and-create-ingresses.sh"
   doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
   doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 

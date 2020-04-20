@@ -20,16 +20,18 @@
 #      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 
-echo "@@"
-echo "@@ ######################################################################"
-echo "@@ Info: Running '$(basename "$0")'."
-
 set -eu
 set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+echo "@@"
+echo "@@ ######################################################################"
+echo "@@ Info: Running '$(basename "$0")'."
+echo "@@ Info: WORKDIR='$WORKDIR'."
+echo "@@ Info: SCRIPTDIR='$SCRIPTDIR'."
 
 mkdir -p $WORKDIR
 

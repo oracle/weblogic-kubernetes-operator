@@ -2,15 +2,20 @@
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# Usage: run-update.sh
+# Usage: run-update.sh [-wait]
 #
 # This script demonstrates the steps for updating a running model
-# in image domain by deploying a model configmap that defines
-# a new datasource, deploying a new secret that's referenced by
-# the configmap, and finally by patching the domain resource
-# 'domain restart version'. If the domain is shutdown, then the
-# domain should restart, or if the domain is already running, then
-# it should roll.
+# in image domain by:
+#
+#   - Staging and deploying a model configmap that defines a new datasource.
+#   - Deploying a new secret that's referenced by the configmap.
+#   - Patching the domain resource 'domain restart version'. 
+#   - If '-wait' is passed, then wait until all wl server pods reach 
+#     the target image name, image tag, and restart version, plus
+#     reach the ready state.
+#
+# If the domain is shutdown, then the domain should restart, or if the domain
+# is already running, then it should roll.
 #
 # Prerequisites:
 #
@@ -47,6 +52,8 @@ set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
+DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 
 # Ensure stage-domain-resource.sh and create-secrets.sh 
 # account for the model configmap:
@@ -83,11 +90,30 @@ $SCRIPTDIR/create-domain-resource.sh
 
 $SCRIPTDIR/util-patch-restart-version.sh
 
+echo "@@"
+echo "@@ Info: To watch pods roll/start and get their status:"
+echo "         - run 'kubectl get pods -n ${DOMAIN_NAMESPACE} --watch' and ctrl-c when done watching"
+echo "         - or run 'SCRIPTDIR/util-wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'"
+echo "@@"
+echo "@@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> Debugging' in the documentation."
+echo "@@"
+
+
 #######################################################################
-# Wait for pods to roll and reach the new restart version.
+# Optionally wait for pods to roll and reach the new restart version.
 
-$SCRIPTDIR/util-wl-pod-wait.sh -p 3
+if [ "${1:-}" = "-wait" ]; then
+  echo "@@"
+  echo "@@ ######################################################################"
+  echo "@@"
 
-echo "@@"
-echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."
-echo "@@"
+  $SCRIPTDIR/util-wl-pod-wait.sh -p 3
+
+  echo "@@"
+  echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."
+  echo "@@"
+else
+  echo "@@"
+  echo "@@ Info: Voila! Script '$(basename $0)' completed successfully!"
+  echo "@@"
+fi

@@ -34,6 +34,16 @@ echo "@@"
 echo "@@ Info: Staging model configmap files from SCRIPTDIR/sample-model-configmap to WORKDIR/model-configmap"
 echo "@@"
 
+if [ -e $WORKDIR/model-configmap ]; then
+    echo "@@"
+    echo "@@ -----------------------------------------------------------------------"
+    echo "@@ Info: NOTE! Skipping config map staging since directory                "
+    echo "@@             'WORKDIR/model-configmap' already exists.                "
+    echo "@@             To force staging, delete this directory first.             "
+    echo "@@ -----------------------------------------------------------------------"
+    echo "@@"
+    exit 0
+fi
+
 mkdir -p $WORKDIR/model-configmap
-rm -f $WORKDIR/model-configmap/*
 cp $SCRIPTDIR/sample-model-configmap/* $WORKDIR/model-configmap

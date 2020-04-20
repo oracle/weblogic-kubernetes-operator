@@ -34,9 +34,37 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+for var in DOMAIN_UID \
+           DOMAIN_NAMESPACE \
+           CUSTOM_DOMAIN_NAME \
+           WDT_DOMAIN_TYPE \
+           MODEL_IMAGE_NAME \
+           MODEL_IMAGE_TAG \
+           INCLUDE_MODEL_CONFIGMAP \
+           DOMAIN_RESOURCE_TEMPLATE
+do
+  echo "@@ Info: ${var}=${!var}"
+done
+
+function timestamp() {
+  date --utc '+%Y-%m-%dT%H:%M:%S'
+}
+
 domain_resource_file=${WORKDIR}/k8s-domain.yaml
 
-echo "@@ Info: Creating domain resource file '${domain_resource_file}' from '${DOMAIN_RESOURCE_TEMPLATE}'"
+echo "@@"
+echo "@@ Info: Creating domain resource file 'WORKDIR/k8s-domain.yaml' from 'DOMAIN_RESOURCE_TEMPLATE'"
+
+if [ -e "${domain_resource_file}" ]; then
+  save_file=${WORKDIR}/k8s-domain-saved/k8s-domain.yaml.$(timestamp)
+  mkdir -p $(dirname $save_file)
+  echo "@@"
+  echo "@@ Notice! An old version of the domain resource file already exists and will be replaced."
+  echo "@@ Notice! Saving old version of the domain resource file to 'WORKDIR/k8s-domain-saved/$(basename $save_file)'."
+  cp ${domain_resource_file} ${save_file}
+fi
+
+echo "@@"
 
 cp ${DOMAIN_RESOURCE_TEMPLATE} ${domain_resource_file}
 
@@ -47,11 +75,9 @@ for template_var in WDT_DOMAIN_TYPE \
                     MODEL_IMAGE_NAME \
                     MODEL_IMAGE_TAG
 do
-  echo "@@ Info: ${template_var}=${!template_var}"
   sed -i -e "s;@@${template_var}@@;${!template_var};" $domain_resource_file
 done
 
-echo "@@ Info: INCLUDE_MODEL_CONFIGMAP=$INCLUDE_MODEL_CONFIGMAP"
 
 if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # we're going to deploy and use the model.configuration.configMap, and this
@@ -61,9 +87,4 @@ if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   sed -i -e "s;\#\(-.*datasource-secret\);\1;" $domain_resource_file
 fi
 
-# TBD add logic below and add DOMAIN_RESTART_VERSION to the template, env-custom, etc.
-# nextRV=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}' --ignore-not-found)
-# nextRV=$(echo $nextRV | sed 's/[^0-9]//')
-# nextRV=${nextRV:-0}
-# nextRV=$((nextRV + 1))
-# export DOMAIN_RESTART_VERSION=${DOMAIN_RESTART_VERSION:-$nextRV}
+echo "@@ Info: Done."

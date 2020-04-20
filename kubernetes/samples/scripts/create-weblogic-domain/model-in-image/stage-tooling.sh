@@ -53,17 +53,17 @@ download_zip() {
     return
   fi
 
-  echo "@@ Downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
+  echo "@@ Info: Downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
 
   local iurl="$LOCATION"
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
-    echo "@@ The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
+    echo "@@ Info: The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
     local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
     curl -fL $LOCATION -o $tempfile
     LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
     rm -f $tempfile
-    echo "@@ The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
-    echo "@@ Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
+    echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
+    echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
   fi
 
   rm -f $ZIPFILE

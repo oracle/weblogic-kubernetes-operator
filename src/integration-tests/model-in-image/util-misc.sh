@@ -89,7 +89,7 @@ function testapp() {
 #      - shift, and runs command "$@" in foreground
 #    - if first parameter is ! -c
 #      - redirects dommand "$@" stdout/stderr to a file something like
-#        '$WORKDIR/command_out/$PPID.$COUNT.$(timestamp).$(basename $(printf $1)).out'
+#        '$WORKDIR/test-out/$PPID.$COUNT.$(timestamp).$(basename $(printf $1)).out'
 #      - prints out an Info with the name of the command and the location of this file
 #      - follows info with 'dots' while it waits for command to complete
 #    - if command fails, prints out an Error and exits non-zero
@@ -134,9 +134,9 @@ function doCommand() {
   COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:=0}
   COMMAND_OUTFILE_COUNT=$((COMMAND_OUTFILE_COUNT + 1))
 
-  mkdir -p $WORKDIR/command_out
+  mkdir -p $WORKDIR/test-out
 
-  local out_file="$WORKDIR/command_out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).$(basename $(printf $1)).out"
+  local out_file="$WORKDIR/test-out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).$(basename $(printf $1)).out"
   tracen Info: Running command "'$command'," "output='$out_file'."
   printdots_start
 

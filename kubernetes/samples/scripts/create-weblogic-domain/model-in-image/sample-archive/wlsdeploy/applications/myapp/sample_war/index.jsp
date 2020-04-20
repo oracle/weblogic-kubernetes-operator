@@ -4,14 +4,16 @@
 <%@ page import="javax.management.*" %>
 <%@ page import="java.io.*" %>
 <%
+  InitialContext ic = null;
   try {
     String srName=System.getProperty("weblogic.Name");
 
+    out.println("<html><body><pre>");
     out.println("**************************************************************");
     out.println();
     out.println("Hello World! Welcome to WebLogic server '" + srName + "'!");
 
-    InitialContext ic = new InitialContext();
+    ic = new InitialContext();
 
     MBeanServer mbs = (MBeanServer)ic.lookup("java:comp/env/jmx/runtime");
 
@@ -35,5 +37,8 @@
 
   } catch (Throwable t) {
     t.printStackTrace(new PrintStream(response.getOutputStream()));
+  } finally {
+    out.println("</pre></body></html>");
+    if (ic != null) ic.close();
   }
 %>

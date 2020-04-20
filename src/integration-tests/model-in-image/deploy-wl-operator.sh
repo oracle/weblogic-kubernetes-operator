@@ -22,13 +22,15 @@ OPER_IMAGE_TAG=${OPER_IMAGE_TAG:-test}
 OPER_IMAGE_NAME=${OPER_IMAGE_NAME:-weblogic-kubernetes-operator}
 OPER_IMAGE=${OPER_IMAGE_NAME}:${OPER_IMAGE_TAG}
 
+mkdir -p $WORKDIR/test-out
+
 #
 # Do not re-install if it's up and running and has same setting as last deploy
 #
 
-if [ -e $WORKDIR/operator-values.orig ]; then
-  helm get values ${OPER_NAME} -n ${OPER_NAMESPACE} > $WORKDIR/operator-values.cur 2>&1
-  if [ "$(cat $WORKDIR/operator-values.cur)" = "$(cat $WORKDIR/operator-values.orig)" ]; then
+if [ -e $WORKDIR/test-out/operator-values.orig ]; then
+  helm get values ${OPER_NAME} -n ${OPER_NAMESPACE} > $WORKDIR/test-out/operator-values.cur 2>&1
+  if [ "$(cat $WORKDIR/test-out/operator-values.cur)" = "$(cat $WORKDIR/test-out/operator-values.orig)" ]; then
     echo "@@"
     echo "@@ Operator already running. Skipping."
     echo "@@"
@@ -58,7 +60,7 @@ helm install $OPER_NAME kubernetes/charts/weblogic-operator \
 
 kubectl get deployments -n $OPER_NAMESPACE
 
-helm get values ${OPER_NAME} -n ${OPER_NAMESPACE} > $WORKDIR/operator-values.orig 2>&1
+helm get values ${OPER_NAME} -n ${OPER_NAMESPACE} > $WORKDIR/test-out/operator-values.orig 2>&1
 
 echo "log command: kubectl logs -n $OPER_NAMESPACE -c weblogic-operator deployments/weblogic-operator"
 

@@ -30,7 +30,7 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
 WALLET_FILE=${WALLET_FILE:-./ewallet.p12}
-WALLET_SECRET=${DOMAIN_UID}-opss-walletfile-secret
+WALLET_SECRET=${WALLET_SECRET:-${DOMAIN_UID}-opss-walletfile-secret}
 
 usage_exit() {
 cat << EOF
@@ -55,6 +55,8 @@ cat << EOF
 
     -s                  Save an OPSS wallet file from an introspector
                         configmap to a file. (See also '-wf'.)
+                        Default is '\$WALLET_SECRET' if set, 
+                        'DOMAIN_UID-opss-walletfile-secret' otherwise.
 
     -r                  Restore an OPSS wallet file to a Kubernetes secret.
                         (See also '-wf' and '-ws').
@@ -146,7 +148,7 @@ if [ $FILESIZE = 0 ]; then
 fi
 
 if [ ${RESTORE_WALLET} -eq 1 ] ; then
-  echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}'."
+  echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}', domain uid '${DOMAIN_UID}'."
   $SCRIPTDIR/util-create-secret.sh \
     -n ${DOMAIN_NAMESPACE} \
     -d ${DOMAIN_UID} \
