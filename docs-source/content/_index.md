@@ -20,7 +20,7 @@ The fastest way to experience the operator is to follow the [Quick Start guide](
 ##### Current release
 
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.5.0.
-This release was published on February 26, 2020.
+This release was published on February 26, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
 ##### Preview of next planned release
 
@@ -34,7 +34,7 @@ The planned feature changes in 3.0.0-rc1 are:
 
 * Introduction of a new "Model In Image" feature which allows you to have a domain
   created at pod startup time from a WebLogic Deploy Tool model and archive.
-  This supports user-requested use cases like creating multiple domains from 
+  This supports user-requested use cases like creating multiple domains from
   the same model and automated updating of the domain based on model changes.
   The operator automates management of the domain encryption keys to ensure
   that they are not changed during domain updates.
@@ -48,9 +48,6 @@ The planned feature changes in 3.0.0-rc1 are:
 
 ***
 
-{{% notice note %}}
-Please review the prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction" >}}).
-{{% /notice %}}
 
 #### Operator earlier versions
 
