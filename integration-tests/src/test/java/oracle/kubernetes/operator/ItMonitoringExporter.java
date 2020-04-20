@@ -1503,7 +1503,7 @@ public class ItMonitoringExporter extends BaseTest {
     //       + chartName + " --namespace montesttraefikns "
     //       + "| grep Ingress | awk '{print $3}'";
 
-    String cmdip = "kubectl get svc -namespace montesttraefikns "
+    String cmdip = "kubectl get svc --namespace montesttraefikns "
         + " -o jsonpath='{.items[?(@.metadata.name == \"traefik-"
         + chartName + "\")].status.loadBalancer.ingress[0].ip}'";
     result = TestUtils.exec(cmdip);

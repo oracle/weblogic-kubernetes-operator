@@ -166,7 +166,7 @@ public class Domain {
           TestUtils.checkLbExternalIpCreated("traefik-operator","traefik");
           //String cmdip = "kubectl describe svc traefik-operator --namespace traefik
           // | grep Ingress | awk '{print $3}'";
-          String cmdip = "kubectl get svc -namespace traefik "
+          String cmdip = "kubectl get svc --namespace traefik "
                   + " -o jsonpath='{.items[?(@.metadata.name == \"traefik-operator\")]"
                   + ".status.loadBalancer.ingress[0].ip}'";
 
