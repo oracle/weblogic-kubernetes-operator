@@ -163,7 +163,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void beforeTestExecution(ExtensionContext context) throws Exception {
     printHeader(String.format("Ending beforeEach for %s.%s()", className, methodName), "-");
-    logger.info("About to execute [{0}] in {1}()", context.getDisplayName(), context.getRequiredTestMethod());
+    logger.info("About to execute [{0}] in {1}.{2}()", context.getDisplayName(), className, methodName);
     getStore(context).put(START_TIME, System.currentTimeMillis());
   }
 
@@ -172,7 +172,7 @@ public class IntegrationTestWatcher implements
     Method testMethod = context.getRequiredTestMethod();
     long startTime = getStore(context).remove(START_TIME, long.class);
     long duration = System.currentTimeMillis() - startTime;
-    logger.info("Finished executing [{0}] in {1}()", context.getDisplayName(), context.getRequiredTestMethod());
+    logger.info("Finished executing [{0}] {1}.{2}()", context.getDisplayName(), className, methodName);
     logger.info("Method [{0}] took {1} ms.", testMethod.getName(), duration);
   }
 
