@@ -96,7 +96,6 @@ public class Installer {
       checkDirectory(DOWNLOAD_DIR);
       
       // we are about to download the installer. We need to get the real version that is requested
-      boolean failedGetRealVersion;
       try {
         params.version(getActualVersionIfNeeded(params.location(), params.type(), params.version()));      
       } catch (RuntimeException re) {
