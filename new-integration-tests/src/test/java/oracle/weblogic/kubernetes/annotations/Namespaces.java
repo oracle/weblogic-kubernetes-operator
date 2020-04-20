@@ -11,8 +11,8 @@ import java.lang.annotation.Target;
 /**
  * Annotation interface to define the number of namespaces needed by the test.
  */
-@Target({ElementType.TYPE})
+@Target({ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ITNamespaces {
-  int numofns() default 0;
+public @interface Namespaces {
+  int value() default 0;
 }

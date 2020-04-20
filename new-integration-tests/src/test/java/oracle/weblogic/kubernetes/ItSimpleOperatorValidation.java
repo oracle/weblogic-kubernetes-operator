@@ -11,19 +11,17 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.annotations.ITNamespaces;
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -55,12 +53,7 @@ import static org.awaitility.Awaitility.with;
 // order. this is controlled with the TestMethodOrder annotation
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of basic operator functions")
-// this is an example of registering an extension that will time how long each test takes.
-@ExtendWith(Timing.class)
-// by implementing the LoggedTest, we will automatically get a logger injected and it
-// will also automatically log entry/exit messages for each test method.
-@ExtendWith(IntegrationTestWatcher.class)
-@ITNamespaces(numofns = 3)
+@IntegrationTest
 class ItSimpleOperatorValidation implements LoggedTest {
 
   private HelmParams opHelmParams = null;
@@ -77,7 +70,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
   // like these two:
   @Slow
   @MustNotRunInParallel
-  public void testInstallingOperator(List namespaces) {
+  public void testInstallingOperator(@Namespaces(3)List namespaces) {
     // this first example is an operation that we wait for.
     // installOperator() is one of our custom, reusable actions.
     // imagine that installOperator() will try to install the operator, by creating

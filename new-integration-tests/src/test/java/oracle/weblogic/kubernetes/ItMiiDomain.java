@@ -31,12 +31,10 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.annotations.ITNamespaces;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -46,7 +44,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -78,14 +75,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
-@ExtendWith(Timing.class)
-@ExtendWith(IntegrationTestWatcher.class)
-@ITNamespaces(numofns = 2)
 class ItMiiDomain implements LoggedTest {
 
   // operator constants
@@ -121,9 +116,11 @@ class ItMiiDomain implements LoggedTest {
 
   /**
    * Install Operator.
+   * @param namespaces namespace list created by the IntegrationTestWatcher by the
+   JUnit engine parameter resolution
    */
   @BeforeAll
-  public static void initAll(List namespaces) {
+  public static void initAll(@Namespaces(2)List namespaces) {
     // create standard, reusbale retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -131,9 +128,11 @@ class ItMiiDomain implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
+    assertNotNull(namespaces.get(0));
     opNamespace = (String)namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
+    assertNotNull(namespaces.get(1));
     domainNamespace = (String)namespaces.get(1);
 
     // Create a service account for the unique opNamespace

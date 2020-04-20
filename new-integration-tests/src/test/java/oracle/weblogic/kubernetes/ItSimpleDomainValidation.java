@@ -19,14 +19,12 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
-import oracle.weblogic.kubernetes.annotations.ITNamespaces;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -38,18 +36,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
-@IntegrationTest
 //Every test class needs to tagged with this annotation for log collection and namespace creation.
-@ExtendWith(IntegrationTestWatcher.class)
-// The ITNamespaces numofns value is used to create the number of unique namespaces needed by the test.
-// The namespace list is available for use by all methods in the test class.
-@ITNamespaces(numofns = 1) //
+@IntegrationTest
 class ItSimpleDomainValidation implements LoggedTest {
 
   @Test
   @DisplayName("Create a domain")
   @Slow
-  public void testCreatingDomain(List namespaces) {  // parameter namespaces created with Annotation ITNamespaces
+  public void testCreatingDomain(@Namespaces(1)List namespaces) {
 
     final String domainUID = "domain1";
 
