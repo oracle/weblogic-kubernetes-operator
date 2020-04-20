@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecCommand;
-import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -30,21 +28,10 @@ import org.junit.jupiter.api.TestMethodOrder;
  * <p>This test is used for testing pods being shutdowned by some properties change.
  */
 @TestMethodOrder(Alphanumeric.class)
-public class ItPodsShutdown extends BaseTest {
+public class ItPodsShutdownMS extends ShutdownOptionsBase {
 
-  private static final String testAppName = "httpsessionreptestapp";
-  private static final String scriptName = "buildDeployAppInPod.sh";
   private static Operator operator1 = null;
   private static String testClassName;
-  private static String domainNSShutOpCluster = "domainns-sopcluster";
-  private static String domainNSShutOpMS = "domainns-sopms";
-  private static String domainNSShutOpDomain = "domainns-sopdomain";
-  private static String domainNSShutOpMSIgnoreSessions = "domainns-sopmsignores";
-  private static String domainNSShutOpMSTimeout = "domainns-sopmstimeout";
-  private static String domainNSShutOpMSForced = "domainns-sopmsforced";
-  private static String domainNSShutOpEnv = "domainns-sopenv";
-  private static String domainNSShutOpOverrideViaEnv = "domainns-sopoverenv";
-  private static String domainNSShutOpOverrideViaCluster = "domainns-sopovercluster";
   private static StringBuffer namespaceList;
 
   /**
@@ -79,15 +66,11 @@ public class ItPodsShutdown extends BaseTest {
       // create operator1
       if (operator1 == null) {
         ArrayList<String> targetDomainsNS = new ArrayList<String>();
-        targetDomainsNS.add(domainNSShutOpCluster);
-        targetDomainsNS.add(domainNSShutOpDomain);
-        targetDomainsNS.add(domainNSShutOpEnv);
         targetDomainsNS.add(domainNSShutOpMS);
         targetDomainsNS.add(domainNSShutOpMSForced);
         targetDomainsNS.add(domainNSShutOpMSIgnoreSessions);
         targetDomainsNS.add(domainNSShutOpMSTimeout);
         targetDomainsNS.add(domainNSShutOpOverrideViaCluster);
-        targetDomainsNS.add(domainNSShutOpOverrideViaEnv);
         Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
         operatorMap.put("domainNamespaces",targetDomainsNS);
         operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
@@ -102,15 +85,7 @@ public class ItPodsShutdown extends BaseTest {
             .append(" ")
             .append(domainNSShutOpMSIgnoreSessions)
             .append(" ")
-            .append(domainNSShutOpMSTimeout)
-            .append(" ")
-            .append(domainNSShutOpEnv)
-            .append(" ")
-            .append(domainNSShutOpDomain)
-            .append(" ")
-            .append(domainNSShutOpOverrideViaEnv)
-            .append(" ")
-            .append(domainNSShutOpCluster);
+            .append(domainNSShutOpMSTimeout);
       }
     }
   }
@@ -128,141 +103,6 @@ public class ItPodsShutdown extends BaseTest {
 
       LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
     }
-  }
-
-  private Domain createDomain(String domainNS, Map<String, Object> shutdownProps) throws Exception {
-
-    Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
-    domainMap.put("namespace", domainNS);
-    domainMap.put("domainUID", domainNS);
-    domainMap.put("initialManagedServerReplicas", new Integer("1"));
-    domainMap.put("shutdownOptionsOverrides",shutdownProps);
-    LoggerHelper.getLocal().log(Level.INFO, "Creating and verifying the domain creation with domainUid: " + domainNS);
-    Domain domain = TestUtils.createDomain(domainMap);
-    domain.verifyDomainCreated();
-    return domain;
-  }
-
-  /**
-   * Send request to web app deployed on wls.
-   *
-   * @param testAppPath - URL path for webapp
-   * @param domain      - Domain where webapp deployed
-   * @throws Exception  - Fails if can't find expected output from app
-   */
-  public static void callWebApp(String testAppPath, Domain domain)
-      throws Exception {
-
-    String nodePortHost = domain.getHostNameForCurl();
-    int nodePort = domain.getLoadBalancerWebPort();
-
-    StringBuffer webServiceUrl = new StringBuffer("curl --silent --noproxy '*' ");
-    webServiceUrl
-        .append(" -H 'host: ")
-        .append(domain.getDomainUid())
-        .append(".org' ")
-        .append(" http://")
-        .append(nodePortHost)
-        .append(":")
-        .append(nodePort)
-        .append("/")
-        .append(testAppPath);
-
-    // Send a HTTP request to keep open session
-    String curlCmd = webServiceUrl.toString();
-    ExecCommand.exec(curlCmd);
-    //TestUtils.checkAnyCmdInLoop(curlCmd, "Ending to sleep");
-  }
-
-  /**
-   * Shutdown managed server and returns spent shutdown time.
-   *
-   * @throws Exception If failed to shutdown the server.
-   */
-  private static long shutdownServer(String serverName, String domainNS, String domainUid) throws Exception {
-    long startTime;
-    startTime = System.currentTimeMillis();
-    String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
-    LoggerHelper.getLocal().log(Level.INFO, "command to shutdown server <" + serverName + "> is: " + cmd);
-    ExecResult result = ExecCommand.exec(cmd);
-    long terminationTime = 0;
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
-    TestUtils.checkPodCreated(domainUid + "-" + serverName, domainNS);
-    long endTime = System.currentTimeMillis();
-    terminationTime = endTime - startTime;
-    return terminationTime;
-  }
-
-  private static boolean checkShutdownUpdatedProp(String podName, String domainNS, String... props)
-      throws Exception {
-
-    HashMap<String, Boolean> propFound = new HashMap<String, Boolean>();
-    StringBuffer cmd = new StringBuffer("kubectl get pod ");
-    cmd.append(podName);
-    cmd.append(" -o yaml ");
-    cmd.append(" -n ").append(domainNS);
-    cmd.append(" | grep SHUTDOWN -A 1 ");
-
-    LoggerHelper.getLocal().log(Level.INFO,
-        " Get SHUTDOWN props for " + podName + " in namespace " + " with command: '" + cmd + "'");
-
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    String stdout = result.stdout();
-    LoggerHelper.getLocal().log(Level.INFO, "Output " + stdout);
-    boolean found = false;
-    for (String prop : props) {
-      if (stdout.contains(prop)) {
-        LoggerHelper.getLocal().log(Level.INFO, "Property with value " + prop + " has found");
-        propFound.put(prop, new Boolean(true));
-      }
-    }
-    if (props.length == propFound.size()) {
-      found = true;
-    }
-    return found;
-  }
-
-  /**
-   * Start domain with added shutdown options at the domain level
-   * and verify values are propagated to server level.
-   *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
-   */
-  @Test
-  public void testAddShutdownOptionsToDomain() throws Exception {
-
-    Assumptions.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    Map<String, Object> shutdownProps = new HashMap<>();
-    Map<String, Object> shutdownDomainProps = new HashMap();
-    shutdownProps.put("timeoutSeconds", 160);
-    shutdownDomainProps.put("domain",shutdownProps);
-    Domain domain = null;
-    try {
-      domain = createDomain(domainNSShutOpDomain, shutdownDomainProps);
-      Assertions.assertNotNull(domain, "Domain "
-          + domainNSShutOpDomain
-          + "failed to create");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-          + "-admin-server", domain.getDomainNs(),"160"),
-          domain.getDomainUid()
-              + "-admin-server"
-              + "shutdown property for timeoutseconds does not match the expected value 160");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-          + "-managed-server1",domain.getDomainNs(), "160"),
-          domain.getDomainUid()
-              + "-managed-server1: "
-              + "shutdown property for timeoutseconds does not match the expected value 160");
-    } finally {
-      if (domain != null) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      }
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
@@ -310,55 +150,6 @@ public class ItPodsShutdown extends BaseTest {
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, " Deleting domain " + domain.getDomainUid());
-      if (domain != null) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      }
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
-  }
-
-  /**
-   * Start domain with added shutdown options at the cluster level
-   * and verify values are propagated to all managed servers in the cluster.
-   *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
-   */
-  @Test
-  public void testAddShutdownOptionToCluster() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    Map<String, Object> shutdownProps = new HashMap();
-    shutdownProps.put("timeoutSeconds", 60);
-    shutdownProps.put("shutdownType", "Forced");
-    shutdownProps.put("ignoreSessions", true);
-    List<Map<String,Object>> shutdownPropsClusters = new ArrayList<>();
-    Map<String, Object> shutdownPropsMyCluster = new HashMap();
-    shutdownPropsMyCluster.put("cluster-1", shutdownProps);
-    shutdownPropsClusters.add(shutdownPropsMyCluster);
-    Map<String, Object> shutdownPropOpt = new HashMap();
-    shutdownPropOpt.put("cluster",shutdownPropsClusters);
-    Domain domain = null;
-    try {
-      domain = createDomain(domainNSShutOpCluster,shutdownPropOpt);
-      Assertions.assertNotNull(domain,
-          domainNSShutOpCluster
-              + " failed to create, returns null");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-          + "-admin-server", domain.getDomainNs(),"Graceful"),
-          domain.getDomainUid()
-              + "-admin-server: "
-              + " shutdown property does not match the expected : shutdownType=Graceful");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-          + "-managed-server1", domain.getDomainNs(),"Forced"),
-          domain.getDomainUid()
-              + "-managed-server1: "
-              + " shutdown property does not match the expected : shutdownType=Forced");
-    } finally {
-      LoggerHelper.getLocal().log(
-          Level.INFO, "Deleting domain");
       if (domain != null) {
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
@@ -529,105 +320,6 @@ public class ItPodsShutdown extends BaseTest {
   }
 
   /**
-   * Add shutdown env vars at domain spec level and verify the pod are Terminated and recreated.
-   *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
-   */
-  @Test
-  public void testAddShutdownOptionsEnv() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    Map<String, String> shutdownEnvProps = new HashMap();
-    shutdownEnvProps.put("SHUTDOWN_TYPE", "Forced");
-    shutdownEnvProps.put("SHUTDOWN_TIMEOUT", "60");
-    shutdownEnvProps.put("SHUTDOWN_IGNORE_SESSIONS", "false");
-    Map<String, Object> shutdownProps = new HashMap<>();
-    shutdownProps.put("env",shutdownEnvProps);
-    Domain domain = null;
-    try {
-      domain = createDomain(domainNSShutOpEnv,shutdownProps);
-      Assertions.assertNotNull(domain,
-          domainNSShutOpEnv
-              + " failed to create, returns null");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-          + "-managed-server1", domain.getDomainNs(), "Forced", "60", "false"),
-          domain.getDomainUid()
-              + "-managed-server1 :"
-              + " shutdown properties don't not match the expected : "
-              + "shutdownType=Forced, timeoutSeconds=60, ignoreSessions=false");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-          + "-admin-server", domain.getDomainNs(),"Forced", "60", "false"),
-          domain.getDomainUid()
-              + "-admin-server :"
-              + " shutdown properties don't not match the expected : "
-              + "shutdownType=Forced, timeoutSeconds=60, ignoreSessions=false");
-    } finally {
-      if (domain != null) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      }
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
-  }
-
-  /**
-   * Add shutdown env vars at domain spec level and managed server level,verify env override server level.
-   *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
-   */
-  @Test
-  public void testShutdownOptionsOverrideViaEnv() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    String testMethodName = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    Map<String, String> shutdownEnvProps = new HashMap();
-    shutdownEnvProps.put("SHUTDOWN_TYPE", "Forced");
-    shutdownEnvProps.put("SHUTDOWN_TIMEOUT", "60");
-    Map<String, Object> shutdownPropsOpt = new HashMap<>();
-    shutdownPropsOpt.put("env",shutdownEnvProps);
-
-
-    Map<String, Object> shutdownProps = new HashMap();
-    shutdownProps.put("timeoutSeconds", 20);
-    shutdownProps.put("shutdownType", "Graceful");
-    shutdownProps.put("ignoreSessions", false);
-    List<Map<String,Object>> shutdownPropsMSs = new ArrayList<>();
-    Map<String, Object> shutdownPropsMyMS = new HashMap();
-    shutdownPropsMyMS.put("managed-server1", shutdownProps);
-    shutdownPropsMSs.add(shutdownPropsMyMS);
-    shutdownPropsOpt.put("server",shutdownPropsMSs);
-
-    Domain domain = null;
-    try {
-      domain = createDomain(domainNSShutOpOverrideViaEnv,shutdownPropsOpt);
-      Assertions.assertNotNull(domain,
-          domainNSShutOpOverrideViaEnv
-              + " failed to create, returns null");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-              + "-managed-server1", domain.getDomainNs(), "Forced", "60"),
-          domain.getDomainUid()
-              + "-managed-server1 :"
-              + " shutdown properties don't not match the expected : "
-              + "shutdownType=Forced, timeoutSeconds=60");;
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
-              + "-admin-server", domain.getDomainNs(),"Forced", "60"),
-          domain.getDomainUid()
-              + "-admin-server :"
-              + " shutdown properties don't not match the expected : "
-              + "shutdownType=Forced, timeoutSeconds=60");
-
-    } finally {
-      if (domain != null) {
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      }
-    }
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
-  }
-
-  /**
    * Add shutdown options at cluster spec level and the managed server1 level,verify managed server
    * override cluster level.
    *
@@ -685,20 +377,6 @@ public class ItPodsShutdown extends BaseTest {
       }
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - {0}", testMethodName);
-  }
-
-  private long verifyShutdown(long delayTime, Domain domain) throws Exception {
-
-    // invoke servlet to keep sessions opened, terminate pod and check shutdown time
-    if (delayTime > 0) {
-      SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, domain);
-      new Thread(sessionDelay).start();
-      // sleep 5 secs before shutdown
-      Thread.sleep(5 * 1000);
-    }
-    long terminationTime = shutdownServer("managed-server1", domain.getDomainNs(), domain.getDomainUid());
-    LoggerHelper.getLocal().log(Level.INFO, " termination time: " + terminationTime);
-    return terminationTime;
   }
 
   /**

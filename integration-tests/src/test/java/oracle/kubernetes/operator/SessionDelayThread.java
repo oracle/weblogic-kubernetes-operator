@@ -22,7 +22,7 @@ class SessionDelayThread implements Runnable {
    */
   private static void keepSessionAlive(long delayTime, Domain domain) throws Exception {
     String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
-    ItPodsShutdown.callWebApp(testAppPath, domain);
+    ShutdownOptionsBase.callWebApp(testAppPath, domain);
   }
 
   @Override
