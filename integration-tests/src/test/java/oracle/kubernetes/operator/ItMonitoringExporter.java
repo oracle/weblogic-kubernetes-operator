@@ -163,7 +163,7 @@ public class ItMonitoringExporter extends BaseTest {
         boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
         if (isTraefik) {
           LoggerHelper.getLocal().log(Level.INFO, "Upgrading Traefik");
-          upgradeTraefikHostName();
+          //upgradeTraefikHostName();
         }
         deployRunMonitoringExporter(domain, operator);
 
@@ -573,6 +573,7 @@ public class ItMonitoringExporter extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final WebClient webClient = new WebClient();
+    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_empty.yml");
@@ -736,6 +737,7 @@ public class ItMonitoringExporter extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     WebClient webClient = new WebClient();
+    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
     String expectedErrorMsg = "401 Unauthorized for " + exporterUrl;
     try {
       HtmlPage page =
@@ -966,6 +968,7 @@ public class ItMonitoringExporter extends BaseTest {
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
       throws Exception {
     final WebClient webClient = new WebClient();
+    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
@@ -978,6 +981,7 @@ public class ItMonitoringExporter extends BaseTest {
       throws Exception {
     try {
       final WebClient webClient = new WebClient();
+      webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
       setCredentials(webClient, username, password);
       HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, webClient);
       throw new RuntimeException("Expected exception was not thrown ");
@@ -989,6 +993,7 @@ public class ItMonitoringExporter extends BaseTest {
   private HtmlPage submitConfigureForm(String exporterUrl, String effect, String configFile)
       throws Exception {
     final WebClient webClient = new WebClient();
+    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
     webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
     setCredentials(webClient);
     return submitConfigureForm(exporterUrl, effect, configFile, webClient);
