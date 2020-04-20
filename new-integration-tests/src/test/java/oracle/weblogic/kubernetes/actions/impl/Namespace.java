@@ -64,9 +64,8 @@ public class Namespace {
    *
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes request fails
    */
-  public static boolean delete(String namespace) throws ApiException {
+  public static boolean delete(String namespace) {
     return Kubernetes.deleteNamespace(namespace);
   }
 

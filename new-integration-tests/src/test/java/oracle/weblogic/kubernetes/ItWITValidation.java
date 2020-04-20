@@ -53,7 +53,7 @@ class ItWITValidation implements LoggedTest {
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
     List<String> archiveList = Collections.singletonList(zipFile);
-  
+
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap();
@@ -69,12 +69,12 @@ class ItWITValidation implements LoggedTest {
             .wdtVersion("latest")
             .env(env)
             .redirect(true));
- 
+
     assertThat(success)
         .as("Test the Docker image creation has succeeded")
         .withFailMessage("Failed to create the image using WebLogic Image Tool")
         .isTrue();
-  
+
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
   } 
 }
