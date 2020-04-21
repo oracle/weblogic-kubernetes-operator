@@ -159,7 +159,7 @@ public class ItMonitoringExporter extends BaseTest {
         boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
         if (isTraefik) {
           LoggerHelper.getLocal().log(Level.INFO, "Upgrading Traefik");
-          //upgradeTraefikHostName();
+          upgradeTraefikHostName();
         }
         deployRunMonitoringExporter(domain, operator);
 
