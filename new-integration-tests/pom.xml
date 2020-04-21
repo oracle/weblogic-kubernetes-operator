@@ -19,6 +19,7 @@
     <properties>
         <skipITs>false</skipITs>
         <includes-failsafe>**/It*</includes-failsafe>
+        <root.basedir>${project.parent.basedir}</root.basedir>
     </properties>
 
     <dependencies>
