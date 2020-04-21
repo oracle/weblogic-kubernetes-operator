@@ -27,6 +27,9 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -142,41 +145,28 @@ class ItSimpleDomainValidation implements LoggedTest {
     // wait for the managed servers to exist
 
     // Delete domain custom resource
-    assertDoesNotThrow(
-        () -> deleteDomainCustomResource(domainUID, namespace),
-        "Domain failed to be deleted, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
+    assertTrue(deleteDomainCustomResource(domainUID, namespace), "Domain failed to be deleted, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
     logger.info("Deleted Domain Custom Resource {0} from {1}", domainUID, namespace);
 
     // Delete service account from unique namespace
-    assertDoesNotThrow(
-        () -> Kubernetes.deleteServiceAccount(serviceAccount.getMetadata().getName(),
-            serviceAccount.getMetadata().getNamespace()),
-        "Aervice account failed to be deleted, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
+    assertTrue(deleteServiceAccount(serviceAccount.getMetadata().getName(),
+        serviceAccount.getMetadata().getNamespace()), "Service account failed to be deleted, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
     logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
-        + "' in namespace: " + serviceAccount.getMetadata().getNamespace());
+        + "\' in namespace: " + serviceAccount.getMetadata().getNamespace());
 
     // Delete the persistent volume claim and persistent volume
-    assertDoesNotThrow(
-        () -> Kubernetes.deletePvc(pvcName, namespace),
+    assertTrue(deletePersistentVolumeClaim(pvcName, namespace),
         "Persistent volume claim deletion failed, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
-    assertDoesNotThrow(
-        () -> Kubernetes.deletePv(pvName),
-        "Persistent volume deletion failed, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
+            + "look at the above console log messages for failure reason in ApiException responsebody");
+
+    assertTrue(deletePersistentVolume(pvName), "Persistent volume deletion failed, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
 
     // Delete namespace
-    assertDoesNotThrow(
-        () -> TestActions.deleteNamespace(namespace),
-        "Namespace failed to be deleted, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
+    assertTrue(TestActions.deleteNamespace(namespace), "Namespace failed to be deleted, "
+        + "look at the above console log messages for failure reason in ApiException responsebody");
     logger.info("Deleted namespace: {0}", namespace);
   }
 

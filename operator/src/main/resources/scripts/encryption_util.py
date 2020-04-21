@@ -13,9 +13,11 @@
 #
 
 from oracle.weblogic.deploy.encrypt import EncryptionUtils
+from oracle.weblogic.deploy.encrypt import EncryptionException
 from java.lang import String
 import sys, os, traceback
 from java.lang import System
+from utils import trace
 
 def decrypt_file(cipher_text, password, outputfile):
       try:
@@ -26,10 +28,14 @@ def decrypt_file(cipher_text, password, outputfile):
         fh.write(str(restored_text))
         fh.close()
         System.exit(0)
+      except EncryptionException, e:
+          # Catch the exact exception to get the real cause
+          trace("SEVERE", "Error in decrypting file: %s" % e.getCause())
+          System.exit(-1)
       except:
           exc_type, exc_obj, exc_tb = sys.exc_info()
           eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
-          print eeString
+          trace("SEVERE", "Error in decrypting file: %s" % eeString)
           System.exit(-1)
 
 def encrypt_file(clear_text, password, outputfile):
@@ -41,10 +47,14 @@ def encrypt_file(clear_text, password, outputfile):
         fh.write(str(encrypted_text))
         fh.close()
         System.exit(0)
+      except EncryptionException, e:
+          # Catch the exact exception to get the real cause
+          trace("SEVERE", "Error in encrypting file: %s" % e.getCause())
+          System.exit(-1)
       except:
           exc_type, exc_obj, exc_tb = sys.exc_info()
           eeString = traceback.format_exception(exc_type, exc_obj, exc_tb)
-          print eeString
+          trace("SEVERE", "Error in encrypting file: %s" % eeString)
           System.exit(-1)
 
 if __name__ == "__main__":

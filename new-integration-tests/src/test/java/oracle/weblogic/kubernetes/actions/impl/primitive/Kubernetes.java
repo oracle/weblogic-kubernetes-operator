@@ -10,6 +10,7 @@ import java.util.Random;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.generic.GenericKubernetesApi;
 import io.kubernetes.client.extended.generic.KubernetesApiResponse;
 import io.kubernetes.client.openapi.ApiClient;
@@ -17,6 +18,9 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -60,9 +64,11 @@ public class Kubernetes implements LoggedTest {
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
+  private static RbacAuthorizationV1Api rbacAuthApi = null;
 
   // Extended GenericKubernetesApi clients
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
+  private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
   private static GenericKubernetesApi<Domain, DomainList> crdClient = null;
   private static GenericKubernetesApi<V1Namespace, V1NamespaceList> namespaceClient = null;
   private static GenericKubernetesApi<V1Pod, V1PodList> podClient = null;
@@ -78,6 +84,7 @@ public class Kubernetes implements LoggedTest {
       apiClient = Configuration.getDefaultApiClient();
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
+      rbacAuthApi = new RbacAuthorizationV1Api();
       initializeGenericKubernetesApiClients();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
@@ -146,6 +153,16 @@ public class Kubernetes implements LoggedTest {
             "", // the api group
             "v1", // the api version
             "persistentvolumeclaims", // the resource plural
+            apiClient //the api client
+        );
+
+    roleBindingClient =
+        new GenericKubernetesApi<>(
+            V1ClusterRoleBinding.class,  // the api type class
+            V1ClusterRoleBindingList.class, // the api list type class
+            "rbac.authorization.k8s.io", // the api group
+            "v1", // the api version
+            "clusterrolebindings", // the resource plural
             apiClient //the api client
         );
 
@@ -238,9 +255,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the pod
    * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deletePod(String name, String namespace) throws ApiException {
+  public static boolean deletePod(String name, String namespace) {
 
     KubernetesApiResponse<V1Pod> response = podClient.delete(namespace, name);
 
@@ -251,7 +267,9 @@ public class Kubernetes implements LoggedTest {
     }
 
     if (response.getObject() != null) {
-      logger.info("Received after-deletion status of the requested object, will be deleting pod in background!");
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "pod in background!");
     }
 
     return true;
@@ -335,9 +353,8 @@ public class Kubernetes implements LoggedTest {
    *
    * @param name name of namespace
    * @return true if successful delete, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteNamespace(String name) throws ApiException {
+  public static boolean deleteNamespace(String name) {
 
     KubernetesApiResponse<V1Namespace> response = namespaceClient.delete(name);
 
@@ -349,7 +366,8 @@ public class Kubernetes implements LoggedTest {
 
     if (response.getObject() != null) {
       logger.info(
-          "Received after-deletion status of the requested object, will be deleting namespace in background!");
+          "Received after-deletion status of the requested object, will be deleting namespace"
+              + " in background!");
     }
 
     return true;
@@ -365,6 +383,20 @@ public class Kubernetes implements LoggedTest {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(Domain domain) throws ApiException {
+    if (domain == null) {
+      throw new IllegalArgumentException(
+          "Parameter 'domain' cannot be null when calling createDomainCustomResource()");
+    }
+
+    if (domain.metadata() == null) {
+      throw new IllegalArgumentException(
+          "'metadata' field of the parameter 'domain' cannot be null when calling createDomainCustomResource()");
+    }
+
+    if (domain.metadata().getNamespace() == null) {
+      throw new IllegalArgumentException(
+          "'namespace' field in the metadata cannot be null when calling createDomainCustomResource()");
+    }
 
     String namespace = domain.metadata().getNamespace();
 
@@ -399,10 +431,8 @@ public class Kubernetes implements LoggedTest {
    * @param domainUID unique domain identifier
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace)
-      throws ApiException {
+  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
 
     KubernetesApiResponse<Domain> response = crdClient.delete(namespace, domainUID);
 
@@ -446,6 +476,87 @@ public class Kubernetes implements LoggedTest {
 
     logger.warning("Domain Custom Resource '" + domainUID + "' not found in namespace " + namespace);
     return null;
+  }
+
+  /**
+   * Patch the Domain Custom Resource using JSON Patch.  JSON Patch is a format for describing
+   * changes to a JSON document using a series of operations.  JSON Patch is specified in RFC 6902
+   * from the IETF. For example, the following operation will replace the "spec.restartVersion" to a
+   * value of "2".
+   *
+   *    [
+   *      {"op": "replace", "path": "/spec/restartVersion", "value": "2" }
+   *    ]
+   *
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
+   * @param patchString JSON Patch document as a String
+   */
+  public static boolean patchCustomResourceDomainJsonPatch(String domainUID, String namespace,
+      String patchString) {
+    return patchDomainCustomResource(
+        domainUID, // name of custom resource domain
+        namespace, // name of namespace
+        new V1Patch(patchString), // patch data
+        V1Patch.PATCH_FORMAT_JSON_PATCH // "application/json-patch+json" patch format
+    );
+  }
+
+  /**
+   * Patch the Domain Custom Resource using JSON Merge Patch.  JSON Merge Patch is a format for describing
+   * a changed version to a JSON document.  JSON Merge Patch is specified in RFC 7396
+   * from the IETF. For example, the following JSON object fragment would add/replace the
+   * "spec.restartVersion" to a value of "1".
+   *
+   *    {
+   *      "spec" : {
+   *        "restartVersion" : "1"
+   *    }
+   * }
+   *
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
+   * @param patchString JSON Patch document as a String
+   */
+  public static boolean patchCustomResourceDomainJsonMergePatch(String domainUID, String namespace,
+      String patchString) {
+    return patchDomainCustomResource(
+        domainUID, // name of custom resource domain
+        namespace, // name of namespace
+        new V1Patch(patchString), // patch data
+        V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH // "application/merge-patch+json" patch format
+    );
+  }
+
+  /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUID unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDomainCustomResource(String domainUID, String namespace,
+      V1Patch patch, String patchFormat) {
+
+    // GenericKubernetesApi uses CustomObjectsApi calls
+    KubernetesApiResponse<Domain> response = crdClient.patch(
+        namespace, // name of namespace
+        domainUID, // name of custom resource domain
+        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
+        patch // patch data
+    );
+
+    if (!response.isSuccess()) {
+      logger.warning(
+          "Failed to patch " + domainUID + " in namespace " + namespace + " using patch format: "
+              + patchFormat);
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -541,9 +652,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Config Map
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteConfigMap(String name, String namespace) throws ApiException {
+  public static boolean deleteConfigMap(String name, String namespace) {
 
     KubernetesApiResponse<V1ConfigMap> response = configMapClient.delete(namespace, name);
 
@@ -606,9 +716,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Secret
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteSecret(String name, String namespace) throws ApiException {
+  public static boolean deleteSecret(String name, String namespace) {
 
     KubernetesApiResponse<V1Secret> response = secretClient.delete(namespace, name);
 
@@ -696,9 +805,8 @@ public class Kubernetes implements LoggedTest {
    *
    * @param name name of the Persistent Volume
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deletePv(String name) throws ApiException {
+  public static boolean deletePv(String name) {
 
     KubernetesApiResponse<V1PersistentVolume> response = pvClient.delete(name);
 
@@ -723,10 +831,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Persistent Volume Claim
    * @param namespace name of the namespace
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deletePvc(String name, String namespace)
-      throws ApiException {
+  public static boolean deletePvc(String name, String namespace) {
 
     KubernetesApiResponse<V1PersistentVolumeClaim> response = pvcClient.delete(namespace, name);
 
@@ -791,9 +897,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Service Account
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteServiceAccount(String name, String namespace) throws ApiException {
+  public static boolean deleteServiceAccount(String name, String namespace) {
 
     KubernetesApiResponse<V1ServiceAccount> response = serviceAccountClient.delete(namespace, name);
 
@@ -856,9 +961,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Service
    * @param namespace name of namespace
    * @return true if successful
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean deleteService(String name, String namespace) throws ApiException {
+  public static boolean deleteService(String name, String namespace) {
 
     KubernetesApiResponse<V1Service> response = serviceClient.delete(namespace, name);
 
@@ -872,6 +976,54 @@ public class Kubernetes implements LoggedTest {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
               + "service in background!");
+    }
+
+    return true;
+  }
+
+  // --------------------------- Role-based access control (RBAC)   ---------------------------
+
+  /**
+   * Create a Cluster Role Binding.
+   *
+   * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
+   *     data
+   * @return true if successful
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
+      throws ApiException {
+
+    V1ClusterRoleBinding crb = rbacAuthApi.createClusterRoleBinding(
+        clusterRoleBinding, // role binding configuration data
+        PRETTY, // pretty print output
+        null, // indicates that modifications should not be persisted
+        null // fieldManager is a name associated with the actor
+    );
+
+    return true;
+  }
+
+  /**
+   * Delete Cluster Role Binding.
+   *
+   * @param name name of cluster role binding
+   * @return true if successful, false otherwise
+   */
+  public static boolean deleteClusterRoleBinding(String name) {
+    KubernetesApiResponse<V1ClusterRoleBinding> response = roleBindingClient.delete(name);
+
+    if (!response.isSuccess()) {
+      logger.warning(
+          "Failed to delete Cluster Role Binding '" + name + " with HTTP status code: " + response
+              .getHttpStatusCode());
+      return false;
+    }
+
+    if (response.getObject() != null) {
+      logger.info(
+          "Received after-deletion status of the requested object, will be deleting "
+              + "Cluster Role Binding " + name + " in background!");
     }
 
     return true;
