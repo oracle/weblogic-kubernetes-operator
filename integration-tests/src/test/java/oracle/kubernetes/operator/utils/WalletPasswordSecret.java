@@ -5,8 +5,6 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Level;
 
-import org.junit.jupiter.api.Assertions;
-
 public class WalletPasswordSecret extends Secret {
   
   private String walletPassword;
@@ -39,11 +37,10 @@ public class WalletPasswordSecret extends Secret {
             
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     try {
-      ExecResult result = TestUtils.exec(command);
+      ExecResult result = TestUtils.exec(command, true);
       LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to create walletPasswordSecret.\n", ex.getCause());
+      ex.getCause();
     } 
   }
   
@@ -55,10 +52,9 @@ public class WalletPasswordSecret extends Secret {
     String command = "kubectl -n " + namespace + " delete secret " + secretName;
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     try {
-      ExecCommand.exec(command);
+      ExecCommand.exec(command, true);
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      ex.getCause();
     } 
   }
 

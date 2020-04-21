@@ -5,8 +5,6 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.logging.Level;
 
-import org.junit.jupiter.api.Assertions;
-
 public class RcuSecret extends Secret {
 
   private String sysUsername;
@@ -110,27 +108,51 @@ public class RcuSecret extends Secret {
       ExecResult result = TestUtils.exec(command);
       LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to create RCU access secret.\n", ex.getCause());
+      ex.getCause();
     }     
   }
-
+  
+  /**
+   * Get system username
+   * 
+   * @return sysUsername system username
+   */
   public String getSysUsername() {
     return sysUsername;
   }
-
+  
+  /**
+   * Get system password
+   * 
+   * @return sysPassword system password
+   */
   public String getSysPassword() {
     return sysPassword;
   }
   
+  /**
+   * Get RCU prefix
+   * 
+   * @return rcuPrefix RCU prefix 
+   */
   public String getrcuPrefix() {
     return rcuPrefix;
   }
   
+  /**
+   * Get RCU schema passwordd
+   * 
+   * @return rcuSchemaPass RCU schema password 
+   */
   public String getrcuSchemaPass() {
     return rcuSchemaPass;
   }
   
+  /**
+   * Get RCU connection
+   * 
+   * @return rcuConnection RCU connection 
+   */
   public String getrcuConnection() {
     return rcuConnection;
   }

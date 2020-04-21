@@ -95,16 +95,19 @@ public class ItJrfModelInImage extends MiiBaseTest {
     //start DB and create RCU
     dbNamespace = "db" + String.valueOf(getNewSuffixCount());
     assertDoesNotThrow(() -> DbUtils.createNamespace(dbNamespace),
-        "For Db and RCU schema created namespace" + dbNamespace);
-    
+        "Failed to create namespace: " + dbNamespace);
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
     assertDoesNotThrow(() -> DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, 
         rcuSchemaPrefix, dbNamespace));
-    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " + testClassName 
-        + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort); 
+    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " 
+        + testClassName 
+        + " dbNamespace is: " + dbNamespace 
+        + " dbUrl:" + dbUrl 
+        + " dbPort: " + dbPort
+        + " rcuSchemaPrefix" + rcuSchemaPrefix); 
         
-    // create operator1
+    // create operator
     if (operator == null) {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
@@ -186,11 +189,11 @@ public class ItJrfModelInImage extends MiiBaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "JRF domain verification succeeded for {0}", testClassName);
       
       //save and restore walletFile secret
-      assertDoesNotThrow(() -> saveWalletFileSecret(getResultDir(), domainUid, namespace),
+      assertDoesNotThrow(() -> TestUtils.saveWalletFileSecret(getResultDir(), domainUid, namespace),
           "Failed to save walletFile secret");
       LoggerHelper.getLocal().log(Level.INFO, "Saved walletFile secret for {0}", domainUid);
       String walletFileSecretName = domainUid + "-opss-walletfile-secret";
-      assertDoesNotThrow(() -> restoreWalletFileSecret(getResultDir(), domainUid, namespace, 
+      assertDoesNotThrow(() -> TestUtils.restoreWalletFileSecret(getResultDir(), domainUid, namespace, 
           walletFileSecretName), 
           "Failed to store walletFile secret");
       LoggerHelper.getLocal().log(Level.INFO, "Restored walletFile secret for {0}", domainUid);
@@ -236,7 +239,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
   
-  private static void saveWalletFileSecret(String scriptsDir, String domainUid, String namespace) {
+  /*private static void saveWalletFileSecret(String scriptsDir, String domainUid, String namespace) {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
@@ -269,6 +272,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
       ex.printStackTrace();
       Assertions.fail("Failed to excute command.\n", ex.getCause());
     }   
-  }
+  }*/
    
 }

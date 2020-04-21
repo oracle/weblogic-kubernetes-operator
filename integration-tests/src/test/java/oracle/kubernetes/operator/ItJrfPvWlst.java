@@ -80,14 +80,17 @@ public class ItJrfPvWlst extends BaseTest {
     //start DB and create RCU
     dbNamespace = "db" + String.valueOf(getNewSuffixCount());
     assertDoesNotThrow(() -> DbUtils.createNamespace(dbNamespace),
-        "For Db and RCU schema created namespace" + dbNamespace);
-    
+        "Failed to create namespace: " + dbNamespace);
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
     assertDoesNotThrow(() -> DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, 
         rcuSchemaPrefix, dbNamespace));
-    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " + testClassName 
-        + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort); 
+    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " 
+        + testClassName 
+        + " dbNamespace is: " + dbNamespace 
+        + " dbUrl:" + dbUrl 
+        + " dbPort: " + dbPort
+        + " rcuSchemaPrefix" + rcuSchemaPrefix);  
         
     // create operator
     if (operator == null) {

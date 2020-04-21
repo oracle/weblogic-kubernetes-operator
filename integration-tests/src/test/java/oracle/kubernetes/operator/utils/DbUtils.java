@@ -4,10 +4,10 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import oracle.kubernetes.operator.BaseTest;
-import org.junit.jupiter.api.Assertions;
 
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
@@ -24,8 +24,8 @@ public class DbUtils {
    * Create oracle db pod in the k8s cluster.
    *
    * @param dbPropsFile - db properties file
-   * @return - OracleDB instance
-   * @throws Exception - if any error occurs when creating Oracle DB pod
+   * @return OracleDB instance
+   * @throws Exception if any error occurs when creating Oracle DB pod
    */
   public static OracleDB createOracleDB(String dbPropsFile) throws Exception {
     OracleDB oracledb = new OracleDB(dbPropsFile);
@@ -79,8 +79,7 @@ public class DbUtils {
       TestUtils.checkCmdInLoop(cmd3, "The database is ready for use", podName);
 
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to start Oracle DB.\n", ex.getCause());
+      ex.getCause();
     } 
   }
   
@@ -99,8 +98,7 @@ public class DbUtils {
     try {
       TestUtils.exec(cmd, true);
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      ex.getCause();
     } 
   }
   
@@ -137,8 +135,7 @@ public class DbUtils {
     try {
       TestUtils.exec(cmd, true);
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      ex.getCause();
     } 
   }
   
@@ -166,8 +163,7 @@ public class DbUtils {
           System.getenv("OCR_USERNAME") + "@oracle.com",
           namespace);
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      ex.getCause();
     } 
   }
 
@@ -190,8 +186,7 @@ public class DbUtils {
     try {
       TestUtils.exec(cmd, true);
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      ex.getCause();
     } 
   }
   
@@ -221,17 +216,16 @@ public class DbUtils {
     try {
       TestUtils.exec(cmd, true);
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
+      ex.getCause();
     } 
   }
 
   /**
    * Run RCU script to load database schema.
    *
-   * @param rcuPodName - rcu pod name
-   * @param inputYaml  - create domain input file
-   * @throws Exception - if any error occurs
+   * @param rcuPodName rcu pod name
+   * @param inputYaml create domain input file
+   * @throws Exception if any error occurs
    */
   public static void runRcu(String rcuPodName, String inputYaml) throws Exception {
     Map<String, Object> inputMap = TestUtils.loadYaml(inputYaml);
@@ -241,9 +235,9 @@ public class DbUtils {
   /**
    * Run RCU script to load database schema.
    *
-   * @param rcuPodName - rcu pod name
-   * @param inputMap   - domain input map
-   * @throws Exception - if any error occurs
+   * @param rcuPodName rcu pod name
+   * @param inputMap domain input map
+   * @throws Exception if any error occurs
    */
   public static void runRcu(String rcuPodName, Map<String, Object> inputMap) throws Exception {
     String dbConnectString = (String) inputMap.get("rcuDatabaseURL");
@@ -254,10 +248,10 @@ public class DbUtils {
   /**
    * Run RCU script to load database schema.
    *
-   * @param rcuNamespace    - namespace for rcu pod
-   * @param dbConnectString - db connect string to load the database schema
-   * @param rcuPrefix       - rcu prefix for the db schema name
-   * @throws Exception - if any error occurs
+   * @param rcuNamespace namespace for rcu pod
+   * @param dbConnectString db connect string to load the database schema
+   * @param rcuPrefix rcu prefix for the db schema name
+   * @throws Exception if any error occurs
    */
   private static void runRcu(
       String rcuPodName, String rcuNamespace, String dbConnectString, String rcuPrefix)
@@ -349,8 +343,7 @@ public class DbUtils {
         logger.info("Running " + cmd2);
         TestUtils.exec(cmd2, true);
       } catch (Exception ex) {
-        ex.printStackTrace();
-        Assertions.fail("Failed to create namespace.");
+        ex.getCause();
       }
     }
   }
@@ -376,9 +369,13 @@ public class DbUtils {
       DbUtils.createDockerRegistrySecret(dbNamespace);
       DbUtils.startOracleDB(scriptDir, String.valueOf(dbPort), dbNamespace);
       DbUtils.createRcuSchema(scriptDir,rcuSchemaPrefix, dbUrl, dbNamespace);
+      LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for:" 
+          + " dbNamespace is: " + dbNamespace 
+          + " dbUrl:" + dbUrl 
+          + " dbPort: " + dbPort
+          + " rcuSchemaPrefix: " + rcuSchemaPrefix); 
     } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to start DB and create RCU schema.\n", ex.getCause());
+      ex.getCause();
     }
   }
 

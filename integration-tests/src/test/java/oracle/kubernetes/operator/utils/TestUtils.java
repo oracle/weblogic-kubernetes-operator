@@ -1597,7 +1597,50 @@ public class TestUtils {
     content = content.replaceAll(originalString, newString);
     Files.write(path, content.getBytes());
   }
-
+  
+  /**
+   * Restore the walletFile secret.
+   *
+   * @param scriptsDir scriptDir
+   * @param domainUid domainUid
+   * @param namespace namespace of domain
+   * @param secretName name of walletFile secret
+   * @throws Exception if any error occurs
+   */
+  public static void restoreWalletFileSecret(String scriptsDir, String domainUid, 
+      String namespace, String secretName) throws Exception {
+    String cmd = "sh " 
+        + scriptsDir
+        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
+        + domainUid
+        + " -n "
+        + namespace
+        + " -r"
+        + " -ws "
+        + secretName;
+    exec(cmd, true);
+  }
+  
+  /**
+   * Save the walletFile secret in a file.
+   *
+   * @param scriptsDir scriptDir
+   * @param domainUid domainUid
+   * @param namespace namespace of domain
+   * @throws Exception if any error occurs
+   */
+  public static void saveWalletFileSecret(String scriptsDir, String domainUid, 
+      String namespace) throws Exception {
+    String cmd = "sh " 
+        + scriptsDir
+        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
+        + domainUid
+        + " -n "
+        + namespace
+        + " -s";
+    exec(cmd, true);
+  }
+  
   private static KeyStore createKeyStore(Operator operator) throws Exception {
     // get operator external certificate from weblogic-operator.yaml
     String opExtCertFile = getExternalOperatorCertificate(operator);
