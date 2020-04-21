@@ -134,7 +134,7 @@ public class ItDomainInImage extends BaseTest {
    * @throws Exception If an error occurred
    */
   @Test
-  public void testDomainInImageUsingWlstWithSSLEnabled() throws Exception {
+  public void testDomainInImageUsingWlstWithSslEnabled() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
@@ -157,7 +157,7 @@ public class ItDomainInImage extends BaseTest {
 
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      List<ExecResult> execResultList = domain.verifySSLListeners();
+      List<ExecResult> execResultList = domain.verifySslListeners();
       Assert.assertTrue(execResultList.size() > 0);
       for (ExecResult execResult : execResultList) {
         Assert.assertNotNull(execResult);

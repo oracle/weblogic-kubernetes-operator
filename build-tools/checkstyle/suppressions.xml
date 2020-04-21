@@ -5,11 +5,6 @@
     "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 
 <suppressions>
-    <!-- Ignore the javadoc stuff for tests -->
-    <suppress checks="(JavadocMethod|JavadocParagraphCheck|NonEmptyAtclauseDescriptionChec|SummaryJavadocCheck)" files=".*Test.java"/>
-    <suppress checks="(JavadocMethod|JavadocParagraphCheck|NonEmptyAtclauseDescriptionChec|SummaryJavadocCheck)" files=".*IT.java"/>
-    <suppress checks="(JavadocMethod|JavadocParagraphCheck|NonEmptyAtclauseDescriptionChec|SummaryJavadocCheck)" files=".*[/\\](?:test|integTest|arquillianJetty9)[/\\].*"/>
-
     <!-- There's nothing wrong with these - ignore them b/c they generate noise -->
     <suppress checks="AbbreviationAsWordInName" files=".*"/>
 

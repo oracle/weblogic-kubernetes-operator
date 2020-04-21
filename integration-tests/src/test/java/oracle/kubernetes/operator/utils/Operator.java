@@ -688,7 +688,7 @@ public class Operator {
   }
 
   /**
-   * writes operator pod describe and logs to a file
+   * writes operator pod describe and logs to a file.
    * @param logLocation - location where the logs to be written
    */
   public void writePodLog(String logLocation) throws Exception {
