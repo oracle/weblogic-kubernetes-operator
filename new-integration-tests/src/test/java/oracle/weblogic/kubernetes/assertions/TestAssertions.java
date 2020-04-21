@@ -170,12 +170,23 @@ public class TestAssertions {
 
   /**
    * Check if an application can be accessed within a managed server pod.
-   * @param imageName the name of the image to be checked
-   * @param imageTag  the tag of the image to be checked
+   * @param ins the namespace of the domain that hosts the application
+   * @param port the port of the cluster's clusterIP
+   * @param appPath the path for the application url
+   * @param expectedStr  the expected text from the application's response
    * @return true if the image does exist, false otherwise
    */
-  public static boolean appAccessibleInPod(String ns, String port, String appPath, String expectedStr) {
-    return Application.appAccessibleInPod(ns, port, appPath, expectedStr);
+
+  public static Callable<Boolean> appAccessibleInPod(String ns, String port, String appPath, String expectedStr) {
+    return () -> {
+      return Application.appAccessibleInPod(ns, port, appPath, expectedStr);
+    };
+  }
+
+  public static Callable<Boolean> appAccessibleExternally(String ns, String port, String appPath, String expectedStr) {
+    return () -> {
+      return Application.appAccessibleExternally(ns, port, appPath, expectedStr);
+    };
   }
 
 }

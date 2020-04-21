@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes.assertions.impl;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 /**
  * Assertions for applications in a domain.
@@ -12,6 +14,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
  */
 
 public class Application {
+  private static final LoggingFacade logger = LoggingFactory.getLogger(Application.class);
 
   /**
    * Check if an application is accessible inside a WebLogic server pod.
@@ -26,7 +29,7 @@ public class Application {
       String appPath,
       String expectedStr) {
 
-    return expectedStr.contentEquals(verifyAppInPod(ns, port, appPath));
+    return verifyAppInPod(ns, port, appPath).contains(expectedStr);
   }
   
   /**
@@ -52,8 +55,21 @@ public class Application {
         "kubectl get pod -n %s -o=jsonpath='{.items[1].metadata.name}' | grep managed-server1",
         domainNS);
 
-    appStr = exec(cmd, true);
+    String msPodName = exec(cmd, true);
+    logger.info("msPodName = " + msPodName);
+    
 
+    // access the application deployed in managed-server1
+    cmd = String.format(
+         "kubectl -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
+         domainNS,
+         msPodName,
+         msPodName,
+         port,
+         appPath);
+
+    appStr = exec(cmd, true);
+    logger.info("appStr =" + appStr);
     return appStr;
   }
   
@@ -68,13 +84,14 @@ public class Application {
 
     // access the application deployed in managed-server1
     cmd = String.format(
-         "kubectl -n %s exec -it %s -- bash -c 'curl http://%s:%s/%s'",
+         "curl -H 'host: domain1.org' http://localhost:%s/%s",
          domainNS,
          msPodName,
          port,
          appPath);
  
     appStr = exec(cmd, true);
+    logger.info("appStr =" + appStr);
     return appStr;
   }
   
@@ -83,8 +100,9 @@ public class Application {
         .defaultCommandParams()
         .command(command)
         .saveStdOut(true)
-        .redirect(false);
+        .redirect(true);
     Command.withParams(params).execute();
+    logger.info("Stdout = " + params.stdOut());
     return params.stdOut();
   }
   

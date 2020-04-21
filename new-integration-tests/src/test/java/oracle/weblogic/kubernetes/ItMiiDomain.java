@@ -68,6 +68,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleExternally;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
@@ -352,7 +354,16 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceCreated(managedServerPrefix + i);
     }
-
+    checkAppRunning(domainNamespace, "30711", "8801", "sample-war/index.jsp", "Hello World.");
+  }
+  
+  @Test
+  @Order(2)
+  @DisplayName("Update application to version2")
+  @Slow
+  @MustNotRunInParallel
+  public void testUpdateAppVersion2() {
+    
   }
 
   @AfterEach
@@ -498,6 +509,38 @@ class ItMiiDomain implements LoggedTest {
 
   }
 
+  private void checkAppRunning(
+      String ns, 
+      String nodePort, 
+      String internalPort, 
+      String appPath, 
+      String expectedStr) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for application {0} to be ready in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            appPath,
+            domainNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> appAccessibleExternally(ns, nodePort, appPath, expectedStr),
+            String.format(
+               "App %s is not ready in namespace %s", appPath, domainNamespace)));
+    
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for application {0} to be ready in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            appPath,
+            domainNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> appAccessibleInPod(ns, internalPort, appPath, expectedStr),
+            String.format(
+               "App %s is not ready in namespace %s", appPath, domainNamespace)));
+
+  }
+ 
   private static JsonObject getDockerConfigJson(String username, String password, String email, String registry) {
     JsonObject authObject = new JsonObject();
     authObject.addProperty("username", username);
