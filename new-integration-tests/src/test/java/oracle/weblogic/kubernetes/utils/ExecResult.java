@@ -38,7 +38,8 @@ public class ExecResult {
   public String stderr() {
     return this.stderr;
   }
-  
+
+  @Override
   public String toString() {
     return String.format(
         "ExecResult: exitValue = %s, stdout = %s, stderr = %s", 
