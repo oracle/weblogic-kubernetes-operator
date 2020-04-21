@@ -68,7 +68,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleExternally;
+//import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleExternally;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -198,7 +198,7 @@ class ItMiiDomain implements LoggedTest {
     final int replicaCount = 2;
 
     // create image with model files
-    miiImage = createImageAndVerify();
+    miiImage = createFirstDomainImage();
 
     // push the image to OCIR to make the test work in multi node cluster
     if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
@@ -354,32 +354,82 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceCreated(managedServerPrefix + i);
     }
-    checkAppRunning(domainNamespace, "30711", "8801", "sample-war/index.jsp", "Hello World.");
+    checkAppRunning(
+        domainNamespace,
+        "30711",
+        "8001",
+        "sample-war/index.jsp",
+        "Hello World, you have reached server managed-server1");
   }
   
   @Test
   @Order(2)
-  @DisplayName("Update application to version2")
+  @DisplayName("Update the application to version2")
   @Slow
   @MustNotRunInParallel
-  public void testUpdateAppVersion2() {
+  public void testAppVersion2Patching() {
+    final String adminServerPodName = domainUID + "-admin-server";
+    final String managedServerPrefix = domainUID + "-managed-server";
+    final int replicaCount = 2;
     
-  }
+    // app here is what is in the original app dir plus the delta in the second app dir
+    final String appDir1 = "sample-app";
+    final String appDir2 = "sample-app-2";
+    
+    // create another image with app V2 
+    String image = updateImageWithAppV2Patch(
+        MII_IMAGE_NAME,
+        Arrays.asList(appDir1, appDir2));
+    
+    // modify the domain resource to use the new image
+    patchDomainResourceWithNewIamge(domainUID, image);
+    
+    // check and wait for the admin server pod to be started
+    logger.info("Check for admin server pod {0} existence in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodCreated(adminServerPodName);
 
-  @AfterEach
-  public void tearDown() {
-
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
-
-    // delete the domain image created for the test
-    if (miiImage != null) {
-      deleteImage(miiImage);
+    // check and wait for the managed server pods to be started
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check for managed server pod {0} existence in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodCreated(managedServerPrefix + i);
     }
 
+    // check and wait for the admin server pod to be in running state
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodRunning(adminServerPodName);
+
+    // check and wait for the managed server pods to be in running state
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodRunning(managedServerPrefix + i);
+    }
+
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceCreated(adminServerPodName);
+
+    // check and wait for the managed server services to be created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceCreated(managedServerPrefix + i);
+    }
+    
+    // check and wait for the app to be ready
+    checkAppRunning(
+        domainNamespace,
+        "30711",
+        "8001",
+        "sample-war/index.jsp",
+        "Hello World again, you have reached the server managed-server1");    
+  }
+
+  private void patchDomainResourceWithNewIamge(String domainUID2, String image) {
+    // TODO Auto-generated method stub
   }
 
   /**
@@ -388,6 +438,17 @@ class ItMiiDomain implements LoggedTest {
    */
   @AfterAll
   public void tearDownAll() {
+    // Delete domain custom resource
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID, domainNamespace),
+        "deleteDomainCustomResource failed with ApiException");  
+    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
+
+    // delete the domain image created for the test
+	if (miiImage != null) {
+	  deleteImage(miiImage);
+	}
+
     // uninstall operator release
     logger.info("Uninstall Operator in namespace {0}", opNamespace);
     if (opHelmParams != null) {
@@ -418,7 +479,7 @@ class ItMiiDomain implements LoggedTest {
 
   }
 
-  private String createImageAndVerify() {
+  private String createFirstDomainImage() {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
@@ -436,6 +497,37 @@ class ItMiiDomain implements LoggedTest {
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
     List<String> archiveList = Collections.singletonList(zipFile);
 
+    createImageAndVerify(MII_IMAGE_NAME, imageTag, modelList, archiveList);
+
+    return MII_IMAGE_NAME + ":" + imageTag;
+  }
+  
+  private String updateImageWithAppV2Patch(String imageName, List<String> appDirList) {
+    // build the model file list
+    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+   
+    // build an application archive using what is in resources/apps/APP_NAME
+    boolean archiveBuilt = buildAppArchive(
+        defaultAppParams()
+            .srcDirList(appDirList));
+    
+    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s" + APP_NAME));
+    
+    // build the archive list
+    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
+    List<String> archiveList = Collections.singletonList(zipFile);
+    createImageAndVerify(
+        imageName, "v2", modelList, archiveList);
+    return imageName + ":" + "v2";
+ 
+  }
+
+  private void createImageAndVerify(
+      String imageName,
+      String imageTag,
+      List<String> modelList,
+      List<String> archiveList) {
+
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap();
@@ -443,10 +535,10 @@ class ItMiiDomain implements LoggedTest {
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using model directory {2}",
-        MII_IMAGE_NAME, imageTag, MODEL_DIR);
+        imageName, imageTag, MODEL_DIR);
     boolean result = createMIIImage(
         defaultWITParams()
-            .modelImageName(MII_IMAGE_NAME)
+            .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
@@ -454,15 +546,12 @@ class ItMiiDomain implements LoggedTest {
             .env(env)
             .redirect(true));
 
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", MII_IMAGE_NAME));
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", imageName));
 
     // check image exists
-    assertTrue(dockerImageExists(MII_IMAGE_NAME, imageTag),
-        String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag));
-
-    return MII_IMAGE_NAME + ":" + imageTag;
+    assertTrue(dockerImageExists(imageName, imageTag),
+        String.format("Image %s doesn't exist", imageName + ":" + imageTag));
   }
-
 
   private void checkPodCreated(String podName) {
     withStandardRetryPolicy
@@ -510,11 +599,12 @@ class ItMiiDomain implements LoggedTest {
   }
 
   private void checkAppRunning(
-      String ns, 
-      String nodePort, 
-      String internalPort, 
+      String ns,
+      String nodePort,
+      String internalPort,
       String appPath, 
       String expectedStr) {
+    /* enable this once the load balancer is deployed
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for application {0} to be ready in namespace {1} "
@@ -526,7 +616,7 @@ class ItMiiDomain implements LoggedTest {
         .until(assertDoesNotThrow(() -> appAccessibleExternally(ns, nodePort, appPath, expectedStr),
             String.format(
                "App %s is not ready in namespace %s", appPath, domainNamespace)));
-    
+    */
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for application {0} to be ready in namespace {1} "

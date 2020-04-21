@@ -74,23 +74,14 @@ public class Application {
   }
   
   private static String verifyAppExternally(String domainNS, String port, String appPath) {
-    String appStr = "";
-    // get managed server pod name
-    String cmd = String.format(
-        "kubectl get pod -n %s -o=jsonpath='{.items[1].metadata.name}' | grep managed-server1",
-        domainNS);
-
-    String msPodName = exec(cmd, true);
 
     // access the application deployed in managed-server1
-    cmd = String.format(
+    String cmd = String.format(
          "curl -H 'host: domain1.org' http://localhost:%s/%s",
-         domainNS,
-         msPodName,
          port,
          appPath);
  
-    appStr = exec(cmd, true);
+    String appStr = exec(cmd, true);
     logger.info("appStr =" + appStr);
     return appStr;
   }
