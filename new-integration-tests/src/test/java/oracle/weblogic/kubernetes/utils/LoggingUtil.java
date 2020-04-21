@@ -65,12 +65,20 @@ public class LoggingUtil {
    */
   public static void generateLog(String namespace, Path resultDir) throws IOException, ApiException {
     logger.info("Collecting logs in namespace : {0}", namespace);
+
     // get service accounts
     writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir.toString(), namespace + "_sa.log");
+
     // get namespaces
-    writeToFile(Kubernetes.listNamespacesAsObjects(), resultDir.toString(), namespace + "_ns.log");
+    for (var ns: Kubernetes.listNamespacesAsObjects().getItems()) {
+      if (namespace.equals(ns.getMetadata().getName())) {
+        writeToFile(ns, resultDir.toString(), namespace + "_ns.log");
+      }
+    }
+
     // get pvc
     writeToFile(Kubernetes.listPersistentVolumeClaims(namespace), resultDir.toString(), namespace + "_pvc.log");
+
     // get pv based on the weblogic.domainUID in pvc
     for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
       if (pvc.getMetadata() != null
@@ -81,20 +89,28 @@ public class LoggingUtil {
             String.format("weblogic.domainUID in (%s)", label)), resultDir.toString(), label + "_pv.log");
       }
     }
+
     // get secrets
     writeToFile(Kubernetes.listSecrets(namespace), resultDir.toString(), namespace + "_secrets.log");
+
     // get configmaps
     writeToFile(Kubernetes.listConfigMaps(namespace), resultDir.toString(), namespace + "_cm.log");
+
     // get jobs
     writeToFile(Kubernetes.listJobs(namespace), resultDir.toString(), namespace + "_jobs.log");
+
     // get deployments
     writeToFile(Kubernetes.listDeployments(namespace), resultDir.toString(), namespace + "_deploy.log");
+
     // get replicasets
     writeToFile(Kubernetes.listReplicaSets(namespace), resultDir.toString(), namespace + "_rs.log");
+
     // get all Domain objects in all namespaces
-    writeToFile(Kubernetes.getDomainObjects(), resultDir.toString(), "all_domains.log");
+    writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), "all_domains.log");
+
     // get all Domain objects in given namespace
     writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_list_domains.log");
+
     // get domain/operator pods
     for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
       if (pod.getMetadata() != null) {

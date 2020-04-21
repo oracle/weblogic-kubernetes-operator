@@ -721,66 +721,9 @@ public class Kubernetes implements LoggedTest {
       response = crdClient.list(namespace);
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
-      throw ex;
+      return new DomainList();
     }
     return response != null ? response.getObject() : new DomainList();
-  }
-
-
-  /**
-   * Get Domain Custom Resource objects in all namespaces.
-   *
-   * @return Object Domain Custom Resources object
-   */
-  public static Object getDomainObjects() {
-    Object domainObjects = null;
-    try {
-      domainObjects = customObjectsApi.listClusterCustomObject(
-          DOMAIN_GROUP, // custom resource's group name
-          DOMAIN_VERSION, // custom resource's version
-          DOMAIN_PLURAL, // custom resource's plural name
-          PRETTY, // pretty print
-          null, //conitnue fetching
-          null, // field selector
-          null, // label selector
-          null, // limit the number of objects to get
-          null, // resource version
-          TIMEOUT_SECONDS, // timeout
-          ALLOW_WATCH_BOOKMARKS // allow watch book marks
-      );
-    } catch (ApiException ex) {
-      logger.severe(ex.getResponseBody());
-    }
-    return domainObjects;
-  }
-
-  /**
-   * Get Domain Custom Resource objects in given namespace.
-   *
-   * @param namespace the namespace in which to list custom objects
-   * @return Object Domain Custom Resources object
-   */
-  public static Object getDomainObjects(String namespace) {
-    Object domainObjects = null;
-    try {
-      domainObjects = customObjectsApi.listNamespacedCustomObject(
-          DOMAIN_GROUP, // custom resource's group name
-          DOMAIN_VERSION, // custom resource's version
-          namespace, // namespace
-          DOMAIN_PLURAL, // custom resource's plural name
-          PRETTY, // pretty print
-          null, //conitnue fetching
-          null, // field selector
-          null, // label selector
-          null, // limit the number of objects to get
-          null, // resource version
-          TIMEOUT_SECONDS, // timeout
-          ALLOW_WATCH_BOOKMARKS // allow watch book marks
-      );
-    } catch (ApiException ex) {
-      logger.severe(ex.getResponseBody());
-    }
-    return domainObjects;
   }
 
   // --------------------------- config map ---------------------------
@@ -1154,7 +1097,7 @@ public class Kubernetes implements LoggedTest {
    * List all persistent volume claims in the Kubernetes cluster.
    * @return V1PersistentVolumeClaimList of Persistent Volume Claims in Kubernetes cluster
    */
-  public static V1PersistentVolumeClaimList listPersistentVolumeClaims() {
+  public static V1PersistentVolumeClaimList listPersistentVolumeClaimsAllNamespaces() {
     KubernetesApiResponse<V1PersistentVolumeClaimList> list = pvcClient.list();
     if (list.isSuccess()) {
       return list.getObject();
