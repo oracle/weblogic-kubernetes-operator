@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -17,11 +18,11 @@ public class TraefikParams {
   private static final String NAMESPACES = "kubernetes.namespaces";
 
   // Adding some of the most commonly used params for now
-  private String nameSpaces;
+  private String namespaces;
   private HelmParams helmParams;
 
-  public TraefikParams nameSpaces(String nameSpaces) {
-    this.nameSpaces = nameSpaces;
+  public TraefikParams namespaces(String namespaces) {
+    this.namespaces = namespaces;
     return this;
   }
 
@@ -34,9 +35,9 @@ public class TraefikParams {
     return helmParams;
   }
 
-  public HashMap<String, Object> getValues() {
-    HashMap<String, Object> values = new HashMap();
-    values.put(NAMESPACES, nameSpaces);
+  public Map<String, Object> getValues() {
+    Map<String, Object> values = new HashMap<>();
+    values.put(NAMESPACES, namespaces);
 
     values.values().removeIf(Objects::isNull);
     return values;

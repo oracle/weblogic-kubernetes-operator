@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-import java.util.HashMap;
+import java.util.Map;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
@@ -22,7 +22,7 @@ public class Helm {
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */
-  public static boolean install(HelmParams helmParams, HashMap<String, Object> chartValues) {
+  public static boolean install(HelmParams helmParams, Map<String, Object> chartValues) {
     String namespace = helmParams.getNamespace();
 
     // assertions for required parameters
@@ -86,7 +86,7 @@ public class Helm {
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */
-  public static boolean upgrade(HelmParams params, HashMap<String, Object> chartValues) {
+  public static boolean upgrade(HelmParams params, Map<String, Object> chartValues) {
     String namespace = params.getNamespace();
 
     // assertions for required parameters
@@ -176,7 +176,7 @@ public class Helm {
    * @param values hash map with key, value pairs
    * @return string with chart values
    */
-  private static String valuesToString(HashMap<String, Object> values) {
+  private static String valuesToString(Map<String, Object> values) {
     StringBuffer valuesString = new StringBuffer("");
     values.forEach((key, value) ->
         valuesString.append(String.format(" --set \"%1s=%2s\"",

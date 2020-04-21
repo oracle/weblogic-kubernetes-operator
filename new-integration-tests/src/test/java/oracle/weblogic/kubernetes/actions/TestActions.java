@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions;
 
+import java.util.HashMap;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -590,4 +591,50 @@ public class TestActions {
     return true;
   }
 
+  /**
+   * Check the load balancer functionality, call curl command and check the response contains the managed server info
+   * @param curlCmd curl command to call sample app
+   * @param managedServerNames managed server names to verify the sample app can hit the servers
+   * @param maxIterations max interations to call the curl command
+   * @throws Exception if the web app can not hit one or more managed servers
+   */
+  public static void callWebAppAndCheckForServerNameInResponse(String curlCmd,
+                                                        List<String> managedServerNames,
+                                                        int maxIterations) throws Exception {
+
+    // map with server names and boolean values
+    HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
+    managedServerNames.forEach(managedServerName -> {
+      managedServers.put(managedServerName, false);
+    });
+
+    logger.info("Calling webapp " + maxIterations + " times " + curlCmd);
+
+    // check the response contains managed server name
+    int i = 1;
+    while (managedServers.containsValue(false) && (i <= maxIterations)) {
+      logger.info("Iteration {0}/{1} executing command: {2} ", i, maxIterations, curlCmd);
+
+      ExecResult result = ExecCommand.exec(curlCmd, true);
+
+      String response = result.stdout().trim();
+      managedServers.keySet().forEach(key -> {
+        if (response.contains(key)) {
+          managedServers.put(key, true);
+        }
+      });
+
+      i++;
+    }
+
+    // after the max iterations, check if any managedserver value is false
+    managedServers.entrySet().forEach(entry -> {
+      if (entry.getValue()) {
+        logger.info("Load balancer successfully reach server " + entry.getKey());
+      } else {
+        throw new RuntimeException(
+            "FAILURE: Load balancer can not reach server " + entry.getKey());
+      }
+    });
+  }
 }
