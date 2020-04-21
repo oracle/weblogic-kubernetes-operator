@@ -46,15 +46,19 @@ public class Command {
           params.command(), 
           params.redirect(),
           params.env());
-      if (params.saveStdOut()) {
-        params.stdOut(result.stdout());
+      if (params.saveResults()) {
+        params.stdout(result.stdout());
+        params.stderr(result.stderr());
       }
+
+      // check exitValue to determine if the command execution has failed.
       if (result.exitValue() != 0) {
-        logger.severe("The command execution failed with the result: {0}", result);
-      }
+        logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+      } 
+
       return result.exitValue() == 0;
-    } catch (IOException | InterruptedException e) {
-      logger.severe("The command execution failed", e);
+    } catch (IOException | InterruptedException ie) {
+      logger.severe("The command execution failed", ie);
       return false;
     }
   }

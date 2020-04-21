@@ -34,4 +34,12 @@ public class ExecResult {
   public String stderr() {
     return this.stderr;
   }
+  
+  public String toString() {
+    return String.format(
+        "ExecResult: exitValue = %s, stdout = %s, stderr = %s", 
+        exitValue, 
+        stdout, 
+        stderr);
+  }
 }

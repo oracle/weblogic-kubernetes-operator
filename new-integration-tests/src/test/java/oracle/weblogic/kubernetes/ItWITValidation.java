@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
@@ -55,7 +56,7 @@ class ItWITValidation implements LoggedTest {
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
     List<String> archiveList = Collections.singletonList(zipFile);
-  
+
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap();
@@ -68,15 +69,15 @@ class ItWITValidation implements LoggedTest {
             .modelImageTag(IMAGE_TAG)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
-            .wdtVersion("latest")
+            .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
- 
+
     assertThat(success)
-        .as("Test the Docker image creation has succeeded")
+        .as("Test the Docker image creation")
         .withFailMessage("Failed to create the image using WebLogic Image Tool")
         .isTrue();
-  
+
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
   } 
   
