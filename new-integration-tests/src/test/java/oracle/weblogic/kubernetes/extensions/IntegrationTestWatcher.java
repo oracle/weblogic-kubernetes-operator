@@ -321,14 +321,14 @@ public class IntegrationTestWatcher implements
     logger.info("Collecting logs...");
     if (namespaces == null || namespaces.isEmpty()) {
       logger.warning("Namespace list is empty, "
-          + "see if the test class is annotated with @ITNamespaces(numofns = <n>)");
+          + "see if the methods in the tests is(are) annotated with Namespaces(<n>)");
       return;
     }
     Path resultDir = null;
     try {
       resultDir = Files.createDirectories(Paths.get(LOGS_DIR,
               extensionContext.getRequiredTestClass().getSimpleName(),
-              getExtDir(failedStage)));
+              getExtDir(extensionContext, failedStage)));
     } catch (IOException ex) {
       logger.warning(ex.getMessage());
     }
@@ -346,15 +346,15 @@ public class IntegrationTestWatcher implements
    * @param failedStage the test execution failed stage
    * @return String extension directory name
    */
-  private String getExtDir(String failedStage) {
+  private String getExtDir(ExtensionContext extensionContext, String failedStage) {
     String ext;
     switch (failedStage) {
       case "beforeEach":
       case "afterEach":
-        ext = methodName + "_" + failedStage;
+        ext = extensionContext.getRequiredTestMethod().getName() + "_" + failedStage;
         break;
       case "test":
-        ext = methodName;
+        ext = extensionContext.getRequiredTestMethod().getName();
         break;
       default:
         ext = failedStage;
