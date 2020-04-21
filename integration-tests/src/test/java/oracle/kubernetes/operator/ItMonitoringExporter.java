@@ -993,19 +993,15 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   private HtmlPage submitConfigureForm(
-      String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
+          String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
     // Get the first page
     HtmlPage page1 = webClient.getPage(exporterUrl);
-    int i = 0;
-    while (i < 5 && (page1 == null)) {
-      Thread.sleep(1000);
+    if (page1 == null) {
       //try again
       page1 = webClient.getPage(exporterUrl);
-      i++;
     }
-    assertNotNull(page1, "wls-exporter dashboard can't be reached");
-    assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."),
-            "wls-exporter dashboard is not loaded " + page1.asText());
+    assertNotNull(page1);
+    assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."));
 
     // Get the form that we are dealing with and within that form,
     // find the submit button and the field that we want to change.Generated form for cluster had
@@ -1024,7 +1020,7 @@ public class ItMonitoringExporter extends BaseTest {
     }
 
     HtmlSubmitInput button =
-        page1.getFirstByXPath("//form//input[@type='submit']");
+            page1.getFirstByXPath("//form//input[@type='submit']");
     assertNotNull(button);
     final HtmlFileInput fileField = form.getInputByName("configuration");
     assertNotNull(fileField);
@@ -1037,7 +1033,6 @@ public class ItMonitoringExporter extends BaseTest {
     HtmlPage page2 = button.click();
     assertNotNull(page2);
     assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
-
     // wait time for coordinator to update both managed configuration
     Thread.sleep(15 * 1000);
     return page2;
