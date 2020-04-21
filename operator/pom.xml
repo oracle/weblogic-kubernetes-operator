@@ -395,6 +395,7 @@
   <properties>
     <root.basedir>${project.parent.basedir}</root.basedir>
     <junit-version>4.13</junit-version>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 
 </project>

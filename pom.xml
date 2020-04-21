@@ -414,58 +414,13 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.version}</version>
             <executions>
-
               <execution>
-                <id>pre-unit-test</id>
+                <id>prepare-agent</id>
                 <goals>
                   <goal>prepare-agent</goal>
                 </goals>
-                <configuration>
-                  <destFile>${sonar.jacoco.reportPath}</destFile>
-                  <append>true</append>
-                  <propertyName>surefireArgLine</propertyName>
-                </configuration>
               </execution>
-
-              <execution>
-                <id>post-unit-test</id>
-                <phase>test</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-                <configuration>
-                  <outputDirectory>${jacoco.outputDir}</outputDirectory>
-                  <dataFile>${sonar.jacoco.reportPath}</dataFile>
-                </configuration>
-              </execution>
-
-              <execution>
-                <id>pre-integration-test</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>prepare-agent-integration</goal>
-                </goals>
-                <configuration>
-                  <destFile>${sonar.jacoco.itReportPath}</destFile>
-                  <append>true</append>
-                  <propertyName>failsafeArgLine</propertyName>
-                </configuration>
-              </execution>
-              <execution>
-                <id>post-integration-test</id>
-                <phase>post-integration-test</phase>
-                <goals>
-                  <goal>report-integration</goal>
-                </goals>
-                <configuration>
-                  <dataFile>${sonar.jacoco.itReportPath}</dataFile>
-                  <append>true</append>
-                  <outputDirectory>$jacoco.itOutputDir}</outputDirectory>
-                </configuration>
-              </execution>
-
             </executions>
           </plugin>
         </plugins>
@@ -766,8 +721,8 @@
     <maven-jar-plugin-version>3.2.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.1.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.8.2</maven-site-plugin-version>
-    <maven-surefire-plugin-version>3.0.0-M4</maven-surefire-plugin-version>
-    <surefire-logger-api-version>3.0.0-M3</surefire-logger-api-version>
+    <maven-surefire-plugin-version>2.22.2</maven-surefire-plugin-version>
+    <surefire-logger-api-version>2.22.2</surefire-logger-api-version>
     <maven-checkstyle-plugin-version>3.1.1</maven-checkstyle-plugin-version>
     <maven-pmd-plugin-version>3.13.0</maven-pmd-plugin-version>
     <maven-release-plugin-version>3.0.0-M1</maven-release-plugin-version>
@@ -797,16 +752,8 @@
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
-    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.jacoco.reportPath>${root.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
-    <sonar.jacoco.itReportPath>${root.basedir}/target/jacoco-it.exec</sonar.jacoco.itReportPath>
-    <sonar.language>java</sonar.language>
     <jacoco.version>0.8.5</jacoco.version>
-    <jacoco.outputDir>${root.basedir}/target/jacoco</jacoco.outputDir>
-    <jacoco.itOutputDir>${root.basedir}/target/jacoco-it</jacoco.itOutputDir>
-    <jacoco.destFile>${root.basedir}/target/jacoco.exec</jacoco.destFile>
-    <jacoco.skip>false</jacoco.skip>
+    <aggregate.report.dir>buildtime-reports/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
   </properties>
 

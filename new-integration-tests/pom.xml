@@ -20,6 +20,7 @@
         <skipITs>false</skipITs>
         <includes-failsafe>**/It*</includes-failsafe>
         <root.basedir>${project.parent.basedir}</root.basedir>
+        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencies>
@@ -227,4 +228,24 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <surefireArgLine></surefireArgLine>
+                <failsafeArgLine></failsafeArgLine>
+                <skipITs>true</skipITs>
+            </properties>
+        </profile>
+        <profile>
+            <id>integration-tests</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/It*</includes-failsafe>
+            </properties>
+        </profile>
+    </profiles>
 </project>

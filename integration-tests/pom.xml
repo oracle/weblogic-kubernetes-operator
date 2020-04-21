@@ -30,6 +30,7 @@
         <resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
         <root.basedir>${project.parent.basedir}</root.basedir>
         <junit-version>4.13</junit-version>
+        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencies>
