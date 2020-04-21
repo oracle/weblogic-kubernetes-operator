@@ -126,7 +126,9 @@ public class ItJrfPvWlst extends BaseTest {
          "tearDown failed");
   }
 
- 
+  /**
+   * Create and deploy a JRF domain. Verify the domain is created successfully
+   */
   @Test
   public void testJrfDomainOnPvUsingWlst() throws Exception {
     if (QUICKTEST) {

@@ -223,7 +223,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
       
       assertDoesNotThrow(() -> jrfdomain.verifyDomainCreated(40));
       testCompletedSuccessfully = true;
-
     } catch (Exception ex) {
       ex.printStackTrace();
       Assertions.fail("FAILED - " + testMethodName);
@@ -234,7 +233,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
             TestUtils.deleteWeblogicDomainResources(jrfdomain.getDomainUid()));
       }
     }
-
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
   
