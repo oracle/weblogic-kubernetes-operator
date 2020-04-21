@@ -63,7 +63,6 @@ public class ItMonitoringExporter extends BaseTest {
 
   private static Domain domain = null;
   private static String myhost = "";
-  private static String metricsUrl = "";
   private static String monitoringExporterDir = "";
   private static String monitoringExporterEndToEndDir = "";
   private static String resourceExporterDir = "";
@@ -81,8 +80,6 @@ public class ItMonitoringExporter extends BaseTest {
       "heap_free_current%7Bname%3D%22managed-server2%22%7D%5B15s%5D";
   private static String testappPrometheusSearchKey =
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
-  String oprelease = "op" + number;
-  private int waitTime = 5;
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static String domainNS1;
@@ -122,7 +119,6 @@ public class ItMonitoringExporter extends BaseTest {
         wlsUser = BaseTest.getUsername();
         wlsPassword = BaseTest.getPassword();
 
-        metricsUrl = exporterUrl + "metrics";
         monitoringExporterDir = getResultDir() + "/monitoring";
         monitoringExporterScriptDir = getResultDir() + "/scripts";
         resourceExporterDir =
@@ -177,7 +173,7 @@ public class ItMonitoringExporter extends BaseTest {
           cleanUpPvDirOke("/ci-oke-prom");
           cleanUpPvDirOke("/ci-oke-alertprom");
           LB_MONITORING_PUBLIC_IP = createMonitorTraefikLB("monitoring");
-          LB_MONITORING_PUBLIC_IP = LB_MONITORING_PUBLIC_IP;
+
         }
         installPrometheusGrafanaWebHookMySqlCoordinator();
       }
@@ -425,6 +421,8 @@ public class ItMonitoringExporter extends BaseTest {
               "%DOMAIN_NAMESPACE%", domain.getDomainNs());
       String cmd = "kubectl apply -f " + monitoringExporterScriptDir + "/monexp-path-route.yaml";
       ExecCommand.exec(cmd, true);
+      upgradeTraefikNamespace();
+      exporterUrl = "http://" + LB_MONITORING_PUBLIC_IP + "/wls-exporter/";
     }
     test01_CheckMetricsViaPrometheus();
     test02_ReplaceConfiguration();
@@ -573,8 +571,6 @@ public class ItMonitoringExporter extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     final WebClient webClient = new WebClient();
-    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
-    webClient.getOptions().setRedirectEnabled(true);
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_empty.yml");
@@ -738,8 +734,6 @@ public class ItMonitoringExporter extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     WebClient webClient = new WebClient();
-    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
-    webClient.getOptions().setRedirectEnabled(true);
     String expectedErrorMsg = "401 Unauthorized for " + exporterUrl;
     try {
       HtmlPage page =
@@ -970,13 +964,11 @@ public class ItMonitoringExporter extends BaseTest {
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
       throws Exception {
     final WebClient webClient = new WebClient();
-    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
-    webClient.getOptions().setRedirectEnabled(true);
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
-    assertTrue((page.asText()).contains(expectedErrorMsg));
-    assertTrue(!(page.asText()).contains("Error 500--Internal Server Error"));
+    assertTrue((page.asText()).contains(expectedErrorMsg),
+            "Expected Error was not received , actual " +  page.asText());
   }
 
   private void changeConfigNegativeAuth(
@@ -984,7 +976,6 @@ public class ItMonitoringExporter extends BaseTest {
       throws Exception {
     try {
       final WebClient webClient = new WebClient();
-      webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
       setCredentials(webClient, username, password);
       HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, webClient);
       throw new RuntimeException("Expected exception was not thrown ");
@@ -996,8 +987,6 @@ public class ItMonitoringExporter extends BaseTest {
   private HtmlPage submitConfigureForm(String exporterUrl, String effect, String configFile)
       throws Exception {
     final WebClient webClient = new WebClient();
-    webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
-    webClient.getOptions().setRedirectEnabled(true);
     webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
     setCredentials(webClient);
     return submitConfigureForm(exporterUrl, effect, configFile, webClient);
@@ -1045,21 +1034,13 @@ public class ItMonitoringExporter extends BaseTest {
     fileField.setContentType("multipart/form-data");
 
     // Now submit the form by clicking the button and get back the second page.
-    //HtmlPage page2 = button.click();
-    try {
-      HtmlPage page2 = button.click(false, false, false, true, true, false);
-      assertNotNull(page2);
-      assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
-    } catch (RuntimeException ex) {
-      //ignore
-      LoggerHelper.getLocal().log(Level.INFO, " Intermittent exception during click " + ex.getMessage());
-    }
+    HtmlPage page2 = button.click();
+    assertNotNull(page2);
+    assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
+
     // wait time for coordinator to update both managed configuration
     Thread.sleep(15 * 1000);
-    HtmlPage newPage = webClient.getPage(exporterUrl);
-    assertNotNull(newPage);
-    assertFalse((newPage.asText()).contains("Error 500--Internal Server Error"));
-    return newPage;
+    return page2;
   }
 
   /**
@@ -1635,4 +1616,44 @@ public class ItMonitoringExporter extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "WARNING: cleaning entire domain home dirs failed ");
     }
   }
+
+  private void upgradeTraefikNamespace() throws Exception {
+
+    String namespace = "{" + domainNS1 + ",montesttraefikns,monitortestns}";
+    LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
+    StringBuffer cmd = new StringBuffer("helm upgrade ");
+    cmd.append(" traefik-monitoring")
+            .append(" stable/traefik ")
+            .append("--namespace montesttraefikns ")
+            .append("--reuse-values ")
+            .append("--set ")
+            .append("\"")
+            .append("kubernetes.namespaces=")
+            .append(namespace)
+            .append("\"");
+
+    if (BaseTest.HELM_VERSION.equals("V2")) {
+      if (BaseTest.OKE_CLUSTER) {
+        //cmd.append(" --cleanup-on-fail --force --timeout 240");
+        cmd.append(" --debug --timeout 240");
+      } else {
+        cmd.append("  --wait --timeout 240");
+      }
+    }
+    if (BaseTest.HELM_VERSION.equals("V3")) {
+      if (BaseTest.OKE_CLUSTER) {
+        cmd.append(" --debug  --timeout 4m0s");
+      } else {
+        cmd.append("  --wait --timeout 4m0s");
+      }
+    }
+    LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new Exception("Helm Upgrade Failed" + cmd.toString() + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+  }
+
 }
