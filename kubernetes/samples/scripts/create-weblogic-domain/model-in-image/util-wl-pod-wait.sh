@@ -12,9 +12,6 @@
 # See 'usage()' below for the command line and other details.
 #
 
-# TBD Update to fail early and dump introspector log if
-#     introspector stays failed for more than N seconds?
-
 set -eu
 set -o pipefail
 

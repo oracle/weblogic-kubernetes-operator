@@ -14,19 +14,20 @@
 #   WORKDIR                  - Working directory for the sample with at least
 #                              10g of space. Defaults to 
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
-#   CUSTOM_DOMAIN_NAME       - defaults to 'domain1'.
-#   DOMAIN_UID               - defaults to 'sample-domain1'
-#   DOMAIN_NAMESPACE         - defaults to '${DOMAIN_UID}-ns'
-#   MODEL_IMAGE_NAME         - defaults to 'model-in-image'
-#   MODEL_IMAGE_TAG          - defaults to 'v1'
+#   CUSTOM_DOMAIN_NAME       - default 'domain1'.
+#   DOMAIN_UID               - default 'sample-domain1'
+#   DOMAIN_NAMESPACE         - default '${DOMAIN_UID}-ns'
+#   MODEL_IMAGE_NAME         - default 'model-in-image'
+#   MODEL_IMAGE_TAG          - default 'v1'
 #   WDT_DOMAIN_TYPE          - WLS (default), RestrictedJRF, or JRF
-#   DOMAIN_RESOURCE_TEMPLATE - use this file for a domain resource template instead
-#                              of TBD/k8s-domain.yaml.template-TBD
-#   INCLUDE_MODEL_CONFIGMAP  - defaults to 'false'
+#   INCLUDE_MODEL_CONFIGMAP  - defaults 'false'
 #                              Set to true to uncomment the template's
 #                              'model.configuration.configMap' reference,
 #                              and to uncomment the secret that's referenced
 #                              by the model file in this config map.
+#
+#   DOMAIN_RESOURCE_TEMPLATE - use as the domain resource template
+#     default 'sample-domain-resource/k8s-domain.yaml.template-WDT_DOMAIN_TYPE'
 
 set -eu
 set -o pipefail

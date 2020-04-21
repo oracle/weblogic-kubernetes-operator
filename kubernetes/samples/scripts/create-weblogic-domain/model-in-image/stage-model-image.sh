@@ -2,10 +2,8 @@
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# TBD should we skip self if there's already a WORKDIR/model dir?
-#     maybe have a 'when-missing/always' option?
-
-#
+# Usage: 'stage_model_image.sh'
+# 
 # This script stages a wdt model to directory 'WORKDIR/model' for future
 # inclusion in a model-in-image image:
 #
@@ -30,7 +28,7 @@
 #    WDT_DOMAIN_TYPE 
 #      'WLS' (default), 'JRF', or 'RestrictedJRF'.
 #
-# CUSTOMIZATION NOTE:
+# CUSTOMIZATION NOTES:
 #
 #   If you want to specify your own model files for an image, then you 
 #   don't need to run this script. Instead, set an environment variable
@@ -44,26 +42,49 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+echo "@@ WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE"
+
+mkdir -p ${WORKDIR}
+
 #
-# delete old model files in WORKDIR/model, if any
-# avoid using an env var in an 'rm -fr' for safety reasons
+# copy over sample model yaml/properties - but skip if this was already done before
 #
 
-cd ${WORKDIR}
-rm -fr ./model
-mkdir -p ${WORKDIR}/model
-
+echo "@@"
 echo "@@ Info: Copying wdt model yaml and properties files from directory 'SCRIPTDIR/sample-model/$WDT_DOMAIN_TYPE' to directory 'WORKDIR/model'."
 
-cp $SCRIPTDIR/sample-model/$WDT_DOMAIN_TYPE/* $WORKDIR/model
+if [ -e ${WORKDIR}/model ]; then
+  echo "@@"
+  echo "@@ Notice! Skipping copy of yaml and properties files - target directory already exists."
+else 
+  mkdir -p ${WORKDIR}/model
+  cp $SCRIPTDIR/sample-model/$WDT_DOMAIN_TYPE/* $WORKDIR/model
+fi
 
+#
+# copy over sample archive - but skip if this was already done before
+#
+
+echo "@@"
 echo "@@ Info: Copying sample archive with an exploded ear jsp app from SCRIPTDIR to the 'WORKDIR/archive' directory."
 
 if [ ! -d $WORKDIR/archive ]; then
   cp -r $SCRIPTDIR/sample-archive $WORKDIR/archive
+else
+  echo "@@"
+  echo "@@ Notice! Skipping copy of sample archive - target directory already exists."
 fi
 
-echo "@@ Info: Zipping 'WORKDIR/archive' contents to 'WORKDIR/model/archive1.zip'."
+#
+# zip the archive and place it in the WORKDIR/model directory
+#
+
+echo "@@"
+echo "@@ Info: Removing old archive zip (if any), and zipping 'WORKDIR/archive' contents to 'WORKDIR/model/archive1.zip'."
 
 cd $WORKDIR/archive
-zip -r ../model/archive1.zip wlsdeploy
+rm -f ../model/archive1.zip
+zip -q -r ../model/archive1.zip wlsdeploy
+
+echo "@@"
+echo "@@ Done!"

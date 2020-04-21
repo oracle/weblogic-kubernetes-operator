@@ -48,16 +48,9 @@
 #      Default is 'false'.  
 #      (To add configmap later dynamically, see 'run-update.sh'.)
 #
-#    Others 
+#    Others
 #      See 'custom-env.sh'.
 #      (In particular DOMAIN_UID and DOMAIN_NAMESPACE.)
-#
-# TBD add Traefik ingress setup to official sample?
-#        Does quick-start setup an ingress?
-#     'require' Traefik in sample?
-#     add check to see if Operator running and monitoring expected ns?
-#     add check to see if DB running in expected ns at expected port and responding to SQL commands?
-#     add check to see if Traefik is running?
 #
 
 set -eu

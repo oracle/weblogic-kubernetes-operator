@@ -96,7 +96,7 @@
 #  Used by './stage-tooling.sh' to obtain the WDT installer.
 #  Set to a specific zip loc to download specific version, for example:
 #   'https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.7.1/weblogic-deploy.zip'
-#  TBD update example version above to correspond to lateste and greatest version
+#  TBD before releasing 3.0, update example version above to correspond to latest and greatest version - and/or point to where we document the supported version 
 #  Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
 
 # export DOWNLOAD_WIT=
@@ -109,7 +109,7 @@
 #  Used by './stage-tooling.sh' to obtain the WIT installer.
 #  Set to zip loc to download specific version, for example:
 #   'https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.1/imagetool.zip'
-#  TBD update example version above to correspond to lateste and greatest version
+#  TBD before releasing 3.0, update example version above to correspond to latest and greatest version - and/or point to where we document the supported version 
 #  Defaults to 'https://github.com/oracle/weblogic-image-tool/releases/latest'
 
 # export DOMAIN_RESOURCE_TEMPLATE=
@@ -118,4 +118,4 @@
 #  resource yaml file in WORKDIR. Defaults to 
 #  'sample-domain-resource/k8s-domain.yaml.template-WDT_DOMAIN_TYPE'
 
-# TBD add DB_NAMESPACE
+# TBD add DB_NAMESPACE (used for setting up the DB urls), can the DB port change?

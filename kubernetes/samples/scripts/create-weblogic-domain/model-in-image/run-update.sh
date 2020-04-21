@@ -88,16 +88,11 @@ $SCRIPTDIR/create-domain-resource.sh
 #     config with the model files from the model configmap. This will
 #     also force a subsequent rolling restart.
 
+echo "@@"
+echo "@@ ######################################################################"
+echo "@@"
+
 $SCRIPTDIR/util-patch-restart-version.sh
-
-echo "@@"
-echo "@@ Info: To watch pods roll/start and get their status:"
-echo "         - run 'kubectl get pods -n ${DOMAIN_NAMESPACE} --watch' and ctrl-c when done watching"
-echo "         - or run 'SCRIPTDIR/util-wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'"
-echo "@@"
-echo "@@ Info: If the introspector job fails or you see any other unexpected issue, see 'User Guide -> Manage WebLogic Domains -> Model in Image -> Debugging' in the documentation."
-echo "@@"
-
 
 #######################################################################
 # Optionally wait for pods to roll and reach the new restart version.

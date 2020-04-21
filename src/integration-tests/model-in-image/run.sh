@@ -6,6 +6,8 @@
 #
 # See "usage()" below for usage.
 
+# TBD Verify again that this works for JRF and RestrictedJRF.
+
 set -eu
 set -o pipefail
 trap '[ -z "$(jobs -pr)" ] || kill $(jobs -pr)' SIGINT SIGTERM EXIT
@@ -92,16 +94,6 @@ if [ "$DO_CLEAN" = "true" ]; then
       trace "Info: Forcing model image rebuild by removing old docker image '$m_image'!"
       docker image rm $m_image
     fi
-
-    # TBD cleaning dangling is not multi-user safe:
-
-    trace "Cleaning dangling docker images (if any)."
-    #if [ ! -z "$(docker images -f "dangling=true" -q)" ]; then
-      # TBD do we need the rmi command  if we do the prunes below?
-    #  docker rmi -f $(docker images -f "dangling=true" -q)
-    #fi
-    docker container prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
-    docker image prune -f --filter label="com.oracle.weblogic.imagetool.buildid"
   fi
 fi
 
@@ -131,9 +123,12 @@ doCommand  "\$TESTDIR/build-wl-operator.sh"
 if [ "$DO_DB" = "true" ]; then
   # TBD note that start-db (and maybe stop-db) seem to alter files right inside the source tree - 
   #     this should be fixed to have a WORKDIR or similar, and means that they aren't suitable for multi-user/multi-ns environments
-  #TBD add support for DB_IMAGE_PULL_SECRET
   doCommand  "\$DBSAMPLEDIR/stop-db-service.sh -n \$DB_NAMESPACE"
-  doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT -s \$DB_IMAGE_PULL_SECRET"
+  if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
+    doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT -s \$DB_IMAGE_PULL_SECRET"
+  else
+    doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT"
+  fi
 fi
 
 doCommand  "\$TESTDIR/deploy-wl-operator.sh"
@@ -160,14 +155,20 @@ if [ "$DO_MAIN" = "true" ]; then
   # Cheat to speedup a subsequent roll/shutdown.
   diefast
 
-  # TBD If JRF, TBD export wallet to $WORKDIR/somefile
-
   [ ! "$DRY_RUN" = "true" ] && testapp internal "Hello World!"
   [ ! "$DRY_RUN" = "true" ] && testapp traefik  "Hello World!"
 
+  # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
+  #   TBD export wallet
+  #   TBD import wallet to wallet secret 
+  #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
+  #   doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
+  #   doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+  # fi
+  # Cheat to speedup a subsequent roll/shutdown.
+  # diefast
+
 fi
-
-
 
 
 #
@@ -178,7 +179,10 @@ fi
 
 if [ "$DO_UPDATE" = "true" ]; then
 
-  # TBD If JRF, import wallet to wallet secret - is that a sufficient test? Or do we need to restart domain?
+  # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
+  #   TBD import wallet to wallet secret again
+  #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
+  # fi
 
   doCommand  -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"

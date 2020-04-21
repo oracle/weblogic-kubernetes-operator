@@ -3,7 +3,16 @@
 # Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# TBD doc
+# 'build-wl-operator.sh'
+#
+# Build and helm install an operator that monitors DOMAIN_NAMESPACE. 
+# 
+# This script is not necessary if the operator is already running
+# and monitoring DOMAIN_NAMESPACE.
+#
+# This script skips the build if it finds no changes since the last build.
+#
+# This script always does a helm uninstall/install.
 
 set -eu
 set -o pipefail
@@ -52,6 +61,7 @@ docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_p
 
 save_cksum
 
+# push to remote repo if cluster is remote
 # if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ]; then
 #   echo "Provide Docker login details using REPO_REGISTRY, REPO_USERNAME & REPO_PASSWORD env variables to push the Operator image to the repository."
 #   exit 1

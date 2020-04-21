@@ -34,6 +34,5 @@ export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 
 # ::: Traefik name and namespace
 #  Defaults are 'traefik-operator' and '${TRAEFIK_NAME}-ns'
-#  TBD need a pull secret
 # export TRAEFIK_NAME=
 # export TRAEFIK_NAMESPACE=
