@@ -1046,12 +1046,20 @@ public class ItMonitoringExporter extends BaseTest {
 
     // Now submit the form by clicking the button and get back the second page.
     //HtmlPage page2 = button.click();
-    HtmlPage page2 = button.click(false, false, false, true, true, false);
-    assertNotNull(page2);
-    assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
+    try {
+      HtmlPage page2 = button.click(false, false, false, true, true, false);
+      assertNotNull(page2);
+      assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
+    } catch (RuntimeException ex) {
+      //ignore
+      LoggerHelper.getLocal().log(Level.INFO, " Intermittent exception during click " + ex.getMessage());
+    }
     // wait time for coordinator to update both managed configuration
     Thread.sleep(15 * 1000);
-    return page2;
+    HtmlPage newPage = webClient.getPage(exporterUrl);
+    assertNotNull(newPage);
+    assertFalse((newPage.asText()).contains("Error 500--Internal Server Error"));
+    return newPage;
   }
 
   /**
