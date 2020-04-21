@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
-//import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -109,6 +108,7 @@ class ItMiiDomain implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainNamespace1 = null;
+  private static String domainNamespace2 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
 
   private String domainUID = "domain1";
@@ -261,52 +261,9 @@ class ItMiiDomain implements LoggedTest {
     assertTrue(secretCreated, String.format("create secret failed for %s", encryptionSecretName));
 
     // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUID)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUID)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(30711))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))));
-
-    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
-        domainUID, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUID, domainNamespace)),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUID, domainNamespace));
+    int adminNodePort = 30711;
+    createDomainResource(domainUID, domainNamespace, adminSecretName, repoSecretName,
+            encryptionSecretName, adminNodePort, replicaCount);
 
 
     // wait for the domain to exist
@@ -431,52 +388,9 @@ class ItMiiDomain implements LoggedTest {
     assertTrue(secretCreated, String.format("create secret failed for %s", encryptionSecretName));
 
     // create the domain CR
-    Domain domain = new Domain()
-            .apiVersion(API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUID1)
-                    .namespace(domainNamespace1))
-            .spec(new DomainSpec()
-                    .domainUid(domainUID1)
-                    .domainHomeSourceType("FromModel")
-                    .image(miiImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domainNamespace1))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(30712))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
-                    .configuration(new Configuration()
-                            .model(new Model()
-                                    .domainType("WLS")
-                                    .runtimeEncryptionSecret(encryptionSecretName))));
-
-    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
-            domainUID1, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUID1, domainNamespace1)),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUID1, domainNamespace1));
+    int adminNodePort = 30712;
+    createDomainResource(domainUID1, domainNamespace1, adminSecretName, repoSecretName,
+            encryptionSecretName, adminNodePort, replicaCount);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace1);
@@ -527,7 +441,133 @@ class ItMiiDomain implements LoggedTest {
     }
   }
 
-  //@AfterEach
+  @Test
+  @Order(3)
+  @DisplayName("Create a domain with same domainUID as first domain but in a new namespace")
+  @Slow
+  @MustNotRunInParallel
+  public void testCreateMiiDomainSameDomainUIDDiffNS() {
+    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
+    final String adminServerPodName = domainUID + "-admin-server";
+    final String managedServerPrefix = domainUID + "-managed-server";
+    final int replicaCount = 2;
+
+    logger.info("Creating unique namespace for Domain domain3");
+    domainNamespace2 = assertDoesNotThrow(() -> createUniqueNamespace(),
+            "Failed to create unique namespace due to ApiException");
+    logger.info("Created a new namespace called {0}", domainNamespace2);
+
+    OperatorParams opParams =
+            new OperatorParams()
+                    .helmParams(opHelmParams)
+                    .image(OPERATOR_IMAGE)
+                    .domainNamespaces(Arrays.asList(domainNamespace,domainNamespace1,domainNamespace2))
+                    .serviceAccount(serviceAccountName);
+
+    // install Operator
+    logger.info("Installing Operator in namespace {0}", opNamespace);
+    assertTrue(upgradeOperator(opParams),
+            String.format("Operator upgrade failed in namespace %s", opNamespace));
+    logger.info("Operator upgraded in namespace {0}", opNamespace);
+
+
+    JsonObject dockerConfigJsonObject = getDockerConfigJson(
+            repoUserName, repoPassword, repoEmail, repoRegistry);
+    String dockerConfigJson = dockerConfigJsonObject.toString();
+
+    // Create the V1Secret configuration
+    V1Secret repoSecret = new V1Secret()
+            .metadata(new V1ObjectMeta()
+                    .name(repoSecretName)
+                    .namespace(domainNamespace2))
+            .type("kubernetes.io/dockerconfigjson")
+            .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
+            String.format("createSecret failed for %s", repoSecretName));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = domainUID + "-weblogic-credentials";
+    Map<String, String> adminSecretMap = new HashMap();
+    adminSecretMap.put("username", "weblogic");
+    adminSecretMap.put("password", "welcome3");
+    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+            .metadata(new V1ObjectMeta()
+                    .name(adminSecretName)
+                    .namespace(domainNamespace2))
+            .stringData(adminSecretMap)), "Create secret for domain2 failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecretdomain3";
+    Map<String, String> encryptionSecretMap = new HashMap();
+    encryptionSecretMap.put("username", "weblogicencdomain3");
+    encryptionSecretMap.put("password", "weblogicencdomain3");
+    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+            .metadata(new V1ObjectMeta()
+                    .name(encryptionSecretName)
+                    .namespace(domainNamespace2))
+            .stringData(encryptionSecretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", encryptionSecretName));
+
+    // create the domain CR
+    int adminNodePort = 30714;
+    createDomainResource(domainUID, domainNamespace2, adminSecretName, repoSecretName,
+            encryptionSecretName, adminNodePort, replicaCount);
+
+    // wait for the domain to exist
+    logger.info("Check for domain custom resouce in namespace {0}", domainNamespace2);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                   + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUID,
+                domainNamespace1,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainUID, DOMAIN_VERSION, domainNamespace2));
+
+
+    // check admin server pod exist
+    logger.info("Check for admin server pod {0} existence in namespace {1}",
+            adminServerPodName, domainNamespace2);
+    checkPodCreated(adminServerPodName, domainUID, domainNamespace2);
+
+    // check managed server pods exists
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check for managed server pod {0} existence in namespace {1}",
+              managedServerPrefix + i, domainNamespace2);
+      checkPodCreated(managedServerPrefix + i, domainUID, domainNamespace2);
+    }
+
+    // check admin server pod is running
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+            adminServerPodName, domainNamespace2);
+    checkPodRunning(adminServerPodName, domainUID, domainNamespace2);
+
+    // check managed server pods are running
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+              managedServerPrefix + i, domainNamespace2);
+      checkPodRunning(managedServerPrefix + i, domainUID, domainNamespace2);
+    }
+
+    logger.info("Check admin service {0} is created in namespace {1}",
+            adminServerPodName, domainNamespace1);
+    checkServiceCreated(adminServerPodName, domainNamespace2);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+              managedServerPrefix + i, domainNamespace2);
+      checkServiceCreated(managedServerPrefix + i, domainNamespace2);
+    }
+  }
+
+
   public void tearDown() {
 
     // Delete domain custom resource
@@ -536,10 +576,15 @@ class ItMiiDomain implements LoggedTest {
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
 
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID1, domainNamespace1),
             "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUID1 + " from " + domainNamespace1);
+
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace2);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID1, domainNamespace2),
+            "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace2);
 
     // delete the domain image created for the test
     if (miiImage != null) {
@@ -581,6 +626,14 @@ class ItMiiDomain implements LoggedTest {
       assertDoesNotThrow(() -> deleteNamespace(domainNamespace1),
               "deleteNamespace failed with ApiException");
       logger.info("Deleted namespace: " + domainNamespace1);
+    }
+
+    // Delete domain namespaces
+    logger.info("Deleting domain namespace {0}", domainNamespace2);
+    if (domainNamespace2 != null) {
+      assertDoesNotThrow(() -> deleteNamespace(domainNamespace2),
+              "deleteNamespace failed with ApiException");
+      logger.info("Deleted namespace: " + domainNamespace2);
     }
 
     // Delete opNamespace
@@ -637,6 +690,57 @@ class ItMiiDomain implements LoggedTest {
     return MII_IMAGE_NAME + ":" + imageTag;
   }
 
+  public void createDomainResource(String domainUID, String domNamespace, String adminSecretName,
+                                   String repoSecretName, String encryptionSecretName,
+                                   int adminNodePort, int replicaCount) {
+    // create the domain CR
+    Domain domain = new Domain()
+            .apiVersion(API_VERSION)
+            .kind("Domain")
+            .metadata(new V1ObjectMeta()
+                    .name(domainUID)
+                    .namespace(domNamespace))
+            .spec(new DomainSpec()
+                    .domainUid(domainUID)
+                    .domainHomeSourceType("FromModel")
+                    .image(miiImage)
+                    .addImagePullSecretsItem(new V1LocalObjectReference()
+                            .name(repoSecretName))
+                    .webLogicCredentialsSecret(new V1SecretReference()
+                            .name(adminSecretName)
+                            .namespace(domNamespace))
+                    .includeServerOutInPodLog(true)
+                    .serverStartPolicy("IF_NEEDED")
+                    .serverPod(new ServerPod()
+                            .addEnvItem(new V1EnvVar()
+                                    .name("JAVA_OPTIONS")
+                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                            .addEnvItem(new V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .adminServer(new AdminServer()
+                            .serverStartState("RUNNING")
+                            .adminService(new AdminService()
+                                    .addChannelsItem(new Channel()
+                                            .channelName("default")
+                                            .nodePort(adminNodePort))))
+                    .addClustersItem(new Cluster()
+                            .clusterName("cluster-1")
+                            .replicas(replicaCount)
+                            .serverStartState("RUNNING"))
+                    .configuration(new Configuration()
+                            .model(new Model()
+                                    .domainType("WLS")
+                                    .runtimeEncryptionSecret(encryptionSecretName))));
+
+    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
+            domainUID, domNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUID, domNamespace)),
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUID, domNamespace));
+  }
 
   private void checkPodCreated(String podName, String domainUid, String domNamespace) {
     withStandardRetryPolicy
