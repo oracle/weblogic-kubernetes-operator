@@ -14,7 +14,6 @@
 
   <description>Oracle WebLogic Server Kubernetes Operator</description>
   <name>operator-runtime</name>
-  <packaging>jar</packaging>
 
   <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
   <inceptionYear>2017</inceptionYear>
@@ -89,9 +88,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>
-            --illegal-access=permit
-          </argLine>
           <skipTests>${skip.unit.tests}</skipTests>
           <includes>
             <exclude>**/*Test.java</exclude>
@@ -124,11 +120,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <argLine>
-            --illegal-access=permit
-          </argLine>
-        </configuration>
         <executions>
           <execution>
             <goals>
