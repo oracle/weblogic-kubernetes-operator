@@ -3,7 +3,12 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# Usage: See 'usage_exit()' function below.
+# This is a helper script that can save an OPSS key wallet from a
+# running domain's introspector configmap to a file, and/or restore
+# an OPSS key wallet file to a Kubernetes secret for use by a domain
+# that you're about to run.
+#
+# For command line details, pass '-?' or see 'usage_exit()' below.
 #
 # Defaults can optionally be changed via env vars:
 #
@@ -14,9 +19,13 @@
 #
 
 set -e
+set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 echo "@@ Info: Running '$(basename "$0")'."
+
+WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
 
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
@@ -46,6 +55,8 @@ cat << EOF
 
     -s                  Save an OPSS wallet file from an introspector
                         configmap to a file. (See also '-wf'.)
+                        Default is '\$WALLET_SECRET' if set, 
+                        'DOMAIN_UID-opss-walletfile-secret' otherwise.
 
     -r                  Restore an OPSS wallet file to a Kubernetes secret.
                         (See also '-wf' and '-ws').
@@ -137,8 +148,8 @@ if [ $FILESIZE = 0 ]; then
 fi
 
 if [ ${RESTORE_WALLET} -eq 1 ] ; then
-  echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' domainUid '${DOMAIN_UID}' for wallet file '${WALLET_FILE}'."
-  $SCRIPTDIR/create_secret.sh \
+  echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}', domain uid '${DOMAIN_UID}'."
+  $SCRIPTDIR/util-create-secret.sh \
     -n ${DOMAIN_NAMESPACE} \
     -d ${DOMAIN_UID} \
     -s ${WALLET_SECRET} \
