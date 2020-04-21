@@ -32,7 +32,7 @@ public class ShutdownOptionsBase extends BaseTest {
   protected static String domainNSShutOpMSForced = "domainns-sopmsforced";
   protected static String domainNSShutOpEnv = "domainns-sopenv";
   protected static String domainNSShutOpOverrideViaEnv = "domainns-sopoverenv";
-  protected static String domainNSShutOpOverrideViaCluster = "domainns-sopovercluster";
+  protected static String domainNSShutOpOverrideViaCluster = "domainns-sopovercl";
   
 
   protected Domain createDomain(String domainNS, Map<String, Object> shutdownProps) throws Exception {
