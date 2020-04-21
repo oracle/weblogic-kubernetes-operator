@@ -43,7 +43,6 @@ public class ItJrfPvWlst extends BaseTest {
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
-   *
    */
   @BeforeAll
   public static void staticPrepare() {
@@ -60,7 +59,6 @@ public class ItJrfPvWlst extends BaseTest {
   /**
    * This method gets called before every test. It creates the result/pv root directories
    * for the test. It also creates RCU schema, operator.
-   *
    */
   @BeforeEach
   public void prepare() {
@@ -91,7 +89,7 @@ public class ItJrfPvWlst extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " + testClassName 
         + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort); 
         
-    // create operator1
+    // create operator
     if (operator == null) {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
@@ -108,7 +106,6 @@ public class ItJrfPvWlst extends BaseTest {
    
   /**
    * This method will run once after all test methods are finished. It delete both RCU and DB pods
-   *
    */
   @AfterEach
   public void unPrepare() {
@@ -121,7 +118,6 @@ public class ItJrfPvWlst extends BaseTest {
   
   /**
    * Releases k8s cluster lease, archives result, pv directories.
-   *
    */
   @AfterAll
   public static void staticUnPrepare() {

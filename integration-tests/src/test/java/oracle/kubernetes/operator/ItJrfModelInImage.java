@@ -58,7 +58,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
-   *
    */
   @BeforeAll
   public static void staticPrepare() {
@@ -75,7 +74,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
   /**
    * This method gets called before every test. It creates the result/pv root directories
    * for the test. It also creates RCU schema, operator.
-   *
    */
   @BeforeEach
   public void prepare() {
@@ -122,7 +120,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
   
   /**
    * This method will run once after all test methods are finished. It delete both RCU and DB pods
-   *
    */
   @AfterEach
   public void unPrepare() {
@@ -135,7 +132,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
 
   /**
    * Releases k8s cluster lease, archives result, pv directories.
-   *
    */
   @AfterAll
   public static void staticUnPrepare() {
@@ -148,7 +144,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
    * Create and deploy a JRF domain using model in image. Save and restore walletFileSecret. After shutting down 
    * the domain, enable walletFileSecret in the domain yaml file. Restart the domain with the modified domain yaml 
    * file that reuses the same RCU schema. Verify the restarted domain is in the good state.
-   *
    */
   @Test
   public void testReuseRCU2Deployments() {
