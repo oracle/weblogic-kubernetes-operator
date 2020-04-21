@@ -24,11 +24,13 @@ public class Configuration {
           + " it overrides the value of spec.configOverrideSecrets.")
   private List<String> secrets;
 
-  @ApiModelProperty("The name of the config map for WebLogic configuration overrides. If this field is specified"
+  @ApiModelProperty(
+      "The name of the config map for WebLogic configuration overrides. If this field is specified"
           + " it overrides the value of spec.configOverrides.")
   private String overridesConfigMap;
 
-  @ApiModelProperty("The introspector job timeout value in seconds. If this field is specified"
+  @ApiModelProperty(
+      "The introspector job timeout value in seconds. If this field is specified"
           + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
   private Long introspectorJobActiveDeadlineSeconds;
 
@@ -41,6 +43,14 @@ public class Configuration {
     return model;
   }
 
+  public Model getModel() {
+    return model;
+  }
+
+  public void setModel(Model model) {
+    this.model = model;
+  }
+
   public Configuration opss(Opss opss) {
     this.opss = opss;
     return this;
@@ -48,6 +58,14 @@ public class Configuration {
 
   public Opss opss() {
     return this.opss;
+  }
+
+  public Opss getOpss() {
+    return opss;
+  }
+
+  public void setOpss(Opss opss) {
+    this.opss = opss;
   }
 
   public Configuration secrets(List<String> secrets) {
@@ -67,6 +85,14 @@ public class Configuration {
     return this;
   }
 
+  public List<String> getSecrets() {
+    return secrets;
+  }
+
+  public void setSecrets(List<String> secrets) {
+    this.secrets = secrets;
+  }
+
   public Configuration overridesConfigMap(String overridesConfigMap) {
     this.overridesConfigMap = overridesConfigMap;
     return this;
@@ -76,13 +102,30 @@ public class Configuration {
     return this.overridesConfigMap;
   }
 
-  public Configuration introspectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
+  public String getOverridesConfigMap() {
+    return overridesConfigMap;
+  }
+
+  public void setOverridesConfigMap(String overridesConfigMap) {
+    this.overridesConfigMap = overridesConfigMap;
+  }
+
+  public Configuration introspectorJobActiveDeadlineSeconds(
+      Long introspectorJobActiveDeadlineSeconds) {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
     return this;
   }
 
   public Long introspectorJobActiveDeadlineSeconds() {
     return this.introspectorJobActiveDeadlineSeconds;
+  }
+
+  public Long getIntrospectorJobActiveDeadlineSeconds() {
+    return introspectorJobActiveDeadlineSeconds;
+  }
+
+  public void setIntrospectorJobActiveDeadlineSeconds(Long introspectorJobActiveDeadlineSeconds) {
+    this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
   }
 
   @Override
@@ -100,9 +143,13 @@ public class Configuration {
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder = new HashCodeBuilder()
-        .append(model).append(opss).append(secrets).append(overridesConfigMap)
-        .append(introspectorJobActiveDeadlineSeconds);
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .append(model)
+            .append(opss)
+            .append(secrets)
+            .append(overridesConfigMap)
+            .append(introspectorJobActiveDeadlineSeconds);
 
     return builder.toHashCode();
   }
@@ -128,4 +175,3 @@ public class Configuration {
     return builder.isEquals();
   }
 }
-

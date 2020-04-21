@@ -9,26 +9,37 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description = "ClusterStatus describes the current status of a specific WebLogic cluster.")
+@ApiModel(
+    description = "ClusterStatus describes the current status of a specific WebLogic cluster.")
 public class ClusterStatus {
 
   @ApiModelProperty("WebLogic cluster name. Required.")
   private String clusterName;
 
-  @ApiModelProperty(value = "The number of intended cluster members. Required.", allowableValues = "range[0,infinity]")
+  @ApiModelProperty(
+      value = "The number of intended cluster members. Required.",
+      allowableValues = "range[0,infinity]")
   private Integer replicas;
 
-  @ApiModelProperty(value = "The number of ready cluster members. Required.", allowableValues = "range[0,infinity]")
+  @ApiModelProperty(
+      value = "The number of ready cluster members. Required.",
+      allowableValues = "range[0,infinity]")
   private Integer readyReplicas;
 
-  @ApiModelProperty(value = "The maximum number of cluster members. Required.", allowableValues = "range[0,infinity]")
+  @ApiModelProperty(
+      value = "The maximum number of cluster members. Required.",
+      allowableValues = "range[0,infinity]")
   private Integer maximumReplicas;
 
-  @ApiModelProperty(value = "The minimum number of cluster members.", allowableValues = "range[0,infinity]")
+  @ApiModelProperty(
+      value = "The minimum number of cluster members.",
+      allowableValues = "range[0,infinity]")
   private Integer minimumReplicas;
 
-  @ApiModelProperty(value = "The requested number of cluster members from the domain spec. "
-      + "Cluster members will be started by the operator if this value is larger than zero.",
+  @ApiModelProperty(
+      value =
+          "The requested number of cluster members from the domain spec. "
+              + "Cluster members will be started by the operator if this value is larger than zero.",
       allowableValues = "range[0,infinity]")
   private Integer replicasGoal;
 
@@ -41,6 +52,14 @@ public class ClusterStatus {
     return clusterName;
   }
 
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
+  }
+
   public ClusterStatus replicas(Integer replicas) {
     this.replicas = replicas;
     return this;
@@ -48,6 +67,14 @@ public class ClusterStatus {
 
   public Integer replicas() {
     return replicas;
+  }
+
+  public Integer getReplicas() {
+    return replicas;
+  }
+
+  public void setReplicas(Integer replicas) {
+    this.replicas = replicas;
   }
 
   public ClusterStatus readyReplicas(Integer readyReplicas) {
@@ -59,6 +86,14 @@ public class ClusterStatus {
     return readyReplicas;
   }
 
+  public Integer getReadyReplicas() {
+    return readyReplicas;
+  }
+
+  public void setReadyReplicas(Integer readyReplicas) {
+    this.readyReplicas = readyReplicas;
+  }
+
   public ClusterStatus maximumReplicas(Integer maximumReplicas) {
     this.maximumReplicas = maximumReplicas;
     return this;
@@ -66,6 +101,14 @@ public class ClusterStatus {
 
   public Integer maximumReplicas() {
     return maximumReplicas;
+  }
+
+  public Integer getMaximumReplicas() {
+    return maximumReplicas;
+  }
+
+  public void setMaximumReplicas(Integer maximumReplicas) {
+    this.maximumReplicas = maximumReplicas;
   }
 
   public ClusterStatus minimumReplicas(Integer minimumReplicas) {
@@ -77,6 +120,14 @@ public class ClusterStatus {
     return minimumReplicas;
   }
 
+  public Integer getMinimumReplicas() {
+    return minimumReplicas;
+  }
+
+  public void setMinimumReplicas(Integer minimumReplicas) {
+    this.minimumReplicas = minimumReplicas;
+  }
+
   public ClusterStatus replicasGoal(Integer replicasGoal) {
     this.replicasGoal = replicasGoal;
     return this;
@@ -84,6 +135,14 @@ public class ClusterStatus {
 
   public Integer replicasGoal() {
     return replicasGoal;
+  }
+
+  public Integer getReplicasGoal() {
+    return replicasGoal;
+  }
+
+  public void setReplicasGoal(Integer replicasGoal) {
+    this.replicasGoal = replicasGoal;
   }
 
   @Override
@@ -129,5 +188,4 @@ public class ClusterStatus {
         .append(replicasGoal, rhs.replicasGoal)
         .isEquals();
   }
-
 }
