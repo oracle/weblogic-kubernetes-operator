@@ -574,6 +574,7 @@ public class ItMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     final WebClient webClient = new WebClient();
     webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
+    webClient.getOptions().setRedirectEnabled(true);
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_empty.yml");
@@ -738,6 +739,7 @@ public class ItMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     WebClient webClient = new WebClient();
     webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
+    webClient.getOptions().setRedirectEnabled(true);
     String expectedErrorMsg = "401 Unauthorized for " + exporterUrl;
     try {
       HtmlPage page =
@@ -969,6 +971,7 @@ public class ItMonitoringExporter extends BaseTest {
       throws Exception {
     final WebClient webClient = new WebClient();
     webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
+    webClient.getOptions().setRedirectEnabled(true);
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
@@ -994,6 +997,7 @@ public class ItMonitoringExporter extends BaseTest {
       throws Exception {
     final WebClient webClient = new WebClient();
     webClient.addRequestHeader("Host", domain.getDomainUid() + ".org");
+    webClient.getOptions().setRedirectEnabled(true);
     webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
     setCredentials(webClient);
     return submitConfigureForm(exporterUrl, effect, configFile, webClient);
@@ -1041,7 +1045,8 @@ public class ItMonitoringExporter extends BaseTest {
     fileField.setContentType("multipart/form-data");
 
     // Now submit the form by clicking the button and get back the second page.
-    HtmlPage page2 = button.click();
+    //HtmlPage page2 = button.click();
+    HtmlPage page2 = button.click(false, false, false, true, true, false);
     assertNotNull(page2);
     assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
     // wait time for coordinator to update both managed configuration
