@@ -36,8 +36,8 @@
         <skipITs>false</skipITs>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <wit.version>release-1.8.3</wit.version>
-        <wdt.version>weblogic-deploy-tooling-1.7.2</wdt.version>
+        <wit.version>latest</wit.version>
+        <wdt.version>latest</wdt.version>
         <includes-failsafe>**/It*</includes-failsafe>
     </properties>
 

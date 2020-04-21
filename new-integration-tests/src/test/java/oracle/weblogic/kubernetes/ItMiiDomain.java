@@ -50,6 +50,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -438,7 +439,7 @@ class ItMiiDomain implements LoggedTest {
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
-            .wdtVersion("latest")
+            .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
 
