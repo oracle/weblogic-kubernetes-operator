@@ -38,7 +38,7 @@ public class ShutdownOptionsBase extends BaseTest {
   protected Domain createDomain(String domainNS, Map<String, Object> shutdownProps) throws Exception {
 
     Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), "itpodsshutdown");
-    domainMap.put("namespace", domainNS + getNewSuffixCount());
+    domainMap.put("namespace", domainNS);
     domainMap.put("domainUID", domainNS + getNewSuffixCount());
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
     domainMap.put("shutdownOptionsOverrides",shutdownProps);

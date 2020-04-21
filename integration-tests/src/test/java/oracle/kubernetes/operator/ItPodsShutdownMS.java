@@ -148,9 +148,9 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
               + " shutdown properties don't not match the expected : "
               + "shutdownType=Forced, timeoutSeconds=160, ignoreSessions=true");
     } finally {
-      LoggerHelper.getLocal().log(
-          Level.INFO, " Deleting domain " + domain.getDomainUid());
       if (domain != null) {
+        LoggerHelper.getLocal().log(
+            Level.INFO, " Deleting domain " + domain.getDomainUid());
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       }
     }
