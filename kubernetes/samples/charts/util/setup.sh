@@ -22,7 +22,7 @@ function createNameSpace() {
  ns=$1
  namespace=`kubectl get namespace ${ns} | grep ${ns} | awk '{print $1}'`
  if [ -z ${namespace} ]; then
-   echo "Adding namespace[$ns] to kubernetes cluster"
+   echo "Adding namespace[$ns] to Kubernetes cluster"
    kubectl create namespace ${ns}
  fi
 }
@@ -33,11 +33,11 @@ function createVoyager() {
   echo
 
   if [ "$(helm search appscode/voyager | grep voyager |  wc -l)" = 0 ]; then
-    echo "Add appscode chart Repository"
+    echo "Add AppsCode chart repository"
     helm repo add appscode https://charts.appscode.com/stable/
     helm repo update
   else
-    echo "Appscode chart repository is already added."
+    echo "AppsCode chart repository is already added."
   fi
 
   if [ "$(helm list --namespace $VSPACE | grep $VNAME |  wc -l)" = 0 ]; then
