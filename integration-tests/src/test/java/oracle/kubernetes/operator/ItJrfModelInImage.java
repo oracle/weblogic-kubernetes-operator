@@ -32,6 +32,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 /**
  * Simple JUnit test file used for testing Model in Image.
  *
@@ -49,56 +52,68 @@ public class ItJrfModelInImage extends MiiBaseTest {
   private static int dbPort;
   private static String dbNamespace;
   private static String dbUrl;
+  private static JrfDomain jrfdomain; 
   
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * @throws Exception if initial setup fails 
    */
   @BeforeAll
-  public static void staticPrepare() throws Exception {
+  public static void staticPrepare() {
     namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE, testClassName);
+    
+    LoggerHelper.getLocal().log(Level.INFO, "setting up properties, directories for: {0}", 
+        testClassName);
+    assertDoesNotThrow(() -> initialize(APP_PROPS_FILE, testClassName),
+        "Failed: initial setup");   
   }
 
   /**
    * This method gets called before every test. It creates the result/pv root directories
-   * for the test. Creates RCU schema, operator if its not running.
+   * for the test. It also creates RCU schema, operator.
    *
-   * @throws Exception exception if result/pv/operator/RCU schema creation fails
    */
   @BeforeEach
-  public void prepare() throws Exception {
+  public void prepare() {
 
-    createResultAndPvDirs(testClassName);
+    //createResultAndPvDirs(testClassName);
+    LoggerHelper.getLocal().log(Level.INFO, "Creating result/pv root directories");
+    assertDoesNotThrow(() -> createResultAndPvDirs(testClassName),
+        "Failed: createResultAndPvDirs");
     
-    TestUtils.exec(
-            "cp -rf " 
-            + BaseTest.getProjectRoot() 
-            + "/kubernetes/samples/scripts " 
-            + getResultDir(),
-            true);
+    LoggerHelper.getLocal().log(Level.INFO, "Copying sample dir to the result dir");
+    assertDoesNotThrow(() -> TestUtils.exec(
+        "cp -rf " 
+         + BaseTest.getProjectRoot() 
+         + "/kubernetes/samples/scripts " 
+         + getResultDir(),
+         true),
+         "Failed: Copy sample dir to the result dir");
     
     //start DB and create RCU
     dbNamespace = "db" + String.valueOf(getNewSuffixCount());
-    DbUtils.createNamespace(dbNamespace);
+    assertDoesNotThrow(() -> DbUtils.createNamespace(dbNamespace),
+        "For Db and RCU schema created namespace" + dbNamespace);
+    
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
-    LoggerHelper.getLocal().log(Level.INFO,"For test: " + testClassName 
-        + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort);
-    DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, rcuSchemaPrefix, dbNamespace);
-    
+    assertDoesNotThrow(() -> DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, 
+        rcuSchemaPrefix, dbNamespace));
+    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " + testClassName 
+        + " dbNamespace is: " + dbNamespace + " dbUrl:" + dbUrl + " dbPort: " + dbPort); 
+        
     // create operator1
     if (operator == null) {
       Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(),
           true, testClassName);
-      operator = TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED);
-      Assertions.assertNotNull(operator);
+      operator = assertDoesNotThrow(() -> TestUtils.createOperator(operatorMap, RestCertType.SELF_SIGNED));
+      assertNotNull(operator);
+      LoggerHelper.getLocal().log(Level.INFO, "Operator is created for {0}", testClassName);
+      
       domainNS = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       namespaceList.append((String)operatorMap.get("namespace"));
       namespaceList.append(" ").append(domainNS);
@@ -108,26 +123,25 @@ public class ItJrfModelInImage extends MiiBaseTest {
   /**
    * This method will run once after all test methods are finished. It delete both RCU and DB pods
    *
-   * @throws Exception - if any error occurs
    */
   @AfterEach
-  public void unPrepare() throws Exception {
-    DbUtils.deleteRcuPod(getResultDir());
-    DbUtils.deleteDbPod(getResultDir());
+  public void unPrepare() {
+    LoggerHelper.getLocal().log(Level.INFO, "Is going to drop RCU schema and stop DB for {0}", testClassName);
+    assertDoesNotThrow(() -> DbUtils.deleteRcuPod(getResultDir()),
+        "Failed: drop RCU schema");
+    assertDoesNotThrow(() -> DbUtils.deleteDbPod(getResultDir()),
+        "Failed: stop DB");
   }
 
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception when errors while running statedump.sh or cleanup.sh
-   *         scripts or while renewing the lease for shared cluster run
    */
   @AfterAll
-  public static void staticUnPrepare() throws Exception {
-    tearDown(new Object() {
-    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
-
-    LoggerHelper.getLocal().info("SUCCESS");
+  public static void staticUnPrepare() {
+    assertDoesNotThrow(() -> tearDown(new Object() {
+        }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString()),
+         "tearDown failed");
   }
 
   /**
@@ -135,17 +149,14 @@ public class ItJrfModelInImage extends MiiBaseTest {
    * the domain, enable walletFileSecret in the domain yaml file. Restart the domain with the modified domain yaml 
    * file that reuses the same RCU schema. Verify the restarted domain is in the good state.
    *
-   * @throws Exception when test fails 
    */
   @Test
-  public void testReuseRCU2Deployments() throws Exception {
+  public void testReuseRCU2Deployments() {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    LoggerHelper.getLocal().log(Level.INFO,
-        "Creating Domain & waiting for the script to complete execution");
-    JrfDomain jrfdomain = null;
+    assertDoesNotThrow(() -> logTestBegin(testMethodName));
+    
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap =
@@ -164,44 +175,58 @@ public class ItJrfModelInImage extends MiiBaseTest {
       String namespace = (String)domainMap.get("namespace");
       
       //create rcuAccess secret and walletPassword secret
-      Secret rcuAccess = new RcuSecret(namespace, domainUid + "-rcu-access", 
-          rcuSchemaPrefix, rcuSchemaPass, dbUrl);
-      Secret walletPass = new WalletPasswordSecret(namespace, domainUid 
-          + "-opss-wallet-password-secret", walletPassword);
+      Secret rcuAccess = assertDoesNotThrow(() -> new RcuSecret(namespace, domainUid + "-rcu-access", 
+          rcuSchemaPrefix, rcuSchemaPass, dbUrl));
+      LoggerHelper.getLocal().log(Level.INFO, "RCU access secret is createdfor {0}", domainUid);
       
-      jrfdomain = new JrfDomain(domainMap);
-      jrfdomain.verifyDomainCreated(40);
+      Secret walletPass = assertDoesNotThrow(() -> new WalletPasswordSecret(namespace, 
+          domainUid + "-opss-wallet-password-secret", walletPassword));
+      LoggerHelper.getLocal().log(Level.INFO, "Wallet password secret is created for {0}", domainUid);
+      
+      jrfdomain = assertDoesNotThrow(() -> new JrfDomain(domainMap), 
+          "Failed: JRF domain creation");
+      LoggerHelper.getLocal().log(Level.INFO, "JRF domain is created for {0}", testClassName);
+      assertDoesNotThrow(() -> jrfdomain.verifyDomainCreated(40), 
+          "Failed: domain verification");
+      LoggerHelper.getLocal().log(Level.INFO, "JRF domain verification succeeded for {0}", testClassName);
       
       //save and restore walletFile secret
-      saveWalletFileSecret(getResultDir(), domainUid, namespace);
+      assertDoesNotThrow(() -> saveWalletFileSecret(getResultDir(), domainUid, namespace),
+          "Failed to save walletFile secret");
+      LoggerHelper.getLocal().log(Level.INFO, "Saved walletFile secret for {0}", domainUid);
       String walletFileSecretName = domainUid + "-opss-walletfile-secret";
-      restoreWalletFileSecret(getResultDir(), domainUid, namespace, walletFileSecretName);
+      assertDoesNotThrow(() -> restoreWalletFileSecret(getResultDir(), domainUid, namespace, 
+          walletFileSecretName), 
+          "Failed to store walletFile secret");
+      LoggerHelper.getLocal().log(Level.INFO, "Restored walletFile secret for {0}", domainUid);
       
       //shutdown the domain
-      jrfdomain.shutdownUsingServerStartPolicy();
+      assertDoesNotThrow(() -> jrfdomain.shutdownUsingServerStartPolicy(),
+          "Failed to shutdown the domain");
+      LoggerHelper.getLocal().log(Level.INFO, "Shutdown the domain {0}", domainUid);
       
       //modify the original domain to enable walletFileSecret
       String originalYaml = getUserProjectsDir() + "/weblogic-domains/" + jrfdomain.getDomainUid()
           + "/domain.yaml"; 
-      DomainCrd crd = new DomainCrd(originalYaml);
+      DomainCrd crd = assertDoesNotThrow(() -> new DomainCrd(originalYaml));
       Map<String, String> opssNode = new HashMap();
       opssNode.put("walletFileSecret", walletFileSecretName);
       crd.addObjectNodeToOpss(opssNode);
-      String modYaml = crd.getYamlTree();
+      String modYaml = assertDoesNotThrow(() -> crd.getYamlTree());
       LoggerHelper.getLocal().log(Level.INFO, modYaml);
       // Write the modified yaml to a new file
       Path path = Paths.get(getUserProjectsDir() + "/weblogic-domains/" + jrfdomain.getDomainUid(),
           "modified.domain.yaml");
       LoggerHelper.getLocal().log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
-      Files.write(path, modYaml.getBytes(charset));
+      assertDoesNotThrow(() -> Files.write(path, modYaml.getBytes(charset)));
       
       //Use the new yaml to startup the domain
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      ExecResult exec = assertDoesNotThrow(() -> TestUtils.exec("kubectl apply -f " + path.toString()));
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
       
-      jrfdomain.verifyDomainCreated(40);
+      assertDoesNotThrow(() -> jrfdomain.verifyDomainCreated(40));
       testCompletedSuccessfully = true;
 
     } catch (Exception ex) {
@@ -210,17 +235,18 @@ public class ItJrfModelInImage extends MiiBaseTest {
     } finally {
       if (jrfdomain != null && (JENKINS || testCompletedSuccessfully)) {
         LoggerHelper.getLocal().log(Level.INFO, "DONE!!!");
-        TestUtils.deleteWeblogicDomainResources(jrfdomain.getDomainUid());
+        assertDoesNotThrow(() -> 
+            TestUtils.deleteWeblogicDomainResources(jrfdomain.getDomainUid()));
       }
     }
 
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
   
-  private static void saveWalletFileSecret(String scriptsDir, String domainUid, String namespace)throws Exception {
+  private static void saveWalletFileSecret(String scriptsDir, String domainUid, String namespace) {
     String cmd = "sh " 
         + scriptsDir
-        + "/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -d "
+        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
         + domainUid
         + " -n "
         + namespace
@@ -234,10 +260,10 @@ public class ItJrfModelInImage extends MiiBaseTest {
   }
   
   private static void restoreWalletFileSecret(String scriptsDir, String domainUid, String namespace, 
-      String secretName)throws Exception {
+      String secretName) {
     String cmd = "sh " 
         + scriptsDir
-        + "/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -d "
+        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
         + domainUid
         + " -n "
         + namespace
