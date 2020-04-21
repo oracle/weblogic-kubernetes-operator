@@ -239,39 +239,4 @@ public class ItJrfModelInImage extends MiiBaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
   
-  /*private static void saveWalletFileSecret(String scriptsDir, String domainUid, String namespace) {
-    String cmd = "sh " 
-        + scriptsDir
-        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
-        + domainUid
-        + " -n "
-        + namespace
-        + " -s";
-    try {
-      TestUtils.exec(cmd, true);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
-    }   
-  }
-  
-  private static void restoreWalletFileSecret(String scriptsDir, String domainUid, String namespace, 
-      String secretName) {
-    String cmd = "sh " 
-        + scriptsDir
-        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
-        + domainUid
-        + " -n "
-        + namespace
-        + " -r"
-        + " -ws "
-        + secretName;
-    try {
-      TestUtils.exec(cmd, true);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      Assertions.fail("Failed to excute command.\n", ex.getCause());
-    }   
-  }*/
-   
 }
