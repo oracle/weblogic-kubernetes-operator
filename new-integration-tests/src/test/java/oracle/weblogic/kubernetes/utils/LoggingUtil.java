@@ -105,8 +105,13 @@ public class LoggingUtil {
     // get replicasets
     writeToFile(Kubernetes.listReplicaSets(namespace), resultDir.toString(), namespace + "_rs.log");
 
+    try {
+      writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_domains.log");
+    } catch (Exception ex) {
+      logger.warning("Listing domain failed, not collecting any data for domain");
+    }
     // get all Domain objects in given namespace
-    writeToFile(Kubernetes.listDomains(namespace), resultDir.toString(), namespace + "_domains.log");
+
 
     // get domain/operator pods
     for (var pod : Kubernetes.listPods(namespace, null).getItems()) {

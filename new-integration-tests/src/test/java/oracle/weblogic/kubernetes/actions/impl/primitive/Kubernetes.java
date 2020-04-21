@@ -721,7 +721,7 @@ public class Kubernetes implements LoggedTest {
       response = crdClient.list(namespace);
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
-      return new DomainList();
+      throw ex;
     }
     return response != null ? response.getObject() : new DomainList();
   }
@@ -1089,21 +1089,6 @@ public class Kubernetes implements LoggedTest {
     } else {
       logger.warning("Failed to list Persistent Volumes claims,"
           + " status code {0}", list.getHttpStatusCode());
-      return null;
-    }
-  }
-
-  /**
-   * List all persistent volume claims in the Kubernetes cluster.
-   * @return V1PersistentVolumeClaimList of Persistent Volume Claims in Kubernetes cluster
-   */
-  public static V1PersistentVolumeClaimList listPersistentVolumeClaimsAllNamespaces() {
-    KubernetesApiResponse<V1PersistentVolumeClaimList> list = pvcClient.list();
-    if (list.isSuccess()) {
-      return list.getObject();
-    } else {
-      logger.warning("Failed to list Persistent Volumes claims,"
-          + "status code {0}", list.getHttpStatusCode());
       return null;
     }
   }
