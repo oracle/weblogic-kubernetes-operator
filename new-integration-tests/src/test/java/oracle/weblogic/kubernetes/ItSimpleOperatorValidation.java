@@ -77,11 +77,10 @@ class ItSimpleOperatorValidation implements LoggedTest {
     // imagine that installOperator() will try to install the operator, by creating
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
-
     // get unique namespaces for operator and domains
-    for (int i = 0; i < 3; i++) {
-      assertNotNull(namespaces.get(i), "Namespace " + i + "is null");
-    }
+    namespaces.forEach((namespace) -> {
+      assertNotNull(namespace, "Namespace " + namespace + "is null");
+    });
     opNamespace = namespaces.get(0);
     domainNamespace1 = namespaces.get(1);
     domainNamespace2 = namespaces.get(2);
