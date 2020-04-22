@@ -446,11 +446,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * Initialize the operator with elkIntegrationEnabled attribute set to "true".
    * Install the operator.
    * Installation should fail as elkIntegrationEnabled is supposed to be boolean.
-   *
-   * Initialize the operator with javaLoggingLevel attribute set to "VERBOSE". 
+   * Initialize the operator with javaLoggingLevel attribute set to "VERBOSE".
    * Install the operator.
    * Installation should fail as VERBOSE is not a valid value for javaLoggingLevel 
-   *
    * @throws Exception when operator installation does not fail
    */
   @Test
@@ -533,7 +531,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   /**
    * Install the operator with empty string as target domains namespaces
    * This is equivalent of QuickStart guide does when it installs the operator 
-   * with ' --set "domainNamespaces={}" '
+   * with ' --set "domainNamespaces={}" '.
    *
    * @throws Exception when operator pod is not ready
    */
@@ -567,8 +565,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * Upgrade the operator target domainNamespaces to include namespace for domain2 
    * Verify both domains are managed by the operator by making a REST API call
    * Call helm upgrade to remove the first domain from operator target domainNamespaces
-   * Verify it can't be managed by operator anymore
-   *
+   * Verify it can't be managed by operator anymore.
    * @throws Exception when an operator fails to manage the domain as expected
    */
   @Test
@@ -631,10 +628,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
   /**
    * Create operator and verify it is deployed successfully 
    * Create domain1 and verify domain is started 
-   * Delete operator 
-   * Make sure domain1 is still accessible by checking livenessprobe for server(s)
-   *
-   * @throws Exception when domain1 is not accessible in the absense of operator
+   * Delete operator.
+   * Make sure domain1 is still accessible by checking liveness probe for server(s)
+   * @throws Exception when domain1 is not accessible in the absence of operator
    */
   @Test
   public void testDeleteOperatorButNotDomain() throws Exception {
