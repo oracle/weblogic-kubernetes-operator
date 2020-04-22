@@ -83,7 +83,7 @@ public class ItJrfPvWlst extends BaseTest {
         "Failed to create namespace: " + dbNamespace);
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
-    assertDoesNotThrow(() -> DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, 
+    assertDoesNotThrow(() -> DbUtils.setupRCUdatabase(getResultDir(), dbPort, dbUrl, 
         rcuSchemaPrefix, dbNamespace));
     LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " 
         + testClassName 

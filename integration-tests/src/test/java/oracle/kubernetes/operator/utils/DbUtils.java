@@ -349,7 +349,7 @@ public class DbUtils {
   }
   
   /**
-   * Create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * Create Oracle rcu pod and load database schema in the specified namespace.
    * 
    * @param scriptDir script dir
    * @param dbPort NodePort of DB
@@ -358,7 +358,7 @@ public class DbUtils {
    * @param dbNamespace namesspace that DB instance is going to start
    * @throws Exception if any error occurs when creating Oracle rcu pod
    */
-  public static void createDbRcu(String scriptDir, int dbPort, String dbUrl, String rcuSchemaPrefix,
+  public static void setupRCUdatabase(String scriptDir, int dbPort, String dbUrl, String rcuSchemaPrefix,
       String dbNamespace) throws Exception {  
     
     try {  

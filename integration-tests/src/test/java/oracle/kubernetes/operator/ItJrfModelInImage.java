@@ -36,9 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Simple JUnit test file used for testing Model in Image.
+ * Unit test file used for testing Model in Image.
  *
- * <p>This test is used for creating domain using model in image.
+ * <p>This test is to verify reusing the same RCU schema during 2 JRF domain deployments. Domains are 
+ *    created using model in image.
  */
 
 public class ItJrfModelInImage extends MiiBaseTest {
@@ -98,7 +99,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
         "Failed to create namespace: " + dbNamespace);
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
-    assertDoesNotThrow(() -> DbUtils.createDbRcu(getResultDir(), dbPort, dbUrl, 
+    assertDoesNotThrow(() -> DbUtils.setupRCUdatabase(getResultDir(), dbPort, dbUrl, 
         rcuSchemaPrefix, dbNamespace));
     LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for test: " 
         + testClassName 
@@ -176,7 +177,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
       //create rcuAccess secret and walletPassword secret
       Secret rcuAccess = assertDoesNotThrow(() -> new RcuSecret(namespace, domainUid + "-rcu-access", 
           rcuSchemaPrefix, rcuSchemaPass, dbUrl));
-      LoggerHelper.getLocal().log(Level.INFO, "RCU access secret is createdfor {0}", domainUid);
+      LoggerHelper.getLocal().log(Level.INFO, "RCU access secret is created for {0}", domainUid);
       
       Secret walletPass = assertDoesNotThrow(() -> new WalletPasswordSecret(namespace, 
           domainUid + "-opss-wallet-password-secret", walletPassword));

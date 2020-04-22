@@ -112,47 +112,22 @@ public class RcuSecret extends Secret {
     }     
   }
   
-  /**
-   * Get system username
-   * 
-   * @return sysUsername system username
-   */
   public String getSysUsername() {
     return sysUsername;
   }
   
-  /**
-   * Get system password
-   * 
-   * @return sysPassword system password
-   */
   public String getSysPassword() {
     return sysPassword;
   }
   
-  /**
-   * Get RCU prefix
-   * 
-   * @return rcuPrefix RCU prefix 
-   */
   public String getrcuPrefix() {
     return rcuPrefix;
   }
   
-  /**
-   * Get RCU schema passwordd
-   * 
-   * @return rcuSchemaPass RCU schema password 
-   */
   public String getrcuSchemaPass() {
     return rcuSchemaPass;
   }
   
-  /**
-   * Get RCU connection
-   * 
-   * @return rcuConnection RCU connection 
-   */
   public String getrcuConnection() {
     return rcuConnection;
   }

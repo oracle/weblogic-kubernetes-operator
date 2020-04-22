@@ -1601,7 +1601,7 @@ public class TestUtils {
   /**
    * Restore the walletFile secret.
    *
-   * @param scriptsDir scriptDir
+   * @param scriptsDir directory of scripts
    * @param domainUid domainUid
    * @param namespace namespace of domain
    * @param secretName name of walletFile secret
@@ -1624,7 +1624,7 @@ public class TestUtils {
   /**
    * Save the walletFile secret in a file.
    *
-   * @param scriptsDir scriptDir
+   * @param scriptsDir directory of scripts
    * @param domainUid domainUid
    * @param namespace namespace of domain
    * @throws Exception if any error occurs

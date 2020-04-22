@@ -73,14 +73,14 @@ fi
 
 echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}] namespace[${namespace}]"
 
-echo "Checking Status for NameSpace [$namespace]"
+echo "Checking status for namespace[$namespace]"
 domns=`kubectl get ns ${namespace} | grep ${namespace} | awk '{print $1}'`
 if [ -z ${domns} ]; then
- echo "Adding NameSpace[$namespace] to Kubernetes Cluster"
+ echo "Adding namespace[$namespace] to kubernetes cluster"
  kubectl create namespace ${namespace}
  sleep 5
 else
- echo "Skipping the NameSpace[$namespace] Creation ..."
+ echo "Skipping the namespace[$namespace] creation ..."
 fi
 
 #kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
