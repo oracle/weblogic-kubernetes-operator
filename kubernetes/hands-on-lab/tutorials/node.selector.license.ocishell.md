@@ -1,6 +1,6 @@
 # Oracle WebLogic Server Kubernetes Operator Tutorial #
 
-### Assign WebLogic domain to selected nodes ###
+### Assign a WebLogic domain to selected nodes ###
 
 This use case is similar to the [Assign WebLogic Pods to Nodes](node.selector.ocishell.md) lab, where individual servers/pods were assigned to specific node(s). However, the focus in this use case on the license coverage.
 
