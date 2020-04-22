@@ -102,6 +102,7 @@ class ItMiiDomain implements LoggedTest {
   // mii constants
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
+  private static final String MII_IMAGE_NAME_2 = "mii-image-2";
   private static final String APP_NAME = "sample-app";
 
   // domain constants
@@ -376,7 +377,7 @@ class ItMiiDomain implements LoggedTest {
   }
   
   @Test
-  @Order(2)
+  @Order(4)
   @DisplayName("Update the sample-app application to version 2")
   @Slow
   @MustNotRunInParallel
@@ -390,6 +391,67 @@ class ItMiiDomain implements LoggedTest {
     String image = updateImageWithAppV2Patch(
         MII_IMAGE_NAME,
         Arrays.asList(appDir1, appDir2));
+  
+    // check and V1 app is running
+    assertTrue(appAccessibleInPod(
+            domainUid,
+            domainNamespace,
+            "8001",
+            "sample-war/index.jsp",
+            APP_RESPONSE_V1),
+        "The expected app is not accessible inside the server pod");
+    
+    // check and make sure that the version 2 app is NOT running
+    assertFalse(appAccessibleInPod(
+            domainUid,
+            domainNamespace,
+            "8001",
+            "sample-war/index.jsp",
+            APP_RESPONSE_V2),
+        "The second version of the app is not supposed to be running!!");   
+    
+    // modify the domain resource to use the new image
+    patchDomainResourceIamge(domainUid, domainNamespace, image);
+    
+    // Ideally we want to verify that the server pods were rolling restarted.
+    // But it is hard to time the pod state transitions.
+    // Instead, sleep for 2 minutes and check the newer version of the application. 
+    // The application check is sufficient to verify that the version2 application
+    // is running, thus the servers have been patched.
+    try {
+      TimeUnit.MINUTES.sleep(2);
+    } catch (InterruptedException ie) {
+      // do nothing
+    }
+    
+    // check and wait for the app to be ready
+    checkAppRunning(
+        domainUid,
+        domainNamespace,
+        "30711",
+        "8001",
+        "sample-war/index.jsp",
+        APP_RESPONSE_V2);
+
+    logger.info("The cluster has been rolling started, and the version 2 application has been deployed correctly.");
+  }
+
+  @Test
+  @Order(5)
+  @DisplayName("Update the domain with another application")
+  @Slow
+  @MustNotRunInParallel
+  public void testAnotherAppDeployment() {
+    
+    // app here is what is in the original app dir plus the delta in the second app dir
+    final String appDir1 = "sample-app";
+    final String appDir2 = "sample-app-3";
+    
+    // create another image with app V2 
+    String image = updateImageWithApp3(
+        MII_IMAGE_NAME_2,
+        Arrays.asList(appDir1),
+        appDir2);
   
     // check and V1 app is running
     assertTrue(appAccessibleInPod(
@@ -520,6 +582,32 @@ class ItMiiDomain implements LoggedTest {
     
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
+    List<String> archiveList = Collections.singletonList(zipFile);
+    createImageAndVerify(
+        imageName, "v2", modelList, archiveList);
+    return imageName + ":" + "v2";
+ 
+  }
+
+  private String updateImageWithApp3(
+      String imageName,
+      List<String> appDirList,
+      String appName
+  ) {
+    // build the model file list
+    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+   
+    // build an application archive using what is in resources/apps/{appDirList(0)}
+
+    boolean archiveBuilt = buildAppArchive(
+        defaultAppParams()
+            .srcDirList(appDirList)
+            .appName(appName));
+    
+    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName));
+    
+    // build the archive list
+    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
     List<String> archiveList = Collections.singletonList(zipFile);
     createImageAndVerify(
         imageName, "v2", modelList, archiveList);
