@@ -4,7 +4,7 @@
 
 This use case is similar to the [Assign WebLogic Pods to Nodes](node.selector.ocishell.md) lab, where individual servers/pods were assigned to specific node(s). However, the focus in this use case on the license coverage.
 
-Starting from v1.13, Kubernetes supports clusters with up to 5000(!) nodes. However, in certain situation you need to deploy WebLogic domain on selected node(s). Using the `nodeSelector` feature, Kubernetes ensures that all WebLogic pods belong to the domain end up on licensed worker node(s).
+Starting at v1.13, Kubernetes supports clusters with up to 5000(!) nodes. However, in certain situations you need to deploy a WebLogic domain on selected node(s). Using the `nodeSelector` feature, Kubernetes ensures that all WebLogic pods that belong to the domain end up on licensed worker node(s).
 
 In this lab you will learn how to assign all the WebLogic pods (a WebLogic domain) to specific node or nodes.
 
