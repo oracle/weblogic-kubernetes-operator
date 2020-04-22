@@ -529,9 +529,7 @@ class ItMiiDomain implements LoggedTest {
 
   /**
    * Patch the domain resource with a new image that contains a newer version of the application.
-   * 
    * Here is an example of the JSON patch string that is constructed in this method.
-   * 
    * [
    *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
    * ]

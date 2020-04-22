@@ -18,6 +18,10 @@ public class Command {
 
   private CommandParams params;
 
+  // This is private because the static methods are supposed to be used from outside
+  private Command() {
+  }
+
   /**
    * Create a CommandParams instance with the default values.
    * @return a CommandParams instance 

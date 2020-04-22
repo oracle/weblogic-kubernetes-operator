@@ -45,9 +45,6 @@ public class AppParams {
   }
 
   public String appName() {
-    if (appName == null) {
-      return srcDirList.get(0);
-    }
     return appName;
   }
 

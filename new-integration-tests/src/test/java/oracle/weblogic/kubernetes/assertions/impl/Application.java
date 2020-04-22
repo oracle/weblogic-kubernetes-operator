@@ -39,6 +39,8 @@ public class Application {
   ) { 
     String msPodName = domainUID + "-managed-server1";
 
+    // TODO currently calling "kubectl exec" command; will change it to use a Kubernetes
+    // action once that action for "exec" command is available.
     // access the application deployed on managed-server1
     String cmd = String.format(
          "kubectl -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
