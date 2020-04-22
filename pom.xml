@@ -239,6 +239,24 @@
       </plugin>
 
       <plugin>
+        <groupId>org.commonjava.maven.plugins</groupId>
+        <artifactId>directory-maven-plugin</artifactId>
+        <version>0.1</version>
+        <executions>
+          <execution>
+            <id>directories</id>
+            <goals>
+              <goal>highest-basedir</goal>
+            </goals>
+            <phase>initialize</phase>
+            <configuration>
+              <property>root.basedir</property>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin-version}</version>
@@ -706,7 +724,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <src-integration-test>${project.basedir}/src/test/java</src-integration-test>
     <resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
-    <root.basedir>${project.basedir}</root.basedir>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <java.version.range>11</java.version.range>
