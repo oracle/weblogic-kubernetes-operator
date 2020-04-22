@@ -325,6 +325,17 @@ public class TestActions {
   }
 
   /**
+   * Read Kubernetes Secret.
+   *
+   * @param name name of the Secret
+   * @param namespace name of namespace
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean readSecret(String name, String namespace) throws ApiException {
+    return Secret.read(name, namespace);
+  }
+
+  /**
    * Delete Kubernetes Secret.
    *
    * @param name name of the Secret

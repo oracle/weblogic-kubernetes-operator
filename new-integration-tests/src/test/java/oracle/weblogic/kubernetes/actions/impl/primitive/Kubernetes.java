@@ -711,6 +711,40 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Read a Kubernetes Secret.
+   *
+   * @param secretName name of the Secret
+   * @param namespace name of namespace
+   * @return true if successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean readSecret(String secretName, String namespace) throws ApiException {
+    if (secretName == null) {
+      throw new IllegalArgumentException(
+              "Parameter 'secretName' cannot be null when calling readSecret()");
+    }
+
+    if (namespace == null) {
+      throw new IllegalArgumentException(
+              "Parameter 'namespace' cannot be null when calling readSecret()");
+    }
+
+    V1Secret v1Secret = coreV1Api.readNamespacedSecret(
+            secretName, // name of the secret
+            namespace, // name of the Namespace
+            PRETTY, // pretty print output
+            false, // should the export be exact - to be deprecated in 1.18
+            false // should this value be exported - to be deprecated in 1.18
+    );
+
+    if (v1Secret == null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
    * Delete a Kubernetes Secret.
    *
    * @param name name of the Secret
