@@ -10,10 +10,9 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Assertions for the results of WebLogic Image Tool operations
+ * Assertions for the results of WebLogic Image Tool operations.
  */
-
-public class WITAssertion {
+public class WitAssertion {
 
   /**
    * Check if a Docker image exists.

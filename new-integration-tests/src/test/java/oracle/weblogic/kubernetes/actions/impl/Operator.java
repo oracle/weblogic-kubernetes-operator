@@ -9,7 +9,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 public class Operator {
 
   /**
-   * install helm chart
+   * install helm chart.
    * @param params the helm parameters like namespace, release name, repo url or chart dir,
    *               chart name and chart values to override
    * @return true on success, false otherwise
@@ -37,7 +37,7 @@ public class Operator {
     return Helm.uninstall(params);
   }
 
-  public static boolean scaleDomain(String domainUID, String clusterName, int numOfServers) {
+  public static boolean scaleDomain(String domainUid, String clusterName, int numOfServers) {
     return true;
   }
 }

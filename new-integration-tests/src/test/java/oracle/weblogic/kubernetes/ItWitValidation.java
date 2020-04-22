@@ -17,15 +17,15 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWITParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Simple validation of basic WIT functions")
-class ItWITValidation implements LoggedTest {
+class ItWitValidation implements LoggedTest {
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String IMAGE_NAME = "test-mii-image-2";
   private static final String IMAGE_TAG = "v1";
@@ -34,12 +34,12 @@ class ItWITValidation implements LoggedTest {
 
   @Test
   @DisplayName("Create a MII image")
-  public void testCreatingMIIImage() {
+  public void testCreatingMiiImage() {
 
     logger.info("WDT model directory is {0}", MODEL_DIR);
 
     // build the model file list
-    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
     
     // build an application archive using what is in resources/apps/APP_NAME
     boolean archiveBuilt = buildAppArchive(
@@ -61,8 +61,8 @@ class ItWITValidation implements LoggedTest {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
-    boolean success = createMIIImage(
-        defaultWITParams()
+    boolean success = createMiiImage(
+        defaultWitParams()
             .modelImageName(IMAGE_NAME)
             .modelImageTag(IMAGE_TAG)
             .modelFiles(modelList)
