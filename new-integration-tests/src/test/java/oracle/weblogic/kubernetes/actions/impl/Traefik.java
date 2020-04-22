@@ -8,7 +8,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 public class Traefik {
   /**
-   * install helm chart
+   * install helm chart.
    * @param params the helm parameters like namespace, release name, repo url or chart dir,
    *               chart name and chart values to override
    * @return true on success, false otherwise

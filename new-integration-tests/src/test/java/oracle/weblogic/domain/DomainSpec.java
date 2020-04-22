@@ -330,6 +330,11 @@ public class DomainSpec {
     return imagePullSecrets;
   }
 
+  /**
+   * Add image pull secrets item.
+   * @param imagePullSecretsItem Image pull secret
+   * @return this
+   */
   public DomainSpec addImagePullSecretsItem(V1LocalObjectReference imagePullSecretsItem) {
     if (imagePullSecrets == null) {
       imagePullSecrets = new ArrayList<>();
@@ -457,6 +462,11 @@ public class DomainSpec {
     return configOverrideSecrets;
   }
 
+  /**
+   * Adds config override secrets.
+   * @param configOverrideSecretsItem Config override secret
+   * @return this
+   */
   public DomainSpec addConfigOverrideSecretsItem(String configOverrideSecretsItem) {
     if (configOverrideSecrets == null) {
       configOverrideSecrets = new ArrayList<>();
@@ -499,6 +509,11 @@ public class DomainSpec {
     return managedServers;
   }
 
+  /**
+   * Adds managed server item.
+   * @param managedServersItem Managed server
+   * @return this
+   */
   public DomainSpec addManagedServersItem(ManagedServer managedServersItem) {
     if (managedServers == null) {
       managedServers = new ArrayList<>();
@@ -524,6 +539,11 @@ public class DomainSpec {
     return clusters;
   }
 
+  /**
+   * Adds cluster item.
+   * @param clustersItem Cluster
+   * @return this
+   */
   public DomainSpec addClustersItem(Cluster clustersItem) {
     if (clusters == null) {
       clusters = new ArrayList<>();

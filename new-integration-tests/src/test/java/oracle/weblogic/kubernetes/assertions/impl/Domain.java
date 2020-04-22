@@ -31,12 +31,12 @@ public class Domain {
   private static final ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
 
   /**
-   * Check if the Domain CRD exists
+   * Check if the Domain CRD exists.
    *
    * @return true if domains.weblogic.oracle CRD exists otherwise false
    * @throws ApiException when Domain CRD doesn't exist
    */
-  public static boolean doesCRDExist() throws ApiException {
+  public static boolean doesCrdExist() throws ApiException {
     try {
       V1beta1CustomResourceDefinition domainBetaCrd
           = apiextensionsV1beta1Api.readCustomResourceDefinition(
@@ -56,18 +56,18 @@ public class Domain {
   /**
    * Checks if weblogic.oracle CRD domain object exists.
    *
-   * @param domainUID domain UID of the domain object
+   * @param domainUid domain UID of the domain object
    * @param domainVersion version value for Kind Domain
    * @param namespace in which the domain object exists
    * @return true if domain object exists otherwise false
    */
-  public static Callable<Boolean> doesDomainExist(String domainUID, String domainVersion, String namespace) {
+  public static Callable<Boolean> doesDomainExist(String domainUid, String domainVersion, String namespace) {
     return () -> {
       Object domainObject = null;
       try {
         domainObject
             = customObjectsApi.getNamespacedCustomObject(
-            "weblogic.oracle", domainVersion, namespace, "domains", domainUID);
+            "weblogic.oracle", domainVersion, namespace, "domains", domainUid);
       } catch (ApiException apex) {
         logger.info(apex.getMessage());
       }
@@ -77,11 +77,11 @@ public class Domain {
     };
   }
 
-  public static boolean adminT3ChannelAccessible(String domainUID, String namespace) {
+  public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
     return true;
   }
 
-  public static boolean adminNodePortAccessible(String domainUID, String namespace) {
+  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
     return true;
   }
 
