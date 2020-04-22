@@ -710,7 +710,6 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-
   /**
    * Delete a Kubernetes Secret.
    *

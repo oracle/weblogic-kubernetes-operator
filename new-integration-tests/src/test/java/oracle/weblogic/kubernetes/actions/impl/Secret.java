@@ -19,7 +19,7 @@ public class Secret {
   public static boolean create(V1Secret secret) throws ApiException {
     return Kubernetes.createSecret(secret);
   }
-  
+
   /**
    * Delete a Kubernetes Secret.
    *
@@ -28,7 +28,6 @@ public class Secret {
    * @return true if successful, false otherwise
    */
   public static boolean delete(String name, String namespace) {
-
     return Kubernetes.deleteSecret(name, namespace);
   }
 }
