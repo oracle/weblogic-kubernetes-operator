@@ -44,7 +44,7 @@ class ItWitValidation implements LoggedTest {
     // build an application archive using what is in resources/apps/APP_NAME
     boolean archiveBuilt = buildAppArchive(
         defaultAppParams()
-            .srcDir(APP_NAME));
+            .srcDirList(Collections.singletonList(APP_NAME)));
     
     assertThat(archiveBuilt)
         .as("Create an app archive")

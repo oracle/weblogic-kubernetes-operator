@@ -102,9 +102,9 @@ public class FileUtils {
         try {
           copy(source, destPath.resolve(srcPath.relativize(source)));
         } catch (IOException e) {
-          e.printStackTrace();
+          logger.severe(String.format("Failed to copy file %s", source), e);
           // cannot throw non runtime exception. the caller checks throwable
-          throw new RuntimeException("Failed to copy file " + source + " due to:" + e.getMessage());
+          throw new RuntimeException("Failed to copy file " + source);
         }
       });
     }

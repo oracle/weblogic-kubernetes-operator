@@ -5,20 +5,17 @@ package oracle.weblogic.kubernetes.assertions.impl;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 /**
- * Assertions for applications in a domain.
+ * Assertions for applications that are deployed in a domain custom resource.
  *
  */
 
 public class Application {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(Application.class);
 
   /**
    * Check if an application is accessible inside a WebLogic server pod.
-   * @param domainUID unique identifier of the Kubernetes domain custom resource instance
+   * @param domainUID identifier of the Kubernetes domain custom resource instance
    * @param domainNS Kubernetes namespace where the WebLogic servers are running
    * @param port internal port of the managed servers
    * @param appPath the path to access the application
@@ -51,13 +48,9 @@ public class Application {
          port,
          appPath);
 
-    return exec(cmd, true);
-  }
-
-  private static String exec(String command, boolean redirectOutput) {
     CommandParams params = Command
         .defaultCommandParams()
-        .command(command)
+        .command(cmd)
         .saveResults(true)
         .redirect(false)
         .debug(false);

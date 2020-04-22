@@ -206,7 +206,7 @@ class ItMiiDomain implements LoggedTest {
     final int replicaCount = 2;
 
     // create image with model files
-    miiImage = createFirstDomainImage();
+    miiImage = createInitialDomainImage();
 
     // push the image to OCIR to make the test work in multi node cluster
     if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
@@ -306,7 +306,7 @@ class ItMiiDomain implements LoggedTest {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
+    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
@@ -364,7 +364,7 @@ class ItMiiDomain implements LoggedTest {
     }
     
     checkAppRunning(
-        domainUID,
+        domainUid,
         domainNamespace,
         "30711",
         "8001",
@@ -372,12 +372,12 @@ class ItMiiDomain implements LoggedTest {
         APP_RESPONSE_V1);
     
     logger.info(String.format("Domain %s is fully started - servers are running and application is deployed corretly.",
-        domainUID));
+        domainUid));
   }
   
   @Test
   @Order(2)
-  @DisplayName("Update the application to version 2")
+  @DisplayName("Update the sample-app application to version 2")
   @Slow
   @MustNotRunInParallel
   public void testAppVersion2Patching() {
@@ -393,7 +393,7 @@ class ItMiiDomain implements LoggedTest {
   
     // check and V1 app is running
     assertTrue(appAccessibleInPod(
-            domainUID,
+            domainUid,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
@@ -402,7 +402,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and make sure that the version 2 app is NOT running
     assertFalse(appAccessibleInPod(
-            domainUID,
+            domainUid,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
@@ -410,7 +410,7 @@ class ItMiiDomain implements LoggedTest {
         "The second version of the app is not supposed to be running!!");   
     
     // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUID, domainNamespace, image);
+    patchDomainResourceIamge(domainUid, domainNamespace, image);
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
@@ -425,7 +425,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and wait for the app to be ready
     checkAppRunning(
-        domainUID,
+        domainUid,
         domainNamespace,
         "30711",
         "8001",
@@ -433,36 +433,6 @@ class ItMiiDomain implements LoggedTest {
         APP_RESPONSE_V2);
 
     logger.info("The cluster has been rolling started, and the version 2 application has been deployed correctly.");
-  }
-
-  /**
-   * Patch the domain resource with a new image that contains a newer version of the application.
-   * 
-   * Here is an example of the JSON patch string that is constructed in this method.
-   * 
-   * [
-   *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
-   * ]
-   * 
-   * @param domainUID the unique identifier of the domain resource
-   * @param namespace the Kubernetes namespace that the domain is hosted
-   * @param image the name of the image that contains a newer version of the application
-   */
-  private void patchDomainResourceIamge(
-      String domainUID,
-      String namespace,
-      String image
-  ) {
-    String patch = 
-        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n", image);
-    logger.info("Patch string is : " + patch);
-
-    assertTrue(patchDomainCustomResource(
-            domainUID,
-            namespace,
-            new V1Patch(patch),
-            V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch the domain resource with a  a different image.");
   }
 
   /**
@@ -511,7 +481,7 @@ class ItMiiDomain implements LoggedTest {
     }
   }
 
-  private String createFirstDomainImage() {
+  private String createInitialDomainImage() {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
@@ -557,6 +527,37 @@ class ItMiiDomain implements LoggedTest {
  
   }
 
+  /**
+   * Patch the domain resource with a new image that contains a newer version of the application.
+   * 
+   * Here is an example of the JSON patch string that is constructed in this method.
+   * 
+   * [
+   *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
+   * ]
+   * 
+   * @param domainUid the unique identifier of the domain resource
+   * @param namespace the Kubernetes namespace that the domain is hosted
+   * @param image the name of the image that contains a newer version of the application
+   */
+  private void patchDomainResourceIamge(
+      String domainUid,
+      String namespace,
+      String image
+  ) {
+    String patch = 
+        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n",
+            image);
+    logger.info("Patch string is : " + patch);
+
+    assertTrue(patchDomainCustomResource(
+            domainUid,
+            namespace,
+            new V1Patch(patch),
+            V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch the domain resource with a  a different image.");
+  }
+
   private void createImageAndVerify(
       String imageName,
       String imageTag,
@@ -572,8 +573,8 @@ class ItMiiDomain implements LoggedTest {
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using model directory {2}",
         imageName, imageTag, MODEL_DIR);
-    boolean result = createMIIImage(
-        defaultWITParams()
+    boolean result = createMiiImage(
+        defaultWitParams()
             .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
@@ -635,7 +636,7 @@ class ItMiiDomain implements LoggedTest {
   }
 
   private void checkAppRunning(
-      String domainUID,
+      String domainUid,
       String ns,
       String nodePort,
       String internalPort,
@@ -652,7 +653,7 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPodCallable(domainUID, ns, internalPort, appPath, expectedStr),
+        .until(assertDoesNotThrow(() -> appAccessibleInPodCallable(domainUid, ns, internalPort, appPath, expectedStr),
             String.format(
                "App %s is not ready in namespace %s", appPath, domainNamespace)));
 
