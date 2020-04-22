@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.List;
+
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -18,6 +20,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
@@ -33,23 +36,26 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccoun
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
+// Every test class needs to tagged with this annotation for log collection, diagnostic messages logging
+// and namespace creation.
 @IntegrationTest
 class ItSimpleDomainValidation implements LoggedTest {
 
   @Test
   @DisplayName("Create a domain")
   @Slow
-  public void testCreatingDomain() {
+  public void testCreatingDomain(@Namespaces(1) List<String> namespaces) {
 
     final String domainUid = "domain1";
 
     // get a new unique namespace
-    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Got a new namespace called {0}", namespace);
+    logger.info("Creating unique namespace for Operator");
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    String namespace = namespaces.get(0);
 
     // Create a service account for the unique namespace
     final String serviceAccountName = namespace + "-sa";
@@ -91,7 +97,7 @@ class ItSimpleDomainValidation implements LoggedTest {
             .putCapacityItem("storage", Quantity.fromString("10Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .hostPath(new V1HostPathVolumeSource()
-                .path(System.getProperty("java.io.tmpdir") + domainUid + "-persistentVolume")))
+                .path(System.getProperty("java.io.tmpdir") + "/" + domainUid + "-persistentVolume")))
                 .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .withNamespace(namespace)
