@@ -505,7 +505,7 @@ public class DomainCrd {
   }
 
   /**
-   * Gets the model object node
+   * Gets the model object node.
    *
    * @return JsonNode model object
    */

@@ -51,6 +51,12 @@ public class ServerService {
     return labels;
   }
 
+  /**
+   * Puts labels map item.
+   * @param key Label name
+   * @param labelsItem Label value
+   * @return this
+   */
   public ServerService putLabelsItem(String key, String labelsItem) {
     if (labels == null) {
       labels = new HashMap<>();
@@ -76,6 +82,12 @@ public class ServerService {
     return annotations;
   }
 
+  /**
+   * Puts annotations map item.
+   * @param key Annotation name
+   * @param annotationsItem Annotation value
+   * @return this
+   */
   public ServerService putAnnotationsItem(String key, String annotationsItem) {
     if (annotations == null) {
       annotations = new HashMap<>();

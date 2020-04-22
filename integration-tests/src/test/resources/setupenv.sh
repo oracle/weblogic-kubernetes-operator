@@ -2,29 +2,6 @@
 # Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates. 
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-function setup_shared_cluster {
-  echo "Perform setup for running on shared cluster"
-  echo "Install tiller"
-  kubectl create serviceaccount --namespace kube-system tiller
-  kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-  
-  # Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
-  helm init --service-account=tiller --wait
-  
-  helm version
-  
-  kubectl get po -n kube-system
-  
-  echo "Existing helm charts "
-  helm ls --all
-  echo "Deleting installed helm charts"
-  helm list --short --all | xargs -L1 helm delete --purge
-  echo "After helm delete, list of installed helm charts is: "
-  helm ls
-
-  echo "Completed setup_shared_cluster"
-}
-
 function cleanup {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
@@ -178,8 +155,6 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	  	exit 1
 	fi
     	
-  #fi
-  setup_shared_cluster
   docker images
     
 elif [ "$JENKINS" = "true" ]; then
