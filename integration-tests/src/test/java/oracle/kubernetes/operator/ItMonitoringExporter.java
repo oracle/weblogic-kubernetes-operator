@@ -148,13 +148,6 @@ public class ItMonitoringExporter extends BaseTest {
         domain.verifyDomainCreated();
 
         myhost = domain.getHostNameForCurl();
-        StringBuffer exportStr = new StringBuffer();
-        exportStr.append("http://" + myhost);
-        if (!BaseTest.OKE_CLUSTER) {
-          exportStr.append(":" + domain.getLoadBalancerWebPort());
-        }
-        exportStr.append("/wls-exporter/");
-        exporterUrl = exportStr.toString();
         LoggerHelper.getLocal().log(Level.INFO, "LB_TYPE is set to: " + System.getenv("LB_TYPE"));
         boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
         if (isTraefik) {
@@ -168,13 +161,22 @@ public class ItMonitoringExporter extends BaseTest {
         domain.buildDeployJavaAppInPod(
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
         setupPv();
-        if (BaseTest.OKE_CLUSTER) {
+        if (OKE_CLUSTER) {
           cleanUpPvDirOke("/ci-oke-mysql");
           cleanUpPvDirOke("/ci-oke-prom");
           cleanUpPvDirOke("/ci-oke-alertprom");
           LB_MONITORING_PUBLIC_IP = createMonitorTraefikLB("monitoring");
-
+          upgradeTraefikNamespace();
+          //exporterUrl = "http://" + LB_MONITORING_PUBLIC_IP + "/wls-exporter/";
+          exporterUrl = "http://" + myhost + "/wls-exporter/";
+        } else {
+          StringBuffer exportStr = new StringBuffer();
+          exportStr.append("http://" + myhost);
+          exportStr.append(":" + domain.getLoadBalancerWebPort());
+          exportStr.append("/wls-exporter/");
+          exporterUrl = exportStr.toString();
         }
+
         installPrometheusGrafanaWebHookMySqlCoordinator();
       }
       domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
@@ -420,9 +422,7 @@ public class ItMonitoringExporter extends BaseTest {
       TestUtils.replaceStringInFile(monitoringExporterScriptDir + "/monexp-path-route.yaml",
               "%DOMAIN_NAMESPACE%", domain.getDomainNs());
       String cmd = "kubectl apply -f " + monitoringExporterScriptDir + "/monexp-path-route.yaml";
-      ExecCommand.exec(cmd, true);
-      upgradeTraefikNamespace();
-      exporterUrl = "http://" + LB_MONITORING_PUBLIC_IP + "/wls-exporter/";
+      //ExecCommand.exec(cmd, true);
     }
     test01_CheckMetricsViaPrometheus();
     test02_ReplaceConfiguration();
