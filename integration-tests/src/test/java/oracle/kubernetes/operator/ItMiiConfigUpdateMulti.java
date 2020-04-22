@@ -118,7 +118,7 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
       assertNotNull(domain, "Failed to create a domain");
 
       // copy model files that contains JDBC DS to a dir to re-create cm
-      final String destDir = getResultDir() + "/samples/model-in-image-update-lon";
+      final String destDir = getResultDir() + "/samples/model-in-image-update-multi1";
       String[] modelFiles =
           {"now.jdbc.10.yaml",
               "jdbc.20.yaml",
@@ -212,7 +212,7 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
       wdtConfigUpdateImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
 
       // copy model files that contains JDBC DS to a dir to re-create cm
-      final String destDir = getResultDir() + "/samples/model-in-image-update-lon";
+      final String destDir = getResultDir() + "/samples/model-in-image-update-multi2";
       String[] modelFiles =
           {"cm.jdbc.yaml",
               "model.jdbc.yaml",
