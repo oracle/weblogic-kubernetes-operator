@@ -32,29 +32,6 @@ do so (now or later) by using -b with the checkout command again. Example:
 Checking out files: 100% (8396/8396), done.
 ```
 #### Prepare the environment ####
-In order to use Helm to install and manage the operator, you need to ensure that the service account has the `cluster-admin` role.  The default is `default` in namespace `kube-system`.  You can give that service
-account the necessary permissions with this command:
-
-```bash
-cat << EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: helm-user-cluster-admin-role
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: kube-system
-EOF
-```
-The output should be as follows:
-```bash
-clusterrolebinding.rbac.authorization.k8s.io/helm-user-cluster-admin-role created
-```
 Kubernetes distinguishes between the concept of a user account and a service account for a number of reasons. The main reason is that user accounts are for humans while service accounts are for processes, which run in pods. The operator also requires service accounts.  If a service account is not specified, it defaults to `default` (for example, the namespace's default service account). If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
 
 Thus, create the operator's namespace in advance:
