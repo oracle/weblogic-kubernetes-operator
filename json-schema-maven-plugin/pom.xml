@@ -50,7 +50,6 @@
     </dependencies>
 
     <properties>
-        <root.basedir>${project.parent.basedir}</root.basedir>
         <junit-version>4.13</junit-version>
     </properties>
 
