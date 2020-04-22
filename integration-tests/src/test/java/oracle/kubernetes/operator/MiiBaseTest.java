@@ -17,7 +17,6 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -84,114 +83,6 @@ public class MiiBaseTest extends BaseTest {
     // domain = new Domain(domainMap, true, false);
     domain.verifyDomainCreated();
     return domain;
-  }
-
-  /**
-   * Create a new or update an existing image using model-in-image tool.
-   * @param domainMap a Java Map object that storing key and value pairs used to create the Domain
-   * @param imageName image name to be created or updated
-   * @param modelFile a model to describe a WebLogic Server domain configuration.
-   * @param modelPropFile a file to specify values of variable tokens declared in model file(s) at runtime
-   */
-  protected void createDomainImage(Map<String, Object> domainMap, String imageName,
-                                   String modelFile, String modelPropFile) {
-    String domainBaseImageName = (String) domainMap.get("domainHomeImageBase");
-    String domainUid = (String) domainMap.get("domainUID");
-    String domainName = (String) domainMap.get("domainName");
-    ExecResult result = null;
-
-    // Get the map of any additional environment vars, or null
-    Map<String, String> additionalEnvMap = (Map<String, String>) domainMap.get("additionalEnvMap");
-    String resultsDir = (String) domainMap.get("resultDir");
-    StringBuffer createDomainImageScriptCmd = new StringBuffer("export WDT_VERSION=");
-
-    createDomainImageScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
-      .append(getUserProjectsDir())
-      .append("/weblogic-domains/")
-      .append(domainName)
-      .append("/miiWorkDir/")
-      .append("imagetool/bin/imagetool.sh update")
-      .append(" --tag ")
-      .append(imageName)
-      .append(" --fromImage ")
-      .append(domainBaseImageName)
-      .append(" --wdtModel ")
-      .append(resultsDir)
-      .append("/samples/model-in-image/")
-      .append(modelFile)
-      .append(" --wdtVariables ")
-      .append(resultsDir)
-      .append("/samples/model-in-image/")
-      .append(modelPropFile)
-      .append(" --wdtArchive ")
-      .append(getUserProjectsDir())
-      .append("/weblogic-domains/")
-      .append(domainName)
-      .append("/miiWorkDir/models/archive.zip")
-      .append(" --wdtModelOnly ")
-      .append(" --wdtDomainType ")
-      .append(WdtDomainType.WLS.geWdtDomainType());
-
-    try {
-      // creating image
-      LoggerHelper.getLocal().log(Level.INFO, "Command to create domain image: "
-          + createDomainImageScriptCmd);
-      result = ExecCommand.exec(createDomainImageScriptCmd.toString(), true, additionalEnvMap);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
-      errorMsg
-          .append(createDomainImageScriptCmd)
-          .append(" failed, returned ")
-          .append(result.stdout())
-          .append("\n")
-          .append(result.stderr());
-
-      Assertions.fail(errorMsg.toString(), ex.getCause());
-    }
-  }
-
-  /**
-   * Modify the domain yaml to change image name and verify the domain restarted.
-   * @param domain the Domain where to change the image name
-   * @param domainNS the domain namespace name
-   * @param imageName image name to be updated in the Domain
-   */
-  protected void modifyDomainYamlWithImageName(
-      Domain domain, String domainNS, String imageName) {
-    ExecResult result = null;
-    String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
-    StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
-    patchDomainCmd
-        .append(domainNS)
-        .append(" patch domain ")
-        .append(domain.getDomainUid())
-        .append(" --type='json' ")
-        .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"'")
-        .append(imageName)
-        .append("'\" }]'");
-
-    try {
-      // patching the domain
-      LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-      result = TestUtils.exec(patchDomainCmd.toString());
-      LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
-
-      // verify the domain restarted
-      domain.verifyAdminServerRestarted();
-      domain.verifyManagedServersRestarted();
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
-      errorMsg
-          .append(patchDomainCmd)
-          .append(" failed, returned ")
-          .append(result.stdout())
-          .append("\n")
-          .append(result.stderr());
-
-      Assertions.fail(errorMsg.toString(), ex.getCause());
-    }
   }
 
   /**
