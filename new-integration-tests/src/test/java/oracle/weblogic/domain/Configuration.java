@@ -77,6 +77,11 @@ public class Configuration {
     return secrets;
   }
 
+  /**
+   * Adds item to secrets list.
+   * @param secretsItem Secret
+   * @return this
+   */
   public Configuration addSecretsItem(String secretsItem) {
     if (secrets == null) {
       secrets = new ArrayList<>();

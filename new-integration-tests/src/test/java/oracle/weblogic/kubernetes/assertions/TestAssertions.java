@@ -11,7 +11,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.Traefik;
-import oracle.weblogic.kubernetes.assertions.impl.WITAssertion;
+import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -64,25 +64,25 @@ public class TestAssertions {
    * Check if a WebLogic custom resource domain object exists in specified
    * namespace.
    *
-   * @param domainUID ID of the domain
+   * @param domainUid ID of the domain
    * @param namespace in which the domain custom resource object exists
    * @return true if domain object exists
    */
-  public static Callable<Boolean> domainExists(String domainUID, String domainVersion, String namespace) {
-    return Domain.doesDomainExist(domainUID, domainVersion, namespace);
+  public static Callable<Boolean> domainExists(String domainUid, String domainVersion, String namespace) {
+    return Domain.doesDomainExist(domainUid, domainVersion, namespace);
   }
 
   /**
    * Check if a Kubernetes pod exists in any state in the given namespace.
    *
    * @param podName   name of the pod to check for
-   * @param domainUID UID of WebLogic domain in which the pod exists
+   * @param domainUid UID of WebLogic domain in which the pod exists
    * @param namespace in which the pod exists
    * @return true if the pod exists in the namespace otherwise false
    */
-  public static Callable<Boolean> podExists(String podName, String domainUID, String namespace) throws ApiException {
+  public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) throws ApiException {
     return () -> {
-      return Kubernetes.doesPodExist(namespace, domainUID, podName);
+      return Kubernetes.doesPodExist(namespace, domainUid, podName);
     };
   }
 
@@ -90,11 +90,11 @@ public class TestAssertions {
    * Check if a Kubernetes pod is in running/ready state.
    *
    * @param podName   name of the pod to check for
-   * @param domainUID WebLogic domain uid in which the pod belongs
+   * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
    */
-  public static Callable<Boolean> podReady(String podName, String domainUID, String namespace) throws ApiException {
+  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
     return () -> {
       return Kubernetes.isPodReady(namespace, domainUID, podName);
     };
@@ -104,13 +104,13 @@ public class TestAssertions {
    * Check if a pod given by the podName is in Terminating state.
    *
    * @param podName   name of the pod to check for Terminating status
-   * @param domainUID WebLogic domain uid in which the pod belongs
+   * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is terminating otherwise false
    */
-  public static Callable<Boolean> podTerminating(String podName, String domainUID, String namespace) {
+  public static Callable<Boolean> podTerminating(String podName, String domainUid, String namespace) {
     return () -> {
-      return Kubernetes.isPodTerminating(namespace, domainUID, podName);
+      return Kubernetes.isPodTerminating(namespace, domainUid, podName);
     };
   }
 
@@ -136,44 +136,44 @@ public class TestAssertions {
   /**
    * Check if a loadbalancer pod is ready.
    *
-   * @param domainUID id of the WebLogic domain custom resource domain
-   * @return
+   * @param domainUid id of the WebLogic domain custom resource domain
+   * @return true, if the load balancer is ready
    */
-  public static boolean loadbalancerReady(String domainUID) {
-    return Kubernetes.loadBalancerReady(domainUID);
+  public static boolean loadbalancerReady(String domainUid) {
+    return Kubernetes.loadBalancerReady(domainUid);
   }
 
   /**
    * Check if the admin server pod is ready.
    *
-   * @param domainUID id of the domain in which admin server pod is running
+   * @param domainUid id of the domain in which admin server pod is running
    * @param namespace in which the pod exists
    * @return true if the admin server is ready otherwise false
    */
-  public static boolean adminServerReady(String domainUID, String namespace) {
-    return Kubernetes.adminServerReady(domainUID, namespace);
+  public static boolean adminServerReady(String domainUid, String namespace) {
+    return Kubernetes.adminServerReady(domainUid, namespace);
   }
 
   /**
    * Check if a adminserver T3 channel is accessible.
    *
-   * @param domainUID id of the domain in which admin server pod is running
+   * @param domainUid id of the domain in which admin server pod is running
    * @param namespace in which the WebLogic server pod exists
    * @return true if the admin T3 channel is accessible otherwise false
    */
-  public static boolean adminT3ChannelAccessible(String domainUID, String namespace) {
-    return Domain.adminT3ChannelAccessible(domainUID, namespace);
+  public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
+    return Domain.adminT3ChannelAccessible(domainUid, namespace);
   }
 
   /**
    * Check if a admin server pod admin node port is accessible.
    *
-   * @param domainUID domainUID id of the domain in which admin server pod is running
+   * @param domainUid domainUID id of the domain in which admin server pod is running
    * @param namespace in which the WebLogic server pod exists
    * @return true if the admin node port is accessible otherwise false
    */
-  public static boolean adminNodePortAccessible(String domainUID, String namespace) {
-    return Domain.adminNodePortAccessible(domainUID, namespace);
+  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
+    return Domain.adminNodePortAccessible(domainUid, namespace);
   }
 
   /**
@@ -184,7 +184,7 @@ public class TestAssertions {
    * @return true if the image does exist, false otherwise
    */
   public static boolean dockerImageExists(String imageName, String imageTag) {
-    return WITAssertion.doesImageExist(imageName, imageTag);
+    return WitAssertion.doesImageExist(imageName, imageTag);
   }
 
 }

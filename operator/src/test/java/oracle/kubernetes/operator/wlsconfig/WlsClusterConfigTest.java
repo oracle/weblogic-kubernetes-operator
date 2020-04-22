@@ -255,6 +255,7 @@ public class WlsClusterConfigTest {
     assertThat(wlsClusterConfig.getMaxClusterSize(), equalTo(2));
   }
 
+  @Test
   public void verifyGetUpdateDynamicClusterSizeUrlIncludesClusterName() {
     WlsDynamicServersConfig wlsDynamicServersConfig =
         createDynamicServersConfig(1, 1, 1, "ms-", "cluster1");

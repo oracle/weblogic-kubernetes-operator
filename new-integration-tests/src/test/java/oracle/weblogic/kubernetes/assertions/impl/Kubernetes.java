@@ -245,7 +245,7 @@ public class Kubernetes {
   }
 
   /**
-   * Get V1Service object for the given servicename, label and namespace
+   * Get V1Service object for the given service name, label and namespace.
    * @param serviceName name of the service to look for
    * @param label the key value pair with which the service is decorated with
    * @param namespace the namespace in which to check for the service
@@ -360,11 +360,11 @@ public class Kubernetes {
     }
   }
 
-  public static boolean loadBalancerReady(String domainUID) {
+  public static boolean loadBalancerReady(String domainUid) {
     return true;
   }
 
-  public static boolean adminServerReady(String domainUID, String namespace) {
+  public static boolean adminServerReady(String domainUid, String namespace) {
     return true;
   }
 
