@@ -1262,7 +1262,7 @@ public class Kubernetes implements LoggedTest {
     }
   }
 
-  // --------------------------- resplica sets ---------------------------
+  // --------------------------- replica sets ---------------------------
   /**
    * Get a list of all replica sets in the given namespace.
    *

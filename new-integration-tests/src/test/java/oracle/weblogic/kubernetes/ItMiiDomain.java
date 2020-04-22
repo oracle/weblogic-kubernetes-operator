@@ -124,7 +124,7 @@ class ItMiiDomain implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
-    // create standard, reusbale retry/backoff policy
+    // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
