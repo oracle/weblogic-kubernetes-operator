@@ -14,7 +14,7 @@
 # Optional environment variables (see custom-env.sh for details):
 #
 #   WORKDIR                  - Working directory for the sample with at least
-#                              10g of space. Defaults to 
+#                              10GB of space. Defaults to 
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   CUSTOM_DOMAIN_NAME       - default 'domain1'.
 #   DOMAIN_UID               - default 'sample-domain1'

@@ -16,7 +16,7 @@
 # Optional environment variable used by this script:
 #
 #    WORKDIR 
-#      Working directory for the sample with at least 10g of space.
+#      Working directory for the sample with at least 10GB of space.
 #      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 

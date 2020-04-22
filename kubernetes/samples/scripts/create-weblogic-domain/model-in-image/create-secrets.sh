@@ -8,7 +8,7 @@
 # Optional environment variables:
 #
 #   WORKDIR                  - Working directory for the sample with at least
-#                              10g of space. Defaults to 
+#                              10GB of space. Defaults to 
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - defaults to 'sample-domain1-ns'

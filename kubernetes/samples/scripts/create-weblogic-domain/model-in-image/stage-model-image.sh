@@ -27,7 +27,7 @@
 # Optionally set these environment variables:
 #
 #   WORKDIR
-#     Working directory for the sample with at least 10g of space.
+#     Working directory for the sample with at least 10GB of space.
 #     Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 #   WDT_DOMAIN_TYPE 

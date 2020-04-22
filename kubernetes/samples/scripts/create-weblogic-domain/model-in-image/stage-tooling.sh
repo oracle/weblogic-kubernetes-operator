@@ -10,7 +10,7 @@
 # Optional environment variables (see 'env-custom.sh' for more details):
 #
 #    WORKDIR 
-#      Working directory for the sample with at least 10g of space
+#      Working directory for the sample with at least 10GB of space
 #      defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 #    http_proxy https_proxy
