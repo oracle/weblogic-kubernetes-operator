@@ -121,7 +121,8 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
 
       // copy model files that contains JDBC DS to a dir to re-create cm
       final String destDir = getResultDir() + "/samples/model-in-image-update";
-      copyTestModelFiles(destDir);
+      String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
+      copyTestModelFiles(destDir, modelFiles);
 
       // re-create cm to update config and verify cm is created successfully
       wdtConfigUpdateCm(destDir, domain);
@@ -214,7 +215,8 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       }
 
       // copy model files that contain JDBC DS to a dir to re-create cm
-      copyTestModelFiles(destDir);
+      String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
+      copyTestModelFiles(destDir, modelFiles);
 
       // re-create cm to update config and verify cm is created successfully
       wdtConfigUpdateCm(destDir, domain);

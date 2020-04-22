@@ -32,14 +32,11 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   protected static final String readTimeout_1 = "30001";
   protected static final String readTimeout_2 = "30002";
 
-  protected void copyTestModelFiles(String destDir) {
-    LoggerHelper.getLocal().log(Level.INFO, "Copying Model files");
-
-    String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
-
-    copyTestModelFiles(destDir, modelFiles);
-  }
-
+  /**
+   * Copy model files from source dir to test dir.
+   * @param destDir destination directory name to copy model files to
+   * @param modelFiles names of model files to copy
+   */
   protected void copyTestModelFiles(String destDir, String[] modelFiles) {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
     String origDir = BaseTest.getProjectRoot()
@@ -60,6 +57,13 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     }
   }
 
+  /**
+   * Create domain using model in image.
+   * @param createDS a boolean value to determine whether or not
+   *                 to config a JDBC DS when creating domain
+   * @param domainNS domain namespace name
+   * @param testClassName test class name that calls this method
+   */
   protected Domain createDomainUsingMii(boolean createDS, String domainNS, String testClassName) {
     final String cmFile = "model.empty.properties";
     String wdtModelFile = "model.wls.yaml";
@@ -108,7 +112,12 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     return domain;
   }
 
-  protected void wdtConfigUpdateCm(String destDir, Domain domain) {
+  /**
+   * Update an existing cm.
+   * @param fileOrDirPath a directory path where to get model files
+   * @param domain the Domain object where to get domain config values
+   */
+  protected void wdtConfigUpdateCm(String fileOrDirPath, Domain domain) {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap...");
 
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -120,13 +129,12 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     final String label = "weblogic.domainUID=" + domainUid;
 
     try {
-      TestUtils.createConfigMap(cmName, destDir, domainNS, label);
+      TestUtils.createConfigMap(cmName, fileOrDirPath, domainNS, label);
     } catch (Exception ex) {
       ex.printStackTrace();
       fail("Failed to create cm.\n", ex.getCause());
     }
   }
-
 
   /**
    * Create a new or update an existing image using model-in-image tool.
@@ -194,11 +202,9 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     }
   }
 
-
   /**
    * Modify the domain yaml to change image name and verify the domain restarted.
    * @param domain the Domain where to change the image name
-   * @param domainNS the domain namespace name
    * @param imageName image name to be updated in the Domain
    */
   protected void modifyDomainYamlWithImageName(Domain domain, String imageName) {
@@ -240,6 +246,10 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     }
   }
 
+  /**
+   * Retrieve JNDI name from server pod.
+   * @param domain the Domain object where to get domain config values
+   */
   protected String getJndiName(Domain domain) {
     // get domain namespace name and domain name
     Map<String, Object> domainMap = domain.getDomainMap();
@@ -284,6 +294,11 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     return jdbcDsStr;
   }
 
+  /**
+   * Retrieve JDBC DS prop values from server pod via WLST.
+   * @param destDir destination directory name to test python file to
+   * @param domain the Domain object where to get domain config values
+   */
   protected String getJdbcResources(String destDir, Domain domain) {
     // get domain namespace name and domain name
     Map<String, Object> domainMap = domain.getDomainMap();
