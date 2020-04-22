@@ -29,6 +29,8 @@ public class CommandParams {
   // The stderr of the command execution
   private String stderr;
   
+  private boolean debug = false;
+  
   public CommandParams defaults() {
     return this;
   }
@@ -86,4 +88,14 @@ public class CommandParams {
   public String stdout() {
     return stdout;
   }
+  
+  public CommandParams debug(boolean debug) {
+    this.debug = debug;
+    return this;
+  }
+
+  public boolean debug() {
+    return debug;
+  }
+ 
 }

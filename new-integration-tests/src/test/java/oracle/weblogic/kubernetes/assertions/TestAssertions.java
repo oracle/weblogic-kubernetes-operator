@@ -169,24 +169,43 @@ public class TestAssertions {
   }
 
   /**
-   * Check if an application can be accessed within a managed server pod.
-   * @param ins the namespace of the domain that hosts the application
-   * @param port the port of the cluster's clusterIP
-   * @param appPath the path for the application url
-   * @param expectedStr  the expected text from the application's response
-   * @return true if the image does exist, false otherwise
+   * Check if an application is accessible inside a WebLogic server pod.
+   * @param domainUID unique identifier of the Kubernetes domain custom resource instance
+   * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param port internal port of the managed servers
+   * @param appPath the path to access the application
+   * @param expectedStr the expected response from the application
+   * @return true if the command succeeds 
    */
-
-  public static Callable<Boolean> appAccessibleInPod(String ns, String port, String appPath, String expectedStr) {
-    return () -> {
-      return Application.appAccessibleInPod(ns, port, appPath, expectedStr);
-    };
+  public static boolean appAccessibleInPod(
+      String domainUID,
+      String domainNS,
+      String port,
+      String appPath,
+      String expectedStr
+  ) {
+    return Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
   }
 
-  public static Callable<Boolean> appAccessibleExternally(String ns, String port, String appPath, String expectedStr) {
+  /**
+   * Check if an application is accessible inside a server pod.
+   * .
+   * @param domainUID unique identifier of the Kubernetes domain custom resource instance
+   * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param port internal port of the managed servers
+   * @param appPath the path to access the application
+   * @param expectedStr the expected response from the application
+   * @return Callable true if the command succeeds 
+   */
+  public static Callable<Boolean> appAccessibleInPodCallable(
+      String domainUID,
+      String domainNS,
+      String port,
+      String appPath,
+      String expectedStr
+  ) {
     return () -> {
-      return Application.appAccessibleExternally(ns, port, appPath, expectedStr);
+      return Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
     };
   }
-
 }

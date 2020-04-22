@@ -40,7 +40,9 @@ public class Command {
   }
 
   public boolean execute() {
-    logger.info("Executing command {0}", params.command());
+    if (params.debug()) {
+      logger.info("Executing command {0}", params.command());
+    }
     try {
       ExecResult result = ExecCommand.exec(
           params.command(), 
@@ -52,7 +54,7 @@ public class Command {
       }
 
       // check exitValue to determine if the command execution has failed.
-      if (result.exitValue() != 0) {
+      if (params.debug() && result.exitValue() != 0) {
         logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
       } 
 

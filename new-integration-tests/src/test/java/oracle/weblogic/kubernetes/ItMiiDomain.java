@@ -12,8 +12,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -37,7 +39,6 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -68,9 +69,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-//import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleExternally;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodCallable;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
@@ -80,6 +82,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
@@ -104,6 +107,10 @@ class ItMiiDomain implements LoggedTest {
   // domain constants
   private static final String DOMAIN_VERSION = "v7";
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+  
+  // app constants
+  private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server1";
+  private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server1";
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -355,23 +362,25 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceCreated(managedServerPrefix + i);
     }
+    
     checkAppRunning(
+        domainUID,
         domainNamespace,
         "30711",
         "8001",
         "sample-war/index.jsp",
-        "Hello World, you have reached server managed-server1");
+        APP_RESPONSE_V1);
+    
+    logger.info(String.format("Domain %s is fully started - servers are running and application is deployed corretly.",
+        domainUID));
   }
   
   @Test
   @Order(2)
-  @DisplayName("Update the application to version2")
+  @DisplayName("Update the application to version 2")
   @Slow
   @MustNotRunInParallel
   public void testAppVersion2Patching() {
-    final String adminServerPodName = domainUID + "-admin-server";
-    final String managedServerPrefix = domainUID + "-managed-server";
-    final int replicaCount = 2;
     
     // app here is what is in the original app dir plus the delta in the second app dir
     final String appDir1 = "sample-app";
@@ -381,56 +390,79 @@ class ItMiiDomain implements LoggedTest {
     String image = updateImageWithAppV2Patch(
         MII_IMAGE_NAME,
         Arrays.asList(appDir1, appDir2));
+  
+    // check and V1 app is running
+    assertTrue(appAccessibleInPod(
+            domainUID,
+            domainNamespace,
+            "8001",
+            "sample-war/index.jsp",
+            APP_RESPONSE_V1),
+        "The expected app is not accessible inside the server pod");
+    
+    // check and make sure that the version 2 app is NOT running
+    assertFalse(appAccessibleInPod(
+            domainUID,
+            domainNamespace,
+            "8001",
+            "sample-war/index.jsp",
+            APP_RESPONSE_V2),
+        "The second version of the app is not supposed to be running!!");   
     
     // modify the domain resource to use the new image
-    patchDomainResourceWithNewIamge(domainUID, image);
+    patchDomainResourceIamge(domainUID, domainNamespace, image);
     
-    // check and wait for the admin server pod to be started
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName);
-
-    // check and wait for the managed server pods to be started
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodCreated(managedServerPrefix + i);
-    }
-
-    // check and wait for the admin server pod to be in running state
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodRunning(adminServerPodName);
-
-    // check and wait for the managed server pods to be in running state
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodRunning(managedServerPrefix + i);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName);
-
-    // check and wait for the managed server services to be created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i);
+    // Ideally we want to verify that the server pods were rolling restarted.
+    // But it is hard to time the pod state transitions.
+    // Instead, sleep for 2 minutes and check the newer version of the application. 
+    // The application check is sufficient to verify that the version2 application
+    // is running, thus the servers have been patched.
+    try {
+      TimeUnit.MINUTES.sleep(2);
+    } catch (InterruptedException ie) {
+      // do nothing
     }
     
     // check and wait for the app to be ready
     checkAppRunning(
+        domainUID,
         domainNamespace,
         "30711",
         "8001",
         "sample-war/index.jsp",
-        "Hello World again, you have reached the server managed-server1");    
+        APP_RESPONSE_V2);
+
+    logger.info("The cluster has been rolling started, and the version 2 application has been deployed correctly.");
   }
 
-  private void patchDomainResourceWithNewIamge(String domainUID2, String image) {
-    // TODO Auto-generated method stub
+  /**
+   * Patch the domain resource with a new image that contains a newer version of the application.
+   * 
+   * Here is an example of the JSON patch string that is constructed in this method.
+   * 
+   * [
+   *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
+   * ]
+   * 
+   * @param domainUID the unique identifier of the domain resource
+   * @param namespace the Kubernetes namespace that the domain is hosted
+   * @param image the name of the image that contains a newer version of the application
+   */
+  private void patchDomainResourceIamge(
+      String domainUID,
+      String namespace,
+      String image
+  ) {
+    String patch = 
+        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n", image);
+    logger.info("Patch string is : " + patch);
+
+    assertTrue(patchDomainCustomResource(
+            domainUID,
+            namespace,
+            new V1Patch(patch),
+            V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch the domain resource with a  a different image.");
   }
 
   /**
@@ -446,9 +478,9 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
 
     // delete the domain image created for the test
-	if (miiImage != null) {
-	  deleteImage(miiImage);
-	}
+    if (miiImage != null) {
+      deleteImage(miiImage);
+    }
 
     // uninstall operator release
     logger.info("Uninstall Operator in namespace {0}", opNamespace);
@@ -477,7 +509,6 @@ class ItMiiDomain implements LoggedTest {
           "deleteNamespace failed with ApiException");
       logger.info("Deleted namespace: " + opNamespace);
     }
-
   }
 
   private String createFirstDomainImage() {
@@ -503,7 +534,10 @@ class ItMiiDomain implements LoggedTest {
     return MII_IMAGE_NAME + ":" + imageTag;
   }
   
-  private String updateImageWithAppV2Patch(String imageName, List<String> appDirList) {
+  private String updateImageWithAppV2Patch(
+      String imageName,
+      List<String> appDirList
+  ) {
     // build the model file list
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
    
@@ -512,7 +546,7 @@ class ItMiiDomain implements LoggedTest {
         defaultAppParams()
             .srcDirList(appDirList));
     
-    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s" + APP_NAME));
+    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", APP_NAME));
     
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
@@ -527,7 +561,8 @@ class ItMiiDomain implements LoggedTest {
       String imageName,
       String imageTag,
       List<String> modelList,
-      List<String> archiveList) {
+      List<String> archiveList
+  ) {
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -600,12 +635,15 @@ class ItMiiDomain implements LoggedTest {
   }
 
   private void checkAppRunning(
+      String domainUID,
       String ns,
       String nodePort,
       String internalPort,
       String appPath, 
-      String expectedStr) {
-    /* enable this once the load balancer is deployed
+      String expectedStr
+  ) {
+   
+    // check if the app is accessible inside of a server pod
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for application {0} to be ready in namespace {1} "
@@ -614,19 +652,7 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleExternally(ns, nodePort, appPath, expectedStr),
-            String.format(
-               "App %s is not ready in namespace %s", appPath, domainNamespace)));
-    */
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for application {0} to be ready in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            appPath,
-            domainNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPod(ns, internalPort, appPath, expectedStr),
+        .until(assertDoesNotThrow(() -> appAccessibleInPodCallable(domainUID, ns, internalPort, appPath, expectedStr),
             String.format(
                "App %s is not ready in namespace %s", appPath, domainNamespace)));
 
