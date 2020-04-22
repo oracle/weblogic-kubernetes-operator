@@ -13,9 +13,9 @@ public class AppParams {
 
   // Locations of the source code. 
   // This are the directory names under resources/apps for an application.
-  // Note: the order of the directory names are signaficant. Files are copied into
+  // Note: the order of the directory names are significant. Files are copied into
   // the staging directory in the order that corresponds to the order that the
-  // directories are locates in the list. 
+  // directories are located in the list. 
   private List<String> srcDirList;
   
   // The name of the final ear file.
