@@ -20,6 +20,16 @@ public class CommandParams {
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
   
+  // Whether the results of the command need to be saved
+  private boolean saveResults = false;
+
+  // The stdout of the command execution 
+  private String stdout;
+  
+  // The stderr of the command execution
+  private String stderr;
+  
+
   public CommandParams defaults() {
     return this;
   }
@@ -50,4 +60,32 @@ public class CommandParams {
   public boolean redirect() {
     return redirect;
   }
+  
+  public CommandParams saveResults(boolean saveResults) {
+    this.saveResults = saveResults;
+    return this;
+  }
+
+  public boolean saveResults() {
+    return saveResults;
+  }
+ 
+  public CommandParams stderr(String stderr) {
+    this.stderr = stderr;
+    return this;
+  }
+
+  public String stderr() {
+    return stderr;
+  }
+ 
+  public CommandParams stdout(String stdout) {
+    this.stdout = stdout;
+    return this;
+  }
+
+  public String stdout() {
+    return stdout;
+  }
+ 
 }

@@ -24,6 +24,11 @@ public interface LoggedTest {
     logger.info("Finished executing [{0}] in {1}", testInfo.getDisplayName(), getMethodName(testInfo));
   }
 
+  /**
+   * Calculates test method name.
+   * @param testInfo Test information
+   * @return Test method name
+   */
   private String getMethodName(TestInfo testInfo) {
     if (testInfo.getTestMethod().isPresent()) {
       String[] tempMethodName = testInfo.getTestMethod().get().toString().split(" ");

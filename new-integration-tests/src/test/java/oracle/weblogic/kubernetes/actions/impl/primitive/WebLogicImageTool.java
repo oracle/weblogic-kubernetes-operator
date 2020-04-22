@@ -11,8 +11,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWDTParams;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWITParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWdtParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWitParams;
 
 /**
  * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
@@ -21,25 +21,25 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaul
 public class WebLogicImageTool {
   private static final LoggingFacade logger = LoggingFactory.getLogger(WebLogicImageTool.class);
 
-  private WITParams params;
+  private WitParams params;
 
   /**
    * Create a WITParams with the default values.
    * @return a WITParams instance
    */
-  public static WITParams defaultWITParams() {
-    return new WITParams().defaults();
+  public static WitParams defaultWitParams() {
+    return new WitParams().defaults();
   }
 
   /**
    * Set up the WebLogicImageTool with given parameters.
    * @return the instance of WebLogicImageTool 
    */
-  public static WebLogicImageTool withParams(WITParams params) {
+  public static WebLogicImageTool withParams(WitParams params) {
     return new WebLogicImageTool().params(params);
   }
   
-  private WebLogicImageTool params(WITParams params) {
+  private WebLogicImageTool params(WitParams params) {
     this.params = params;
     return this;
   }
@@ -50,12 +50,12 @@ public class WebLogicImageTool {
    */
   public boolean updateImage() {
     // download WIT if it is not in the expected location 
-    if (!downloadWIT()) {
+    if (!downloadWit()) {
       return false;
     } 
    
     // download WDT if it is not in the expected location 
-    if (!downloadWDT()) {
+    if (!downloadWdt()) {
       return false;
     } 
 
@@ -71,27 +71,27 @@ public class WebLogicImageTool {
   
     return Command.withParams(
         defaultCommandParams()
-            .command(buildiWITCommand())
+            .command(buildiWitCommand())
             .env(params.env())
             .redirect(params.redirect()))
         .execute();
   }
   
-  private boolean downloadWIT() {
+  private boolean downloadWit() {
     // install WIT if needed
     return Installer.withParams(
-        defaultInstallWITParams())
+        defaultInstallWitParams())
         .download();
   }
   
-  private boolean downloadWDT() {
+  private boolean downloadWdt() {
     // install WDT if needed
     return Installer.withParams(
-        defaultInstallWDTParams())
+        defaultInstallWdtParams())
         .download();
   } 
 
-  private String buildiWITCommand() {
+  private String buildiWitCommand() {
     String command = 
         IMAGE_TOOL 
         + " update "
@@ -133,7 +133,7 @@ public class WebLogicImageTool {
   }
   
   /**
-   * Add WDT installer to the WebLogic Image Tool cache
+   * Add WDT installer to the WebLogic Image Tool cache.
    * @return true if the command succeeds 
    */
   public boolean addInstaller() {
@@ -152,7 +152,7 @@ public class WebLogicImageTool {
   }
   
   /**
-   * Delete the WDT installer cache entry from the WebLogic Image Tool
+   * Delete the WDT installer cache entry from the WebLogic Image Tool.
    * @return true if the command succeeds
    */
   public boolean deleteEntry() {

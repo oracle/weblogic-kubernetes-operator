@@ -50,15 +50,16 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWITParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
@@ -127,7 +128,7 @@ class ItMiiDomain implements LoggedTest {
    */
   @BeforeAll
   public static void initAll() {
-    // create standard, reusbale retry/backoff policy
+    // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
@@ -558,7 +559,7 @@ class ItMiiDomain implements LoggedTest {
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
 
     // build the model file list
-    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
@@ -566,23 +567,23 @@ class ItMiiDomain implements LoggedTest {
 
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    List<String> archiveList = Collections.singletonList(zipFile);
+    final List<String> archiveList = Collections.singletonList(zipFile);
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap();
+    Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using model directory {2}",
         MII_IMAGE_NAME, imageTag, MODEL_DIR);
-    boolean result = createMIIImage(
-        defaultWITParams()
+    boolean result = createMiiImage(
+        defaultWitParams()
             .modelImageName(MII_IMAGE_NAME)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
-            .wdtVersion("latest")
+            .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
 
