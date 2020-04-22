@@ -8,16 +8,20 @@ package oracle.weblogic.kubernetes.utils;
  * Class that holds the results of using java to exec a command (i.e. exit value, stdout and stderr)
  */
 public class ExecResult {
-  private int exitValue;
-  private String stdout;
-  private String stderr;
+  private final int exitValue;
+  private final String stdout;
+  private final String stderr;
 
-
+  /**
+   * Populate execution result.
+   * @param exitValue Exit value
+   * @param stdout Contents of standard out
+   * @param stderr Contents of standard error
+   */
   public ExecResult(
       int exitValue, 
       String stdout, 
-      String stderr
-  ) {
+      String stderr) {
     this.exitValue = exitValue;
     this.stdout = stdout;
     this.stderr = stderr;
@@ -33,5 +37,14 @@ public class ExecResult {
 
   public String stderr() {
     return this.stderr;
+  }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "ExecResult: exitValue = %s, stdout = %s, stderr = %s", 
+        exitValue, 
+        stdout, 
+        stderr);
   }
 }

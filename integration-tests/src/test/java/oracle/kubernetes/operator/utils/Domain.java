@@ -84,8 +84,8 @@ public class Domain {
   private boolean sslEnabled = false;
   private static final String ADMIN_SERVER_SSL_PORT_KEY = "adminServerSSLPort";
   private static final String MANAGED_SERVER_SSL_PORT_KEY = "managedServerSSLPort";
-  private int adminServerSSLPort;
-  private int managedServerSSLPort;
+  private int adminServerSslPort;
+  private int managedServerSslPort;
 
   public Domain() throws Exception {
     domainMap = new HashMap<String, Object>();
@@ -290,16 +290,16 @@ public class Domain {
    *
    * @throws Exception If an error occurred
    */
-  public List<ExecResult> verifySSLListeners() throws Exception {
+  public List<ExecResult> verifySslListeners() throws Exception {
     List execResults = new ArrayList<ExecResult>(1 + initialManagedServerReplicas);
     // Check admin server's SSL port
-    execResults.add(verifyWebLogicSSLListener(domainUid + "-" + adminServerName, "$ADMIN_SERVER_SSL_PORT"));
+    execResults.add(verifyWebLogicSslListener(domainUid + "-" + adminServerName, "$ADMIN_SERVER_SSL_PORT"));
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server's SSL port
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         LoggerHelper.getLocal().log(Level.INFO,
                 "Checking if managed server's SSL port (" + managedServerNameBase + i + ") is active.");
-        execResults.add(verifyWebLogicSSLListener(domainUid + "-" + managedServerNameBase + i,
+        execResults.add(verifyWebLogicSslListener(domainUid + "-" + managedServerNameBase + i,
                 "$MANAGED_SERVER_SSL_PORT"));
       }
     }
@@ -391,7 +391,7 @@ public class Domain {
   }
 
 
-  private ExecResult verifyWebLogicSSLListener(String podName, String sslPortEnvVariable) throws Exception {
+  private ExecResult verifyWebLogicSslListener(String podName, String sslPortEnvVariable) throws Exception {
     ExecResult execResult = null;
     if (sslEnabled) {
       LoggerHelper.getLocal().log(Level.INFO,
@@ -1896,8 +1896,8 @@ public class Domain {
 
     if (domainMap.containsKey(SSL_ENABLED_KEY)) {
       sslEnabled = ((Boolean) domainMap.getOrDefault(SSL_ENABLED_KEY, Boolean.FALSE)).booleanValue();
-      adminServerSSLPort = ((Integer) domainMap.getOrDefault(ADMIN_SERVER_SSL_PORT_KEY, 7002)).intValue();
-      managedServerSSLPort = ((Integer) domainMap.getOrDefault(MANAGED_SERVER_SSL_PORT_KEY, 8002)).intValue();
+      adminServerSslPort = ((Integer) domainMap.getOrDefault(ADMIN_SERVER_SSL_PORT_KEY, 7002)).intValue();
+      managedServerSslPort = ((Integer) domainMap.getOrDefault(MANAGED_SERVER_SSL_PORT_KEY, 8002)).intValue();
     }
 
     if (exposeAdminT3Channel) {

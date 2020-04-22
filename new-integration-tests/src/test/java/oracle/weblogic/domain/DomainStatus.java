@@ -59,6 +59,11 @@ public class DomainStatus {
     return conditions;
   }
 
+  /**
+   * Adds condition item.
+   * @param conditionsItem Condition
+   * @return this
+   */
   public DomainStatus addConditionsItem(DomainCondition conditionsItem) {
     if (conditions == null) {
       conditions = new ArrayList<>();
@@ -118,6 +123,11 @@ public class DomainStatus {
     return servers;
   }
 
+  /**
+   * Adds servers item.
+   * @param serversItem Server
+   * @return this
+   */
   public DomainStatus addServersItem(ServerStatus serversItem) {
     if (servers == null) {
       servers = new ArrayList<>();
@@ -143,6 +153,11 @@ public class DomainStatus {
     return clusters;
   }
 
+  /**
+   * Adds clusters item.
+   * @param clustersItem Cluster
+   * @return this
+   */
   public DomainStatus addClustersItem(ClusterStatus clustersItem) {
     if (clusters == null) {
       clusters = new ArrayList<>();

@@ -8,13 +8,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import oracle.weblogic.kubernetes.extensions.Timing;
+import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Tag("integration")
-@ExtendWith(Timing.class)
+@ExtendWith(IntegrationTestWatcher.class)
 public @interface IntegrationTest {
 }

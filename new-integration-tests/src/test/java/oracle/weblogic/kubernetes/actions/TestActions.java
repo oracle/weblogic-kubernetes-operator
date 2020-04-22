@@ -33,9 +33,8 @@ import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.WITParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
-
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -67,13 +66,13 @@ public class TestActions {
   /**
    * Makes a REST call to the Operator to scale the domain.
    *
-   * @param domainUID domainUid of the domain
+   * @param domainUid domainUid of the domain
    * @param clusterName cluster in the domain to scale
    * @param numOfServers number of servers to scale upto.
    * @return true on success, false otherwise
    */
-  public static boolean scaleDomain(String domainUID, String clusterName, int numOfServers) {
-    return Operator.scaleDomain(domainUID, clusterName, numOfServers);
+  public static boolean scaleDomain(String domainUid, String clusterName, int numOfServers) {
+    return Operator.scaleDomain(domainUid, clusterName, numOfServers);
   }
 
   /**
@@ -113,62 +112,62 @@ public class TestActions {
   /**
    * Get the Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return Domain Custom Resource or null if Domain does not exist
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUID,
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
       String namespace) throws ApiException {
-    return Domain.getDomainCustomResource(domainUID, namespace);
+    return Domain.getDomainCustomResource(domainUid, namespace);
   }
 
   /**
    * Shutdown the domain.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean shutdown(String domainUID, String namespace) {
-    return Domain.shutdown(domainUID, namespace);
+  public static boolean shutdown(String domainUid, String namespace) {
+    return Domain.shutdown(domainUid, namespace);
   }
 
   /**
    * Restart the domain.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restart(String domainUID, String namespace) {
-    return Domain.restart(domainUID, namespace);
+  public static boolean restart(String domainUid, String namespace) {
+    return Domain.restart(domainUid, namespace);
   }
 
   /**
    * Delete a Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
-    return Domain.deleteDomainCustomResource(domainUID, namespace);
+  public static boolean deleteDomainCustomResource(String domainUid, String namespace) {
+    return Domain.deleteDomainCustomResource(domainUid, namespace);
   }
 
   /**
    * Patch the Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document:
    *     "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
-  public static boolean patchDomainCustomResource(String domainUID, String namespace, V1Patch patch,
+  public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
       String patchFormat) {
-    return Domain.patchDomainCustomResource(domainUID, namespace, patch, patchFormat);
+    return Domain.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 
   // ------------------------   ingress controller ----------------------
@@ -245,9 +244,9 @@ public class TestActions {
    *
    * @return an instance of WITParams that contains the default values
    */
-  public static WITParams defaultWITParams() {
+  public static WitParams defaultWitParams() {
     return
-        WebLogicImageTool.defaultWITParams();
+        WebLogicImageTool.defaultWitParams();
   }
 
   /**
@@ -256,7 +255,7 @@ public class TestActions {
    * @param params - the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
-  public static boolean createMIIImage(WITParams params) {
+  public static boolean createMiiImage(WitParams params) {
     return
         WebLogicImageTool
             .withParams(params)
@@ -444,7 +443,7 @@ public class TestActions {
   public static boolean helmList(HelmParams params) {
     return Helm.list(params);
   }
-  
+
   // ------------------------ Application Builder  -------------------------
 
   /**

@@ -30,6 +30,12 @@ public class ClusterService {
     return labels;
   }
 
+  /**
+   * Puts item in labels map.
+   * @param key Label name
+   * @param labelsItem Label value
+   * @return this
+   */
   public ClusterService putLabelsItem(String key, String labelsItem) {
     if (labels == null) {
       labels = new HashMap<>();
@@ -55,6 +61,12 @@ public class ClusterService {
     return annotations;
   }
 
+  /**
+   * Puts item in annotations map.
+   * @param key Annotation name
+   * @param annotationsItem Annotation value
+   * @return this
+   */
   public ClusterService putAnnotationsItem(String key, String annotationsItem) {
     if (annotations == null) {
       annotations = new HashMap<>();

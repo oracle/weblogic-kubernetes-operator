@@ -12,9 +12,8 @@
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
 
-  <description>Oracle Weblogic Server Kubernetes Operator</description>
+  <description>Oracle WebLogic Server Kubernetes Operator</description>
   <name>operator-runtime</name>
-  <packaging>jar</packaging>
 
   <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
   <inceptionYear>2017</inceptionYear>
@@ -41,7 +40,7 @@
           </execution>
         </executions>
         <configuration>
-          <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+          <dotGitDirectory>${root.basedir}/.git</dotGitDirectory>
           <prefix>git</prefix>
           <verbose>false</verbose>
           <generateGitPropertiesFile>true</generateGitPropertiesFile>
@@ -89,9 +88,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>
-            --illegal-access=permit
-          </argLine>
           <skipTests>${skip.unit.tests}</skipTests>
           <includes>
             <exclude>**/*Test.java</exclude>
@@ -124,11 +120,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <argLine>
-            --illegal-access=permit
-          </argLine>
-        </configuration>
         <executions>
           <execution>
             <goals>
@@ -245,7 +236,6 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>${swagger-core-version}</version>
     </dependency>
     <dependency>
       <groupId>com.kjetland</groupId>
@@ -358,6 +348,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>${junit-version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -391,5 +382,10 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <junit-version>4.13</junit-version>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+  </properties>
 
 </project>
