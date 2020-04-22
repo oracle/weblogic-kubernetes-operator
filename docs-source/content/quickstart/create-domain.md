@@ -26,7 +26,7 @@ weight: 6
        * `domainUID`: `sample-domain1`
        * `image`: Leave empty unless you need to tag the new image that the script builds to a different name.
           For example if you are using a remote cluster that will need to pull the image from a Docker registry, 
-          in which case you should set this value to the fully qualified image name.  Note that you will need to 
+          then you should set this value to the fully qualified image name.  Note that you will need to 
           push the image manually. 
        * `weblogicCredentialsSecretName`: `sample-domain1-weblogic-credentials`
        * `namespace`: `sample-domain1-ns`
