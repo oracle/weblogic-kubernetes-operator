@@ -41,7 +41,7 @@ public class Installer {
    * Create an InstallParams with the default values for WDT.
    * @return an InstallParams instance 
    */
-  public static InstallParams defaultInstallWDTParams() {
+  public static InstallParams defaultInstallWdtParams() {
     return new InstallParams()
         .defaults()
         .type(WDT)
@@ -56,7 +56,7 @@ public class Installer {
    * Create an InstallParams with the default values for WIT.
    * @return an InstallParams instance 
    */
-  public static InstallParams defaultInstallWITParams() {
+  public static InstallParams defaultInstallWitParams() {
     return new InstallParams()
         .defaults()
         .type(WIT)

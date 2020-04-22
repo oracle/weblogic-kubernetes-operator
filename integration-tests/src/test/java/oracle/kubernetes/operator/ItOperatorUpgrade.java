@@ -158,7 +158,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Checks the expected Upgraded Version of CustomResourceDefintion (CRD) 
+   * Checks the expected Upgraded Version of CustomResourceDefintion (CRD).
    *
    * @throws Exception when version does not match
    */
@@ -193,7 +193,7 @@ public class ItOperatorUpgrade extends BaseTest {
   /**
    * Check whether the WebLogic server instances are still RUNNING 
    * not restarted due to Operator Upgrade by comparing the creationTimestamp
-   * before and after upgrade
+   * before and after upgrade.
    *
    * @throws Exception If restarted
    */

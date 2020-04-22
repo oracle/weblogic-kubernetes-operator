@@ -186,7 +186,7 @@ public class HttpClient {
             .request()
             .accept("application/json")
             .header("Authorization", "Basic " + encodedCredentials)
-            .header("X-Requested-By", "Weblogic Operator");
+            .header("X-Requested-By", "WebLogic Operator");
     Response response = invocationBuilder.post(Entity.json(payload));
     LOGGER.finer("Response is  " + response.getStatusInfo());
     String responseString = null;

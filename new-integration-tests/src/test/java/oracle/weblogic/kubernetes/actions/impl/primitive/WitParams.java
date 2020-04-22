@@ -16,8 +16,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
  * Contains the parameters for creating a Docker image using the WebLogic Image Tool.
  *
  */
-
-public class WITParams {
+public class WitParams {
  
   // The name of the Docker image that is used as the base of a new image
   private String baseImageName;
@@ -51,8 +50,12 @@ public class WITParams {
 
   // Whether the output of the command is redirected to system out
   private boolean redirect;
-  
-  public WITParams defaults() {
+
+  /**
+   * Generate default WIT parameters.
+   * @return WIT parameters
+   */
+  public WitParams defaults() {
     this.baseImageName(WLS_BASE_IMAGE_NAME)
         .baseImageTag(WLS_BASE_IMAGE_TAG)
         .modelImageName(DEFAULT_MODEL_IMAGE_NAME)
@@ -61,7 +64,7 @@ public class WITParams {
     return this;
   }
 
-  public WITParams baseImageName(String baseImageName) {
+  public WitParams baseImageName(String baseImageName) {
     this.baseImageName = baseImageName;
     return this;
   }
@@ -70,7 +73,7 @@ public class WITParams {
     return baseImageName;
   }
   
-  public WITParams baseImageTag(String baseImageTag) {
+  public WitParams baseImageTag(String baseImageTag) {
     this.baseImageTag = baseImageTag;
     return this;
   }
@@ -79,7 +82,7 @@ public class WITParams {
     return baseImageTag;
   }
   
-  public WITParams modelImageName(String modelImageName) {
+  public WitParams modelImageName(String modelImageName) {
     this.modelImageName = modelImageName;
     return this;
   }
@@ -88,7 +91,7 @@ public class WITParams {
     return modelImageName;
   }
   
-  public WITParams modelImageTag(String modelImageTag) {
+  public WitParams modelImageTag(String modelImageTag) {
     this.modelImageTag = modelImageTag;
     return this;
   }
@@ -97,7 +100,7 @@ public class WITParams {
     return modelImageTag;
   }
      
-  public WITParams wdtVersion(String wdtVersion) {
+  public WitParams wdtVersion(String wdtVersion) {
     this.wdtVersion = wdtVersion;
     return this;
   }
@@ -106,7 +109,7 @@ public class WITParams {
     return wdtVersion;
   }
 
-  public WITParams domainType(String domainType) {
+  public WitParams domainType(String domainType) {
     this.domainType = domainType;
     return this;
   }
@@ -115,7 +118,7 @@ public class WITParams {
     return domainType;
   }
 
-  public WITParams modelFiles(List<String> modelFiles) {
+  public WitParams modelFiles(List<String> modelFiles) {
     this.modelFiles = modelFiles;
     return this;
   }
@@ -124,7 +127,7 @@ public class WITParams {
     return modelFiles;
   }
 
-  public WITParams modelVariableFiles(List<String> modelVariableFiles) {
+  public WitParams modelVariableFiles(List<String> modelVariableFiles) {
     this.modelVariableFiles = modelVariableFiles;
     return this;
   }
@@ -133,7 +136,7 @@ public class WITParams {
     return modelVariableFiles;
   }
 
-  public WITParams modelArchiveFiles(List<String> modelArchiveFiles) {
+  public WitParams modelArchiveFiles(List<String> modelArchiveFiles) {
     this.modelArchiveFiles = modelArchiveFiles;
     return this;
   }
@@ -146,7 +149,7 @@ public class WITParams {
     return modelImageName + ":" + modelImageTag;
   }
   
-  public WITParams env(Map<String, String> env) {
+  public WitParams env(Map<String, String> env) {
     this.env = env;
     return this;
   }
@@ -155,7 +158,7 @@ public class WITParams {
     return env;
   }
 
-  public WITParams redirect(boolean redirect) {
+  public WitParams redirect(boolean redirect) {
     this.redirect = redirect;
     return this;
   }
