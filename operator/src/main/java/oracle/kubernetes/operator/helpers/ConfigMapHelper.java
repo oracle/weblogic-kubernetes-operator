@@ -77,7 +77,7 @@ public class ConfigMapHelper {
   /**
    * Factory for {@link Step} that deletes introspector config map.
    *
-   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
+   * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
    * @param namespace Namespace
    * @param next Next processing step
    * @return Step for deleting introspector config map

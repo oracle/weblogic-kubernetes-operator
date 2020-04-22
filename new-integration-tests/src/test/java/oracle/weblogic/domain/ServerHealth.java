@@ -74,6 +74,11 @@ public class ServerHealth {
     return subsystems;
   }
 
+  /**
+   * Adds subsystems health item.
+   * @param subsystemsItem Subsystem health
+   * @return this
+   */
   public ServerHealth addSubsystemsItem(SubsystemHealth subsystemsItem) {
     if (subsystems == null) {
       subsystems = new ArrayList<>();

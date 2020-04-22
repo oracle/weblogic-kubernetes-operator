@@ -41,7 +41,7 @@
     </module>
 
     <module name="RegexpHeader">
-        <property name="headerFile" value="build-tools/src/main/resources/weblogic-kubernetes-operator/checkstyle/java.header"/>
+        <property name="headerFile" value="build-tools/checkstyle/java.header"/>
         <property name="fileExtensions" value="java"/>
     </module>
 
