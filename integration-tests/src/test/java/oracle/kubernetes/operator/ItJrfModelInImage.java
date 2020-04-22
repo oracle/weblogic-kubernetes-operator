@@ -146,7 +146,8 @@ public class ItJrfModelInImage extends MiiBaseTest {
   /**
    * Create and deploy a JRF domain using model in image. Save and restore walletFileSecret. After shutting down 
    * the domain, enable walletFileSecret in the domain yaml file. Restart the domain with the modified domain yaml 
-   * file that reuses the same RCU schema. Verify the restarted domain is in the good state.
+   * file that reuses the same RCU schema. Verify in the restarted domain the required pods, services are created 
+   * and the servers are ready.
    */
   @Test
   public void testReuseRCU2Deployments() {
