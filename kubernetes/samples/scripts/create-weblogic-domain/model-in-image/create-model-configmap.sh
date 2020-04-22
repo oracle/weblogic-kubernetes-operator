@@ -26,7 +26,7 @@
 #                              10g of space. Defaults to 
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
-#   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
+#   DOMAIN_NAMESPACE          - defaults to 'sample-domain1-ns'
 #   MODEL_CONFIGMAP_DIR       - defaults to '${WORKDIR}/model-configmap' 
 #                               (a directory populated by stage-model-configmap.sh)
 #

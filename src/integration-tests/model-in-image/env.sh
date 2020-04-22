@@ -14,8 +14,11 @@ DBSAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service"
 
 # ::: Directory for sample's temp files
 #  should have 10GB? of space
-#  default is '/tmp/$USER/model-in-image-sample-work-dir
+#  default is '/tmp/$USER/model-in-image-sample-work-dir'
 export WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+
+# ::: Additional sample env vars.
+#  see 'env-custom.sh' in the sample directory/
 
 # ::: Operator settings
 #  Defaults are 'sample-weblogic-operator', '${OPER_NAME}-ns', '${OPER_NAME}-sa', 'weblogic-kubernetes-operator', and 'test'

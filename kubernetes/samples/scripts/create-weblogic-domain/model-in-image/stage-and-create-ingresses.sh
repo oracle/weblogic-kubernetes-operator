@@ -25,9 +25,6 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
-echo "@@ Info: DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE"
-echo "@@ Info: DOMAIN_UID=$DOMAIN_UID"
-
 cluster_name=cluster-1
 cluster_service_name=${DOMAIN_UID}-cluster-${cluster_name}
 cluster_service_name=$(tr [A-Z_] [a-z-] <<< $cluster_service_name)
@@ -38,21 +35,37 @@ admin_service_name=${DOMAIN_UID}-${admin_name}
 admin_service_name=$(tr [A-Z_] [a-z-] <<< $admin_service_name)
 admin_ingress_yaml=traefik-ingress-console-${admin_service_name}.yaml
 
-mkdir -p $WORKDIR
-
-function kubehost() {
+function get_kube_address() {
   kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
 }
 
+function get_sample_host() {
+  tr [A-Z_] [a-z-] <<< ${DOMAIN_UID}.mii-sample.org
+}
+
+function get_curl_command() {
+  echo "curl -s -S -m 10 -H 'host: $(get_sample_host)'"
+}
+
+function timestamp() {
+  date --utc '+%Y-%m-%dT%H:%M:%S'
+}
+
+mkdir -p $WORKDIR/ingresses
+
 echo "@@"
-echo "@@ Info: Staging ingress yaml for the WebLogic cluster to 'WORKDIR/${cluster_ingress_yaml}'"
+echo "@@ Info: Staging ingress yaml for the WebLogic cluster to 'WORKDIR/ingresses/${cluster_ingress_yaml}'"
 
-if [ -e  ${WORKDIR}/${cluster_ingress_yaml} ]; then
+if [ -e  ${WORKDIR}/ingresses/${cluster_ingress_yaml} ]; then
+  save_file=${WORKDIR}/ingresses/old/${cluster_ingress_yaml}.$(timestamp)
+  mkdir -p $(dirname $save_file)
   echo "@@"
-  echo "@@ Notice: Skipping stage operation! Target file already exists."
-else
+  echo "@@ Notice! An old version of ingress yaml already exists and will be replaced."
+  echo "@@ Notice! Saving old version of the domain resource file to the 'WORKDIR/ingresses/old' directory.'"
+  cp ${WORKDIR}/ingresses/${cluster_ingress_yaml} ${save_file}
+fi
 
-cat << EOF > ${WORKDIR}/${cluster_ingress_yaml}
+cat << EOF > ${WORKDIR}/ingresses/${cluster_ingress_yaml}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -64,7 +77,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host:
+  - host: $(get_sample_host)
     http:
       paths:
       - path: 
@@ -74,17 +87,21 @@ spec:
 
 EOF
 
-fi
+# TBD add doc reference to Info that discusses the necessary browser extensions and/or /etc/hosts changes to make this work!
 
 echo "@@"
-echo "@@ Info: Staging ingress yaml for the admin server console to 'WORKDIR/${admin_ingress_yaml}"
+echo "@@ Info: Staging ingress yaml for the admin server console to 'WORKDIR/ingresses/${admin_ingress_yaml}'."
 
-if [ -e ${WORKDIR}/${admin_ingress_yaml} ]; then
+if [ -e  ${WORKDIR}/ingresses/${admin_ingress_yaml} ]; then
+  save_file=${WORKDIR}/ingresses/old/${admin_ingress_yaml}.$(timestamp)
+  mkdir -p $(dirname $save_file)
   echo "@@"
-  echo "@@ Notice: Skipping stage operation! Target file already exists."
-else
+  echo "@@ Notice! An old version of ingress yaml already exists and will be replaced."
+  echo "@@ Notice! Saving old version of the domain resource file to the 'WORKDIR/ingresses/old' directory.'"
+  cp ${WORKDIR}/ingresses/${admin_ingress_yaml} ${save_file}
+fi
 
-cat << EOF > ${WORKDIR}/${admin_ingress_yaml}
+cat << EOF > ${WORKDIR}/ingresses/${admin_ingress_yaml}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -96,7 +113,7 @@ metadata:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-  - host:
+  - host: $(get_sample_host)
     http:
       paths:
       - path: /console
@@ -106,31 +123,27 @@ spec:
 
 EOF
 
-fi
-
 echo "@@"
 echo "@@ Info: Creating traefik ingresses."
 echo "@@"
 
-kubectl delete -f ${WORKDIR}/${cluster_ingress_yaml} --ignore-not-found
-kubectl apply  -f ${WORKDIR}/${cluster_ingress_yaml}
+kubectl delete -f ${WORKDIR}/ingresses/${cluster_ingress_yaml} --ignore-not-found
+kubectl apply  -f ${WORKDIR}/ingresses/${cluster_ingress_yaml}
 
-kubectl delete -f ${WORKDIR}/${admin_ingress_yaml} --ignore-not-found
-kubectl apply  -f ${WORKDIR}/${admin_ingress_yaml}
+kubectl delete -f ${WORKDIR}/ingresses/${admin_ingress_yaml} --ignore-not-found
+kubectl apply  -f ${WORKDIR}/ingresses/${admin_ingress_yaml}
 
-echo "@@"
-echo "@@ Info: When the Traefik operator and WebLogic domain are both running:"
-echo ""
-echo "   - the WebLogic console should be available at"
-echo "        'http://$(hostname).$(dnsdomainname):30305/console'"
-echo "     or"
-echo "        'http://$(kubehost):30305/console' (weblogic/welcome1)."
-echo ""
-echo "   - the sample app should be available at"
-echo "        'http://$(hostname).$(dnsdomainname):30305/sample_war/index.jsp'"
-echo "     or"
-echo "        'http://$(kubehost):30305/sample_war/index.jsp'"
-echo ""
-echo "@@"
-echo "@@ Info: Traefik ingress staging and creation complete!"
+cat << EOF
+@@
+@@ Info: If the Traefik operator and WebLogic domain are both running, then the sample app should respond to one or both of:
 
+  $(get_curl_command) http://$(hostname).$(dnsdomainname):30305/sample_war/index.jsp
+
+                        - or -
+
+  $(get_curl_command) http://$(get_kube_address):30305/sample_war/index.jsp
+
+@@
+@@ Info: Traefik ingress staging and creation complete!
+@@
+EOF

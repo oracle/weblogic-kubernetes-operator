@@ -13,7 +13,7 @@
 # Defaults can optionally be changed via env vars:
 #
 #   DOMAIN_UID       : sample-domain1
-#   DOMAIN_NAMESPACE : DOMAIN_UID-ns
+#   DOMAIN_NAMESPACE : sample-domain1-ns
 #   WALLET_FILE      : ./ewallet.p12
 #   WALLET_SECRET    : DOMAIN_UID-opss-walletfile-secret
 #
@@ -28,7 +28,7 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 [ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
 
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 WALLET_FILE=${WALLET_FILE:-./ewallet.p12}
 WALLET_SECRET=${WALLET_SECRET:-${DOMAIN_UID}-opss-walletfile-secret}
 
@@ -37,9 +37,9 @@ cat << EOF
 
   Usage: 
 
-    $(basename $0) -s [-wf wallet-file-name] 
-    $(basename $0) -r [-wf wallet-file-name] [-ws wallet-file-secret]
-    $(basename $0) -s -r [-wf wallet-file-name] [-ws wallet-file-secret]
+    $(basename $0) -s [-wf wallet-file-name] [-d domain-uid] [-n namespace]
+    $(basename $0) -r [-wf wallet-file-name] [-ws wallet-file-secret] [-d domain-uid] [-n namespace]
+    $(basename $0) -s -r [-wf wallet-file-name] [-ws wallet-file-secret] [-d domain-uid] [-n namespace]
 
     Save an OPSS key wallet from a running domain's introspector configmap
     to a file, and/or restore an OPSS key wallet file to a Kubernetes secret
@@ -48,10 +48,10 @@ cat << EOF
   Parameters:
 
     -d   <domain-uid>   Domain UID. 
-                        Default is '\$DOMAIN_UID' if set, '-sample-domain1' otherwise.
+                        Default is '\$DOMAIN_UID' if set, 'sample-domain1' otherwise.
 
     -n   <namespace>    Kubernetes namespace. 
-                        Default is '\$DOMAIN_NAMESPACE' if set, 'DOMAIN_UID-ns' otherwise.
+                        Default is '\$DOMAIN_NAMESPACE' if set, 'sample-domain1-ns' otherwise.
 
     -s                  Save an OPSS wallet file from an introspector
                         configmap to a file. (See also '-wf'.)

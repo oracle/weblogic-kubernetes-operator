@@ -23,8 +23,10 @@ m_image="${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-v1}"
 trace "Running end to end MII sample test."
 
 DRY_RUN=false
-DO_CLEAN=true
+DO_CLEAN=false
 DO_DB=false
+DO_OPER=false
+DO_TRAEFIK=false
 DO_MAIN=true
 DO_UPDATE=true
 WDT_DOMAIN_TYPE=WLS
@@ -36,16 +38,24 @@ function usage() {
 
   Optional args:
 
+    -jrf      : Run in JRF mode instead of WLS mode. 
+
     -dry      : Dry run - show but don't do.
 
-    -noclean  : Do not pre-delete MII image '$m_image', call
-                'cleanup.sh', or delete WORKDIR.
-                (Reuses artifacts from previous run.)
-
-    -jrf      : Run in JRF mode instead of WLS mode.
-                Note: this forces DB deployment.
+    -clean    : Call cleanup.sh, pre-delete MII image
+                '$m_image', and delete WORKDIR.
+                (Reuses artifacts from previous run, if any.)
+                IMPORTANT: This implicitly enables '-oper' and '-traefik'.
 
     -db       : Deploy Oracle DB. 
+
+    -oper     : Build and deploy Operator. This
+                operator will monitor 'DOMAIN_NAMESPACE'
+                which defaults to 'sample-domain1-ns'.
+
+    -traefik  : Deploy Traefik. This will monitor
+                'DOMAIN_NAMESPACE' which defaults 
+                to 'sample-domain1-ns'.
 
     -nomain   : Skip main test.
 
@@ -59,9 +69,14 @@ EOF
 while [ ! -z "${1:-}" ]; do
   case "${1}" in
     -dry)       DRY_RUN="true" ;;
-    -noclean)   DO_CLEAN="false" ;;
+    -clean)     DO_CLEAN="true" 
+                DO_OPER="true"
+                DO_TRAEFIK="true"
+                ;;
     -db)        DO_DB="true" ;;
-    -jrf)       WDT_DOMAIN_TYPE="JRF"; DO_DB="true"; ;;
+    -oper)      DO_OPER="true" ;;
+    -traefik)   DO_TRAEFIK="true" ;;
+    -jrf)       WDT_DOMAIN_TYPE="JRF"; ;;
     -nomain)    DO_MAIN="false" ;;
     -noupdate)  DO_UPDATE="false" ;;
     -?)         usage; exit 0; ;;
@@ -94,6 +109,8 @@ if [ "$DO_CLEAN" = "true" ]; then
       trace "Info: Forcing model image rebuild by removing old docker image '$m_image'!"
       docker image rm $m_image
     fi
+  else
+    echo "dryrun: [ ! -z "$(docker images -q $m_image)" ] && docker image rm $m_image"
   fi
 fi
 
@@ -114,7 +131,9 @@ doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
 # Build pre-req (operator)
 #
 
-doCommand  "\$TESTDIR/build-wl-operator.sh" 
+if [ "$DO_OPER" = "true" ]; then
+  doCommand  "\$TESTDIR/build-wl-operator.sh" 
+fi
 
 #
 # Deploy pre-reqs (db, traefik, operator)
@@ -131,9 +150,13 @@ if [ "$DO_DB" = "true" ]; then
   fi
 fi
 
-doCommand  "\$TESTDIR/deploy-wl-operator.sh"
-doCommand  "\$TESTDIR/deploy-traefik.sh"
+if [ "$DO_OPER" = "true" ]; then
+  doCommand  "\$TESTDIR/deploy-wl-operator.sh"
+fi
 
+if [ "$DO_TRAEFIK" = "true" ]; then
+  doCommand  "\$TESTDIR/deploy-traefik.sh"
+fi
 
 #
 # Deploy initial domain, wait for its pods to be ready, and test its cluster app
@@ -153,7 +176,7 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 
   # Cheat to speedup a subsequent roll/shutdown.
-  diefast
+  [ ! "$DRY_RUN" = "true" ] && diefast
 
   [ ! "$DRY_RUN" = "true" ] && testapp internal "Hello World!"
   [ ! "$DRY_RUN" = "true" ] && testapp traefik  "Hello World!"
@@ -194,7 +217,7 @@ if [ "$DO_UPDATE" = "true" ]; then
   doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
 
   # Cheat to speedup a subsequent roll/shutdown.
-  diefast
+  [ ! "$DRY_RUN" = "true" ] && diefast
 
   [ ! "$DRY_RUN" = "true" ] && testapp internal "mynewdatasource"
   [ ! "$DRY_RUN" = "true" ] && testapp traefik  "mynewdatasource"

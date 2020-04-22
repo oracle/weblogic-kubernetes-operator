@@ -15,7 +15,7 @@ function usage() {
     $(basename $0) [-n mynamespace] [-d mydomainuid] -s mysecretname [-l key1=val1] [-l key2=val2] [-f key=fileloc ]...
   
     -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-    -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
+    -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
     -s <secret-name>    : Name of secret. Required.
     -l <key-value-pair> : Secret 'literal' key/value pair, for example '-l password=abc123'.
                           Can be specified more than once. 
@@ -35,7 +35,7 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 [ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
 
 DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
-NAMESPACE="${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}"
+NAMESPACE="${DOMAIN_NAMESPACE:-sample-domain1-ns}"
 SECRET_NAME=""
 LITERALS=""
 FILENAMES=""

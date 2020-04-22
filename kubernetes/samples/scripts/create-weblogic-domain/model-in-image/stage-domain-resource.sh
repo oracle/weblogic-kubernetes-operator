@@ -5,9 +5,11 @@
 #
 # This is an example of how to configure a model-in-image domain resource.
 #
-# This script creates '$WORKDIR/k8s-domain.yaml' from a template.
+# This script creates '$WORKDIR/mii-$DOMAIN_UID.yaml' from a template.
 #
-# Warning!!: '$WORKDIR/k8s-domain.yaml' is overwritten if it already exists.
+# Warning!!
+#    '$WORKDIR/mii-$DOMAIN_UID.yaml' is overwritten if it already
+#     exists, and the old file is copied into '$WORKDIR/mii-domain-saved/'.
 #
 # Optional environment variables (see custom-env.sh for details):
 #
@@ -16,7 +18,7 @@
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   CUSTOM_DOMAIN_NAME       - default 'domain1'.
 #   DOMAIN_UID               - default 'sample-domain1'
-#   DOMAIN_NAMESPACE         - default '${DOMAIN_UID}-ns'
+#   DOMAIN_NAMESPACE         - default 'sample-domain1-ns'
 #   MODEL_IMAGE_NAME         - default 'model-in-image'
 #   MODEL_IMAGE_TAG          - default 'v1'
 #   WDT_DOMAIN_TYPE          - WLS (default), RestrictedJRF, or JRF
@@ -27,7 +29,7 @@
 #                              by the model file in this config map.
 #
 #   DOMAIN_RESOURCE_TEMPLATE - use as the domain resource template
-#     default 'sample-domain-resource/k8s-domain.yaml.template-WDT_DOMAIN_TYPE'
+#     default 'sample-domain-resource/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
 
 set -eu
 set -o pipefail
@@ -51,17 +53,17 @@ function timestamp() {
   date --utc '+%Y-%m-%dT%H:%M:%S'
 }
 
-domain_resource_file=${WORKDIR}/k8s-domain.yaml
+domain_resource_file=${WORKDIR}/mii-${DOMAIN_UID}.yaml
 
 echo "@@"
-echo "@@ Info: Creating domain resource file 'WORKDIR/k8s-domain.yaml' from 'DOMAIN_RESOURCE_TEMPLATE'"
+echo "@@ Info: Creating domain resource file 'WORKDIR/mii-${DOMAIN_UID}.yaml' from 'DOMAIN_RESOURCE_TEMPLATE'"
 
 if [ -e "${domain_resource_file}" ]; then
-  save_file=${WORKDIR}/k8s-domain-saved/k8s-domain.yaml.$(timestamp)
+  save_file=${WORKDIR}/mii-domain-saved/mii-${DOMAIN_UID}.yaml.$(timestamp)
   mkdir -p $(dirname $save_file)
   echo "@@"
   echo "@@ Notice! An old version of the domain resource file already exists and will be replaced."
-  echo "@@ Notice! Saving old version of the domain resource file to 'WORKDIR/k8s-domain-saved/$(basename $save_file)'."
+  echo "@@ Notice! Saving old version of the domain resource file to 'WORKDIR/mii-domain-saved/$(basename $save_file)'."
   cp ${domain_resource_file} ${save_file}
 fi
 

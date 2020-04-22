@@ -17,7 +17,7 @@
 
 # export DOMAIN_NAMESPACE=
 # ::: Domain Namespace
-#  Default is '${DOMAIN_UID}-ns'.
+#  Default is 'sample-domain1-ns'.
 
 # export CUSTOM_DOMAIN_NAME=
 # ::: WebLogic Domain Name
@@ -64,11 +64,12 @@
 #  Defaults to 'v1'. See MODEL_IMAGE_NAME for more info.
 
 # export MODEL_DIR=
-# ::: Location of staged model files.
+# ::: Location of staged model files for the model image.
 #  Location of staged model .zip, .properties, and .yaml files that are
 #  copied into the model image by the './build-model-image.sh' script.
-#  Default is 'WORKDIR/model' which is populated by the 
-#  './stage-model-image.sh' script.
+#  Default is:
+#   'WORKDIR/model/image--$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}'
+#  which is populated by the './stage-model-image.sh' script.
 
 # export INCLUDE_MODEL_CONFIGMAP
 # ::: Tell sample to include a configuration.model.configMap
@@ -116,6 +117,6 @@
 # ::: Domain resource template
 #  Used by './stage-domain-resource.sh' as a template for generating a domain
 #  resource yaml file in WORKDIR. Defaults to 
-#  'sample-domain-resource/k8s-domain.yaml.template-WDT_DOMAIN_TYPE'
+#  'sample-domain-resource/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
 
 # TBD add DB_NAMESPACE (used for setting up the DB urls), can the DB port change?

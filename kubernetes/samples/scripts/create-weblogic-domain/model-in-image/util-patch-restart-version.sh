@@ -16,7 +16,7 @@ function usage() {
     $(basename $0) [-n mynamespace] [-d mydomainuid]
   
     -d <domain_uid>     : Default is \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-    -n <namespace>      : Default is \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
+    -n <namespace>      : Default is \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
     -?                  : This help.
    
 EOF
@@ -28,7 +28,7 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 [ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
 
 DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
-DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}"
+DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-sample-domain1-ns}"
 
 while [ ! "$1" = "" ]; do
   if [ ! "$1" = "-?" ] && [ "$2" = "" ]; then
@@ -63,8 +63,18 @@ echo "@@ Info: Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}
 kubectl -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
   -p='[{"op": "replace", "path": "/spec/restartVersion", "value": "'${nextRV}'" }]'
 
-echo "@@"
-echo "@@ Info: Domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' successfully patched!"
-echo "@@"
-echo "@@ Info: To monitor the domain's pods, call 'kubectl -n ${DOMAIN_NAMESPACE} get pods --watch=true --show-labels=true'. Expect the operator to restart the domain's pods until all of them have label 'weblogic.domainRestartVersion=\"$nextRV\"."
-echo "@@"
+cat << EOF
+@@
+@@ Info: Domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' successfully patched!"
+
+   To wait until pods start and/or get their status:
+
+      kubectl get pods -n ${DOMAIN_NAMESPACE} --watch
+       # (ctrl-c once all pods are running and ready)
+             -or-
+      'SCRIPTDIR/util-wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'
+
+   Expect the operator to restart the domain's pods until all of them have label 'weblogic.domainRestartVersion=\"$nextRV\"."
+
+@@ Done.
+EOF

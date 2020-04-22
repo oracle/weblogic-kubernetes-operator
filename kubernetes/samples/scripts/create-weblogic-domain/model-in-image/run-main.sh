@@ -96,7 +96,7 @@ if [ "${INCLUDE_MODEL_CONFIGMAP:-false}" = "true" ]; then
 fi
 
 #######################################################################
-# Stage a domain resource to 'WORKDIR/k8s-domain.yaml'.
+# Stage a domain resource to 'WORKDIR/mii-DOMAIN_UID.yaml'.
 
 $SCRIPTDIR/stage-domain-resource.sh
 

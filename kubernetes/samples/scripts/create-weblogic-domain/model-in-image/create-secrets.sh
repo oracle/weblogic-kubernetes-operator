@@ -11,7 +11,7 @@
 #                              10g of space. Defaults to 
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
-#   DOMAIN_NAMESPACE          - defaults to '${DOMAIN_UID}-ns'
+#   DOMAIN_NAMESPACE          - defaults to 'sample-domain1-ns'
 #   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
 #   DB_NAMESPACE              - default (default)
 #   INCLUDE_MODEL_CONFIGMAP   - 'true' if sample is deploying its
@@ -47,7 +47,7 @@ kubectl -n $DOMAIN_NAMESPACE get secret $sname > /dev/null 2>&1
 errcode=$?
 set -e
 if [ $errcode -eq 0 ]; then
-  echo "@@ Info: Skipping creation of the 'model runtime encryption secret because the secret already exists and must stay the same for the life of the model's domain resource."
+  echo "@@ Info: Skipping deletion and recreation of the 'model runtime encryption secret because the secret already exists and must stay the same for the life of the model's domain resource."
 else
   echo "@@ Info: Creating model runtime encryption secret"
   $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-runtime-encryption-secret \

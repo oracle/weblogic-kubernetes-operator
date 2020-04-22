@@ -17,7 +17,7 @@ function usage() {
                 [-f filename_or_dir] [-f filename_or_dir] ...
   
   -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-  -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
+  -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
   -c <configmap-name> : Name of configmap. Required.
   -f <filename_or_dir>: File or directory location. Can be specified more than once. 
                         Key will be the file-name(s), value will be file contents. Required.
@@ -31,7 +31,7 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 [ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
 
 DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
-DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}"
+DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-sample-domain1-ns}"
 CONFIGMAP_NAME=""
 FILENAMES=""
 

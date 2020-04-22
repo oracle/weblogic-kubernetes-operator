@@ -19,7 +19,7 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 [ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
 
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
 expected=0
 timeout_secs=600
@@ -48,7 +48,7 @@ function usage() {
   Parameters:
 
     -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-    -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'DOMAIN_UID-ns' otherwise.
+    -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
     -p <pod-count>      : Number of pods to wait for. Default is '$expected'.
     -t <timeout-secs>   : Defaults to '$timeout_secs'.
     -v                  : Verbose. Show wl pods and introspector job state as when they change.
@@ -154,7 +154,7 @@ while [ 1 -eq 1 ]; do
     fi
   fi
 
-  currentImage=$(kubectl -n sample-domain1-ns get domain sample-domain1 -o=jsonpath='{.spec.image}' 2>&1)
+  currentImage=$(kubectl -n sample-domain1-ns get domain ${DOMAIN_UID} -o=jsonpath='{.spec.image}' 2>&1)
   if [ $? -ne 0 ]; then
     if [ $expected -ne 0 ]; then
       echo "@@ Error: Could not obtain 'spec.image' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed?"
@@ -195,7 +195,8 @@ while [ 1 -eq 1 ]; do
         -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
         | wc -l ) 
 
-    out_str="Waiting for WebLogic server pod count to reach '0'"
+    lead_string="Waiting up to $timeout_secs there to be no (0) WebLogic server pods that match the following criteria:"
+    criteria="namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
 
   else
 
@@ -210,7 +211,8 @@ while [ 1 -eq 1 ]; do
         | grep "$regex" | wc -l )
     set -e
 
-    out_str="Waiting for exactly '$expected' WebLogic server pods to reach ready='true', image='$currentImage', and domainRestartVersion='$currentRV'"
+    lead_string="Waiting up to $timeout_secs seconds for exactly '$expected' WebLogic server pods to reach the following criteria:"
+    criteria="ready='true' image='$currentImage' domainRestartVersion='$currentRV' namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
 
   fi
 
@@ -219,17 +221,16 @@ while [ 1 -eq 1 ]; do
   # goal, exit non-zero if we've reached our time-out.
   #
 
-  out_str+=", ns=$DOMAIN_NAMESPACE"
-  out_str+=", domainUID=$DOMAIN_UID"
-  out_str+=", timeout_secs='$timeout_secs'"
-  out_str+=", cur_pods='$cur_pods'"
-  out_str+=", cur_seconds='$SECONDS'"
 
   if [ "$verbose" = "false" ]; then
     if [ $reported -eq 0 ]; then
-      echo -n "@@ Info: $out_str:"
-      reported=1
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
+      for criterion in $criteria; do
+        echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
+      done
+      echo -n "@@ [$(timestamp)][seconds=$SECONDS] Info: Current pods that match the above criteria ="
       echo -n " $cur_pods"
+      reported=1
       last_pod_count_secs=$SECONDS
   
     elif [ $((SECONDS - last_pod_count_secs)) -gt $report_interval ] \
@@ -252,7 +253,12 @@ while [ 1 -eq 1 ]; do
        || [ $((SECONDS - last_pod_count_secs)) -gt $report_interval ] \
        || [ $cur_pods -eq $expected ]; then
       echo
-      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $out_str. Current Weblogic server and introspector pods:"
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
+      for criterion in $criteria; do
+        echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
+      done
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Current pods that match the above criteria = $cur_pods."
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Current Weblogic server and introspector pods:"
       echo
       cat $tmpfilecur
       cp $tmpfilecur $tmpfileorig
@@ -262,17 +268,17 @@ while [ 1 -eq 1 ]; do
 
   if [ $cur_pods -eq $expected ]; then
     if [ ! "$verbose" = "true" ]; then
-      echo -n ". "
+      echo ". "
     else
-      echo -n "@@ "
+      echo
     fi
-    echo "Success! Total seconds=$SECONDS."
+    echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Success!"
     exit 0
   fi
 
   if [ $SECONDS -ge $timeout_secs ]; then
     echo
-    echo "@@ Error: Timeout waiting $out_str."
+    echo "@@ [$(timestamp)][seconds=$SECONDS] Error: Timeout after waiting more than $timeout_secs seconds."
     exit 1
   fi
 

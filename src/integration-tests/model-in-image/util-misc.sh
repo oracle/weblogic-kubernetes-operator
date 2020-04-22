@@ -41,6 +41,7 @@ function testapp() {
   set +e
   set -u
 
+
   if [ "$1" = "internal" ]; then
     local cluster_name=cluster-1
     local cluster_service_name=${DOMAIN_UID:-sample-domain1}-cluster-${cluster_name}
@@ -49,11 +50,12 @@ function testapp() {
     local admin_service_name=${DOMAIN_UID:-sample-domain1}-${admin_name}
     local admin_service_name=$(tr [A-Z_] [a-z-] <<< $admin_service_name)
     local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
-    local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S -m 5 http://$cluster_service_name:8001/sample_war/index.jsp\""
+    local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S -m 10 http://$cluster_service_name:8001/sample_war/index.jsp\""
 
   elif [ "$1" = "traefik" ]; then
-    local kube_host=$(kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;')
-    local command="curl -s -S -m 5 http://$kube_host:30305/sample_war/index.jsp"
+    local sample_host="$(tr [A-Z_] [a-z-] <<< ${DOMAIN_UID:-sample-domain1}.mii-sample.org)"
+    local kube_address=$(kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;')
+    local command="curl -s -S -m 10 -H 'host: $sample_host' http://$kube_address:30305/sample_war/index.jsp"
 
   else
     echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"

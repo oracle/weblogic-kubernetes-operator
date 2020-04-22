@@ -24,12 +24,12 @@ if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
 fi
 
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 CUSTOM_DOMAIN_NAME=${CUSTOM_DOMAIN_NAME:-domain1}
 
 MODEL_CONFIGMAP_DIR=${MODEL_CONFIGMAP_DIR:-$WORKDIR/model-configmap}
 
-DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/sample-domain-resource/k8s-domain.yaml.template-$WDT_DOMAIN_TYPE}"
+DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/sample-domain-resource/mii-domain.yaml.template-$WDT_DOMAIN_TYPE}"
 
 DB_NAMESPACE=${DB_NAMESPACE:-default}
 
@@ -52,15 +52,18 @@ MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
 MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
-MODEL_DIR=${MODEL_DIR:-$WORKDIR/model}
+MODEL_DIR=${MODEL_DIR:-$WORKDIR/model/image--$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}}
 
 INCLUDE_MODEL_CONFIGMAP=${INCLUDE_MODEL_CONFIGMAP:-false}
 
 echo "@@"
 echo "@@ ######################################################################"
-echo "@@ Info: Running '$(basename "$0")'."
+[ $# -eq 0 ] && echo "@@ Info: Running '$(basename "$0")'"
+[ $# -ne 0 ] && echo "@@ Info: Running '$(basename "$0") $@'"
 echo "@@ Info: WORKDIR='$WORKDIR'."
 echo "@@ Info: SCRIPTDIR='$SCRIPTDIR'."
+echo "@@ Info: DOMAIN_UID='$DOMAIN_UID'."
+echo "@@ Info: DOMAIN_NAMESPACE='$DOMAIN_NAMESPACE'."
 
 #
 # fail if WDT domain type changed since last invoke

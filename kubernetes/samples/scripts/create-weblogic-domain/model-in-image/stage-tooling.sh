@@ -59,7 +59,7 @@ download_zip() {
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
     echo "@@ Info: The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
     local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
-    curl -fL $LOCATION -o $tempfile
+    curl -m 30 -fL $LOCATION -o $tempfile
     LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
     rm -f $tempfile
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
@@ -67,7 +67,7 @@ download_zip() {
   fi
 
   rm -f $ZIPFILE
-  curl -fL $LOCATION -o $ZIPFILE
+  curl -m 30 -fL $LOCATION -o $ZIPFILE
 }
 
 download_zip weblogic-deploy-tooling.zip $WDT_INSTALLER_URL DOWNLOAD_WDT

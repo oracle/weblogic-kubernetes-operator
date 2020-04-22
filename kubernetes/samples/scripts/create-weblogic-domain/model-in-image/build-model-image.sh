@@ -16,9 +16,8 @@
 #      the WebLogic Deploy Tool zip is 'WORKDIR/weblogic-deploy-tooling.zip'
 #      (see './stage-tooling.sh').
 #
-#    - Model files have been staged in the 'WORKDIR/model' directory
-#      (see './stage-model-image.sh') or MODEL_DIR has been explicitly set to
-#      point to a different location.
+#    - Model files have been staged in the MODEL_DIR directory
+#      (by './stage-model-image.sh' or some custom process).
 #
 #  Optional environment variables:
 #
@@ -28,8 +27,9 @@
 #
 #    MODEL_DIR:
 #      Location of the model .zip, .properties, and .yaml files
-#      that will be copied to the model image.  Default is 'WORKDIR/model'
-#      which is populated by the './stage-model-image.sh' script.
+#      that will be copied to the model image.  Default is:
+#        'WORKDIR/model/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'
+#      which is usually populated by the './stage-model-image.sh' script.
 #
 #    MODEL_IMAGE_BUILD:
 #      Set to 'when-changed' (default) or 'always'. Default behavior is to
@@ -58,15 +58,8 @@ source $SCRIPTDIR/env-init.sh
 
 cd ${WORKDIR}
 
-MODEL_YAML_FILES="$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
-MODEL_ARCHIVE_FILES="$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"
-MODEL_VARIABLE_FILES="$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
-
 echo @@ Info: WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 echo @@ Info: MODEL_DIR=${MODEL_DIR}
-echo @@ Info: MODEL_YAML_FILES=${MODEL_YAML_FILES}
-echo @@ Info: MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
-echo @@ Info: MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
 echo @@ Info: BASE_IMAGE_NAME=${BASE_IMAGE_NAME}
 echo @@ Info: BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
 echo @@ Info: MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
@@ -84,6 +77,19 @@ if [ ! "$MODEL_IMAGE_BUILD" = "always" ] \
   echo "@@"
   exit 0
 fi
+
+if [ ! -d "$MODEL_DIR" ]; then
+  echo "@@ Error: MODEL_DIR directory not found. Did you remember to stage it first?"
+  exit 1
+fi
+
+MODEL_YAML_FILES="$(ls $MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
+MODEL_ARCHIVE_FILES="$(ls $MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"
+MODEL_VARIABLE_FILES="$(ls $MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
+
+echo @@ Info: MODEL_YAML_FILES=${MODEL_YAML_FILES}
+echo @@ Info: MODEL_ARCHIVE_FILES=${MODEL_ARCHIVE_FILES}
+echo @@ Info: MODEL_VARIABLE_FILES=${MODEL_VARIABLE_FILES}
 
 echo @@
 echo @@ Info: Setting up imagetool and populating its cache with the WDT installer
