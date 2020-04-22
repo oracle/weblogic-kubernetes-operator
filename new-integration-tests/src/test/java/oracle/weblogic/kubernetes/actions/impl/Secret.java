@@ -19,18 +19,7 @@ public class Secret {
   public static boolean create(V1Secret secret) throws ApiException {
     return Kubernetes.createSecret(secret);
   }
-
-  /**
-   * Read a Kubernetes Secret.
-   *
-   * @param secret V1Secret object containing Kubernetes secret configuration data
-   * @return true if secret exists
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean read(String secretName, String namespace) throws ApiException {
-    return Kubernetes.readSecret(secretName, namespace);
-  }
-
+  
   /**
    * Delete a Kubernetes Secret.
    *

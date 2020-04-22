@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-//import javax.json.stream.JsonParser;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.openapi.ApiException;
@@ -68,7 +67,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.readSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
@@ -226,23 +224,27 @@ class ItMiiDomain implements LoggedTest {
     }
 
     // Create the repo secret to pull the image
-    createRepoSecret(domainNamespace);
+    assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
+            String.format("createSecret failed for %s", repoSecretName));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createDomainSecret(adminSecretName,"weblogic", "welcome1", domainNamespace);
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
+            "welcome1", domainNamespace),
+            String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    createDomainSecret(encryptionSecretName, "weblogicenc", "weblogicenc", domainNamespace);
+    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
+            "weblogicenc", domainNamespace),
+             String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
     int adminNodePort = 30711;
     createDomainResource(domainUID, domainNamespace, adminSecretName, repoSecretName,
             encryptionSecretName, adminNodePort, replicaCount);
-
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
@@ -323,18 +325,23 @@ class ItMiiDomain implements LoggedTest {
             String.format("Operator upgrade failed in namespace %s", opNamespace));
     logger.info("Operator upgraded in namespace {0}", opNamespace);
 
-    //create repo secret to pull the image
-    createRepoSecret(domainNamespace1);
+    // Create the repo secret to pull the image
+    assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
+            String.format("createSecret failed for %s", repoSecretName));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = domainUID1 + "-weblogic-credentials";
-    createDomainSecret(adminSecretName, "weblogic", "welcome2", domainNamespace1);
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
+            "welcome2", domainNamespace1),
+            String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecretdomain2";
-    createDomainSecret(encryptionSecretName, "weblogicencdomain2", "weblogicencdomain2", domainNamespace1);
+    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicencdomain2",
+            "weblogicencdomain2", domainNamespace1),
+             String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
     int adminNodePort = 30712;
@@ -401,19 +408,23 @@ class ItMiiDomain implements LoggedTest {
     final String managedServerPrefix = domainUID + "-managed-server";
     final int replicaCount = 2;
 
-    // Create the V1Secret configuration
-    logger.info("Create secret for repo so image can be pulled");
-    createRepoSecret(domainNamespace1);
+    // Create the repo secret to pull the image
+    assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
+            String.format("createSecret failed for %s", repoSecretName));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = domainUID + "-weblogic-credentials";
-    createDomainSecret(adminSecretName, "weblogic", "welcome3", domainNamespace1);
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
+            "welcome3", domainNamespace1),
+            String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecretdomain3";
-    createDomainSecret(encryptionSecretName, "weblogicencdomain3", "weblogicencdomain3", domainNamespace1);
+    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicencdomain3",
+            "weblogicencdomain3", domainNamespace1),
+             String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
     int adminNodePort = 30714;
@@ -584,7 +595,7 @@ class ItMiiDomain implements LoggedTest {
     return MII_IMAGE_NAME + ":" + imageTag;
   }
 
-  public void createRepoSecret(String domNamespace) {
+  public void createRepoSecret(String domNamespace) throws ApiException {
     V1Secret repoSecret = new V1Secret()
             .metadata(new V1ObjectMeta()
                     .name(repoSecretName)
@@ -592,29 +603,27 @@ class ItMiiDomain implements LoggedTest {
             .type("kubernetes.io/dockerconfigjson")
             .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
-
-    boolean secretExists = false;
+    boolean secretCreated = false;
     try {
-      secretExists = readSecret(repoSecretName, domNamespace);
-    } catch (ApiException apie) {
-      //do nothing - failed because secret does not exist yet - have to create
+      secretCreated = createSecret(repoSecret);
+    } catch (ApiException e) {
+      System.err.println("Exception when calling CoreV1Api#createNamespacedSecret");
+      System.err.println("Status code: " + e.getCode());
+      System.err.println("Reason: " + e.getResponseBody());
+      System.err.println("Response headers: " + e.getResponseHeaders());
+      //409 means that the secret already exists - it is not an error, so can proceed
+      if (e.getCode() != 409) {
+        throw e;
+      } else {
+        secretCreated = true;
+      }
+
     }
-
-
-    //boolean secretExists = assertTrue(assertDoesNotThrow(() -> readSecret(repoSecretName, domNamespace),
-    //        String.format("secret %s does not exist in %s", repoSecretName, domNamespace)),
-    //        String.format("secret %s does not exist in %s\", repoSecretName, domNamespace));
-
-    if (!secretExists) {
-      logger.info("reposecret for namespace %s does not exist. Create one", domNamespace);
-      boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-              String.format("createSecret failed for %s", repoSecretName));
-      assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
-    }
-
+    assertTrue(secretCreated, String.format("create secret failed for %s", repoSecretName));
   }
 
-  public void createDomainSecret(String secretName, String username, String password, String domNamespace) {
+  public void createDomainSecret(String secretName, String username, String password, String domNamespace)
+          throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
     secretMap.put("password", password);
@@ -624,6 +633,7 @@ class ItMiiDomain implements LoggedTest {
                     .namespace(domNamespace))
             .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+
   }
 
   public void createDomainResource(String domainUID, String domNamespace, String adminSecretName,
@@ -738,4 +748,5 @@ class ItMiiDomain implements LoggedTest {
     configJsonObject.add("auths", registryObject);
     return configJsonObject;
   }
+
 }
