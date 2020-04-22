@@ -12,6 +12,7 @@
 # See 'usage()' below for the command line and other details.
 #
 
+
 set -eu
 set -o pipefail
 
@@ -22,7 +23,10 @@ DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
 expected=0
-timeout_secs=600
+
+timeout_secs_def=600
+timeout_secs=$timeout_secs_def
+
 syntax_error=false
 verbose=false
 report_interval=10
@@ -33,10 +37,15 @@ function usage() {
 
   Usage:
 
-  $(basename $0) [-n mynamespace] [-d mydomainuid] [-p pod_count] [-t timeout_secs ] [-v]
+    $(basename $0) 
+       [-n mynamespace] 
+       [-d mydomainuid] 
+       [-p expected_pod_count]
+       [-t timeout_secs]
+       [-v]
 
     pod_count > 0: Wait until exactly 'pod_count' WebLogic server pods for a domain
-                   are all (a) ready, (b) have the same domainRestartVersion
+                   are all (a) ready, (b) have the same domain resource 'spec.restartVersion'
                    as the current domain resource's domainRestartVersion, (c)
                    have the same image as the current domain resource's image.
 
@@ -49,13 +58,14 @@ function usage() {
 
     -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
     -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
-    -p <pod-count>      : Number of pods to wait for. Default is '$expected'.
-    -t <timeout-secs>   : Defaults to '$timeout_secs'.
-    -v                  : Verbose. Show wl pods and introspector job state as when they change.
+    -p <pod-count>      : Number of pods to wait for. Default is '0'.
+    -t <timeout-secs>   : Defaults to '$timeout_secs_def'.
+    -v                  : Verbose. Show wl pods and introspector job state as they change.
     -?                  : This help.
 
 EOF
 }
+
 
 while [ ! "${1:-}" = "" ]; do
   if [ ! "$1" = "-?" ] && [ ! "$1" = "-v" ] && [ "${2:-}" = "" ]; then
@@ -101,14 +111,73 @@ function timestamp() {
   date --utc '+%Y-%m-%dT%H:%M:%S'
 }
 
-tempfile() {
+function tempfile() {
   mktemp /tmp/$(basename "$0").$PPID.$(timestamp).XXXXXX
+}
+
+# prints a formatted table from the data in file $1, this assumes:
+#   - delimiter is 'space'
+#   - all rows have same number of columns
+#   - first row is column headers
+function print_table() {
+  file=$1
+
+  rm -f $tmpfiletab
+
+  # first, get the column widths and number of columns
+  # we don't use arrays since this needs to work in Mac's ancient bash
+  local coltot=0
+  cat $file | while read line; do
+    local colcur=0
+    for token in $line; do
+      colcur=$((colcur + 1))
+      curvar=colwidth$colcur
+      eval "local $curvar=\$((${#token} > ${!curvar:-0} ? ${#token} : ${!curvar:-0}))"
+      echo "local $curvar=${!curvar}" >> $tmpfiletab
+    done
+    echo "local coltot=$colcur" >> $tmpfiletab
+  done
+
+  source $tmpfiletab
+
+  # now build the printfexp and separator
+  local colcur=1
+  local printfexp=""
+  local separator=""
+  while [ $colcur -le $coltot ]; do
+    local curvar=colwidth$colcur
+    local width=$(( ${!curvar} ))
+
+    printfexp="${printfexp}%-$((width))s  "
+
+    local pos=0
+    while [ $pos -lt $width ]; do
+      separator="$separator-"
+      pos=$((pos + 1))
+    done
+    separator="$separator "
+
+    colcur=$((colcur+1))
+  done
+  printfexp="${printfexp}\n"
+
+  # now print the table
+  local row=1
+  cat $file | while read line; do
+    printf "$printfexp" $line
+    if [ $row -eq 1 ]; then
+      printf "$printfexp" $separator
+    fi
+    row=$((row + 1))
+  done
 }
 
 tmpfileorig=$(tempfile)
 tmpfilecur=$(tempfile)
+tmpfiletmp=$(tempfile)
+tmpfiletab=$(tempfile)
 
-trap "rm -f $tmpfileorig $tmpfilecur" EXIT
+trap "rm -f $tmpfileorig $tmpfilecur $tmpfiletmp $tmpfiletab" EXIT
 
 cur_pods=0
 reported=0
@@ -116,22 +185,26 @@ last_pod_count_secs=$SECONDS
 origRV="--not-known--"
 origImage="--not-known--"
 
-# be careful! if changing jpath, then it must correspond with the regex below
+# col_headers must line up with the jpath
+col_headers="NAME VERSION IMAGE READY PHASE"
+
+# be careful! if changing jpath, then it must
+# correspond with the regex below and col_headers above
+
 jpath=''
 jpath+='{range .items[*]}'
   jpath+='{" name="}'
-  jpath+='{.metadata.name}'
+  jpath+='{";"}{.metadata.name}{";"}'
   jpath+='{" domainRestartVersion="}'
-  jpath+='{.metadata.labels.weblogic\.domainRestartVersion}'
+  jpath+='{";"}{.metadata.labels.weblogic\.domainRestartVersion}{";"}'
   jpath+='{" image="}'
-  jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].image}'
+  jpath+='{";"}{.status.containerStatuses[?(@.name=="weblogic-server")].image}{";"}'
   jpath+='{" ready="}'
-  jpath+='{.status.containerStatuses[?(@.name=="weblogic-server")].ready}'
+  jpath+='{";"}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{";"}'
   jpath+='{" phase="}'
-  jpath+='{.status.phase}'
+  jpath+='{";"}{.status.phase}{";"}'
   jpath+='{"\n"}'
 jpath+='{end}'
-
 
 # Loop until we reach the desired pod count for pods at the desired restart version, or
 # until we reach the timeout.
@@ -200,9 +273,9 @@ while [ 1 -eq 1 ]; do
 
   else
 
-    regex="domainRestartVersion=$currentRV"
-    regex+=" image=$currentImage"
-    regex+=" ready=true"
+    regex="domainRestartVersion=;$currentRV;"
+    regex+=" image=;$currentImage;"
+    regex+=" ready=;true;"
 
     set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
     cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
@@ -252,15 +325,30 @@ while [ 1 -eq 1 ]; do
     if [ ! $diff_res -eq 0 ] \
        || [ $((SECONDS - last_pod_count_secs)) -gt $report_interval ] \
        || [ $cur_pods -eq $expected ]; then
+
+      if [ $reported -eq 0 ]; then
+        echo
+        echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
+        for criterion in $criteria; do
+          echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
+        done
+        echo
+        reported=1
+      fi
+
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: '$cur_pods' WebLogic pods currently match all criteria, expecting '$expected'."
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Introspector and WebLogic pods with same namespace and domain-uid:"
       echo
-      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: $lead_string"
-      for criterion in $criteria; do
-        echo "@@ [$(timestamp)][seconds=$SECONDS] Info:   $criterion"
-      done
-      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Current pods that match the above criteria = $cur_pods."
-      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Current Weblogic server and introspector pods:"
+
+      # print results as a table
+      #  - first strip out the var= and replace with "val". 
+      #  - note that the quotes are necessary so that 'print_table' 
+      #    doesn't get confused by col entries that are missing values
+      echo $col_headers > $tmpfiletmp
+      cat $tmpfilecur | sed "s|[^ ]*=;\([^;]*\);|'\1'|g" >> $tmpfiletmp
+      print_table $tmpfiletmp
       echo
-      cat $tmpfilecur
+   
       cp $tmpfilecur $tmpfileorig
       last_pod_count_secs=$SECONDS
     fi
