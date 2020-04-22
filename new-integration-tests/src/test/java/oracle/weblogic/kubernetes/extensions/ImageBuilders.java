@@ -33,21 +33,24 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
      * before running their tests.
      */
     if (!started.getAndSet(true)) {
-      // Only the first thread will enter this block.
+      try {
+        // Only the first thread will enter this block.
 
-      logger.info("Building docker Images before any integration test classes are run");
-      context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
+        logger.info("Building docker Images before any integration test classes are run");
+        context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
 
-      // build operator image
-      String operatorImage = Operator.getImageName();
-      logger.info("Operator image name {0}", operatorImage);
-      assertFalse(true);
-      /* assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
-      assertTrue(Operator.buildImage(operatorImage)); */
-
-      // Initialization is done. Release all waiting other threads. The latch is now disabled so other threads
-      // arriving later will immediately proceed.
-      initializationLatch.countDown();
+        // build operator image
+        String operatorImage = Operator.getImageName();
+        logger.info("Operator image name {0}", operatorImage);
+        assertFalse(true);
+        /* assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
+        assertTrue(Operator.buildImage(operatorImage)); */
+      } finally {
+        // Initialization is done. Release all waiting other threads. The latch is now disabled so
+        // other threads
+        // arriving later will immediately proceed.
+        initializationLatch.countDown();
+      }
     } else {
       // Other threads will enter here and wait on the latch. Once the latch is released, any threads arriving
       // later will immediately proceed.
