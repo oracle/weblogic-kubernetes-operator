@@ -67,6 +67,11 @@ public class SubsystemHealth {
     return symptoms;
   }
 
+  /**
+   * Adds symptoms item.
+   * @param symptomsItem Symptom
+   * @return this
+   */
   public SubsystemHealth addSymptomsItem(String symptomsItem) {
     if (symptoms == null) {
       symptoms = new ArrayList<>();

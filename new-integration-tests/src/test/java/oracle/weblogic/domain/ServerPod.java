@@ -130,6 +130,11 @@ public class ServerPod {
     return env;
   }
 
+  /**
+   * Adds env item.
+   * @param envItem Environment item
+   * @return this
+   */
   public ServerPod addEnvItem(V1EnvVar envItem) {
     if (env == null) {
       env = new ArrayList<>();
@@ -155,6 +160,12 @@ public class ServerPod {
     return labels;
   }
 
+  /**
+   * Puts labels item.
+   * @param key Label name
+   * @param labelsItem Label value
+   * @return this
+   */
   public ServerPod putLabelsItem(String key, String labelsItem) {
     if (labels == null) {
       labels = new HashMap<>();
@@ -180,6 +191,12 @@ public class ServerPod {
     return annotations;
   }
 
+  /**
+   * Puts annotations item.
+   * @param key Annotation name
+   * @param annotationsItem Annotation value
+   * @return this
+   */
   public ServerPod putAnnotationsItem(String key, String annotationsItem) {
     if (annotations == null) {
       annotations = new HashMap<>();
@@ -239,6 +256,12 @@ public class ServerPod {
     return nodeSelector;
   }
 
+  /**
+   * Puts node selector item.
+   * @param key Node selector name
+   * @param nodeSelectorItem Node selector value
+   * @return this
+   */
   public ServerPod putNodeSelectorItem(String key, String nodeSelectorItem) {
     if (nodeSelector == null) {
       nodeSelector = new HashMap<>();
@@ -298,6 +321,11 @@ public class ServerPod {
     return readinessGates;
   }
 
+  /**
+   * Adds readiness gate item.
+   * @param readinessGateItem Readiness gate
+   * @return this
+   */
   public ServerPod addReadinessGatesItem(V1PodReadinessGate readinessGateItem) {
     if (readinessGates == null) {
       readinessGates = new ArrayList<>();
@@ -391,6 +419,11 @@ public class ServerPod {
     return tolerations;
   }
 
+  /**
+   * Adds tolerations item.
+   * @param tolerationsItem Toleration
+   * @return this
+   */
   public ServerPod addTolerationsItem(V1Toleration tolerationsItem) {
     if (tolerations == null) {
       tolerations = new ArrayList<>();
@@ -467,6 +500,11 @@ public class ServerPod {
     return initContainers;
   }
 
+  /**
+   * Adds init containers item.
+   * @param initContainersItem Init container
+   * @return this
+   */
   public ServerPod addInitContainersItem(V1Container initContainersItem) {
     if (initContainers == null) {
       initContainers = new ArrayList<>();
@@ -492,6 +530,11 @@ public class ServerPod {
     return containers;
   }
 
+  /**
+   * Adds containers item.
+   * @param containersItem Container
+   * @return this
+   */
   public ServerPod addContainersItem(V1Container containersItem) {
     if (containers == null) {
       containers = new ArrayList<>();
@@ -551,6 +594,11 @@ public class ServerPod {
     return volumes;
   }
 
+  /**
+   * Adds volumes item.
+   * @param volumesItem Volume
+   * @return this
+   */
   public ServerPod addVolumesItem(V1Volume volumesItem) {
     if (volumes == null) {
       volumes = new ArrayList<>();
@@ -576,6 +624,11 @@ public class ServerPod {
     return volumeMounts;
   }
 
+  /**
+   * Adds volume mounts item.
+   * @param volumeMountsItem Volume mount
+   * @return this
+   */
   public ServerPod addVolumeMountsItem(V1VolumeMount volumeMountsItem) {
     if (volumeMounts == null) {
       volumeMounts = new ArrayList<>();

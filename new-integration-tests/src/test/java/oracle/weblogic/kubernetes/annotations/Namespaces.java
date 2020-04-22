@@ -14,5 +14,9 @@ import java.lang.annotation.Target;
 @Target({ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Namespaces {
+  /**
+   * Gets the value of the number of namespaces required.
+   * @return integer value of the number of namespaces required
+   */
   int value() default 0;
 }

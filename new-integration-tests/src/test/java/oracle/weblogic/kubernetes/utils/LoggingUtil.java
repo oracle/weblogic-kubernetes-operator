@@ -32,8 +32,8 @@ public class LoggingUtil {
   /**
    * Collect logs for artifacts in Kubernetes cluster for current running test object. This method can be called
    * anywhere in the test by passing the test instance object and list namespaces.
-   * <p>
-   * The collected logs are written in the LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP directory.
+   * 
+   * <p>The collected logs are written in the LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP directory.
    *
    * @param itInstance the integration test instance
    * @param namespaces list of namespaces used by the test instance

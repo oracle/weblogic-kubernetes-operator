@@ -42,6 +42,11 @@ public class AdminService {
     return channels;
   }
 
+  /**
+   * Adds item to channels list.
+   * @param channelsItem Channel item
+   * @return this
+   */
   public AdminService addChannelsItem(Channel channelsItem) {
     if (channels == null) {
       channels = new ArrayList<>();
@@ -67,6 +72,12 @@ public class AdminService {
     return labels;
   }
 
+  /**
+   * Puts item in labels map.
+   * @param key Label key name
+   * @param labelsItem Label value
+   * @return this
+   */
   public AdminService putLabelsItem(String key, String labelsItem) {
     if (labels == null) {
       labels = new HashMap<>();
@@ -92,6 +103,12 @@ public class AdminService {
     return Collections.unmodifiableMap(annotations);
   }
 
+  /**
+   * Put annotation map item.
+   * @param key Annotation key
+   * @param annotationsItem Annotation value
+   * @return this
+   */
   public AdminService putAnnotationsItem(String key, String annotationsItem) {
     if (annotations == null) {
       annotations = new HashMap<>();

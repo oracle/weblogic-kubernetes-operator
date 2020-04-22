@@ -559,17 +559,17 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete the Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
+  public static boolean deleteDomainCustomResource(String domainUid, String namespace) {
 
-    KubernetesApiResponse<Domain> response = crdClient.delete(namespace, domainUID);
+    KubernetesApiResponse<Domain> response = crdClient.delete(namespace, domainUid);
 
     if (!response.isSuccess()) {
       logger.warning(
-          "Failed to delete Domain Custom Resource '" + domainUID + "' from namespace: "
+          "Failed to delete Domain Custom Resource '" + domainUid + "' from namespace: "
           + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
@@ -586,12 +586,12 @@ public class Kubernetes implements LoggedTest {
   /**
    * Get the Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return domain custom resource or null if Domain does not exist
    * @throws ApiException if Kubernetes request fails
    */
-  public static Domain getDomainCustomResource(String domainUID, String namespace)
+  public static Domain getDomainCustomResource(String domainUid, String namespace)
       throws ApiException {
     Object domain;
     try {
@@ -600,7 +600,7 @@ public class Kubernetes implements LoggedTest {
           DOMAIN_VERSION, // //custom resource's version
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
-          domainUID // custom object's name
+          domainUid // custom object's name
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
@@ -611,28 +611,28 @@ public class Kubernetes implements LoggedTest {
       return handleResponse(domain, Domain.class);
     }
 
-    logger.warning("Domain Custom Resource '" + domainUID + "' not found in namespace " + namespace);
+    logger.warning("Domain Custom Resource '" + domainUid + "' not found in namespace " + namespace);
     return null;
   }
 
   /**
-   * Patch the Domain Custom Resource using JSON Patch.  JSON Patch is a format for describing
-   * changes to a JSON document using a series of operations.  JSON Patch is specified in RFC 6902
-   * from the IETF. For example, the following operation will replace the "spec.restartVersion" to a
-   * value of "2".
+   * Patch the Domain Custom Resource using JSON Patch.JSON Patch is a format for describing changes to a JSON document
+   * using a series of operations. JSON Patch is specified in RFC 6902 from the IETF. For example, the following
+   * operation will replace the "spec.restartVersion" to a value of "2".
    *
-   *    [
+   * <p>[
    *      {"op": "replace", "path": "/spec/restartVersion", "value": "2" }
    *    ]
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @param patchString JSON Patch document as a String
+   * @return true if patch is successful otherwise false
    */
-  public static boolean patchCustomResourceDomainJsonPatch(String domainUID, String namespace,
+  public static boolean patchCustomResourceDomainJsonPatch(String domainUid, String namespace,
       String patchString) {
     return patchDomainCustomResource(
-        domainUID, // name of custom resource domain
+        domainUid, // name of custom resource domain
         namespace, // name of namespace
         new V1Patch(patchString), // patch data
         V1Patch.PATCH_FORMAT_JSON_PATCH // "application/json-patch+json" patch format
@@ -640,25 +640,23 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Patch the Domain Custom Resource using JSON Merge Patch.  JSON Merge Patch is a format for describing
-   * a changed version to a JSON document.  JSON Merge Patch is specified in RFC 7396
-   * from the IETF. For example, the following JSON object fragment would add/replace the
-   * "spec.restartVersion" to a value of "1".
+   * Patch the Domain Custom Resource using JSON Merge Patch.JSON Merge Patch is a format for describing a changed
+   * version to a JSON document. JSON Merge Patch is specified in RFC 7396 from the IETF. For example, the following
+   * JSON object fragment would add/replace the "spec.restartVersion" to a value of "1".
    *
-   *    {
-   *      "spec" : {
-   *        "restartVersion" : "1"
+   * <p>{
+   *      "spec" : { "restartVersion" : "1" }
    *    }
-   * }
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @param patchString JSON Patch document as a String
+   * @return true if patch is successful otherwise false
    */
-  public static boolean patchCustomResourceDomainJsonMergePatch(String domainUID, String namespace,
+  public static boolean patchCustomResourceDomainJsonMergePatch(String domainUid, String namespace,
       String patchString) {
     return patchDomainCustomResource(
-        domainUID, // name of custom resource domain
+        domainUid, // name of custom resource domain
         namespace, // name of namespace
         new V1Patch(patchString), // patch data
         V1Patch.PATCH_FORMAT_JSON_MERGE_PATCH // "application/merge-patch+json" patch format
@@ -668,27 +666,27 @@ public class Kubernetes implements LoggedTest {
   /**
    * Patch the Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document:
    *     "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
-  public static boolean patchDomainCustomResource(String domainUID, String namespace,
+  public static boolean patchDomainCustomResource(String domainUid, String namespace,
       V1Patch patch, String patchFormat) {
 
     // GenericKubernetesApi uses CustomObjectsApi calls
     KubernetesApiResponse<Domain> response = crdClient.patch(
         namespace, // name of namespace
-        domainUID, // name of custom resource domain
+        domainUid, // name of custom resource domain
         patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
         patch // patch data
     );
 
     if (!response.isSuccess()) {
       logger.warning(
-          "Failed to patch " + domainUID + " in namespace " + namespace + " using patch format: "
+          "Failed to patch " + domainUid + " in namespace " + namespace + " using patch format: "
               + patchFormat);
       return false;
     }
