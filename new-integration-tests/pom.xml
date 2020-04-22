@@ -267,7 +267,7 @@
                         </goals>
                         <configuration>
                             <skip>${skipITs}</skip>
-                            <executable>../buildDockerImage.sh</executable>
+                            <executable>build_push_operator_image.sh</executable>
                         </configuration>
                     </execution>
                 </executions>

@@ -48,6 +48,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -84,14 +87,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain and start the domain")
 @ExtendWith(Timing.class)
 class ItMiiDomain implements LoggedTest {
-
-  // operator constants
-  private static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
-  private static final String OPERATOR_CHART_DIR =
-      "../kubernetes/charts/weblogic-operator";
-  private static final String OPERATOR_IMAGE =
-      "oracle/weblogic-kubernetes-operator:3.0.0";
-  //"phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop";
 
   // mii constants
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
@@ -157,7 +152,7 @@ class ItMiiDomain implements LoggedTest {
     OperatorParams opParams =
         new OperatorParams()
             .helmParams(opHelmParams)
-            .image(OPERATOR_IMAGE)
+            .image(OPERATOR_IMAGE_NAME)
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
