@@ -23,7 +23,7 @@ public class Docker {
   }
 
   /**
-   * Push an image to a registry
+   * Push an image to a registry.
    * @param image image
    * @return true if successfull
    */

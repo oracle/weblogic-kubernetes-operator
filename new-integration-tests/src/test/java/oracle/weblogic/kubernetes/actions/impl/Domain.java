@@ -31,50 +31,50 @@ public class Domain {
     return Kubernetes.listDomains(namespace);
   }
 
-  public static boolean shutdown(String domainUID, String namespace) {
+  public static boolean shutdown(String domainUid, String namespace) {
     return true;
   }
 
-  public static boolean restart(String domainUID, String namespace) {
+  public static boolean restart(String domainUid, String namespace) {
     return true;
   }
 
   /**
    * Delete a Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
-  public static boolean deleteDomainCustomResource(String domainUID, String namespace) {
-    return Kubernetes.deleteDomainCustomResource(domainUID, namespace);
+  public static boolean deleteDomainCustomResource(String domainUid, String namespace) {
+    return Kubernetes.deleteDomainCustomResource(domainUid, namespace);
   }
 
   /**
    * Get a Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @return domain custom resource or null if Domain does not exist
    * @throws ApiException if Kubernetes request fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUID,
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
       String namespace) throws ApiException {
-    return Kubernetes.getDomainCustomResource(domainUID, namespace);
+    return Kubernetes.getDomainCustomResource(domainUid, namespace);
   }
 
   /**
    * Patch the Domain Custom Resource.
    *
-   * @param domainUID unique domain identifier
+   * @param domainUid unique domain identifier
    * @param namespace name of namespace
    * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document:
    *     "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
-  public static boolean patchDomainCustomResource(String domainUID, String namespace, V1Patch patch,
+  public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
       String patchFormat) {
-    return Kubernetes.patchDomainCustomResource(domainUID, namespace, patch, patchFormat);
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 }

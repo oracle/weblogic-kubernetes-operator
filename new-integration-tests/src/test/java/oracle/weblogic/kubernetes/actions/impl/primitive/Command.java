@@ -39,6 +39,10 @@ public class Command {
     return this;
   }
 
+  /**
+   * Executes command.
+   * @return true, on success
+   */
   public boolean execute() {
     logger.info("Executing command {0}", params.command());
     try {
@@ -46,12 +50,19 @@ public class Command {
           params.command(), 
           params.redirect(),
           params.env());
-      if (result.exitValue() != 0) {
-        logger.warning("The command execution failed with the result: {0}", result);
+      if (params.saveResults()) {
+        params.stdout(result.stdout());
+        params.stderr(result.stderr());
       }
+
+      // check exitValue to determine if the command execution has failed.
+      if (result.exitValue() != 0) {
+        logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+      } 
+
       return result.exitValue() == 0;
     } catch (IOException | InterruptedException ie) {
-      logger.warning("The command execution failed due to {0}", ie.getMessage());
+      logger.severe("The command execution failed", ie);
       return false;
     }
   }
