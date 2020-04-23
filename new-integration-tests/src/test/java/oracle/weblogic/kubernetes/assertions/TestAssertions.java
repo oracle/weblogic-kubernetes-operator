@@ -31,28 +31,28 @@ public class TestAssertions {
   /**
    * Check if Traefik is running.
    *
-   * @param namespace in which the traefik is running
-   * @return true if running false otherwise
+   * @param namespace in which to check if Traefik is running
+   * @return true if Traefik is running, false otherwise
    */
   public static Callable<Boolean> isTraefikRunning(String namespace) {
     return Traefik.isRunning(namespace);
   }
 
   /**
-   * Check if Traefik is ready.
+   * Check if there are ready Traefik pods in the specified namespace.
    *
-   * @param namespace in which the traefik is running
-   * @return true if the traefik is ready, false otherwise
+   * @param namespace in which to check if Traefik pods are in the ready state
+   * @return true if there are ready Traefik pods in the specified namespace , false otherwise
    */
   public static Callable<Boolean> isTraefikReady(String namespace) {
     return Traefik.isReady(namespace);
   }
 
   /**
-   * Check if operator Rest service is running.
+   * Check if operator REST service is running.
    *
-   * @param namespace in which the operator rest service exists
-   * @return true if rest service is running otherwise false
+   * @param namespace in which the operator REST service exists
+   * @return true if REST service is running otherwise false
    */
   public static Callable<Boolean> operatorRestServiceRunning(String namespace) throws ApiException {
     return () -> {

@@ -9,10 +9,10 @@ import java.util.concurrent.Callable;
 public class Traefik {
 
   /**
-   * Check if the traefik pod is running in a given namespace.
+   * Check if the Traefik pod is running in a given namespace.
    *
-   * @param namespace in which the traefik pod is running
-   * @return true if the traefik pod is running, false otherwise
+   * @param namespace in which to check if the Traefik pod is running
+   * @return true if the Traefik pod is running, false otherwise
    */
   public static Callable<Boolean> isRunning(String namespace) {
     return () -> {
@@ -21,10 +21,10 @@ public class Traefik {
   }
 
   /**
-   * Check if the traefik is ready in a given namespace.
+   * Check if the Traefik is ready in a given namespace.
    *
-   * @param namespace in which the traefik pod is running
-   * @return true if the traefik pod is ready, false otherwise
+   * @param namespace in which to check the Traefik pod is ready
+   * @return true if the Traefik pod is in the ready state, false otherwise
    */
   public static Callable<Boolean> isReady(String namespace) {
     return () -> {

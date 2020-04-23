@@ -55,7 +55,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
@@ -70,8 +69,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.getExpectedResult;
-import static oracle.weblogic.kubernetes.actions.TestActions.getIngress;
+import static oracle.weblogic.kubernetes.actions.TestActions.getIngressList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallIngress;
@@ -85,6 +83,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.TestUtils.runCmdAndCheckResultContainsString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
@@ -131,7 +131,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   private final int replicaCount = 2;
 
   /**
-   * Install Operator and Traefik.
+   * Install operator and Traefik.
    */
   @BeforeAll
   public static void initAll() {
@@ -143,7 +143,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
     // install and verify operator
     installAndVerifyOperator();
 
-    // install and verify traefik
+    // install and verify Traefik
     installAndVerifyTraefik();
   }
 
@@ -174,14 +174,14 @@ class ItSimpleTraefikValidation implements LoggedTest {
       repoPassword = System.getenv("REPO_PASSWORD");
       repoEmail = System.getenv("REPO_EMAIL");
 
-      logger.info("docker login");
-      assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
+      logger.info("Docker login");
+      assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "Docker login failed");
 
-      logger.info("docker push image {0} to OCIR", miiImage);
-      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
+      logger.info("Docker push image {0} to OCIR", miiImage);
+      assertTrue(dockerPush(miiImage), String.format("Docker push failed for image %s", miiImage));
     }
 
-    // create docker registry secret in the domain namespace to pull the image from OCIR
+    // create Docker registry secret in the domain namespace to pull the image from OCIR
     JsonObject dockerConfigJsonObject = getDockerConfigJson(
         repoUserName, repoPassword, repoEmail, repoRegistry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
@@ -324,7 +324,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   @Order(2)
   @DisplayName("Create an ingress per domain")
   public void testCreateIngress() {
-    // helm install parameters for ingress
+    // Helm install parameters for ingress
     ingressParam = new HelmParams()
             .releaseName(domainUid + "-ingress")
             .namespace(domainNamespace)
@@ -337,7 +337,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
     // check the ingress is created
     String ingressName = domainUid + "-traefik";
-    assertThat(assertDoesNotThrow(() -> getIngress(domainNamespace)))
+    assertThat(assertDoesNotThrow(() -> getIngressList(domainNamespace)))
         .as(String.format("get the ingress %1s in namespace %2s", ingressName, domainNamespace))
         .withFailMessage(String.format("can not get ingress %1s in namespace %2s", ingressName, domainNamespace))
         .contains(ingressName);
@@ -357,7 +357,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
   /**
    * TODO: remove this after Sankar's PR is merged
-   * Uninstall Operator, traefik and ingress, delete service account, domain namespace, traefik namespace and
+   * Uninstall operator, Traefik and ingress, delete service account, domain namespace, Traefik namespace and
    * operator namespace.
    */
   @AfterAll
@@ -374,7 +374,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
     }
 
     // uninstall operator release
-    logger.info("Uninstall Operator in namespace {0}", opNamespace);
+    logger.info("Uninstall operator in namespace {0}", opNamespace);
     if (opHelmParams != null) {
       uninstallOperator(opHelmParams);
     }
@@ -394,7 +394,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
     }
 
     // Delete opNamespace
-    logger.info("Deleting Operator namespace {0}", opNamespace);
+    logger.info("Deleting operator namespace {0}", opNamespace);
     if (opNamespace != null) {
       assertDoesNotThrow(() -> deleteNamespace(opNamespace),
           "deleteNamespace failed with ApiException");
@@ -409,7 +409,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
           .isTrue();
     }
 
-    // uninstall traefik release
+    // uninstall Traefik release
     if (tfHelmParams != null) {
       assertThat(uninstallTraefik(tfHelmParams))
           .as("Test uninstallTraefik returns true")
@@ -417,7 +417,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
           .isTrue();
     }
 
-    // Delete traefik Namespace
+    // Delete Traefik Namespace
     if (tfNamespace != null) {
       assertThatCode(
           () -> deleteNamespace(tfNamespace))
@@ -429,11 +429,11 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * Prepare and install weblogic operator.
+   * Prepare and install WebLogic operator.
    */
   private static void installAndVerifyOperator() {
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Creating unique namespace for operator");
     opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
         "Failed to create unique namespace due to ApiException");
     logger.info("Created a new namespace called {0}", opNamespace);
@@ -453,13 +453,13 @@ class ItSimpleTraefikValidation implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
-    // helm install parameters
+    // Helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
 
-    // Operator chart values to override
+    // operator chart values to override
     OperatorParams opParams =
         new OperatorParams()
             .helmParams(opHelmParams)
@@ -467,20 +467,20 @@ class ItSimpleTraefikValidation implements LoggedTest {
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
-    // install Operator
-    logger.info("Installing Operator in namespace {0}", opNamespace);
+    // install operator
+    logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
-        String.format("Operator install failed in namespace %s", opNamespace));
+        String.format("Failed to install operator in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
-    // list helm releases
-    logger.info("List helm releases in namespace {0}", opNamespace);
+    // list Helm releases
+    logger.info("List Helm releases in namespace {0}", opNamespace);
     String cmd = String.format("helm list -n %s", opNamespace);
-    assertTrue(getExpectedResult(cmd, OPERATOR_RELEASE_NAME),
-        String.format("did not get %1s in namespace %2s", OPERATOR_RELEASE_NAME, opNamespace));
+    assertTrue(runCmdAndCheckResultContainsString(cmd, OPERATOR_RELEASE_NAME),
+        String.format("Did not get %1s in namespace %2s", OPERATOR_RELEASE_NAME, opNamespace));
 
     // check operator is running
-    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
+    logger.info("Check operator pod is running in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for operator to be running in namespace {0} "
@@ -492,17 +492,17 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * Install traefik and wait until the traefik pod is ready.
+   * Install Traefik and wait until the Traefik pod is ready.
    */
   private static void installAndVerifyTraefik() {
 
-    // create a new unique namespace for traefik
+    // create a new unique namespace for Traefik
     logger.info("Creating an unique namespace for Traefil");
     tfNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
         "Fail to create an unique namespace due to ApiException");
     logger.info("Created a new namespace called {0}", tfNamespace);
 
-    // helm install parameters
+    // Helm install parameters
     tfHelmParams = new HelmParams()
         .releaseName("traefik-operator")
         .namespace(tfNamespace)
@@ -522,19 +522,19 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .isTrue();
     logger.info("Traefik is installed in namespace {0}", tfNamespace);
 
-    // verify that the traefik is installed
+    // verify that Traefik is installed
     String cmd = "helm ls -n " + tfNamespace;
-    assertThat(getExpectedResult(cmd, tfHelmParams.getReleaseName()))
-        .as("traefik is installed")
-        .withFailMessage("did not find traefik-operator in " + tfNamespace)
+    assertThat(runCmdAndCheckResultContainsString(cmd, tfHelmParams.getReleaseName()))
+        .as("Traefik is installed")
+        .withFailMessage(String.format("Did not find %1s in %2s", tfHelmParams.getReleaseName(), tfNamespace))
         .isTrue();
 
-    // first wait 30 seconds, then check if the traefik pod is ready.
-    with().pollDelay(30, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
+    // first wait 5 seconds, then check if the Traefik pod is ready.
+    with().pollDelay(5, SECONDS)
+        .and().with().pollInterval(5, SECONDS)
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for traefik to be ready (elapsed time {0}ms, remaining time {1}ms)",
+                "Waiting for Traefik to be ready (elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .await().atMost(5, MINUTES)
@@ -558,7 +558,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * Create a docker image for model in image.
+   * Create a Docker image for model in image.
    *
    * @return image name
    */
@@ -667,13 +667,13 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * Get docker registry configuration json object.
+   * Get Docker registry configuration json object.
    *
-   * @param username username for the docker registry
-   * @param password password for the docker registry
-   * @param email email for the docker registry
-   * @param registry docker registry name
-   * @return json object for the docker registry configuration
+   * @param username username for the Docker registry
+   * @param password password for the Docker registry
+   * @param email email for the Docker registry
+   * @param registry Docker registry name
+   * @return json object for the Docker registry configuration
    */
   private static JsonObject getDockerConfigJson(String username, String password, String email, String registry) {
     JsonObject authObject = new JsonObject();

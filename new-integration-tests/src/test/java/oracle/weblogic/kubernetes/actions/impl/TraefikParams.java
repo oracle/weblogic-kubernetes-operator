@@ -15,7 +15,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 public class TraefikParams {
 
   // only add the values which need to be updated here
-  // the default traefik values are here: https://github.com/helm/charts/blob/master/stable/traefik/values.yaml
+  // the default Traefik values are here: https://github.com/helm/charts/blob/master/stable/traefik/values.yaml
   private static final String NAMESPACES = "kubernetes.namespaces";
 
   // Adding some of the most commonly used params for now

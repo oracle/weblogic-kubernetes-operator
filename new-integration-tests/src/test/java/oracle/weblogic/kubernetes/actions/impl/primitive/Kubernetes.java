@@ -1332,10 +1332,10 @@ public class Kubernetes implements LoggedTest {
   //------------------------ Ingress -------------------------------------------
 
   /**
-   * List the ingress in the namespace.
+   * List the ingresses in the namespace.
    *
-   * @param namespace the namespace which contains the ingress
-   * @return ExtensionsV1beta1IngressList list of the ingress
+   * @param namespace the namespace which contains the ingresses
+   * @return ExtensionsV1beta1IngressList list of the ingresses
    * @throws ApiException if api call throws error
    */
   public static ExtensionsV1beta1IngressList listIngress(String namespace) throws ApiException {

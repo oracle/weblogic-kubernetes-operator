@@ -19,9 +19,9 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
  */
 public class Traefik {
   /**
-   * Install helm chart.
+   * Install Helm chart.
    *
-   * @param params the helm parameters like namespace, release name, repo url or chart dir,
+   * @param params the Helm parameters like namespace, release name, repo url or chart dir,
    *               chart name and chart values to override
    * @return true on success, false otherwise
    */
@@ -30,9 +30,9 @@ public class Traefik {
   }
 
   /**
-   * Upgrade a helm release.
+   * Upgrade a Helm release.
    *
-   * @param params the helm parameters like namespace, release name, repo url or chart dir,
+   * @param params the Helm parameters like namespace, release name, repo url or chart dir,
    *               chart name and chart values to override
    * @return true on success, false otherwise
    */
@@ -41,9 +41,9 @@ public class Traefik {
   }
 
   /**
-   * Uninstall a helm release.
+   * Uninstall a Helm release.
    *
-   * @param params the parameters to helm uninstall command, release name and namespace
+   * @param params the parameters to Helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstall(HelmParams params) {
@@ -51,16 +51,16 @@ public class Traefik {
   }
 
   /**
-   * Create an ingress per domain.
+   * Create an ingress for each domain.
    *
-   * @param params the params to helm install command, releaseName, chartDir and WLS domain namespace
-   * @param domainUID the weblogic domainUID to create the ingress
+   * @param params the params to Helm install command, releaseName, chartDir and WebLogic domain namespace
+   * @param domainUid the WebLogic domainUid to create the ingress
    * @param traefikHostname the hostname for the ingress
    * @return true on success, false otherwise
    */
-  public static boolean createIngress(HelmParams params, String domainUID, String traefikHostname) {
+  public static boolean createIngress(HelmParams params, String domainUid, String traefikHostname) {
     HashMap<String, Object> values = new HashMap();
-    values.put("wlsDomain.domainUID", domainUID);
+    values.put("wlsDomain.domainUID", domainUid);
     values.put("traefik.hostname", traefikHostname);
 
     Helm.install(params, values);
@@ -70,7 +70,7 @@ public class Traefik {
   /**
    * Uninstall the ingress on a wls domain namespace.
    *
-   * @param params the parameters to helm uninstall command, release name and wls domain namespace
+   * @param params the parameters to Helm uninstall command, release name and wls domain namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstallIngress(HelmParams params) {
@@ -78,12 +78,12 @@ public class Traefik {
   }
 
   /**
-   * Get the ingress in the namespace.
+   * Get a list of ingresses in the specified namespace.
    *
-   * @param namespace the namespace which the ingress belongs to
-   * @return true on success, false otherwise
+   * @param namespace the namespace which the ingresses belong to
+   * @return a list of ingresses in the namespace
    */
-  public static List<String> getIngress(String namespace) throws ApiException {
+  public static List<String> getIngressList(String namespace) throws ApiException {
 
     List<String> ingressNames = new ArrayList<>();
     ExtensionsV1beta1IngressList ingressList = Kubernetes.listIngress(namespace);

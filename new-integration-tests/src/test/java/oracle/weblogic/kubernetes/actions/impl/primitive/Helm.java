@@ -17,7 +17,7 @@ public class Helm {
 
   /**
    * Installs a Helm chart.
-   * @param helmParams the parameters to helm install command like namespace, release name,
+   * @param helmParams the parameters to Helm install command like namespace, release name,
    *                   repo url or chart dir, chart name
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
@@ -45,7 +45,7 @@ public class Helm {
             + "repo url, chart name or chart dir must be provided")
         .isFalse();
 
-    //chart reference to be used in helm install
+    //chart reference to be used in Helm install
     String chartRef = helmParams.getChartDir();
 
     // use repo url as chart reference if provided
@@ -61,7 +61,7 @@ public class Helm {
 
     logger.fine("Installing a chart in namespace {0} using chart reference {1}", namespace, chartRef);
 
-    // build helm install command
+    // build Helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
             helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
 
@@ -81,7 +81,7 @@ public class Helm {
 
   /**
    * Upgrade a Helm release.
-   * @param params the parameters to helm install command like namespace, release name,
+   * @param params the parameters to Helm install command like namespace, release name,
    *                   repo url or chart dir, chart name
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
@@ -105,12 +105,12 @@ public class Helm {
         .isNotNull()
         .isNotEmpty();
 
-    //chart reference to be used in helm upgrade
+    //chart reference to be used in Helm upgrade
     String chartDir = params.getChartDir();
 
     logger.fine("Upgrading a release in namespace {0} using chart reference {1}", namespace, chartDir);
 
-    // build helm upgrade command
+    // build Helm upgrade command
     String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s --reuse-values",
         params.getReleaseName(), chartDir, params.getNamespace());
 
@@ -123,7 +123,7 @@ public class Helm {
 
   /**
    * Uninstall a Helm release.
-   * @param params the parameters to helm uninstall command, release name and namespace
+   * @param params the parameters to Helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstall(HelmParams params) {
@@ -163,7 +163,7 @@ public class Helm {
   /**
    * Add a chart repository.
    * @param repoName the name of the repo
-   * @param repoUrl reposiroty url
+   * @param repoUrl repository url
    * @return true on success, false otherwise
    */
   public static boolean addRepo(String repoName, String repoUrl) {

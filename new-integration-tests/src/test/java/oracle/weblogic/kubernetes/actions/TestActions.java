@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions;
 
-import java.util.HashMap;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -36,10 +35,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
-import oracle.weblogic.kubernetes.utils.ExecResult;
-
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -50,7 +45,7 @@ public class TestActions {
   /**
    * Install WebLogic Kubernetes Operator.
    *
-   * @param params operator parameters for helm values
+   * @param params operator parameters for Helm values
    * @return true if the operator is successfully installed, false otherwise.
    */
   public static boolean installOperator(OperatorParams params) {
@@ -60,7 +55,7 @@ public class TestActions {
   /**
    * Upgrade existing Operator release.
    *
-   * @param params operator parameters for helm values
+   * @param params operator parameters for Helm values
    * @return true if the operator is successfully upgraded, false otherwise.
    */
   public static boolean upgradeOperator(OperatorParams params) {
@@ -82,7 +77,7 @@ public class TestActions {
   /**
    * Uninstall the Operator release.
    *
-   * @param params the parameters to helm uninstall command, release name and namespace
+   * @param params the parameters to Helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
 
@@ -179,7 +174,7 @@ public class TestActions {
   /**
    * Install Traefik Operator.
    *
-   * @param params parameters for helm values
+   * @param params parameters for Helm values
    * @return true on success, false otherwise
    */
   public static boolean installTraefik(TraefikParams params) {
@@ -189,19 +184,19 @@ public class TestActions {
   /**
    * Create Traefik Ingress.
    *
-   * @param params the params to helm install command, including release name, chartDir and wls domain namespace
-   * @param domainUID weblogic domainUID to create the ingress
+   * @param params the params to Helm install command, including release name, chartDir and wls domain namespace
+   * @param domainUid WebLogic domainUid to create the ingress
    * @param traefikHostname the hostname for the ingress
    * @return true on success, false otherwise
    */
-  public static boolean createIngress(HelmParams params, String domainUID, String traefikHostname) {
-    return Traefik.createIngress(params, domainUID, traefikHostname);
+  public static boolean createIngress(HelmParams params, String domainUid, String traefikHostname) {
+    return Traefik.createIngress(params, domainUid, traefikHostname);
   }
 
   /**
    * Upgrade Traefik release.
    *
-   * @param params parameters for helm values
+   * @param params parameters for Helm values
    * @return true on success, false otherwise
    */
   public static boolean upgradeTraefik(TraefikParams params) {
@@ -211,7 +206,7 @@ public class TestActions {
   /**
    * Uninstall the Traefik release.
    *
-   * @param params the parameters to helm uninstall command, release name and namespace
+   * @param params the parameters to Helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstallTraefik(HelmParams params) {
@@ -221,7 +216,7 @@ public class TestActions {
   /**
    * Uninstall the ingress.
    *
-   * @param params the parameters to helm uninstall command, including release name and wls domain namespace containing
+   * @param params the parameters to Helm uninstall command, including release name and wls domain namespace containing
    *               the ingress
    * @return true on success, false otherwise
    */
@@ -469,7 +464,7 @@ public class TestActions {
     return ClusterRoleBinding.delete(name);
   }
 
-  // ----------------------- helm -----------------------------------
+  // ----------------------- Helm -----------------------------------
 
   /**
    * List releases.
@@ -540,8 +535,15 @@ public class TestActions {
 
   // ------------------------ Ingress -------------------------------------
 
-  public static List<String> getIngress(String namespace) throws Exception {
-    return Traefik.getIngress(namespace);
+  /**
+   * Get a list of ingress names in the specified namespace.
+   *
+   * @param namespace in which to list all the ingresses
+   * @return list of ingress names in the specified namespace
+   * @throws Exception if any error occurs
+   */
+  public static List<String> getIngressList(String namespace) throws Exception {
+    return Traefik.getIngressList(namespace);
   }
 
   // ------------------------ where does this go  -------------------------
@@ -560,86 +562,5 @@ public class TestActions {
   public static boolean deployApplication(String appName, String appLocation, String t3Url,
                                           String username, String password, String target) {
     return true;
-  }
-
-  // ------------------------ some utility method  -------------------------
-
-  /**
-   * Check running some command and returning expected value.
-   *
-   * @param command the command to run
-   * @param expectedValue the expected value should return
-   * @return true on success, false otherwise
-   */
-  public static boolean getExpectedResult(String command, String expectedValue) {
-    logger.info("Running command - \n" + command);
-
-    ExecResult result;
-    try {
-      result = ExecCommand.exec(command);
-      if (result.exitValue() != 0) {
-        logger.info("Command failed with errors " + result.stderr() + "\n" + result.stdout());
-        return false;
-      }
-    } catch (Exception e) {
-      logger.info("Got exception, command failed with errors " + e.getMessage());
-      return false;
-    }
-
-    if (!result.stdout().contains(expectedValue)) {
-      logger.info("Did not get the expected result, expected: " + expectedValue + ", got: " + result.stdout());
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Call curl command and check the app can be reached from all managed servers.
-   *
-   * @param curlCmd curl command to call sample app
-   * @param managedServerNames managed server names that the sample app response will return
-   * @param maxIterations max interations to call the curl command
-   * @throws Exception if the web app can not hit one or more managed servers
-   */
-  public static void callWebAppAndCheckForServerNameInResponse(String curlCmd,
-                                                        List<String> managedServerNames,
-                                                        int maxIterations) throws Exception {
-
-    // map with server names and boolean values
-    HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
-    managedServerNames.forEach(managedServerName -> {
-      managedServers.put(managedServerName, false);
-    });
-
-    logger.info("Calling webapp " + maxIterations + " times " + curlCmd);
-
-    // check the response contains managed server name
-    for (int i = 1; i <= maxIterations; i++) {
-      if (!managedServers.containsValue(false)) {
-        break;
-      } else {
-        logger.info("Iteration {0}/{1} executing command: {2} ", i, maxIterations, curlCmd);
-
-        ExecResult result = ExecCommand.exec(curlCmd, true);
-
-        String response = result.stdout().trim();
-        managedServers.keySet().forEach(key -> {
-          if (response.contains(key)) {
-            managedServers.put(key, true);
-          }
-        });
-      }
-    }
-
-    // after the max iterations, check if any managedserver value is false
-    managedServers.entrySet().forEach(entry -> {
-      if (entry.getValue()) {
-        logger.info("Load balancer successfully reach server " + entry.getKey());
-      } else {
-        throw new RuntimeException(
-            "FAILURE: Load balancer can not reach server " + entry.getKey());
-      }
-    });
   }
 }

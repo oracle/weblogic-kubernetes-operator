@@ -91,10 +91,10 @@ public class Kubernetes {
   /**
    * Checks if a pod is ready in a given namespace.
    *
-   * @param namespace in which the pod is running
+   * @param namespace in which to check if the pod is ready
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
-   * @return true if the pod is in ready condition
+   * @return true if the pod is in the ready condition, false otherwise
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
@@ -147,7 +147,7 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a Operator pod running in a given namespace.
+   * Checks if a Operator pod is running in a given namespace.
    * The method assumes the operator name to starts with weblogic-operator-
    * and decorated with label weblogic.operatorName:namespace
    * @param namespace in which to check for the pod existence
@@ -168,11 +168,11 @@ public class Kubernetes {
 
   /**
    * Checks if a Traefik pod running in a given namespace.
-   * The method assumes that the traefik pod name starts with "traefik-operator-".
+   * The method assumes that the Traefik pod name starts with "traefik-operator-".
    *
-   * @param namespace in which to check for the pod existence
-   * @return true if pod exists and running otherwise false
-   * @throws ApiException when there is error in querying the cluster
+   * @param namespace in which to check if the Traefik pod is running
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException when there is an error in querying the cluster
    */
   public static boolean isTraefikPodRunning(String namespace) throws ApiException {
 
@@ -180,12 +180,12 @@ public class Kubernetes {
   }
 
   /**
-   * Check whether the traefik pod is ready.
-   * The method assumes that the traefik pod name starts with "traefik-operator-".
+   * Check whether the Traefik pod is ready.
+   * The method assumes that the Traefik pod name starts with "traefik-operator-".
    *
-   * @param namespace in which the traefik pod is running
-   * @return true if the pod Ready status is true, false otherwise
-   * @throws ApiException when there is error in querying the cluster
+   * @param namespace in which to check if the Traefik pod is ready
+   * @return true if the pod is in the ready state, false otherwise
+   * @throws ApiException when there is an error in querying the cluster
    */
   public static boolean isTraefikPodReady(String namespace) throws ApiException {
 
