@@ -37,38 +37,42 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
      * before running their tests.
      */
     if (!started.getAndSet(true)) {
-      // Only the first thread will enter this block.
+      try {
+        // Only the first thread will enter this block.
 
-      logger.info("Building docker Images before any integration test classes are run");
-      context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
+        logger.info("Building docker Images before any integration test classes are run");
+        context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
 
-      // build operator image
-      String operatorImage = Operator.getImageName();
-      logger.info("Operator image name {0}", operatorImage);
-      // assertFalse(true);
-      assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
+        // build operator image
+        String operatorImage = Operator.getImageName();
+        logger.info("Operator image name {0}", operatorImage);
+        // assertFalse(true);
+        assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
 
-      // push the image to OCIR to make the test work in multi node cluster
-      String repoRegistry = System.getenv("REPO_REGISTRY");
-      String repoUserName = System.getenv("REPO_USERNAME");
-      String repoPassword = System.getenv("REPO_PASSWORD");
+        // push the image to OCIR to make the test work in multi node cluster
+        String repoRegistry = System.getenv("REPO_REGISTRY");
+        String repoUserName = System.getenv("REPO_USERNAME");
+        String repoPassword = System.getenv("REPO_PASSWORD");
 
-      if (repoRegistry != null && repoUserName != null && repoPassword != null) {
-        operatorImage = REPO_NAME + operatorImage;
-        assertTrue(Operator.buildImage(operatorImage));
+        if (repoRegistry != null && repoUserName != null && repoPassword != null) {
+          operatorImage = REPO_NAME + operatorImage;
+          assertTrue(Operator.buildImage(operatorImage));
 
-        logger.info("docker login");
-        assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
+          logger.info("docker login");
+          assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
 
-        logger.info("docker push image {0} to OCIR", operatorImage);
-        assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
-      } else {
-        assertTrue(Operator.buildImage(operatorImage));
+          logger.info("docker push image {0} to OCIR", operatorImage);
+          assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
+        } else {
+          assertTrue(Operator.buildImage(operatorImage));
+        }
+        
+      } finally {
+        // Initialization is done. Release all waiting other threads. The latch is now disabled so
+        // other threads
+        // arriving later will immediately proceed.
+        initializationLatch.countDown();
       }
-
-      // Initialization is done. Release all waiting other threads. The latch is now disabled so other threads
-      // arriving later will immediately proceed.
-      initializationLatch.countDown();
     } else {
       // Other threads will enter here and wait on the latch. Once the latch is released, any threads arriving
       // later will immediately proceed.
