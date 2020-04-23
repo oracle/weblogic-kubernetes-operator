@@ -7,7 +7,7 @@ weight: 3
 
 #### Get these images and put them into your local registry.
 
-1. If you don't already have one, obtain a Docker store account, log in to the Docker store
+1. If you don't already have one, obtain a Docker store account, log in to the Docker store,
 and accept the license agreement for the [WebLogic Server image](https://hub.docker.com/_/oracle-weblogic-server-12c).
 
 1. Log in to the Docker store from your Docker client:

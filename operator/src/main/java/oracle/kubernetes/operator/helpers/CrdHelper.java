@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -230,6 +231,7 @@ public class CrdHelper {
 
     static V1CustomResourceSubresources createSubresources() {
       return new V1CustomResourceSubresources()
+          .status(new HashMap<String, String>()) // this just needs an empty object to enable status subresource
           .scale(
               new V1CustomResourceSubresourceScale()
                   .specReplicasPath(".spec.replicas")
@@ -238,6 +240,7 @@ public class CrdHelper {
 
     static V1beta1CustomResourceSubresources createBetaSubresources() {
       return new V1beta1CustomResourceSubresources()
+          .status(new HashMap<String, String>()) // this just needs an empty object to enable status subresource
           .scale(
               new V1beta1CustomResourceSubresourceScale()
                   .specReplicasPath(".spec.replicas")

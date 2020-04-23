@@ -120,6 +120,11 @@ public class MessageKeys {
   public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
   public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
   public static final String REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0164";
+  public static final String REQUEST_PARAMS_IN_NS = "WLSKO-0165";
+  public static final String REQUEST_PARAMS_FOR_NAME = "WLSKO-0166";
+  public static final String REQUEST_PARAMS_WITH = "WLSKO-0167";
+  public static final String CALL_FAILED = "WLSKO-0168";
+  public static final String JOB_CREATION_TIMESTAMP_MESSAGE = "WLSKO-0169";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
