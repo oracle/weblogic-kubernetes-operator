@@ -177,7 +177,7 @@
                             <skip>${skipITs}</skip>
                         </configuration>
                     </execution>
-                    <execution>
+                    <!-- execution>
                         <id>buildoperator</id>
                         <phase>pre-integration-test</phase>
                         <goals>
@@ -187,7 +187,7 @@
                             <skip>${skipITs}</skip>
                             <executable>build_push_operator_image.sh</executable>
                         </configuration>
-                    </execution>
+                    </execution -->
                 </executions>
             </plugin>
             <plugin>

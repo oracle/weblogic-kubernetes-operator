@@ -11,5 +11,7 @@ public interface TestConstants {
       "../kubernetes/charts/weblogic-operator";
   public static final String OPERATOR_IMAGE_NAME =
       "oracle/weblogic-kubernetes-operator";
+  public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
+      "../buildDockerImage.sh";
 
 }

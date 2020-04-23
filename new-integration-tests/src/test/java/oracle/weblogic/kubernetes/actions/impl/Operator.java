@@ -3,10 +3,21 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_NAME;
+
+/**
+ * Action class with implementation methods for Operator.
+ */
 public class Operator {
+  private static final LoggingFacade logger = LoggingFactory.getLogger(Operator.class);
 
   /**
    * install helm chart.
@@ -39,5 +50,50 @@ public class Operator {
 
   public static boolean scaleDomain(String domainUid, String clusterName, int numOfServers) {
     return true;
+  }
+
+  /**
+   * Image Name for the Operator.
+   * @return image name
+   */
+  public static String getImageName() {
+    String image = "";
+
+    String imageName = System.getenv("IMAGE_NAME_OPERATOR") != null
+        ? System.getenv("IMAGE_NAME_OPERATOR") : OPERATOR_IMAGE_NAME;
+
+    // use build id for Jenkins runs in image tag
+    String buildID = System.getenv("BUILD_ID") != null
+        ? System.getenv("BUILD_ID") : "";
+
+    // get branch name
+    String branchName = "";
+    CommandParams params = Command.defaultCommandParams()
+        .command("git branch | grep \\* | cut -d ' ' -f2-")
+        .saveResults(true)
+        .redirect(true);
+
+    if (Command.withParams(params)
+        .execute()) {
+      branchName = params.stdout();
+      logger.info("Branch Name {0}", branchName);
+    }
+    String imageTag = System.getenv("IMAGE_TAG_OPERATOR") != null
+        ? System.getenv("IMAGE_TAG_OPERATOR") : branchName + buildID;
+    image = imageName + ":" + imageTag;
+    return image;
+  }
+
+  /**
+   * Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+   * @param image image name and tag in 'name:tag' format
+   * @return true on success
+   */
+  public static boolean buildImage(String image) {
+    String command = String.format("%s -t %s", OPERATOR_DOCKER_BUILD_SCRIPT, image);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(command))
+        .execute();
   }
 }

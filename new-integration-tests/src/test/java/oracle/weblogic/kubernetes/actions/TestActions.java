@@ -86,6 +86,14 @@ public class TestActions {
     return Operator.uninstall(params);
   }
 
+  /**
+   * Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+   * @param image image name and tag in 'name:tag' format
+   * @return true on success
+   */
+  public static boolean buildOperatorImage(String image) {
+    return Operator.buildImage(image);
+  }
   // ----------------------   domain  -----------------------------------
 
   /**

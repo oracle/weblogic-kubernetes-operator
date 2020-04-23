@@ -7,24 +7,23 @@ import java.util.Arrays;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
@@ -36,12 +35,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to install Operator and verify Operator is running
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of basic operator functions")
-@ExtendWith(Timing.class)
+@IntegrationTest
 // by implementing the LoggedTest, we will automatically get a logger injected and it
 // will also automatically log entry/exit messages for each test method.
 class ItSimpleOperatorValidation implements LoggedTest {
@@ -89,6 +89,9 @@ class ItSimpleOperatorValidation implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
+    String image = Operator.getImageName();
+    assertFalse(image.isEmpty(), "Operator image name can not be empty");
+
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -99,7 +102,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
     OperatorParams opParams =
         new OperatorParams()
             .helmParams(opHelmParams)
-            .image(OPERATOR_IMAGE_NAME)
+            .image(image)
             .domainNamespaces(Arrays.asList(domainNamespace1, domainNamespace2))
             .serviceAccount(serviceAccountName);
 

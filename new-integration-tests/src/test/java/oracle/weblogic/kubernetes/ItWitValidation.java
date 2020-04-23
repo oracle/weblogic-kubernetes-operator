@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Simple validation of basic WIT functions")
+@IntegrationTest
 class ItWitValidation implements LoggedTest {
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String IMAGE_NAME = "test-mii-image-2";
