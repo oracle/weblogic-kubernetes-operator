@@ -7,7 +7,7 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-
+WDT_MINIMUM_VERSION="1.7.4"
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
@@ -283,6 +283,9 @@ function createWLDomain() {
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
+  checkModelDirectoryExtensions
+  checkWDTVersion
+
   # copy the filter related files to the wdt lib
 
   cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib
@@ -382,6 +385,55 @@ function checkDirNotExistsOrEmpty() {
   fi
 
   trace "Exiting checkDirNotExistsOrEmpty"
+}
+
+# limit the file extensions in the model directories
+
+function checkModelDirectoryExtensions() {
+  trace "Entering checkModelDirectoryExtensions"
+
+  cd ${IMG_MODELS_HOME}
+  counter=$(ls  -I  *.yaml -I *.zip -I *.properties | wc -l)
+  if [ $counter -ne 0 ] ; then
+        ls -l -I  *.yaml -I *.zip -I *.properties
+        trace SEVERE "Directory ${IMG_MODELS_HOME} contains files with unsupported extension. Extension must be" \
+          ".yaml, .properties, or .zip"
+        exitOrLoop
+  fi
+  if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
+    cd ${WDT_CONFIGMAP_ROOT}
+    counter=$(ls  -I  *.yaml -I *.zip -I *.properties | wc -l)
+    if [ $counter -ne 0 ] ; then
+          ls -l  -I  *.yaml -I *.zip -I *.properties
+          trace SEVERE "Directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extension. Extension must be" \
+            ".yaml, .properties, or .zip"
+          exitOrLoop
+    fi
+  fi
+
+  trace "Exiting checkModelDirectoryExtensions"
+}
+
+# Check for WDT version
+
+function checkWDTVersion() {
+  trace "Entering checkWDTVersion"
+
+  local wdt_version=$(unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF | \
+      grep "Implementation-Version"  | cut -f2 -d' ')
+  if [ ${PIPESTATUS[0]} -ne 0 ] && [ ! -z ${wdt_version} ]; then
+    rc=$(versionCmp ${wdt_verion} ${WDT_MINIMUM_VERSION})
+    if [ rc -lt 0 ]; then
+      trace SEVERE "Weblogic Deploy Tool version detected in the image is ${wdt_verion}, Model in Image domain "\
+      " requires minimum version ${WDT_MINIMUM_VERSION}"
+      exitOrLoop
+    fi
+  else
+    trace SEVERE "Unknown Weblogic Deploy Tool version. Operator requires WDT minimum version ${WDT_MINIMUM_VERSION}"
+    exitOrLoop
+  fi
+
+  trace "Exiting checkWDTVersion"
 }
 
 # getSecretsMD5
