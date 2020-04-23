@@ -359,14 +359,15 @@ public class TestActions {
   public static boolean deleteConfigMap(String name, String namespace) {
     return ConfigMap.delete(name, namespace);
   }
+
   /**
-   * List Kubernetes Config Map in a namespace.
-   *
-   * @param namespace name of namespace
-   * @return List of Config Maps in a namespace
-   */
+  * List Kubernetes Config Map in a namespace.
+  *
+  * @param namespace name of namespace
+  * @return List of Config Maps in a namespace
+  */
   public static V1ConfigMapList listConfigMaps(String namespace) {
-      return ConfigMap.list(namespace);
+    return ConfigMap.list(namespace);
   }
 
   // -------------------------- Service ---------------------------------
