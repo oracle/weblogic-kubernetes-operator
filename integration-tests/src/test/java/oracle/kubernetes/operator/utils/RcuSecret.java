@@ -11,7 +11,7 @@ public class RcuSecret extends Secret {
   private String sysPassword;
   private String rcuPrefix;
   private String rcuSchemaPass;
-  private String rcuConnection;
+  private String rcuDBConnUrl;
   
 
   /**
@@ -65,11 +65,11 @@ public class RcuSecret extends Secret {
   /**
    * Construct RCU secret.
    * 
-   * @param secretname secret name
-   * @param rcuPrefix username
-   * @param password password
-   * @param sysUsername sys username
-   * @param sysPassword sys password
+   * @param namespace namespace where RCU access secret is going to create
+   * @param secretName secret name
+   * @param rcuPrefix RCU prefix
+   * @param rcuSchemaPass password of RCU schema
+   * @param rcuDBConnUrl URL of RCU DB connection 
    * @throws Exception on failure
    */
   public RcuSecret(
@@ -77,14 +77,14 @@ public class RcuSecret extends Secret {
       String secretName,
       String rcuPrefix,
       String rcuSchemaPass,
-      String rcuConnection
+      String rcuDBConnUrl
   )
       throws Exception {
     this.namespace = namespace;
     this.secretName = secretName;
     this.rcuPrefix = rcuPrefix;
     this.rcuSchemaPass = rcuSchemaPass;
-    this.rcuConnection = rcuConnection;
+    this.rcuDBConnUrl = rcuDBConnUrl;
     
     // delete the secret first if exists
     deleteSecret();
@@ -100,7 +100,7 @@ public class RcuSecret extends Secret {
             + " --from-literal=rcu_schema_password="
             + this.rcuSchemaPass
             + " --from-literal=rcu_db_conn_string="
-            + this.rcuConnection;
+            + this.rcuDBConnUrl;
             
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
     
@@ -128,8 +128,8 @@ public class RcuSecret extends Secret {
     return rcuSchemaPass;
   }
   
-  public String getrcuConnection() {
-    return rcuConnection;
+  public String getrcuDBConnUrl() {
+    return rcuDBConnUrl;
   }
 
   private void deleteSecret() throws Exception {

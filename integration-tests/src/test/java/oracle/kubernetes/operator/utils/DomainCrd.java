@@ -503,7 +503,7 @@ public class DomainCrd {
   }
   
   /**
-   * Gets the labels object node
+   * Gets the labels object node.
    *
    * @return JsonNode labels object
    */
@@ -513,7 +513,7 @@ public class DomainCrd {
 
   
   /**
-   * Gets the metadata object node
+   * Gets the metadata object node.
    *
    * @return JsonNode matadata object
    */

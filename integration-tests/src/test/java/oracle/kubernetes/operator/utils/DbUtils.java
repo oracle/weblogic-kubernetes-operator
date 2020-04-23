@@ -51,9 +51,9 @@ public class DbUtils {
   /**
    * Create Oracle DB pod and service in the k8s cluster default namespace.
    * 
-   * @param scriptDir script dir
+   * @param scriptsDir directory of scripts
    * @param dbPort NodePort of DB
-   * @param dbnamespace namesspace that DB instance is going to start
+   * @param dbNamespace namespace where DB instance is going to start
    * @throws Exception if any error occurs when creating Oracle DB pod and service
    */
   public static void startOracleDB(String scriptsDir, String dbPort, String dbNamespace) throws Exception {
@@ -86,8 +86,8 @@ public class DbUtils {
   /**
    * Stop oracle service.
    * 
-   * @param scriptDir script dir
-   * @param dbnamespace namespace that DB instance is going to stop
+   * @param scriptsDir directory of scripts
+   * @param dbNamespace namespace where DB instance is going to stop
    * @throws Exception if any error occurs when dropping Oracle DB service
    */
   public static void stopOracleDB(String scriptsDir, String dbNamespace) throws Exception {
@@ -105,10 +105,9 @@ public class DbUtils {
   /**
    * Create Oracle rcu pod and load database schema in the k8s cluster default namespace.
    * 
-   * @param scriptDir script dir
+   * @param scriptsDir directory of scripts
    * @param rcuSchemaPrefix rcu SchemaPrefixe
-   * @param dbPort NodePort of DB
-   * @param dbnamespace namesspace that DB instance is going to start
+   * @param dbNamespace namespace where DB instance is going to start
    * @throws Exception if any error occurs when creating Oracle rcu pod
    */
   public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix, 
@@ -171,9 +170,9 @@ public class DbUtils {
   /**
    * Drop Oracle rcu schema.
    * 
-   * @param scriptDir script dir
+   * @param scriptsDir directory of scripts
    * @param rcuSchemaPrefix rcu SchemaPrefixe
-   * @param dbnamespace namesspace that DB instance is going to start
+   * @param dbNamespace namespace where DB instance is going to start
    * @throws Exception if any error occurs when dropping rcu schema
    */
   public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix, String dbNamespace) throws Exception {
