@@ -379,48 +379,6 @@
             </executions>
           </plugin>
 
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>${maven-failsafe-plugin-version}</version>
-            <configuration> <!-- run tests in parallel -->
-              <argLine>
-                --illegal-access=permit
-              </argLine>
-              <encoding>UTF-8</encoding>
-              <argLine>${failsafeArgLine}</argLine>
-              <failIfNoTests>false</failIfNoTests>
-              <systemPropertyVariables>
-                <!-- Add any system properties here -->
-                <!--<project.build.directory>${project.build.directory}</project.build.directory> -->
-                <!--<weblogic.operator.root.directory>${basedir}/..</weblogic.operator.root.directory> -->
-                <!--<TAGS>${env.TAGS}</TAGS> -->
-                <maxThreads>3</maxThreads>
-              </systemPropertyVariables>
-            </configuration>
-
-            <executions>
-              <execution>
-                <id>acceptance-test</id>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-                <phase>integration-test</phase>
-                <configuration>
-                  <!-- do not run unit or integration tests -->
-                  <excludes>
-                    <exclude>**/*Test.java</exclude>
-                    <exclude>**/*IT.java</exclude>
-                  </excludes>
-                  <!-- just run acceptance tests -->
-                  <includes>
-                    <include>**/*AT.java</include>
-                  </includes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
