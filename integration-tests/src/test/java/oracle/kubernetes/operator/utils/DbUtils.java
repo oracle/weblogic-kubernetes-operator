@@ -65,9 +65,9 @@ public class DbUtils {
         + " -n " + dbNamespace;
     
     TestUtils.exec(cmd1, true);
-    String cmd2 = "kubectl get pod" + " -n " + dbNamespace + " | grep oracle-db | cut -f1 -d \" \" ";
+    String cmd2 = "kubectl get pod -n " + dbNamespace + " -o jsonpath=\"{.items[0].metadata.name}\"";
     logger.info("DEBUG: command to get DB pod: " + cmd2);
-    ExecResult result = TestUtils.exec(cmd2);
+    ExecResult result = TestUtils.exec(cmd2, true);
     String podName = result.stdout();
 
     logger.info("DEBUG: DB podname=" + podName + " namespace: " + dbNamespace);
