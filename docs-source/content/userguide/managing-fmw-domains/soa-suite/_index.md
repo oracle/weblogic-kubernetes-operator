@@ -64,7 +64,7 @@ following limitations currently exist for SOA Suite domains:
 * Only configured clusters are supported.  Dynamic clusters are not supported for
   SOA Suite domains.  Note that you can still use all of the scaling features,
   you just need to define the maximum size of your cluster at domain creation time.
-* Deploying and running SOA Suite domains is supported only in operator version 2.4.0.
+* Deploying and running SOA Suite domains is supported only with operator version 2.4.0.
 * The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
   currently supports WebLogic Server logs only.  Other logs will not be sent to
   Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
