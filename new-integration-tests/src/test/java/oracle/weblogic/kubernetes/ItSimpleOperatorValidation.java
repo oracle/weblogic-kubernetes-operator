@@ -4,23 +4,24 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
+import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -35,6 +36,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRun
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 // this is a POC for a new way of writing tests.
@@ -52,10 +54,7 @@ import static org.awaitility.Awaitility.with;
 // order. this is controlled with the TestMethodOrder annotation
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of basic operator functions")
-// this is an example of registering an extension that will time how long each test takes.
-@ExtendWith(Timing.class)
-// by implementing the LoggedTest, we will automatically get a logger injected and it
-// will also automatically log entry/exit messages for each test method.
+@IntegrationTest
 class ItSimpleOperatorValidation implements LoggedTest {
 
   private HelmParams opHelmParams = null;
@@ -72,22 +71,19 @@ class ItSimpleOperatorValidation implements LoggedTest {
   // like these two:
   @Slow
   @MustNotRunInParallel
-  public void testInstallingOperator() {
+  public void testInstallingOperator(@Namespaces(3) List<String> namespaces) {
     // this first example is an operation that we wait for.
     // installOperator() is one of our custom, reusable actions.
     // imagine that installOperator() will try to install the operator, by creating
     // the kubernetes deployment.  this will complete quickly, and will either be
     // successful or not.
-
-    // get a new unique opNamespace
-    opNamespace = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", opNamespace));
-
-    domainNamespace1 = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", domainNamespace1));
-
-    domainNamespace2 = createNamespace();
-    logger.info(String.format("Created a new namespace called %s", domainNamespace2));
+    // get unique namespaces for operator and domains
+    namespaces.forEach((namespace) -> {
+      assertNotNull(namespace, "Namespace " + namespace + "is null");
+    });
+    opNamespace = namespaces.get(0);
+    domainNamespace1 = namespaces.get(1);
+    domainNamespace2 = namespaces.get(2);
 
     // Create a service account for the unique opNamespace
     final String serviceAccountName = opNamespace + "-sa";
