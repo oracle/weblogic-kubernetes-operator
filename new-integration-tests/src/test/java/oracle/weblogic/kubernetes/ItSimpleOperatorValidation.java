@@ -99,7 +99,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
     OperatorParams opParams =
         new OperatorParams()
             .helmParams(opHelmParams)
-            .image(System.getenv("IMAGE_NAME_OPERATOR") != null ? System.getenv("IMAGE_NAME_OPERATOR") OPERATOR_IMAGE_NAME)
+            .image(OPERATOR_IMAGE_NAME)
             .domainNamespaces(Arrays.asList(domainNamespace1, domainNamespace2))
             .serviceAccount(serviceAccountName);
 
