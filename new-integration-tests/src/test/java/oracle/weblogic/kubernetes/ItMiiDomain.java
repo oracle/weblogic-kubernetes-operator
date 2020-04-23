@@ -578,7 +578,8 @@ class ItMiiDomain implements LoggedTest {
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
 
     // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    final List<String> modelList = 
+        Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
 
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
@@ -586,8 +587,8 @@ class ItMiiDomain implements LoggedTest {
         String.format("Failed to create app archive for %s", APP_NAME));
 
     // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    List<String> archiveList = Collections.singletonList(zipFile);
+    List<String> archiveList = 
+        Collections.singletonList(String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
 
     createImageAndVerify(MII_IMAGE_NAME, imageTag, modelList, archiveList);
 
@@ -600,22 +601,25 @@ class ItMiiDomain implements LoggedTest {
       List<String> appDirList
   ) {
     // build the model file list
-    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    List<String> modelList = 
+        Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
    
     // build an application archive using what is in resources/apps/APP_NAME
-    boolean archiveBuilt = buildAppArchive(
-        defaultAppParams()
-            .srcDirList(appDirList));
-    
-    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", APP_NAME));
+    assertTrue(
+        buildAppArchive(
+            defaultAppParams()
+                .srcDirList(appDirList)),
+        String.format("Failed to create app archive for %s",
+            APP_NAME));
     
     // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    List<String> archiveList = Collections.singletonList(zipFile);
-    createImageAndVerify(
-        imageName, imageTag, modelList, archiveList);
+    List<String> archiveList = 
+        Collections.singletonList(
+            String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
+    
+    createImageAndVerify(imageName, imageTag, modelList, archiveList);
+    
     return imageName + ":" + imageTag;
- 
   }
 
   private String updateImageWithApp3(
@@ -633,29 +637,34 @@ class ItMiiDomain implements LoggedTest {
     
     // build an application archive using for the first app, which is the same after
     // patching the original app.
-    boolean archiveBuilt = buildAppArchive(
-        defaultAppParams()
-            .srcDirList(appDirList1)
-            .appName(appName1));
+    assertTrue(
+        buildAppArchive(
+            defaultAppParams()
+                .srcDirList(appDirList1)
+                .appName(appName1)),
+        String.format("Failed to create app archive for %s",
+            appName1));
     
-    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName1));
     logger.info("Successfully created app zip file: " + appName1);
-    archiveBuilt = buildAppArchive(
+        
+    assertTrue(
+        buildAppArchive(
             defaultAppParams()
                 .srcDirList(appDirList2)
-                .appName(appName2));
-        
-    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName2));
-    logger.info("Successfully cteated app zip file: " + appName2);   
+                .appName(appName2)),
+        String.format("Failed to create app archive for %s",
+            appName2));
+    
+    logger.info("Successfully cteated app zip file: " + appName2); 
+    
     // build the archive list with two zip files
     List<String> archiveList = Arrays.asList(
         String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
         String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
     
-    createImageAndVerify(
-        imageName, imageTag, modelList, archiveList);
+    createImageAndVerify(imageName, imageTag, modelList, archiveList);
+    
     return imageName + ":" + imageTag;
- 
   }
 
   /**
