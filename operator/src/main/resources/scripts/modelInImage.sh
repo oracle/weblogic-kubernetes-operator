@@ -424,7 +424,7 @@ function checkWDTVersion() {
     versionGE ${wdt_version} ${WDT_MINIMUM_VERSION}
     if [ $? != "0" ] ; then
       trace SEVERE "Model in Image domain requires Weblogic Deploy Tool minimum version ${WDT_MINIMUM_VERSION}. " \
-      "Your version in the image is ${wdt_version}. You need to update the Weblogic Deploy Tool version in the image."
+      "The version in the image is ${wdt_version}, you need to update the Weblogic Deploy Tool version in the image."
       exitOrLoop
     fi
   else
