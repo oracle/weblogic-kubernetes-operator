@@ -44,7 +44,7 @@ public class Command {
    * @return true, on success
    */
   public boolean execute() {
-    if (params.debug()) {
+    if (params.verbose()) {
       logger.info("Executing command {0}", params.command());
     }
     try {
@@ -58,7 +58,7 @@ public class Command {
       }
 
       // check exitValue to determine if the command execution has failed.
-      if (params.debug() && result.exitValue() != 0) {
+      if (params.verbose() && result.exitValue() != 0) {
         logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
       } 
 

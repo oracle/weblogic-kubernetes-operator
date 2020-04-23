@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
@@ -458,7 +459,7 @@ class ItMiiDomain implements LoggedTest {
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
         "model2-wls.yaml");
-  
+    logger.info("Image is successfully created");
     // check and V2 app is still running
     assertTrue(appAccessibleInPod(
             domainUid,
@@ -467,6 +468,7 @@ class ItMiiDomain implements LoggedTest {
             "sample-war/index.jsp",
             APP_RESPONSE_V2),
         "The expected app is not accessible inside the server pod");
+    logger.info("App version 2 is still running");
     
     // check and make sure that the new app is not already running
     assertFalse(appAccessibleInPod(
@@ -476,6 +478,7 @@ class ItMiiDomain implements LoggedTest {
             "sample-war-3/index.jsp",
             APP_RESPONSE_V3),
         "The second app is not supposed to be running!!");   
+    logger.info("About to patch the domain with new image");
     
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUid, domainNamespace, miiImageAddSecondApp);

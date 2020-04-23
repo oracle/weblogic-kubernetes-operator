@@ -29,7 +29,7 @@ public class CommandParams {
   // The stderr of the command execution
   private String stderr;
   
-  private boolean debug = false;
+  private boolean verbose = true;
   
   public CommandParams defaults() {
     return this;
@@ -89,13 +89,13 @@ public class CommandParams {
     return stdout;
   }
   
-  public CommandParams debug(boolean debug) {
-    this.debug = debug;
+  public CommandParams verbose(boolean verbose) {
+    this.verbose = verbose;
     return this;
   }
 
-  public boolean debug() {
-    return debug;
+  public boolean verbose() {
+    return verbose;
   }
  
 }

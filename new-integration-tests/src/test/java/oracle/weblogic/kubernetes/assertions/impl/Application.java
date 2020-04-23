@@ -55,7 +55,7 @@ public class Application {
         .command(cmd)
         .saveResults(true)
         .redirect(false)
-        .debug(false);
+        .verbose(false);
     Command.withParams(params).execute();
     return params.stdout();
   }

@@ -55,7 +55,7 @@ public class AppBuilder {
   public boolean build() {
     // prepare the archive directory and copy over the app src
     try {
-      cleanupDirectory(ARCHIVE_DIR);
+      cleanupDirectory(ARCHIVE_SRC_DIR);
       checkDirectory(ARCHIVE_SRC_DIR);
       for (String item: params.srcDirList()) {
         copyFolder(
