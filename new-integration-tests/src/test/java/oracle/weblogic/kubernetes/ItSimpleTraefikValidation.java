@@ -3,7 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -123,7 +125,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   private static String tfNamespace = null;
   private static String projectRoot = System.getProperty("user.dir");
 
-  private String domainUID = "domain1";
+  private String domainUid = "domain1";
   private String miiImage = null;
   private final String managedServerNameBase = "managed-server";
   private final int replicaCount = 2;
@@ -133,7 +135,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
    */
   @BeforeAll
   public static void initAll() {
-    // create standard, reusbale retry/backoff policy
+    // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
@@ -152,8 +154,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
   @MustNotRunInParallel
   public void testCreateMiiDomain() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUID + "-admin-server";
-    String managedServerPrefix = domainUID + "-" + managedServerNameBase;
+    final String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-" + managedServerNameBase;
     String repoSecretName = "reposecret";
 
     // create image with model files
@@ -227,10 +229,10 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .apiVersion(API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
-            .name(domainUID)
+            .name(domainUid)
             .namespace(domainNamespace))
         .spec(new DomainSpec()
-            .domainUid(domainUID)
+            .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -252,7 +254,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(30711))))
+                        .nodePort(getNextFreePort(30711, 30811)))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
                 .replicas(replicaCount)
@@ -262,13 +264,13 @@ class ItSimpleTraefikValidation implements LoggedTest {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
-        domainUID, domainNamespace);
+    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUID, domainNamespace)),
+            domainUid, domainNamespace)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUID, domainNamespace));
+            domainUid, domainNamespace));
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
@@ -276,11 +278,11 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUID,
+                domainUid,
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
+        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
     // check admin server pod exist
     logger.info("Check for admin server pod {0} existence in namespace {1}",
@@ -324,17 +326,17 @@ class ItSimpleTraefikValidation implements LoggedTest {
   public void testCreateIngress() {
     // helm install parameters for ingress
     ingressParam = new HelmParams()
-            .releaseName(domainUID + "-ingress")
+            .releaseName(domainUid + "-ingress")
             .namespace(domainNamespace)
             .chartDir(projectRoot + "/../kubernetes/samples/charts/ingress-per-domain");
 
-    assertThat(createIngress(ingressParam, domainUID, domainUID + ".org"))
+    assertThat(createIngress(ingressParam, domainUid, domainUid + ".org"))
             .as("Test createIngress returns true")
             .withFailMessage("createIngress() did not return true")
             .isTrue();
 
     // check the ingress is created
-    String ingressName = domainUID + "-traefik";
+    String ingressName = domainUid + "-traefik";
     assertThat(assertDoesNotThrow(() -> getIngress(domainNamespace)))
         .as(String.format("get the ingress %1s in namespace %2s", ingressName, domainNamespace))
         .withFailMessage(String.format("can not get ingress %1s in namespace %2s", ingressName, domainNamespace))
@@ -349,7 +351,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   public void testSampleAppThroughIngressController() throws Exception {
     String hostname = InetAddress.getLocalHost().getHostName();
     String curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %1s' http://%2s:30305/sample-war/index.jsp",
-        domainUID + ".org", hostname);
+        domainUid + ".org", hostname);
     verifyIngressController(curlCmd, 50);
   }
 
@@ -362,9 +364,9 @@ class ItSimpleTraefikValidation implements LoggedTest {
   public void tearDownAll() {
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID, domainNamespace),
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
         "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
+    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
 
     // delete the domain image created for the test
     if (miiImage != null) {
@@ -618,7 +620,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podExists(podName, domainUID, domainNamespace),
+        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
             String.format("podExists failed with ApiException for %s in namespace in %s",
                 podName, domainNamespace)));
 
@@ -638,7 +640,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUID, domainNamespace),
+        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
             String.format(
                 "pod %s is not ready in namespace %s", podName, domainNamespace)));
 
@@ -689,4 +691,36 @@ class ItSimpleTraefikValidation implements LoggedTest {
     return configJsonObject;
   }
 
+  /**
+   * Get the next free port between range from to to.
+   * @param from range starting point
+   * @param to range ending port
+   * @return free port
+   */
+  private int getNextFreePort(int from, int to) {
+    int port;
+    for (port = from; port < to; port++) {
+      if (isLocalPortFree(port)) {
+        logger.info("next free port is: {0}", port);
+        return port;
+      }
+    }
+    logger.info("Can not find free port between {0} and {1}", from, to);
+    return port;
+  }
+
+  /**
+   * Check if the given port number is free.
+   *
+   * @param port port number to check
+   * @return true if the port is free, false otherwise
+   */
+  private boolean isLocalPortFree(int port) {
+    try {
+      new ServerSocket(port).close();
+      return true;
+    } catch (IOException e) {
+      return false;
+    }
+  }
 }

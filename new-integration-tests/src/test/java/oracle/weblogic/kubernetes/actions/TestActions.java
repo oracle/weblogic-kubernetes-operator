@@ -36,18 +36,15 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
 // directly call the methods in the impl classes
 public class TestActions {
-
-  private static final LoggingFacade logger = LoggingFactory.getLogger(TestActions.class);
-
   // ----------------------   operator  ---------------------------------
 
   /**
