@@ -17,7 +17,7 @@ public class RcuSecret extends Secret {
   /**
    * Construct RCU secret.
    * 
-   * @param namespace namespace
+   * @param namespace namespace where this RCU access secret is going to create
    * @param secretName secret name
    * @param username username
    * @param password password
