@@ -89,7 +89,8 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod is ready in a given namespace
+   * Checks if a pod is ready in a given namespace.
+   *
    * @param namespace in which the pod is running
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
@@ -167,8 +168,7 @@ public class Kubernetes {
 
   /**
    * Checks if a Traefik pod running in a given namespace.
-   * The method assumes the traefik pod name to starts with "traefik-operator-"
-   * and decorated with label "app=traefik"
+   * The method assumes that the traefik pod name starts with "traefik-operator-".
    *
    * @param namespace in which to check for the pod existence
    * @return true if pod exists and running otherwise false
@@ -181,10 +181,11 @@ public class Kubernetes {
 
   /**
    * Check whether the traefik pod is ready.
+   * The method assumes that the traefik pod name starts with "traefik-operator-".
    *
    * @param namespace in which the traefik pod is running
    * @return true if the pod Ready status is true, false otherwise
-   * @throws ApiException
+   * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isTraefikPodReady(String namespace) throws ApiException {
 

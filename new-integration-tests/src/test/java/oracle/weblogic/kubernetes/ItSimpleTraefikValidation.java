@@ -34,10 +34,10 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,7 +46,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -57,12 +56,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWITParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
@@ -70,7 +69,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getExpectedResult;
-import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
+import static oracle.weblogic.kubernetes.actions.TestActions.getIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallIngress;
@@ -91,11 +90,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * verify the sample application can be reached via the load balancer
+ * Verify the sample application can be accessed via the ingress controller.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("verify the sample application can be reached via the load balancer")
-@ExtendWith(Timing.class)
+@DisplayName("Verify the sample application can be accessed via the ingress controller")
+@IntegrationTest
 class ItSimpleTraefikValidation implements LoggedTest {
 
   // operator constants
@@ -130,7 +129,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   private final int replicaCount = 2;
 
   /**
-   * Install Operator and Traefik
+   * Install Operator and Traefik.
    */
   @BeforeAll
   public static void initAll() {
@@ -139,11 +138,11 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
 
-    // install operator
-    installingOperator();
+    // install and verify operator
+    installAndVerifyOperator();
 
-    // install traefik
-    installingTraefik();
+    // install and verify traefik
+    installAndVerifyTraefik();
   }
 
   @Test
@@ -322,7 +321,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   @Test
   @Order(2)
   @DisplayName("Create an ingress per domain")
-  public void testCreatingIngress() {
+  public void testCreateIngress() {
     // helm install parameters for ingress
     ingressParam = new HelmParams()
             .releaseName(domainUID + "-ingress")
@@ -336,22 +335,22 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
     // check the ingress is created
     String ingressName = domainUID + "-traefik";
-    String cmd = String.format("kubectl get ingress %1s -n %2s", ingressName, domainNamespace);
-    assertThat(getExpectedResult(cmd, ingressName))
-            .as("ingress is created")
-            .withFailMessage("ingress is not created in namespace " + domainNamespace)
-            .isTrue();
+    assertThat(assertDoesNotThrow(() -> getIngress(domainNamespace)))
+        .as(String.format("get the ingress %1s in namespace %2s", ingressName, domainNamespace))
+        .withFailMessage(String.format("can not get ingress %1s in namespace %2s", ingressName, domainNamespace))
+        .contains(ingressName);
+
     logger.info("ingress is created in namespace {0}", domainNamespace);
   }
 
   @Test
   @Order(3)
-  @DisplayName("verify the load balancer can reach the application ")
-  public void testSampleAppThroughLB() throws Exception {
+  @DisplayName("Verify the application can be accessed through the ingress controller ")
+  public void testSampleAppThroughIngressController() throws Exception {
     String hostname = InetAddress.getLocalHost().getHostName();
     String curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %1s' http://%2s:30305/sample-war/index.jsp",
         domainUID + ".org", hostname);
-    verifyLoadBalancer(curlCmd, 50);
+    verifyIngressController(curlCmd, 50);
   }
 
   /**
@@ -428,9 +427,9 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * prepare and install weblogic operator
+   * Prepare and install weblogic operator.
    */
-  private static void installingOperator() {
+  private static void installAndVerifyOperator() {
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
@@ -474,7 +473,9 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
     // list helm releases
     logger.info("List helm releases in namespace {0}", opNamespace);
-    helmList(opHelmParams);
+    String cmd = String.format("helm list -n %s", opNamespace);
+    assertTrue(getExpectedResult(cmd, OPERATOR_RELEASE_NAME),
+        String.format("did not get %1s in namespace %2s", OPERATOR_RELEASE_NAME, opNamespace));
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
@@ -489,9 +490,9 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * install traefik and wait until traefik pod is ready
+   * Install traefik and wait until the traefik pod is ready.
    */
-  private static void installingTraefik() {
+  private static void installAndVerifyTraefik() {
 
     // create a new unique namespace for traefik
     logger.info("Creating an unique namespace for Traefil");
@@ -519,7 +520,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .isTrue();
     logger.info("Traefik is installed in namespace {0}", tfNamespace);
 
-    // verify that the trafik is installed
+    // verify that the traefik is installed
     String cmd = "helm ls -n " + tfNamespace;
     assertThat(getExpectedResult(cmd, tfHelmParams.getReleaseName()))
         .as("traefik is installed")
@@ -539,12 +540,13 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * verify the load balancer can reach all managed servers
-   * @param curlCmd curl command to ping apps through load balancer
+   * Verify the ingress controller can route the app to all managed servers.
+   *
+   * @param curlCmd curl command to ping apps through ingress controller
    * @param maxIterations max iterations to call curl command
-   * @throws Exception if the load balancer can not reach one or more servers
+   * @throws Exception if the ingress controller can not route the app to one or more servers
    */
-  private void verifyLoadBalancer(String curlCmd, int maxIterations) throws Exception {
+  private void verifyIngressController(String curlCmd, int maxIterations) throws Exception {
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       managedServerNames.add(managedServerNameBase + i);
@@ -554,7 +556,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * create a docker image for model in image
+   * Create a docker image for model in image.
+   *
    * @return image name
    */
   private String createImageAndVerify() {
@@ -582,8 +585,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using model directory {2}",
         MII_IMAGE_NAME, imageTag, MODEL_DIR);
-    boolean result = createMIIImage(
-        defaultWITParams()
+    boolean result = createMiiImage(
+        defaultWitParams()
             .modelImageName(MII_IMAGE_NAME)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
@@ -602,7 +605,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * check pod is created
+   * Check pod is created.
+   *
    * @param podName pod name to check
    */
   private void checkPodCreated(String podName) {
@@ -621,7 +625,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * check pod is ready
+   * Check pod is ready.
+   *
    * @param podName pod name to check
    */
   private void checkPodReady(String podName) {
@@ -640,7 +645,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * check service is created
+   * Check service is created.
+   *
    * @param serviceName service name to check
    */
   private void checkServiceCreated(String serviceName) {
@@ -659,7 +665,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * Get docker registry configuration json object
+   * Get docker registry configuration json object.
+   *
    * @param username username for the docker registry
    * @param password password for the docker registry
    * @param email email for the docker registry

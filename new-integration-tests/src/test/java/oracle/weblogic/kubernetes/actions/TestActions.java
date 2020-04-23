@@ -541,6 +541,12 @@ public class TestActions {
     return Docker.deleteImage(image);
   }
 
+  // ------------------------ Ingress -------------------------------------
+
+  public static List<String> getIngress(String namespace) throws Exception {
+    return Traefik.getIngress(namespace);
+  }
+
   // ------------------------ where does this go  -------------------------
 
   /**
@@ -562,7 +568,7 @@ public class TestActions {
   // ------------------------ some utility method  -------------------------
 
   /**
-   * Check running some command and returning expected value
+   * Check running some command and returning expected value.
    *
    * @param command the command to run
    * @param expectedValue the expected value should return
@@ -592,9 +598,10 @@ public class TestActions {
   }
 
   /**
-   * Check the load balancer functionality, call curl command and check the response contains the managed server info
+   * Call curl command and check the app can be reached from all managed servers.
+   *
    * @param curlCmd curl command to call sample app
-   * @param managedServerNames managed server names to verify the sample app can hit the servers
+   * @param managedServerNames managed server names that the sample app response will return
    * @param maxIterations max interations to call the curl command
    * @throws Exception if the web app can not hit one or more managed servers
    */
@@ -611,20 +618,21 @@ public class TestActions {
     logger.info("Calling webapp " + maxIterations + " times " + curlCmd);
 
     // check the response contains managed server name
-    int i = 1;
-    while (managedServers.containsValue(false) && (i <= maxIterations)) {
-      logger.info("Iteration {0}/{1} executing command: {2} ", i, maxIterations, curlCmd);
+    for (int i = 1; i <= maxIterations; i++) {
+      if (!managedServers.containsValue(false)) {
+        break;
+      } else {
+        logger.info("Iteration {0}/{1} executing command: {2} ", i, maxIterations, curlCmd);
 
-      ExecResult result = ExecCommand.exec(curlCmd, true);
+        ExecResult result = ExecCommand.exec(curlCmd, true);
 
-      String response = result.stdout().trim();
-      managedServers.keySet().forEach(key -> {
-        if (response.contains(key)) {
-          managedServers.put(key, true);
-        }
-      });
-
-      i++;
+        String response = result.stdout().trim();
+        managedServers.keySet().forEach(key -> {
+          if (response.contains(key)) {
+            managedServers.put(key, true);
+          }
+        });
+      }
     }
 
     // after the max iterations, check if any managedserver value is false

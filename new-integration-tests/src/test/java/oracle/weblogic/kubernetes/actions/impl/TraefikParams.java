@@ -9,8 +9,9 @@ import java.util.Objects;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
-// All parameters needed to install Traefik Operator
-
+/**
+ * All parameters needed to install Traefik Operator.
+ */
 public class TraefikParams {
 
   // only add the values which need to be updated here
@@ -35,6 +36,11 @@ public class TraefikParams {
     return helmParams;
   }
 
+  /**
+   * Loads Helm values into a value map.
+   *
+   * @return Map of values
+   */
   public Map<String, Object> getValues() {
     Map<String, Object> values = new HashMap<>();
     values.put(NAMESPACES, namespaces);

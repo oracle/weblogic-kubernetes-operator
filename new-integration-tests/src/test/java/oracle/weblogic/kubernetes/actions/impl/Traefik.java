@@ -3,11 +3,20 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
+/**
+ * Utility class for Traefik.
+ */
 public class Traefik {
   /**
    * Install helm chart.
@@ -68,4 +77,22 @@ public class Traefik {
     return Helm.uninstall(params);
   }
 
+  /**
+   * Get the ingress in the namespace.
+   *
+   * @param namespace the namespace which the ingress belongs to
+   * @return true on success, false otherwise
+   */
+  public static List<String> getIngress(String namespace) throws ApiException {
+
+    List<String> ingressNames = new ArrayList<>();
+    ExtensionsV1beta1IngressList ingressList = Kubernetes.listIngress(namespace);
+    List<ExtensionsV1beta1Ingress> listOfIngress = ingressList.getItems();
+
+    listOfIngress.forEach(ingress -> {
+      ingressNames.add(ingress.getMetadata().getName());
+
+    });
+    return ingressNames;
+  }
 }

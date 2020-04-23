@@ -96,7 +96,7 @@ public class TestAssertions {
    */
   public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
     return () -> {
-      return Kubernetes.isPodReady(namespace, domainUID, podName);
+      return Kubernetes.isPodReady(namespace, domainUid, podName);
     };
   }
 
