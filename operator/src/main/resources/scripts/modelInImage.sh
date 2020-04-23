@@ -7,7 +7,7 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-WDT_MINIMUM_VERSION="1.7.4"
+WDT_MINIMUM_VERSION="1.7.3"
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
@@ -395,18 +395,18 @@ function checkModelDirectoryExtensions() {
   cd ${IMG_MODELS_HOME}
   counter=$(ls  -I  *.yaml -I *.zip -I *.properties | wc -l)
   if [ $counter -ne 0 ] ; then
-        ls -l -I  *.yaml -I *.zip -I *.properties
         trace SEVERE "Directory ${IMG_MODELS_HOME} contains files with unsupported extension. Extension must be" \
           ".yaml, .properties, or .zip"
+        trace SEVERE $(ls -I  *.yaml -I *.zip -I *.properties)
         exitOrLoop
   fi
   if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
     cd ${WDT_CONFIGMAP_ROOT}
     counter=$(ls  -I  *.yaml -I *.zip -I *.properties | wc -l)
     if [ $counter -ne 0 ] ; then
-          ls -l  -I  *.yaml -I *.zip -I *.properties
           trace SEVERE "Directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extension. Extension must be" \
             ".yaml, .properties, or .zip"
+          trace SEVERE $(ls -I  *.yaml -I *.zip -I *.properties)
           exitOrLoop
     fi
   fi
@@ -418,14 +418,12 @@ function checkModelDirectoryExtensions() {
 
 function checkWDTVersion() {
   trace "Entering checkWDTVersion"
-
-  local wdt_version=$(unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF | \
-      grep "Implementation-Version"  | cut -f2 -d' ')
-  if [ ${PIPESTATUS[0]} -ne 0 ] && [ ! -z ${wdt_version} ]; then
-    rc=$(versionCmp ${wdt_verion} ${WDT_MINIMUM_VERSION})
-    if [ rc -lt 0 ]; then
-      trace SEVERE "Weblogic Deploy Tool version detected in the image is ${wdt_verion}, Model in Image domain "\
-      " requires minimum version ${WDT_MINIMUM_VERSION}"
+  unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
+  local wdt_version="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
+  if  [ ! -z ${wdt_version} ]; then
+    if [ "$(versionGE ${wdt_version} ${WDT_MINIMUM_VERSION})" != "0" ] ; then
+      trace SEVERE "Model in Image domain requires Weblogic Deploy Tool minimum version ${WDT_MINIMUM_VERSION}. " \
+      "Your version in the image is ${wdt_version}. You need to update the Weblogic Deploy Tool version in the image."
       exitOrLoop
     fi
   else
