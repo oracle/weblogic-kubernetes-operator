@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -50,6 +51,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -80,6 +82,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -102,7 +105,6 @@ class ItMiiDomain implements LoggedTest {
   // mii constants
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
-  private static final String MII_IMAGE_NAME_2 = "mii-image-2";
   private static final String APP_NAME = "sample-app";
 
   // domain constants
@@ -112,6 +114,7 @@ class ItMiiDomain implements LoggedTest {
   // app constants
   private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server1";
   private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server1";
+  private static final String APP_RESPONSE_V3 = "How are you doing!";
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -367,7 +370,6 @@ class ItMiiDomain implements LoggedTest {
     checkAppRunning(
         domainUid,
         domainNamespace,
-        "30711",
         "8001",
         "sample-war/index.jsp",
         APP_RESPONSE_V1);
@@ -383,7 +385,7 @@ class ItMiiDomain implements LoggedTest {
   @MustNotRunInParallel
   public void testAppVersion2Patching() {
     
-    // app here is what is in the original app dir plus the delta in the second app dir
+    // app here is what is in the original app dir plus the replacement in the second app dir
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     
@@ -428,7 +430,6 @@ class ItMiiDomain implements LoggedTest {
     checkAppRunning(
         domainUid,
         domainNamespace,
-        "30711",
         "8001",
         "sample-war/index.jsp",
         APP_RESPONSE_V2);
@@ -441,35 +442,37 @@ class ItMiiDomain implements LoggedTest {
   @DisplayName("Update the domain with another application")
   @Slow
   @MustNotRunInParallel
-  public void testAnotherAppDeployment() {
+  public void testAddAnotherApp() {
     
     // app here is what is in the original app dir plus the delta in the second app dir
     final String appDir1 = "sample-app";
-    final String appDir2 = "sample-app-3";
-    
-    // create another image with app V2 
+    final String appDir2 = "sample-app-2";
+    final String appDir3 = "sample-app-3";
+       
+    // create another image with an additional app
     String image = updateImageWithApp3(
-        MII_IMAGE_NAME_2,
-        Arrays.asList(appDir1),
-        appDir2);
+        MII_IMAGE_NAME,
+        Arrays.asList(appDir1, appDir2),
+        Collections.singletonList(appDir3),
+        "model2-wls.yaml");
   
-    // check and V1 app is running
+    // check and V2 app is still running
     assertTrue(appAccessibleInPod(
             domainUid,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V1),
+            APP_RESPONSE_V2),
         "The expected app is not accessible inside the server pod");
     
-    // check and make sure that the version 2 app is NOT running
+    // check and make sure that the new app is not already running
     assertFalse(appAccessibleInPod(
             domainUid,
             domainNamespace,
             "8001",
-            "sample-war/index.jsp",
-            APP_RESPONSE_V2),
-        "The second version of the app is not supposed to be running!!");   
+            "sample-war-3/index.jsp",
+            APP_RESPONSE_V3),
+        "The second app is not supposed to be running!!");   
     
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUid, domainNamespace, image);
@@ -485,16 +488,23 @@ class ItMiiDomain implements LoggedTest {
       // do nothing
     }
     
-    // check and wait for the app to be ready
+    // check and wait for the original app to be ready
+    checkAppRunning(
+            domainUid,
+            domainNamespace,
+            "8001",
+            "sample-war/index.jsp",
+            APP_RESPONSE_V2);
+    
+    // check and wait for the new app to be ready
     checkAppRunning(
         domainUid,
         domainNamespace,
-        "30711",
         "8001",
-        "sample-war/index.jsp",
-        APP_RESPONSE_V2);
+        "sample-war-3/index.jsp",
+        APP_RESPONSE_V3);
 
-    logger.info("The cluster has been rolling started, and the version 2 application has been deployed correctly.");
+    logger.info("The cluster has been rolling started, and the two applications are both running correctly.");
   }
 
   /**
@@ -540,6 +550,14 @@ class ItMiiDomain implements LoggedTest {
       assertDoesNotThrow(() -> deleteNamespace(opNamespace),
           "deleteNamespace failed with ApiException");
       logger.info("Deleted namespace: " + opNamespace);
+    }
+
+    // clean up the download directory so that we can get always the latest
+    // versions of the tools
+    try {
+      cleanupDirectory(DOWNLOAD_DIR);
+    } catch (IOException | RuntimeException e) {    
+      logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR + " ready", e);    
     }
   }
 
@@ -591,27 +609,40 @@ class ItMiiDomain implements LoggedTest {
 
   private String updateImageWithApp3(
       String imageName,
-      List<String> appDirList,
-      String appName
+      List<String> appDirList1,
+      List<String> appDirList2,
+      String modelFile
   ) {
     // build the model file list
-    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
-   
-    // build an application archive using what is in resources/apps/{appDirList(0)}
-
+    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
+ 
+    String appName1 = appDirList1.get(0);
+    String appName2 = appDirList2.get(0);
+    
+    // build an application archive using for the first app, which is the same after
+    // patching the original app.
     boolean archiveBuilt = buildAppArchive(
         defaultAppParams()
-            .srcDirList(appDirList)
-            .appName(appName));
+            .srcDirList(appDirList1)
+            .appName(appName1));
     
-    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName));
+    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName1));
+
+    archiveBuilt = buildAppArchive(
+            defaultAppParams()
+                .srcDirList(appDirList2)
+                .appName(appName2));
+        
+    assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName2));
+        
+    // build the archive list with two zip files
+    List<String> archiveList = Arrays.asList(
+        String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
+        String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
     
-    // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-    List<String> archiveList = Collections.singletonList(zipFile);
     createImageAndVerify(
-        imageName, "v2", modelList, archiveList);
-    return imageName + ":" + "v2";
+        imageName, "v3", modelList, archiveList);
+    return imageName + ":" + "v3";
  
   }
 
@@ -724,7 +755,6 @@ class ItMiiDomain implements LoggedTest {
   private void checkAppRunning(
       String domainUid,
       String ns,
-      String nodePort,
       String internalPort,
       String appPath, 
       String expectedStr

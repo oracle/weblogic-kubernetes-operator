@@ -35,7 +35,7 @@ public class FileUtils {
     File file = new File(dir);
     if (!(file.exists() && file.isDirectory())) {
       file.mkdirs();
-      logger.info("Made a new dir {0}.", dir);
+      logger.fine("Made a new dir {0}.", dir);
     }
   }
 
@@ -74,7 +74,7 @@ public class FileUtils {
    */
   public static void cleanupDirectory(String dir) throws IOException {
     File file = new File(dir);
-    logger.info("Cleaning up directory {0}.", dir);
+    logger.fine("Cleaning up directory {0}.", dir);
     if (!file.exists()) {
       // nothing to do
       return;
@@ -111,7 +111,7 @@ public class FileUtils {
   }
   
   private static void copy(Path source, Path dest) throws IOException {
-    logger.info("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
+    logger.finest("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
     if (!dest.toFile().isDirectory()) {
       Files.copy(source, dest, REPLACE_EXISTING);
     }
