@@ -85,8 +85,8 @@ public class ExecCommand {
                   }
                 });
         out.start();
-      } 
-      
+      }
+
       p.waitFor();
       
       // if we have not read the stdout, we do it now
