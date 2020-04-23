@@ -1,7 +1,7 @@
 ---
 title: "Domain home on a PV"
 date: 2019-02-23T17:32:31-05:00
-weight: 2
+weight: 4
 description: "Sample for creating a WebLogic domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
@@ -14,8 +14,8 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be handled prior to running the create domain script:
 
-* Make sure the WebLogic Server Kubernetes Operator is running.
-* The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. Refer to [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) for details on how to obtain or create the image.
+* Make sure the WebLogic Kubernetes Operator is running.
+* The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. Refer to [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) for details on how to obtain or create the image.
 * Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes namespace as the domain.
@@ -26,7 +26,7 @@ Please note the following important considerations about using persistent storag
 
 There are a number of different Kubernetes storage providers that can be used to create persistent
 volumes.  Depending on which variant and version of Kubernetes you are using, there will be different
-steps required to create persistent volumes.  You must use a storage provider that suppports
+steps required to create persistent volumes.  You must use a storage provider that supports
 the `ReadWriteMany` option.
 
 Many storage providers will create a file system on
@@ -111,14 +111,13 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | WebLogic Docker image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. Refer to [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
+| `image` | WebLogic Docker image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. Refer to [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod location for domain log, server logs, server out, Node Manager log, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
+| `logHome` | The in-pod location for domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
@@ -146,8 +145,9 @@ Note that the example results below use the `default` Kubernetes namespace. If y
 The content of the generated `domain.yaml`:
 
 ```
-# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
@@ -162,10 +162,10 @@ metadata:
 spec:
   # The WebLogic Domain Home
   domainHome: /shared/domains/domain1
-  # Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
-  domainHomeSourceType: PersistentVolume
+  # If the domain home is in the image
+  domainHomeInImage: false
   # The WebLogic Server Docker image that the operator uses to start the domain
-  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
+  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
@@ -298,7 +298,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /shared/domains/domain1
   Domain Home In Image:           false
-  Image:                          container-registry.oracle.com/middleware/weblogic:12.2.1.4
+  Image:                          container-registry.oracle.com/middleware/weblogic:12.2.1.3
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /shared/logs/domain1
@@ -419,8 +419,7 @@ $ kubectl create -f delete-domain-job.yaml
 * Message: `status on iteration 20 of 20
 pod domain1-create-weblogic-sample-domain-job-4qwt2 status is Pending
 The create domain job is not showing status completed after waiting 300 seconds.`  
-The most likely cause is related to the value of `persistentVolumeClaimName`, defined in `domain-home-on-pv/create-domain-inputs.yaml`.  
-To determine if this is the problem:
+The most likely cause is related to the value of `persistentVolumeClaimName`, defined in `domain-home-on-pv/create-domain-inputs.yaml`.  To determine if this is the problem:
 
     * Execute `kubectl get all --all-namespaces` to find the name of the `create-weblogic-sample-domain-job`.
     * Execute  `kubectl describe pod <name-of-create-weblogic-sample-domain-job>` to see if there is an event that has text similar to `persistentvolumeclaim "domain1-weblogic-sample-pvc" not found`.
@@ -435,7 +434,7 @@ Look for lines similar to:
 ```
 weblogic-operator1   pod/weblogic-operator-
 ```
-   If you do not find something similar in the output, the WebLogic Server Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
+   If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
 
 
 * Message: `ERROR: Unable to create folder /shared/domains`  
