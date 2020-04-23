@@ -40,7 +40,7 @@
           </execution>
         </executions>
         <configuration>
-          <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+          <dotGitDirectory>${root.basedir}/.git</dotGitDirectory>
           <prefix>git</prefix>
           <verbose>false</verbose>
           <generateGitPropertiesFile>true</generateGitPropertiesFile>
@@ -384,7 +384,6 @@
   </dependencies>
 
   <properties>
-    <root.basedir>${project.parent.basedir}</root.basedir>
     <junit-version>4.13</junit-version>
     <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
   </properties>

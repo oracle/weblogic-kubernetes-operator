@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("Simple validation of basic WIT functions")
+@IntegrationTest
 class ItWitValidation implements LoggedTest {
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String IMAGE_NAME = "test-mii-image-2";
@@ -40,17 +42,17 @@ class ItWitValidation implements LoggedTest {
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
-    
+
     // build an application archive using what is in resources/apps/APP_NAME
     boolean archiveBuilt = buildAppArchive(
         defaultAppParams()
             .srcDirList(Collections.singletonList(APP_NAME)));
-    
+
     assertThat(archiveBuilt)
         .as("Create an app archive")
         .withFailMessage("Failed to create app archive for " + APP_NAME)
         .isTrue();
-    
+
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
     List<String> archiveList = Collections.singletonList(zipFile);
@@ -77,6 +79,5 @@ class ItWitValidation implements LoggedTest {
         .isTrue();
 
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
-  } 
+  }
 }
-

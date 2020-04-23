@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
@@ -34,10 +33,11 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,7 +46,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -60,7 +59,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -86,12 +84,13 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
-@ExtendWith(Timing.class)
+@IntegrationTest
 class ItMiiDomain implements LoggedTest {
 
   // operator constants
@@ -125,16 +124,20 @@ class ItMiiDomain implements LoggedTest {
   private String domainUid = "domain1";
   private String repoSecretName = "reposecret";
   private String miiImage = null;
+  private String miiImagePatchAppV2 = null;
+  private String miiImageAddSecondApp = null;
   private String repoRegistry = "dummy";
   private String repoUserName = "dummy";
   private String repoPassword = "dummy";
   private String repoEmail = "dummy";
-
+  
   /**
    * Install Operator.
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll() {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -142,14 +145,12 @@ class ItMiiDomain implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", opNamespace);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
-    domainNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace);
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    domainNamespace = namespaces.get(1);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
@@ -383,15 +384,16 @@ class ItMiiDomain implements LoggedTest {
   @DisplayName("Update the sample-app application to version 2")
   @Slow
   @MustNotRunInParallel
-  public void testAppVersion2Patching() {
+  public void testPatchAppV2() {
     
     // app here is what is in the original app dir plus the replacement in the second app dir
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     
     // create another image with app V2 
-    String image = updateImageWithAppV2Patch(
+    miiImagePatchAppV2 = updateImageWithAppV2Patch(
         MII_IMAGE_NAME,
+        "testPatchAppV2",
         Arrays.asList(appDir1, appDir2));
   
     // check and V1 app is running
@@ -413,7 +415,7 @@ class ItMiiDomain implements LoggedTest {
         "The second version of the app is not supposed to be running!!");   
     
     // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, domainNamespace, image);
+    patchDomainResourceIamge(domainUid, domainNamespace, miiImagePatchAppV2);
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
@@ -442,7 +444,7 @@ class ItMiiDomain implements LoggedTest {
   @DisplayName("Update the domain with another application")
   @Slow
   @MustNotRunInParallel
-  public void testAddAnotherApp() {
+  public void testAddSecondApp() {
     
     // app here is what is in the original app dir plus the delta in the second app dir
     final String appDir1 = "sample-app";
@@ -450,8 +452,9 @@ class ItMiiDomain implements LoggedTest {
     final String appDir3 = "sample-app-3";
        
     // create another image with an additional app
-    String image = updateImageWithApp3(
+    miiImageAddSecondApp = updateImageWithApp3(
         MII_IMAGE_NAME,
+        "testAddSecondApp",
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
         "model2-wls.yaml");
@@ -475,7 +478,7 @@ class ItMiiDomain implements LoggedTest {
         "The second app is not supposed to be running!!");   
     
     // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, domainNamespace, image);
+    patchDomainResourceIamge(domainUid, domainNamespace, miiImageAddSecondApp);
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
@@ -523,6 +526,10 @@ class ItMiiDomain implements LoggedTest {
     if (miiImage != null) {
       deleteImage(miiImage);
     }
+    
+    // delete the domain images created in test #4 and #5
+    deleteImage(miiImagePatchAppV2);
+    deleteImage(miiImageAddSecondApp);
 
     // uninstall operator release
     logger.info("Uninstall Operator in namespace {0}", opNamespace);
@@ -586,6 +593,7 @@ class ItMiiDomain implements LoggedTest {
   
   private String updateImageWithAppV2Patch(
       String imageName,
+      String imageTag,
       List<String> appDirList
   ) {
     // build the model file list
@@ -602,13 +610,14 @@ class ItMiiDomain implements LoggedTest {
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
     List<String> archiveList = Collections.singletonList(zipFile);
     createImageAndVerify(
-        imageName, "v2", modelList, archiveList);
-    return imageName + ":" + "v2";
+        imageName, imageTag, modelList, archiveList);
+    return imageName + ":" + imageTag;
  
   }
 
   private String updateImageWithApp3(
       String imageName,
+      String imageTag,
       List<String> appDirList1,
       List<String> appDirList2,
       String modelFile
@@ -627,22 +636,22 @@ class ItMiiDomain implements LoggedTest {
             .appName(appName1));
     
     assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName1));
-
+    logger.info("Successfully created app zip file: " + appName1);
     archiveBuilt = buildAppArchive(
             defaultAppParams()
                 .srcDirList(appDirList2)
                 .appName(appName2));
         
     assertTrue(archiveBuilt, String.format("Failed to create app archive for %s", appName2));
-        
+    logger.info("Successfully cteated app zip file: " + appName2);   
     // build the archive list with two zip files
     List<String> archiveList = Arrays.asList(
         String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
         String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
     
     createImageAndVerify(
-        imageName, "v3", modelList, archiveList);
-    return imageName + ":" + "v3";
+        imageName, imageTag, modelList, archiveList);
+    return imageName + ":" + imageTag;
  
   }
 
@@ -665,7 +674,7 @@ class ItMiiDomain implements LoggedTest {
     String patch = 
         String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n",
             image);
-    logger.info("Patch string is : " + patch);
+    logger.info("About to patch the domain resource with:\n" + patch);
 
     assertTrue(patchDomainCustomResource(
             domainUid,
