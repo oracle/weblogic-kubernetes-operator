@@ -138,9 +138,9 @@ public class DomainCrd {
   }
   
   /**
-   * A utility method to add attributes to opss node in domain.yaml.
+   * A utility method to add attributes to OPSS node in domain.yaml.
    * 
-   *@param attributes A HashMap of key value pairs
+   *@param attributes A Map of key value pairs
    */
   public void addObjectNodeToOpss(Map<String, String> attributes) {
 

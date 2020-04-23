@@ -13,7 +13,7 @@ import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
+//import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.Alphanumeric;
@@ -78,7 +78,7 @@ public class ItJrfPvWlst extends BaseTest {
          "Failed: Copy sample dir to the result dir");
     
     //start DB and create RCU
-    dbNamespace = "db" + String.valueOf(getNewSuffixCount());
+    /*dbNamespace = "db" + String.valueOf(getNewSuffixCount());
     assertDoesNotThrow(() -> DbUtils.createNamespace(dbNamespace),
         "Failed to create namespace: " + dbNamespace);
     dbPort = 30011 + getNewSuffixCount();
@@ -90,7 +90,13 @@ public class ItJrfPvWlst extends BaseTest {
         + " dbNamespace is: " + dbNamespace 
         + " dbUrl:" + dbUrl 
         + " dbPort: " + dbPort
-        + " rcuSchemaPrefix" + rcuSchemaPrefix);  
+        + " rcuSchemaPrefix" + rcuSchemaPrefix); */ 
+    dbNamespace = "db" + String.valueOf(getNewSuffixCount());
+    dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
+    dbPort = 30011 + getNewSuffixCount();
+    dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
+    assertDoesNotThrow(() -> DbUtils.setupRCUdatabase(getResultDir(), dbPort, dbUrl, 
+        rcuSchemaPrefix, dbNamespace));
         
     // create operator
     if (operator == null) {

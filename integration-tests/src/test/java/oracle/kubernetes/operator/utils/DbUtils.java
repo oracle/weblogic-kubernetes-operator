@@ -62,25 +62,20 @@ public class DbUtils {
         + "/scripts/create-oracle-db-service/start-db-service.sh"
         + " -i " + BaseTest.getOracledbImageName() + ":" + BaseTest.getOracledbImageTag()
         + " -p " + dbPort
-        + " -n " + dbNamespace;;
+        + " -n " + dbNamespace;
     
-    try {
-      TestUtils.exec(cmd1, true);
-      String cmd2 = "kubectl get pod" + " -n " + dbNamespace + " | grep oracle-db | cut -f1 -d \" \" ";
-      logger.info("DEBUG: command to get DB pod: " + cmd2);
-      ExecResult result = TestUtils.exec(cmd2);
-      String podName = result.stdout();
+    TestUtils.exec(cmd1, true);
+    String cmd2 = "kubectl get pod" + " -n " + dbNamespace + " | grep oracle-db | cut -f1 -d \" \" ";
+    logger.info("DEBUG: command to get DB pod: " + cmd2);
+    ExecResult result = TestUtils.exec(cmd2);
+    String podName = result.stdout();
 
-      logger.info("DEBUG: DB podname=" + podName + " namespace: " + dbNamespace);
-      TestUtils.checkPodReady(podName, dbNamespace);
+    logger.info("DEBUG: DB podname=" + podName + " namespace: " + dbNamespace);
+    TestUtils.checkPodReady(podName, dbNamespace);
 
-      // check the db is ready to use
-      String cmd3 = "kubectl logs " + podName + " -n " + dbNamespace;
-      TestUtils.checkCmdInLoop(cmd3, "The database is ready for use", podName);
-
-    } catch (Exception ex) {
-      ex.getCause();
-    } 
+    // check the db is ready to use
+    String cmd3 = "kubectl logs " + podName + " -n " + dbNamespace;
+    TestUtils.checkCmdInLoop(cmd3, "The database is ready for use", podName);
   }
   
   /**
@@ -95,23 +90,20 @@ public class DbUtils {
         + scriptsDir
         + "/scripts/create-oracle-db-service/stop-db-service.sh"
         + " -n " + dbNamespace;
-    try {
-      TestUtils.exec(cmd, true);
-    } catch (Exception ex) {
-      ex.getCause();
-    } 
+   
+    TestUtils.exec(cmd, true);
   }
   
   /**
    * Create Oracle rcu pod and load database schema in the k8s cluster default namespace.
    * 
    * @param scriptsDir directory of scripts
-   * @param rcuSchemaPrefix rcu SchemaPrefixe
-   * @param dbNamespace namespace where DB instance is going to start
-   * @throws Exception if any error occurs when creating Oracle rcu pod
+   * @param rcuSchemaPrefix prefix of RCU schema
+   * @param namespace namespace where RCU schema is going to be created
+   * @throws Exception if any error occurs when creating RCU schema
    */
   public static void createRcuSchema(String scriptsDir, String rcuSchemaPrefix, 
-      String dbUrl, String dbNamespace) throws Exception {
+      String dbUrl, String namespace) throws Exception {
     String cmd;
     if (dbUrl == null) {
       cmd = "sh " 
@@ -119,7 +111,7 @@ public class DbUtils {
         + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
         + rcuSchemaPrefix
         + " -i " + BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag()
-        + " -n " + dbNamespace;
+        + " -n " + namespace;
     } else {
       cmd = "sh " 
           + scriptsDir
@@ -128,14 +120,10 @@ public class DbUtils {
           + " -d "
           + dbUrl
           + " -i " + BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag()
-          + " -n " + dbNamespace;
+          + " -n " + namespace;
     }
     
-    try {
-      TestUtils.exec(cmd, true);
-    } catch (Exception ex) {
-      ex.getCause();
-    } 
+    TestUtils.exec(cmd, true);     
   }
   
   /**
@@ -153,40 +141,31 @@ public class DbUtils {
     if (ocrserver == null) {
       ocrserver = "container-registry.oracle.com";
     }
-    try {
-      TestUtils.createDockerRegistrySecret(
+   
+    TestUtils.createDockerRegistrySecret(
           secret,
           ocrserver,
           System.getenv("OCR_USERNAME"),
           System.getenv("OCR_PASSWORD"),
           System.getenv("OCR_USERNAME") + "@oracle.com",
           namespace);
-    } catch (Exception ex) {
-      ex.getCause();
-    } 
   }
 
-  
   /**
    * Drop Oracle rcu schema.
    * 
    * @param scriptsDir directory of scripts
-   * @param rcuSchemaPrefix rcu SchemaPrefixe
-   * @param dbNamespace namespace where DB instance is going to start
+   * @param rcuSchemaPrefix prefix of RCU schema
+   * @param namespace namespace where RCU schema was created
    * @throws Exception if any error occurs when dropping rcu schema
    */
-  public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix, String dbNamespace) throws Exception {
+  public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix, String namespace) throws Exception {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-rcu-schema/drop-rcu-schema.sh "
         + " -s " + rcuSchemaPrefix
-        + " -n " + dbNamespace;
+        + " -n " + namespace;
     TestUtils.exec(cmd, true);
-    try {
-      TestUtils.exec(cmd, true);
-    } catch (Exception ex) {
-      ex.getCause();
-    } 
   }
   
   /**
@@ -204,7 +183,7 @@ public class DbUtils {
   /**
    * Delete DB pod.
    * 
-   * @param scriptsDir script dir
+   * @param scriptsDir directory of scripts
    * @throws Exception if any error occurs when deleting DB pod
    */
   public static void deleteDbPod(String scriptsDir) throws Exception {
@@ -212,11 +191,6 @@ public class DbUtils {
         + scriptsDir
         + "/scripts/create-oracle-db-service/common/oracle.db.yaml --ignore-not-found";
     TestUtils.exec(cmd, true);
-    try {
-      TestUtils.exec(cmd, true);
-    } catch (Exception ex) {
-      ex.getCause();
-    } 
   }
 
   /**
@@ -334,48 +308,42 @@ public class DbUtils {
    */
   public static void createNamespace(String namespace) throws Exception {
     if (!namespace.equalsIgnoreCase("default")) {
-      try {
-        String cmd1 = "kubectl delete ns " + namespace + " --ignore-not-found";
-        logger.info("Running " + cmd1);
-        TestUtils.exec(cmd1, true);
-        String cmd2 = "kubectl create ns " + namespace;
-        logger.info("Running " + cmd2);
-        TestUtils.exec(cmd2, true);
-      } catch (Exception ex) {
-        ex.getCause();
-      }
+      String cmd1 = "kubectl delete ns " + namespace + " --ignore-not-found";
+      logger.info("Running " + cmd1);
+      TestUtils.exec(cmd1, true);
+      String cmd2 = "kubectl create ns " + namespace;
+      logger.info("Running " + cmd2);
+      TestUtils.exec(cmd2, true);
     }
   }
   
   /**
    * Create Oracle rcu pod and load database schema in the specified namespace.
    * 
-   * @param scriptDir script dir
+   * @param scriptsDir directory of scripts
    * @param dbPort NodePort of DB
    * @param dbUrl URL of DB
    * @param rcuSchemaPrefix rcu SchemaPrefixe
-   * @param dbNamespace namesspace that DB instance is going to start
-   * @throws Exception if any error occurs when creating Oracle rcu pod
+   * @param namespace namespace that DB and RCU schema are going to start
+   * @throws Exception if any error occurs when setting up RCU database
    */
-  public static void setupRCUdatabase(String scriptDir, int dbPort, String dbUrl, String rcuSchemaPrefix,
-      String dbNamespace) throws Exception {  
+  public static void setupRCUdatabase(String scriptsDir, int dbPort, String dbUrl, String rcuSchemaPrefix,
+      String namespace) throws Exception {  
     
-    try {  
-      //delete leftover pods caused by test being aborted
-      deleteRcuPod(scriptDir);
-      deleteDbPod(scriptDir);
-         
-      DbUtils.createDockerRegistrySecret(dbNamespace);
-      DbUtils.startOracleDB(scriptDir, String.valueOf(dbPort), dbNamespace);
-      DbUtils.createRcuSchema(scriptDir,rcuSchemaPrefix, dbUrl, dbNamespace);
-      LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for:" 
-          + " dbNamespace is: " + dbNamespace 
-          + " dbUrl:" + dbUrl 
-          + " dbPort: " + dbPort
-          + " rcuSchemaPrefix: " + rcuSchemaPrefix); 
-    } catch (Exception ex) {
-      ex.getCause();
-    }
+    //delete leftover pods caused by test being aborted
+    deleteRcuPod(scriptsDir);
+    deleteDbPod(scriptsDir);
+    
+    createNamespace(namespace);
+    createDockerRegistrySecret(namespace);
+    startOracleDB(scriptsDir, String.valueOf(dbPort), namespace);
+    createRcuSchema(scriptsDir,rcuSchemaPrefix, dbUrl, namespace);
+    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for:" 
+        + " namespace: " + namespace 
+        + " dbUrl:" + dbUrl 
+        + " dbPort: " + dbPort
+        + " rcuSchemaPrefix: " + rcuSchemaPrefix); 
+    
   }
 
 }

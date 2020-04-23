@@ -103,13 +103,8 @@ public class RcuSecret extends Secret {
             + this.rcuDBConnUrl;
             
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
-    
-    try {
-      ExecResult result = TestUtils.exec(command);
-      LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
-    } catch (Exception ex) {
-      ex.getCause();
-    }     
+    ExecResult result = TestUtils.exec(command);
+    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
   
   public String getSysUsername() {
