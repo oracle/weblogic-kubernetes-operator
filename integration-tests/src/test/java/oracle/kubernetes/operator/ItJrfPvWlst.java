@@ -62,8 +62,6 @@ public class ItJrfPvWlst extends BaseTest {
    */
   @BeforeEach
   public void prepare() {
-
-    //createResultAndPvDirs(testClassName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating result/pv root directories");
     assertDoesNotThrow(() -> createResultAndPvDirs(testClassName),
         "Failed: createResultAndPvDirs");
