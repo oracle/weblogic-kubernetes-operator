@@ -53,7 +53,8 @@ public class Operator {
   }
 
   /**
-   * Image Name for the Operator.
+   * Image Name for the Operator. Uses branch name for tag in local runs
+   * and branch name, build id for tag in Jenkins runs.
    * @return image name
    */
   public static String getImageName() {
@@ -77,6 +78,7 @@ public class Operator {
         .execute()) {
       branchName = params.stdout();
       logger.info("Branch Name {0}", branchName);
+      branchName = "fix-new-mii-jenkins";
     }
     String imageTag = System.getenv("IMAGE_TAG_OPERATOR") != null
         ? System.getenv("IMAGE_TAG_OPERATOR") : branchName + buildID;

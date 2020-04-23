@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -48,13 +47,14 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
@@ -80,6 +81,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
@@ -142,6 +144,12 @@ class ItMiiDomain implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
+    String operatorImage = getImageName();
+    assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
+    logger.info("Operator image name {0}", operatorImage);
+
+    // To Do : Create repo registry secret in opNamespace and use that to pull the operator image
+
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -152,7 +160,7 @@ class ItMiiDomain implements LoggedTest {
     OperatorParams opParams =
         new OperatorParams()
             .helmParams(opHelmParams)
-            .image(OPERATOR_IMAGE_NAME)
+            .image(operatorImage)
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
@@ -200,6 +208,7 @@ class ItMiiDomain implements LoggedTest {
       repoUserName = System.getenv("REPO_USERNAME");
       repoPassword = System.getenv("REPO_PASSWORD");
       repoEmail = System.getenv("REPO_EMAIL");
+      miiImage = REPO_NAME + miiImage;
 
       logger.info("docker login");
       assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
@@ -209,7 +218,7 @@ class ItMiiDomain implements LoggedTest {
     }
 
     // create docker registry secret in the domain namespace to pull the image from OCIR
-    JsonObject dockerConfigJsonObject = getDockerConfigJson(
+    JsonObject dockerConfigJsonObject = createDockerConfigJson(
         repoUserName, repoPassword, repoEmail, repoRegistry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
@@ -281,7 +290,7 @@ class ItMiiDomain implements LoggedTest {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(30711))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
                 .replicas(replicaCount)
@@ -492,19 +501,4 @@ class ItMiiDomain implements LoggedTest {
 
   }
 
-  private static JsonObject getDockerConfigJson(String username, String password, String email, String registry) {
-    JsonObject authObject = new JsonObject();
-    authObject.addProperty("username", username);
-    authObject.addProperty("password", password);
-    authObject.addProperty("email", email);
-    String auth = username + ":" + password;
-    String authEncoded = Base64.getEncoder().encodeToString(auth.getBytes());
-    System.out.println("auth encoded: " + authEncoded);
-    authObject.addProperty("auth", authEncoded);
-    JsonObject registryObject = new JsonObject();
-    registryObject.add(registry, authObject);
-    JsonObject configJsonObject = new JsonObject();
-    configJsonObject.add("auths", registryObject);
-    return configJsonObject;
-  }
 }

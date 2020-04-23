@@ -10,8 +10,12 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 
 //import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,9 +45,26 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       // build operator image
       String operatorImage = Operator.getImageName();
       logger.info("Operator image name {0}", operatorImage);
-      assertFalse(true);
-      /* assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
-      assertTrue(Operator.buildImage(operatorImage)); */
+      // assertFalse(true);
+      assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
+
+      // push the image to OCIR to make the test work in multi node cluster
+      String repoRegistry = System.getenv("REPO_REGISTRY");
+      String repoUserName = System.getenv("REPO_USERNAME");
+      String repoPassword = System.getenv("REPO_PASSWORD");
+
+      if (repoRegistry != null && repoUserName != null && repoPassword != null) {
+        operatorImage = REPO_NAME + operatorImage;
+        assertTrue(Operator.buildImage(operatorImage));
+
+        logger.info("docker login");
+        assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
+
+        logger.info("docker push image {0} to OCIR", operatorImage);
+        assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
+      } else {
+        assertTrue(Operator.buildImage(operatorImage));
+      }
 
       // Initialization is done. Release all waiting other threads. The latch is now disabled so other threads
       // arriving later will immediately proceed.

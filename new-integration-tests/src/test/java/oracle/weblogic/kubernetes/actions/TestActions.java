@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions;
 
 import java.util.List;
 
+import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
@@ -84,6 +85,15 @@ public class TestActions {
 
   public static boolean uninstallOperator(HelmParams params) {
     return Operator.uninstall(params);
+  }
+
+  /**
+   * Image Name for the Operator. Uses branch name for tag in local runs
+   * and branch name, build id for tag in Jenkins runs.
+   * @return image name
+   */
+  public static String getImageName() {
+    return Operator.getImageName();
   }
 
   /**
@@ -507,6 +517,18 @@ public class TestActions {
    */
   public static boolean deleteImage(String image) {
     return Docker.deleteImage(image);
+  }
+
+  /**
+   * Create Docker registry configuration in json object.
+   * @param username username for the Docker registry
+   * @param password password for the Docker registry
+   * @param email email for the Docker registry
+   * @param registry Docker registry name
+   * @return json object for the Docker registry configuration
+   */
+  public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
+    return Docker.createDockerConfigJson(username, password, email, registry);
   }
 
   // ------------------------ where does this go  -------------------------

@@ -13,5 +13,6 @@ public interface TestConstants {
       "oracle/weblogic-kubernetes-operator";
   public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
       "../buildDockerImage.sh";
+  public static final String REPO_NAME = "phx.ocir.io/weblogick8s/";
 
 }
