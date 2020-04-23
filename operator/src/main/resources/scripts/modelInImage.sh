@@ -421,7 +421,8 @@ function checkWDTVersion() {
   unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
   local wdt_version="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
   if  [ ! -z ${wdt_version} ]; then
-    if [ "$(versionGE ${wdt_version} ${WDT_MINIMUM_VERSION})" != "0" ] ; then
+    versionGE ${wdt_version} ${WDT_MINIMUM_VERSION}
+    if [ $? != "0" ] ; then
       trace SEVERE "Model in Image domain requires Weblogic Deploy Tool minimum version ${WDT_MINIMUM_VERSION}. " \
       "Your version in the image is ${wdt_version}. You need to update the Weblogic Deploy Tool version in the image."
       exitOrLoop
