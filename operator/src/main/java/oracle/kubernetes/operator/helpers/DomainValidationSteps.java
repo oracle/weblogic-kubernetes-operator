@@ -109,7 +109,7 @@ public class DomainValidationSteps {
 
     private void logAndAddWarning(List<String> validationWarnings, String messageKey, Object... params) {
       LOGGER.warning(messageKey, params);
-      validationWarnings.add(LOGGER.getFormattedMessage(messageKey, params));
+      validationWarnings.add(LOGGER.formatMessage(messageKey, params));
     }
 
     private void validate(DomainPresenceInfo info, WlsDomainConfig wlsDomainConfig) {

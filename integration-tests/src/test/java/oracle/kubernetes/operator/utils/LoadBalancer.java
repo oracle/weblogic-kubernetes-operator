@@ -37,11 +37,7 @@ public class LoadBalancer {
 
     if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
       String cmdLb = "";
-      if (! BaseTest.HELM_VERSION.equals("V2")) {
-        cmdLb = "helm list traefik-operator | grep DEPLOYED";
-      } else {
-        cmdLb = "helm list --namespace traefik | grep traefik-operator | grep -i DEPLOYED";
-      }
+      cmdLb = "helm list --namespace traefik | grep traefik-operator | grep -i DEPLOYED";
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -59,11 +55,7 @@ public class LoadBalancer {
 
     if (lbMap.get("loadBalancer").equals("VOYAGER")) {
       String cmdLb = "";
-      if (BaseTest.HELM_VERSION.equals("V2")) {
-        cmdLb = "helm list voyager-operator | grep DEPLOYED";
-      } else {
-        cmdLb = "helm list --namespace voyager | grep voyager-operator | grep -i DEPLOYED";
-      }
+      cmdLb = "helm list --namespace voyager | grep voyager-operator | grep -i DEPLOYED";
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
@@ -146,6 +138,7 @@ public class LoadBalancer {
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" traefik-operator")
        .append(" stable/traefik ")
+       .append(" --debug ")
        .append("--namespace traefik ")
        .append("--reuse-values ")
        .append("--set ")
@@ -172,9 +165,7 @@ public class LoadBalancer {
    */
   private String getKubernetesNamespaceToUpdate(String domainNamespace) throws Exception {
     String cmd = "helm get values traefik-operator ";
-    if (! BaseTest.HELM_VERSION.equals("V2")) {
-      cmd = cmd + " --namespace traefik ";
-    }
+    cmd = cmd + " --namespace traefik ";
     ExecResult result = TestUtils.exec(cmd, true);
     Map<String, Object> yamlMap = TestUtils.loadYamlFromString(result.stdout());
     LoggerHelper.getLocal().log(Level.INFO, "map " + yamlMap);
@@ -210,16 +201,9 @@ public class LoadBalancer {
 
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(chartDir).append(" && ");
-    
-    if (BaseTest.HELM_VERSION.equals("V2")) {
-      cmd.append(" helm install ingress-per-domain ")
-         .append(" --name ")
-          .append(lbMap.get("name"));
-    } else {
-      cmd.append(" helm install ")
+    cmd.append(" helm install ")
          .append(lbMap.get("name"))
           .append(" ingress-per-domain");
-    }
     cmd.append(" --namespace ")
        .append(lbMap.get("namespace"))
        .append(" --set ")
@@ -268,6 +252,7 @@ public class LoadBalancer {
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" voyager-operator")
         .append(" appscode/voyager ")
+        .append("--debug ")
         .append("--namespace voyager ")
         .append("--reuse-values ")
         .append("--set ")
@@ -315,16 +300,9 @@ public class LoadBalancer {
 
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(chartDir).append(" && ");
-
-    if (BaseTest.HELM_VERSION.equals("V2")) {
-      cmd.append(" helm install ingress-per-domain ")
-         .append(" --name ")
-          .append(lbMap.get("name"));
-    } else {
-      cmd.append(" helm install ")
+    cmd.append(" helm install ")
          .append(lbMap.get("name"))
           .append(" ingress-per-domain");
-    }
     cmd.append(" --namespace ")
        .append(lbMap.get("namespace"))
        .append(" --set type=VOYAGER")

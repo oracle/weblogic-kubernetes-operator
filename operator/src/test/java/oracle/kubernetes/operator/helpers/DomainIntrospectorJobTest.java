@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -45,6 +46,7 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
@@ -92,7 +94,8 @@ public class DomainIntrospectorJobTest {
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
-            .withLogLevel(Level.INFO));
+            .withLogLevel(Level.FINE)
+            .ignoringLoggedExceptions(ApiException.class));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
@@ -172,7 +175,7 @@ public class DomainIntrospectorJobTest {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getJobCreatedMessageKey()));
-    assertThat(logRecords, containsInfo(getJobDeletedMessageKey()));
+    assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
   }
 
   private static WlsDomainConfig createDomainConfig(String clusterName) {
@@ -190,13 +193,13 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenNoJob_retryOnFailure() {
+  public void whenNoJob_onFiveHundred() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(KubernetesTestSupport.JOB, getJobName(), NS, 401);
+    testSupport.failOnResource(KubernetesTestSupport.JOB, getJobName(), NS, 500);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test
@@ -241,7 +244,8 @@ public class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound", "Test this failure"));
+    assertThat(getDomain(), hasStatus("FieldValueNotFound",
+        "testcall in namespace junit, for testName: Test this failure"));
   }
 
   Domain getDomain() {
@@ -268,7 +272,7 @@ public class DomainIntrospectorJobTest {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getJobCreatedMessageKey()));
-    assertThat(logRecords, containsInfo(getJobDeletedMessageKey()));
+    assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
     assertThat(logRecords, containsWarning(getNoClusterInDomainMessageKey()));
   }
 

@@ -568,7 +568,7 @@ function waitForShutdownMarker() {
     if [ -e ${SHUTDOWN_MARKER_FILE} ] ; then
       exit 0
     fi
-    sleep 3
+    sleep 0.1
   done
 }
 

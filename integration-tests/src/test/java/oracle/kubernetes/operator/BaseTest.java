@@ -53,7 +53,6 @@ public class BaseTest {
   public static String GRAFANA_CHART_VERSION;
   public static String MONITORING_EXPORTER_VERSION;
   public static String MONITORING_EXPORTER_BRANCH;
-  public static String HELM_VERSION;
   public static String VOYAGER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
@@ -111,19 +110,13 @@ public class BaseTest {
               + result.stderr());
     }
     LoggerHelper.getLocal().log(Level.INFO, result.stdout());
-    System.out.println("Detected Helm Client Version[" + result.stdout() + "]");
+    System.out.println("BaseTest: Detected helm client version[" + result.stdout() + "]");
     if (result.stdout().contains("v2")) {
-      HELM_VERSION = "V2";
-    } else if (result.stdout().contains("v3")) {
-      HELM_VERSION = "V3";
-    } else {
-      HELM_VERSION = "UNKNOWN";
       throw new RuntimeException(
-          "FAILURE: Unsupported Helm Version ["
+          "FAILURE: BaseTest Unsupported Helm Version ["
               + result.stdout()
               + "]");
     }
-    System.out.println("HELM_VERSION set to [" + HELM_VERSION + "]");
 
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
@@ -812,7 +805,7 @@ public class BaseTest {
   }
 
   /**
-   * Scale the cluster up using Weblogic WLDF scaling.
+   * Scale the cluster up using WebLogic WLDF scaling.
    *
    * @throws Exception exception
    */
@@ -1060,10 +1053,9 @@ public class BaseTest {
     String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
 
     if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-dominimage-"
-          + suffixCount + ":" + currentDateTime);
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage:" + currentDateTime);
     } else {
-      domainMap.put("image", "dominimage-" + suffixCount + ":" + currentDateTime);
+      domainMap.put("image", "dominimage:" + currentDateTime);
     }
     return domainMap;
   }

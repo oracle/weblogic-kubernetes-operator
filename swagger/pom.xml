@@ -12,7 +12,7 @@
 
     <artifactId>operator-swagger</artifactId>
 
-    <description>Oracle Weblogic Server Kubernetes Operator</description>
+    <description>Oracle WebLogic Server Kubernetes Operator</description>
     <name>operator-swagger</name>
     <packaging>jar</packaging>
 

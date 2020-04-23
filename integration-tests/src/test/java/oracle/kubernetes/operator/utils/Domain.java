@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,6 +79,13 @@ public class Domain {
   private boolean createDomainResource = true;
   private boolean createLoadBalancer = true;
   private String domainHomeSourceType = "";
+
+  private static final String SSL_ENABLED_KEY = "sslEnabled";
+  private boolean sslEnabled = false;
+  private static final String ADMIN_SERVER_SSL_PORT_KEY = "adminServerSSLPort";
+  private static final String MANAGED_SERVER_SSL_PORT_KEY = "managedServerSSLPort";
+  private int adminServerSslPort;
+  private int managedServerSslPort;
 
   public Domain() throws Exception {
     domainMap = new HashMap<String, Object>();
@@ -278,6 +286,28 @@ public class Domain {
 
 
   /**
+   * Verifies the SSL listeners in the domain are active by making an SSL connection to each one.
+   *
+   * @throws Exception If an error occurred
+   */
+  public List<ExecResult> verifySslListeners() throws Exception {
+    List execResults = new ArrayList<ExecResult>(1 + initialManagedServerReplicas);
+    // Check admin server's SSL port
+    execResults.add(verifyWebLogicSslListener(domainUid + "-" + adminServerName, "$ADMIN_SERVER_SSL_PORT"));
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
+      // check managed server's SSL port
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        LoggerHelper.getLocal().log(Level.INFO,
+                "Checking if managed server's SSL port (" + managedServerNameBase + i + ") is active.");
+        execResults.add(verifyWebLogicSslListener(domainUid + "-" + managedServerNameBase + i,
+                "$MANAGED_SERVER_SSL_PORT"));
+      }
+    }
+
+    return  execResults;
+  }
+
+  /**
    * verify servers are ready.
    *
    * @throws RuntimeException if WLS pod is not ready and pod output doesn't contain 1/1
@@ -359,6 +389,37 @@ public class Domain {
       }
     }
   }
+
+
+  private ExecResult verifyWebLogicSslListener(String podName, String sslPortEnvVariable) throws Exception {
+    ExecResult execResult = null;
+    if (sslEnabled) {
+      LoggerHelper.getLocal().log(Level.INFO,
+              "Checking the SSL port of WebLogic server " + podName + " in " + domainUid);
+      StringBuffer wlsServerCurlCmd = getCurlCmdForHttps(podName, sslPortEnvVariable);
+
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + wlsServerCurlCmd.toString());
+      execResult = TestUtils.exec(wlsServerCurlCmd.toString(), true);
+    }
+
+    return  execResult;
+  }
+
+
+  private StringBuffer getCurlCmdForHttps(String podName, String sslPortEnvVariable) {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl exec -n ")
+            .append(domainNS)
+            .append(" ")
+            .append(podName)
+            .append(" -- ")
+            .append("/bin/bash -c 'curl -v -k https://$HOSTNAME:")
+            .append(sslPortEnvVariable)
+            .append("/weblogic/ready'");
+
+    return cmd;
+  }
+
 
   /**
    * Verify nodeport by accessing admin REST endpoint.
@@ -1231,7 +1292,7 @@ public class Domain {
                   + "/weblogic-domains/"
                   + domainUid
                   + "/domain_new.yaml");
-      LoggerHelper.getLocal().log(Level.INFO, "kubectl execut with command: " + command.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + command.toString());
       TestUtils.exec(command.toString());
 
       // verify the servers in the domain are being restarted in a sequence
@@ -1285,7 +1346,7 @@ public class Domain {
     // kubectl apply the new constructed domain_new.yaml
     StringBuffer command = new StringBuffer();
     command.append("kubectl apply  -f ").append(newDomainYamlFile);
-    LoggerHelper.getLocal().log(Level.INFO, "kubectl execut with command: " + command.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + command.toString());
     TestUtils.exec(command.toString());
 
     // verify the servers in the domain are being restarted in a sequence
@@ -1362,7 +1423,7 @@ public class Domain {
                 + "\""
                 + changedProperty
                 + "\"");
-    LoggerHelper.getLocal().log(Level.INFO, "kubectl execut with command: " + command.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + command.toString());
     TestUtils.exec(command.toString());
 
     String result = ((TestUtils.exec(command.toString())).stdout());
@@ -1833,6 +1894,11 @@ public class Domain {
     }
     LoggerHelper.getLocal().log(Level.INFO, "pvSharing for this domain is: " + pvSharing);
 
+    if (domainMap.containsKey(SSL_ENABLED_KEY)) {
+      sslEnabled = ((Boolean) domainMap.getOrDefault(SSL_ENABLED_KEY, Boolean.FALSE)).booleanValue();
+      adminServerSslPort = ((Integer) domainMap.getOrDefault(ADMIN_SERVER_SSL_PORT_KEY, 7002)).intValue();
+      managedServerSslPort = ((Integer) domainMap.getOrDefault(MANAGED_SERVER_SSL_PORT_KEY, 8002)).intValue();
+    }
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());

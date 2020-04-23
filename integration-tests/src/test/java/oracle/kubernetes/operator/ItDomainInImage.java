@@ -4,14 +4,17 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -98,13 +101,13 @@ public class ItDomainInImage extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifing the domain creation");
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifying the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap = createDomainInImageMap(
-                getNewSuffixCount(), false, testClassName);
+              getNewSuffixCount(), false, testClassName);
       domainMap.put("namespace", domainNS1);
       domainMap.remove("clusterType");
       domain = TestUtils.createDomain(domainMap);
@@ -122,6 +125,58 @@ public class ItDomainInImage extends BaseTest {
     }
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
+
+
+  /**
+   * Creates a WebLogic domain using domain-in-image option. Verifies the domain is started
+   * successfully and the SSL listeners in the WebLogic servers are active.
+   *
+   * @throws Exception If an error occurred
+   */
+  @Test
+  public void testDomainInImageUsingWlstWithSslEnabled() throws Exception {
+    Assumptions.assumeTrue(FULLTEST);
+    String testMethodName = new Object() {
+    }.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    LoggerHelper.getLocal().log(Level.INFO, "Creating Domain & verifying the domain creation");
+    // create domain
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domainMap = createDomainInImageMap(
+              getNewSuffixCount(), false, testClassName);
+      domainMap.put("namespace", domainNS1);
+      domainMap.remove("clusterType");
+
+      // domainMap key/value pairs are hard coded in the create domain method call above
+      domainMap.put("sslEnabled", Boolean.TRUE);
+      domainMap.put("javaOptions",
+              "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.security.SSL.ignoreHostnameVerification=true");
+
+      domain = TestUtils.createDomain(domainMap);
+      domain.verifyDomainCreated();
+      List<ExecResult> execResultList = domain.verifySslListeners();
+      Assert.assertTrue(execResultList.size() > 0);
+      for (ExecResult execResult : execResultList) {
+        Assert.assertNotNull(execResult);
+        Assert.assertEquals(0, execResult.exitValue());
+        Assert.assertTrue(execResult.stderr().contains("HTTP/1.1 200 OK"));
+      }
+
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+      if (domain != null) {
+        domain.deleteImage();
+      }
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
+  }
+
 
   /**
    * Create Operator and create domain using domain-in-image option. Verify the domain is started
