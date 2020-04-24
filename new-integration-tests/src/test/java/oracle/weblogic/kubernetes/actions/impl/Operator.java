@@ -70,7 +70,9 @@ public class Operator {
     // get branch name
     String branchName = "";
     CommandParams params = Command.defaultCommandParams()
-        .command("git branch | grep \\* | cut -d ' ' -f2-");
+        .command("git branch | grep \\* | cut -d ' ' -f2-")
+        .saveResults(true)
+        .redirect(false);
 
     if (Command.withParams(params)
         .execute()) {
