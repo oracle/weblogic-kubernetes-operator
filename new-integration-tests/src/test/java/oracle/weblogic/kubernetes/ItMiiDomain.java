@@ -246,13 +246,7 @@ class ItMiiDomain implements LoggedTest {
     miiImage = createInitialDomainImage();
 
     // push the image to OCIR to make the test work in multi node cluster
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-
-      logger.info("docker push image {0} to OCIR", miiImage);
-      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
-    }
+    pushImageIfNeeded(miiImage);
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
@@ -434,7 +428,10 @@ class ItMiiDomain implements LoggedTest {
         MII_IMAGE_NAME,
         "testPatchAppV2",
         Arrays.asList(appDir1, appDir2));
-  
+
+    // push the image to OCIR to make the test work in multi node cluster
+    pushImageIfNeeded(miiImagePatchAppV2);
+
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImagePatchAppV2);
     
@@ -502,8 +499,12 @@ class ItMiiDomain implements LoggedTest {
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
         "model2-wls.yaml");
+    
     logger.info("Image is successfully created");  
   
+    // push the image to OCIR to make the test work in multi node cluster
+    pushImageIfNeeded(miiImageAddSecondApp);
+
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImageAddSecondApp);
     
@@ -599,6 +600,17 @@ class ItMiiDomain implements LoggedTest {
     }
   }
 
+  private void pushImageIfNeeded(String image) {
+    // push the image to OCIR to make the test work in multi node cluster
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login");
+      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+
+      logger.info("docker push image {0} to OCIR", image);
+      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", image));
+    }
+  }
+
   private String createInitialDomainImage() {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -621,16 +633,22 @@ class ItMiiDomain implements LoggedTest {
     List<String> archiveList = 
         Collections.singletonList(String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
 
-    createImageAndVerify(MII_IMAGE_NAME, imageTag, modelList, archiveList);
+    createImageAndVerify(imageName, imageTag, modelList, archiveList);
 
     return image;
   }
   
   private String updateImageWithAppV2Patch(
       String imageName,
-      String imageTag,
       List<String> appDirList
   ) {
+	DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+	final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+	// Add repository name in image name for Jenkins runs
+    final String imageNameReal = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? imageName : REPO_NAME + imageName;
+    String image = String.format("%s:%s",  imageNameReal, imageTag);
+    
     // build the model file list
     List<String> modelList = 
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
@@ -648,18 +666,24 @@ class ItMiiDomain implements LoggedTest {
         Collections.singletonList(
             String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
     
-    createImageAndVerify(imageName, imageTag, modelList, archiveList);
+    createImageAndVerify(imageNameReal, imageTag, modelList, archiveList);
     
-    return imageName + ":" + imageTag;
+    return image;
   }
 
   private String updateImageWithApp3(
       String imageName,
-      String imageTag,
       List<String> appDirList1,
       List<String> appDirList2,
       String modelFile
   ) {
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+	// Add repository name in image name for Jenkins runs
+    final String imageNameReal = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? imageName : REPO_NAME + imageName;
+    String image = String.format("%s:%s",  imageNameReal, imageTag);
+    
     // build the model file list
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
  
@@ -693,9 +717,9 @@ class ItMiiDomain implements LoggedTest {
         String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
         String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
     
-    createImageAndVerify(imageName, imageTag, modelList, archiveList);
+    createImageAndVerify(imageNameReal, imageTag, modelList, archiveList);
     
-    return imageName + ":" + imageTag;
+    return image;
   }
 
   /**
