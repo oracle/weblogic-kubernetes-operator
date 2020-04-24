@@ -32,10 +32,11 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,7 +45,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -57,7 +57,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -79,12 +78,13 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
-@ExtendWith(Timing.class)
+@IntegrationTest
 class ItMiiDomain implements LoggedTest {
 
   // operator constants
@@ -125,9 +125,11 @@ class ItMiiDomain implements LoggedTest {
 
   /**
    * Install Operator.
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll() {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -135,14 +137,12 @@ class ItMiiDomain implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", opNamespace);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
-    domainNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace);
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    domainNamespace = namespaces.get(1);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
