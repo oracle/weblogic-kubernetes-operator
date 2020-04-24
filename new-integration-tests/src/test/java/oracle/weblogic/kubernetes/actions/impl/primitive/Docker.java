@@ -4,8 +4,14 @@
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 
-public class Docker {
+import java.util.Base64;
 
+import com.google.gson.JsonObject;
+
+/**
+ * Class with calls to Docker CLI.
+ */
+public class Docker {
   /**
    * Log in to a Docker registry.
    * @param registryName registry name
@@ -48,4 +54,29 @@ public class Docker {
         .execute();
   }
 
+  /**
+   * Create Docker registry configuration in json object.
+   * @param username username for the Docker registry
+   * @param password password for the Docker registry
+   * @param email email for the Docker registry
+   * @param registry Docker registry name
+   * @return json object for the Docker registry configuration
+   */
+  public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
+    JsonObject authObject = new JsonObject();
+    authObject.addProperty("username", username);
+    authObject.addProperty("password", password);
+    authObject.addProperty("email", email);
+
+    String auth = username + ":" + password;
+    String authEncoded = Base64.getEncoder().encodeToString(auth.getBytes());
+    authObject.addProperty("auth", authEncoded);
+
+    JsonObject registryObject = new JsonObject();
+    registryObject.add(registry, authObject);
+
+    JsonObject configJsonObject = new JsonObject();
+    configJsonObject.add("auths", registryObject);
+    return configJsonObject;
+  }
 }

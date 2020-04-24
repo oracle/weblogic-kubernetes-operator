@@ -176,17 +176,6 @@
                             <skip>${skipITs}</skip>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>buildoperator</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${skipITs}</skip>
-                            <executable>../buildDockerImage.sh</executable>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
