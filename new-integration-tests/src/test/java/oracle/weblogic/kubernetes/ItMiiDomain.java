@@ -83,7 +83,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodCallable;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -301,7 +300,7 @@ class ItMiiDomain implements LoggedTest {
             .name(domainUID)
             .namespace(domainNamespace))
         .spec(new DomainSpec()
-            .domainUID(domainUID)
+            .domainUid(domainUID)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -624,7 +623,7 @@ class ItMiiDomain implements LoggedTest {
 
     createImageAndVerify(MII_IMAGE_NAME, imageTag, modelList, archiveList);
 
-    return MII_IMAGE_NAME + ":" + imageTag;
+    return image;
   }
   
   private String updateImageWithAppV2Patch(
@@ -734,6 +733,7 @@ class ItMiiDomain implements LoggedTest {
       List<String> modelList,
       List<String> archiveList
   ) {
+    final String image = imageName + ":" + imageTag;
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -753,7 +753,7 @@ class ItMiiDomain implements LoggedTest {
             .env(env)
             .redirect(true));
 
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool",  image));
 
     /* Check image exists using docker images | grep image tag.
      * Tag name is unique as it contains date and timestamp.
@@ -763,8 +763,6 @@ class ItMiiDomain implements LoggedTest {
      */
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s doesn't exist", image));
-
-    return image;
   }
 
   private void checkPodCreated(String podName) {
@@ -834,20 +832,5 @@ class ItMiiDomain implements LoggedTest {
                "App %s is not ready in namespace %s", appPath, domainNamespace)));
 
   }
- 
-  private static JsonObject getDockerConfigJson(String username, String password, String email, String registry) {
-    JsonObject authObject = new JsonObject();
-    authObject.addProperty("username", username);
-    authObject.addProperty("password", password);
-    authObject.addProperty("email", email);
-    String auth = username + ":" + password;
-    String authEncoded = Base64.getEncoder().encodeToString(auth.getBytes());
-    System.out.println("auth encoded: " + authEncoded);
-    authObject.addProperty("auth", authEncoded);
-    JsonObject registryObject = new JsonObject();
-    registryObject.add(registry, authObject);
-    JsonObject configJsonObject = new JsonObject();
-    configJsonObject.add("auths", registryObject);
-    return configJsonObject;
-  }
+
 }
