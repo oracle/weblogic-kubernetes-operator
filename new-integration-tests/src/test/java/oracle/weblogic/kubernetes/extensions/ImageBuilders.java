@@ -55,7 +55,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         String repoPassword = System.getenv("REPO_PASSWORD");
 
         if (repoRegistry != null && repoUserName != null && repoPassword != null) {
-          operatorImage = REPO_NAME + operatorImage;
           assertTrue(Operator.buildImage(operatorImage));
 
           logger.info("docker login");
