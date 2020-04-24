@@ -30,6 +30,11 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
@@ -91,38 +96,26 @@ class ItSimpleOperatorValidation implements LoggedTest {
     logger.info("Operator image name {0}", image);
 
     // Create docker registry secret in the operator namespace to pull the image from repository
-    String repoRegistry = "dummy";
-    String repoUserName = "dummy";
-    String repoPassword = "dummy";
-    String repoEmail = "dummy";
-    String repoSecretName = "ocir-secret";
-    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
-        && System.getenv("REPO_PASSWORD") != null && System.getenv("REPO_EMAIL") != null) {
-      repoRegistry = System.getenv("REPO_REGISTRY");
-      repoUserName = System.getenv("REPO_USERNAME");
-      repoPassword = System.getenv("REPO_PASSWORD");
-      repoEmail = System.getenv("REPO_EMAIL");
-    }
     logger.info("Creating docker registry secret in namespace {0}", opNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        repoUserName, repoPassword, repoEmail, repoRegistry);
+        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(repoSecretName)
+            .name(REPO_SECRET_NAME)
             .namespace(opNamespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", repoSecretName));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<String, Object>();
-    secretNameMap.put("name", repoSecretName);
+    secretNameMap.put("name", REPO_SECRET_NAME);
 
     // helm install parameters
     opHelmParams = new HelmParams()

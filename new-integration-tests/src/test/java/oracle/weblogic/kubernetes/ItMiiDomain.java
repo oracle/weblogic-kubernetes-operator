@@ -49,7 +49,13 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -105,12 +111,7 @@ class ItMiiDomain implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String repoRegistry = "dummy";
-  private static String repoUserName = "dummy";
-  private static String repoPassword = "dummy";
-  private static String repoEmail = "dummy";
   private static String dockerConfigJson = "";
-  private static String repoSecretName = "ocir-secret";
 
   private String domainUid = "domain1";
   private String miiImage = null;
@@ -152,33 +153,27 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Operator image name {0}", operatorImage);
 
     // Create docker registry secret in the operator namespace to pull the image from repository
-    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
-        && System.getenv("REPO_PASSWORD") != null && System.getenv("REPO_EMAIL") != null) {
-      repoRegistry = System.getenv("REPO_REGISTRY");
-      repoUserName = System.getenv("REPO_USERNAME");
-      repoPassword = System.getenv("REPO_PASSWORD");
-      repoEmail = System.getenv("REPO_EMAIL");
-    }
     logger.info("Creating docker registry secret in namespace {0}", opNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        repoUserName, repoPassword, repoEmail, repoRegistry);
+        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
     dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(repoSecretName)
+            .name(REPO_SECRET_NAME)
             .namespace(opNamespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", repoSecretName));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
+                  REPO_SECRET_NAME, opNamespace));
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<String, Object>();
-    secretNameMap.put("name", repoSecretName);
+    secretNameMap.put("name", REPO_SECRET_NAME);
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -237,9 +232,9 @@ class ItMiiDomain implements LoggedTest {
     miiImage = createImageAndVerify();
 
     // push the image to OCIR to make the test work in multi node cluster
-    if (!repoUserName.equals("dummy")) {
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
-      assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
+      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
       logger.info("docker push image {0} to OCIR", miiImage);
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
@@ -248,14 +243,14 @@ class ItMiiDomain implements LoggedTest {
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(repoSecretName)
+            .name(REPO_SECRET_NAME)
             .namespace(domainNamespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", repoSecretName));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -295,7 +290,7 @@ class ItMiiDomain implements LoggedTest {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
+                .name(REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -440,7 +435,7 @@ class ItMiiDomain implements LoggedTest {
     Date date = new Date();
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = repoUserName.equals("dummy") ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
+    final String imageName = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
     final String image = imageName + ":" + imageTag;
 
     // build the model file list

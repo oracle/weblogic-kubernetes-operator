@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.Optional;
+
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
@@ -10,8 +12,10 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.BRANCH_NAME_FROM_JENKINS;
+import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 
 /**
@@ -60,17 +64,12 @@ public class Operator {
    */
   public static String getImageName() {
     String image = "";
-    String imageName = System.getenv("IMAGE_NAME_OPERATOR") != null
-        ? System.getenv("IMAGE_NAME_OPERATOR") : OPERATOR_IMAGE_NAME;
-
-    // use build id for Jenkins runs in image tag
-    String buildID = System.getenv("BUILD_ID") != null
-        ? System.getenv("BUILD_ID") : "";
-
-    // get branch name
+    String imageName = Optional.ofNullable(System.getenv("IMAGE_NAME_OPERATOR"))
+        .orElse(IMAGE_NAME_OPERATOR);
+    // use branch name and build id for Jenkins runs in image tag
     String branchName = "";
-    if (!buildID.isEmpty()) {
-      branchName = System.getenv("BRANCH");
+    if (!BUILD_ID.isEmpty()) {
+      branchName = BRANCH_NAME_FROM_JENKINS;
       imageName = REPO_NAME + imageName;
     } else  {
       CommandParams params = Command.defaultCommandParams()
@@ -83,8 +82,8 @@ public class Operator {
         branchName = params.stdout();
       }
     }
-    String imageTag = System.getenv("IMAGE_TAG_OPERATOR") != null
-        ? System.getenv("IMAGE_TAG_OPERATOR") : branchName + buildID;
+    String imageTag = Optional.ofNullable(System.getenv("IMAGE_TAG_OPERATOR"))
+        .orElse(branchName + BUILD_ID);
     image = imageName + ":" + imageTag;
     return image;
   }

@@ -10,14 +10,16 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
-
-//import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Class to build the required images for the tests.
@@ -49,15 +51,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
 
         // push the image to OCIR to make the test work in multi node cluster
-        String repoRegistry = System.getenv("REPO_REGISTRY");
-        String repoUserName = System.getenv("REPO_USERNAME");
-        String repoPassword = System.getenv("REPO_PASSWORD");
-
-        if (repoRegistry != null && repoUserName != null && repoPassword != null) {
+        if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
           assertTrue(Operator.buildImage(operatorImage));
 
           logger.info("docker login");
-          assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
+          assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
           logger.info("docker push image {0} to OCIR", operatorImage);
           assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
