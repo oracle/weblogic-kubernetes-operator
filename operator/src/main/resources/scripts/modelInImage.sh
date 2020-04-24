@@ -284,7 +284,7 @@ function createWLDomain() {
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
   checkModelDirectoryExtensions
-  if [ -z "${WDT_BYPASS_WDT_VERSION_CHECK}" ] ; then
+  if [ -z "${WDT_BYPASS_WDT_VERSION_CHECK}" ] || [ "true" != "${WDT_BYPASS_WDT_VERSION_CHECK}" ] ; then
     checkWDTVersion
   fi
 
