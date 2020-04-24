@@ -3,9 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,8 +22,6 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -50,10 +46,13 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -75,6 +74,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getIngressList;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallIngress;
@@ -94,6 +94,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -103,13 +104,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the sample application can be accessed via the ingress controller")
 @IntegrationTest
 class ItSimpleTraefikValidation implements LoggedTest {
-
-  // operator constants
-  private static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
-  private static final String OPERATOR_CHART_DIR =
-      "../kubernetes/charts/weblogic-operator";
-  private static final String OPERATOR_IMAGE =
-      "oracle/weblogic-kubernetes-operator:3.0.0";
 
   // mii constants
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
@@ -125,6 +119,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
+  private static String dockerConfigJson = "";
   private static HelmParams tfHelmParams = null;
   private static HelmParams ingressParam = null;
   private static String tfNamespace = null;
@@ -244,11 +239,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(getNextFreePort(30711, 30811)))))
+                .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
                 .replicas(replicaCount)
@@ -447,6 +438,30 @@ class ItSimpleTraefikValidation implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
+    // get Operator image name
+    String operatorImage = getOperatorImageName();
+    assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
+    logger.info("Operator image name {0}", operatorImage);
+
+    // Create docker registry secret in the operator namespace to pull the image from repository
+    logger.info("Creating docker registry secret in namespace {0}", opNamespace);
+    JsonObject dockerConfigJsonObject = createDockerConfigJson(
+        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+    dockerConfigJson = dockerConfigJsonObject.toString();
+
+    // Create the V1Secret configuration
+    V1Secret repoSecret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(REPO_SECRET_NAME)
+            .namespace(opNamespace))
+        .type("kubernetes.io/dockerconfigjson")
+        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
+        REPO_SECRET_NAME, opNamespace));
+
     // Helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -457,7 +472,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
     OperatorParams opParams =
         new OperatorParams()
             .helmParams(opHelmParams)
-            .image(OPERATOR_IMAGE)
+            .image(operatorImage)
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
@@ -660,37 +675,4 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
   }
 
-  /**
-   * Get the next free port between range from and to.
-   *
-   * @param from the range starting point
-   * @param to the range ending point, exclusive
-   * @return the next free port in the range if found, otherwise return port 'to'
-   */
-  private int getNextFreePort(int from, int to) {
-    int port;
-    for (port = from; port < to; port++) {
-      if (isLocalPortFree(port)) {
-        logger.info("next free port is: {0}", port);
-        return port;
-      }
-    }
-    logger.info("Can not find free port between {0} and {1}", from, to);
-    return port;
-  }
-
-  /**
-   * Check if the given port number is free.
-   *
-   * @param port port number to check
-   * @return true if the port is free, false otherwise
-   */
-  private boolean isLocalPortFree(int port) {
-    try {
-      new ServerSocket(port).close();
-      return true;
-    } catch (IOException e) {
-      return false;
-    }
-  }
 }
