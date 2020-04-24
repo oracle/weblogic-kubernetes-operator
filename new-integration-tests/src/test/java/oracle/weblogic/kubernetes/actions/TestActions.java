@@ -462,6 +462,14 @@ public class TestActions {
     return Helm.list(params);
   }
 
+  /**
+   * List releases that match the expression.
+   * @param params namespace
+   * @return String matched releases
+   */
+  public static String helmListMatchedReleases(HelmParams params) {
+    return Helm.listMatchedReleases(params);
+  }
   // ------------------------ Application Builder  -------------------------
 
   /**

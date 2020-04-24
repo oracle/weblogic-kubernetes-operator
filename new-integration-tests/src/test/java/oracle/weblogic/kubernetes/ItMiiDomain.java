@@ -69,7 +69,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
+import static oracle.weblogic.kubernetes.actions.TestActions.helmListMatchedReleases;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
@@ -200,9 +200,15 @@ class ItMiiDomain implements LoggedTest {
         String.format("Operator install failed in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
-    // list helm releases
-    logger.info("List helm releases in namespace {0}", opNamespace);
-    helmList(opHelmParams);
+    // list helm releases matching Operator release name in operator namespace
+    logger.info("Checking Operator release {0} status in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+    String helmListOutput = helmListMatchedReleases(opHelmParams.filter(OPERATOR_RELEASE_NAME));
+    assertTrue(helmListOutput.toLowerCase().contains("deployed"),
+        String.format("Operator release %s is not in deployed status in namespace %s",
+            OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("Operator release {0} status is deployed in namespace {1} \n {2}",
+        OPERATOR_RELEASE_NAME, opNamespace, helmListOutput);
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
@@ -436,7 +442,7 @@ class ItMiiDomain implements LoggedTest {
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
     final String imageName = repoUserName.equals("dummy") ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
-    final String image = imageName + imageTag;
+    final String image = imageName + ":" + imageTag;
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
