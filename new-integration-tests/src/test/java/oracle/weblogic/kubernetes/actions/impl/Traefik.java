@@ -68,9 +68,9 @@ public class Traefik {
   }
 
   /**
-   * Uninstall the ingress on a wls domain namespace.
+   * Uninstall the ingress on a WebLogic domain namespace.
    *
-   * @param params the parameters to Helm uninstall command, release name and wls domain namespace
+   * @param params the parameters to Helm uninstall command, release name and WebLogic domain namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstallIngress(HelmParams params) {
@@ -80,7 +80,7 @@ public class Traefik {
   /**
    * Get a list of ingresses in the specified namespace.
    *
-   * @param namespace the namespace which the ingresses belong to
+   * @param namespace the namespace to which the ingresses belong
    * @return a list of ingresses in the namespace
    */
   public static List<String> getIngressList(String namespace) throws ApiException {

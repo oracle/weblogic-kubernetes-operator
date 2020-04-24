@@ -554,7 +554,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   /**
    * Create a Docker image for model in image.
    *
-   * @return image name
+   * @return image name with tag
    */
   private String createImageAndVerify() {
     // create unique image name with date
@@ -662,8 +662,9 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
   /**
    * Get the next free port between range from and to.
-   * @param from range starting point
-   * @param to range ending point
+   *
+   * @param from the range starting point
+   * @param to the range ending point, exclusive
    * @return the next free port in the range if found, otherwise return port 'to'
    */
   private int getNextFreePort(int from, int to) {
