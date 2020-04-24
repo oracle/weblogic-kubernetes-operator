@@ -391,12 +391,6 @@ class ItMiiDomain implements LoggedTest {
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     
-    // create another image with app V2 
-    miiImagePatchAppV2 = updateImageWithAppV2Patch(
-        MII_IMAGE_NAME,
-        "testPatchAppV2",
-        Arrays.asList(appDir1, appDir2));
-  
     // check and V1 app is running
     assertTrue(appAccessibleInPod(
             domainUid,
@@ -414,9 +408,17 @@ class ItMiiDomain implements LoggedTest {
             "sample-war/index.jsp",
             APP_RESPONSE_V2),
         "The second version of the app is not supposed to be running!!");   
-    
+   
+    // create another image with app V2 
+    miiImagePatchAppV2 = updateImageWithAppV2Patch(
+        MII_IMAGE_NAME,
+        "testPatchAppV2",
+        Arrays.asList(appDir1, appDir2));
+  
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUid, domainNamespace, miiImagePatchAppV2);
+    
+    logger.info("Sleep for 2 minutes and allow the servers to be rolling restarted");
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
@@ -451,15 +453,7 @@ class ItMiiDomain implements LoggedTest {
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String appDir3 = "sample-app-3";
-       
-    // create another image with an additional app
-    miiImageAddSecondApp = updateImageWithApp3(
-        MII_IMAGE_NAME,
-        "testAddSecondApp",
-        Arrays.asList(appDir1, appDir2),
-        Collections.singletonList(appDir3),
-        "model2-wls.yaml");
-    logger.info("Image is successfully created");
+
     // check and V2 app is still running
     assertTrue(appAccessibleInPod(
             domainUid,
@@ -477,11 +471,22 @@ class ItMiiDomain implements LoggedTest {
             "8001",
             "sample-war-3/index.jsp",
             APP_RESPONSE_V3),
-        "The second app is not supposed to be running!!");   
+        "The second app is not supposed to be running!!");
+    
     logger.info("About to patch the domain with new image");
     
+    // create another image with an additional app
+    miiImageAddSecondApp = updateImageWithApp3(
+        MII_IMAGE_NAME,
+        "testAddSecondApp",
+        Arrays.asList(appDir1, appDir2),
+        Collections.singletonList(appDir3),
+    logger.info("Image is successfully created");  
+  
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUid, domainNamespace, miiImageAddSecondApp);
+    
+    logger.info("Sleep for 2 minutes and allow the servers to be rolling restarted");
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
@@ -496,11 +501,11 @@ class ItMiiDomain implements LoggedTest {
     
     // check and wait for the original app to be ready
     checkAppRunning(
-            domainUid,
-            domainNamespace,
-            "8001",
-            "sample-war/index.jsp",
-            APP_RESPONSE_V2);
+        domainUid,
+        domainNamespace,
+        "8001",
+        "sample-war/index.jsp",
+        APP_RESPONSE_V2);
     
     // check and wait for the new app to be ready
     checkAppRunning(

@@ -11,16 +11,13 @@ import java.util.List;
 
 public class AppParams {
 
-  // Locations of the source code. 
-  // This are the directory names under resources/apps for an application.
+  // A list of directories under resources/apps that are part of the application.
   // Note: the order of the directory names are significant. Files are copied into
-  // the staging directory in the order that corresponds to the order that the
-  // directories are located in the list. 
+  // the staging directory in this order. 
   private List<String> srcDirList;
   
   // The name of the final ear file.
-  // When there is only one srcDir in the srcDirList, this is
-  // the name of that directory by default.
+  // The name of the first dir in srcDirList will be used if the appName is absent.
   private String appName;
   
   // Whether the output of the command is redirected to system out
