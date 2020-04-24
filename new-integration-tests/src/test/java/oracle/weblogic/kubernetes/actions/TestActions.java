@@ -464,12 +464,13 @@ public class TestActions {
 
   /**
    * List releases that match the expression.
-   * @param params namespace
+   * @param params namespace and filter
    * @return String matched releases
    */
   public static String helmListMatchedReleases(HelmParams params) {
     return Helm.listMatchedReleases(params);
   }
+
   // ------------------------ Application Builder  -------------------------
 
   /**
@@ -525,6 +526,15 @@ public class TestActions {
    */
   public static boolean deleteImage(String image) {
     return Docker.deleteImage(image);
+  }
+
+  /**
+   * List Docker images matching the string.
+   * @param searchString search string
+   * @return list of docker images matching the string
+   */
+  public static String dockerImages(String searchString) {
+    return Docker.images(searchString);
   }
 
   /**

@@ -60,7 +60,6 @@ public class Operator {
    */
   public static String getImageName() {
     String image = "";
-
     String imageName = System.getenv("IMAGE_NAME_OPERATOR") != null
         ? System.getenv("IMAGE_NAME_OPERATOR") : OPERATOR_IMAGE_NAME;
 

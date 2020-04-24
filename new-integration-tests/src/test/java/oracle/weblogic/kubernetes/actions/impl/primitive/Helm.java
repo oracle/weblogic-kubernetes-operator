@@ -151,7 +151,7 @@ public class Helm {
 
   /**
    * List releases that match the expression.
-   * @param params namespace
+   * @param params namespace and filter
    * @return String matched releases
    */
   public static String listMatchedReleases(HelmParams params) {

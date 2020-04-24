@@ -66,13 +66,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerImages;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmListMatchedReleases;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -474,8 +474,13 @@ class ItMiiDomain implements LoggedTest {
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
-    // check image exists
-    assertTrue(dockerImageExists(imageName, imageTag),
+    /* Check image exists using docker images | grep image tag.
+     * Tag name is unique as it contains date and timestamp.
+     * This is a workaround for the issue on Jenkins machine
+     * as docker images imagename:imagetag is not working and
+     * the test fails even though the image exists.
+     */
+    assertTrue(dockerImages(imageTag).contains(imageTag),
         String.format("Image %s doesn't exist", image));
 
     return image;
