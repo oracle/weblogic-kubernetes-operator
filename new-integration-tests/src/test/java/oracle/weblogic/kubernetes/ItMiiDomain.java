@@ -481,6 +481,7 @@ class ItMiiDomain implements LoggedTest {
         "testAddSecondApp",
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
+        "model2-wls.yaml");
     logger.info("Image is successfully created");  
   
     // modify the domain resource to use the new image
