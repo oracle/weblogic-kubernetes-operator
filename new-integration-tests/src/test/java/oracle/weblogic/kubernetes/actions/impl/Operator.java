@@ -69,14 +69,18 @@ public class Operator {
 
     // get branch name
     String branchName = "";
-    CommandParams params = Command.defaultCommandParams()
-        .command("git branch | grep \\* | cut -d ' ' -f2-")
-        .saveResults(true)
-        .redirect(false);
+    if (!buildID.isEmpty()) {
+      branchName = System.getenv("BRANCH");
+    } else  {
+      CommandParams params = Command.defaultCommandParams()
+          .command("git branch | grep \\* | cut -d ' ' -f2-")
+          .saveResults(true)
+          .redirect(false);
 
-    if (Command.withParams(params)
-        .execute()) {
-      branchName = params.stdout();
+      if (Command.withParams(params)
+          .execute()) {
+        branchName = params.stdout();
+      }
     }
     String imageTag = System.getenv("IMAGE_TAG_OPERATOR") != null
         ? System.getenv("IMAGE_TAG_OPERATOR") : branchName + buildID;

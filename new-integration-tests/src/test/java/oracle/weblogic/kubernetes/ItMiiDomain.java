@@ -146,6 +146,7 @@ class ItMiiDomain implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
+    // get Operator image name
     String operatorImage = getImageName();
     assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
     logger.info("Operator image name {0}", operatorImage);

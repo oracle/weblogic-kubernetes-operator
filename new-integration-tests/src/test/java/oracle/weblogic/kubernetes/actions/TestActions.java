@@ -88,8 +88,8 @@ public class TestActions {
   }
 
   /**
-   * Image Name for the Operator. Uses branch name for tag in local runs
-   * and branch name, build id for tag in Jenkins runs.
+   * Image Name for the Operator. Uses branch name for image tag in local runs
+   * and branch name, build id for image tag in Jenkins runs.
    * @return image name
    */
   public static String getImageName() {
