@@ -66,14 +66,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerImages;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.helmListMatchedReleases;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -203,12 +203,11 @@ class ItMiiDomain implements LoggedTest {
     // list helm releases matching Operator release name in operator namespace
     logger.info("Checking Operator release {0} status in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
-    String helmListOutput = helmListMatchedReleases(opHelmParams.filter(OPERATOR_RELEASE_NAME));
-    assertTrue(helmListOutput.toLowerCase().contains("deployed"),
+    assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
         String.format("Operator release %s is not in deployed status in namespace %s",
             OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("Operator release {0} status is deployed in namespace {1} \n {2}",
-        OPERATOR_RELEASE_NAME, opNamespace, helmListOutput);
+    logger.info("Operator release {0} status is deployed in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
@@ -480,7 +479,7 @@ class ItMiiDomain implements LoggedTest {
      * as docker images imagename:imagetag is not working and
      * the test fails even though the image exists.
      */
-    assertTrue(dockerImages(imageTag).contains(imageTag),
+    assertTrue(doesImageExist(imageTag),
         String.format("Image %s doesn't exist", image));
 
     return image;

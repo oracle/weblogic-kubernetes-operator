@@ -55,25 +55,6 @@ public class Docker {
   }
 
   /**
-   * List Docker images matching the string.
-   * @param searchString search string
-   * @return list of docker images matching the string
-   */
-  public static String images(String searchString) {
-    String result = "";
-    CommandParams cmdParams = Command.defaultCommandParams()
-        .command(String.format("docker images | grep %s", searchString))
-        .saveResults(true)
-        .redirect(false);
-
-    if (Command.withParams(cmdParams)
-        .execute()) {
-      result = cmdParams.stdout();
-    }
-    return result;
-  }
-
-  /**
    * Create Docker registry configuration in json object.
    * @param username username for the Docker registry
    * @param password password for the Docker registry

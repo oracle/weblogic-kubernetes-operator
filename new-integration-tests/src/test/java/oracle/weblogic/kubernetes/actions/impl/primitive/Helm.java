@@ -150,36 +150,6 @@ public class Helm {
   }
 
   /**
-   * List releases that match the expression.
-   * @param params namespace and filter
-   * @return String matched releases
-   */
-  public static String listMatchedReleases(HelmParams params) {
-    // assertions for required parameters
-    assertThat(params.getNamespace())
-        .as("make sure namespace is not empty or null")
-        .isNotNull()
-        .isNotEmpty();
-
-    assertThat(params.getFilter())
-        .as("make sure filter is not empty or null")
-        .isNotNull()
-        .isNotEmpty();
-
-    String result = "";
-    CommandParams cmdParams = Command.defaultCommandParams()
-        .command(String.format("helm list -n %s --filter %s", params.getNamespace(), params.getFilter()))
-        .saveResults(true)
-        .redirect(false);
-
-    if (Command.withParams(cmdParams)
-        .execute()) {
-      result = cmdParams.stdout();
-    }
-    return result;
-  }
-
-  /**
    * Add a chart repository.
    * @param chartName the name of the chart
    * @param repoUrl reposiroty url
