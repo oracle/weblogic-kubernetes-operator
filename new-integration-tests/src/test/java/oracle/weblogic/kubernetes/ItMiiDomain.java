@@ -31,6 +31,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -59,7 +60,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -82,6 +82,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
@@ -104,20 +105,23 @@ class ItMiiDomain implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
+  private static String repoRegistry = "dummy";
+  private static String repoUserName = "dummy";
+  private static String repoPassword = "dummy";
+  private static String repoEmail = "dummy";
+  private static String dockerConfigJson = "";
+  private static String repoSecretName = "ocir-secret";
 
   private String domainUid = "domain1";
-  private String repoSecretName = "reposecret";
   private String miiImage = null;
-  private String repoRegistry = "dummy";
-  private String repoUserName = "dummy";
-  private String repoPassword = "dummy";
-  private String repoEmail = "dummy";
 
   /**
    * Install Operator.
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll() {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -125,14 +129,12 @@ class ItMiiDomain implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", opNamespace);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
-    domainNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace);
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    domainNamespace = namespaces.get(1);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
@@ -148,8 +150,35 @@ class ItMiiDomain implements LoggedTest {
     assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
     logger.info("Operator image name {0}", operatorImage);
 
-    // To Do : Create repo registry secret in opNamespace and use that to pull the operator image
 
+    // Create docker registry secret in the operator namespace to pull the image from repository
+    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
+        && System.getenv("REPO_PASSWORD") != null && System.getenv("REPO_EMAIL") != null) {
+      repoRegistry = System.getenv("REPO_REGISTRY");
+      repoUserName = System.getenv("REPO_USERNAME");
+      repoPassword = System.getenv("REPO_PASSWORD");
+      repoEmail = System.getenv("REPO_EMAIL");
+    }
+    logger.info("Creating docker registry secret in namespace {0}", opNamespace);
+    JsonObject dockerConfigJsonObject = createDockerConfigJson(
+        repoUserName, repoPassword, repoEmail, repoRegistry);
+    dockerConfigJson = dockerConfigJsonObject.toString();
+
+    // Create the V1Secret configuration
+    V1Secret repoSecret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(repoSecretName)
+            .namespace(opNamespace))
+        .type("kubernetes.io/dockerconfigjson")
+        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
+        String.format("createSecret failed for %s", repoSecretName));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
+
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<String, Object>();
+    secretNameMap.put("name", repoSecretName);
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -161,6 +190,7 @@ class ItMiiDomain implements LoggedTest {
         new OperatorParams()
             .helmParams(opHelmParams)
             .image(operatorImage)
+            .imagePullSecrets(secretNameMap)
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
@@ -202,12 +232,7 @@ class ItMiiDomain implements LoggedTest {
     miiImage = createImageAndVerify();
 
     // push the image to OCIR to make the test work in multi node cluster
-    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
-        && System.getenv("REPO_PASSWORD") != null && System.getenv("REPO_EMAIL") != null) {
-      repoRegistry = System.getenv("REPO_REGISTRY");
-      repoUserName = System.getenv("REPO_USERNAME");
-      repoPassword = System.getenv("REPO_PASSWORD");
-      repoEmail = System.getenv("REPO_EMAIL");
+    if (!repoUserName.equals("dummy")) {
       miiImage = REPO_NAME + miiImage;
 
       logger.info("docker login");
@@ -216,11 +241,6 @@ class ItMiiDomain implements LoggedTest {
       logger.info("docker push image {0} to OCIR", miiImage);
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
     }
-
-    // create docker registry secret in the domain namespace to pull the image from OCIR
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        repoUserName, repoPassword, repoEmail, repoRegistry);
-    String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()

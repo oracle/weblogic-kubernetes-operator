@@ -42,17 +42,17 @@ class ItWitValidation implements LoggedTest {
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
-    
+
     // build an application archive using what is in resources/apps/APP_NAME
     boolean archiveBuilt = buildAppArchive(
         defaultAppParams()
             .srcDir(APP_NAME));
-    
+
     assertThat(archiveBuilt)
         .as("Create an app archive")
         .withFailMessage("Failed to create app archive for " + APP_NAME)
         .isTrue();
-    
+
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
     List<String> archiveList = Collections.singletonList(zipFile);
@@ -79,6 +79,5 @@ class ItWitValidation implements LoggedTest {
         .isTrue();
 
     dockerImageExists(IMAGE_NAME, IMAGE_TAG);
-  } 
+  }
 }
-

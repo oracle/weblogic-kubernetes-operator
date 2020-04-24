@@ -4,6 +4,9 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -13,6 +16,7 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -30,7 +34,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
@@ -40,14 +43,13 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRun
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to install Operator and verify Operator is running
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of basic operator functions")
 @IntegrationTest
-// by implementing the LoggedTest, we will automatically get a logger injected and it
-// will also automatically log entry/exit messages for each test method.
 class ItSimpleOperatorValidation implements LoggedTest {
 
   private HelmParams opHelmParams = null;
@@ -65,23 +67,14 @@ class ItSimpleOperatorValidation implements LoggedTest {
   @DisplayName("Install the operator")
   @Slow
   @MustNotRunInParallel
-  public void testInstallingOperator() {
-
-    // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
-    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", opNamespace);
-
-    logger.info("Creating unique namespace for Domain");
-    domainNamespace1 = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace1);
-
-    logger.info("Creating unique namespace for Domain");
-    domainNamespace2 = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace2);
+  public void testInstallingOperator(@Namespaces(3) List<String> namespaces) {
+    // get unique namespaces for operator and domains
+    namespaces.forEach((namespace) -> {
+      assertNotNull(namespace, "Namespace " + namespace + "is null");
+    });
+    opNamespace = namespaces.get(0);
+    domainNamespace1 = namespaces.get(1);
+    domainNamespace2 = namespaces.get(2);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
@@ -127,6 +120,10 @@ class ItSimpleOperatorValidation implements LoggedTest {
         String.format("createSecret failed for %s", repoSecretName));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
 
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<String, Object>();
+    secretNameMap.put("name", repoSecretName);
+
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -138,7 +135,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
         new OperatorParams()
             .helmParams(opHelmParams)
             .image(image)
-            //.imagePullSecrets(repoSecretName)
+            .imagePullSecrets(secretNameMap)
             .domainNamespaces(Arrays.asList(domainNamespace1, domainNamespace2))
             .serviceAccount(serviceAccountName);
 
@@ -154,7 +151,6 @@ class ItSimpleOperatorValidation implements LoggedTest {
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-
     with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await()

@@ -8,15 +8,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import oracle.weblogic.kubernetes.extensions.ImageBuilders;
-import oracle.weblogic.kubernetes.extensions.IntegrationTestWatcher;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-@Target({ElementType.TYPE})
+/**
+ * Annotation interface to define the number of namespaces needed by the test.
+ */
+@Target({ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
-@Tag("integration")
-@ExtendWith(ImageBuilders.class)
-@ExtendWith(IntegrationTestWatcher.class)
-public @interface IntegrationTest {
+public @interface Namespaces {
+  /**
+   * Gets the value of the number of namespaces required.
+   * @return integer value of the number of namespaces required
+   */
+  int value() default 0;
 }

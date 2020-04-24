@@ -50,7 +50,6 @@ public class Command {
           params.command(), 
           params.redirect(),
           params.env());
-      logger.info("stdout " + result.stdout() + "stderr " + result.stderr());
       if (params.saveResults()) {
         params.stdout(result.stdout());
         params.stderr(result.stderr());

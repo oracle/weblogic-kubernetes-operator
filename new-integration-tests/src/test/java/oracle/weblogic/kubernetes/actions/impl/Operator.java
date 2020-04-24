@@ -70,15 +70,11 @@ public class Operator {
     // get branch name
     String branchName = "";
     CommandParams params = Command.defaultCommandParams()
-        .command("git branch | grep \\* | cut -d ' ' -f2-")
-        .saveResults(true)
-        .redirect(true);
+        .command("git branch | grep \\* | cut -d ' ' -f2-");
 
     if (Command.withParams(params)
         .execute()) {
       branchName = params.stdout();
-      logger.info("Branch Name {0}", branchName);
-      branchName = "fix-new-mii-jenkins";
     }
     String imageTag = System.getenv("IMAGE_TAG_OPERATOR") != null
         ? System.getenv("IMAGE_TAG_OPERATOR") : branchName + buildID;

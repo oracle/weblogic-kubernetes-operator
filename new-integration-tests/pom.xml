@@ -21,7 +21,6 @@
         <wit.version>latest</wit.version>
         <wdt.version>latest</wdt.version>
         <includes-failsafe>**/It*</includes-failsafe>
-        <root.basedir>${project.parent.basedir}</root.basedir>
         <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
