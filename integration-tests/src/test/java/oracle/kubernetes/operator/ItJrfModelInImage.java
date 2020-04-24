@@ -57,7 +57,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
   
   /**
    * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
+   * initialization of the integration test properties defined in OperatorIT.properties and sets
    * the resultRoot, pvRoot and projectRoot attributes.
    */
   @BeforeAll
@@ -79,7 +79,6 @@ public class ItJrfModelInImage extends MiiBaseTest {
   @BeforeEach
   public void prepare() {
 
-    //createResultAndPvDirs(testClassName);
     LoggerHelper.getLocal().log(Level.INFO, "Creating result/pv root directories");
     assertDoesNotThrow(() -> createResultAndPvDirs(testClassName),
         "Failed: createResultAndPvDirs");
@@ -98,7 +97,8 @@ public class ItJrfModelInImage extends MiiBaseTest {
     dbPort = 30011 + getNewSuffixCount();
     dbUrl = "oracle-db." + dbNamespace + ".svc.cluster.local:1521/devpdb.k8s";
     assertDoesNotThrow(() -> DbUtils.setupRCUdatabase(getResultDir(), dbPort, dbUrl, 
-        rcuSchemaPrefix, dbNamespace));
+        rcuSchemaPrefix, dbNamespace),
+        "Failed: setupRCUdatabase");
     
     // create operator
     if (operator == null) {

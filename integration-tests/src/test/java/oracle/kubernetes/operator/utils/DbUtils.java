@@ -147,7 +147,7 @@ public class DbUtils {
           ocrserver,
           System.getenv("OCR_USERNAME"),
           System.getenv("OCR_PASSWORD"),
-          System.getenv("OCR_USERNAME") + "@oracle.com",
+          System.getenv("OCR_USERNAME"),
           namespace);
   }
 

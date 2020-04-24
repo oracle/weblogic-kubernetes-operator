@@ -41,7 +41,7 @@ public class ItJrfPvWlst extends BaseTest {
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
+   * initialization of the integration test properties defined in OperatorIT.properties and sets
    * the resultRoot, pvRoot and projectRoot attributes.
    */
   @BeforeAll
