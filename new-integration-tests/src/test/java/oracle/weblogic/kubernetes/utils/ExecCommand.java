@@ -67,10 +67,6 @@ public class ExecCommand {
       String stdout = null;
       if (isRedirectToOut) {
         InputStream i = in.getInputStream();
-        i.mark(0);
-        // read the stdout first, and reset before we redirect the output
-        stdout = read(i);
-        i.reset();
         @SuppressWarnings("resource")
         CopyingOutputStream copyOut = new CopyingOutputStream(System.out);
         // this makes sense because CopyingOutputStream is an InputStreamWrapper
@@ -88,12 +84,8 @@ public class ExecCommand {
       }
 
       p.waitFor();
-      
-      // if we have not read the stdout, we do it now
-      if (stdout == null) {
-        stdout = read(in.getInputStream());
-      }
-      return new ExecResult(p.exitValue(), stdout, read(p.getErrorStream()));
+ 
+      return new ExecResult(p.exitValue(), read(in.getInputStream()), read(p.getErrorStream()));
     
     } finally {
       if (out != null) {
