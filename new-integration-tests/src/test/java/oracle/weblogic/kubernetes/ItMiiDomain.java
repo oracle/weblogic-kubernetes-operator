@@ -442,7 +442,7 @@ class ItMiiDomain implements LoggedTest {
     // The application check is sufficient to verify that the version2 application
     // is running, thus the servers have been patched.
     try {
-      TimeUnit.MINUTES.sleep(2);
+      TimeUnit.MINUTES.sleep(3);
     } catch (InterruptedException ie) {
       // do nothing
     }
@@ -514,7 +514,7 @@ class ItMiiDomain implements LoggedTest {
     // The application check is sufficient to verify that the version2 application
     // is running, thus the servers have been patched.
     try {
-      TimeUnit.MINUTES.sleep(2);
+      TimeUnit.MINUTES.sleep(3);
     } catch (InterruptedException ie) {
       // do nothing
     }
