@@ -28,15 +28,6 @@ public class Application {
       String appPath,
       String expectedStr
   ) {
-    return verifyAppInPod(domainUID, domainNS, port, appPath).contains(expectedStr);
-  }
-
-  private static String verifyAppInPod(
-      String domainUID,
-      String domainNS,
-      String port,
-      String appPath
-  ) { 
     String msPodName = domainUID + "-managed-server1";
 
     // TODO currently calling "kubectl exec" command; will change it to use a Kubernetes
@@ -56,8 +47,6 @@ public class Application {
         .saveResults(true)
         .redirect(false)
         .verbose(false);
-    Command.withParams(params).execute();
-    return params.stdout();
-  }
-  
+    return Command.withParams(params).executeAndVerify(expectedStr);
+  } 
 }

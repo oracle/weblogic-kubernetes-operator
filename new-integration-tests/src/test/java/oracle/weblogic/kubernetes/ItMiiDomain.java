@@ -122,7 +122,7 @@ class ItMiiDomain implements LoggedTest {
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
 
-  private String domainUid = "domain1";
+  private String domainUID = "domain1";
   private String repoSecretName = "reposecret";
   private String miiImage = null;
   private String miiImagePatchAppV2 = null;
@@ -207,8 +207,8 @@ class ItMiiDomain implements LoggedTest {
   @MustNotRunInParallel
   public void testCreateMiiDomain() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
+    final String adminServerPodName = domainUID + "-admin-server";
+    final String managedServerPrefix = domainUID + "-managed-server";
     final int replicaCount = 2;
 
     // create image with model files
@@ -277,10 +277,10 @@ class ItMiiDomain implements LoggedTest {
         .apiVersion(API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
-            .name(domainUid)
+            .name(domainUID)
             .namespace(domainNamespace))
         .spec(new DomainSpec()
-            .domainUid(domainUid)
+            .domainUID(domainUID)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -312,13 +312,13 @@ class ItMiiDomain implements LoggedTest {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-        domainUid, domainNamespace);
+    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
+        domainUID, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace)),
+            domainUID, domainNamespace)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace));
+            domainUID, domainNamespace));
 
 
     // wait for the domain to exist
@@ -327,11 +327,11 @@ class ItMiiDomain implements LoggedTest {
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
+                domainUID,
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+        .until(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
 
 
     // check admin server pod exist
@@ -370,14 +370,14 @@ class ItMiiDomain implements LoggedTest {
     }
     
     checkAppRunning(
-        domainUid,
+        domainUID,
         domainNamespace,
         "8001",
         "sample-war/index.jsp",
         APP_RESPONSE_V1);
     
     logger.info(String.format("Domain %s is fully started - servers are running and application is deployed corretly.",
-        domainUid));
+        domainUID));
   }
   
   @Test
@@ -393,7 +393,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and V1 app is running
     assertTrue(appAccessibleInPod(
-            domainUid,
+            domainUID,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
@@ -402,7 +402,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and make sure that the version 2 app is NOT running
     assertFalse(appAccessibleInPod(
-            domainUid,
+            domainUID,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
@@ -416,7 +416,7 @@ class ItMiiDomain implements LoggedTest {
         Arrays.asList(appDir1, appDir2));
   
     // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, domainNamespace, miiImagePatchAppV2);
+    patchDomainResourceIamge(domainUID, domainNamespace, miiImagePatchAppV2);
     
     logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
     
@@ -433,7 +433,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and wait for the app to be ready
     checkAppRunning(
-        domainUid,
+        domainUID,
         domainNamespace,
         "8001",
         "sample-war/index.jsp",
@@ -456,7 +456,7 @@ class ItMiiDomain implements LoggedTest {
 
     // check and V2 app is still running
     assertTrue(appAccessibleInPod(
-            domainUid,
+            domainUID,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
@@ -466,7 +466,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and make sure that the new app is not already running
     assertFalse(appAccessibleInPod(
-            domainUid,
+            domainUID,
             domainNamespace,
             "8001",
             "sample-war-3/index.jsp",
@@ -485,7 +485,7 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Image is successfully created");  
   
     // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, domainNamespace, miiImageAddSecondApp);
+    patchDomainResourceIamge(domainUID, domainNamespace, miiImageAddSecondApp);
     
     logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
     
@@ -502,7 +502,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and wait for the original app to be ready
     checkAppRunning(
-        domainUid,
+        domainUID,
         domainNamespace,
         "8001",
         "sample-war/index.jsp",
@@ -510,7 +510,7 @@ class ItMiiDomain implements LoggedTest {
     
     // check and wait for the new app to be ready
     checkAppRunning(
-        domainUid,
+        domainUID,
         domainNamespace,
         "8001",
         "sample-war-3/index.jsp",
@@ -527,9 +527,9 @@ class ItMiiDomain implements LoggedTest {
   public void tearDownAll() {
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID, domainNamespace),
         "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
+    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
 
     // uninstall operator release
     logger.info("Uninstall Operator in namespace {0}", opNamespace);
@@ -682,12 +682,12 @@ class ItMiiDomain implements LoggedTest {
    *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
    * ]
    * 
-   * @param domainUid the unique identifier of the domain resource
+   * @param domainUID the unique identifier of the domain resource
    * @param namespace the Kubernetes namespace that the domain is hosted
    * @param image the name of the image that contains a newer version of the application
    */
   private void patchDomainResourceIamge(
-      String domainUid,
+      String domainUID,
       String namespace,
       String image
   ) {
@@ -697,7 +697,7 @@ class ItMiiDomain implements LoggedTest {
     logger.info("About to patch the domain resource with:\n" + patch);
 
     assertTrue(patchDomainCustomResource(
-            domainUid,
+            domainUID,
             namespace,
             new V1Patch(patch),
             V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -745,7 +745,7 @@ class ItMiiDomain implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
+        .until(assertDoesNotThrow(() -> podExists(podName, domainUID, domainNamespace),
             String.format("podExists failed with ApiException for %s in namespace in %s",
                 podName, domainNamespace)));
 
@@ -760,7 +760,7 @@ class ItMiiDomain implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+        .until(assertDoesNotThrow(() -> podReady(podName, domainUID, domainNamespace),
             String.format(
                 "pod %s is not ready in namespace %s", podName, domainNamespace)));
 
@@ -782,7 +782,7 @@ class ItMiiDomain implements LoggedTest {
   }
 
   private void checkAppRunning(
-      String domainUid,
+      String domainUID,
       String ns,
       String internalPort,
       String appPath, 
@@ -798,7 +798,7 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPodCallable(domainUid, ns, internalPort, appPath, expectedStr),
+        .until(assertDoesNotThrow(() -> appAccessibleInPodCallable(domainUID, ns, internalPort, appPath, expectedStr),
             String.format(
                "App %s is not ready in namespace %s", appPath, domainNamespace)));
 
