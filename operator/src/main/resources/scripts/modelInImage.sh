@@ -397,19 +397,21 @@ function checkModelDirectoryExtensions() {
   cd ${IMG_MODELS_HOME}
   counter=$(ls  -I  "*.yaml" -I "*.zip" -I "*.properties" | wc -l)
   if [ $counter -ne 0 ] ; then
-        trace SEVERE "Model image directory ${IMG_MODELS_HOME} contains files with unsupported extensions. Expected extensions: " \
-          ".yaml, .properties, or .zip"
-        trace SEVERE "Model files with unsupported extensions: '$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
-        exitOrLoop
+    trace SEVERE "Model image directory ${IMG_MODELS_HOME} contains files with unsupported extensions. " \
+      "Expected extensions: .yaml, .properties, or .zip"
+    trace SEVERE "Model image directory files with unsupported extensions: " \
+      "'$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
+    exitOrLoop
   fi
   if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
     cd ${WDT_CONFIGMAP_ROOT}
     counter=$(ls  -I  "*.yaml" -I "*.properties" | wc -l)
     if [ $counter -ne 0 ] ; then
-          trace SEVERE "Model configmap directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extensions. " \
-          "Expected extensions: .yaml or .properties"
-          trace SEVERE "Model files with unsupported extensions: '$(ls -I "*.yaml" -I "*.properties")'"
-          exitOrLoop
+      trace SEVERE "Model configmap directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extensions. " \
+      "Expected extensions: .yaml or .properties"
+      trace SEVERE "Model configmap directory files with unsupported extensions: " \
+        "'$(ls -I "*.yaml" -I "*.properties")'"
+      exitOrLoop
     fi
   fi
 
