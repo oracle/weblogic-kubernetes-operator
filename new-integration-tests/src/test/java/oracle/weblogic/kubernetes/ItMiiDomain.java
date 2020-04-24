@@ -418,7 +418,7 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUid, domainNamespace, miiImagePatchAppV2);
     
-    logger.info("Sleep for 2 minutes and allow the servers to be rolling restarted");
+    logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
@@ -487,7 +487,7 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUid, domainNamespace, miiImageAddSecondApp);
     
-    logger.info("Sleep for 2 minutes and allow the servers to be rolling restarted");
+    logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
@@ -531,15 +531,6 @@ class ItMiiDomain implements LoggedTest {
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
 
-    // delete the domain image created for the test
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
-    
-    // delete the domain images created in test #4 and #5
-    deleteImage(miiImagePatchAppV2);
-    deleteImage(miiImageAddSecondApp);
-
     // uninstall operator release
     logger.info("Uninstall Operator in namespace {0}", opNamespace);
     if (opHelmParams != null) {
@@ -568,7 +559,18 @@ class ItMiiDomain implements LoggedTest {
       logger.info("Deleted namespace: " + opNamespace);
     }
 
-    // clean up the download directory so that we can get always the latest
+    // delete the domain images created in the test class
+    if (miiImage != null) {
+      deleteImage(miiImage);
+    }
+    if (miiImagePatchAppV2 != null) {
+      deleteImage(miiImagePatchAppV2);
+    }
+    if (miiImageAddSecondApp != null) {
+      deleteImage(miiImageAddSecondApp);
+    }
+
+    // clean up the download directory so that we always get the latest
     // versions of the tools
     try {
       cleanupDirectory(DOWNLOAD_DIR);

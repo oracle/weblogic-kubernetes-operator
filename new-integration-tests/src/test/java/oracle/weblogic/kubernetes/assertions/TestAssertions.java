@@ -170,6 +170,7 @@ public class TestAssertions {
 
   /**
    * Check if an application is accessible inside a WebLogic server pod.
+   * 
    * @param domainUID unique identifier of the Kubernetes domain custom resource instance
    * @param domainNS Kubernetes namespace where the WebLogic servers are running
    * @param port internal port of the managed servers
@@ -188,7 +189,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if an application is accessible inside a server pod.
+   * Check if an application is accessible inside a WebLogic server pod.
    * .
    * @param domainUID unique identifier of the Kubernetes domain custom resource instance
    * @param domainNS Kubernetes namespace where the WebLogic servers are running
