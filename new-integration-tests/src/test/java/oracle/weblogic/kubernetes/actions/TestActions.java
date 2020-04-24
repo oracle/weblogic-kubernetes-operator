@@ -551,6 +551,18 @@ public class TestActions {
     return Docker.deleteImage(image);
   }
 
+  /**
+   * Create Docker registry configuration in json object.
+   * @param username username for the Docker registry
+   * @param password password for the Docker registry
+   * @param email email for the Docker registry
+   * @param registry Docker registry name
+   * @return json object for the Docker registry configuration
+   */
+  public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
+    return Docker.createDockerConfigJson(username, password, email, registry);
+  }
+
   // ------------------------ Ingress -------------------------------------
 
   /**
@@ -562,18 +574,6 @@ public class TestActions {
    */
   public static List<String> getIngressList(String namespace) throws Exception {
     return Traefik.getIngressList(namespace);
-  }
-
-  /**
-   * Create Docker registry configuration in json object.
-   * @param username username for the Docker registry
-   * @param password password for the Docker registry
-   * @param email email for the Docker registry
-   * @param registry Docker registry name
-   * @return json object for the Docker registry configuration
-   */
-  public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
-    return Docker.createDockerConfigJson(username, password, email, registry);
   }
 
   // ------------------------ where does this go  -------------------------

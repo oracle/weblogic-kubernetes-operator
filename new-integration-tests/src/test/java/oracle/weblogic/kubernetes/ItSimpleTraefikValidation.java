@@ -10,7 +10,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,10 +50,16 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
@@ -161,29 +166,18 @@ class ItSimpleTraefikValidation implements LoggedTest {
     // create image with model files
     miiImage = createImageAndVerify();
 
-    String repoRegistry = "dummy";
-    String repoUserName = "dummy";
-    String repoPassword = "dummy";
-    String repoEmail = "dummy";
-
     // push the image to OCIR to make the test work in multi node cluster
-    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
-        && System.getenv("REPO_PASSWORD") != null && System.getenv("REPO_EMAIL") != null) {
-      repoRegistry = System.getenv("REPO_REGISTRY");
-      repoUserName = System.getenv("REPO_USERNAME");
-      repoPassword = System.getenv("REPO_PASSWORD");
-      repoEmail = System.getenv("REPO_EMAIL");
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login");
+      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
-      logger.info("Docker login");
-      assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "Docker login failed");
-
-      logger.info("Docker push image {0} to OCIR", miiImage);
-      assertTrue(dockerPush(miiImage), String.format("Docker push failed for image %s", miiImage));
+      logger.info("docker push image {0} to OCIR", miiImage);
+      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
     }
 
     // create Docker registry secret in the domain namespace to pull the image from OCIR
-    JsonObject dockerConfigJsonObject = getDockerConfigJson(
-        repoUserName, repoPassword, repoEmail, repoRegistry);
+    JsonObject dockerConfigJsonObject = createDockerConfigJson(
+        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
@@ -667,35 +661,10 @@ class ItSimpleTraefikValidation implements LoggedTest {
   }
 
   /**
-   * Get Docker registry configuration json object.
-   *
-   * @param username username for the Docker registry
-   * @param password password for the Docker registry
-   * @param email email for the Docker registry
-   * @param registry Docker registry name
-   * @return json object for the Docker registry configuration
-   */
-  private static JsonObject getDockerConfigJson(String username, String password, String email, String registry) {
-    JsonObject authObject = new JsonObject();
-    authObject.addProperty("username", username);
-    authObject.addProperty("password", password);
-    authObject.addProperty("email", email);
-    String auth = username + ":" + password;
-    String authEncoded = Base64.getEncoder().encodeToString(auth.getBytes());
-    System.out.println("auth encoded: " + authEncoded);
-    authObject.addProperty("auth", authEncoded);
-    JsonObject registryObject = new JsonObject();
-    registryObject.add(registry, authObject);
-    JsonObject configJsonObject = new JsonObject();
-    configJsonObject.add("auths", registryObject);
-    return configJsonObject;
-  }
-
-  /**
-   * Get the next free port between range from to to.
+   * Get the next free port between range from and to.
    * @param from range starting point
-   * @param to range ending port
-   * @return free port
+   * @param to range ending point
+   * @return the next free port in the range if found, otherwise return port 'to'
    */
   private int getNextFreePort(int from, int to) {
     int port;
