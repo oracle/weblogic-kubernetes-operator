@@ -436,6 +436,7 @@ class ItMiiDomain implements LoggedTest {
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
     final String imageName = repoUserName.equals("dummy") ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
+    final String image = imageName + imageTag;
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
@@ -454,8 +455,7 @@ class ItMiiDomain implements LoggedTest {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using model directory {2}",
-        MII_IMAGE_NAME, imageTag, MODEL_DIR);
+    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = createMiiImage(
         defaultWitParams()
             .modelImageName(imageName)
@@ -466,13 +466,13 @@ class ItMiiDomain implements LoggedTest {
             .env(env)
             .redirect(true));
 
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", MII_IMAGE_NAME));
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
     // check image exists
-    assertTrue(dockerImageExists(MII_IMAGE_NAME, imageTag),
-        String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag));
+    assertTrue(dockerImageExists(imageName, imageTag),
+        String.format("Image %s doesn't exist", image));
 
-    return MII_IMAGE_NAME + ":" + imageTag;
+    return image;
   }
 
 
