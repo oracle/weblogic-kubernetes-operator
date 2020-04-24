@@ -54,6 +54,10 @@ class ItSimpleDomainValidation implements LoggedTest {
   String pvcName;
   String pvName;
 
+  /**
+   * Setup for test suite. Creates service account, namespace, and persistent volumes.
+   * @param namespaces injected by Junit extension
+   */
   @BeforeAll
   public void setup(@Namespaces(1) List<String> namespaces) {
 
@@ -117,6 +121,9 @@ class ItSimpleDomainValidation implements LoggedTest {
     assertTrue(success, "PersistentVolume creation failed");
   }
 
+  /**
+   * Create a simple domain and checks if pods are coming up.
+   */
   @Test
   @DisplayName("Create a domain")
   @Slow
@@ -158,6 +165,9 @@ class ItSimpleDomainValidation implements LoggedTest {
         .until(domainExists(domainUid, "v7", namespace));
   }
 
+  /**
+   * Delete artifacts.
+   */
   @AfterAll
   public void cleanup() {
 
