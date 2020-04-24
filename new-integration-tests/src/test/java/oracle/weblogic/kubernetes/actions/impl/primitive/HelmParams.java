@@ -8,11 +8,12 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 public class HelmParams {
 
   // Adding some of the most commonly used params for now
-  protected String releaseName;
-  protected String namespace;
-  protected String repoUrl;
-  protected String chartName;
-  protected String chartDir;
+  private String releaseName;
+  private String namespace;
+  private String repoUrl;
+  private String chartName;
+  private String chartDir;
+  private String filter;
 
   public HelmParams releaseName(String releaseName) {
     this.releaseName = releaseName;
@@ -39,6 +40,11 @@ public class HelmParams {
     return this;
   }
 
+  public HelmParams filter(String filter) {
+    this.filter = filter;
+    return this;
+  }
+
   public String getReleaseName() {
     return releaseName;
   }
@@ -59,4 +65,7 @@ public class HelmParams {
     return chartDir;
   }
 
+  public String getFilter() {
+    return filter;
+  }
 }
