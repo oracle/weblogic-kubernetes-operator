@@ -12,6 +12,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 
 /**
  * Action class with implementation methods for Operator.
@@ -71,6 +72,7 @@ public class Operator {
     String branchName = "";
     if (!buildID.isEmpty()) {
       branchName = System.getenv("BRANCH");
+      imageName = REPO_NAME + imageName;
     } else  {
       CommandParams params = Command.defaultCommandParams()
           .command("git branch | grep \\* | cut -d ' ' -f2-")
