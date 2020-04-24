@@ -284,7 +284,7 @@ function createWLDomain() {
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
   checkModelDirectoryExtensions
-  if [ -z "${WDT_BYPASS_WDT_VERSION_CHECK}" ] || [ "true" != "${WDT_BYPASS_WDT_VERSION_CHECK}" ] ; then
+  if [ "true" != "${WDT_BYPASS_WDT_VERSION_CHECK}" ] ; then
     checkWDTVersion
   fi
 
@@ -395,20 +395,20 @@ function checkModelDirectoryExtensions() {
   trace "Entering checkModelDirectoryExtensions"
 
   cd ${IMG_MODELS_HOME}
-  counter=$(ls  -I  *.yaml -I *.zip -I *.properties | wc -l)
+  counter=$(ls  -I  "*.yaml" -I "*.zip" -I "*.properties" | wc -l)
   if [ $counter -ne 0 ] ; then
         trace SEVERE "Model image directory ${IMG_MODELS_HOME} contains files with unsupported extensions. Expected extensions: " \
           ".yaml, .properties, or .zip"
-        trace SEVERE "Model files with unsupported extensions: '$(ls -I  *.yaml -I *.zip -I *.properties)'"
+        trace SEVERE "Model files with unsupported extensions: '$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
         exitOrLoop
   fi
   if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
     cd ${WDT_CONFIGMAP_ROOT}
-    counter=$(ls  -I  *.yaml -I *.properties | wc -l)
+    counter=$(ls  -I  "*.yaml" -I "*.properties" | wc -l)
     if [ $counter -ne 0 ] ; then
           trace SEVERE "Model configmap directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extensions. " \
           "Expected extensions: .yaml or .properties"
-          trace SEVERE "Model files with unsupported extensions: '$(ls -I  *.yaml -I *.properties)'"
+          trace SEVERE "Model files with unsupported extensions: '$(ls -I "*.yaml" -I "*.properties")'"
           exitOrLoop
     fi
   fi
