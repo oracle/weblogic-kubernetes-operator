@@ -156,9 +156,6 @@ class ItSimpleDomainValidation implements LoggedTest {
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
         .until(domainExists(domainUid, "v7", namespace));
-
-    // wait for the admin server pod to exist
-    // wait for the managed servers to exist
   }
 
   @AfterAll
