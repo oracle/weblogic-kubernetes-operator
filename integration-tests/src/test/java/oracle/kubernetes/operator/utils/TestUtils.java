@@ -1611,7 +1611,7 @@ public class TestUtils {
       String namespace, String secretName) throws Exception {
     String cmd = "sh " 
         + scriptsDir
-        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
+        + "util-opss-wallet.sh -d "
         + domainUid
         + " -n "
         + namespace
@@ -1633,7 +1633,7 @@ public class TestUtils {
       String namespace) throws Exception {
     String cmd = "sh " 
         + scriptsDir
-        + "/scripts/create-weblogic-domain/model-in-image/util-opss-wallet.sh -d "
+        + "util-opss-wallet.sh -d "
         + domainUid
         + " -n "
         + namespace

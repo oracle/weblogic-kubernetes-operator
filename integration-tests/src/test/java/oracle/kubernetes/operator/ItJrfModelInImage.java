@@ -183,11 +183,13 @@ public class ItJrfModelInImage extends MiiBaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "JRF domain verification succeeded for {0}", testClassName);
       
       //save and restore walletFile secret
-      assertDoesNotThrow(() -> TestUtils.saveWalletFileSecret(getResultDir(), domainUid, namespace),
+      String scriptsDir = BaseTest.getProjectRoot()
+          + "/integration-tests/src/test/resources/model-in-image/scripts/jrfscripts/";
+      assertDoesNotThrow(() -> TestUtils.saveWalletFileSecret(scriptsDir, domainUid, namespace),
           "Failed to save walletFile secret");
       LoggerHelper.getLocal().log(Level.INFO, "Saved walletFile secret for {0}", domainUid);
       String walletFileSecretName = domainUid + "-opss-walletfile-secret";
-      assertDoesNotThrow(() -> TestUtils.restoreWalletFileSecret(getResultDir(), domainUid, namespace, 
+      assertDoesNotThrow(() -> TestUtils.restoreWalletFileSecret(scriptsDir, domainUid, namespace, 
           walletFileSecretName), 
           "Failed to store walletFile secret");
       LoggerHelper.getLocal().log(Level.INFO, "Restored walletFile secret for {0}", domainUid);
