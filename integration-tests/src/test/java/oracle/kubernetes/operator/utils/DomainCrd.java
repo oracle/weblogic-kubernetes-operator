@@ -365,7 +365,7 @@ public class DomainCrd {
   /**
    * Utility method to replace name of domain in domain.yaml
    *
-   * @param domain new domain name to be replaced
+   * @param domain new domain name
    * @throws JsonProcessingException when domain name not available
    */
   public void changeDomainName(String domain) throws JsonProcessingException {
@@ -377,7 +377,7 @@ public class DomainCrd {
   /**
    * Utility method to replace domainUID in domain.yaml
    *
-   * @param domainUID domainUID to be replaced
+   * @param domainUID new domainUID 
    * @throws JsonProcessingException when domainUID not available
    */
   public void changeDomainUID(String domainUID) throws JsonProcessingException {
@@ -389,7 +389,7 @@ public class DomainCrd {
   /**
    * Utility method to replace domainHome in domain.yaml
    *
-   * @param domainHome new domainHome to be replaced
+   * @param domainHome new domainHome 
    * @throws JsonProcessingException when domainHome not available
    */
   public void changeDomainHome(String domainHome) throws JsonProcessingException {
@@ -434,9 +434,9 @@ public class DomainCrd {
   }
   
   /**
-   * Gets the opss node entry from Domain CRD JSON tree.
+   * Gets the OPSS node entry from Domain CRD JSON tree.
    *
-   * @return opss node
+   * @return OPSS node
    */
   private JsonNode getOpssNode() {
     return root.path("spec").path("configuration").path("opss");

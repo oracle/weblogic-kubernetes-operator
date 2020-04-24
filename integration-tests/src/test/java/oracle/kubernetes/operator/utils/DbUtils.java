@@ -95,7 +95,7 @@ public class DbUtils {
   }
   
   /**
-   * Create Oracle rcu pod and load database schema in the k8s cluster default namespace.
+   * Create Oracle rcu pod and load database schema in the specified namespace.
    * 
    * @param scriptsDir directory of scripts
    * @param rcuSchemaPrefix prefix of RCU schema
@@ -127,9 +127,9 @@ public class DbUtils {
   }
   
   /**
-   * Create Docker Registry Secret for the DB namespace.
+   * Create Docker Registry Secret in the specified namespace.
    * 
-   * @param namespace namespace where the docker registry secreted is going to create
+   * @param namespace namespace where the docker registry secret is going to create
    * @throws Exception when the kubectl create secret command fails
    */
   public static void createDockerRegistrySecret(String namespace) throws Exception {
@@ -156,7 +156,7 @@ public class DbUtils {
    * 
    * @param scriptsDir directory of scripts
    * @param rcuSchemaPrefix prefix of RCU schema
-   * @param namespace namespace where RCU schema was created
+   * @param namespace namespace where RCU schema is going to be dropped
    * @throws Exception if any error occurs when dropping rcu schema
    */
   public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix, String namespace) throws Exception {
@@ -170,7 +170,8 @@ public class DbUtils {
   
   /**
    * Delete RCU pod.
-   *
+   * 
+   * @param scriptsDir directory of scripts
    * @throws Exception - if any error occurs when deleting RCU pod
    */
   public static void deleteRcuPod(String scriptsDir) throws Exception {
@@ -318,7 +319,7 @@ public class DbUtils {
   }
   
   /**
-   * Create Oracle rcu pod and load database schema in the specified namespace.
+   * Start DB instance, create Oracle rcu pod and load database schema in the specified namespace.
    * 
    * @param scriptsDir directory of scripts
    * @param dbPort NodePort of DB
@@ -338,7 +339,7 @@ public class DbUtils {
     createDockerRegistrySecret(namespace);
     startOracleDB(scriptsDir, String.valueOf(dbPort), namespace);
     createRcuSchema(scriptsDir,rcuSchemaPrefix, dbUrl, namespace);
-    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is created for:" 
+    LoggerHelper.getLocal().log(Level.INFO,"RCU schema is going to create for:" 
         + " namespace: " + namespace 
         + " dbUrl:" + dbUrl 
         + " dbPort: " + dbPort

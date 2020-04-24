@@ -12,7 +12,7 @@ public class WalletPasswordSecret extends Secret {
   /**
    * Construct WalletPassword secret.
    * 
-   * @param namespace namespace that this secret is in
+   * @param namespace namespace where the secret is going to create
    * @param secretName secret name
    * @param walletPassword wallet password
    * @throws Exception on failure
