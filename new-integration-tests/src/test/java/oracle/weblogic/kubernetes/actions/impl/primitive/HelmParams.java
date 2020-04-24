@@ -15,6 +15,7 @@ public class HelmParams {
   protected String chartName;
   protected String chartDir;
   protected String chartValuesFile;
+  private String filter;
 
   public HelmParams releaseName(String releaseName) {
     this.releaseName = releaseName;
@@ -51,6 +52,11 @@ public class HelmParams {
     return this;
   }
 
+  public HelmParams filter(String filter) {
+    this.filter = filter;
+    return this;
+  }
+
   public String getReleaseName() {
     return releaseName;
   }
@@ -77,5 +83,9 @@ public class HelmParams {
 
   public String getChartValuesFile() {
     return chartValuesFile;
+  }
+
+  public String getFilter() {
+    return filter;
   }
 }
