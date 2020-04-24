@@ -202,7 +202,7 @@ public class TestActions {
   /**
    * Create Traefik Ingress.
    *
-   * @param params the params to Helm install command, including release name, chartDir and wls domain namespace
+   * @param params the params to Helm install command, including release name, chartDir and WebLogic domain namespace
    * @param domainUid WebLogic domainUid to create the ingress
    * @param traefikHostname the hostname for the ingress
    * @return true on success, false otherwise
@@ -234,8 +234,8 @@ public class TestActions {
   /**
    * Uninstall the ingress.
    *
-   * @param params the parameters to Helm uninstall command, including release name and wls domain namespace containing
-   *               the ingress
+   * @param params the parameters to Helm uninstall command, including release name and WebLogic domain namespace
+   *               which contains the ingress
    * @return true on success, false otherwise
    */
   public static boolean uninstallIngress(HelmParams params) {
