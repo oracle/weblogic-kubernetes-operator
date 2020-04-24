@@ -12,7 +12,6 @@ import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 
-
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
  */
@@ -63,6 +62,20 @@ public class TestAssertions {
   public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) throws ApiException {
     return () -> {
       return Kubernetes.doesPodExist(namespace, domainUid, podName);
+    };
+  }
+
+  /**
+   * Check if a Kubernetes pod is deleted in the given namespace.
+   *
+   * @param podName   name of the pod to check for
+   * @param domainUid UID of WebLogic domain in which the pod exists
+   * @param namespace in which the pod does not exist
+   * @return true if the pod does not exist in the namespace otherwise false
+   */
+  public static Callable<Boolean> podDeleted(String podName, String domainUid, String namespace) throws ApiException {
+    return () -> {
+      return Kubernetes.doesPodDeleted(namespace, domainUid, podName);
     };
   }
 

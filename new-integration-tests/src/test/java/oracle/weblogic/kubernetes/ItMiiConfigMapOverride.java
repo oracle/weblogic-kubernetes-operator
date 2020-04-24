@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -41,7 +42,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.extensions.Timing;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -51,22 +51,22 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMIIImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWITParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
@@ -80,19 +80,23 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDeleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podTerminating;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
-@ExtendWith(Timing.class)
 class ItMiiConfigMapOverride implements LoggedTest {
 
   // operator constants
@@ -113,13 +117,12 @@ class ItMiiConfigMapOverride implements LoggedTest {
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 
   private static HelmParams opHelmParams = null;
-  private static V1ConfigMap configMap = null;
   private static V1ServiceAccount serviceAccount = null;
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
 
-  private String domainUID = "domain1";
+  private String domainUid = "domain1";
   private String repoSecretName = "reposecret";
   private String miiImage = null;
   private String repoRegistry = "dummy";
@@ -127,13 +130,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
   private String repoPassword = "dummy";
   private String repoEmail = "dummy";
   private V1Patch patch = null;
+  private StringBuffer checkJdbc = null;
 
   /**
    * Install Operator.
    */
   @BeforeAll
   public static void initAll() {
-    // create standard, reusbale retry/backoff policy
+    // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
@@ -197,20 +201,20 @@ class ItMiiConfigMapOverride implements LoggedTest {
   }
 
   /**
-   * Deploy a WebLogic domain in model-in-image 
-   * Update configuration/model/configmap section of domain resource with 
-   *  a configmap that define a JDBC datasource targeted to the cluster
-   * Update the restartVersion of domain resource to a newer value to trigger 
-   *  the rolling restart of the domain 
+   *  Deploy a WebLogic domain with a defined configmap 
+   *  in configuration/model section of the domain resource.
+   *  The configmap has a sparse wdt model file that define a JDBC 
+   *  datasource targeted to the cluster
   */
   @Test
   @Order(1)
-  @DisplayName("Create model in image domain with a configmap")
+  @DisplayName("Create model in image domain")
   @Slow
   @MustNotRunInParallel
   public void testCreateMiiDomainWithConfigMapOverride() {
-    final String adminServerPodName = domainUID + "-admin-server";
-    final String managedServerPrefix = domainUID + "-managed-server";
+    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
     // create image with model files
@@ -274,15 +278,15 @@ class ItMiiConfigMapOverride implements LoggedTest {
         .stringData(encryptionSecretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", encryptionSecretName));
 
-    // add domain CR
+    // add domain CR 
     Domain domain = new Domain()
         .apiVersion(API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
-            .name(domainUID)
+            .name(domainUid)
             .namespace(domainNamespace))
         .spec(new DomainSpec()
-            .domainUid(domainUID)
+            .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -314,13 +318,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
-        domainUID, domainNamespace);
+    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUID, domainNamespace)),
+            domainUid, domainNamespace)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUID, domainNamespace));
+            domainUid, domainNamespace));
+
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
@@ -328,11 +333,11 @@ class ItMiiConfigMapOverride implements LoggedTest {
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUID,
+                domainUid,
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUID, DOMAIN_VERSION, domainNamespace));
+        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
 
     // check admin server pod exist
@@ -354,14 +359,24 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     // check managed server pods are running
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+      logger.info("Wait for managedserver pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodRunning(managedServerPrefix + i);
+    }
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceCreated(adminServerPodName);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceCreated(managedServerPrefix + i);
     }
 
     // Create a ConfigMap with a sparse jdbc model file
     Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUID", domainUID);
+    labels.put("weblogic.domainUid", domainUid);
     String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
     Map<String, String> data = new HashMap<>();
     String configMapName = "dsconfigmap";
@@ -383,7 +398,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
         .withMetadata(meta)
         .build();
 
-    // PANI
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
@@ -397,7 +411,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     patch = new V1Patch(new String(patchStr));
     boolean cmPatched = assertDoesNotThrow(() -> 
-        patchDomainCustomResource(domainUID,domainNamespace,patch,"application/json-patch+json"),
+        patchDomainCustomResource(domainUid,domainNamespace,patch,"application/json-patch+json"),
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
 
@@ -410,21 +424,70 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     patch = new V1Patch(new String(patchStr));
     boolean rvPatched = assertDoesNotThrow(() -> 
-        patchDomainCustomResource(domainUID,domainNamespace,patch,"application/json-patch+json"),
+        patchDomainCustomResource(domainUid,domainNamespace,patch,"application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+    logger.info("Snooze for 60 secs for Introspector to kick off");
+    try { 
+      Thread.sleep(60000);
+    } catch (java.lang.InterruptedException ie) {
+      logger.info("Got InterruptedException during Thread.sleep");
+      fail("Got InterruptedException during Thread.sleep");
+    }
+    // Verify a rolling restart is triggered in a sequential fashion 
+    // admin-server --> managed-server1 --> managed-server2 
+    logger.info("Check admin server pod {0} to be restarted in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodDeleted(adminServerPodName);
+    checkPodCreated(adminServerPodName);
+    checkPodRunning(adminServerPodName);
+    checkServiceCreated(adminServerPodName);
+
+    // check managed server pods re-started sequentially
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be restarted in namespace {1}",
+                        managedServerPrefix + i, domainNamespace);
+      checkPodDeleted(managedServerPrefix + i);
+      checkPodRunning(managedServerPrefix + i);
+      checkServiceCreated(managedServerPrefix + i);
+    }
+
+    oracle.weblogic.kubernetes.utils.ExecResult result = null; 
+    try {
+      String hostname = null;
+      if (System.getenv("K8S_NODEPORT_HOST") == null) {
+        hostname = InetAddress.getLocalHost().getHostName();
+      } else {
+        hostname = System.getenv("K8S_NODEPORT_HOST");
+      }
+      checkJdbc =  new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+      checkJdbc.append("http://" + hostname + ":30711")
+             .append("/management/wls/latest/datasources/id/TestDataSource/")
+             .append(" -o /dev/null")
+             .append(" -w %{http_code});")
+             .append("echo ${status}");      
+      logger.info("CURL command {0}", new String(checkJdbc));
+      result = exec(new String(checkJdbc),true);
+    } catch (java.net.UnknownHostException uhe) {
+      logger.info("UnknownHostException is received {0}", uhe);
+      fail("Got UnknownHostException");
+    } catch (Exception ex) {
+      logger.info("Unexpected exception  {0}", ex);
+      fail("Got unexpected exception");
+    }
+    logger.info("Curl command returns {0}", result.toString());
+    assertEquals("200",result.stdout(),"Datasource configuration not found");
+    logger.info("Found the DataSource configuration ");
   }
 
   @AfterEach
-  public void tear() {
-  }
-
   public void tearDown() {
+
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUID, domainNamespace),
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
         "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUID + " from " + domainNamespace);
+    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
 
     // delete the domain image created for the test
     if (miiImage != null) {
@@ -438,9 +501,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
    * operator namespace.
    */
   @AfterAll
-  public void doNothing() {
-  }
-
   public void tearDownAll() {
     // uninstall operator release
     logger.info("Uninstall Operator in namespace {0}", opNamespace);
@@ -479,7 +539,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
 
     // build the model file list
-    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
@@ -487,23 +547,23 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    List<String> archiveList = Collections.singletonList(zipFile);
+    final List<String> archiveList = Collections.singletonList(zipFile);
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap();
+    Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0}:{1} using model directory {2}",
         MII_IMAGE_NAME, imageTag, MODEL_DIR);
-    boolean result = createMIIImage(
-        defaultWITParams()
+    boolean result = createMiiImage(
+        defaultWitParams()
             .modelImageName(MII_IMAGE_NAME)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
-            .wdtVersion("latest")
+            .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
 
@@ -526,8 +586,37 @@ class ItMiiConfigMapOverride implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podExists(podName, domainUID, domainNamespace),
+        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
             String.format("podExists failed with ApiException for %s in namespace in %s",
+                podName, domainNamespace)));
+
+  }
+
+  private void checkPodDeleted(String podName) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podDeleted(podName, domainUid, domainNamespace),
+            String.format("podDeleted failed with ApiException for %s in namespace in %s",
+                podName, domainNamespace)));
+  }
+
+  private void checkPodTerminating(String podName) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be terminated in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podTerminating(podName, domainUid, domainNamespace),
+            String.format("PodTerminating failed with ApiException for %s in namespace in %s",
                 podName, domainNamespace)));
 
   }
@@ -541,7 +630,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUID, domainNamespace),
+        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
             String.format(
                 "pod %s is not ready in namespace %s", podName, domainNamespace)));
 
