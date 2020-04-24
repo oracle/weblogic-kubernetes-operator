@@ -425,7 +425,7 @@ class ItMiiDomain implements LoggedTest {
    
     // create another image with app V2 
     miiImagePatchAppV2 = updateImageWithAppV2Patch(
-        String.format("%s-%s", MII_IMAGE_NAME, "testPatchAppV2"),
+        String.format("%s-%s", MII_IMAGE_NAME, "test-patch-app-v2"),
         Arrays.asList(appDir1, appDir2));
 
     // push the image to OCIR to make the test work in multi node cluster
@@ -493,7 +493,7 @@ class ItMiiDomain implements LoggedTest {
     
     // create another image with an additional app
     miiImageAddSecondApp = updateImageWithApp3(
-        String.format("%s-%s", MII_IMAGE_NAME, "testAddSecondApp"),
+        String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
         "model2-wls.yaml");
