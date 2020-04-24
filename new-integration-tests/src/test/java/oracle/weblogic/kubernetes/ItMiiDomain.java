@@ -68,7 +68,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.getImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
@@ -147,10 +147,9 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Created service account: {0}", serviceAccountName);
 
     // get Operator image name
-    String operatorImage = getImageName();
+    String operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
     logger.info("Operator image name {0}", operatorImage);
-
 
     // Create docker registry secret in the operator namespace to pull the image from repository
     if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
@@ -435,6 +434,8 @@ class ItMiiDomain implements LoggedTest {
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    // Add repository name in image name for Jenkins runs
+    final String imageName = repoUserName.equals("dummy") ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
@@ -457,7 +458,7 @@ class ItMiiDomain implements LoggedTest {
         MII_IMAGE_NAME, imageTag, MODEL_DIR);
     boolean result = createMiiImage(
         defaultWitParams()
-            .modelImageName(MII_IMAGE_NAME)
+            .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
@@ -471,12 +472,7 @@ class ItMiiDomain implements LoggedTest {
     assertTrue(dockerImageExists(MII_IMAGE_NAME, imageTag),
         String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag));
 
-    // Add repo for Jenkins runs
-    if (!repoUserName.equals("dummy")) {
-      return REPO_NAME + MII_IMAGE_NAME + ":" + imageTag;
-    } else {
-      return MII_IMAGE_NAME + ":" + imageTag;
-    }
+    return MII_IMAGE_NAME + ":" + imageTag;
   }
 
 

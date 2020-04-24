@@ -92,7 +92,7 @@ public class TestActions {
    * and branch name, build id for image tag in Jenkins runs.
    * @return image name
    */
-  public static String getImageName() {
+  public static String getOperatorImageName() {
     return Operator.getImageName();
   }
 
