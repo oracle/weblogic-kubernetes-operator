@@ -402,11 +402,11 @@ function checkModelDirectoryExtensions() {
   fi
   if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
     cd ${WDT_CONFIGMAP_ROOT}
-    counter=$(ls  -I  *.yaml -I *.zip -I *.properties | wc -l)
+    counter=$(ls  -I  *.yaml -I *.properties | wc -l)
     if [ $counter -ne 0 ] ; then
           trace SEVERE "Directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extension. Extension must be" \
-            ".yaml, .properties, or .zip"
-          trace SEVERE $(ls -I  *.yaml -I *.zip -I *.properties)
+            ".yaml or .properties"
+          trace SEVERE $(ls -I  *.yaml -I *.properties)
           exitOrLoop
     fi
   fi
