@@ -519,14 +519,6 @@ class ItMiiDomain implements LoggedTest {
       // do nothing
     }
     
-    // check and wait for the original app to be ready
-    checkAppRunning(
-        domainUID,
-        domainNamespace,
-        "8001",
-        "sample-war/index.jsp",
-        APP_RESPONSE_V2);
-    
     // check and wait for the new app to be ready
     checkAppRunning(
         domainUID,
@@ -534,6 +526,14 @@ class ItMiiDomain implements LoggedTest {
         "8001",
         "sample-war-3/index.jsp",
         APP_RESPONSE_V3);
+
+    // check and wait for the original app to be ready
+    checkAppRunning(
+        domainUID,
+        domainNamespace,
+        "8001",
+        "sample-war/index.jsp",
+        APP_RESPONSE_V2);
 
     logger.info("The cluster has been rolling started, and the two applications are both running correctly.");
   }

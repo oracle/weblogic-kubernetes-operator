@@ -84,7 +84,12 @@ public class ExecCommand {
       }
 
       p.waitFor();
- 
+      
+      if (out != null) {
+        out.join();
+        out = null;
+      }
+    
       return new ExecResult(p.exitValue(), read(in.getInputStream()), read(p.getErrorStream()));
     
     } finally {
