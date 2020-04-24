@@ -234,8 +234,6 @@ class ItMiiDomain implements LoggedTest {
 
     // push the image to OCIR to make the test work in multi node cluster
     if (!repoUserName.equals("dummy")) {
-      miiImage = REPO_NAME + miiImage;
-
       logger.info("docker login");
       assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
 
@@ -473,7 +471,12 @@ class ItMiiDomain implements LoggedTest {
     assertTrue(dockerImageExists(MII_IMAGE_NAME, imageTag),
         String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag));
 
-    return MII_IMAGE_NAME + ":" + imageTag;
+    // Add repo for Jenkins runs
+    if (!repoUserName.equals("dummy")) {
+      return REPO_NAME + MII_IMAGE_NAME + ":" + imageTag;
+    } else {
+      return MII_IMAGE_NAME + ":" + imageTag;
+    }
   }
 
 
