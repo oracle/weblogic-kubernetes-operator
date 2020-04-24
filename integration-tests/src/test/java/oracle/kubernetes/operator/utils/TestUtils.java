@@ -1286,8 +1286,6 @@ public class TestUtils {
             
     if (dockerEmail != null) {
       command = command + " --docker-email=" + dockerEmail;
-      //TODO
-      LoggerHelper.getLocal().log(Level.INFO, "DEBUG !!!!dockerEmail command " + command);
     }
    
     command = command + " -n " 

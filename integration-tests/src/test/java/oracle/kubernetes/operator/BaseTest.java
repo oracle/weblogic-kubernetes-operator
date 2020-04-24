@@ -873,12 +873,10 @@ public class BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Done - testOperatorLifecycle");
   }
 
-  protected void logTestBegin(String testName) throws Exception {
+  protected void logTestBegin(String testName) {
     LoggerHelper.getLocal().log(Level.INFO,
         "+++++++++++++++++++++++++++++++++---------------------------------+");
     LoggerHelper.getLocal().log(Level.INFO, "BEGIN " + testName);
-    // renew lease at the beginning for every test method, leaseId is set only for shared cluster
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 
   private void copyScalingScriptToPod(String domainUid, String podName, String domainNS)

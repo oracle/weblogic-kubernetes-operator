@@ -147,7 +147,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
     Assumptions.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
-    assertDoesNotThrow(() -> logTestBegin(testMethodName));
+    logTestBegin(testMethodName);
     
     boolean testCompletedSuccessfully = false;
     try {
