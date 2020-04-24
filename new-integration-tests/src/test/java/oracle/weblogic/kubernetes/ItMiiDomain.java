@@ -642,10 +642,10 @@ class ItMiiDomain implements LoggedTest {
       String imageName,
       List<String> appDirList
   ) {
-	DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
-	final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-	// Add repository name in image name for Jenkins runs
+    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    // Add repository name in image name for Jenkins runs
     final String imageNameReal = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? imageName : REPO_NAME + imageName;
     String image = String.format("%s:%s",  imageNameReal, imageTag);
     
@@ -660,7 +660,7 @@ class ItMiiDomain implements LoggedTest {
                 .srcDirList(appDirList)),
         String.format("Failed to create app archive for %s",
             APP_NAME));
-    
+
     // build the archive list
     List<String> archiveList = 
         Collections.singletonList(
@@ -680,7 +680,7 @@ class ItMiiDomain implements LoggedTest {
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-	// Add repository name in image name for Jenkins runs
+    // Add repository name in image name for Jenkins runs
     final String imageNameReal = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? imageName : REPO_NAME + imageName;
     String image = String.format("%s:%s",  imageNameReal, imageTag);
     
