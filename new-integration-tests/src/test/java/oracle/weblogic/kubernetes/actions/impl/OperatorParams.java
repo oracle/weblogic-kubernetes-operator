@@ -31,7 +31,7 @@ public class OperatorParams {
   private String externalRestIdentitySecret;
   private int externalRestHttpsPort = 0;
   private String imagePullPolicy;
-  private String imagePullSecrets;
+  private Map<String, Object> imagePullSecrets;
   private HelmParams helmParams;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
@@ -64,7 +64,7 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams imagePullSecrets(String imagePullSecrets) {
+  public OperatorParams imagePullSecrets(Map<String, Object> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
     return this;
   }
