@@ -428,7 +428,8 @@ function checkWDTVersion() {
       exitOrLoop
     fi
   else
-    trace SEVERE "Unknown Weblogic Deploy Tool version. Operator requires WDT minimum version ${WDT_MINIMUM_VERSION}"
+    trace SEVERE "Unknown Weblogic Deploy Tool version. Model in Image domain requires Weblogic Deploy Tool " \
+      "minimum version ${WDT_MINIMUM_VERSION}"
     exitOrLoop
   fi
 
