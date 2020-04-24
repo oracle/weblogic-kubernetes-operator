@@ -8,7 +8,9 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
+import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
+import oracle.weblogic.kubernetes.assertions.impl.Helm;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
@@ -208,5 +210,24 @@ public class TestAssertions {
     return () -> {
       return Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
     };
+  }
+
+  /**
+   * Check if the Docker image containing the search string exists.
+   * @param searchString search string
+   * @return true on success
+   */
+  public static boolean doesImageExist(String searchString) {
+    return Docker.doesImageExist(searchString);
+  }
+
+  /**
+   * Check Helm release status is deployed.
+   * @param releaseName release name which unique in a namespace
+   * @param namespace namespace name
+   * @return true on success
+   */
+  public static boolean isHelmReleaseDeployed(String releaseName, String namespace) {
+    return Helm.isReleaseDeployed(releaseName, namespace);
   }
 }
