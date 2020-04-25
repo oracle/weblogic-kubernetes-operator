@@ -84,9 +84,16 @@ public class ExecCommand {
 
       p.waitFor();
 
+      // we need to join the thread before we read the stdout so that the saved stdout is complete
+      if (out != null) {
+        out.join();
+        out = null;
+      }
+
       return new ExecResult(p.exitValue(), read(in.getInputStream()), read(p.getErrorStream()));
     
     } finally {
+      // we try to join again if for any reason the code failed before the previous attempt
       if (out != null) {
         out.join();
       }
