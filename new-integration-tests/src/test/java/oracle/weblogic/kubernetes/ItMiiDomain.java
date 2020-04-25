@@ -435,18 +435,18 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImagePatchAppV2);
     
-    logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
+    //logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
     // Instead, sleep for 2 minutes and check the newer version of the application. 
     // The application check is sufficient to verify that the version2 application
     // is running, thus the servers have been patched.
-    try {
-      TimeUnit.MINUTES.sleep(3);
-    } catch (InterruptedException ie) {
-      // do nothing
-    }
+    //try {
+    //  TimeUnit.MINUTES.sleep(3);
+    //} catch (InterruptedException ie) {
+    // do nothing
+    //}
     
     checkDomainPatched(domainUID, domainNamespace, miiImagePatchAppV2);
 
@@ -509,18 +509,18 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImageAddSecondApp);
     
-    logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
+    //logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
     
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
     // Instead, sleep for 2 minutes and check the newer version of the application. 
     // The application check is sufficient to verify that the version2 application
     // is running, thus the servers have been patched.
-    try {
-      TimeUnit.MINUTES.sleep(3);
-    } catch (InterruptedException ie) {
-      // do nothing
-    }
+    //try {
+    // TimeUnit.MINUTES.sleep(3);
+    //} catch (InterruptedException ie) {
+    // do nothing
+    //}
     
     checkDomainPatched(domainUID, domainNamespace, miiImageAddSecondApp);
     
