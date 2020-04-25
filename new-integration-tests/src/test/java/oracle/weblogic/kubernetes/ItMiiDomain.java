@@ -129,7 +129,7 @@ class ItMiiDomain implements LoggedTest {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -143,6 +143,8 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    domainNamespace1 = namespaces.get(2);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
@@ -189,9 +191,7 @@ class ItMiiDomain implements LoggedTest {
                 condition.getRemainingTimeInMS()))
         .until(operatorIsRunning(opNamespace));
 
-    JsonObject dockerConfigJsonObject = getDockerConfigJson(
-            repoUserName, repoPassword, repoEmail, repoRegistry);
-    dockerConfigJson = dockerConfigJsonObject.toString();
+
 
   }
 
@@ -217,16 +217,20 @@ class ItMiiDomain implements LoggedTest {
       repoPassword = System.getenv("REPO_PASSWORD");
       repoEmail = System.getenv("REPO_EMAIL");
 
+      JsonObject dockerConfigJsonObject = getDockerConfigJson(
+              repoUserName, repoPassword, repoEmail, repoRegistry);
+      dockerConfigJson = dockerConfigJsonObject.toString();
+
       logger.info("docker login");
       assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
 
       logger.info("docker push image {0} to OCIR", miiImage);
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
-    }
 
-    // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", repoSecretName));
+      // Create the repo secret to pull the image
+      assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
+              String.format("createSecret failed for %s", repoSecretName));
+    }
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -243,9 +247,13 @@ class ItMiiDomain implements LoggedTest {
              String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
-    int adminNodePort = 30711;
-    createDomainResource(domainUID, domainNamespace, adminSecretName, repoSecretName,
-            encryptionSecretName, adminNodePort, replicaCount);
+    if (dockerConfigJson != null) {
+      createDomainResource(domainUID, domainNamespace, adminSecretName, repoSecretName,
+              encryptionSecretName, replicaCount);
+    } else {
+      createDomainResource(domainUID, domainNamespace, adminSecretName, null,
+              encryptionSecretName, replicaCount);
+    }
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
@@ -275,13 +283,13 @@ class ItMiiDomain implements LoggedTest {
     // check admin server pod is running
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodRunning(adminServerPodName, domainUID, domainNamespace);
+    checkPodReady(adminServerPodName, domainUID, domainNamespace);
 
     // check managed server pods are running
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodRunning(managedServerPrefix + i, domainUID, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUID, domainNamespace);
     }
 
     logger.info("Check admin service {0} is created in namespace {1}",
@@ -302,16 +310,11 @@ class ItMiiDomain implements LoggedTest {
   @DisplayName("Create a second domain with the image from the the first test")
   @Slow
   @MustNotRunInParallel
-  public void testCreateMiiSecondDomain() {
+  public void testCreateMiiSecondDomainDiffNSSameImage() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUID1 + "-admin-server";
     final String managedServerPrefix = domainUID1 + "-managed-server";
     final int replicaCount = 2;
-
-    logger.info("Creating unique namespace for Domain domain2");
-    domainNamespace1 = assertDoesNotThrow(() -> createUniqueNamespace(),
-            "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace1);
 
     OperatorParams opParams =
             new OperatorParams()
@@ -320,15 +323,17 @@ class ItMiiDomain implements LoggedTest {
                     .domainNamespaces(Arrays.asList(domainNamespace,domainNamespace1))
                     .serviceAccount(serviceAccountName);
 
-    // install Operator
+    // upgrade Operator
     logger.info("Upgrading Operator in namespace {0}", opNamespace);
     assertTrue(upgradeOperator(opParams),
             String.format("Operator upgrade failed in namespace %s", opNamespace));
     logger.info("Operator upgraded in namespace {0}", opNamespace);
 
-    // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
-            String.format("createSecret failed for %s", repoSecretName));
+    if (dockerConfigJson != null) {
+      // Create the repo secret to pull the image
+      assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
+              String.format("createSecret failed for %s", repoSecretName));
+    }
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -345,9 +350,13 @@ class ItMiiDomain implements LoggedTest {
              String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
-    int adminNodePort = 30712;
-    createDomainResource(domainUID1, domainNamespace1, adminSecretName, repoSecretName,
-            encryptionSecretName, adminNodePort, replicaCount);
+    if (dockerConfigJson != null) {
+      createDomainResource(domainUID1, domainNamespace1, adminSecretName, repoSecretName,
+              encryptionSecretName, replicaCount);
+    } else {
+      createDomainResource(domainUID1, domainNamespace1, adminSecretName, null,
+              encryptionSecretName, replicaCount);
+    }
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace1);
@@ -362,12 +371,12 @@ class ItMiiDomain implements LoggedTest {
         .until(domainExists(domainUID1, DOMAIN_VERSION, domainNamespace1));
 
 
-    // check admin server pod exist
+    // check admin server pod exists
     logger.info("Check for admin server pod {0} existence in namespace {1}",
             adminServerPodName, domainNamespace1);
     checkPodCreated(adminServerPodName, domainUID1, domainNamespace1);
 
-    // check managed server pods exists
+    // check managed server pods exist
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check for managed server pod {0} existence in namespace {1}",
               managedServerPrefix + i, domainNamespace1);
@@ -377,13 +386,13 @@ class ItMiiDomain implements LoggedTest {
     // check admin server pod is running
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
             adminServerPodName, domainNamespace1);
-    checkPodRunning(adminServerPodName, domainUID1, domainNamespace1);
+    checkPodReady(adminServerPodName, domainUID1, domainNamespace1);
 
     // check managed server pods are running
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
               managedServerPrefix + i, domainNamespace1);
-      checkPodRunning(managedServerPrefix + i, domainUID1, domainNamespace1);
+      checkPodReady(managedServerPrefix + i, domainUID1, domainNamespace1);
     }
 
     logger.info("Check admin service {0} is created in namespace {1}",
@@ -409,9 +418,11 @@ class ItMiiDomain implements LoggedTest {
     final String managedServerPrefix = domainUID + "-managed-server";
     final int replicaCount = 2;
 
-    // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
-            String.format("createSecret failed for %s", repoSecretName));
+    if (dockerConfigJson != null) {
+      // Create the repo secret to pull the image
+      assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
+              String.format("createSecret failed for %s", repoSecretName));
+    }
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -428,9 +439,13 @@ class ItMiiDomain implements LoggedTest {
              String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
-    int adminNodePort = 30714;
-    createDomainResource(domainUID, domainNamespace1, adminSecretName, repoSecretName,
-            encryptionSecretName, adminNodePort, replicaCount);
+    if (dockerConfigJson != null) {
+      createDomainResource(domainUID, domainNamespace1, adminSecretName, repoSecretName,
+              encryptionSecretName, replicaCount);
+    } else {
+      createDomainResource(domainUID, domainNamespace1, adminSecretName, null,
+              encryptionSecretName, replicaCount);
+    }
 
     // wait for the domain to exist
     logger.info("Check for domain custom resouce in namespace {0}", domainNamespace1);
@@ -460,13 +475,13 @@ class ItMiiDomain implements LoggedTest {
     // check admin server pod is running
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
             adminServerPodName, domainNamespace1);
-    checkPodRunning(adminServerPodName, domainUID, domainNamespace1);
+    checkPodReady(adminServerPodName, domainUID, domainNamespace1);
 
     // check managed server pods are running
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
               managedServerPrefix + i, domainNamespace1);
-      checkPodRunning(managedServerPrefix + i, domainUID, domainNamespace1);
+      checkPodReady(managedServerPrefix + i, domainUID, domainNamespace1);
     }
 
     logger.info("Check admin service {0} is created in namespace {1}",
@@ -482,7 +497,7 @@ class ItMiiDomain implements LoggedTest {
   }
 
 
-  public void tearDown() {
+  private void tearDown() {
 
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
@@ -596,7 +611,7 @@ class ItMiiDomain implements LoggedTest {
     return MII_IMAGE_NAME + ":" + imageTag;
   }
 
-  public void createRepoSecret(String domNamespace) throws ApiException {
+  private void createRepoSecret(String domNamespace) throws ApiException {
     V1Secret repoSecret = new V1Secret()
             .metadata(new V1ObjectMeta()
                     .name(repoSecretName)
@@ -608,10 +623,10 @@ class ItMiiDomain implements LoggedTest {
     try {
       secretCreated = createSecret(repoSecret);
     } catch (ApiException e) {
-      System.err.println("Exception when calling CoreV1Api#createNamespacedSecret");
-      System.err.println("Status code: " + e.getCode());
-      System.err.println("Reason: " + e.getResponseBody());
-      System.err.println("Response headers: " + e.getResponseHeaders());
+      logger.info("Exception when calling CoreV1Api#createNamespacedSecret");
+      logger.info("Status code: " + e.getCode());
+      logger.info("Reason: " + e.getResponseBody());
+      logger.info("Response headers: " + e.getResponseHeaders());
       //409 means that the secret already exists - it is not an error, so can proceed
       if (e.getCode() != 409) {
         throw e;
@@ -620,10 +635,11 @@ class ItMiiDomain implements LoggedTest {
       }
 
     }
-    assertTrue(secretCreated, String.format("create secret failed for %s", repoSecretName));
+    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s",
+            repoSecretName, domNamespace));
   }
 
-  public void createDomainSecret(String secretName, String username, String password, String domNamespace)
+  private void createDomainSecret(String secretName, String username, String password, String domNamespace)
           throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
@@ -633,13 +649,12 @@ class ItMiiDomain implements LoggedTest {
                     .name(secretName)
                     .namespace(domNamespace))
             .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
 
   }
 
-  public void createDomainResource(String domainUID, String domNamespace, String adminSecretName,
-                                   String repoSecretName, String encryptionSecretName,
-                                   int adminNodePort, int replicaCount) {
+  private void createDomainResource(String domainUID, String domNamespace, String adminSecretName,
+                                    String repoSecretName, String encryptionSecretName, int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(API_VERSION)
@@ -670,7 +685,7 @@ class ItMiiDomain implements LoggedTest {
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
-                                            .nodePort(adminNodePort))))
+                                            .nodePort(0))))
                     .addClustersItem(new Cluster()
                             .clusterName("cluster-1")
                             .replicas(replicaCount)
@@ -682,11 +697,11 @@ class ItMiiDomain implements LoggedTest {
 
     logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
             domainUID, domNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUID, domNamespace)),
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
                     domainUID, domNamespace));
+    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
+                    + "for %s in namespace %s", domainUID, domNamespace));
   }
 
   private void checkPodCreated(String podName, String domainUid, String domNamespace) {
@@ -704,7 +719,7 @@ class ItMiiDomain implements LoggedTest {
 
   }
 
-  private void checkPodRunning(String podName, String domainUid, String domNamespace) {
+  private void checkPodReady(String podName, String domainUid, String domNamespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
