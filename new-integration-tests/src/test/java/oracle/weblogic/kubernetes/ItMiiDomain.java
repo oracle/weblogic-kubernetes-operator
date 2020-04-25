@@ -610,7 +610,7 @@ class ItMiiDomain implements LoggedTest {
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
       logger.info("docker push image {0} to OCIR", image);
-      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", image));
+      assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
     }
   }
 
