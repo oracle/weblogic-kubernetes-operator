@@ -50,7 +50,6 @@ function usage() {
                    have the same image as the current domain resource's image.
 
     pod_count = 0: Wait until there are no running WebLogic server pods for a domain.
-                   Exits non-zero if 'timeout_secs' is reached before a zero
 
     Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
 

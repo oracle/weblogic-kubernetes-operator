@@ -9,13 +9,13 @@
 # in a model-in-image image. In detail:
 #
 #   - It defaults MODEL_DIR to
-#     'WORKDIR/model/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'.
+#     'WORKDIR/models/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'.
 #
-#   - It copies WDT model files from 'SCRIPTDIR/sample-model/WDT_DOMAIN_TYPE/*'
+#   - It copies WDT model files from 'SCRIPTDIR/sample-models/WDT_DOMAIN_TYPE/*'
 #     into 'MODEL_DIR' if MODEL_DIR doesn't already exist.
 #
 #   - It copies the 'SCRIPTDIR/sample-archive' directory tree to the
-#     'WORKDIR/archive/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'
+#     'WORKDIR/archives/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'
 #     directory if the target directory doesn't already exist.
 #     The 'SCRIPTDIR/sample-archive' direcctory contains an exploded ear
 #     jsp application.
@@ -35,7 +35,7 @@
 #
 #   MODEL_DIR
 #     Location to stage the model files. Default is:
-#     WORKDIR/model/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG
+#     WORKDIR/models/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG
 #
 # CUSTOMIZATION NOTES:
 #
@@ -66,21 +66,21 @@ mkdir -p ${WORKDIR}
 #
 
 echo "@@"
-echo "@@ Info: Copying wdt model yaml and properties files from directory 'SCRIPTDIR/sample-model/$WDT_DOMAIN_TYPE' to directory 'MODEL_DIR'."
+echo "@@ Info: Copying wdt model yaml and properties files from directory 'SCRIPTDIR/sample-models/$WDT_DOMAIN_TYPE' to directory 'MODEL_DIR'."
 
 if [ -e ${MODEL_DIR} ]; then
   echo "@@"
   echo "@@ Notice! Skipping copy of yaml and properties files - target MODEL_DIR directory already exists."
 else 
   mkdir -p ${MODEL_DIR}
-  cp $SCRIPTDIR/sample-model/$WDT_DOMAIN_TYPE/* ${MODEL_DIR}
+  cp $SCRIPTDIR/sample-models/$WDT_DOMAIN_TYPE/* ${MODEL_DIR}
 fi
 
 #
-# copy over sample archive to WORKDIR/archive/... - but skip if this was already done before
+# copy over sample archive to WORKDIR/archives/... - but skip if this was already done before
 #
 
-target_archive_suffix="archive/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG"
+target_archive_suffix="archives/${TARGET_ARCHIVE_OVERRIDE:-image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG}"
 target_archive_dir="$WORKDIR/$target_archive_suffix"
 
 echo "@@"
@@ -89,11 +89,15 @@ echo "@@ Info: Copying sample archive with an exploded ear jsp app from 'SCRIPTD
 if [ ! -d $target_archive_dir ]; then
   mkdir -p $target_archive_dir
   cp -r $SCRIPTDIR/sample-archive/wlsdeploy $target_archive_dir
+  sed -i -e "s/SAMPLE_APP_VERSION/${SAMPLE_APP_VERSION:-v1}/g" $target_archive_dir/wlsdeploy/applications/myapp/sample_war/index.jsp
 else
   echo "@@"
-  echo "@@ Notice! Skipping copy of sample archive - target directory 'WORKDIR/$target_archive_suffix' already exists."
+  echo "@@ Notice! Skipping modification and copy of sample archive - target directory 'WORKDIR/$target_archive_suffix' already exists."
 fi
 
+#
+# TBD fully move this logic into the build-model script, and have that script take the
+#     location of the archive source as a parameter...
 #
 # zip the archive and place it in the WORKDIR/model directory
 #

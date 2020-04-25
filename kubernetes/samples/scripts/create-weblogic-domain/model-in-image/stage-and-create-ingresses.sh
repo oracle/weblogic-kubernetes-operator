@@ -56,12 +56,16 @@ mkdir -p $WORKDIR/ingresses
 echo "@@"
 echo "@@ Info: Staging ingress yaml for the WebLogic cluster to 'WORKDIR/ingresses/${cluster_ingress_yaml}'"
 
+#
+# TBD there's 99% duplicate code for both ingresses - change into a single function that 
+#     takes three arguments:  service_name & service_port & target_file
+#
+
+save_file=""
 if [ -e  ${WORKDIR}/ingresses/${cluster_ingress_yaml} ]; then
   save_file=${WORKDIR}/ingresses/old/${cluster_ingress_yaml}.$(timestamp)
   mkdir -p $(dirname $save_file)
   echo "@@"
-  echo "@@ Notice! An old version of ingress yaml already exists and will be replaced."
-  echo "@@ Notice! Saving old version of the domain resource file to the 'WORKDIR/ingresses/old' directory.'"
   cp ${WORKDIR}/ingresses/${cluster_ingress_yaml} ${save_file}
 fi
 
@@ -87,17 +91,24 @@ spec:
 
 EOF
 
+if [ ! "$save_file" = "" ]; then
+  if [ "$(cat $save_file)" = "$(cat ${WORKDIR}/ingresses/${cluster_ingress_yaml})" ]; then
+    rm $save_file
+  else
+    echo "@@ Notice! An old version of ingress yaml already exists and will be replaced."
+    echo "@@ Notice! Saving old version of the domain resource file to the 'WORKDIR/ingresses/old' directory.'"
+  fi
+fi
+
 # TBD add doc reference to Info that discusses the necessary browser extensions and/or /etc/hosts changes to make this work!
 
 echo "@@"
 echo "@@ Info: Staging ingress yaml for the admin server console to 'WORKDIR/ingresses/${admin_ingress_yaml}'."
 
+save_file=""
 if [ -e  ${WORKDIR}/ingresses/${admin_ingress_yaml} ]; then
   save_file=${WORKDIR}/ingresses/old/${admin_ingress_yaml}.$(timestamp)
   mkdir -p $(dirname $save_file)
-  echo "@@"
-  echo "@@ Notice! An old version of ingress yaml already exists and will be replaced."
-  echo "@@ Notice! Saving old version of the domain resource file to the 'WORKDIR/ingresses/old' directory.'"
   cp ${WORKDIR}/ingresses/${admin_ingress_yaml} ${save_file}
 fi
 
@@ -122,6 +133,22 @@ spec:
           servicePort: 7001
 
 EOF
+
+if [ ! "$save_file" = "" ]; then
+  if [ "$(cat $save_file)" = "$(cat ${WORKDIR}/ingresses/${admin_ingress_yaml})" ]; then
+    rm $save_file
+  else
+    echo "@@ Notice! An old version of ingress yaml already exists and will be replaced."
+    echo "@@ Notice! Saving old version of the domain resource file to the 'WORKDIR/ingresses/old' directory.'"
+  fi
+fi
+
+# TBD add doc reference to Info that discusses the necessary browser extensions and/or /etc/hosts changes to make this work!
+
+if [ "${1:-}" = "-nocreate" ]; then
+  echo "@@ Info: Traefik ingress staging complete!"
+  exit
+fi
 
 echo "@@"
 echo "@@ Info: Creating traefik ingresses."

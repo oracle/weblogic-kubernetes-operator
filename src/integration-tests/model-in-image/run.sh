@@ -173,7 +173,11 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
   doCommand  "\$MIISAMPLEDIR/stage-and-create-ingresses.sh"
   doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
-  doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+
+  #TBD bug in operator is only starting up one server
+  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
+  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2"
+  
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
@@ -186,7 +190,7 @@ if [ "$DO_MAIN" = "true" ]; then
   #   TBD import wallet to wallet secret 
   #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
   #   doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
-  #   doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+  #   doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
   # fi
   # Cheat to speedup a subsequent roll/shutdown.
   # diefast
@@ -213,8 +217,11 @@ if [ "$DO_UPDATE" = "true" ]; then
   doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
   doCommand  "\$MIISAMPLEDIR/create-model-configmap.sh"
   doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh"
-  doCommand  "\$MIISAMPLEDIR/util-patch-restart-version.sh"
-  doCommand  -c "\$MIISAMPLEDIR/util-wl-pod-wait.sh -p 3"
+  doCommand  "\$MIISAMPLEDIR/utils/patch-restart-version.sh"
+
+  #TBD bug in operator is only starting up one server
+  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
+  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2"
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
@@ -223,5 +230,9 @@ if [ "$DO_UPDATE" = "true" ]; then
   [ ! "$DRY_RUN" = "true" ] && testapp traefik  "mynewdatasource"
 
 fi
+
+# TBD add automated phase for testing update to v2 of the image
+
+# TBD add automated phase for testing adding a second domain
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."

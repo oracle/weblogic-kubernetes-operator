@@ -53,7 +53,9 @@ function timestamp() {
   date --utc '+%Y-%m-%dT%H:%M:%S'
 }
 
-domain_resource_file=${WORKDIR}/mii-${DOMAIN_UID}.yaml
+domain_resource_file=${WORKDIR}/${DOMAIN_RESOURCE_FILE_NAME:-mii-${DOMAIN_UID}.yaml}
+
+mkdir -p $(dirname $domain_resource_file)
 
 echo "@@"
 echo "@@ Info: Creating domain resource file 'WORKDIR/mii-${DOMAIN_UID}.yaml' from 'DOMAIN_RESOURCE_TEMPLATE'"

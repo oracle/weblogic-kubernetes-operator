@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This script deploys the domain resoure in WORKDIR/mii-DOMAIN_UID.yaml.
+# This script deploys the domain resource in WORKDIR/mii-DOMAIN_UID.yaml.
 # If "-predelete" is specified, it also deletes any existing domain and 
 # waits for the existing domain's pods to exit prior to deploying.
 #
@@ -44,13 +44,15 @@ done
 #
 
 if [ "$pre_delete" = "true" ]; then
+
+# TBD remember to include instructions for 'predelete' in the sample (for safety - an old domain's pods interfering is a common problem)
   echo "@@ Info: Deleting WebLogic domain '${DOMAIN_UID}' if it already exists and waiting for its pods to exit."
   if [ "$dry_run" = "false" ]; then
     kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    $SCRIPTDIR/util-wl-pod-wait.sh -p 0
+    $SCRIPTDIR/utils/wl-pod-wait.sh -p 0
   else
     echo dryrun: kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    echo dryrun: $SCRIPTDIR/util-wl-pod-wait.sh -p 0
+    echo dryrun: $SCRIPTDIR/utils/wl-pod-wait.sh -p 0
   fi
 fi
 
@@ -61,10 +63,11 @@ fi
 echo "@@"
 echo "@@ Info: Calling 'kubectl apply -f \$WORKDIR/mii-$DOMAIN_UID.yaml'."
 
+domain_resource_file=${DOMAIN_RESOURCE_FILE_NAME:-$WORKDIR/mii-$DOMAIN_UID.yaml}
 if [ "$dry_run" = "false" ]; then
-  kubectl apply -f $WORKDIR/mii-$DOMAIN_UID.yaml
+  kubectl apply -f $domain_resource_file
 else
-  echo dryrun: kubectl apply -f $WORKDIR/mii-$DOMAIN_UID.yaml
+  echo dryrun: kubectl apply -f $domain_resource_file
 fi
 
 #
@@ -105,6 +108,11 @@ function get_curl_command() {
   echo "curl -s -S -m 10 -H 'host: $(get_sample_host)' http://$1:30305/sample_war/index.jsp"
 }
 
+#
+# TBD conider adding a utility that generates the the
+#     following help for the sample...
+#
+
 cat << EOF
 @@
 @@ Info: Your Model in Image domain resource deployed!
@@ -113,7 +121,7 @@ cat << EOF
       kubectl get pods -n ${DOMAIN_NAMESPACE} --watch 
        # (ctrl-c once all pods are running and ready)
              -or-
-      'SCRIPTDIR/util-wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'
+      'SCRIPTDIR/utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'
 
    To get the domain status:
       'kubectl -n $DOMAIN_NAMESPACE get domain $DOMAIN_UID -o yaml'

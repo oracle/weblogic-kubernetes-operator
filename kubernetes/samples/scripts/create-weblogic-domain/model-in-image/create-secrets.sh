@@ -24,13 +24,19 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+DRY_RUN=""
+if [ "${1:-}" = "-dry" ]; then
+  # TBD add error checking for parameterization
+  DRY_RUN="-dry $2"
+fi
+
 #
 # WebLogic Credential Secret referenced by domain resource 
 # field 'spec.weblogicCredentialsSecret'.
 #
 
 echo "@@ Info: Creating weblogic domain secret"
-$SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-weblogic-credentials \
+$SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-credentials \
   -l username=weblogic \
   -l password=welcome1
 
@@ -41,18 +47,9 @@ $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-weblogic-credentials \
 # the same throughout the life of a running model domain.
 #
 
-set +e
-sname="${DOMAIN_UID}-runtime-encryption-secret"
-kubectl -n $DOMAIN_NAMESPACE get secret $sname > /dev/null 2>&1
-errcode=$?
-set -e
-if [ $errcode -eq 0 ]; then
-  echo "@@ Info: Skipping deletion and recreation of the 'model runtime encryption secret because the secret already exists and must stay the same for the life of the model's domain resource."
-else
-  echo "@@ Info: Creating model runtime encryption secret"
-  $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-runtime-encryption-secret \
-    -l password=$(uuidgen).$SECONDS.$PPID.$RANDOM
-fi
+echo "@@ Info: Creating model runtime encryption secret"
+$SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-secret \
+  -l password=my_runtime_password
 
 #
 # JRF Domain's RCU secret and wallet password secret. Only needed for JRF
@@ -61,12 +58,12 @@ fi
 
 if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
-  $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-rcu-access \
+  $SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-rcu-access \
     -l rcu_prefix=FMW1 \
     -l rcu_schema_password=Oradoc_db1 \
     -l rcu_db_conn_string=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
   echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-  $SCRIPTDIR/util-create-secret.sh -s ${DOMAIN_UID}-opss-wallet-password-secret \
+  $SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-opss-wallet-password-secret \
     -l walletPassword=welcome1
 fi
 
@@ -79,7 +76,7 @@ fi
 if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # this secret is referenced by the datasource in this sample's optional config.configMap
   echo "@@ Info: Creating datasource secret"
-  $SCRIPTDIR/util-create-secret.sh \
+  $SCRIPTDIR/utils/create-secret.sh $DRY_RUN \
     -n ${DOMAIN_NAMESPACE} \
     -s ${DOMAIN_UID}-datasource-secret \
     -l password=Oradoc_db1 \

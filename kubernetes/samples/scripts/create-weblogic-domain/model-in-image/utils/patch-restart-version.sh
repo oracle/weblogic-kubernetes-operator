@@ -74,7 +74,7 @@ cat << EOF
 
              -or-
 
-      SCRIPTDIR/util-wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v
+      SCRIPTDIR/utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v
 
    Expect the operator to restart the domain's pods until all of them
    have label 'weblogic.domainRestartVersion="$nextRV"."

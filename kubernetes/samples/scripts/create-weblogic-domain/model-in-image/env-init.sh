@@ -12,7 +12,9 @@
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
-source $WORKDIR/env-custom.sh
+if [ -f $WORKDIR/env-custom.sh ]; then
+  source $WORKDIR/env-custom.sh
+fi
 
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 
@@ -52,7 +54,7 @@ MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
 MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
-MODEL_DIR=${MODEL_DIR:-$WORKDIR/model/image--$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}}
+MODEL_DIR=${MODEL_DIR:-$WORKDIR/models/image--$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}}
 
 INCLUDE_MODEL_CONFIGMAP=${INCLUDE_MODEL_CONFIGMAP:-false}
 
@@ -69,15 +71,14 @@ echo "@@ Info: DOMAIN_NAMESPACE='$DOMAIN_NAMESPACE'."
 # fail if WDT domain type changed since last invoke
 #
 
-mkdir -p ${WORKDIR}
-model_type_file=${WORKDIR}/.model_type.txt
-if [ -e ${model_type_file} ]; then
-  last_wdt_domain_type=$(cat ${model_type_file})
-  if [ ! "$WDT_DOMAIN_TYPE" = "${last_wdt_domain_type}" ]; then
-    echo "@@ Error: This sample does not support changing the WDT_DOMAIN_TYPE once its set. If you need to change the WDT type, then start over with a fresh WORKDIR directory. Current WDT type: '$WDT_DOMAIN_TYPE'. Last WDT type: '${last_wdt_domain_type}'."
-    exit 1
-  fi
-else
-  echo $WDT_DOMAIN_TYPE > ${WORKDIR}/.model_type.txt
-fi
+# mkdir -p ${WORKDIR}
+# if [ -e ${model_type_file} ]; then
+#   last_wdt_domain_type=$(cat ${model_type_file})
+#   if [ ! "$WDT_DOMAIN_TYPE" = "${last_wdt_domain_type}" ]; then
+#     echo "@@ Error: This sample does not support changing the WDT_DOMAIN_TYPE once its set. If you need to change the WDT type, then start over with a fresh WORKDIR directory. Current WDT type: '$WDT_DOMAIN_TYPE'. Last WDT type: '${last_wdt_domain_type}'."
+#     exit 1
+#   fi
+# else
+#   echo $WDT_DOMAIN_TYPE > ${WORKDIR}/.model_type.txt
+# fi
 

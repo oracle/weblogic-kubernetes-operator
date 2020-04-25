@@ -125,7 +125,7 @@ if [ "${1:-}" = "-wait" ]; then
   echo "@@ ######################################################################"
   echo "@@"
 
-  $SCRIPTDIR/util-wl-pod-wait.sh -p 3
+  $SCRIPTDIR/utils/wl-pod-wait.sh -p 3
   
   echo "@@"
   echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."

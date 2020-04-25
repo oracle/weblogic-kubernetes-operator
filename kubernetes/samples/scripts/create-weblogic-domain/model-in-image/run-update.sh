@@ -92,7 +92,7 @@ echo "@@"
 echo "@@ ######################################################################"
 echo "@@"
 
-$SCRIPTDIR/util-patch-restart-version.sh
+$SCRIPTDIR/utils/patch-restart-version.sh
 
 #######################################################################
 # Optionally wait for pods to roll and reach the new restart version.
@@ -102,7 +102,7 @@ if [ "${1:-}" = "-wait" ]; then
   echo "@@ ######################################################################"
   echo "@@"
 
-  $SCRIPTDIR/util-wl-pod-wait.sh -p 3
+  $SCRIPTDIR/utils/wl-pod-wait.sh -p 3
 
   echo "@@"
   echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."

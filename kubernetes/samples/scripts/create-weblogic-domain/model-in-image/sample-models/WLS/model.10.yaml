@@ -20,10 +20,16 @@ topology:
     Server:
         'admin-server':
             ListenPort: 7001
+            WebServer:
+              FrontendHost: '@@ENV:DOMAIN_UID@@.mii-sample.org'
+              FrontendHTTPPort: 30305
     ServerTemplate:
         'cluster-1-template':
             Cluster: 'cluster-1'
-            ListenPort : '@@PROP:MANSVR_PORT@@'
+            ListenPort: '@@PROP:MANSVR_PORT@@'
+            WebServer:
+              FrontendHost: '@@ENV:DOMAIN_UID@@.mii-sample.org'
+              FrontendHTTPPort: 30305
 
 appDeployments:
     Application:

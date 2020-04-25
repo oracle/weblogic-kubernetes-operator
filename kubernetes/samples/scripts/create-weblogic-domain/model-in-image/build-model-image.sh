@@ -28,7 +28,7 @@
 #    MODEL_DIR:
 #      Location of the model .zip, .properties, and .yaml files
 #      that will be copied to the model image.  Default is:
-#        'WORKDIR/model/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'
+#        'WORKDIR/models/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'
 #      which is usually populated by the './stage-model-image.sh' script.
 #
 #    MODEL_IMAGE_BUILD:
@@ -56,7 +56,18 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
-cd ${WORKDIR}
+DRY_RUN="false"
+if [ "${1:-}" = "-dry" ]; then
+  DRY_RUN="true"
+fi
+
+if [ ! "$WORKDIR" = "." ]; then
+  if [ "$DRY_RUN" = "false" ]; then
+    cd ${WORKDIR}
+  else
+    echo dryrun: cd ${WORKDIR}
+  fi
+fi
 
 echo @@ Info: WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 echo @@ Info: MODEL_DIR=${MODEL_DIR}
@@ -66,7 +77,8 @@ echo @@ Info: MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
 echo @@ Info: MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG}
 echo @@ Info: MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD}
 
-if [ ! "$MODEL_IMAGE_BUILD" = "always" ] \
+if [ "$DRY_RUN" = "false" ] \
+   && [ ! "$MODEL_IMAGE_BUILD" = "always" ] \
    && [ ! -z "$(docker images -q $MODEL_IMAGE)" ]; then
   echo "@@"
   echo "@@ Info: ----------------------------------------------------------------------------"
@@ -95,11 +107,13 @@ echo @@
 echo @@ Info: Setting up imagetool and populating its cache with the WDT installer
 echo @@
 
+IMGTOOL=${WORKDIR}/imagetool/bin/imagetool.sh
+
+if [ "$DRY_RUN" = "false" ]; then
+
 mkdir -p imagetool/cache
 mkdir -p imagetool/bld
 unzip -o weblogic-image-tool.zip
-
-IMGTOOL=${WORKDIR}/imagetool/bin/imagetool.sh
 
 # The image tool uses the WLSIMG_CACHEDIR and WLSIMG_BLDIR env vars:
 export WLSIMG_CACHEDIR=${WORKDIR}/imagetool/cache
@@ -113,6 +127,68 @@ ${IMGTOOL} cache addInstaller \
 
 set +x
 
+else
+
+cat << EOF
+
+dryrun:#!/bin/bash
+dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
+dryrun:# using the contents of '$MODEL_DIR'.
+dryrun:
+dryrun:SCRIPTDIR="\$( cd "\$(dirname "\$0")" > /dev/null 2>&1 ; pwd -P )"
+dryrun:set -e
+dryrun:
+dryrun:echo "@@ STEP 1"
+dryrun:echo "@@ Recreate the archive were using in case its contents changed"
+dryrun:
+
+TBD copy the zip of the archive into the non-dryrun mode, and make the source directory a parameter/env-var.
+
+dryrun:rm -f $MODEL_DIR/archive1.zip
+dryrun:cd ../archives/${TARGET_ARCHIVE_OVERRIDE:-image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG}
+dryrun:zip -q -r ../../models/$MODEL_DIR/archive1.zip wlsdeploy
+dryrun:cd \$SCRIPTDIR
+dryrun:
+dryrun:echo "@@ STEP 2"
+dryrun:echo "@@ Unzip image tool. (You can use 'stage-tooling.sh'"
+dryrun:echo "@@ to retrieve the WIT and WDT zips)."
+dryrun:
+dryrun:unzip -o weblogic-image-tool.zip
+dryrun:
+dryrun:echo "@@ STEP 3"
+dryrun:echo "@@ Setup image tool cache directory, it will use"
+dryrun:echo "@@ the WLSIMG_CACHEDIR env var to find its cache."
+dryrun:
+dryrun:mkdir -p ${WORKDIR}/imagetool/cache
+dryrun:export WLSIMG_CACHEDIR=${WORKDIR}/imagetool/cache
+dryrun:
+dryrun:echo "@@ STEP 4"
+dryrun:echo "@@ Setup the image tool build directory, it will"
+dryrun:echo "@@ use the WLSIMG_BLDDIR to find this directory."
+dryrun:
+dryrun:mkdir -p imagetool/bld
+dryrun:export WLSIMG_BLDDIR=${WORKDIR}/imagetool/bld
+dryrun:
+dryrun:echo "@@ STEP 5"
+dryrun:echo "@@ Put the location of the WDT zip installer in the "
+dryrun:echo "@@ image tool cache as type 'wdt' with version "
+dryrun:echo "@@ 'myversion'. When we later create the image using"
+dryrun:echo "@@ the image tool, this cache entry will be referenced"
+dryrun:echo "@@ using '--wdtVersion myversion'."
+dryrun:
+dryrun:$IMGTOOL cache deleteEntry \\
+dryrun:  --key wdt_myversion
+dryrun:
+dryrun:$IMGTOOL cache addInstaller \\
+dryrun:  --type wdt \\
+dryrun:  --version myversion \\
+dryrun:  --path ${WORKDIR}/weblogic-deploy-tooling.zip
+dryrun:
+
+EOF
+
+fi
+
 echo "@@"
 echo "@@ Info: Starting model image build for '$MODEL_IMAGE'"
 echo "@@"
@@ -124,6 +200,9 @@ echo "@@"
 #
 
 # TBD test empty cases, even all three empty
+
+
+if [ "$DRY_RUN" = "false" ]; then
 
 set -x
 
@@ -138,6 +217,29 @@ ${IMGTOOL} update \
   --wdtDomainType ${WDT_DOMAIN_TYPE}
 
 set +x
+
+else
+
+cat << EOF
+
+dryrun:# STEP 6
+dryrun:# Use the image tool to build image '$MODEL_IMAGE'.
+dryrun:
+dryrun:$IMGTOOL update \\
+dryrun:  --tag $MODEL_IMAGE \\
+dryrun:  --fromImage $BASE_IMAGE \\
+dryrun:  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \\
+dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
+dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
+dryrun:  --wdtModelOnly \\
+dryrun:  --wdtVersion myversion \\
+dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
+dryrun:
+
+EOF
+
+fi
+
 
 echo "@@"
 echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=$SECONDS."
