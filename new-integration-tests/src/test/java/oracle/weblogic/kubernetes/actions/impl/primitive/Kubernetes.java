@@ -3,13 +3,17 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
+import com.google.common.base.Charsets;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import io.kubernetes.client.Exec;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.generic.GenericKubernetesApi;
 import io.kubernetes.client.extended.generic.KubernetesApiResponse;
@@ -56,7 +60,6 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 // to run kubectl.
 public class Kubernetes implements LoggedTest {
 
-  public static Random RANDOM = new Random(System.currentTimeMillis());
   private static String PRETTY = "false";
   private static Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static String RESOURCE_VERSION = "";
@@ -85,6 +88,13 @@ public class Kubernetes implements LoggedTest {
   private static GenericKubernetesApi<V1Secret, V1SecretList> secretClient = null;
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
+
+  private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
+  // Even though we don't need input data for this call, the API server is
+  // returning 400 Bad Request any time we set these to false.  There is likely some bug in the
+  // client
+  private static final boolean stdin = true;
+  private static final boolean tty = true;
 
   static {
     try {
@@ -475,10 +485,11 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete a namespace for the given name.
+   * Delete a namespace for the given name. Delete is asynchronous, so for a time you will see the
+   * namespace in the Terminating state.
    *
    * @param name name of namespace
-   * @return true if successful delete, false otherwise
+   * @return true if successful delete request and status is 'Terminating', false otherwise.
    */
   public static boolean deleteNamespace(String name) {
 
@@ -491,9 +502,13 @@ public class Kubernetes implements LoggedTest {
     }
 
     if (response.getObject() != null) {
+      V1Namespace namespace = (V1Namespace) response.getObject();
+      String phase = namespace.getStatus().getPhase();
       logger.info(
-          "Received after-deletion status of the requested object, will be deleting namespace"
-              + " in background!");
+          "Deletion of namespace " + namespace.getMetadata().getName() + " is in phase: " + phase);
+      if (!phase.equals("Terminating")) {
+        return false;
+      }
     }
 
     return true;
@@ -1155,6 +1170,8 @@ public class Kubernetes implements LoggedTest {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
           + "service account in background!");
+      V1ServiceAccount serviceAccount = (V1ServiceAccount) response.getObject();
+      logger.info("Deleted Service Account serviceAccount: " + serviceAccount);
     }
 
     return true;
@@ -1327,5 +1344,108 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
+  // --------------------------- Exec   ---------------------------
+
+  /**
+   * Execute a command in a container.
+   *
+   * @param pod The pod where the command is run
+   * @param containerName The container in the Pod where the command is run. If no container
+   *     name is provided than the first container in the Pod is used.
+   * @param command The command to run
+   * @return output from the command
+   * @throws IOException if an I/O error occurs.
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String exec(V1Pod pod, String containerName, String... command)
+      throws IOException, ApiException {
+    final StringBuilder sb = new StringBuilder();
+
+    // Execute command using Kubernetes API
+    KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
+    final Process proc = kubernetesExec.exec(command);
+
+    // Start a thread to begin reading the output of the command
+    final InputStream istrm = proc.getInputStream();
+    try {
+      Thread out =
+          new Thread(
+            new Runnable() {
+              public void run() {
+              try (BufferedReader reader = new BufferedReader(
+                  new InputStreamReader(istrm, Charsets.UTF_8))) {
+                int c = 0;
+                while ((c = reader.read()) != -1) {
+                  sb.append((char) c);
+                }
+              } catch (IOException e) {
+                logger.warning("Exception thrown " + e);
+              }
+            }
+          });
+      out.start();
+
+      // wait for the Process, representing the executing command, terminates
+      proc.waitFor();
+
+      // wait for reading any last output
+      out.join(1000);
+
+    } catch (InterruptedException e) {
+      // Ignore
+    } finally {
+      if (proc != null) {
+        proc.destroy();
+      }
+      if (istrm != null) {
+        istrm.close();
+      }
+    }
+
+    return sb.toString();
+  }
+
+  /**
+   * Create an object which can execute commands in Kubertenes container.
+   *
+   * @param pod The pod where the command is run
+   * @param containerName The container in the Pod where the command is run. If no container
+   *     name is provided than the first container in the Pod is used.
+   * @return object for executing a command in a container of the pod
+   */
+  public static KubernetesExec createKubernetesExec(V1Pod pod, String containerName) {
+    KubernetesExec kubernetesExec = EXEC_FACTORY.create(pod, containerName);
+    kubernetesExec.setStdin(stdin);
+    kubernetesExec.setTty(tty);
+    return kubernetesExec;
+  }
+
   //------------------------
+
+  /**
+   * KubernetesExec object for executing a command in the container of a pod.
+   */
+  public static class KubernetesExecImpl extends KubernetesExec {
+
+    private final V1Pod pod;
+    private final String containerName;
+
+    KubernetesExecImpl(V1Pod pod, String containerName) {
+      this.pod = pod;
+      this.containerName = containerName;
+    }
+
+    /**
+     * Execute a command in a container.
+     *
+     * @param command the command to run
+     * @return the process which mediates the execution
+     * @throws ApiException if a Kubernetes-specific problem arises
+     * @throws IOException if another problem occurs while trying to run the command
+     */
+    @Override
+    public Process exec(String... command) throws ApiException, IOException {
+      return new Exec(apiClient).exec(pod, command, containerName, isStdin(), isTty());
+    }
+  }
 }

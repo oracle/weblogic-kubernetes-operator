@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions;
 
+import java.io.IOException;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -11,6 +12,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -20,6 +22,7 @@ import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -477,7 +480,7 @@ public class TestActions {
    * @param registryName registry name
    * @param username user
    * @param password password
-   * @return true if successfull
+   * @return true if successful
    */
   public static boolean dockerLogin(String registryName, String username, String password) {
     return Docker.login(registryName, username, password);
@@ -499,6 +502,24 @@ public class TestActions {
    */
   public static boolean deleteImage(String image) {
     return Docker.deleteImage(image);
+  }
+
+  // ----------------------- Execute a Command   ---------------------------
+
+  /**
+   * Execute a command in a container.
+   *
+   * @param pod The pod where the command is run
+   * @param containerName The container in the Pod where the command is run. If no container name
+   *     is provided than the first container in the Pod is used.
+   * @param command The command to run
+   * @return output from the command
+   * @throws IOException if an I/O error occurs.
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String execCommand(V1Pod pod, String containerName, String... command)
+      throws IOException, ApiException {
+    return Exec.exec(pod, containerName, command);
   }
 
   // ------------------------ where does this go  -------------------------
