@@ -8,19 +8,22 @@
 #   for cutting and pasting into the sample 
 #   documentation. It uses the templates and helper
 #   scripts in the sample to generate the following
-#   in WORKDIR /tmp/$USER/prestaged:
+#   in '/tmp/$USER/prestaged' stripped of any
+#   significant references to environment variables, etc:
 #
-#      domain resources
-#      archives
-#      model files
-#      image build scripts/source
-#      secret scripts/yaml
-#      configmap script/yaml/source
+#      - model archives (applications)
+#      - model files (wl config)
+#      - image build scripts for above model archive/files
+#      - model configmap scripts/yaml/source
+#      - domain resources
+#      - secret scripts/yaml for above model files, model 
+#      - configmap, and domain resource
+#      - traefik ingress yaml
 #
 # WARNING!
 #   
 #   This script is destructive! It deletes
-#   anything that's already in prestaged.
+#   anything that's already in '/tmp/$USER/prestaged.'
 #
 
 # TBD add dry run output for create-model-configmap.sh
@@ -28,13 +31,14 @@
 # TBD try get console to work via VNC + firefox + /etc/hosts
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-SRCDIR="$( cd "$SCRIPTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
+SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
 MIISAMPLEDIR="$( cd "$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image" > /dev/null 2>&1 ; pwd -P )"
-MIIWRAPPERDIR=$SCRIPTDIR/mii-sample-wrapper
 
 set -e
 
 export WORKDIR=/tmp/$USER/prestaged
+
+echo "@@ Info: Starting '$(basename $0)'. See target directory '$WORKDIR'."
 
 #
 # Remove old prestaged output.  Avoid using env var in 'rm -fr' for safety.
@@ -54,9 +58,10 @@ cd $WORKDIR
 
 (
   savedir=$(pwd)
-  mkdir ./models
+  mkdir $WORKDIR/models
   cd $WORKDIR/models
-  $MIIWRAPPERDIR/stage-tooling.sh
+  export WORKDIR="."
+  $SCRIPTDIR/stage-tooling.sh
   cd $savedir
 )
 
@@ -66,7 +71,7 @@ cd $WORKDIR
 
 export MODEL_IMAGE_NAME=model-in-image
 
-$MIIWRAPPERDIR/stage-model-configmap.sh
+$SCRIPTDIR/stage-model-configmap.sh
 
 #
 # Get everything else
@@ -95,7 +100,7 @@ do
     # in WORKDIR/models
     # TBD modify the following script skip to step for zipping the archive
     #     and instead make it part of the generated image build script
-    $MIIWRAPPERDIR/stage-model-image.sh
+    $SCRIPTDIR/stage-model-image.sh
 
     # Rename app directory in app archive, and update model to correspond
     # (TBD move this logic into the model/archive scripts respectively)
@@ -113,7 +118,7 @@ do
       cd $WORKDIR/models
       export WORKDIR=.
       export MODEL_DIR=$model_dir_suffix
-      $MIIWRAPPERDIR/build-model-image.sh -dry | grep dryrun | sed 's/dryrun://' >> build--$model_image.sh
+      $SCRIPTDIR/build-model-image.sh -dry | grep dryrun | sed 's/dryrun://' >> build--$model_image.sh
       chmod +x build--$model_image.sh
       cd $savedir
     )
@@ -121,7 +126,7 @@ do
     for domain in sample-domain1 sample-domain2; do
 
       export DOMAIN_UID=$domain
-      $MIIWRAPPERDIR/stage-and-create-ingresses.sh -nocreate
+      $SCRIPTDIR/stage-and-create-ingresses.sh -nocreate
 
       for configmap in true false; do
         export INCLUDE_MODEL_CONFIGMAP=$configmap
@@ -133,10 +138,10 @@ do
         fi
 
         export DOMAIN_RESOURCE_FILE_NAME=$domain_root/mii-domain.yaml
-        $MIIWRAPPERDIR/stage-domain-resource.sh
+        $SCRIPTDIR/stage-domain-resource.sh
 
-        $MIIWRAPPERDIR/create-secrets.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/secrets.sh
-        $MIIWRAPPERDIR/create-secrets.sh -dry yaml | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/secrets.yaml
+        $SCRIPTDIR/create-secrets.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/secrets.sh
+        $SCRIPTDIR/create-secrets.sh -dry yaml | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/secrets.yaml
         chmod +x $WORKDIR/$domain_root/secrets.sh
    
         if [ "$configmap" = "true" ]; then
@@ -150,4 +155,9 @@ do
   done
 done
 
-echo "GENERATE DONE! See target directory '$WORKDIR'."
+echo "@@"
+echo "@@ ##############################################"
+echo "@@"
+echo "@@ Info: Finished '$(basename $0)'! See target directory '$WORKDIR'."
+echo "@@"
+
