@@ -56,6 +56,22 @@ public class TestAssertions {
   }
 
   /**
+   * Check if a WebLogic domain custom resource has been patched with a new image.
+   *
+   * @param domainUid ID of the domain
+   * @param namespace in which the domain custom resource object exists
+   * @param image that was used to patch the domain resource
+   * @return true if the domain is patched
+   */
+  public static Callable<Boolean> domainPatchedWithImage(
+      String domainUid,
+      String namespace,
+      String image
+  ) {
+    return Domain.domainPatchedWithImage(domainUid, namespace, image);
+  }
+
+  /**
    * Check if a Kubernetes pod exists in any state in the given namespace.
    *
    * @param podName   name of the pod to check for

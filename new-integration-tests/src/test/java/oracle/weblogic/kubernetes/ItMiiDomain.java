@@ -85,6 +85,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessible
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodCallable;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainPatchedWithImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -140,7 +141,7 @@ class ItMiiDomain implements LoggedTest {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
+        .atMost(10, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -447,6 +448,8 @@ class ItMiiDomain implements LoggedTest {
       // do nothing
     }
     
+    checkDomainPatched(domainUID, domainNamespace, miiImagePatchAppV2);
+
     // check and wait for the app to be ready
     checkAppRunning(
         domainUID,
@@ -518,6 +521,8 @@ class ItMiiDomain implements LoggedTest {
     } catch (InterruptedException ie) {
       // do nothing
     }
+    
+    checkDomainPatched(domainUID, domainNamespace, miiImageAddSecondApp);
     
     // check and wait for the new app to be ready
     checkAppRunning(
@@ -854,5 +859,25 @@ class ItMiiDomain implements LoggedTest {
                "App %s is not ready in namespace %s", appPath, domainNamespace)));
 
   }
+  
+  private void checkDomainPatched(
+      String domainUID,
+      String ns,
+      String image 
+  ) {
+   
+    // check if the app is accessible inside of a server pod
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            domainUID,
+            ns,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> domainPatchedWithImage(domainUID, ns, image),
+            String.format(
+               "Domain %s is not patched in namespace %s with image %s", domainUID, domainNamespace, image)));
 
+  }
 }

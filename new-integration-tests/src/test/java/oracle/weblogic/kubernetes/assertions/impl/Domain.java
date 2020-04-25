@@ -77,6 +77,34 @@ public class Domain {
     };
   }
 
+  /**
+   * Checks if domain resource has been patched with a new image.
+   *
+   * @param domainUID domain UID of the domain object
+   * @param namespace in which the domain object exists
+   * @param image image that has been patch
+   * @return true if domain object 's image does not match what is expected
+   */
+  public static Callable<Boolean> domainPatchedWithImage(
+      String domainUID,
+      String namespace,
+      String image
+  ) {
+    return () -> {
+      oracle.weblogic.domain.Domain domain = null;
+      try {
+        domain = oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes
+                .getDomainCustomResource(domainUID, namespace);
+      } catch (ApiException apex) {
+        logger.info(apex.getMessage());
+      }
+      
+      boolean domainPatched = (domain.spec().image().equals(image));
+      logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
+      return domainPatched;
+    };
+  }
+
   public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
     return true;
   }
