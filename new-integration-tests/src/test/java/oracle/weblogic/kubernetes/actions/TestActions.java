@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -27,6 +28,7 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
+import oracle.weblogic.kubernetes.actions.impl.Pod;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
@@ -42,6 +44,40 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 // detail impl classes - tests would only ever call methods in here, never
 // directly call the methods in the impl classes
 public class TestActions {
+
+  // ----------------------   pod  ---------------------------------
+  
+  /**
+   * Get the creationTimestamp for a given pod with following parameters.
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod 
+   * @return creationTimestamp from metadata section of the Pod
+   */
+  public static String getPodCreationTime(String namespace, String labelSelector, String podName) {
+    return Pod.getPodCreationTime(namespace,labelSelector,podName);
+  }
+ 
+  /**
+   * Get the Pod object with following parameters.
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod 
+   * @return V1Pod pod object
+   **/
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) {
+    return Pod.getPod(namespace,labelSelector,podName);
+  }
+
+  /**
+   * Get a pod's log.
+   * @param podName name of the Pod
+   * @param namespace name of the Namespace
+   * @return log as a String
+   **/
+  public static String getPodLog(String podName, String namespace) {
+    return Pod.getPodLog(podName,namespace);
+  }
 
   // ----------------------   operator  ---------------------------------
 
@@ -379,10 +415,10 @@ public class TestActions {
   }
 
   /**
-  * List Kubernetes Config Map in a namespace.
+  * List Kubernetes Config Map(s) in a namespace.
   *
   * @param namespace name of namespace
-  * @return List of Config Maps in a namespace
+  * @return List of Config Map(s) in a namespace
   */
   public static V1ConfigMapList listConfigMaps(String namespace) {
     return ConfigMap.list(namespace);

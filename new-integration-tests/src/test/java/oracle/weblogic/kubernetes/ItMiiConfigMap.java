@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +36,8 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -52,17 +53,26 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -71,11 +81,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.helmList;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -85,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -92,15 +104,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
+@IntegrationTest
 class ItMiiConfigMap implements LoggedTest {
-
-  // operator constants
-  private static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
-  private static final String OPERATOR_CHART_DIR =
-      "../kubernetes/charts/weblogic-operator";
-  private static final String OPERATOR_IMAGE =
-      "oracle/weblogic-kubernetes-operator:3.0.0";
-  //"phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop";
 
   // mii constants
   private static final String WDT_MODEL_FILE = "model1-wls.yaml";
@@ -116,21 +121,19 @@ class ItMiiConfigMap implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
+  private static String dockerConfigJson = "";
 
   private String domainUid = "domain1";
-  private String repoSecretName = "reposecret";
   private String miiImage = null;
-  private String repoRegistry = "dummy";
-  private String repoUserName = "dummy";
-  private String repoPassword = "dummy";
-  private String repoEmail = "dummy";
   private StringBuffer checkJdbc = null;
 
   /**
    * Install Operator.
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll() {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -138,14 +141,12 @@ class ItMiiConfigMap implements LoggedTest {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
-    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", opNamespace);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
-    domainNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace);
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    domainNamespace = namespaces.get(1);
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
@@ -157,6 +158,33 @@ class ItMiiConfigMap implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
+    // get Operator image name
+    String operatorImage = getOperatorImageName();
+    assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
+    logger.info("Operator image name {0}", operatorImage);
+
+    // Create docker registry secret in the operator namespace to pull the image from repository
+    logger.info("Creating docker registry secret in namespace {0}", opNamespace);
+    JsonObject dockerConfigJsonObject = createDockerConfigJson(
+        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+    dockerConfigJson = dockerConfigJsonObject.toString();
+
+    // Create the V1Secret configuration
+    V1Secret repoSecret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(REPO_SECRET_NAME)
+            .namespace(opNamespace))
+        .type("kubernetes.io/dockerconfigjson")
+        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
+                  REPO_SECRET_NAME, opNamespace));
+
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<String, Object>();
+    secretNameMap.put("name", REPO_SECRET_NAME);
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -167,7 +195,8 @@ class ItMiiConfigMap implements LoggedTest {
     OperatorParams opParams =
         new OperatorParams()
             .helmParams(opHelmParams)
-            .image(OPERATOR_IMAGE)
+            .image(operatorImage)
+            .imagePullSecrets(secretNameMap)
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
@@ -177,9 +206,14 @@ class ItMiiConfigMap implements LoggedTest {
         String.format("Operator install failed in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
-    // list helm releases
-    logger.info("List helm releases in namespace {0}", opNamespace);
-    helmList(opHelmParams);
+    // list helm releases matching Operator release name in operator namespace
+    logger.info("Checking Operator release {0} status in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+    assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
+        String.format("Operator release %s is not in deployed status in namespace %s",
+            OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("Operator release {0} status is deployed in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
@@ -207,7 +241,7 @@ class ItMiiConfigMap implements LoggedTest {
   @DisplayName("Create model in image domain with a configmap")
   @Slow
   @MustNotRunInParallel
-  public void testCreateMiiConfigMapDomain() {
+  public void testCreateMiiDomain() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -217,36 +251,25 @@ class ItMiiConfigMap implements LoggedTest {
     miiImage = createImageAndVerify();
 
     // push the image to OCIR to make the test work in multi node cluster
-    if (System.getenv("REPO_REGISTRY") != null && System.getenv("REPO_USERNAME") != null
-        && System.getenv("REPO_PASSWORD") != null && System.getenv("REPO_EMAIL") != null) {
-      repoRegistry = System.getenv("REPO_REGISTRY");
-      repoUserName = System.getenv("REPO_USERNAME");
-      repoPassword = System.getenv("REPO_PASSWORD");
-      repoEmail = System.getenv("REPO_EMAIL");
-
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
-      assertTrue(dockerLogin(repoRegistry, repoUserName, repoPassword), "docker login failed");
+      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
       logger.info("docker push image {0} to OCIR", miiImage);
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
     }
 
-    // create docker registry secret in the domain namespace to pull the image from OCIR
-    JsonObject dockerConfigJsonObject = getDockerConfigJson(
-        repoUserName, repoPassword, repoEmail, repoRegistry);
-    String dockerConfigJson = dockerConfigJsonObject.toString();
-
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(repoSecretName)
+            .name(REPO_SECRET_NAME)
             .namespace(domainNamespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", repoSecretName));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -300,7 +323,8 @@ class ItMiiConfigMap implements LoggedTest {
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
 
-    // add domain CR with a predefined configmap in configuration/model section
+    // Create the domain custom resource with a predefined configmap 
+    // in configuration/model section
     Domain domain = new Domain()
         .apiVersion(API_VERSION)
         .kind("Domain")
@@ -312,7 +336,7 @@ class ItMiiConfigMap implements LoggedTest {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
+                .name(REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -341,7 +365,7 @@ class ItMiiConfigMap implements LoggedTest {
                     .configMap(configMapName)
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+    logger.info("Create domain custom resource for domainUID {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
@@ -397,6 +421,7 @@ class ItMiiConfigMap implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceCreated(managedServerPrefix + i);
     }
+
     oracle.weblogic.kubernetes.utils.ExecResult result = null; 
     try {
       String hostname = null;
@@ -424,7 +449,6 @@ class ItMiiConfigMap implements LoggedTest {
     logger.info("Curl command returns {0}", result.toString());
     assertEquals("200",result.stdout(),"Datasource configuration not found");
     logger.info("Found the DataSource configuration ");
-
   }
 
   @AfterEach
@@ -484,6 +508,9 @@ class ItMiiConfigMap implements LoggedTest {
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    // Add repository name in image name for Jenkins runs
+    final String imageName = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
+    final String image = imageName + ":" + imageTag;
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
@@ -502,11 +529,10 @@ class ItMiiConfigMap implements LoggedTest {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using model directory {2}",
-        MII_IMAGE_NAME, imageTag, MODEL_DIR);
+    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = createMiiImage(
         defaultWitParams()
-            .modelImageName(MII_IMAGE_NAME)
+            .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
@@ -514,13 +540,18 @@ class ItMiiConfigMap implements LoggedTest {
             .env(env)
             .redirect(true));
 
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", MII_IMAGE_NAME));
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
-    // check image exists
-    assertTrue(dockerImageExists(MII_IMAGE_NAME, imageTag),
-        String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag));
+    /* Check image exists using docker images | grep image tag.
+     * Tag name is unique as it contains date and timestamp.
+     * This is a workaround for the issue on Jenkins machine
+     * as docker images imagename:imagetag is not working and
+     * the test fails even though the image exists.
+     */
+    assertTrue(doesImageExist(imageTag),
+        String.format("Image %s doesn't exist", image));
 
-    return MII_IMAGE_NAME + ":" + imageTag;
+    return image;
   }
 
 
@@ -569,19 +600,4 @@ class ItMiiConfigMap implements LoggedTest {
 
   }
 
-  private static JsonObject getDockerConfigJson(String username, String password, String email, String registry) {
-    JsonObject authObject = new JsonObject();
-    authObject.addProperty("username", username);
-    authObject.addProperty("password", password);
-    authObject.addProperty("email", email);
-    String auth = username + ":" + password;
-    String authEncoded = Base64.getEncoder().encodeToString(auth.getBytes());
-    System.out.println("auth encoded: " + authEncoded);
-    authObject.addProperty("auth", authEncoded);
-    JsonObject registryObject = new JsonObject();
-    registryObject.add(registry, authObject);
-    JsonObject configJsonObject = new JsonObject();
-    configJsonObject.add("auths", registryObject);
-    return configJsonObject;
-  }
 }

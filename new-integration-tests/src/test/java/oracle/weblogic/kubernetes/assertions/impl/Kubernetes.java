@@ -72,7 +72,7 @@ public class Kubernetes {
    * @return true if pod does not exists otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean doesPodDeleted(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean doesPodNotExist(String namespace, String domainUid, String podName) throws ApiException {
     boolean podDeleted = false;
     String labelSelector = null;
     if (domainUid != null) {
