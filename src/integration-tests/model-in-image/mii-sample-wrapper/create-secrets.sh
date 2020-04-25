@@ -5,11 +5,16 @@
 #
 # This script deploys secrets for the Model in Image sample. 
 #
+# Optional parameter:
+#
+#   -dry                      - Dry run. Show but don't do. Dry run
+#                               output is prefixed with 'dryrun:'.
+#
 # Optional environment variables:
 #
-#   WORKDIR                  - Working directory for the sample with at least
-#                              10GB of space. Defaults to 
-#                              '/tmp/$USER/model-in-image-sample-work-dir'.
+#   WORKDIR                   - Working directory for the sample with at least
+#                               10GB of space. Defaults to 
+#                               '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - defaults to 'sample-domain1-ns'
 #   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
@@ -36,7 +41,7 @@ fi
 #
 
 echo "@@ Info: Creating weblogic domain secret"
-$SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-credentials \
+$MIISAMPLEDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-credentials \
   -l username=weblogic \
   -l password=welcome1
 
@@ -48,7 +53,7 @@ $SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-credentials
 #
 
 echo "@@ Info: Creating model runtime encryption secret"
-$SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-secret \
+$MIISAMPLEDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-secret \
   -l password=my_runtime_password
 
 #
@@ -58,12 +63,12 @@ $SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-s
 
 if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
-  $SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-rcu-access \
+  $MIISAMPLEDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-rcu-access \
     -l rcu_prefix=FMW1 \
     -l rcu_schema_password=Oradoc_db1 \
     -l rcu_db_conn_string=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
   echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-  $SCRIPTDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-opss-wallet-password-secret \
+  $MIISAMPLEDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-opss-wallet-password-secret \
     -l walletPassword=welcome1
 fi
 
@@ -76,7 +81,7 @@ fi
 if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # this secret is referenced by the datasource in this sample's optional config.configMap
   echo "@@ Info: Creating datasource secret"
-  $SCRIPTDIR/utils/create-secret.sh $DRY_RUN \
+  $MIISAMPLEDIR/utils/create-secret.sh $DRY_RUN \
     -n ${DOMAIN_NAMESPACE} \
     -s ${DOMAIN_UID}-datasource-secret \
     -l password=Oradoc_db1 \

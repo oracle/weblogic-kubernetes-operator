@@ -11,13 +11,13 @@
 #   - It defaults MODEL_DIR to
 #     'WORKDIR/models/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'.
 #
-#   - It copies WDT model files from 'SCRIPTDIR/sample-models/WDT_DOMAIN_TYPE/*'
+#   - It copies WDT model files from 'MIISAMPLEDIR/sample-models/WDT_DOMAIN_TYPE/*'
 #     into 'MODEL_DIR' if MODEL_DIR doesn't already exist.
 #
-#   - It copies the 'SCRIPTDIR/sample-archive' directory tree to the
+#   - It copies the 'MIISAMPLEDIR/sample-archive' directory tree to the
 #     'WORKDIR/archives/image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG'
 #     directory if the target directory doesn't already exist.
-#     The 'SCRIPTDIR/sample-archive' direcctory contains an exploded ear
+#     The 'MIISAMPLEDIR/sample-archive' directory contains an exploded ear
 #     jsp application.
 #
 #   - It zips the archive target directory contents and puts
@@ -66,14 +66,14 @@ mkdir -p ${WORKDIR}
 #
 
 echo "@@"
-echo "@@ Info: Copying wdt model yaml and properties files from directory 'SCRIPTDIR/sample-models/$WDT_DOMAIN_TYPE' to directory 'MODEL_DIR'."
+echo "@@ Info: Copying wdt model yaml and properties files from directory 'MIISAMPLEDIR/sample-models/$WDT_DOMAIN_TYPE' to directory 'MODEL_DIR'."
 
 if [ -e ${MODEL_DIR} ]; then
   echo "@@"
   echo "@@ Notice! Skipping copy of yaml and properties files - target MODEL_DIR directory already exists."
 else 
   mkdir -p ${MODEL_DIR}
-  cp $SCRIPTDIR/sample-models/$WDT_DOMAIN_TYPE/* ${MODEL_DIR}
+  cp $MIISAMPLEDIR/sample-models/$WDT_DOMAIN_TYPE/* ${MODEL_DIR}
 fi
 
 #
@@ -84,11 +84,11 @@ target_archive_suffix="archives/${TARGET_ARCHIVE_OVERRIDE:-image--$(basename $MO
 target_archive_dir="$WORKDIR/$target_archive_suffix"
 
 echo "@@"
-echo "@@ Info: Copying sample archive with an exploded ear jsp app from 'SCRIPTDIR/sample-archive' to the 'WORKDIR/$target_archive_suffix' directory."
+echo "@@ Info: Copying sample archive with an exploded ear jsp app from 'MIISAMPLEDIR/sample-archive' to the 'WORKDIR/$target_archive_suffix' directory."
 
 if [ ! -d $target_archive_dir ]; then
   mkdir -p $target_archive_dir
-  cp -r $SCRIPTDIR/sample-archive/wlsdeploy $target_archive_dir
+  cp -r $MIISAMPLEDIR/sample-archive/wlsdeploy $target_archive_dir
   sed -i -e "s/SAMPLE_APP_VERSION/${SAMPLE_APP_VERSION:-v1}/g" $target_archive_dir/wlsdeploy/applications/myapp/sample_war/index.jsp
 else
   echo "@@"

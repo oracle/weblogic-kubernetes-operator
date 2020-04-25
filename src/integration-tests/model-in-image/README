@@ -15,22 +15,13 @@ IMPORTANT NOTES:
       on a single machine. (It builds/uses local images
       without pushing them.)
 
--------------------
-To run stand alone:
--------------------
+----------------------------------------------------
+To run stand alone (not as part of a test framework)
+----------------------------------------------------
 
-  1) Optionally customize the following:
-
-     export WORKDIR=/tmp/$USER/model-in-image-sample-work-dir
-     export MODEL_IMAGE_NAME=model-in-image
-     export MODEL_IMAGE_TAG=v1
-     export DOMAIN_NAMESPACE=sample-domain1-ns
-     export DOMAIN_UID=sample-domain1
-
-     Defaults are as shown.
-
-     See the sample's 'custom-env.sh' file and this
-     test's 'env.sh' for additional customizable env vars.
+  1) To customize the location of output, etc, 
+     see the customizable env vars in step 1 of the 
+     test framework section below.
 
   2) If running JRF:
 
@@ -40,8 +31,8 @@ To run stand alone:
 
   3) Run the test.
 
-     For WLS: ./run.sh -clean [-noupdate]
-     For JRF: ./run.sh -clean [-noupdate] -jrf -db
+     For WLS: ./run-test.sh -clean [-noupdate]
+     For JRF: ./run-test.sh -clean [-noupdate] -jrf -db
 
      WARNINGS AND NOTES:
 
@@ -82,19 +73,30 @@ To integrate it with a test framework:
 
   1) Optionally customize the following:
 
+     # Working directory:
      export WORKDIR=/tmp/$USER/model-in-image-sample-work-dir
+
+     # Sample image name, but not the 'tag' part:
      export MODEL_IMAGE_NAME=model-in-image
-     export MODEL_IMAGE_TAG=v1
+
+     # (Do NOT customize MODEL_IMAGE_TAG - the test itself does that.)
+
+     # Namespace
      export DOMAIN_NAMESPACE=sample-domain1-ns
-     export DOMAIN_UID=sample-domain1
 
      # If running JRF and/or the db, add:
      export DB_NAMESPACE=default
 
      Defaults are as shown.
 
-     See the sample's 'custom-env.sh' file and this
-     test's 'env.sh' for additional customizable env vars.
+     See the sample wrapper's 'custom-env.sh' file and this
+     test's 'test-env.sh' for additional customizable env vars,
+     but be aware that some of the custom-env.sh vars
+     are overridden by the test and should not be set
+     (includes MODEL_DIR, DOMAIN_UID, MODEL_IMAGE_TAG, 
+      INCLUDE_MODEL_CONFIGMAP, WDT_DOMAIN_TYPE, etc.). So 
+     if you want to change an env var, search for it in the test
+     scripts first...
 
   2) Optionally remove the contents of the old WORKDIR,
      and any old images to prevent re-using a WORKDIR
@@ -112,9 +114,9 @@ To integrate it with a test framework:
      monitoring DOMAIN_NAMESPACE.
 
   6) For WLS: 
-       ./run.sh [-noupdate]
+       ./run-test.sh [-noupdate]
 
      For JRF:
-       ./run.sh -jrf [-noupdate]
+       ./run-test.sh -jrf [-noupdate]
 
      To skip the multi-minute 'update' portion of the test, pass '-noupdate'.

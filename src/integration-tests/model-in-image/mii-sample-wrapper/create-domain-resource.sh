@@ -3,20 +3,26 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This script deploys the domain resource in WORKDIR/mii-DOMAIN_UID.yaml.
-# If "-predelete" is specified, it also deletes any existing domain and 
-# waits for the existing domain's pods to exit prior to deploying.
+# This script deploys a domain resource file.
 #
-# Optional parameter:
-#   -predelete             - Delete the existing domain (if any) and
-#                            wait for its pods to exit before deploying.
+# If "-predelete" is specified, it also kubectl deletes any existing
+# domain and waits for the existing domain's pods to exit prior to deploying.
+#
+# Optional parameters:
+#   -predelete                - Delete the existing domain (if any) and
+#                               wait for its pods to exit before deploying.
+#   -dryrun                   - Show but don't do. Show-and-tell output is
+#                               prefixed with 'dryrun:'.
 #
 # Optional environment variables:
-#   WORKDIR                - Working directory for the sample with at least
-#                            10GB of space. Defaults to 
-#                            '/tmp/$USER/model-in-image-sample-work-dir'.
-#   DOMAIN_UID             - Defaults to 'sample-domain1'
-#   DOMAIN_NAMESPACE       - Defaults to 'sample-domain1-ns'
+#   WORKDIR                   - Working directory for the sample with at least
+#                               10GB of space. Defaults to 
+#                               '/tmp/$USER/model-in-image-sample-work-dir'.
+#   DOMAIN_UID                - Defaults to 'sample-domain1'
+#   DOMAIN_NAMESPACE          - Defaults to 'sample-domain1-ns'
+#   DOMAIN_RESOURCE_FILE_NAME - Location of domain resource file.
+#                               Defaults to WORKDIR/mii-DOMAIN_UID.yaml
+#                            
 #
 
 set -eu
@@ -49,10 +55,10 @@ if [ "$pre_delete" = "true" ]; then
   echo "@@ Info: Deleting WebLogic domain '${DOMAIN_UID}' if it already exists and waiting for its pods to exit."
   if [ "$dry_run" = "false" ]; then
     kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    $SCRIPTDIR/utils/wl-pod-wait.sh -p 0
+    $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0
   else
     echo dryrun: kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    echo dryrun: $SCRIPTDIR/utils/wl-pod-wait.sh -p 0
+    echo dryrun: $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0
   fi
 fi
 
@@ -60,10 +66,11 @@ fi
 # Apply the domain resource.
 #
 
-echo "@@"
-echo "@@ Info: Calling 'kubectl apply -f \$WORKDIR/mii-$DOMAIN_UID.yaml'."
-
 domain_resource_file=${DOMAIN_RESOURCE_FILE_NAME:-$WORKDIR/mii-$DOMAIN_UID.yaml}
+
+echo "@@"
+echo "@@ Info: Calling 'kubectl apply -f '$domain_resource_file'."
+
 if [ "$dry_run" = "false" ]; then
   kubectl apply -f $domain_resource_file
 else
@@ -109,7 +116,7 @@ function get_curl_command() {
 }
 
 #
-# TBD conider adding a utility that generates the the
+# TBD consider adding a utility that generates the the
 #     following help for the sample...
 #
 
@@ -121,7 +128,7 @@ cat << EOF
       kubectl get pods -n ${DOMAIN_NAMESPACE} --watch 
        # (ctrl-c once all pods are running and ready)
              -or-
-      'SCRIPTDIR/utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'
+      'MIISAMPLEDIR/utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'
 
    To get the domain status:
       'kubectl -n $DOMAIN_NAMESPACE get domain $DOMAIN_UID -o yaml'

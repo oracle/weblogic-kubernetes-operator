@@ -16,7 +16,7 @@ TESTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 source $TESTDIR/util-dots.sh
 source $TESTDIR/util-misc.sh
-source $TESTDIR/env.sh
+source $TESTDIR/test-env.sh
 
 m_image="${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-v1}"
 
@@ -39,11 +39,14 @@ function usage() {
   Optional args:
 
     -jrf      : Run in JRF mode instead of WLS mode. 
+                Note that this depends on the db
+                being deployed. So either pre-deploy
+                the db or pass '-db' too.
 
     -dry      : Dry run - show but don't do.
 
     -clean    : Call cleanup.sh, pre-delete MII image
-                '$m_image', and delete WORKDIR.
+                '$MODEL_IMAGE_NAME:*', and delete WORKDIR.
                 (Reuses artifacts from previous run, if any.)
                 IMPORTANT: This implicitly enables '-oper' and '-traefik'.
 
@@ -103,6 +106,8 @@ if [ "$DO_CLEAN" = "true" ]; then
   doCommand -c rm -fr ./model-in-image-sample-work-dir
   doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
 
+  # TBD update to delete all images with name 'MODEL_IMAGE_NAME:*'
+
   # delete model image, if any, and dangling images
   if [ ! "$DRY_RUN" = "true" ]; then
     if [ ! -z "$(docker images -q $m_image)" ]; then
@@ -122,8 +127,9 @@ doCommand -c set -e
 doCommand -c SRCDIR=$SRCDIR
 doCommand -c TESTDIR=$TESTDIR
 doCommand -c MIISAMPLEDIR=$MIISAMPLEDIR
+doCommand -c MIIWRAPPERDIR=$MIIWRAPPERDIR
 doCommand -c DBSAMPLEDIR=$DBSAMPLEDIR
-doCommand -c source \$TESTDIR/env.sh
+doCommand -c source \$TESTDIR/test-env.sh
 doCommand -c export WORKDIR=$WORKDIR
 doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
 
@@ -165,14 +171,14 @@ fi
 if [ "$DO_MAIN" = "true" ]; then
 
   doCommand  -c "export INCLUDE_CONFIGMAP=false"
-  doCommand  "\$MIISAMPLEDIR/stage-workdir.sh"
-  doCommand  "\$MIISAMPLEDIR/stage-tooling.sh"
-  doCommand  "\$MIISAMPLEDIR/stage-model-image.sh"
-  doCommand  "\$MIISAMPLEDIR/build-model-image.sh"
-  doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
-  doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
-  doCommand  "\$MIISAMPLEDIR/stage-and-create-ingresses.sh"
-  doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
+  doCommand  "\$MIIWRAPPERDIR/stage-workdir.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-tooling.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-model-image.sh"
+  doCommand  "\$MIIWRAPPERDIR/build-model-image.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
 
   #TBD bug in operator is only starting up one server
   #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
@@ -189,7 +195,7 @@ if [ "$DO_MAIN" = "true" ]; then
   #   TBD export wallet
   #   TBD import wallet to wallet secret 
   #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
-  #   doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh -predelete"
+  #   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
   #   doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
   # fi
   # Cheat to speedup a subsequent roll/shutdown.
@@ -212,11 +218,11 @@ if [ "$DO_UPDATE" = "true" ]; then
   # fi
 
   doCommand  -c "export INCLUDE_MODEL_CONFIGMAP=true"
-  doCommand  "\$MIISAMPLEDIR/stage-domain-resource.sh"
-  doCommand  "\$MIISAMPLEDIR/stage-model-configmap.sh"
-  doCommand  "\$MIISAMPLEDIR/create-secrets.sh"
-  doCommand  "\$MIISAMPLEDIR/create-model-configmap.sh"
-  doCommand  "\$MIISAMPLEDIR/create-domain-resource.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-model-configmap.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-model-configmap.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
   doCommand  "\$MIISAMPLEDIR/utils/patch-restart-version.sh"
 
   #TBD bug in operator is only starting up one server

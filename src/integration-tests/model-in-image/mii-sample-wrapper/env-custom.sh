@@ -3,11 +3,11 @@
 
 # Description:
 #   This file can be modified to customize the behavior of the
-#   other scripts in this sample.
+#   other scripts in this sample wrapper.
 #
-#   It is copied to WORKDIR from the sample directory by 'stage-workdir.sh',
+#   It is copied to WORKDIR from this directory by 'stage-workdir.sh',
 #   and is automatically loaded from its WORKDIR location by every script
-#   in this sample (except for 'stage-workdir.sh').
+#   in this test (except for 'stage-workdir.sh').
 # 
 
 # export DOMAIN_UID=
@@ -119,4 +119,4 @@
 #  resource yaml file in WORKDIR. Defaults to 
 #  'sample-domain-resource/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
 
-# TBD add DB_NAMESPACE (used for setting up the DB urls), can the DB port change?
+# TBD Move DB_NAMESPACE here from env.sh for clarity (used for setting up the DB urls), can the DB port change?

@@ -34,7 +34,7 @@ SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
 echo "@@"
-echo "@@ Info: Staging model configmap files from SCRIPTDIR/sample-model-configmap to WORKDIR/model-configmap"
+echo "@@ Info: Staging model configmap files from MIISAMPLEDIR/sample-model-configmap to WORKDIR/model-configmap"
 echo "@@"
 
 if [ -e $WORKDIR/model-configmap ]; then
@@ -49,4 +49,4 @@ if [ -e $WORKDIR/model-configmap ]; then
 fi
 
 mkdir -p $WORKDIR/model-configmap
-cp $SCRIPTDIR/sample-model-configmap/* $WORKDIR/model-configmap
+cp $MIISAMPLEDIR/sample-model-configmap/* $WORKDIR/model-configmap

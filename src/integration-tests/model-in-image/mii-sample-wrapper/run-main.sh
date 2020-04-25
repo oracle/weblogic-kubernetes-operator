@@ -57,6 +57,7 @@ set -eu
 set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+source SCRIPTDIR/env-init.sh
 
 #######################################################################
 # Setup a working directory WORKDIR for running the sample. By default,
@@ -125,7 +126,7 @@ if [ "${1:-}" = "-wait" ]; then
   echo "@@ ######################################################################"
   echo "@@"
 
-  $SCRIPTDIR/utils/wl-pod-wait.sh -p 3
+  $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3
   
   echo "@@"
   echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."

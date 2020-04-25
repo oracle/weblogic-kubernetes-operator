@@ -51,6 +51,7 @@ set -eu
 set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+source $SCRIPTDIR/env-init.sh
 
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
@@ -92,7 +93,7 @@ echo "@@"
 echo "@@ ######################################################################"
 echo "@@"
 
-$SCRIPTDIR/utils/patch-restart-version.sh
+$MIISAMPLEDIR/utils/patch-restart-version.sh
 
 #######################################################################
 # Optionally wait for pods to roll and reach the new restart version.
@@ -102,7 +103,7 @@ if [ "${1:-}" = "-wait" ]; then
   echo "@@ ######################################################################"
   echo "@@"
 
-  $SCRIPTDIR/utils/wl-pod-wait.sh -p 3
+  $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3
 
   echo "@@"
   echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."

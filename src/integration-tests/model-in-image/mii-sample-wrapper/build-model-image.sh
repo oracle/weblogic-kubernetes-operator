@@ -10,6 +10,10 @@
 #    This script, by default, builds the model image with model files from
 #    './stage-model-image.sh' plus tooling downloaded by './stage-tooling.sh.'.
 #
+#  Optional Argument(s):
+#
+#    Pass '-dry' to show but not do.
+#
 #  Assumptions:
 #
 #    - The WebLogic Image Tool zip is 'WORKDIR/weblogic-image-tool.zip' and
@@ -143,7 +147,8 @@ dryrun:echo "@@ Recreate the archive were using in case its contents changed"
 dryrun:
 
 TBD copy the zip of the archive into the non-dryrun mode, and make the source directory a parameter/env-var.
-
+    the zip below assumes relative to current location, which is brittle
+  
 dryrun:rm -f $MODEL_DIR/archive1.zip
 dryrun:cd ../archives/${TARGET_ARCHIVE_OVERRIDE:-image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG}
 dryrun:zip -q -r ../../models/$MODEL_DIR/archive1.zip wlsdeploy

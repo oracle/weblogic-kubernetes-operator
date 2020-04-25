@@ -36,4 +36,4 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
-$SCRIPTDIR/utils/create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${MODEL_CONFIGMAP_DIR}
+$MIISAMPLEDIR/utils/create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${MODEL_CONFIGMAP_DIR}

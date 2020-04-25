@@ -16,6 +16,10 @@ if [ -f $WORKDIR/env-custom.sh ]; then
   source $WORKDIR/env-custom.sh
 fi
 
+SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
+MIISAMPLEDIR="$( cd "$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image" > /dev/null 2>&1 ; pwd -P )"
+
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 
 if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
@@ -31,7 +35,7 @@ CUSTOM_DOMAIN_NAME=${CUSTOM_DOMAIN_NAME:-domain1}
 
 MODEL_CONFIGMAP_DIR=${MODEL_CONFIGMAP_DIR:-$WORKDIR/model-configmap}
 
-DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$SCRIPTDIR/sample-domain-resource/mii-domain.yaml.template-$WDT_DOMAIN_TYPE}"
+DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$MIISAMPLEDIR/sample-domain-resource/mii-domain.yaml.template-$WDT_DOMAIN_TYPE}"
 
 DB_NAMESPACE=${DB_NAMESPACE:-default}
 
@@ -64,21 +68,7 @@ echo "@@ ######################################################################"
 [ $# -ne 0 ] && echo "@@ Info: Running '$(basename "$0") $@'"
 echo "@@ Info: WORKDIR='$WORKDIR'."
 echo "@@ Info: SCRIPTDIR='$SCRIPTDIR'."
+echo "@@ Info: MIISAMPLEDIR='$MIISAMPLEDIR'."
 echo "@@ Info: DOMAIN_UID='$DOMAIN_UID'."
 echo "@@ Info: DOMAIN_NAMESPACE='$DOMAIN_NAMESPACE'."
-
-#
-# fail if WDT domain type changed since last invoke
-#
-
-# mkdir -p ${WORKDIR}
-# if [ -e ${model_type_file} ]; then
-#   last_wdt_domain_type=$(cat ${model_type_file})
-#   if [ ! "$WDT_DOMAIN_TYPE" = "${last_wdt_domain_type}" ]; then
-#     echo "@@ Error: This sample does not support changing the WDT_DOMAIN_TYPE once its set. If you need to change the WDT type, then start over with a fresh WORKDIR directory. Current WDT type: '$WDT_DOMAIN_TYPE'. Last WDT type: '${last_wdt_domain_type}'."
-#     exit 1
-#   fi
-# else
-#   echo $WDT_DOMAIN_TYPE > ${WORKDIR}/.model_type.txt
-# fi
 

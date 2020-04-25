@@ -2,13 +2,15 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This file defines env vars and env defaults for this test.
+# This file defines env vars and env defaults specific to the test.
 #
-# For more env vars see '$MIISAMPLEDIR/custom-env.sh'.
+# For env vars related directly to the sample see
+# '$SCRIPTDIR/mii-sample-helpers/custom-env.sh'.
 # (Especially DOMAIN_NAMESPACE, DOMAIN_NAME, and DOMAIN_UID.)
 #
 
 SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
+MIIWRAPPERDIR="${TESTDIR}/mii-sample-wrapper"
 MIISAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image"
 DBSAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service"
 
@@ -16,9 +18,6 @@ DBSAMPLEDIR="${SRCDIR}/kubernetes/samples/scripts/create-oracle-db-service"
 #  should have 10GB? of space
 #  default is '/tmp/$USER/model-in-image-sample-work-dir'
 export WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-
-# ::: Additional sample env vars.
-#  see 'env-custom.sh' in the sample directory/
 
 # ::: Operator settings
 #  Defaults are 'sample-weblogic-operator', '${OPER_NAME}-ns', '${OPER_NAME}-sa', 'weblogic-kubernetes-operator', and 'test'

@@ -4,7 +4,10 @@
 
 #
 # This script stages Traefik ingresses for this sample's admin
-# server and cluster. It assumes the following:
+# server and cluster ingresses to yaml files in WORKDIR/ingresses.
+# It than calls 'kubectl apply -f' on the yaml by default.
+#
+# It assumes the following:
 #
 #   - Traefik is (or will be) deployed, and monitors DOMAIN_NAMESPACE
 #     (otherwise the ingresses will simply be ignored).
@@ -12,12 +15,21 @@
 #   - The WL admin server is named 'admin-server' and listens on port 7001.
 #   - The WL cluster is named 'cluster-1' and listens on port 8001.
 #
+# Optional param:
+#   '-nocreate' Stage the ingress yaml files, but don't call
+#               'kubectl 
+#
 # Optional environment variables (see 'env-custom.sh' for details):
 #
 #    WORKDIR
 #    DOMAIN_NAMESPACE
 #    DOMAIN_UID
 #
+
+# TBD add doc reference to Info that discusses the necessary 
+#     browser extensions and/or /etc/hosts changes to get console
+#     to work through the LB.
+
 
 set -eu
 set -o pipefail
@@ -59,6 +71,11 @@ echo "@@ Info: Staging ingress yaml for the WebLogic cluster to 'WORKDIR/ingress
 #
 # TBD there's 99% duplicate code for both ingresses - change into a single function that 
 #     takes three arguments:  service_name & service_port & target_file
+#
+
+#
+# TBD consider adding an @@ template for traefik ingresses into the sample itself
+#     and then use that template...
 #
 
 save_file=""
@@ -142,8 +159,6 @@ if [ ! "$save_file" = "" ]; then
     echo "@@ Notice! Saving old version of the domain resource file to the 'WORKDIR/ingresses/old' directory.'"
   fi
 fi
-
-# TBD add doc reference to Info that discusses the necessary browser extensions and/or /etc/hosts changes to make this work!
 
 if [ "${1:-}" = "-nocreate" ]; then
   echo "@@ Info: Traefik ingress staging complete!"

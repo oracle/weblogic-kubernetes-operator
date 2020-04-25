@@ -5,7 +5,7 @@
 #
 # This is an example of how to configure a model-in-image domain resource.
 #
-# This script creates '$WORKDIR/mii-$DOMAIN_UID.yaml' from a template.
+# This script creates '$WORKDIR/$DOMAIN_RESOURCE_FILE_NAME' from a template.
 #
 # Warning!!
 #    '$WORKDIR/mii-$DOMAIN_UID.yaml' is overwritten if it already
@@ -13,23 +13,27 @@
 #
 # Optional environment variables (see custom-env.sh for details):
 #
-#   WORKDIR                  - Working directory for the sample with at least
-#                              10GB of space. Defaults to 
-#                              '/tmp/$USER/model-in-image-sample-work-dir'.
-#   CUSTOM_DOMAIN_NAME       - default 'domain1'.
-#   DOMAIN_UID               - default 'sample-domain1'
-#   DOMAIN_NAMESPACE         - default 'sample-domain1-ns'
-#   MODEL_IMAGE_NAME         - default 'model-in-image'
-#   MODEL_IMAGE_TAG          - default 'v1'
-#   WDT_DOMAIN_TYPE          - WLS (default), RestrictedJRF, or JRF
-#   INCLUDE_MODEL_CONFIGMAP  - defaults 'false'
-#                              Set to true to uncomment the template's
-#                              'model.configuration.configMap' reference,
-#                              and to uncomment the secret that's referenced
-#                              by the model file in this config map.
+#   WORKDIR                   - Working directory for the sample with at least
+#                               10GB of space. Defaults to 
+#                               '/tmp/$USER/model-in-image-sample-work-dir'.
+#   CUSTOM_DOMAIN_NAME        - default 'domain1'.
+#   DOMAIN_UID                - default 'sample-domain1'
+#   DOMAIN_NAMESPACE          - default 'sample-domain1-ns'
+#   MODEL_IMAGE_NAME          - default 'model-in-image'
+#   MODEL_IMAGE_TAG           - default 'v1'
+#   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
+#   INCLUDE_MODEL_CONFIGMAP   - defaults 'false'
+#                               Set to true to uncomment the template's
+#                               'model.configuration.configMap' reference,
+#                               and to uncomment the secret that's referenced
+#                               by the model file in this config map.
 #
-#   DOMAIN_RESOURCE_TEMPLATE - use as the domain resource template
+#   DOMAIN_RESOURCE_FILE_NAME - Filename for target relative to WORKDIR.
+#                               Default is 'mii-$DOMAIN_UID.yaml'.
+#
+#   DOMAIN_RESOURCE_TEMPLATE  - use as the domain resource template
 #     default 'sample-domain-resource/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
+#
 
 set -eu
 set -o pipefail
