@@ -141,7 +141,7 @@ class ItMiiDomain implements LoggedTest {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
+        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
