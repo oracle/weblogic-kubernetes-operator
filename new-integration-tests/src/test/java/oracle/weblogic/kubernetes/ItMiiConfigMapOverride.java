@@ -107,7 +107,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-// Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
 @IntegrationTest
@@ -487,8 +486,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
     String newAdminPodCreationTime = getPodCreationTime(domainNamespace,"",adminServerPodName);
     assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
-
-    if (Long.parseLong(newAdminPodCreationTime) < Long.parseLong(adminPodCreationTime)) {
+    if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {
+      logger.info("NewAdminPodCreationTime {0} BeforeAdminPodCreationTime ${1}",
+           newAdminPodCreationTime,adminPodCreationTime);
       fail("New pod creation time must be later than the original timestamp");
     }
     oracle.weblogic.kubernetes.utils.ExecResult result = null; 
