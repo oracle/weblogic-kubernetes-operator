@@ -133,6 +133,10 @@ set +x
 
 else
 
+# TBD copy the zip of the archive into the non-dryrun mode, and make the source directory a parameter/env-var.
+#    the zip below assumes relative to current location, which is brittle
+  
+
 cat << EOF
 
 dryrun:#!/bin/bash
@@ -145,10 +149,6 @@ dryrun:
 dryrun:echo "@@ STEP 1"
 dryrun:echo "@@ Recreate the archive were using in case its contents changed"
 dryrun:
-
-TBD copy the zip of the archive into the non-dryrun mode, and make the source directory a parameter/env-var.
-    the zip below assumes relative to current location, which is brittle
-  
 dryrun:rm -f $MODEL_DIR/archive1.zip
 dryrun:cd ../archives/${TARGET_ARCHIVE_OVERRIDE:-image--$(basename $MODEL_IMAGE_NAME):$MODEL_IMAGE_TAG}
 dryrun:zip -q -r ../../models/$MODEL_DIR/archive1.zip wlsdeploy
