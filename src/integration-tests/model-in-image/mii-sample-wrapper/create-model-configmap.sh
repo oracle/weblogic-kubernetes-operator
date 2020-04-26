@@ -20,6 +20,14 @@
 #    in configuration.model.configMap.
 #    (See 'INCLUDE_MODEL_CONFIGMAP' in 'stage-domain-resource.sh')
 #
+# Optional command line params:
+#
+#  -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:')
+#                        but do not perform them.
+#
+#  -dry yaml           : Show the yaml (prefixed with 'dryun:') 
+#                        but do not execute it.
+#
 # Optional environment variables:
 #
 #   WORKDIR                  - Working directory for the sample with at least
@@ -36,4 +44,4 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
-$MIISAMPLEDIR/utils/create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${MODEL_CONFIGMAP_DIR}
+$MIISAMPLEDIR/utils/create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${MODEL_CONFIGMAP_DIR} ${1:-} ${2:-}

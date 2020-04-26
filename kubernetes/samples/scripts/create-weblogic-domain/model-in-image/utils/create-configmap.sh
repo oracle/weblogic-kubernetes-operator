@@ -48,7 +48,7 @@ while [ ! "$1" = "" ]; do
     -c)   CONFIGMAP_NAME="${2}" ;;
     -n)   DOMAIN_NAMESPACE="${2}" ;;
     -d)   DOMAIN_UID="${2}" ;;
-    -f)   FILENAMES="${FILENAMES} --from-file=${2}" ;;
+    -f)   FILENAMES="${FILENAMES}--from-file=${2} " ;;
     -dry) DRY_RUN="${2}"
           case "$DRY_RUN" in
             kubectl|yaml) ;;

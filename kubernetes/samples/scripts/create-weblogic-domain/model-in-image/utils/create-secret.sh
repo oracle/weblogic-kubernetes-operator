@@ -116,7 +116,9 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   | sed "s/^/dryrun:/"
 
 else
+
   kubectl -n $NAMESPACE delete secret         $SECRET_NAME --ignore-not-found
   kubectl -n $NAMESPACE create secret generic $SECRET_NAME $LITERALS $FILENAMES
   kubectl -n $NAMESPACE label  secret         $SECRET_NAME weblogic.domainUID=$DOMAIN_UID
+
 fi

@@ -7,6 +7,11 @@
 # and of the WebLogic Image Tool to WORKDIR/weblogic-deploy-tooling.zip
 # and WORKDIR/weblogic-image-tool.zip by default.
 #
+# Optional command line:
+#    -dry    Show, but don't perform, the final download command. (This
+#            may still implicilty perform some web actions in order
+#            to locate the installer in github.com).
+#
 # Optional environment variables (see 'env-custom.sh' for more details):
 #
 #    WORKDIR 
@@ -33,6 +38,9 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+dry_run=false
+[ "${1:-}" = "-dry" ] && dry_run=true
+
 cd ${WORKDIR}
 
 download_zip() {
@@ -42,7 +50,7 @@ download_zip() {
   local DOWNLOAD_VAR_NAME=$3
   local DOWNLOAD=${!DOWNLOAD_VAR_NAME}
 
-  if [ ! "$DOWNLOAD" = "always" ] && [ -f $ZIPFILE ]; then
+  if [ ! "$dry_run" = "true" ] && [ ! "$DOWNLOAD" = "always" ] && [ -f $ZIPFILE ]; then
     echo "@@"
     echo "@@ -----------------------------------------------------------------------"
     echo "@@ Info: NOTE! Skipping '$LOCATION' download since local                  "
@@ -66,8 +74,13 @@ download_zip() {
     echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
   fi
 
-  rm -f $ZIPFILE
-  curl -m 30 -fL $LOCATION -o $ZIPFILE
+  if [ ! "$dry_run" = "true" ]; then
+    rm -f $ZIPFILE
+    curl -m 30 -fL $LOCATION -o $ZIPFILE
+  else
+    echo "dryrun:rm -f $ZIPFILE"
+    echo "dryrun:curl -m 30 -fL $LOCATION -o $ZIPFILE"
+  fi
 }
 
 download_zip weblogic-deploy-tooling.zip $WDT_INSTALLER_URL DOWNLOAD_WDT

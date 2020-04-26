@@ -35,6 +35,8 @@ SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
 MIISAMPLEDIR="$( cd "$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image" > /dev/null 2>&1 ; pwd -P )"
 
 set -e
+set -o pipefail
+set -u
 
 export WORKDIR=/tmp/$USER/prestaged
 
@@ -53,25 +55,34 @@ cd $savedir
 cd $WORKDIR
 
 #
-# Get WDT and WIT installer zips
+# Get commands for downloading WDT and WIT installer zips
 #
 
 (
   savedir=$(pwd)
   mkdir $WORKDIR/models
   cd $WORKDIR/models
-  export WORKDIR="."
-  $SCRIPTDIR/stage-tooling.sh
+  export WORKDIR=""
+  $SCRIPTDIR/stage-tooling.sh -dry | grep dryrun | sed 's/dryrun://' > download-tooling.sh
+  chmod +x download-tooling.sh
   cd $savedir
 )
 
 #
-# Get configmap
+# Get commands and yaml for creating the model configmap
 #
 
 export MODEL_IMAGE_NAME=model-in-image
 
 $SCRIPTDIR/stage-model-configmap.sh
+
+for domain in sample-domain1 sample-domain2; do
+  export DOMAIN_UID=$domain
+  $SCRIPTDIR/create-model-configmap.sh -dry yaml | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-configmap-uid-$DOMAIN_UID.yaml
+  $SCRIPTDIR/create-model-configmap.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-configmap-uid-$DOMAIN_UID.sh
+  chmod +x $WORKDIR/model-configmap-uid-$DOMAIN_UID.sh
+done
+
 
 #
 # Get everything else
@@ -146,8 +157,9 @@ do
    
         if [ "$configmap" = "true" ]; then
            mapdir=$WORKDIR/model-configmap
-           $MIISAMPLEDIR/utils/create-configmap.sh -dry kubectl -f $mapdir -c $domain-wdt-config-map | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/model-configmap.sh
            $MIISAMPLEDIR/utils/create-configmap.sh -dry yaml    -f $mapdir -c $domain-wdt-config-map | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/model-configmap.yaml
+           $MIISAMPLEDIR/utils/create-configmap.sh -dry kubectl -f $mapdir -c $domain-wdt-config-map | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/model-configmap.sh
+           chmod +x $WORKDIR/$domain_root/model-configmap.sh
         fi
 
       done
