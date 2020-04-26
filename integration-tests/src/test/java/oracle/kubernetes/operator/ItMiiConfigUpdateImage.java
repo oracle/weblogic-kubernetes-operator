@@ -113,19 +113,12 @@ public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
       assertNotNull(domain, "Failed to create a domain");
 
       // create image with a new tag to update config and verify image created successfully
+      // patch domain to change image tag and verify domain restarted successfully
       Map<String, Object> domainMap = domain.getDomainMap();
       final String imageName = (String) domainMap.get("image") + "_nonjdbc";
       final String wdtModelFile = "model.jdbc.yaml";
       final String wdtModelPropFile = "model.jdbc.properties";
-      wdtConfigUpdateImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
-
-      // push the image to docker repository
-      if (BaseTest.SHARED_CLUSTER) {
-        TestUtils.loginAndPushImageToOcir(imageName);
-      }
-
-      // patch to change image tag and verify domain restarted successfully
-      modifyDomainYamlWithImageTag(domain, imageName);
+      createImageAndPatchDomain(domain, imageName, wdtModelFile, wdtModelPropFile);
 
       // get JDBC DS prop values via WLST on server pod
       final String destDir = getResultDir() + "/samples/model-in-image-update";
@@ -201,20 +194,13 @@ public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
         LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
       }
 
-      // create image with a new tag to update config and verify image is created successfully
+      // create image with a new tag to update config and verify image created successfully
+      // patch domain to change image tag and verify domain restarted successfully
       Map<String, Object> domainMap = domain.getDomainMap();
       final String imageName = (String) domainMap.get("image") + "_jdbc";
       final String wdtModelFile = "model.jdbc.yaml";
       final String wdtModelPropFile = "model.jdbc.properties";
-      wdtConfigUpdateImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
-
-      // push the image to docker repository
-      if (BaseTest.SHARED_CLUSTER) {
-        TestUtils.loginAndPushImageToOcir(imageName);
-      }
-
-      // patch to change image tag and verify domain restarted successfully
-      modifyDomainYamlWithImageTag(domain, imageName);
+      createImageAndPatchDomain(domain, imageName, wdtModelFile, wdtModelPropFile);
 
       // get JDBC DS prop values via WLST on server pod
       jdbcResourceData = getJdbcResources(destDir, domain);

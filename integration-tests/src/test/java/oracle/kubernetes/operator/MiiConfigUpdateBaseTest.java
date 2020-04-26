@@ -31,31 +31,6 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   protected static final String readTimeout_2 = "30002";
 
   /**
-   * Copy model files from source dir to test dir.
-   * @param destDir destination directory name to copy model files to
-   * @param modelFiles names of model files to copy
-   */
-  protected void copyTestModelFiles(String destDir, String[] modelFiles) {
-    LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
-    String origDir = BaseTest.getProjectRoot()
-        + "/integration-tests/src/test/resources/model-in-image";
-
-    try {
-      Files.deleteIfExists(Paths.get(destDir));
-      Files.createDirectories(Paths.get(destDir));
-
-      for (String modelFile : modelFiles) {
-        TestUtils.copyFile(origDir + "/" + modelFile, destDir + "/" + modelFile);
-        LoggerHelper.getLocal().log(Level.INFO, "Copied <" + origDir
-            + "/" + modelFile + "> to <" + destDir + "/" + modelFile + ">");
-      }
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      fail("Failed to copy model files", ex.getCause());
-    }
-  }
-
-  /**
    * Create domain using model in image.
    * @param createDS a boolean value to determine whether or not
    *                 to config a JDBC DS when creating domain
@@ -111,22 +86,89 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   }
 
   /**
+   * Re-create cm to update config and patch domain to change domain-level restart version.
+   * @param domain the Domain object where to patch domain and update domain config values
+   * @param destDir destination directory name to copy model files to
+   * @param modelFiles names of model files to copy
+   */
+  protected void createCmAndPatchDomain(Domain domain, String destDir, String[] modelFiles) {
+    // copy model files that contains JDBC DS to a dir to re-create cm
+    copyTestModelFiles(destDir, modelFiles);
+
+    // re-create cm to update config and verify cm is created successfully
+    wdtConfigUpdateCm(destDir, domain);
+
+    // patch domain to change domain-level restart version and verify domain restarted successfully
+    modifyDomainYamlWithRestartVersion(domain);
+  }
+
+  /**
+   * Create image to update config and patch domain to change domain-level restart version.
+   * @param domain the Domain object where to patch domain and update domain config values
+   * @param destDir destination directory name to copy model files to
+   * @param modelFiles names of model files to copy
+   */
+  protected void createImageAndPatchDomain(Domain domain,
+                                           String imageName,
+                                           String wdtModelFile,
+                                           String wdtModelPropFile) {
+    Map<String, Object> domainMap = domain.getDomainMap();
+    wdtConfigUpdateImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
+
+    // push the image to docker repository
+    if (BaseTest.SHARED_CLUSTER) {
+      try {
+        TestUtils.loginAndPushImageToOcir(imageName);
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        fail("Failed to push image <" + imageName + "> to Docker repo");
+      }
+    }
+
+    // patch to change image tag and verify domain restarted successfully
+    modifyDomainYamlWithImageTag(domain, imageName);
+  }
+
+  /**
+   * Copy model files from source dir to test dir.
+   * @param destDir destination directory name to copy model files to
+   * @param modelFiles names of model files to copy
+   */
+  protected void copyTestModelFiles(String destDir, String[] modelFiles) {
+    LoggerHelper.getLocal().log(Level.INFO, "Creating configMap");
+    final String origDir = BaseTest.getProjectRoot()
+        + "/integration-tests/src/test/resources/model-in-image";
+
+    try {
+      Files.deleteIfExists(Paths.get(destDir));
+      Files.createDirectories(Paths.get(destDir));
+
+      for (String modelFile : modelFiles) {
+        TestUtils.copyFile(origDir + "/" + modelFile, destDir + "/" + modelFile);
+        LoggerHelper.getLocal().log(Level.INFO, "Copied <" + origDir
+            + "/" + modelFile + "> to <" + destDir + "/" + modelFile + ">");
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      fail("Failed to copy model files", ex.getCause());
+    }
+  }
+
+  /**
    * Update an existing cm.
    * @param fileOrDirPath a directory path where to get model files
-   * @param domain the Domain object where to get domain config values
+   * @param domain the Domain object where to update domain config values
    */
   protected void wdtConfigUpdateCm(String fileOrDirPath, Domain domain) {
     LoggerHelper.getLocal().log(Level.INFO, "Creating configMap...");
-
-    Map<String, Object> domainMap = domain.getDomainMap();
-    final String domainNS = domainMap.get("namespace").toString();
-
-    // Re-create config map after deploying domain crd
+    // get domain UID and domain namespace name
     final String domainUid = domain.getDomainUid();
+    final String domainNS = domain.getDomainNs();
     final String cmName = domainUid + configMapSuffix;
     final String label = "weblogic.domainUID=" + domainUid;
 
     try {
+      // Re-create config map after deploying domain crd
       TestUtils.createConfigMap(cmName, fileOrDirPath, domainNS, label);
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -143,15 +185,15 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
    */
   protected void wdtConfigUpdateImage(Map<String, Object> domainMap, String imageName,
                                       String modelFile, String modelPropFile) {
-    // get domain namespace name and domain name
-    String domainBaseImageName = (String) domainMap.get("domainHomeImageBase");
-    String domainUid = (String) domainMap.get("domainUID");
-    String domainName = (String) domainMap.get("domainName");
+    // get domain base image, domain UID and domain name
+    final String domainBaseImageName = (String) domainMap.get("domainHomeImageBase");
+    final String domainUid = (String) domainMap.get("domainUID");
+    final String domainName = (String) domainMap.get("domainName");
     ExecResult result = null;
 
     // Get the map of any additional environment vars, or null
     Map<String, String> additionalEnvMap = (Map<String, String>) domainMap.get("additionalEnvMap");
-    String resultsDir = (String) domainMap.get("resultDir");
+    final String resultsDir = (String) domainMap.get("resultDir");
     StringBuffer createDomainImageScriptCmd = new StringBuffer("export WDT_VERSION=");
 
     createDomainImageScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
@@ -206,16 +248,16 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
    * @param imageName image name to be updated in the Domain
    */
   protected void modifyDomainYamlWithImageTag(Domain domain, String imageName) {
-    // get domain namespace name
-    Map<String, Object> domainMap = domain.getDomainMap();
-    final String domainNS = domainMap.get("namespace").toString();
+    // get domain namespace name and domain UID
+    final String domainNS = domain.getDomainNs();
+    final String domainUid = domain.getDomainUid();
     ExecResult result = null;
 
     StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
     patchDomainCmd
         .append(domainNS)
         .append(" patch domain ")
-        .append(domain.getDomainUid())
+        .append(domainUid)
         .append(" --type='json' ")
         .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"'")
         .append(imageName)
@@ -249,10 +291,10 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
    * @param domain the Domain object where to get domain config values
    */
   protected String getJndiName(Domain domain) {
-    // get domain namespace name and domain name
+    // get domain name and domain namespace name
     Map<String, Object> domainMap = domain.getDomainMap();
-    final String domainNS = domainMap.get("namespace").toString();
     final String domainName = (String) domainMap.get("domainName");
+    final String domainNS = domain.getDomainNs();
     ExecResult result = null;
     String jdbcDsStr = "";
 
@@ -298,18 +340,18 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
    * @param domain the Domain object where to get domain config values
    */
   protected String getJdbcResources(String destDir, Domain domain) {
-    // get domain namespace name and domain name
+    // get domain name and domain namespace name
     Map<String, Object> domainMap = domain.getDomainMap();
-    final String domainNS = domainMap.get("namespace").toString();
     String domainName = (String) domainMap.get("domainName");
+    final String domainNS = domain.getDomainNs();
     ExecResult result = null;
     String jdbcDsStr = "";
 
     try {
       // copy verification file to test dir
-      String origDir = BaseTest.getProjectRoot()
+      final String origDir = BaseTest.getProjectRoot()
           + "/integration-tests/src/test/resources/model-in-image/scripts";
-      String pyFileName = "verify-jdbc-resource.py";
+      final String pyFileName = "verify-jdbc-resource.py";
       Files.createDirectories(Paths.get(destDir));
       TestUtils.copyFile(origDir + "/" + pyFileName, destDir + "/" + pyFileName);
 

@@ -118,7 +118,8 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
       domain = createDomainUsingMii(createDS, domainNS, testClassName);
       assertNotNull(domain, "Failed to create a domain");
 
-      // copy model files that contains JDBC DS to a dir to re-create cm
+      // copy model files that contains JDBC DS to a dir, re-create cm to update config,
+      // patch domain to change domain-level restart version and verify domain restarted successfully
       final String destDir = getResultDir() + "/samples/model-in-image-update-multi1";
       String[] modelFiles =
           {"now.jdbc.10.yaml",
@@ -127,13 +128,7 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
               "model.jdbc.yaml",
               "model.jdbc.properties",
               "cm.jdbc.yaml"};
-      copyTestModelFiles(destDir, modelFiles);
-
-      // re-create cm to update config and verify cm is created successfully
-      wdtConfigUpdateCm(destDir, domain);
-
-      // patch to change domain-level restart version and verify domain restarted successfully
-      modifyDomainYamlWithRestartVersion(domain, domainNS);
+      createCmAndPatchDomain(domain, destDir, modelFiles);
 
       // get JDBC DS prop values via WLST on server pod
       String jdbcResourceData = getJdbcResources(destDir, domain);
@@ -205,20 +200,14 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
       final String wdtModelPropFile = "model.jdbc.image.properties";
       wdtConfigUpdateImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
 
-      // copy model files that contains JDBC DS to a dir to re-create cm
+      // copy model files that contains JDBC DS to a dir, re-create cm to update config,
+      // patch domain to change domain-level restart version and verify domain restarted successfully
       final String destDir = getResultDir() + "/samples/model-in-image-update-multi2";
       String[] modelFiles =
           {"cm.jdbc.yaml",
               "model.jdbc.yaml",
               "model.jdbc.properties"};
-      copyTestModelFiles(destDir, modelFiles);
-
-      // re-create cm by defining model and property files with overlapped JDBC DS
-      // and verify cm is created successfully
-      wdtConfigUpdateCm(destDir, domain);
-
-      // patch to change domain-level restart version and verify domain restarted successfully
-      modifyDomainYamlWithRestartVersion(domain, domainNS);
+      createCmAndPatchDomain(domain, destDir, modelFiles);
 
       // get JDBC DS prop values via WLST on server pod
       String jdbcResourceData = getJdbcResources(destDir, domain);

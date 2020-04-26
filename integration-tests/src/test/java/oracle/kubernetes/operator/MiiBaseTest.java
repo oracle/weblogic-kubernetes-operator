@@ -130,14 +130,17 @@ public class MiiBaseTest extends BaseTest {
    * @param domain the Domain where to change domain-level restart version
    * @param domainNS the domain namespace name
    */
-  protected void modifyDomainYamlWithRestartVersion(Domain domain, String domainNS) {
+  protected void modifyDomainYamlWithRestartVersion(Domain domain) {
+    final String domainNS = domain.getDomainNs();
+    final String domainUid = domain.getDomainUid();
+    final String versionNo = getRestartVersion(domainNS, domainUid);
     ExecResult result = null;
-    String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
+
     StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
     patchDomainCmd
         .append(domainNS)
         .append(" patch domain ")
-        .append(domain.getDomainUid())
+        .append(domainUid)
         .append(" --type='json' ")
         .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"'")
         .append(versionNo)

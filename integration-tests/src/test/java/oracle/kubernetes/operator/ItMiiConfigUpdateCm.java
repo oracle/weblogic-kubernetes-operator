@@ -119,16 +119,11 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       domain = createDomainUsingMii(createDS, domainNS, testClassName);
       assertNotNull(domain, "Failed to create a domain");
 
-      // copy model files that contains JDBC DS to a dir to re-create cm
+      // copy model files that contains JDBC DS to a dir, re-create cm to update config,
+      // patch domain to change domain-level restart version and verify domain restarted successfully
       final String destDir = getResultDir() + "/samples/model-in-image-update";
-      String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
-      copyTestModelFiles(destDir, modelFiles);
-
-      // re-create cm to update config and verify cm is created successfully
-      wdtConfigUpdateCm(destDir, domain);
-
-      // patch to change domain-level restart version and verify domain restarted successfully
-      modifyDomainYamlWithRestartVersion(domain, domainNS);
+      final String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
+      createCmAndPatchDomain(domain, destDir, modelFiles);
 
       // get JDBC DS prop values via WLST on server pod
       String jdbcResourceData = getJdbcResources(destDir, domain);
@@ -194,7 +189,7 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
 
       // verify that JDBC DS is created by checking DS name, JNDI name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
-      String[] jdbcResourcesToVerify1 =
+      final String[] jdbcResourcesToVerify1 =
           {"datasource.name.1=" + dsName,
               "datasource.jndiname.1=array(java.lang.String,['" + jndiName + "'])",
               "datasource.readTimeout.1=" + readTimeout_1};
@@ -203,15 +198,10 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
         LoggerHelper.getLocal().log(Level.INFO, prop + " exists");
       }
 
-      // copy model files that contain JDBC DS to a dir to re-create cm
-      String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
-      copyTestModelFiles(destDir, modelFiles);
-
-      // re-create cm to update config and verify cm is created successfully
-      wdtConfigUpdateCm(destDir, domain);
-
-      // patch to change domain-level restart version and verify domain restarted successfully
-      modifyDomainYamlWithRestartVersion(domain, domainNS);
+      // copy model files that contains JDBC DS to a dir, re-create cm to update config,
+      // patch domain to change domain-level restart version and verify domain restarted successfully
+      final String[] modelFiles = {"model.jdbc.yaml", "model.jdbc.properties"};
+      createCmAndPatchDomain(domain, destDir, modelFiles);
 
       // get JDBC DS props via WLST on server pod
       jdbcResourceData = getJdbcResources(destDir, domain);
@@ -219,7 +209,7 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       // verify that JDBC DS is updated by checking JDBC DS name,
       // connection timeout and read timeout via WLST on server pod
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
-      String[] jdbcResourcesToVerify2 =
+      final String[] jdbcResourcesToVerify2 =
           {"datasource.name.1=" + dsName,
               "datasource.readTimeout.1=" + readTimeout_2,
               "datasource.connectionTimeout.1=" + connTimeout};
@@ -282,7 +272,7 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       wdtConfigDeleteOverride(domain);
 
       // patch to change domain-level restart version and verify domain restarted successfully
-      modifyDomainYamlWithRestartVersion(domain, domainNS);
+      modifyDomainYamlWithRestartVersion(domain);
 
       // verify the test result by getting JDBC DS via WLST on server pod
       String destDir = getResultDir() + "/samples/model-in-image-override";
