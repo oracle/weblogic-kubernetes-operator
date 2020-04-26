@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 /**
  * Simple JUnit test file used for testing Operator.
  *
- * <p>This test is used for testing pods being shutdowned by some properties change.
+ * <p>This test is used for applying Shutdown Properties at ManagedServer(MS) level.
  */
 @TestMethodOrder(Alphanumeric.class)
 public class ItPodsShutdownMS extends ShutdownOptionsBase {
@@ -161,7 +161,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
    * Start domain with added shutdown options at the managed server level with IgnoreSessions=false
    * and verify values are propagated to specified server level. Server shuts down only after sessions are ended.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
+   * @throws Exception If domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionsToMsIgnoreSessions() throws Exception {
@@ -218,7 +218,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
    * Add shutdown option Timeout at managed server level and verify all pods are Terminated
    * according to the setting.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
+   * @throws Exception If domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionsToMsTimeout() throws Exception {
@@ -271,7 +271,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
    * Add shutdown option Forced at managed server level and verify all pods are Terminated according
    * to the setting.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
+   * @throws Exception If domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionsToMsForced() throws Exception {
@@ -323,7 +323,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
    * Add shutdown options at cluster spec level and the managed server1 level,verify managed server
    * override cluster level.
    *
-   * @throws Exception If domain fails to start or can't verify the expected behavior
+   * @throws Exception If domain fails to start or can't verify the expected behavior.
    */
   @Test
   public void testShutdownOptionsOverrideClusterLevel() throws Exception {
@@ -383,7 +383,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
    * Call operator to scale to specified number of replicas.
    *
    * @param replicas - number of managed servers
-   * @throws Exception If fails to scale
+   * @throws Exception If fails to scale.
    */
   private void scaleCluster(int replicas, Domain domain) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Scale up/down to " + replicas + " managed servers");

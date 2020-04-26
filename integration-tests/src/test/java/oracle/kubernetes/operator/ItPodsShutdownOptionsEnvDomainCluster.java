@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 /**
  * Simple JUnit test file used for testing Operator.
  *
- * <p>This test is used for testing pods being shutdowned by some properties change.
+ * <p>This test is used for applying Shutdown Properties at Domain, Cluster, Env level.
  */
 @TestMethodOrder(Alphanumeric.class)
 public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
@@ -90,7 +90,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception If failed to delete the created objects or archive results
+   * @throws Exception If failed to delete the created objects or archive results.
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
@@ -106,7 +106,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
    * Start domain with added shutdown options at the domain level
    * and verify values are propagated to server level.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
+   * @throws Exception If domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionsToDomain() throws Exception {
@@ -147,7 +147,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
    * Start domain with added shutdown options at the cluster level
    * and verify values are propagated to all managed servers in the cluster.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
+   * @throws Exception If domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionToCluster() throws Exception {
@@ -195,7 +195,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
   /**
    * Add shutdown env vars at domain spec level and verify the pod are Terminated and recreated.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
+   * @throws Exception If domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionsEnv() throws Exception {
@@ -239,7 +239,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
   /**
    * Add shutdown env vars at domain spec level and managed server level,verify env override server level.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options
+   * @throws Exception If domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testShutdownOptionsOverrideViaEnv() throws Exception {

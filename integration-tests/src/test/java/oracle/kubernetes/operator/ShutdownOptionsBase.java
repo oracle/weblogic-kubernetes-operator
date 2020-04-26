@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.utils.TestUtils;
 /**
  * Simple JUnit test file used for testing Operator.
  *
- * <p>This test is used for testing pods being shutdowned by some properties change.
+ * <p>This test is used for testing Shutdown Properties, applied at domain, cluster, ms, env level.
  */
 
 public class ShutdownOptionsBase extends BaseTest {
@@ -52,8 +52,8 @@ public class ShutdownOptionsBase extends BaseTest {
    * Send request to web app deployed on wls.
    *
    * @param testAppPath - URL path for webapp
-   * @param domain      - Domain where webapp deployed
-   * @throws Exception  - Fails if can't find expected output from app
+   * @param domain      - Domain where webapp is deployed
+   * @throws Exception  - Fails if can't find expected output from app.
    */
   protected static void callWebApp(String testAppPath, Domain domain)
       throws Exception {
@@ -62,11 +62,6 @@ public class ShutdownOptionsBase extends BaseTest {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
       testAppUrl.append(domain.getHostNameForCurl());
-      /*
-      if (!OKE_CLUSTER) {
-        testAppUrl.append(":").append(domain.getLoadBalancerWebPort());
-      }
-      */
       testAppUrl.append("/");
       if (domain.getLoadBalancerName().equals("APACHE")) {
         testAppUrl.append("weblogic/");
@@ -108,6 +103,14 @@ public class ShutdownOptionsBase extends BaseTest {
     return terminationTime;
   }
 
+  /**
+   * Check the applied properties are set in the pod.
+   *
+   * @param podName - name of the pod
+   * @param domainNS - domain namespace
+   * @param props - set of properties to check
+   * @throws Exception If failed verify the property update.
+   */
   protected static boolean checkShutdownUpdatedProp(String podName, String domainNS, String... props)
       throws Exception {
 
@@ -137,6 +140,14 @@ public class ShutdownOptionsBase extends BaseTest {
     return found;
   }
 
+  /**
+   * Check the applied properties are set in the pod.
+   *
+   * @param delayTime - time to set delay to extend webapp opened session.
+   * @param domain - domain namespace
+   * @return termination time of managed server1
+   * @throws Exception If failed verify the property update.
+   */
   protected long verifyShutdown(long delayTime, Domain domain) throws Exception {
 
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
