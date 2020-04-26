@@ -71,12 +71,12 @@ public class TestActions {
 
   /**
    * Get a pod's log.
-   * @param podName name of the Pod
-   * @param namespace name of the Namespace
+   * @param podName name of the pod
+   * @param namespace name of the namespace
    * @return log as a String
    **/
   public static String getPodLog(String podName, String namespace) {
-    return Pod.getPodLog(podName,namespace);
+    return Pod.getPodLog(podName, namespace);
   }
 
   // ----------------------   operator  ---------------------------------
@@ -415,10 +415,10 @@ public class TestActions {
   }
 
   /**
-  * List Kubernetes Config Map(s) in a namespace.
+  * List Kubernetes ConfigMaps in a namespace.
   *
   * @param namespace name of namespace
-  * @return List of Config Map(s) in a namespace
+  * @return List of ConfigMaps in a namespace
   */
   public static V1ConfigMapList listConfigMaps(String namespace) {
     return ConfigMap.list(namespace);

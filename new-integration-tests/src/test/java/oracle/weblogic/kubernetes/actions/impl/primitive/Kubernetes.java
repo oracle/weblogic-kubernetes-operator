@@ -266,9 +266,8 @@ public class Kubernetes implements LoggedTest {
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName name of the pod to return
    * @return V1Pod object if found otherwise null
-   * @throws ApiException when there is error in querying the cluster
    */
-  public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) {
     V1PodList pods = listPods(namespace, labelSelector);
     for (var pod : pods.getItems()) {
       if (podName.equals(pod.getMetadata().getName())) {
@@ -284,9 +283,8 @@ public class Kubernetes implements LoggedTest {
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName name of the pod 
    * @return creationTimestamp from metadata section of the Pod
-   * @throws ApiException when there is error in querying the cluster
    */
-  public static String getPodCreationTime(String namespace, String labelSelector, String podName) throws ApiException {
+  public static String getPodCreationTime(String namespace, String labelSelector, String podName) {
     DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
     // DateTimeFormatter dtf = DateTimeFormat.forPattern("YYYYMMDDHHmmss");
     V1Pod pod = getPod(namespace, labelSelector, podName);
@@ -294,7 +292,7 @@ public class Kubernetes implements LoggedTest {
       // return pod.getMetadata().getCreationTimestamp().toString();
       return dtf.print(pod.getMetadata().getCreationTimestamp());
     } else {
-      logger.info("getPodCreationTime: Pod doesn't exist");
+      logger.info("getPodCreationTime(): Pod doesn't exist");
       return null;
     }
   }
@@ -305,9 +303,8 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Pod
    * @param namespace name of the Namespace
    * @return log as a String
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodLog(String name, String namespace) throws ApiException {
+  public static String getPodLog(String name, String namespace) {
     return getPodLog(name, namespace, null);
   }
 
@@ -318,10 +315,8 @@ public class Kubernetes implements LoggedTest {
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
    * @return log as a String
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodLog(String name, String namespace, String container)
-      throws ApiException {
+  public static String getPodLog(String name, String namespace, String container) {
     String log = null;
     try {
       log = coreV1Api.readNamespacedPodLog(
@@ -338,9 +333,8 @@ public class Kubernetes implements LoggedTest {
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
-      throw apex;
+      return null;
     }
-
     return log;
   }
 
@@ -376,9 +370,8 @@ public class Kubernetes implements LoggedTest {
    * @param namespace Namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
    * @return V1PodList list of pods
-   * @throws ApiException when there is error in querying the cluster
    */
-  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+  public static V1PodList listPods(String namespace, String labelSelectors) {
     V1PodList v1PodList = null;
     try {
       v1PodList
@@ -396,7 +389,7 @@ public class Kubernetes implements LoggedTest {
           );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
-      throw apex;
+      return null;
     }
     return v1PodList;
   }
@@ -813,12 +806,10 @@ public class Kubernetes implements LoggedTest {
    * List Config Maps in the Kubernetes cluster.
    *
    * @param namespace Namespace in which to query
-   * @return V1ConfigMapList of Config Maps
-   * @throws ApiException if Kubernetes client API call fails
+   * @return V1ConfigMapList list of ConfigMaps
    */
-  public static V1ConfigMapList listConfigMaps(String namespace) throws ApiException {
-
-    V1ConfigMapList configMapList;
+  public static V1ConfigMapList listConfigMaps(String namespace) {
+    V1ConfigMapList configMapList = null;
     try {
       configMapList = coreV1Api.listNamespacedConfigMap(
           namespace, // config map's namespace
@@ -834,9 +825,8 @@ public class Kubernetes implements LoggedTest {
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
-      throw apex;
+      return null;
     }
-
     return configMapList;
   }
 

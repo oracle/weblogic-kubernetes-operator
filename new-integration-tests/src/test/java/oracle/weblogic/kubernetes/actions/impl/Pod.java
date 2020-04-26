@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -22,35 +21,25 @@ public class Pod {
   }
 
   /**
-   * List Kubernetes Pod(s) in a namesapce.
+   * List Kubernetes pods in a namesapce.
    *
    * @param namespace name of namespace
    * @param labelSelectors with which pods are decorated
    * @return V1PodList list of pods
   */
   public static V1PodList listPods(String namespace, String labelSelectors) {
-    V1PodList retPodList = null;
-    try {
-      retPodList = Kubernetes.listPods(namespace,labelSelectors);
-    } catch (ApiException api) {
-      return null;
-    }
-    return retPodList;
+    return Kubernetes.listPods(namespace,labelSelectors);
   }
 
   /**
    * Get a pod's log.
    *  
-   * @param podName name of the Pod
+   * @param podName name of the pod
    * @param namespace name of the Namespace
    * @return log as a String
   */
   public static String getPodLog(String podName, String namespace) {
-    try {
-      return Kubernetes.getPodLog(podName,namespace);
-    } catch (ApiException api) {
-      return null;
-    }
+    return Kubernetes.getPodLog(podName,namespace);
   }
 
   /**
@@ -58,34 +47,20 @@ public class Pod {
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName name of the pod 
-   * @return creationTimestamp from metadata section of the Pod
+   * @return creationTimestamp from metadata section of the pod
    */
   public static String getPodCreationTime(String namespace, String labelSelector, String podName) {
-    try {
-      return Kubernetes.getPodCreationTime(namespace,labelSelector,podName);
-    } catch (ApiException api) {
-      return null;
-    }
+    return Kubernetes.getPodCreationTime(namespace,labelSelector,podName);
   }
 
   /**
-   * Get the Pod object with following parameters.
+   * Get the Kubernetes pod object with following parameters.
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName name of the pod 
    * @return V1Pod pod object
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) {
-    try {
-      V1PodList pods = Kubernetes.listPods(namespace, labelSelector);
-      for (var pod : pods.getItems()) {
-        if (podName.equals(pod.getMetadata().getName())) {
-          return pod;
-        }
-      }
-    } catch (ApiException api) {
-      return null;
-    }
-    return null;
+    return Kubernetes.getPod(namespace, labelSelector, podName);
   }
 }

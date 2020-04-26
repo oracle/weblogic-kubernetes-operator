@@ -33,18 +33,12 @@ public class ConfigMap {
   }
 
   /**
-   * List Kubernetes Config Map in a namesapce.
+   * List Kubernetes ConfigMaps in a namesapce.
    *
    * @param namespace name of namespace
-   * @return List of Config Maps in a namespace
+   * @return List of ConfigMaps in a namespace
   */
   public static V1ConfigMapList list(String namespace) {
-    V1ConfigMapList retConfigMapList = null;
-    try {
-      retConfigMapList = Kubernetes.listConfigMaps(namespace);
-    } catch (ApiException api) {
-      return null;
-    }
-    return retConfigMapList;
+    return Kubernetes.listConfigMaps(namespace);
   }
 }
