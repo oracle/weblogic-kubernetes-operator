@@ -32,9 +32,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Wdt Config Update with Model File(s) to existing MII domain
  *
- * <p>This test is used for creating domain using model in image.
+ * <p>This test is used for domain config update by re-creating
+ *    config map using model in image.
  */
-
 public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
   private static Operator operator;
   private static String domainNS;
@@ -95,10 +95,10 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
   }
 
   /**
-   * Create a domain without a JDBC DS using model in image and having configmap
+   * Create a domain without a JDBC DS using model in image and having config map
    * in the domain.yaml before deploying the domain. After the domain resources
-   * is created, re-create the configmap with model files that define a JDBC DataSource
-   * and patch the domain to change domain restartVersion to reload the model,
+   * is created, re-create the config map with model files that define a JDBC DataSource
+   * and patch to change domain-level restart version to reload the model files,
    * generate new config and initiate a rolling restart.
    */
   @Test
@@ -127,23 +127,17 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       // re-create cm to update config and verify cm is created successfully
       wdtConfigUpdateCm(destDir, domain);
 
-      // update domain yaml with restartVersion,
-      // apply the domain yaml and verify domain restarted successfully
+      // patch to change domain-level restart version and verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
-
-      // verify that JNDI name exists by checking updated config file on server pod
-      String jdbcDsStr = getJndiName(domain);
-      assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS wasn't updated");
-      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
 
       // get JDBC DS prop values via WLST on server pod
       String jdbcResourceData = getJdbcResources(destDir, domain);
 
-      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      // verify that JDBC DS is created by checking DS name, JNDI name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
       final String[] jdbcResourcesToVerify =
           {"datasource.name.1=" + dsName,
+              "datasource.jndiname.1=array(java.lang.String,['" + jndiName + "'])",
               "datasource.readTimeout.1=" + readTimeout_2};
       for (String prop : jdbcResourcesToVerify) {
         assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
@@ -167,10 +161,10 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
   }
 
   /**
-   * Create a domain with a JDBC DS using model in image and having configmap
+   * Create a domain with a JDBC DS using model in image and having config map
    * in the domain.yaml before deploying the domain. After the domain resources
-   * is created, re-create the configmap with a model file that define a JDBC DataSource
-   * and patch the domain to change domain restartVersion to reload the model,
+   * is created, re-create the config map with a model file that define a JDBC DataSource
+   * and patch to change domain-level restart version to reload the model file,
    * generate new config and initiate a rolling restart.
    */
   @Test
@@ -194,20 +188,15 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       domain = createDomainUsingMii(createDS, domainNS, testClassName);
       assertNotNull(domain, "Failed to create a domain");
 
-      // verify that JNDI name exists by checking updated config file on server pod
-      String jdbcDsStr = getJndiName(domain);
-      assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS wasn't updated");
-      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
-
       // get JDBC DS prop values via WLST on server pod
       final String destDir = getResultDir() + "/samples/model-in-image-update";
       String jdbcResourceData = getJdbcResources(destDir, domain);
 
-      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      // verify that JDBC DS is created by checking DS name, JNDI name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
       String[] jdbcResourcesToVerify1 =
           {"datasource.name.1=" + dsName,
+              "datasource.jndiname.1=array(java.lang.String,['" + jndiName + "'])",
               "datasource.readTimeout.1=" + readTimeout_1};
       for (String prop : jdbcResourcesToVerify1) {
         assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
@@ -221,8 +210,7 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       // re-create cm to update config and verify cm is created successfully
       wdtConfigUpdateCm(destDir, domain);
 
-      // update domain yaml with restartVersion and
-      // apply the domain yaml, verify domain restarted successfully
+      // patch to change domain-level restart version and verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
 
       // get JDBC DS props via WLST on server pod
@@ -257,9 +245,9 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
   }
 
   /**
-   * Create a domain using model in image and having configmap in the domain.yaml
+   * Create a domain using model in image and having config map in the domain.yaml
    * The model file has predeployed application and a JDBC DataSource. After the domain
-   * resources is created, re-create the configmap with a model file that removes the JDBC
+   * resources is created, re-create the config map with a model file that removes the JDBC
    * and application through the ! notation and patch the domain to change domain
    * restartVersion to reload the model, generate new config and initiate a rolling restart.
    * Verify the JDBC DataSource and application no longer exists in the WebLogic domain.
@@ -293,8 +281,7 @@ public class ItMiiConfigUpdateCm extends MiiConfigUpdateBaseTest {
       // delete config and application using new model file
       wdtConfigDeleteOverride(domain);
 
-      // update domain yaml with restartVersion and
-      // apply the domain yaml, verify domain restarted successfully
+      // patch to change domain-level restart version and verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
 
       // verify the test result by getting JDBC DS via WLST on server pod

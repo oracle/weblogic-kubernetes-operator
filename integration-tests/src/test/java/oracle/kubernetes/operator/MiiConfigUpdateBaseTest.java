@@ -18,11 +18,9 @@ import oracle.kubernetes.operator.utils.TestUtils;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Wdt Config Update with Model File(s) to existing MII domain
- *
- * <p>This test is used for creating domain using model in image.
+ * Base class which contains common methods to test config update
+ * using model in image. ItMiiConfigUpdate tests can extend this class.
  */
-
 public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   protected static final String configMapSuffix = "-mii-config-map";
   protected static final String dsName = "MyDataSource";
@@ -137,7 +135,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   }
 
   /**
-   * Create a new or update an existing image using model-in-image tool.
+   * Create a new or update an existing image using model in image.
    * @param domainMap a Java Map object that storing key and value pairs used to create the Domain
    * @param imageName image name to be created or updated
    * @param modelFile a model to describe a WebLogic Server domain configuration.
@@ -184,7 +182,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
       .append(WdtDomainType.WLS.geWdtDomainType());
 
     try {
-      // creating image
+      // creating a new or updating an existing image
       LoggerHelper.getLocal().log(Level.INFO, "Command to create domain image: "
           + createDomainImageScriptCmd);
       result = ExecCommand.exec(createDomainImageScriptCmd.toString(), true, additionalEnvMap);
@@ -203,11 +201,11 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   }
 
   /**
-   * Modify the domain yaml to change image name and verify the domain restarted.
-   * @param domain the Domain where to change the image name
+   * Patch the domain to add reference to image and verify the domain restarted.
+   * @param domain the Domain where to update the image
    * @param imageName image name to be updated in the Domain
    */
-  protected void modifyDomainYamlWithImageName(Domain domain, String imageName) {
+  protected void modifyDomainYamlWithImageTag(Domain domain, String imageName) {
     // get domain namespace name
     Map<String, Object> domainMap = domain.getDomainMap();
     final String domainNS = domainMap.get("namespace").toString();
@@ -224,7 +222,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
         .append("'\" }]'");
 
     try {
-      // patching the domain
+      // patch the domain
       LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
       result = TestUtils.exec(patchDomainCmd.toString());
       LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
@@ -326,17 +324,11 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
           content.getBytes(StandardCharsets.UTF_8));
 
       // get server pod name
-      StringBuffer cmdStrBuff = new StringBuffer("kubectl get pod -n ");
-      cmdStrBuff
-          .append(domainNS)
-          .append(" -o=jsonpath='{.items[0].metadata.name}' | grep admin-server");
-      LoggerHelper.getLocal().log(Level.INFO, "Command to get pod name: " + cmdStrBuff);
-      result = TestUtils.exec(cmdStrBuff.toString());
-      String adminPodName = result.stdout();
-      LoggerHelper.getLocal().log(Level.INFO, "pod name is: " + adminPodName);
+      final String adminPodName =
+          domain.getDomainUid() + "-" + domain.getAdminServerName();
 
       // copy verification file to the pod
-      cmdStrBuff = new StringBuffer("kubectl -n ");
+      StringBuffer cmdStrBuff = new StringBuffer("kubectl -n ");
       cmdStrBuff
           .append(domainNS)
           .append(" exec -it ")

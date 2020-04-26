@@ -25,9 +25,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Wdt Config Update with Model File(s) to existing MII domain
  *
- * <p>This test is used for creating domain using model in image.
+ * <p>This test is used for domain config update by updating
+ *    the image tag using model in image.
  */
-
 public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
   private static Operator operator;
   private static String domainNS;
@@ -88,11 +88,11 @@ public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
   }
 
   /**
-   * Create a domain without a JDBC DS using model in image and having configmap
+   * Create a domain without a JDBC DS using model in image and having config map
    * in the domain.yaml before deploying the domain. After the domain resources
    * is created, create a new image with diff tag name and model files that
-   * define a JDBC DataSource and patch the domain to change image name to reload
-   * the model, generate new config and initiate a rolling restart.
+   * define a JDBC DataSource and patch the domain to change image tag to reload
+   * the model file, generate new config and initiate a rolling restart.
    */
   @Test
   public void testMiiConfigUpdateNonJdbcImage() {
@@ -124,24 +124,18 @@ public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
         TestUtils.loginAndPushImageToOcir(imageName);
       }
 
-      // update domain yaml with new image tag and
-      // apply the domain yaml, verify domain rolling-restarted successfully
-      modifyDomainYamlWithImageName(domain, imageName);
-
-      // verify that JNDI name exists by checking updated config file on server pod
-      String jdbcDsStr = getJndiName(domain);
-      assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS wasn't updated");
-      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
+      // patch to change image tag and verify domain restarted successfully
+      modifyDomainYamlWithImageTag(domain, imageName);
 
       // get JDBC DS prop values via WLST on server pod
       final String destDir = getResultDir() + "/samples/model-in-image-update";
       String jdbcResourceData = getJdbcResources(destDir, domain);
 
-      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      // verify that JDBC DS is created by checking DS name, JNDI name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
       final String[] jdbcResourcesToVerify =
           {"datasource.name.1=" + dsName,
+              "datasource.jndiname.1=array(java.lang.String,['" + jndiName + "'])",
               "datasource.readTimeout.1=" + readTimeout_2};
       for (String prop : jdbcResourcesToVerify) {
         assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
@@ -165,11 +159,11 @@ public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
   }
 
   /**
-   * Create a domain with a JDBC DS using model in image and having configmap
+   * Create a domain with a JDBC DS using model in image and having config map
    * in the domain.yaml before deploying the domain. After the domain resources
    * is created, create a new image with diff tag name and model files that
-   * define a JDBC DataSource and patch the domain to change image name
-   * to reload the model, generate new config and initiate a rolling restart.
+   * define a JDBC DataSource and patch to change image tage to reload
+   * the model file, generate new config and initiate a rolling restart.
    */
   @Test
   public void testMiiConfigUpdateJdbcImage() {
@@ -192,20 +186,15 @@ public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
       domain = createDomainUsingMii(createDS, domainNS, testClassName);
       assertNotNull(domain, "Failed to create a domain");
 
-      // verify that JNDI name exists by checking updated config file on server pod
-      String jdbcDsStr = getJndiName(domain);
-      assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS wasn't updated");
-      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
-
       // get JDBC DS prop values via WLST on server pod
       final String destDir = getResultDir() + "/samples/model-in-image-update";
       String jdbcResourceData = getJdbcResources(destDir, domain);
 
-      // verify that JDBC DS is created by checking JDBC DS name and read timeout
+      // verify that JDBC DS is created by checking DS name, JNDI name and read timeout
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
       String[] jdbcResourcesToVerify1 =
           {"datasource.name.1=" + dsName,
+              "datasource.jndiname.1=array(java.lang.String,['" + jndiName + "'])",
               "datasource.readTimeout.1=" + readTimeout_1};
       for (String prop : jdbcResourcesToVerify1) {
         assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
@@ -224,9 +213,8 @@ public class ItMiiConfigUpdateImage extends MiiConfigUpdateBaseTest {
         TestUtils.loginAndPushImageToOcir(imageName);
       }
 
-      // update domain yaml with new image tag and
-      // apply the domain yaml, verify domain rolling-restarted
-      modifyDomainYamlWithImageName(domain, imageName);
+      // patch to change image tag and verify domain restarted successfully
+      modifyDomainYamlWithImageTag(domain, imageName);
 
       // get JDBC DS prop values via WLST on server pod
       jdbcResourceData = getJdbcResources(destDir, domain);

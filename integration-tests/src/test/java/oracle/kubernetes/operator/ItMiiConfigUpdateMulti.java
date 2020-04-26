@@ -25,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Wdt Config Update with Model File(s) to existing MII domain
  *
- * <p>This test is used for creating domain using model in image.
+ * <p>This test is used for domain config update with multiple model files
+ *    using model in image.
  */
 
 public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
@@ -88,11 +89,11 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
   }
 
   /**
-   * Create a domain without a JDBC DS using model in image and having configmap
+   * Create a domain without a JDBC DS using model in image and having config map
    * in the domain.yaml before deploying the domain. After the domain resources is created,
-   * re-create the configmap with multiple model files that define a JDBC DataSource.
+   * re-create the config map with multiple model files that define a JDBC DataSource.
    * Each model file overlaps the value of JDBC DS property oracle.net.CONNECT_TIMEOUT.
-   * Patch the domain crd to change domain restartVersion to reload the model, generate
+   * Patch to change domain-level restart version to reload the model file, generate
    * new config and initiate a rolling restart. The test verifies that loading order
    * of model files follows WDT rules and the model file loaded last take precedence
    */
@@ -126,21 +127,13 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
               "model.jdbc.yaml",
               "model.jdbc.properties",
               "cm.jdbc.yaml"};
-
       copyTestModelFiles(destDir, modelFiles);
 
       // re-create cm to update config and verify cm is created successfully
       wdtConfigUpdateCm(destDir, domain);
 
-      // update domain yaml with restartVersion,
-      // apply the domain yaml and verify domain restarted successfully
+      // patch to change domain-level restart version and verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
-
-      // verify that JNDI name exists by checking updated config file on server pod
-      String jdbcDsStr = getJndiName(domain);
-      assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS wasn't updated");
-      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
 
       // get JDBC DS prop values via WLST on server pod
       String jdbcResourceData = getJdbcResources(destDir, domain);
@@ -151,6 +144,7 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
       final String[] jdbcResourcesToVerify =
           {"datasource.name.1=" + dsName,
+              "datasource.jndiname.1=array(java.lang.String,['" + jndiName + "'])",
               "datasource.connectionTimeout.1=" + connTimeout};
       for (String prop : jdbcResourcesToVerify) {
         assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
@@ -174,13 +168,13 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
   }
 
   /**
-   * Create a domain without a JDBC DS using model in image and having configmap
+   * Create a domain without a JDBC DS using model in image and having config map
    * in the domain.yaml before deploying the domain. After the domain resources is created,
-   * re-create the image and configmap with multiple model files that define a JDBC DataSource.
+   * re-create the image and config map with multiple model files that define a JDBC DataSource.
    * Each model file overlaps the value of JDBC DS property oracle.net.CONNECT_TIMEOUT.
-   * Patch the domain crd to change domain restartVersion to reload the model,
+   * Patch to change domain-level restart version to reload the model file,
    * generate new config and initiate a rolling restart. The test verifies
-   * that the last model file loaded by configMap take precedence
+   * that the last model file loaded by config map take precedence
    */
   @Test
   public void testMiiMultiModelFilesLoadingOrderCm() {
@@ -223,15 +217,8 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
       // and verify cm is created successfully
       wdtConfigUpdateCm(destDir, domain);
 
-      // update domain yaml with restartVersion,
-      // apply the domain yaml and verify domain restarted successfully
+      // patch to change domain-level restart version and verify domain restarted successfully
       modifyDomainYamlWithRestartVersion(domain, domainNS);
-
-      // verify that JNDI name exists by checking updated config file on server pod
-      String jdbcDsStr = getJndiName(domain);
-      assertTrue(jdbcDsStr.contains("<jndi-name>" + jndiName + "</jndi-name>"),
-          "JDBC DS wasn't updated");
-      LoggerHelper.getLocal().log(Level.INFO, jndiName + " found");
 
       // get JDBC DS prop values via WLST on server pod
       String jdbcResourceData = getJdbcResources(destDir, domain);
@@ -242,6 +229,7 @@ public class ItMiiConfigUpdateMulti extends MiiConfigUpdateBaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Verify that JDBC DS is created");
       final String[] jdbcResourcesToVerify =
           {"datasource.name.1=" + dsName,
+              "datasource.jndiname.1=array(java.lang.String,['" + jndiName + "'])",
               "datasource.connectionTimeout.1=" + connTimeout};
       for (String prop : jdbcResourcesToVerify) {
         assertTrue(jdbcResourceData.contains(prop), prop + " is not found");
