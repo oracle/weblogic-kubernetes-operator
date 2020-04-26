@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -30,7 +31,7 @@ public class OperatorParams {
   private String externalRestIdentitySecret;
   private int externalRestHttpsPort = 0;
   private String imagePullPolicy;
-  private String imagePullSecrets;
+  private Map<String, Object> imagePullSecrets;
   private HelmParams helmParams;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
@@ -63,7 +64,7 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams imagePullSecrets(String imagePullSecrets) {
+  public OperatorParams imagePullSecrets(Map<String, Object> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
     return this;
   }
@@ -86,14 +87,18 @@ public class OperatorParams {
     return helmParams;
   }
 
-  public HashMap<String, Object> getValues() {
-    HashMap<String, Object> values = new HashMap();
+  /**
+   * Loads Helm values into a value map.
+   * @return Map of values
+   */
+  public Map<String, Object> getValues() {
+    Map<String, Object> values = new HashMap<>();
     values.put(DOMAIN_NAMESPACES, domainNamespaces);
     values.put(IMAGE, image);
     values.put(SERVICE_ACCOUNT, serviceAccount);
-    values.put(EXTERNAL_REST_ENABLED, new Boolean(externalRestEnabled));
+    values.put(EXTERNAL_REST_ENABLED, Boolean.valueOf(externalRestEnabled));
     if (externalRestHttpsPort > 0) {
-      values.put(EXTERNAL_REST_HTTPS_PORT, new Integer(externalRestHttpsPort));
+      values.put(EXTERNAL_REST_HTTPS_PORT, Integer.valueOf(externalRestHttpsPort));
     }
     values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
     values.put(IMAGE_PULL_POLICY, imagePullPolicy);

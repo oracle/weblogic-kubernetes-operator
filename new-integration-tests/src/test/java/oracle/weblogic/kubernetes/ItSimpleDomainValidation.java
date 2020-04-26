@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.List;
+
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -18,8 +20,11 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,40 +38,50 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccoun
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Simple validation of basic domain functions")
+// Every test class needs to tagged with this annotation for log collection, diagnostic messages logging
+// and namespace creation.
 @IntegrationTest
 class ItSimpleDomainValidation implements LoggedTest {
 
-  @Test
-  @DisplayName("Create a domain")
-  @Slow
-  public void testCreatingDomain() {
+  final String domainUid = "domain1";
+  String namespace;
+  String serviceAccountName;
+  V1ServiceAccount serviceAccount;
+  String pvcName;
+  String pvName;
 
-    final String domainUID = "domain1";
+  /**
+   * Setup for test suite. Creates service account, namespace, and persistent volumes.
+   * @param namespaces injected by Junit extension
+   */
+  @BeforeAll
+  public void setup(@Namespaces(1) List<String> namespaces) {
 
     // get a new unique namespace
-    final String namespace = assertDoesNotThrow(TestActions::createUniqueNamespace,
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Got a new namespace called {0}", namespace);
+    logger.info("Creating unique namespace for Operator");
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    namespace = namespaces.get(0);
 
     // Create a service account for the unique namespace
-    final String serviceAccountName = namespace + "-sa";
-    final V1ServiceAccount serviceAccount = assertDoesNotThrow(
+    serviceAccountName = namespace + "-sa";
+    serviceAccount = assertDoesNotThrow(
         () -> Kubernetes.createServiceAccount(new V1ServiceAccount()
             .metadata(new V1ObjectMeta().namespace(namespace).name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccount.getMetadata().getName());
 
     // create persistent volume and persistent volume claim
-    final String pvcName = domainUID + "-pvc"; // name of the persistent volume claim
-    final String pvName = domainUID + "-pv"; // name of the persistent volume
+    pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    pvName = domainUid + "-pv"; // name of the persistent volume
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUID + "-weblogic-domain-storage-class")
-            .volumeName(domainUID + "-weblogic-pv")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeName(domainUid + "-weblogic-pv")
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("10Gi"))))
         .metadata(new V1ObjectMetaBuilder()
@@ -74,40 +89,49 @@ class ItSimpleDomainValidation implements LoggedTest {
             .withNamespace(namespace)
             .build()
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUID", domainUID));
+            .putLabelsItem("weblogic.domainUid", domainUid));
 
     boolean success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolumeClaim(v1pvc),
         "Persistent volume claim creation failed, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
+        + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success, "PersistentVolumeClaim creation failed");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUID + "-weblogic-domain-storage-class")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("10Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .hostPath(new V1HostPathVolumeSource()
-                .path(System.getProperty("java.io.tmpdir") + domainUID + "-persistentVolume")))
-                .metadata(new V1ObjectMetaBuilder()
+                .path(System.getProperty("java.io.tmpdir") + "/" + domainUid + "-persistentVolume")))
+        .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .withNamespace(namespace)
             .build()
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUID", domainUID));
+            .putLabelsItem("weblogic.domainUid", domainUid));
     success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(v1pv),
         "Persistent volume creation failed, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
+        + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success, "PersistentVolume creation failed");
+  }
+
+  /**
+   * Create a simple domain and checks if pods are coming up.
+   */
+  @Test
+  @DisplayName("Create a domain")
+  @Slow
+  public void testCreatingDomain() {
 
     // create the domain CR
     V1ObjectMeta metadata = new V1ObjectMetaBuilder()
-        .withName(domainUID)
+        .withName(domainUid)
         .withNamespace(namespace)
         .build();
     DomainSpec domainSpec = new DomainSpec()
@@ -120,10 +144,10 @@ class ItSimpleDomainValidation implements LoggedTest {
         .kind("Domain")
         .metadata(metadata)
         .spec(domainSpec);
-    success = assertDoesNotThrow(
+    boolean success = assertDoesNotThrow(
         () -> createDomainCustomResource(domain),
         "Domain failed to be created, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
+        + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success);
 
@@ -132,22 +156,25 @@ class ItSimpleDomainValidation implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for domain to be running (elapsed time {0}ms, remaining time {1}ms)",
+                "Waiting for domain to be running (elapsed time {0} ms, remaining time {1} ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         // and here we can set the maximum time we are prepared to wait
         .await().atMost(5, MINUTES)
         // operatorIsRunning() is one of our custom, reusable assertions
-        .until(domainExists(domainUID, "v7", namespace));
+        .until(domainExists(domainUid, "v7", namespace));
+  }
 
-    // wait for the admin server pod to exist
-
-    // wait for the managed servers to exist
+  /**
+   * Delete artifacts.
+   */
+  @AfterAll
+  public void cleanup() {
 
     // Delete domain custom resource
-    assertTrue(deleteDomainCustomResource(domainUID, namespace), "Domain failed to be deleted, "
+    assertTrue(deleteDomainCustomResource(domainUid, namespace), "Domain failed to be deleted, "
         + "look at the above console log messages for failure reason in ApiException responsebody");
-    logger.info("Deleted Domain Custom Resource {0} from {1}", domainUID, namespace);
+    logger.info("Deleted Domain Custom Resource {0} from {1}", domainUid, namespace);
 
     // Delete service account from unique namespace
     assertTrue(deleteServiceAccount(serviceAccount.getMetadata().getName(),
@@ -159,7 +186,7 @@ class ItSimpleDomainValidation implements LoggedTest {
     // Delete the persistent volume claim and persistent volume
     assertTrue(deletePersistentVolumeClaim(pvcName, namespace),
         "Persistent volume claim deletion failed, "
-            + "look at the above console log messages for failure reason in ApiException responsebody");
+        + "look at the above console log messages for failure reason in ApiException responsebody");
 
     assertTrue(deletePersistentVolume(pvName), "Persistent volume deletion failed, "
         + "look at the above console log messages for failure reason in ApiException responsebody");
@@ -169,5 +196,4 @@ class ItSimpleDomainValidation implements LoggedTest {
         + "look at the above console log messages for failure reason in ApiException responsebody");
     logger.info("Deleted namespace: {0}", namespace);
   }
-
 }

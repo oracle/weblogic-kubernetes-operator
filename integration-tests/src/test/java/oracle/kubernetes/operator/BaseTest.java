@@ -805,7 +805,7 @@ public class BaseTest {
   }
 
   /**
-   * Scale the cluster up using Weblogic WLDF scaling.
+   * Scale the cluster up using WebLogic WLDF scaling.
    *
    * @throws Exception exception
    */

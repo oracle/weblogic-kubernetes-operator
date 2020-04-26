@@ -39,6 +39,10 @@ public class Command {
     return this;
   }
 
+  /**
+   * Executes command.
+   * @return true, on success
+   */
   public boolean execute() {
     logger.info("Executing command {0}", params.command());
     try {

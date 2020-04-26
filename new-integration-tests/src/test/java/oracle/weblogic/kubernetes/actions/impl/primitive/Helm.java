@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-import java.util.HashMap;
+import java.util.Map;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
@@ -22,7 +22,7 @@ public class Helm {
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */
-  public static boolean install(HelmParams helmParams, HashMap<String, Object> chartValues) {
+  public static boolean install(HelmParams helmParams, Map<String, Object> chartValues) {
     String namespace = helmParams.getNamespace();
 
     // assertions for required parameters
@@ -75,7 +75,7 @@ public class Helm {
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */
-  public static boolean upgrade(HelmParams params, HashMap<String, Object> chartValues) {
+  public static boolean upgrade(HelmParams params, Map<String, Object> chartValues) {
     String namespace = params.getNamespace();
 
     // assertions for required parameters
@@ -161,15 +161,30 @@ public class Helm {
   }
 
   /**
-   * Append the values to the given string buffer.
-   * @param values hash map with key, value pairs
-   * @return string with chart values
+   * Append the helmValues to the given string buffer.
+   * @param helmValues hash map with key, value pairs
+   * @return string with chart helmValues
    */
-  private static String valuesToString(HashMap<String, Object> values) {
+  private static String valuesToString(Map<String, Object> helmValues) {
     StringBuffer valuesString = new StringBuffer("");
-    values.forEach((key, value) ->
+
+    // values can be Map or String
+    for (Map.Entry<String,Object> entry : helmValues.entrySet()) {
+      if (entry.getValue() instanceof Map) {
+        Map<String, Object> item = (Map<String, Object>) entry.getValue();
+        int index = 0;
+        for (Map.Entry<String,Object> itemEntry : item.entrySet()) {
+          valuesString.append(" --set \"" + entry.getKey() + "[" + index + "]."
+              + itemEntry.getKey() + "=" + itemEntry.getValue() + "\"");
+          ++index;
+        }
+      } else {
         valuesString.append(String.format(" --set \"%1s=%2s\"",
-              key, value.toString().replaceAll("\\[", "{").replaceAll("\\]", "}").replace(" ",""))));
+            entry.getKey(), entry.getValue().toString()
+                .replaceAll("\\[", "{")
+                .replaceAll("\\]", "}").replace(" ","")));
+      }
+    }
     return valuesString.toString();
   }
 
