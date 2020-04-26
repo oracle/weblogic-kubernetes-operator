@@ -98,7 +98,7 @@ public class ItJrfPvWlst extends BaseTest {
   }
    
   /**
-   * This method will run once after all test methods are finished. It delete both RCU and DB pods
+   * This method will run once after every test method is finished. It delete both RCU and DB pods.
    */
   @AfterEach
   public void unPrepare() {
@@ -120,10 +120,10 @@ public class ItJrfPvWlst extends BaseTest {
   }
 
   /**
-   * Create and deploy a JRF domain. Verify the domain is created successfully
+   * Create and deploy a JRF domain. Verify the domain is created successfully.
    */
   @Test
-  public void testJrfDomainOnPvUsingWlst() throws Exception {
+  public void testJrfDomainOnPvUsingWlst() {
     if (QUICKTEST) {
       String testMethodName = new Object() {
       }.getClass().getEnclosingMethod().getName();

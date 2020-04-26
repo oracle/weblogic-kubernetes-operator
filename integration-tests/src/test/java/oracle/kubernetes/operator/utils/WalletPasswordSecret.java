@@ -23,7 +23,7 @@ public class WalletPasswordSecret extends Secret {
     this.walletPassword = walletPassword;
     
 
-    // delete the secret first if exists
+    // delete the secret first if it exists
     deleteSecret();
 
     // create the secret

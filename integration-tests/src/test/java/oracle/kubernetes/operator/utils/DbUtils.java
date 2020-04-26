@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,7 +48,7 @@ public class DbUtils {
   }
   
   /**
-   * Create Oracle DB pod and service in the k8s cluster default namespace.
+   * Start Oracle DB pod and service in the specified namespace.
    * 
    * @param scriptsDir directory of scripts
    * @param dbPort NodePort of DB
@@ -79,11 +78,11 @@ public class DbUtils {
   }
   
   /**
-   * Stop oracle service.
+   * Stop Oracle DB service.
    * 
    * @param scriptsDir directory of scripts
-   * @param dbNamespace namespace where DB instance is going to stop
-   * @throws Exception if any error occurs when dropping Oracle DB service
+   * @param dbNamespace namespace where DB instance was 
+   * @throws Exception if any error occurs when stopping Oracle DB service
    */
   public static void stopOracleDB(String scriptsDir, String dbNamespace) throws Exception {
     String cmd = "sh " 
@@ -156,7 +155,7 @@ public class DbUtils {
    * 
    * @param scriptsDir directory of scripts
    * @param rcuSchemaPrefix prefix of RCU schema
-   * @param namespace namespace where RCU schema is going to be dropped
+   * @param namespace namespace where RCU schema was 
    * @throws Exception if any error occurs when dropping rcu schema
    */
   public static void dropRcuSchema(String scriptsDir, String rcuSchemaPrefix, String namespace) throws Exception {
@@ -193,97 +192,7 @@ public class DbUtils {
         + "/scripts/create-oracle-db-service/common/oracle.db.yaml --ignore-not-found";
     TestUtils.exec(cmd, true);
   }
-
-  /**
-   * Run RCU script to load database schema.
-   *
-   * @param rcuPodName rcu pod name
-   * @param inputYaml create domain input file
-   * @throws Exception if any error occurs
-   */
-  public static void runRcu(String rcuPodName, String inputYaml) throws Exception {
-    Map<String, Object> inputMap = TestUtils.loadYaml(inputYaml);
-    runRcu(rcuPodName, inputMap);
-  }
-
-  /**
-   * Run RCU script to load database schema.
-   *
-   * @param rcuPodName rcu pod name
-   * @param inputMap domain input map
-   * @throws Exception if any error occurs
-   */
-  public static void runRcu(String rcuPodName, Map<String, Object> inputMap) throws Exception {
-    String dbConnectString = (String) inputMap.get("rcuDatabaseURL");
-    String rcuPrefix = (String) inputMap.get("rcuSchemaPrefix");
-    runRcu(rcuPodName, DEFAULT_RCU_NAMESPACE, dbConnectString, rcuPrefix);
-  }
-
-  /**
-   * Run RCU script to load database schema.
-   *
-   * @param rcuNamespace namespace for rcu pod
-   * @param dbConnectString db connect string to load the database schema
-   * @param rcuPrefix rcu prefix for the db schema name
-   * @throws Exception if any error occurs
-   */
-  private static void runRcu(
-      String rcuPodName, String rcuNamespace, String dbConnectString, String rcuPrefix)
-      throws Exception {
-
-    // create password file used for rcu script
-    String rcuPwdCmd = "echo " + DEFAULT_RCU_SYS_PASSWORD + "> /u01/oracle/pwd.txt";
-    TestUtils.kubectlexec(rcuPodName, rcuNamespace, " -- bash -c '" + rcuPwdCmd + "'");
-    rcuPwdCmd = "echo " + DEFAULT_RCU_SYS_PASSWORD + ">> /u01/oracle/pwd.txt";
-    TestUtils.kubectlexec(rcuPodName, rcuNamespace, " -- bash -c '" + rcuPwdCmd + "'");
-
-    // create rcu script to run
-    String rcuScript =
-        "/u01/oracle/oracle_common/bin/rcu -silent -createRepository -databaseType ORACLE"
-            + " -connectString "
-            + dbConnectString
-            + " -dbUser sys -dbRole sysdba"
-            + " -useSamePasswordForAllSchemaUsers true -selectDependentsForComponents true   -schemaPrefix "
-            + rcuPrefix
-            + " -component MDS -component IAU -component IAU_APPEND -component IAU_VIEWER -component OPSS"
-            + " -component WLS -component STB < /u01/oracle/pwd.txt";
-
-    TestUtils.kubectlexec(rcuPodName, rcuNamespace, " -- bash -c '" + rcuScript + "'");
-  }
-
-  /**
-   * Create a rcu pod to run rcu script.
-   *
-   * @param rcuNamespace namespace for rcu pod
-   * @return rcu pod name
-   * @throws Exception if any error occurs
-   */
-  public static String createRcuPod(String rcuNamespace) throws Exception {
-    // create a rcu deployment
-    String cmd =
-        "kubectl run rcu -n "
-            + rcuNamespace
-            + " --image "
-            + DEFAULT_FMWINFRA_DOCKER_IMAGENAME
-            + ":"
-            + DEFAULT_FMWINFRA_DOCKER_IMAGETAG
-            + " -- sleep 100000";
-    logger.info("running command " + cmd);
-    TestUtils.exec(cmd);
-
-    // get rcu pod name
-    cmd = "kubectl get pod -n " + rcuNamespace + " -o jsonpath=\"{.items[0].metadata.name}\"";
-    logger.info("running command " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    String podName = result.stdout();
-    logger.info("DEBUG: rcuPodName=" + podName);
-
-    // check the pod is ready
-    TestUtils.checkPodReady(podName, rcuNamespace);
-
-    return podName;
-  }
-
+  
   /**
    * Delete a namespace.
    *
@@ -325,7 +234,7 @@ public class DbUtils {
    * @param dbPort NodePort of DB
    * @param dbUrl URL of DB
    * @param rcuSchemaPrefix rcu SchemaPrefixe
-   * @param namespace namespace that DB and RCU schema are going to start
+   * @param namespace namespace where DB and RCU schema are going to start
    * @throws Exception if any error occurs when setting up RCU database
    */
   public static void setupRCUdatabase(String scriptsDir, int dbPort, String dbUrl, String rcuSchemaPrefix,

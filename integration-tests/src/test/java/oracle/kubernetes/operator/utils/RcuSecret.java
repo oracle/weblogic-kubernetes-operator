@@ -40,7 +40,7 @@ public class RcuSecret extends Secret {
     this.sysUsername = sysUsername;
     this.sysPassword = sysPassword;
 
-    // delete the secret first if exists
+    // delete the secret first if it exists
     deleteSecret();
 
     // create the secret

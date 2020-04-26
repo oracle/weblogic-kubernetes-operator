@@ -35,13 +35,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/**
- * Unit test file used for testing Model in Image.
- *
- * <p>This test is to verify reusing the same RCU schema during 2 JRF domain deployments. Domains are 
- *    created using model in image.
- */
-
 public class ItJrfModelInImage extends MiiBaseTest {
   private static Operator operator;
   private static String domainNS;
@@ -115,7 +108,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
   }
   
   /**
-   * This method will run once after all test methods are finished. It delete both RCU and DB pods
+   * This method will run once after each test method is finished. It delete both RCU and DB pods
    */
   @AfterEach
   public void unPrepare() {
@@ -127,7 +120,7 @@ public class ItJrfModelInImage extends MiiBaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories.
+   * Archives result, pv directories.
    */
   @AfterAll
   public static void staticUnPrepare() {
