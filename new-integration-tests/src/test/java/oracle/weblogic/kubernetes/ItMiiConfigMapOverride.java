@@ -20,11 +20,9 @@ import java.util.logging.Level;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapBuilder;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -135,8 +133,8 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   /**
    * Install Operator.
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   JUnit engine parameter resolution mechanism
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher
+   *                   by the JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -248,7 +246,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
   @DisplayName("Create model in image domain with a configmap")
   @Slow
   @MustNotRunInParallel
-  public void testCreateMiiDomain() {
+  public void testCreateMiiDomainConfigMapOverride() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -354,7 +352,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
 
     // wait for the domain to exist
-    logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
+    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
@@ -419,15 +417,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
     data.put("model.jdbc.yaml",cmData);
 
-    V1ObjectMeta meta = new V1ObjectMetaBuilder()
-        .withLabels(labels)
-        .withName(configMapName)
-        .withNamespace(domainNamespace)
-        .build();
-    V1ConfigMap configMap = new V1ConfigMapBuilder()
-        .withData(data)
-        .withMetadata(meta)
-        .build();
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .labels(labels)
+        .name(configMapName)
+        .namespace(domainNamespace);
+
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(meta);
 
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("createConfigMap failed for %s", configMapName));
