@@ -284,7 +284,7 @@ public class Kubernetes implements LoggedTest {
    * @param podName name of the pod 
    * @return creationTimestamp from metadata section of the Pod
    */
-  public static String getPodCreationTime(String namespace, String labelSelector, String podName) {
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
     DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
     // DateTimeFormatter dtf = DateTimeFormat.forPattern("YYYYMMDDHHmmss");
     V1Pod pod = getPod(namespace, labelSelector, podName);
@@ -292,7 +292,7 @@ public class Kubernetes implements LoggedTest {
       // return pod.getMetadata().getCreationTimestamp().toString();
       return dtf.print(pod.getMetadata().getCreationTimestamp());
     } else {
-      logger.info("getPodCreationTime(): Pod doesn't exist");
+      logger.info("getPodCreationTimestamp(): Pod doesn't exist");
       return null;
     }
   }
@@ -1275,6 +1275,53 @@ public class Kubernetes implements LoggedTest {
     }
 
     return true;
+  }
+
+  /**
+   * List all Kubernetes services in given namespace.
+   *
+   * @param namespace Namespace in which to list all services
+   * @param labelSelectors with which the services are decorated
+   * @return V1ServiceList list of Kubernetes services
+   */
+  public static V1ServiceList listServices(String namespace, String labelSelectors) {
+    V1ServiceList v1ServiceList = null;
+    try {
+      v1ServiceList
+          = coreV1Api.listNamespacedService(
+              namespace, // namespace in which to look for the pods.
+              Boolean.FALSE.toString(), // pretty print output.
+              Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+              null, // continue to query when there is more results to return.
+              null, // selector to restrict the list of returned objects by their fields
+              labelSelectors, // selector to restrict the list of returned objects by their labels.
+              null, // maximum number of responses to return for a list call.
+              null, // shows changes that occur after that particular version of a resource.
+              null, // Timeout for the list/watch call.
+              Boolean.FALSE // Watch for changes to the described resources.
+          );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      return null;
+    }
+    return v1ServiceList;
+  }
+
+  /**
+   * Returns the V1Service object given the following parameters.
+   * @param namespace in which to check for the service existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param serviceName name of the Service to return
+   * @return V1Service object if found otherwise null
+   */
+  public static V1Service getService(String namespace, String labelSelector, String serviceName) {
+    V1ServiceList services = listServices(namespace, labelSelector);
+    for (var service : services.getItems()) {
+      if (serviceName.equals(service.getMetadata().getName())) {
+        return service;
+      }
+    }
+    return null;
   }
 
   // --------------------------- jobs ---------------------------

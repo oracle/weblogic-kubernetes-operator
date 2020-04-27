@@ -49,8 +49,8 @@ public class Pod {
    * @param podName name of the pod 
    * @return creationTimestamp from metadata section of the pod
    */
-  public static String getPodCreationTime(String namespace, String labelSelector, String podName) {
-    return Kubernetes.getPodCreationTime(namespace,labelSelector,podName);
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
+    return Kubernetes.getPodCreationTimestamp(namespace,labelSelector,podName);
   }
 
   /**

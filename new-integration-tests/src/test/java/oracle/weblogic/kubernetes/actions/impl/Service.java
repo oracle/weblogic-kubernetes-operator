@@ -12,7 +12,7 @@ public class Service {
   /**
    * Create a Kubernetes Service.
    *
-   * @param service V1Service object containing Kubernetes secret configuration data
+   * @param service V1Service object containing Kubernetes service configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -30,4 +30,17 @@ public class Service {
   public static boolean delete(String name, String namespace) {
     return Kubernetes.deleteService(name, namespace);
   }
+
+  /**
+   * Get a Kubernetes Service.
+   *
+   * @param name name of the Service
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param namespace name of namespace
+   * @return V1Service object if found otherwise null
+   */
+  public static V1Service getService(String name,String labelSelector, String namespace) {
+    return Kubernetes.getService(namespace, labelSelector, name);
+  }
+
 }

@@ -83,7 +83,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTime;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
@@ -391,7 +391,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceCreated(adminServerPodName);
-    String adminPodCreationTime = getPodCreationTime(domainNamespace,"",adminServerPodName);
+    String adminPodCreationTime = getPodCreationTimestamp(domainNamespace,"",adminServerPodName);
     assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
 
@@ -480,7 +480,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i);
     }
 
-    String newAdminPodCreationTime = getPodCreationTime(domainNamespace,"",adminServerPodName);
+    String newAdminPodCreationTime = getPodCreationTimestamp(domainNamespace,"",adminServerPodName);
     assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
     if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {

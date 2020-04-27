@@ -54,8 +54,8 @@ public class TestActions {
    * @param podName name of the pod 
    * @return creationTimestamp from metadata section of the Pod
    */
-  public static String getPodCreationTime(String namespace, String labelSelector, String podName) {
-    return Pod.getPodCreationTime(namespace,labelSelector,podName);
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
+    return Pod.getPodCreationTimestamp(namespace,labelSelector,podName);
   }
  
   /**
@@ -446,6 +446,17 @@ public class TestActions {
    */
   public static boolean deleteService(String name, String namespace) {
     return Service.delete(name, namespace);
+  }
+
+  /**
+   * Returns the V1Service object given the following parameters.
+   * @param namespace in which to check for the service existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param name name of the Service to return
+   * @return V1Service object if found otherwise null
+   */
+  public static V1Service  getService(String name, String namespace, String labelSelector) {
+    return Service.getService(namespace, labelSelector, name);
   }
 
   // ------------------------ service account  --------------------------
