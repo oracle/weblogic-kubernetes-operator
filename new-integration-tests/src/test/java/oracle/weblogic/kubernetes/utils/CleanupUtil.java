@@ -78,7 +78,7 @@ public class CleanupUtil {
       // If put 30 seconds in pollDelay in below, its going to sleep 30 seconds for every namespace.
 
       // wait for the artifacts to be deleted, waiting for a maximum of 3 minutes
-      // with pollDeal 0, since already waited for 30 seconds
+      // with pollDelay 0, since already waited for 30 seconds
       ConditionFactory withStandardRetryPolicy = with().pollDelay(0, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(3, MINUTES).await();
