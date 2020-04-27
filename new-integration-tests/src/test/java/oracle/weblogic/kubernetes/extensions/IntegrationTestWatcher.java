@@ -129,6 +129,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("BeforeAll failed %s", className), "!");
     collectLogs(context, "beforeAll");
+    throw throwable;
   }
 
   /**
@@ -153,6 +154,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("BeforeEach failed for %s", methodName), "!");
     collectLogs(context, "beforeEach");
+    throw throwable;
   }
 
   /**
@@ -252,6 +254,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("AfterEach failed for %s", methodName), "!");
     collectLogs(context, "afterEach");
+    throw throwable;
   }
 
   /**
