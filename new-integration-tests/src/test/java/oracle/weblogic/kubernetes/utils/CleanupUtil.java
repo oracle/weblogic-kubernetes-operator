@@ -50,10 +50,8 @@ public class CleanupUtil {
    */
   public static void cleanup(List<String> namespaces) {
     try {
-      // If namespace list is empty or null,
-      // just delete the non namespaced artifacts and return
+      // If namespace list is empty or null return
       if (namespaces == null || namespaces.isEmpty()) {
-        deleteClusterArtifacts();
         return;
       }
       // iterate through the namespaces and delete domain as a
@@ -71,17 +69,13 @@ public class CleanupUtil {
         }
       }
 
-      // Delete all the artifacts
+      // Delete artifacts in namespace used by the test class
       for (var namespace : namespaces) {
         deleteNamespacedArtifacts(namespace);
       }
-      // If the tests are running in parallel how do we figure out
-      // which cluster artifacts are to be deleted.
-      deleteClusterArtifacts();
 
-
-      Thread.sleep(30 * 1000); // I am using Thread.sleep to have only one 30 sec sleep.
-      // If put in pollDelay in below, its going to sleep 30 seconds for every namespace.
+      Thread.sleep(30 * 1000); // I am using Thread.sleep for a one time 30 sec sleep.
+      // If put 30 seconds in pollDelay in below, its going to sleep 30 seconds for every namespace.
 
       // wait for the artifacts to be deleted, waiting for a maximum of 3 minutes
       // with pollDeal 0, since already waited for 30 seconds
@@ -363,36 +357,6 @@ public class CleanupUtil {
         logger.warning("Failed to list namespaced role bindings");
       }
 
-      /*
-      // check if cluster roles exist, check with selector 'weblogic.operatorName'
-      try {
-        if (!Kubernetes.listClusterRoles("weblogic.operatorName").getItems().isEmpty()) {
-          logger.info("Cluster Roles still exists!!!");
-          List<V1ClusterRole> items = Kubernetes.listClusterRoles("weblogic.operatorName").getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
-          }
-          doesnotExist = false;
-        }
-      } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list cluster roles");
-      }
-      // check if cluster rolebindings exist, check with selector 'weblogic.operatorName'
-      try {
-        if (!Kubernetes.listClusterRoleBindings("weblogic.operatorName").getItems().isEmpty()) {
-          logger.info("Cluster RoleBindings still exists!!!");
-          List<V1RoleBinding> items = Kubernetes.listClusterRoleBindings("weblogic.operatorName").getItems();
-          for (var item : items) {
-            logger.info(item.getMetadata().getName());
-          }
-          doesnotExist = false;
-        }
-      } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list Cluster Role Bindings");
-      }*/
-
       // get namespaces
       try {
         if (Kubernetes.listNamespaces().contains(namespace)) {
@@ -555,37 +519,6 @@ public class CleanupUtil {
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
       logger.warning("Failed to delete namespace");
-    }
-  }
-
-  /**
-   * Deletes non name spaced artifacts in the Kubernetes cluster.
-   *
-   */
-  public static void deleteClusterArtifacts() {
-    logger.info("Deleting cluster artifacts");
-    // Delete cluster roles
-    try {
-      logger.info("Cluster Roles list");
-      for (var item : Kubernetes.listClusterRoles("weblogic.operatorName").getItems()) {
-        logger.info(item.getMetadata().getName());
-        //Kubernetes.deleteClusterRole(item.getMetadata().getName());
-      }
-    } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete cluster roles");
-    }
-
-    // Delete cluster rolebindings
-    try {
-      logger.info("Cluster Role Bindings list");
-      for (var item : Kubernetes.listClusterRoleBindings("weblogic.operatorName").getItems()) {
-        logger.info(item.getMetadata().getName());
-        //Kubernetes.deleteClusterRoleBinding(item.getMetadata().getName());
-      }
-    } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete cluster rolebindings");
     }
   }
 
