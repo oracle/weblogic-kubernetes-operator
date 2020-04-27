@@ -6,8 +6,8 @@ function usage() {
 
   cat << EOF
   
-  This is a helper script for creating and labeling a Kubernetes configmap.  The configmap
-  is labeled with the specified domain-uid.
+  This is a helper script for creating and labeling a Kubernetes configmap.
+  The configmap is labeled with the specified domain-uid.
   
   Usage:
   
@@ -16,13 +16,21 @@ function usage() {
                 [-d mydomainuid]  \\
                 [-f filename_or_dir] [-f filename_or_dir] ...
   
-  -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-  -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
+  -d <domain_uid>     : Defaults to 'sample-domain1'.
+
+  -n <namespace>      : Defaults to 'sample-domain1-ns' otherwise.
+
   -c <configmap-name> : Name of configmap. Required.
-  -f <filename_or_dir>: File or directory location. Can be specified more than once. 
-                        Key will be the file-name(s), value will be file contents. Required.
-  -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:') but do not perform them.
-  -dry yaml           : Show the yaml (prefixed with 'dryun:') but do not execute it.
+
+  -f <filename_or_dir>: File or directory location. Can be specified
+                        more than once. Key will be the file-name(s),
+                        value will be file contents. Required.
+
+  -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:')
+                        but do not perform them.
+
+  -dry yaml           : Show the yaml (prefixed with 'dryun:')
+                        but do not execute it.
 
 EOF
 }
@@ -30,11 +38,8 @@ EOF
 set -e
 set -o pipefail
 
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
-
-DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
-DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-sample-domain1-ns}"
+DOMAIN_UID="sample-domain1"
+DOMAIN_NAMESPACE="sample-domain1-ns"
 CONFIGMAP_NAME=""
 FILENAMES=""
 DRY_RUN=""

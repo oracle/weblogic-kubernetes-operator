@@ -5,31 +5,17 @@
 #
 # This is a utility script that waits until a domain's pods have
 # all exited, or waits until a domain's pods have all reached
-# the ready state plus have have the domain resource's domain
-# restart version and the domain resource's image.
+# the ready state plus have have the same domain restart 
+# version and image as the pods domain resource.
 # It exits non-zero on a failure. 
 # 
 # See 'usage()' below for the command line and other details.
 #
 
-
 set -eu
 set -o pipefail
 
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
-
-DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
-
-expected=0
-
 timeout_secs_def=600
-timeout_secs=$timeout_secs_def
-
-syntax_error=false
-verbose=false
-report_interval=10
 
 function usage() {
 
@@ -37,34 +23,49 @@ function usage() {
 
   Usage:
 
-    $(basename $0) 
-       [-n mynamespace] 
-       [-d mydomainuid] 
-       [-p expected_pod_count]
-       [-t timeout_secs]
+    $(basename $0) [-n mynamespace] [-d mydomainuid] \\
+       [-p expected_pod_count] \\
+       [-t timeout_secs] \\
        [-v]
-
-    pod_count > 0: Wait until exactly 'pod_count' WebLogic server pods for a domain
-                   are all (a) ready, (b) have the same domain resource 'spec.restartVersion'
-                   as the current domain resource's domainRestartVersion, (c)
-                   have the same image as the current domain resource's image.
-
-    pod_count = 0: Wait until there are no running WebLogic server pods for a domain.
 
     Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
 
   Parameters:
 
-    -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-    -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
-    -p <pod-count>      : Number of pods to wait for. Default is '0'.
-    -t <timeout-secs>   : Defaults to '$timeout_secs_def'.
-    -v                  : Verbose. Show wl pods and introspector job state as they change.
-    -?                  : This help.
+    -d <domain_uid> : Defaults to 'sample-domain1'.
+
+    -n <namespace>  : Defaults to 'sample-domain1-ns'.
+
+    pod_count > 0   : Wait until exactly 'pod_count' WebLogic server pods for
+                      a domain all (a) are ready, (b) have the same 
+                      'domainRestartVersion' label value as the
+                      current domain resource's 'spec.restartVersion, and
+                      (c) have the same image as the current domain
+                      resource's image.
+
+    pod_count = 0   : Wait until there are no running WebLogic server pods
+                      for a domain. The default.
+
+    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_def'.
+
+    -v              : Verbose. Show wl pods and introspector job state
+                      as they change.
+
+    -?              : This help.
 
 EOF
 }
 
+DOMAIN_UID="sample-domain1"
+DOMAIN_NAMESPACE="sample-domain1-ns"
+
+expected=0
+
+timeout_secs=$timeout_secs_def
+
+syntax_error=false
+verbose=false
+report_interval=10
 
 while [ ! "${1:-}" = "" ]; do
   if [ ! "$1" = "-?" ] && [ ! "$1" = "-v" ] && [ "${2:-}" = "" ]; then

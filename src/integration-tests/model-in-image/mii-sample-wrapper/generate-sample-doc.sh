@@ -157,8 +157,14 @@ do
    
         if [ "$configmap" = "true" ]; then
            mapdir=$WORKDIR/model-configmap
-           $MIISAMPLEDIR/utils/create-configmap.sh -dry yaml    -f $mapdir -c $domain-wdt-config-map | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/model-configmap.yaml
-           $MIISAMPLEDIR/utils/create-configmap.sh -dry kubectl -f $mapdir -c $domain-wdt-config-map | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/model-configmap.sh
+           $MIISAMPLEDIR/utils/create-configmap.sh -dry yaml    -f $mapdir -c $domain-wdt-config-map \
+             -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
+             | grep dryrun | sed 's/dryrun://' \
+             > $WORKDIR/$domain_root/model-configmap.yaml
+           $MIISAMPLEDIR/utils/create-configmap.sh -dry kubectl -f $mapdir -c $domain-wdt-config-map \
+             -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
+             | grep dryrun | sed 's/dryrun://' \
+             > $WORKDIR/$domain_root/model-configmap.sh
            chmod +x $WORKDIR/$domain_root/model-configmap.sh
         fi
 

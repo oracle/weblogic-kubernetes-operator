@@ -7,25 +7,36 @@ function usage() {
 
   cat << EOF
 
-  This is a helper script for creating and labeling a Kubernetes secret.  The secret
-  is labeled with the specified domain-uid.
+  This is a helper script for creating and labeling a Kubernetes secret.
+  The secret is labeled with the specified domain-uid.
  
   Usage:
  
-    $(basename $0) [-n mynamespace] [-d mydomainuid] -s mysecretname [-l key1=val1] [-l key2=val2] [-f key=fileloc ]...
+  $(basename $0) [-n mynamespace] [-d mydomainuid] \\
+    -s mysecretname [-l key1=val1] [-l key2=val2] [-f key=fileloc ]...
   
-    -d <domain_uid>     : Defaults to \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-    -n <namespace>      : Defaults to \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
-    -s <secret-name>    : Name of secret. Required.
-    -l <key-value-pair> : Secret 'literal' key/value pair, for example '-l password=abc123'.
-                          Can be specified more than once. 
-                          This script doesn't support spaces in the key/value pair.
-    -f <key-value-pair> : Secret 'file-name' key/file pair, for example '-l walletFile=./ewallet.p12'.
-                          Can be specified more than once. 
-                          This script doesn't support spaces in the key/file pair.
-    -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:') but do not perform them. 
-    -dry yaml           : Show the yaml (prefixed with 'dryun:') but do not execute it. 
-    -?                  : This help.
+  -d <domain_uid>     : Defaults to 'sample-domain1' otherwise.
+
+  -n <namespace>      : Defaults to 'sample-domain1-ns' otherwise.
+
+  -s <secret-name>    : Name of secret. Required.
+
+  -l <key-value-pair> : Secret 'literal' key/value pair, for example
+                        '-l password=abc123'. Can be specified more than once. 
+
+  -f <key-file-pair>  : Secret 'file-name' key/file pair, for example
+                        '-l walletFile=./ewallet.p12'.
+                        Can be specified more than once. 
+
+  -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:')
+                        but do not perform them. 
+
+  -dry yaml           : Show the yaml (prefixed with 'dryun:') but do not
+                        execute it. 
+
+  -?                  : This help.
+
+  Note: Spaces are not supported in the '-f' or '-l' parameters.
    
 EOF
 }
@@ -33,11 +44,8 @@ EOF
 set -e
 set -o pipefail
 
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
-
-DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
-NAMESPACE="${DOMAIN_NAMESPACE:-sample-domain1-ns}"
+DOMAIN_UID="sample-domain1"
+NAMESPACE="sample-domain1-ns"
 SECRET_NAME=""
 LITERALS=""
 FILENAMES=""
@@ -70,8 +78,13 @@ while [ ! "${1:-}" = "" ]; do
 done
 
 if [ -z "$SECRET_NAME" ]; then
-  echo "Error: Syntax Error. Pass '-?' for usage."
+  echo "Error: Syntax Error. Must specify '-s'. Pass '-?' for usage."
   exit 1
+fi
+
+if [ -z "${LITERALS}${FILENAMES}" ]; then
+  echo "Error: Syntax Error. Must specify at least one '-l' or '-f'. Pass '-?' for usage."
+  exit
 fi
 
 set -eu
@@ -99,8 +112,9 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   echo "dryrun:---"
   echo "dryrun:"
 
-  # don't change indent of the sed append commands - the spaces are significant
-  #   (we use an ancient form of sed append to stay compatible with old bash on mac)
+  # don't change indent of the sed '/a' commands - the spaces are significant
+  # (we use an old form of sed append to stay compatible with old bash on mac)
+
   kubectl -n $NAMESPACE \
   \
   create secret generic \

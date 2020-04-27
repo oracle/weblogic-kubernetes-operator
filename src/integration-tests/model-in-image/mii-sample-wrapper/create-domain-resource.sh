@@ -55,10 +55,10 @@ if [ "$pre_delete" = "true" ]; then
   echo "@@ Info: Deleting WebLogic domain '${DOMAIN_UID}' if it already exists and waiting for its pods to exit."
   if [ "$dry_run" = "false" ]; then
     kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0
+    $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
   else
     echo dryrun: kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    echo dryrun: $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0
+    echo dryrun: $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
   fi
 fi
 

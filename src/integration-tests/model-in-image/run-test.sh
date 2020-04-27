@@ -18,6 +18,9 @@ source $TESTDIR/util-dots.sh
 source $TESTDIR/util-misc.sh
 source $TESTDIR/test-env.sh
 
+export DOMAIN_UID="sample-domain1"
+export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
+
 m_image="${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-v1}"
 
 trace "Running end to end MII sample test."
@@ -65,6 +68,10 @@ function usage() {
     -noupdate : Skip testing a runtime model update.
 
     -?        : This help.
+
+  Optional env var:
+    
+    Set "DOMAIN_NAMESPACE" prior to running (default sample-domain1-ns).
 
 EOF
 }
@@ -132,6 +139,8 @@ doCommand -c DBSAMPLEDIR=$DBSAMPLEDIR
 doCommand -c source \$TESTDIR/test-env.sh
 doCommand -c export WORKDIR=$WORKDIR
 doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
+doCommand -c export DOMAIN_UID=$DOMAIN_UID
+doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 
 #
 # Build pre-req (operator)
@@ -168,6 +177,8 @@ fi
 # Deploy initial domain, wait for its pods to be ready, and test its cluster app
 #
 
+wait_parms="-d $DOMAIN_UID -n $DOMAIN_NAMESPACE"
+
 if [ "$DO_MAIN" = "true" ]; then
 
   doCommand  -c "export INCLUDE_CONFIGMAP=false"
@@ -181,8 +192,8 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
 
   #TBD bug in operator is only starting up one server
-  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
-  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2"
+  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2 $wait_parms"
   
 
   # Cheat to speedup a subsequent roll/shutdown.
@@ -196,7 +207,7 @@ if [ "$DO_MAIN" = "true" ]; then
   #   TBD import wallet to wallet secret 
   #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
   #   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
-  #   doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
+  #   doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
   # fi
   # Cheat to speedup a subsequent roll/shutdown.
   # diefast
@@ -223,11 +234,11 @@ if [ "$DO_UPDATE" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand  "\$MIIWRAPPERDIR/create-model-configmap.sh"
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
-  doCommand  "\$MIISAMPLEDIR/utils/patch-restart-version.sh"
+  doCommand  "\$MIISAMPLEDIR/utils/patch-restart-version.sh $wait_parms"
 
   #TBD bug in operator is only starting up one server
-  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3"
-  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2"
+  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2 $wait_parms"
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast

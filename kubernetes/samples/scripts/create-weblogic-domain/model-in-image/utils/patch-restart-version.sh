@@ -9,14 +9,17 @@ function usage() {
 
   This is a helper script for changing the 'spec.restartVersion' field
   of a deployed domain. This change will cause the operator to initiate
-  a rolling restart of the resource's WebLogic pods.
+  a rolling restart of the resource's WebLogic pods if the pods are
+  already running.
  
   Usage:
  
     $(basename $0) [-n mynamespace] [-d mydomainuid]
   
-    -d <domain_uid>     : Default is \$DOMAIN_UID if set, 'sample-domain1' otherwise.
-    -n <namespace>      : Default is \$DOMAIN_NAMESPACE if set, 'sample-domain1-ns' otherwise.
+    -d <domain_uid>     : Default is 'sample-domain1'.
+
+    -n <namespace>      : Default is 'sample-domain1-ns'.
+
     -?                  : This help.
    
 EOF
@@ -24,11 +27,8 @@ EOF
 
 set -e
 
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
-
-DOMAIN_UID="${DOMAIN_UID:-sample-domain1}"
-DOMAIN_NAMESPACE="${DOMAIN_NAMESPACE:-sample-domain1-ns}"
+DOMAIN_UID="sample-domain1"
+DOMAIN_NAMESPACE="sample-domain1-ns"
 
 while [ ! "$1" = "" ]; do
   if [ ! "$1" = "-?" ] && [ "$2" = "" ]; then
@@ -74,7 +74,7 @@ cat << EOF
 
              -or-
 
-      SCRIPTDIR/utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v
+      utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v
 
    Expect the operator to restart the domain's pods until all of them
    have label 'weblogic.domainRestartVersion="$nextRV"."

@@ -3,88 +3,82 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This is a helper script that can save an OPSS key wallet from a
-# running domain's introspector configmap to a file, and/or restore
-# an OPSS key wallet file to a Kubernetes secret for use by a domain
-# that you're about to run.
+# This is a helper script for JRF type domains that can save an OPSS key
+# wallet from a running domain's introspector configmap to a file, and/or
+# restore an OPSS key wallet file to a Kubernetes secret for use by a
+# domain that you're about to run. 
 #
 # For command line details, pass '-?' or see 'usage_exit()' below.
-#
-# Defaults can optionally be changed via env vars:
-#
-#   DOMAIN_UID       : sample-domain1
-#   DOMAIN_NAMESPACE : sample-domain1-ns
-#   WALLET_FILE      : ./ewallet.p12
-#   WALLET_SECRET    : DOMAIN_UID-opss-walletfile-secret
 #
 
 set -e
 set -o pipefail
-
-SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-echo "@@ Info: Running '$(basename "$0")'."
-
-WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-[ -e "$WORKDIR/env-custom.sh" ] && source $WORKDIR/env-custom.sh
-
-DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
-WALLET_FILE=${WALLET_FILE:-./ewallet.p12}
-WALLET_SECRET=${WALLET_SECRET:-${DOMAIN_UID}-opss-walletfile-secret}
 
 usage_exit() {
 cat << EOF
 
   Usage: 
 
-    $(basename $0) -s [-wf wallet-file-name] [-d domain-uid] [-n namespace]
-    $(basename $0) -r [-wf wallet-file-name] [-ws wallet-file-secret] [-d domain-uid] [-n namespace]
-    $(basename $0) -s -r [-wf wallet-file-name] [-ws wallet-file-secret] [-d domain-uid] [-n namespace]
+    $(basename $0) -s [-d domain-uid] [-n namespace] \\
+      [-wf wallet-file-name] 
 
-    Save an OPSS key wallet from a running domain's introspector configmap
-    to a file, and/or restore an OPSS key wallet file to a Kubernetes secret
-    for use by a domain that you're about to run.
+    $(basename $0) -r [-d domain-uid] [-n namespace] \\
+      [-wf wallet-file-name] [-ws wallet-file-secret]
+
+    $(basename $0) -r -s [-d domain-uid] [-n namespace] \\
+      [-wf wallet-file-name] [-ws wallet-file-secret]
+
+    Save an OPSS key wallet from a running JRF domain's introspector
+    configmap to a file, and/or restore an OPSS key wallet file
+    to a Kubernetes secret for use by a domain that you're about to run.
 
   Parameters:
 
-    -d   <domain-uid>   Domain UID. 
-                        Default is '\$DOMAIN_UID' if set, 'sample-domain1' otherwise.
+    -d   <domain-uid>   Domain UID. Default 'sample-domain1'.
 
-    -n   <namespace>    Kubernetes namespace. 
-                        Default is '\$DOMAIN_NAMESPACE' if set, 'sample-domain1-ns' otherwise.
+    -n   <namespace>    Kubernetes namespace. Default 'sample-domain1-ns'.
 
     -s                  Save an OPSS wallet file from an introspector
                         configmap to a file. (See also '-wf'.)
-                        Default is '\$WALLET_SECRET' if set, 
-                        'DOMAIN_UID-opss-walletfile-secret' otherwise.
+                        Default is 'DOMAIN_UID-opss-walletfile-secret'.
 
     -r                  Restore an OPSS wallet file to a Kubernetes secret.
                         (See also '-wf' and '-ws').
 
     -wf  <wallet-file>  Name of OPSS wallet file on local file system.
-                        Default is '\$WALLET_FILE' if set, './ewallet.p12' otherwise.
+                        Default is './ewallet.p12'.
 
-    -ws  <secret-name>  Name of Kubernetes secret to create from the OPSS wallet file.
-                        This must match the 'configuration.opss.walletFileSecret'
+    -ws  <secret-name>  Name of Kubernetes secret to create from the
+                        wallet file. This must match the
+                        'configuration.opss.walletFileSecret'
                         configured in your domain resource.
                         Ignored if '-r' not specified. 
-                        Default is '\$WALLET_SECRET' if set, 
-                        and 'DOMAIN_UID-opss-walletfile-secret' otherwise.
+                        Default is 'DOMAIN_UID-opss-walletfile-secret'.
 
     -?                  Output this help message.
 
   Examples:
 
-    Save an OPSS key wallet from a running domain:
+    Save an OPSS key wallet from a running domain to file './ewallet.p12':
       $(basename $0) -s
 
-    Restore the OPSS key wallet to a secret for use by a domain you're about to run:
+    Restore the OPSS key wallet from file './ewallet.p12' to secret
+    'sample-domain1-opss-walletfile-secret' for use by a domain
+    you're about to run:
       $(basename $0) -r
 
 EOF
 
   exit 0
 }
+
+SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+echo "@@ Info: Running '$(basename "$0")'."
+
+DOMAIN_UID="sample-domain1"
+DOMAIN_NAMESPACE="sample-domain1-ns"
+WALLET_FILE="ewallet.p12"
+WALLET_SECRET=""
 
 syntax_error_exit() {
   echo "@@ Syntax error: Use '-?' for usage."
@@ -126,6 +120,8 @@ done
 
 [ ${SAVE_WALLET} -eq 0 ] && [ ${RESTORE_WALLET} -eq 0 ] && syntax_error_exit
 
+WALLET_SECRET=${WALLET_SECRET:-$DOMAIN_UID-opss-walletfile-secret}
+
 set -eu
 
 if [ ${SAVE_WALLET} -eq 1 ] ; then
@@ -149,7 +145,7 @@ fi
 
 if [ ${RESTORE_WALLET} -eq 1 ] ; then
   echo "@@ Info: Creating secret '${WALLET_SECRET}' in namespace '${DOMAIN_NAMESPACE}' for wallet file '${WALLET_FILE}', domain uid '${DOMAIN_UID}'."
-  $SCRIPTDIR/utils/create-secret.sh \
+  $SCRIPTDIR/create-secret.sh \
     -n ${DOMAIN_NAMESPACE} \
     -d ${DOMAIN_UID} \
     -s ${WALLET_SECRET} \
