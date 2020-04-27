@@ -84,7 +84,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessible
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainPatchedWithImage;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -114,8 +114,8 @@ class ItMiiDomain implements LoggedTest {
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   
   // app constants
-  private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server1";
-  private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server1";
+  private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
+  private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
   private static final String APP_RESPONSE_V3 = "How are you doing!";
 
   private static HelmParams opHelmParams = null;
@@ -388,13 +388,16 @@ class ItMiiDomain implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i);
     }
     
-    checkAppRunning(
-        domainUID,
-        domainNamespace,
-        "8001",
-        "sample-war/index.jsp",
-        APP_RESPONSE_V1);
-    
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppRunning(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war/index.jsp",
+          APP_RESPONSE_V1 + i);
+    }
+ 
     logger.info(String.format("Domain %s is fully started - servers are running and application is deployed corretly.",
         domainUID));
   }
@@ -409,26 +412,34 @@ class ItMiiDomain implements LoggedTest {
     // app here is what is in the original app dir plus the replacement in the second app dir
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
+    final String managedServerPrefix = domainUID + "-managed-server";
+    final int replicaCount = 2;
     
-    // check and V1 app is running
-    quickCheckAppRunning(
+    // check and make sure that V1 app is running
+    for (int i = 1; i <= replicaCount; i++) {
+      quickCheckAppRunning(
             domainUID,
             domainNamespace,
+            managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V1,
+            APP_RESPONSE_V1 + i,
             String.format("App sample-war/index.jsp is not running in namespace %s as expected.", 
                 domainNamespace));
-    
+    }
+ 
     // check and make sure that the version 2 app is NOT running
-    quickCheckAppNotRunning(
+    for (int i = 1; i <= replicaCount; i++) {
+      quickCheckAppNotRunning(
             domainUID,
             domainNamespace,
+            managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V2,
+            APP_RESPONSE_V2 + i,
             "The second version of the app is not supposed to be running.");   
-   
+    }
+ 
     // create another image with app V2 
     miiImagePatchAppV2 = updateImageWithAppV2Patch(
         String.format("%s-%s", MII_IMAGE_NAME, "test-patch-app-v2"),
@@ -449,12 +460,15 @@ class ItMiiDomain implements LoggedTest {
     checkDomainPatched(domainUID, domainNamespace, miiImagePatchAppV2);
 
     // check and wait for the app to be ready
-    checkAppRunning(
-        domainUID,
-        domainNamespace,
-        "8001",
-        "sample-war/index.jsp",
-        APP_RESPONSE_V2);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppRunning(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war/index.jsp",
+          APP_RESPONSE_V2 + i);
+    }
 
     logger.info("The cluster has been rolling started, and the version 2 application has been deployed correctly.");
   }
@@ -470,27 +484,35 @@ class ItMiiDomain implements LoggedTest {
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String appDir3 = "sample-app-3";
+    final String managedServerPrefix = domainUID + "-managed-server";
+    final int replicaCount = 2;
 
     // check and V2 app is still running
-    quickCheckAppRunning(
-            domainUID,
-            domainNamespace,
-            "8001",
-            "sample-war/index.jsp",
-            APP_RESPONSE_V2,
-            "The expected app is not accessible inside the server pod");
+    for (int i = 1; i <= replicaCount; i++) {
+      quickCheckAppRunning(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war/index.jsp",
+          APP_RESPONSE_V2 + i,
+          "The expected app is not accessible inside the server pods");
+    }
 
     logger.info("App version 2 is still running");
     
     // check and make sure that the new app is not already running
-    quickCheckAppNotRunning(
-            domainUID,
-            domainNamespace,
-            "8001",
-            "sample-war-3/index.jsp",
-            APP_RESPONSE_V3,
-            "The second app is not supposed to be running!!");
-    
+    for (int i = 1; i <= replicaCount; i++) {
+      quickCheckAppNotRunning(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war-3/index.jsp",
+          APP_RESPONSE_V3,
+          "The second app is not supposed to be running!!");
+    }
+   
     logger.info("About to patch the domain with new image");
     
     // create another image with an additional app
@@ -517,20 +539,26 @@ class ItMiiDomain implements LoggedTest {
     checkDomainPatched(domainUID, domainNamespace, miiImageAddSecondApp);
     
     // check and wait for the new app to be ready
-    checkAppRunning(
-        domainUID,
-        domainNamespace,
-        "8001",
-        "sample-war-3/index.jsp",
-        APP_RESPONSE_V3);
-
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppRunning(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war-3/index.jsp",
+          APP_RESPONSE_V3);
+    }
+ 
     // check and wait for the original app to be ready
-    checkAppRunning(
-        domainUID,
-        domainNamespace,
-        "8001",
-        "sample-war/index.jsp",
-        APP_RESPONSE_V2);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppRunning(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war/index.jsp",
+          APP_RESPONSE_V2 + i);
+    }
 
     logger.info("The cluster has been rolling started, and the two applications are both running correctly.");
   }
@@ -832,6 +860,7 @@ class ItMiiDomain implements LoggedTest {
   private void checkAppRunning(
       String domainUID,
       String ns,
+      String podName,
       String internalPort,
       String appPath, 
       String expectedStr
@@ -840,21 +869,29 @@ class ItMiiDomain implements LoggedTest {
     // check if the app is accessible inside of a server pod
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for application {0} to be ready in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
+            condition -> logger.info("Waiting for application {0} to be ready on {1} in namespace {2} "
+            + "(elapsed time {3}ms, remaining time {4}ms)",
             appPath,
+            podName,
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPod(domainUID, ns, internalPort, appPath, expectedStr),
+        .until(assertDoesNotThrow(() -> appAccessibleInPod(
+                domainUID, 
+                ns, 
+                podName, 
+                internalPort, 
+                appPath, 
+                expectedStr),
             String.format(
-               "App %s is not ready in namespace %s", appPath, domainNamespace)));
+                "App %s is not ready on pod %s in namespace %s", appPath, podName, domainNamespace)));
 
   }
   
   private void quickCheckAppRunning(
       String domainUID,
       String ns,
+      String podName,
       String internalPort,
       String appPath, 
       String expectedStr,
@@ -870,7 +907,13 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPod(domainUID, ns, internalPort, appPath, expectedStr),
+        .until(assertDoesNotThrow(() -> appAccessibleInPod(
+                domainUID, 
+                ns,
+                podName, 
+                internalPort, 
+                appPath, 
+                expectedStr),
             failMessage));
 
   }
@@ -878,6 +921,7 @@ class ItMiiDomain implements LoggedTest {
   private void quickCheckAppNotRunning(
       String domainUID,
       String ns,
+      String podName,
       String internalPort,
       String appPath, 
       String expectedStr,
@@ -893,9 +937,14 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appNotAccessibleInPod(domainUID, ns, internalPort, appPath, expectedStr),
-               failMessage));
-
+        .until(assertDoesNotThrow(() -> appNotAccessibleInPod(
+                domainUID, 
+                ns, 
+                podName,
+                internalPort, 
+                appPath, 
+                expectedStr),
+            failMessage));
   }
    
   private void checkDomainPatched(
@@ -913,7 +962,7 @@ class ItMiiDomain implements LoggedTest {
             ns,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainPatchedWithImage(domainUID, ns, image),
+        .until(assertDoesNotThrow(() -> domainResourceImagePatched(domainUID, ns, image),
             String.format(
                "Domain %s is not patched in namespace %s with image %s", domainUID, domainNamespace, image)));
 

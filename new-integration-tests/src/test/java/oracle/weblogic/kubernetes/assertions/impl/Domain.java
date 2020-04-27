@@ -85,7 +85,7 @@ public class Domain {
    * @param image image that has been patch
    * @return true if domain object 's image does not match what is expected
    */
-  public static Callable<Boolean> domainPatchedWithImage(
+  public static Callable<Boolean> domainResourceImagePatched(
       String domainUID,
       String namespace,
       String image

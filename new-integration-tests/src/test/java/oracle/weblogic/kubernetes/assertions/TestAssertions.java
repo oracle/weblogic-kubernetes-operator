@@ -63,12 +63,12 @@ public class TestAssertions {
    * @param image that was used to patch the domain resource
    * @return true if the domain is patched
    */
-  public static Callable<Boolean> domainPatchedWithImage(
+  public static Callable<Boolean> domainResourceImagePatched(
       String domainUid,
       String namespace,
       String image
   ) {
-    return Domain.domainPatchedWithImage(domainUid, namespace, image);
+    return Domain.domainResourceImagePatched(domainUid, namespace, image);
   }
 
   /**
@@ -191,6 +191,7 @@ public class TestAssertions {
    * 
    * @param domainUID unique identifier of the Kubernetes domain custom resource instance
    * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param podName name of the WebLogic server pod
    * @param port internal port of the managed servers
    * @param appPath the path to access the application
    * @param expectedStr the expected response from the application
@@ -199,12 +200,13 @@ public class TestAssertions {
   public static Callable<Boolean> appAccessibleInPod(
       String domainUID,
       String domainNS,
+      String podName,
       String port,
       String appPath,
       String expectedStr
   ) {
     return () -> {
-      return Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
+      return Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
     };
   }
 
@@ -213,6 +215,7 @@ public class TestAssertions {
    * .
    * @param domainUID unique identifier of the Kubernetes domain custom resource instance
    * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param podName name of the WebLogic server pod
    * @param port internal port of the managed servers
    * @param appPath the path to access the application
    * @param expectedStr the expected response from the application
@@ -221,12 +224,13 @@ public class TestAssertions {
   public static Callable<Boolean> appNotAccessibleInPod(
       String domainUID,
       String domainNS,
+      String podName,
       String port,
       String appPath,
       String expectedStr
   ) {
     return () -> {
-      return !Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
+      return !Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
     };
   }
 

@@ -17,6 +17,7 @@ public class Application {
    * Check if an application is accessible inside a WebLogic server pod.
    * @param domainUID identifier of the Kubernetes domain custom resource instance
    * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param podName name of the WebLogic server pod
    * @param port internal port of the managed servers
    * @param appPath the path to access the application
    * @return true if the command succeeds 
@@ -24,11 +25,11 @@ public class Application {
   public static boolean appAccessibleInPod(
       String domainUID, 
       String domainNS,
+      String podName,
       String port, 
       String appPath,
       String expectedStr
   ) {
-    String msPodName = domainUID + "-managed-server1";
 
     // TODO currently calling "kubectl exec" command; will change it to use a Kubernetes
     // action once that action for "exec" command is available.
@@ -36,8 +37,8 @@ public class Application {
     String cmd = String.format(
          "kubectl -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
          domainNS,
-         msPodName,
-         msPodName,
+         podName,
+         podName,
          port,
          appPath);
 
@@ -45,8 +46,8 @@ public class Application {
         .defaultCommandParams()
         .command(cmd)
         .saveResults(true)
-        .redirect(false)
-        .verbose(false);
+        .redirect(true)
+        .verbose(true);
     return Command.withParams(params).executeAndVerify(expectedStr);
   } 
 }
