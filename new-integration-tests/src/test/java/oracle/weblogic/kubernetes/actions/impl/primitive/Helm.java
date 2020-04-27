@@ -81,8 +81,8 @@ public class Helm {
 
   /**
    * Upgrade a Helm release.
-   * @param params the parameters to Helm install command like namespace, release name,
-   *                   repo url or chart dir, chart name
+   * @param params the parameters to Helm upgrade command such as namespace, release name,
+   *               repo url or chart dir and chart name
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */

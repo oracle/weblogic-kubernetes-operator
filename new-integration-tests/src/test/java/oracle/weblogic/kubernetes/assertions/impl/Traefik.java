@@ -5,11 +5,13 @@ package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.util.concurrent.Callable;
 
-
+/**
+ * Utility class for Traefik.
+ */
 public class Traefik {
 
   /**
-   * Check if the Traefik pod is running in a given namespace.
+   * Check if the Traefik pod is running in the specified namespace.
    *
    * @param namespace in which to check if the Traefik pod is running
    * @return true if the Traefik pod is running, false otherwise
@@ -21,7 +23,7 @@ public class Traefik {
   }
 
   /**
-   * Check if the Traefik is ready in a given namespace.
+   * Check if the Traefik pod is ready in the specified namespace.
    *
    * @param namespace in which to check the Traefik pod is ready
    * @return true if the Traefik pod is in the ready state, false otherwise

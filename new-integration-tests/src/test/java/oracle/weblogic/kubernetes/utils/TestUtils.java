@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-
 import java.util.HashMap;
 import java.util.List;
 
@@ -49,7 +48,7 @@ public class TestUtils {
    *
    * @param curlCmd curl command to call the sample app
    * @param managedServerNames managed server names that the sample app response should return
-   * @param maxIterations max interations to call the curl command
+   * @param maxIterations max iterations to call the curl command
    * @throws Exception if the web app can not hit one or more managed servers
    */
   public static void callWebAppAndCheckForServerNameInResponse(String curlCmd,

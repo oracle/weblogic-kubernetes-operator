@@ -21,8 +21,8 @@ public class Traefik {
   /**
    * Install Helm chart.
    *
-   * @param params the Helm parameters like namespace, release name, repo url or chart dir,
-   *               chart name and chart values to override
+   * @param params the parameters to Helm install command such as namespace, release name, repo url or chart dir,
+   *               chart name and chart values
    * @return true on success, false otherwise
    */
   public static boolean install(TraefikParams params) {
@@ -32,8 +32,7 @@ public class Traefik {
   /**
    * Upgrade a Helm release.
    *
-   * @param params the Helm parameters like namespace, release name, repo url or chart dir,
-   *               chart name and chart values to override
+   * @param params the parameters to Helm upgrade command such as namespace, release name and chart values to override
    * @return true on success, false otherwise
    */
   public static boolean upgrade(TraefikParams params) {
@@ -43,7 +42,7 @@ public class Traefik {
   /**
    * Uninstall a Helm release.
    *
-   * @param params the parameters to Helm uninstall command, release name and namespace
+   * @param params the parameters to Helm uninstall command such as release name and namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstall(HelmParams params) {
@@ -53,7 +52,7 @@ public class Traefik {
   /**
    * Create an ingress for each domain.
    *
-   * @param params the params to Helm install command, releaseName, chartDir and WebLogic domain namespace
+   * @param params the params to Helm install command such as release name, chartDir and WebLogic domain namespace
    * @param domainUid the WebLogic domainUid to create the ingress
    * @param traefikHostname the hostname for the ingress
    * @return true on success, false otherwise
@@ -68,9 +67,9 @@ public class Traefik {
   }
 
   /**
-   * Uninstall the ingress on a WebLogic domain namespace.
+   * Uninstall the ingress in a WebLogic domain namespace.
    *
-   * @param params the parameters to Helm uninstall command, release name and WebLogic domain namespace
+   * @param params the parameters to Helm uninstall command, such as release name and WebLogic domain namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstallIngress(HelmParams params) {

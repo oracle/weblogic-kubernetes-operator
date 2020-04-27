@@ -506,7 +506,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
   private static void installAndVerifyTraefik() {
 
     // create a new unique namespace for Traefik
-    logger.info("Creating an unique namespace for Traefil");
+    logger.info("Creating an unique namespace for Traefik");
     tfNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
         "Fail to create an unique namespace due to ApiException");
     logger.info("Created a new namespace called {0}", tfNamespace);
@@ -529,14 +529,14 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .as("Test installTraefik returns true")
         .withFailMessage("installTraefik() did not return true")
         .isTrue();
-    logger.info("Traefik is installed in namespace {0}", tfNamespace);
 
     // verify that Traefik is installed
     String cmd = "helm ls -n " + tfNamespace;
     assertThat(runCmdAndCheckResultContainsString(cmd, tfHelmParams.getReleaseName()))
-        .as("Traefik is installed")
+        .as(String.format("Traefik is installed in namespace %1s", tfNamespace))
         .withFailMessage(String.format("Did not find %1s in %2s", tfHelmParams.getReleaseName(), tfNamespace))
         .isTrue();
+    logger.info("Traefik is installed in namespace {0}", tfNamespace);
 
     // first wait 5 seconds, then check if the Traefik pod is ready.
     with().pollDelay(5, SECONDS)
