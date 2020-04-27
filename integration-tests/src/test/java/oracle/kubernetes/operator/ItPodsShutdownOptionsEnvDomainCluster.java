@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * This test is used for applying Shutdown Properties at Domain, Cluster, Env level.
+ * This class is used to test Shutdown Properties at Domain, Cluster, Env level.
  */
 @TestMethodOrder(Alphanumeric.class)
 public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
