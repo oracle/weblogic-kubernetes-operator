@@ -4,13 +4,17 @@
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.base.Charsets;
+import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.Exec;
@@ -54,6 +58,7 @@ import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
@@ -1352,57 +1357,64 @@ public class Kubernetes implements LoggedTest {
    * @param pod The pod where the command is run
    * @param containerName The container in the Pod where the command is run. If no container
    *     name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy Process output to stdout
    * @param command The command to run
    * @return output from the command
    * @throws IOException if an I/O error occurs.
    * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
    */
-  public static String exec(V1Pod pod, String containerName, String... command)
-      throws IOException, ApiException {
-    final StringBuilder sb = new StringBuilder();
+  public static ExecResult exec(V1Pod pod, String containerName, boolean redirectToStdout,
+      String... command)
+      throws IOException, ApiException, InterruptedException {
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
     final Process proc = kubernetesExec.exec(command);
 
-    // Start a thread to begin reading the output of the command
-    final InputStream istrm = proc.getInputStream();
+    final CopyingOutputStream copyOut =
+        redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
+
+    // Start a thread to begin reading the output stream of the command
+    Thread out = null;
     try {
-      Thread out =
+      out =
           new Thread(
-            new Runnable() {
-              public void run() {
-              try (BufferedReader reader = new BufferedReader(
-                  new InputStreamReader(istrm, Charsets.UTF_8))) {
-                int c = 0;
-                while ((c = reader.read()) != -1) {
-                  sb.append((char) c);
+              () -> {
+                try {
+                  ByteStreams.copy(proc.getInputStream(), copyOut);
+                } catch (IOException ex) {
+                  logger.warning("Exception reading from input stream.", ex);
                 }
-              } catch (IOException e) {
-                logger.warning("Exception thrown " + e);
-              }
-            }
-          });
+              });
       out.start();
 
-      // wait for the Process, representing the executing command, terminates
+      // wait for the Process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading any last output
-      out.join(1000);
+      // wait for reading thread to finish any last remaining output
+      if (out != null) {
+        out.join();
+        out = null;
+      }
 
-    } catch (InterruptedException e) {
-      // Ignore
+      // Read data from Process's stdout
+      String stdout = read(copyOut.getInputStream());
+
+      // Read from Process's stderr, if data available
+      String stderr = (proc.getErrorStream().available() != 0) ? read(proc.getErrorStream()) : null;
+
+      return new ExecResult(proc.exitValue(), stdout, stderr);
     } finally {
+      // we try to join again if for any reason the code failed before the previous attempt
+      if (out != null) {
+        out.join();
+      }
+
       if (proc != null) {
         proc.destroy();
       }
-      if (istrm != null) {
-        istrm.close();
-      }
     }
-
-    return sb.toString();
   }
 
   /**
@@ -1446,6 +1458,46 @@ public class Kubernetes implements LoggedTest {
     @Override
     public Process exec(String... command) throws ApiException, IOException {
       return new Exec(apiClient).exec(pod, command, containerName, isStdin(), isTty());
+    }
+  }
+
+  private static String read(InputStream is) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(is, Charsets.UTF_8))) {
+      int c = 0;
+      while ((c = reader.read()) != -1) {
+        sb.append((char) c);
+      }
+    } catch (IOException e) {
+      logger.warning("Exception thrown " + e);
+    }
+    return sb.toString().trim();
+  }
+
+  /**
+   * Simple class to redirect/copy data to both the stdout stream and a buffer
+   * which can be read from later.
+   */
+  private static class CopyingOutputStream extends OutputStream {
+
+    final OutputStream out;
+    final ByteArrayOutputStream copy = new ByteArrayOutputStream();
+
+    CopyingOutputStream(OutputStream out) {
+      this.out = out;
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+      if (out != null) {
+        out.write(b);
+      }
+      copy.write(b);
+    }
+
+    public InputStream getInputStream() {
+      return new ByteArrayInputStream(copy.toByteArray());
     }
   }
 }

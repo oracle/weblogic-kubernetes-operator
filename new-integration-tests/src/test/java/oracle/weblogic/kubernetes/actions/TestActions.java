@@ -39,6 +39,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -540,16 +541,19 @@ public class TestActions {
    * Execute a command in a container.
    *
    * @param pod The pod where the command is run
-   * @param containerName The container in the Pod where the command is run. If no container name
-   *     is provided than the first container in the Pod is used.
+   * @param containerName The container in the Pod where the command is run. If no container
+   *     name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy Process output to stdout
    * @param command The command to run
    * @return output from the command
    * @throws IOException if an I/O error occurs.
    * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
    */
-  public static String execCommand(V1Pod pod, String containerName, String... command)
-      throws IOException, ApiException {
-    return Exec.exec(pod, containerName, command);
+  public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
+      String... command)
+      throws IOException, ApiException, InterruptedException {
+    return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 
   // ------------------------ where does this go  -------------------------

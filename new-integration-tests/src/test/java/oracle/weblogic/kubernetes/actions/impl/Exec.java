@@ -8,6 +8,7 @@ import java.io.IOException;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
 public class Exec {
 
@@ -15,15 +16,18 @@ public class Exec {
    * Execute a command in a container.
    *
    * @param pod The pod where the command is run
-   * @param containerName The container in the Pod where the command is run. If no container name
-   *     is provided than the first container in the Pod is used.
+   * @param containerName The container in the Pod where the command is run. If no container
+   *     name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy Process output to stdout
    * @param command The command to run
    * @return output from the command
    * @throws IOException if an I/O error occurs.
    * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
    */
-  public static String exec(V1Pod pod, String containerName, String... command)
-      throws IOException, ApiException {
-    return Kubernetes.exec(pod, containerName, command);
+  public static ExecResult exec(V1Pod pod, String containerName, boolean redirectToStdout,
+      String... command)
+      throws IOException, ApiException, InterruptedException {
+    return Kubernetes.exec(pod, containerName, redirectToStdout, command);
   }
 }
