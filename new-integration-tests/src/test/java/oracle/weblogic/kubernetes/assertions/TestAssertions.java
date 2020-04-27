@@ -196,27 +196,7 @@ public class TestAssertions {
    * @param expectedStr the expected response from the application
    * @return true if the command succeeds 
    */
-  public static boolean appAccessibleInPod(
-      String domainUID,
-      String domainNS,
-      String port,
-      String appPath,
-      String expectedStr
-  ) {
-    return Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
-  }
-
-  /**
-   * Check if an application is accessible inside a WebLogic server pod.
-   * .
-   * @param domainUID unique identifier of the Kubernetes domain custom resource instance
-   * @param domainNS Kubernetes namespace where the WebLogic servers are running
-   * @param port internal port of the managed servers
-   * @param appPath the path to access the application
-   * @param expectedStr the expected response from the application
-   * @return Callable true if the command succeeds 
-   */
-  public static Callable<Boolean> appAccessibleInPodCallable(
+  public static Callable<Boolean> appAccessibleInPod(
       String domainUID,
       String domainNS,
       String port,
@@ -225,6 +205,28 @@ public class TestAssertions {
   ) {
     return () -> {
       return Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
+    };
+  }
+
+  /**
+   * Check if an application is Not running inside a WebLogic server pod.
+   * .
+   * @param domainUID unique identifier of the Kubernetes domain custom resource instance
+   * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param port internal port of the managed servers
+   * @param appPath the path to access the application
+   * @param expectedStr the expected response from the application
+   * @return true if the command succeeds 
+   */
+  public static Callable<Boolean> appNotAccessibleInPod(
+      String domainUID,
+      String domainNS,
+      String port,
+      String appPath,
+      String expectedStr
+  ) {
+    return () -> {
+      return !Application.appAccessibleInPod(domainUID, domainNS, port, appPath, expectedStr);
     };
   }
 

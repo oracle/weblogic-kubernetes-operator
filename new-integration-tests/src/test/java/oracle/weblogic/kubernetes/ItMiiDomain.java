@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
@@ -82,7 +81,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodCallable;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainPatchedWithImage;
@@ -124,6 +123,7 @@ class ItMiiDomain implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
+  private static ConditionFactory withQuickRetryPolicy = null;
   private static String dockerConfigJson = "";
 
   private String domainUID = "domain1";
@@ -141,7 +141,11 @@ class ItMiiDomain implements LoggedTest {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
+        .atMost(6, MINUTES).await();
+
+    withQuickRetryPolicy = with().pollDelay(1, SECONDS)
+        .and().with().pollInterval(2, SECONDS)
+        .atMost(5, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -407,22 +411,23 @@ class ItMiiDomain implements LoggedTest {
     final String appDir2 = "sample-app-2";
     
     // check and V1 app is running
-    assertTrue(appAccessibleInPod(
+    quickCheckAppRunning(
             domainUID,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V1),
-        "The expected app is not accessible inside the server pod");
+            APP_RESPONSE_V1,
+            String.format("App sample-war/index.jsp is not running in namespace %s as expected.", 
+                domainNamespace));
     
     // check and make sure that the version 2 app is NOT running
-    assertFalse(appAccessibleInPod(
+    quickCheckAppNotRunning(
             domainUID,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V2),
-        "The second version of the app is not supposed to be running!!");   
+            APP_RESPONSE_V2,
+            "The second version of the app is not supposed to be running.");   
    
     // create another image with app V2 
     miiImagePatchAppV2 = updateImageWithAppV2Patch(
@@ -435,18 +440,11 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImagePatchAppV2);
     
-    //logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
-    
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
-    // Instead, sleep for 2 minutes and check the newer version of the application. 
-    // The application check is sufficient to verify that the version2 application
-    // is running, thus the servers have been patched.
-    //try {
-    //  TimeUnit.MINUTES.sleep(3);
-    //} catch (InterruptedException ie) {
-    // do nothing
-    //}
+    // Instead, check the domain spec and make sure that the image has been patched
+    // with the new image, and also check the accessibility of the application, which
+    // was not running before patching.
     
     checkDomainPatched(domainUID, domainNamespace, miiImagePatchAppV2);
 
@@ -474,23 +472,24 @@ class ItMiiDomain implements LoggedTest {
     final String appDir3 = "sample-app-3";
 
     // check and V2 app is still running
-    assertTrue(appAccessibleInPod(
+    quickCheckAppRunning(
             domainUID,
             domainNamespace,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V2),
-        "The expected app is not accessible inside the server pod");
+            APP_RESPONSE_V2,
+            "The expected app is not accessible inside the server pod");
+
     logger.info("App version 2 is still running");
     
     // check and make sure that the new app is not already running
-    assertFalse(appAccessibleInPod(
+    quickCheckAppNotRunning(
             domainUID,
             domainNamespace,
             "8001",
             "sample-war-3/index.jsp",
-            APP_RESPONSE_V3),
-        "The second app is not supposed to be running!!");
+            APP_RESPONSE_V3,
+            "The second app is not supposed to be running!!");
     
     logger.info("About to patch the domain with new image");
     
@@ -509,18 +508,11 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImageAddSecondApp);
     
-    //logger.info("Sleep for 2 minutes and wait for the servers to be rolling-restarted");
-    
     // Ideally we want to verify that the server pods were rolling restarted.
     // But it is hard to time the pod state transitions.
-    // Instead, sleep for 2 minutes and check the newer version of the application. 
-    // The application check is sufficient to verify that the version2 application
-    // is running, thus the servers have been patched.
-    //try {
-    // TimeUnit.MINUTES.sleep(3);
-    //} catch (InterruptedException ie) {
-    // do nothing
-    //}
+    // Instead, check the domain spec and make sure that the image has been patched
+    // with the new image, and also check the accessibility of the application, which
+    // was not running before patching.
     
     checkDomainPatched(domainUID, domainNamespace, miiImageAddSecondApp);
     
@@ -854,12 +846,58 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPodCallable(domainUID, ns, internalPort, appPath, expectedStr),
+        .until(assertDoesNotThrow(() -> appAccessibleInPod(domainUID, ns, internalPort, appPath, expectedStr),
             String.format(
                "App %s is not ready in namespace %s", appPath, domainNamespace)));
 
   }
   
+  private void quickCheckAppRunning(
+      String domainUID,
+      String ns,
+      String internalPort,
+      String appPath, 
+      String expectedStr,
+      String failMessage
+  ) {
+   
+    // check if the app is accessible inside of a server pod
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking if application {0} is running in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            appPath,
+            domainNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> appAccessibleInPod(domainUID, ns, internalPort, appPath, expectedStr),
+            failMessage));
+
+  }
+  
+  private void quickCheckAppNotRunning(
+      String domainUID,
+      String ns,
+      String internalPort,
+      String appPath, 
+      String expectedStr,
+      String failMessage
+  ) {
+   
+    // check if the app is not running inside of a server pod
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking if application {0} is not running in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            appPath,
+            domainNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> appNotAccessibleInPod(domainUID, ns, internalPort, appPath, expectedStr),
+               failMessage));
+
+  }
+   
   private void checkDomainPatched(
       String domainUID,
       String ns,
