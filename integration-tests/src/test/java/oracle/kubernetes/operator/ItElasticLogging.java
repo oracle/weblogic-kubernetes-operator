@@ -165,6 +165,7 @@ public class ItElasticLogging extends BaseTest {
 
         // Create a dir to hold required WebLogic logging exporter archive files
         loggingExpArchiveLoc = getResultDir() + "/loggingExpArchDir";
+        LoggerHelper.getLocal().log(Level.INFO,"In prepare, attempting to create directory " + loggingExpArchiveLoc);
         Files.createDirectories(Paths.get(loggingExpArchiveLoc));
       }
     }
@@ -520,6 +521,7 @@ public class ItElasticLogging extends BaseTest {
   }
 
   private void downloadWlsLoggingExporterJars() throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO,"In downloadWlsLoggingExporterJars, attempting to get file " + loggingExpArchiveLoc);
     File loggingJatReposDir = new File(loggingExpArchiveLoc);
     File wlsLoggingExpFile =
         new File(loggingExpArchiveLoc + "/" + wlsLoggingExpJar);
