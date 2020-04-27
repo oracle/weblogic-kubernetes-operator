@@ -88,6 +88,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -451,13 +452,17 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImagePatchAppV2);
     
-    // Ideally we want to verify that the server pods were rolling restarted.
-    // But it is hard to time the pod state transitions.
-    // Instead, check the domain spec and make sure that the image has been patched
-    // with the new image, and also check the accessibility of the application, which
-    // was not running before patching.
-    
+    // check if domain resource has been patched with the new image    
     checkDomainPatched(domainUID, domainNamespace, miiImagePatchAppV2);
+    
+    // check and wait for the managed server pods to be patched with the new image
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodImagePatched(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          miiImagePatchAppV2);
+    }
 
     // check and wait for the app to be ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -530,13 +535,17 @@ class ItMiiDomain implements LoggedTest {
     // modify the domain resource to use the new image
     patchDomainResourceIamge(domainUID, domainNamespace, miiImageAddSecondApp);
     
-    // Ideally we want to verify that the server pods were rolling restarted.
-    // But it is hard to time the pod state transitions.
-    // Instead, check the domain spec and make sure that the image has been patched
-    // with the new image, and also check the accessibility of the application, which
-    // was not running before patching.
-    
+    // check if the domain resource has been patched with the new image   
     checkDomainPatched(domainUID, domainNamespace, miiImageAddSecondApp);
+ 
+    // check and wait for the managed server pods to be patched with the new image
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodImagePatched(
+          domainUID,
+          domainNamespace,
+          managedServerPrefix + i,
+          miiImageAddSecondApp);
+    }
     
     // check and wait for the new app to be ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -901,9 +910,10 @@ class ItMiiDomain implements LoggedTest {
     // check if the app is accessible inside of a server pod
     withQuickRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Checking if application {0} is running in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
+            condition -> logger.info("Checking if application {0} is running on pod {1} in namespace {2} "
+            + "(elapsed time {3}ms, remaining time {4}ms)",
             appPath,
+            podName,
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
@@ -931,9 +941,10 @@ class ItMiiDomain implements LoggedTest {
     // check if the app is not running inside of a server pod
     withQuickRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Checking if application {0} is not running in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
+            condition -> logger.info("Checking if application {0} is not running on pod {1} in namespace {2} "
+            + "(elapsed time {3}ms, remaining time {4}ms)",
             appPath,
+            podName,
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
@@ -966,5 +977,30 @@ class ItMiiDomain implements LoggedTest {
             String.format(
                "Domain %s is not patched in namespace %s with image %s", domainUID, domainNamespace, image)));
 
+  }
+  
+  private void checkPodImagePatched(
+      String domainUID,
+      String ns,
+      String podName,
+      String image
+  ) {
+   
+    // check if the app is accessible inside of a server pod
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be patched in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            podName,
+            ns,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podImagePatched(domainUID, ns, podName, image),
+            String.format(
+               "Domain %s pod %s is not patched with image %s in namespace %s.",
+               domainUID,
+               podName,
+               domainNamespace,
+               image)));
   }
 }
