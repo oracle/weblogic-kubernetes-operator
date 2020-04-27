@@ -1395,7 +1395,6 @@ public class Kubernetes implements LoggedTest {
       // wait for reading thread to finish any last remaining output
       if (out != null) {
         out.join();
-        out = null;
       }
 
       // Read data from Process's stdout
@@ -1406,11 +1405,6 @@ public class Kubernetes implements LoggedTest {
 
       return new ExecResult(proc.exitValue(), stdout, stderr);
     } finally {
-      // we try to join again if for any reason the code failed before the previous attempt
-      if (out != null) {
-        out.join();
-      }
-
       if (proc != null) {
         proc.destroy();
       }
