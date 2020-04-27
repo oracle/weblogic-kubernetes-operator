@@ -64,13 +64,8 @@ public class ExecCommand {
     Thread out = null;
 
     try {
-      String stdout = null;
       if (isRedirectToOut) {
         InputStream i = in.getInputStream();
-        i.mark(0);
-        // read the stdout first, and reset before we redirect the output
-        stdout = read(i);
-        i.reset();
         @SuppressWarnings("resource")
         CopyingOutputStream copyOut = new CopyingOutputStream(System.out);
         // this makes sense because CopyingOutputStream is an InputStreamWrapper
@@ -88,14 +83,17 @@ public class ExecCommand {
       }
 
       p.waitFor();
-      
-      // if we have not read the stdout, we do it now
-      if (stdout == null) {
-        stdout = read(in.getInputStream());
+
+      // we need to join the thread before we read the stdout so that the saved stdout is complete
+      if (out != null) {
+        out.join();
+        out = null;
       }
-      return new ExecResult(p.exitValue(), stdout, read(p.getErrorStream()));
+
+      return new ExecResult(p.exitValue(), read(in.getInputStream()), read(p.getErrorStream()));
     
     } finally {
+      // we try to join again if for any reason the code failed before the previous attempt
       if (out != null) {
         out.join();
       }
