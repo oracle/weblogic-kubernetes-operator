@@ -192,7 +192,7 @@ public class TestActions {
   /**
    * Install Traefik Operator.
    *
-   * @param params the parameters for Helm install command, such as release name, namespace, repo url,
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
    *               repo name, chart name, chart value file
    * @return true on success, false otherwise
    */

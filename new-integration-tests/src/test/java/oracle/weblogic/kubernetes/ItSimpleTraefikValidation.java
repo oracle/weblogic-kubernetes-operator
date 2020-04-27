@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,6 +31,7 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
@@ -46,6 +46,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.INGRESS_SAMPLE_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
@@ -54,6 +57,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_SAMPLE_VALUE_FILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -64,7 +68,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -95,6 +98,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -123,7 +127,6 @@ class ItSimpleTraefikValidation implements LoggedTest {
   private static HelmParams tfHelmParams = null;
   private static HelmParams ingressParam = null;
   private static String tfNamespace = null;
-  private static String projectRoot = System.getProperty("user.dir");
 
   private String domainUid = "domain1";
   private String miiImage = null;
@@ -132,13 +135,31 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
   /**
    * Install operator and Traefik.
+   *
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll() {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
+
+    // get a new unique operator namespace
+    logger.info("Creating an unique namespace for Operator");
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    opNamespace = namespaces.get(0);
+
+    // get a new unique domain namespace
+    logger.info("Creating an unique namespace for WebLogic Domain");
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    domainNamespace = namespaces.get(1);
+
+    // get a new unique Traefik namespace
+    logger.info("Creating an unique namespace for Traefik");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    tfNamespace = namespaces.get(2);
 
     // install and verify operator
     installAndVerifyOperator();
@@ -313,7 +334,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
     ingressParam = new HelmParams()
             .releaseName(domainUid + "-ingress")
             .namespace(domainNamespace)
-            .chartDir(projectRoot + "/../kubernetes/samples/charts/ingress-per-domain");
+            .chartDir(INGRESS_SAMPLE_CHART_DIR);
 
     assertThat(createIngress(ingressParam, domainUid, domainUid + ".org"))
             .as("Test createIngress returns true")
@@ -334,9 +355,8 @@ class ItSimpleTraefikValidation implements LoggedTest {
   @Order(3)
   @DisplayName("Verify the application can be accessed through the ingress controller ")
   public void testSampleAppThroughIngressController() throws Exception {
-    String hostname = InetAddress.getLocalHost().getHostName();
     String curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %1s' http://%2s:30305/sample-war/index.jsp",
-        domainUid + ".org", hostname);
+        domainUid + ".org", K8S_NODEPORT_HOST);
     verifyIngressController(curlCmd, 50);
   }
 
@@ -417,16 +437,6 @@ class ItSimpleTraefikValidation implements LoggedTest {
    * Prepare and install WebLogic operator.
    */
   private static void installAndVerifyOperator() {
-    // get a new unique opNamespace
-    logger.info("Creating unique namespace for operator");
-    opNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", opNamespace);
-
-    logger.info("Creating unique namespace for Domain");
-    domainNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Failed to create unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", domainNamespace);
 
     // Create a service account for the opNamespace
     logger.info("Creating service account");
@@ -505,20 +515,14 @@ class ItSimpleTraefikValidation implements LoggedTest {
    */
   private static void installAndVerifyTraefik() {
 
-    // create a new unique namespace for Traefik
-    logger.info("Creating an unique namespace for Traefik");
-    tfNamespace = assertDoesNotThrow(() -> createUniqueNamespace(),
-        "Fail to create an unique namespace due to ApiException");
-    logger.info("Created a new namespace called {0}", tfNamespace);
-
     // Helm install parameters
     tfHelmParams = new HelmParams()
         .releaseName("traefik-operator")
         .namespace(tfNamespace)
-        .repoUrl("https://kubernetes-charts.storage.googleapis.com/")
+        .repoUrl(GOOGLE_REPO_URL)
         .repoName("stable")
         .chartName("traefik")
-        .chartValuesFile(projectRoot + "/../kubernetes/samples/charts/traefik/values.yaml");
+        .chartValuesFile(TRAEFIK_SAMPLE_VALUE_FILE);
 
     TraefikParams tfParams = new TraefikParams()
         .helmParams(tfHelmParams)

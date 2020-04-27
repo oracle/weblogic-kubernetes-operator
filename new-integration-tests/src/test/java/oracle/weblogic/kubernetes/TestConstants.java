@@ -3,7 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.net.InetAddress;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
 
@@ -30,4 +33,12 @@ public interface TestConstants {
       .orElse("");
   public static final String BRANCH_NAME_FROM_JENKINS = Optional.ofNullable(System.getenv("BRANCH"))
       .orElse("");
+  public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
+        .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
+  public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
+  public static final String PROJECT_ROOT = System.getProperty("user.dir");
+  public static final String TRAEFIK_SAMPLE_VALUE_FILE =
+      PROJECT_ROOT + "/../kubernetes/samples/charts/traefik/values.yaml";
+  public static final String INGRESS_SAMPLE_CHART_DIR =
+      PROJECT_ROOT + "/../kubernetes/samples/charts/ingress-per-domain";
 }
