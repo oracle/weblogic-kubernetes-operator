@@ -85,6 +85,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -147,7 +148,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .atMost(5, MINUTES).await();
 
     // get a new unique operator namespace
-    logger.info("Creating an unique namespace for Operator");
+    logger.info("Creating an unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
@@ -177,7 +178,6 @@ class ItSimpleTraefikValidation implements LoggedTest {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-" + managedServerNameBase;
-    String repoSecretName = "reposecret";
 
     // create image with model files
     miiImage = createImageAndVerify();
@@ -191,22 +191,17 @@ class ItSimpleTraefikValidation implements LoggedTest {
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
     }
 
-    // create Docker registry secret in the domain namespace to pull the image from OCIR
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
-    String dockerConfigJson = dockerConfigJsonObject.toString();
-
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(repoSecretName)
+            .name(REPO_SECRET_NAME)
             .namespace(domainNamespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", repoSecretName));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", repoSecretName));
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -246,7 +241,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
             .domainHomeSourceType("FromModel")
             .image(miiImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
+                .name(REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(adminSecretName)
                 .namespace(domainNamespace))
@@ -438,7 +433,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
    */
   private static void installAndVerifyOperator() {
 
-    // Create a service account for the opNamespace
+    // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     String serviceAccountName = opNamespace + "-sa";
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
@@ -448,10 +443,10 @@ class ItSimpleTraefikValidation implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
-    // get Operator image name
+    // get operator image name
     String operatorImage = getOperatorImageName();
-    assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
-    logger.info("Operator image name {0}", operatorImage);
+    assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
+    logger.info("operator image name {0}", operatorImage);
 
     // Create docker registry secret in the operator namespace to pull the image from repository
     logger.info("Creating docker registry secret in namespace {0}", opNamespace);
@@ -472,6 +467,10 @@ class ItSimpleTraefikValidation implements LoggedTest {
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
         REPO_SECRET_NAME, opNamespace));
 
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<>();
+    secretNameMap.put("name", REPO_SECRET_NAME);
+
     // Helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -483,6 +482,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
         new OperatorParams()
             .helmParams(opHelmParams)
             .image(operatorImage)
+            .imagePullSecrets(secretNameMap)
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
@@ -492,11 +492,14 @@ class ItSimpleTraefikValidation implements LoggedTest {
         String.format("Failed to install operator in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
-    // list Helm releases
-    logger.info("List Helm releases in namespace {0}", opNamespace);
-    String cmd = String.format("helm list -n %s", opNamespace);
-    assertTrue(runCmdAndCheckResultContainsString(cmd, OPERATOR_RELEASE_NAME),
-        String.format("Did not get %1s in namespace %2s", OPERATOR_RELEASE_NAME, opNamespace));
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+    assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
+        String.format("Operator release %s is not in deployed status in namespace %s",
+            OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("Operator release {0} status is deployed in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
 
     // check operator is running
     logger.info("Check operator pod is running in namespace {0}", opNamespace);
