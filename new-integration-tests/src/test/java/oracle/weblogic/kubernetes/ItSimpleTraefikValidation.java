@@ -53,6 +53,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
@@ -60,6 +61,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_SAMPLE_VALUE_FILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
@@ -83,7 +85,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
@@ -297,12 +299,12 @@ class ItSimpleTraefikValidation implements LoggedTest {
       checkPodCreated(managedServerPrefix + i);
     }
 
-    // check admin server pod is running
+    // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName);
 
-    // check managed server pods are running
+    // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
@@ -579,13 +581,17 @@ class ItSimpleTraefikValidation implements LoggedTest {
    * @return image name with tag
    */
   private String createImageAndVerify() {
+
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    // Add repository name in image name for Jenkins runs
+    final String imageName = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
+    final String image = imageName + ":" + imageTag;
 
     // build the model file list
-    List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
 
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
@@ -593,33 +599,32 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    List<String> archiveList = Collections.singletonList(zipFile);
+    final List<String> archiveList = Collections.singletonList(zipFile);
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap();
+    Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using model directory {2}",
-        MII_IMAGE_NAME, imageTag, MODEL_DIR);
+    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = createMiiImage(
         defaultWitParams()
-            .modelImageName(MII_IMAGE_NAME)
+            .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
-            .wdtVersion("latest")
+            .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
 
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", MII_IMAGE_NAME));
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
-    // check image exists
-    assertTrue(dockerImageExists(MII_IMAGE_NAME, imageTag),
-        String.format("Image %s doesn't exist", MII_IMAGE_NAME + ":" + imageTag));
+    // Check image exists using docker images | grep image tag.
+    assertTrue(doesImageExist(imageTag),
+        String.format("Image %s does not exist", image));
 
-    return MII_IMAGE_NAME + ":" + imageTag;
+    return image;
   }
 
   /**
