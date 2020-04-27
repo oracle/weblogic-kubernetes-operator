@@ -5,11 +5,13 @@
 #
 # This is an example of how to configure a model-in-image domain resource.
 #
-# This script creates '$WORKDIR/$DOMAIN_RESOURCE_FILE_NAME' from a template.
+# This script creates 'WORKDIR/DOMAIN_RESOURCE_FILENAME'
+# from a template.
 #
 # Warning!!
-#    '$WORKDIR/mii-$DOMAIN_UID.yaml' is overwritten if it already
-#     exists, and the old file is copied into '$WORKDIR/mii-domain-saved/'.
+#    'WORKDIR/DOMAIN_RESOURCE_FILENAME' is overwritten if it already
+#     exists, and the old file is copied into 
+#    'WORKDIR/$(dirname $DOMAIN_RESOURCE_FILENAME)/mii-domain-saved/'.
 #
 # Optional environment variables (see custom-env.sh for details):
 #
@@ -20,7 +22,7 @@
 #   DOMAIN_UID                - default 'sample-domain1'
 #   DOMAIN_NAMESPACE          - default 'sample-domain1-ns'
 #   MODEL_IMAGE_NAME          - default 'model-in-image'
-#   MODEL_IMAGE_TAG           - default 'v1'
+#   MODEL_IMAGE_TAG           - default 'WDT_DOMAIN_TYPE-v1'
 #   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
 #   INCLUDE_MODEL_CONFIGMAP   - defaults 'false'
 #                               Set to true to uncomment the template's
@@ -28,11 +30,12 @@
 #                               and to uncomment the secret that's referenced
 #                               by the model file in this config map.
 #
-#   DOMAIN_RESOURCE_FILE_NAME - Filename for target relative to WORKDIR.
-#                               Default is 'mii-$DOMAIN_UID.yaml'.
+#   DOMAIN_RESOURCE_FILENAME  - Filename for target relative to WORKDIR.
+#                               Default is 'domain-resources/mii-$DOMAIN_UID.yaml'.
 #
-#   DOMAIN_RESOURCE_TEMPLATE  - use as the domain resource template
-#     default 'sample-domain-resource/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
+#   DOMAIN_RESOURCE_TEMPLATE  - Use as the domain resource template relative
+#                               to WORKDIR. Default 
+#                               'domain-resources/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
 #
 
 set -eu
@@ -48,6 +51,7 @@ for var in DOMAIN_UID \
            MODEL_IMAGE_NAME \
            MODEL_IMAGE_TAG \
            INCLUDE_MODEL_CONFIGMAP \
+           DOMAIN_RESOURCE_FILENAME \
            DOMAIN_RESOURCE_TEMPLATE
 do
   echo "@@ Info: ${var}=${!var}"
@@ -57,25 +61,23 @@ function timestamp() {
   date --utc '+%Y-%m-%dT%H:%M:%S'
 }
 
-domain_resource_file=${WORKDIR}/${DOMAIN_RESOURCE_FILE_NAME:-mii-${DOMAIN_UID}.yaml}
-
-mkdir -p $(dirname $domain_resource_file)
+mkdir -p $(dirname $WORKDIR/$DOMAIN_RESOURCE_FILENAME)
 
 echo "@@"
-echo "@@ Info: Creating domain resource file 'WORKDIR/mii-${DOMAIN_UID}.yaml' from 'DOMAIN_RESOURCE_TEMPLATE'"
+echo "@@ Info: Creating domain resource file 'WORKDIR/DOMAIN_RESOURCE_FILENAME' from 'WORKDIR/DOMAIN_RESOURCE_TEMPLATE'"
 
-if [ -e "${domain_resource_file}" ]; then
-  save_file=${WORKDIR}/mii-domain-saved/mii-${DOMAIN_UID}.yaml.$(timestamp)
-  mkdir -p $(dirname $save_file)
+if [ -e "$WORKDIR/$DOMAIN_RESOURCE_FILENAME" ]; then
+  save_file=$(dirname $DOMAIN_RESOURCEFILENAME)/mii-domain-saved/$(basename $DOMAIN_RESOURCEFILENAME).$(timestamp)
   echo "@@"
   echo "@@ Notice! An old version of the domain resource file already exists and will be replaced."
-  echo "@@ Notice! Saving old version of the domain resource file to 'WORKDIR/mii-domain-saved/$(basename $save_file)'."
-  cp ${domain_resource_file} ${save_file}
+  echo "@@ Notice! Saving old version of the domain resource file to 'WORKDIR/${save_file}'"
+  mkdir -p "$WORKDIR/$(dirname $save_file)"
+  cp "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"  "$WORKDIR/${save_file}"
 fi
 
 echo "@@"
 
-cp ${DOMAIN_RESOURCE_TEMPLATE} ${domain_resource_file}
+cp "$WORKDIR/$DOMAIN_RESOURCE_TEMPLATE" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 
 for template_var in WDT_DOMAIN_TYPE \
                     CUSTOM_DOMAIN_NAME \
@@ -84,16 +86,16 @@ for template_var in WDT_DOMAIN_TYPE \
                     MODEL_IMAGE_NAME \
                     MODEL_IMAGE_TAG
 do
-  sed -i -e "s;@@${template_var}@@;${!template_var};" $domain_resource_file
+  sed -i -e "s;@@${template_var}@@;${!template_var};" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 done
 
 
 if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
   # we're going to deploy and use the model.configuration.configMap, and this
   # configmap depends on the datasource-secret.
-  sed -i -e "s;\#\(configMap:\);\1;"           $domain_resource_file
-  sed -i -e "s;\#\(secrets:\);\1;"             $domain_resource_file
-  sed -i -e "s;\#\(-.*datasource-secret\);\1;" $domain_resource_file
+  sed -i -e "s;\#\(configMap:\);\1;"           "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+  sed -i -e "s;\#\(secrets:\);\1;"             "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+  sed -i -e "s;\#\(-.*datasource-secret\);\1;" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 fi
 
 echo "@@ Info: Done."

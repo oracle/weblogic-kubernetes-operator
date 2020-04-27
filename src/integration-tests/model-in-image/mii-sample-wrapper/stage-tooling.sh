@@ -41,7 +41,7 @@ source $SCRIPTDIR/env-init.sh
 dry_run=false
 [ "${1:-}" = "-dry" ] && dry_run=true
 
-cd ${WORKDIR}
+cd ${WORKDIR}/model-images
 
 download_zip() {
   set -eu

@@ -3,13 +3,11 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This is a utility script that waits until a domain's pods have
-# all exited, or waits until a domain's pods have all reached
-# the ready state plus have have the same domain restart 
-# version and image as the pods domain resource.
-# It exits non-zero on a failure. 
+# This is a utility script that waits until a domain's pods have all exited,
+# or waits until a domain's pods have all reached the ready state plus have
+# have the same domain restart version and image as the pod's domain resource.
 # 
-# See 'usage()' below for the command line and other details.
+# See 'usage()' below for  details.
 #
 
 set -eu
@@ -26,7 +24,7 @@ function usage() {
     $(basename $0) [-n mynamespace] [-d mydomainuid] \\
        [-p expected_pod_count] \\
        [-t timeout_secs] \\
-       [-v]
+       [-q]
 
     Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
 
@@ -48,8 +46,8 @@ function usage() {
 
     -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_def'.
 
-    -v              : Verbose. Show wl pods and introspector job state
-                      as they change.
+    -q              : Quiet mode. Show only a count of wl pods that
+                      have reached the desired criteria.
 
     -?              : This help.
 
@@ -64,11 +62,11 @@ expected=0
 timeout_secs=$timeout_secs_def
 
 syntax_error=false
-verbose=false
+verbose=true
 report_interval=10
 
 while [ ! "${1:-}" = "" ]; do
-  if [ ! "$1" = "-?" ] && [ ! "$1" = "-v" ] && [ "${2:-}" = "" ]; then
+  if [ ! "$1" = "-?" ] && [ ! "$1" = "-q" ] && [ "${2:-}" = "" ]; then
     syntax_error=true
     break
   fi
@@ -87,7 +85,7 @@ while [ ! "${1:-}" = "" ]; do
           ''|*[!0-9]*) syntax_error=true ;;
         esac
         ;;
-    -v) verbose=true
+    -q) verbose=false
         report_interval=30
         shift
         continue
@@ -96,6 +94,7 @@ while [ ! "${1:-}" = "" ]; do
         exit 0
         ;;
     *)  syntax_error=true
+        break
         ;;
   esac
   shift
@@ -114,6 +113,7 @@ function timestamp() {
 function tempfile() {
   mktemp /tmp/$(basename "$0").$PPID.$(timestamp).XXXXXX
 }
+
 
 # prints a formatted table from the data in file $1, this assumes:
 #   - delimiter is 'space'

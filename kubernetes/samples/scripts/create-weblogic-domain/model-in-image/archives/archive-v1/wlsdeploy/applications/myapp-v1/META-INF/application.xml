@@ -4,8 +4,8 @@
   <display-name>JSP 2.0 Expression Language Example</display-name>
   <module>
     <web>
-      <web-uri>sample_war</web-uri>
-      <context-root>sample_war</context-root>
+      <web-uri>myapp_war</web-uri>
+      <context-root>myapp_war</context-root>
     </web>
   </module>
 </application>

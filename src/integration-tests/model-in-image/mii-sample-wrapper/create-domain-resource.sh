@@ -20,10 +20,9 @@
 #                               '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - Defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - Defaults to 'sample-domain1-ns'
-#   DOMAIN_RESOURCE_FILE_NAME - Location of domain resource file.
-#                               Defaults to WORKDIR/mii-DOMAIN_UID.yaml
+#   DOMAIN_RESOURCE_FILENAME  - Location of domain resource file.
+#                               Defaults to WORKDIR/domain-resources/mii-DOMAIN_UID.yaml
 #                            
-#
 
 set -eu
 set -o pipefail
@@ -55,10 +54,11 @@ if [ "$pre_delete" = "true" ]; then
   echo "@@ Info: Deleting WebLogic domain '${DOMAIN_UID}' if it already exists and waiting for its pods to exit."
   if [ "$dry_run" = "false" ]; then
     kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
+    echo "@@ Info: Calling $WORKDIR/utils/wl-pod-wait.sh -p 0 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE -q"
+    $WORKDIR/utils/wl-pod-wait.sh -p 0 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE -q
   else
     echo dryrun: kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found
-    echo dryrun: $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 0 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
+    echo dryrun: $WORKDIR/utils/wl-pod-wait.sh -p 0 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE -q
   fi
 fi
 
@@ -66,15 +66,13 @@ fi
 # Apply the domain resource.
 #
 
-domain_resource_file=${DOMAIN_RESOURCE_FILE_NAME:-$WORKDIR/mii-$DOMAIN_UID.yaml}
-
 echo "@@"
-echo "@@ Info: Calling 'kubectl apply -f '$domain_resource_file'."
+echo "@@ Info: Calling 'kubectl apply -f 'WORKDIR/$DOMAIN_RESOURCE_FILENAME'."
 
 if [ "$dry_run" = "false" ]; then
-  kubectl apply -f $domain_resource_file
+  kubectl apply -f $WORKDIR/$DOMAIN_RESOURCE_FILENAME
 else
-  echo dryrun: kubectl apply -f $domain_resource_file
+  echo dryrun: kubectl apply -f $WORKDIR/$DOMAIN_RESOURCE_FILENAME
 fi
 
 #
@@ -105,16 +103,20 @@ function get_exec_command() {
   local admin_name=admin-server
   local admin_service_name=${DOMAIN_UID}-${admin_name}
   local admin_service_name=$(tr [A-Z_] [a-z-] <<< $admin_service_name)
-  echo "kubectl exec -n $DOMAIN_NAMESPACE $admin_service_name -- bash -c \"curl -s -S -m 10 http://$cluster_service_name:8001/sample_war/index.jsp\""
+  echo "kubectl exec -n $DOMAIN_NAMESPACE $admin_service_name -- bash -c \"curl -s -S -m 10 http://$cluster_service_name:8001/myapp_war/index.jsp\""
 }
 
 function get_curl_command() {
   # Echo a curl command you can use to invoke the sample application
   # via the Traefik load balancer listening on port 30305.
   # The '$1' parm must be a DNS address suitable for accessing the port.
-  echo "curl -s -S -m 10 -H 'host: $(get_sample_host)' http://$1:30305/sample_war/index.jsp"
+  echo "curl -s -S -m 10 -H 'host: $(get_sample_host)' http://$1:30305/myapp_war/index.jsp"
 }
 
+# TBD the following help is now out of date
+#     see ../utils-misc for more up-to-date help -
+#     or see the generated ingress' yaml comments
+#     in WORKDIR/ingresses
 #
 # TBD consider adding a utility that generates the the
 #     following help for the sample...
@@ -128,7 +130,7 @@ cat << EOF
       kubectl get pods -n ${DOMAIN_NAMESPACE} --watch 
        # (ctrl-c once all pods are running and ready)
              -or-
-      'MIISAMPLEDIR/utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3 -v'
+      'WORKDIR/utils/wl-pod-wait.sh -n $DOMAIN_NAMESPACE -d $DOMAIN_UID -p 3'
 
    To get the domain status:
       'kubectl -n $DOMAIN_NAMESPACE get domain $DOMAIN_UID -o yaml'

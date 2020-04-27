@@ -18,22 +18,22 @@ topology:
     Server:
         'admin-server':
             ListenPort: 7001
-        'managed-server1':
+        'managed-server1-c1-':
             Cluster: 'cluster-1'
-            ListenPort: '@@PROP:MANSVR_PORT@@'
-         'managed-server2':
+            ListenPort: 8001
+        'managed-server2-c1-':
             Cluster: 'cluster-1'
-            ListenPort: '@@PROP:MANSVR_PORT@@'
-         'managed-server3':
+            ListenPort: 8001
+        'managed-server3-c1-':
             Cluster: 'cluster-1'
-            ListenPort: '@@PROP:MANSVR_PORT@@'
-         'managed-server4':
+            ListenPort: 8001
+        'managed-server4-c1-':
             Cluster: 'cluster-1'
-            ListenPort: '@@PROP:MANSVR_PORT@@'
+            ListenPort: 8001
            
 appDeployments:
     Application:
-        myear:
-            SourcePath: 'wlsdeploy/applications/myapp'
+        myapp:
+            SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'           

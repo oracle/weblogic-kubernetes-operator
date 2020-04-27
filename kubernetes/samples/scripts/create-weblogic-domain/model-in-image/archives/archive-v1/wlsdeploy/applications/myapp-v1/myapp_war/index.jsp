@@ -13,9 +13,9 @@
     String domainName=System.getenv("CUSTOM_DOMAIN_NAME");
 
     out.println("<html><body><pre>");
-    out.println("**************************************************************");
+    out.println("*****************************************************************");
     out.println();
-    out.println("Hello World! This is SAMPLE_APP_VERSION of the mii-sample JSP web-app.");
+    out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");
     out.println();
     out.println("Welcome to WebLogic server '" + srName + "'!");
     out.println();
@@ -48,7 +48,7 @@
     out.println();
 
     out.println();
-    out.println("**************************************************************");
+    out.println("*****************************************************************");
 
   } catch (Throwable t) {
     t.printStackTrace(new PrintStream(response.getOutputStream()));

@@ -4,7 +4,8 @@
 
 #
 # By default, this script deploys a model configmap named
-# '${DOMAIN_UID}-wdt-config-map' from files in the 'WORKDIR/model-configmap'
+# 'DOMAIN_UID-wdt-config-map' from files in the 
+# 'WORKDIR/model-configmaps/uid-DOMAIN_UID'
 # directory that were staged by 'stage-model-configmap.sh'.
 #
 # If the 'MODEL_CONFIGMAP_DIR' env var is customized, then this script
@@ -35,8 +36,9 @@
 #                              '/tmp/$USER/model-in-image-sample-work-dir'.
 #   DOMAIN_UID                - defaults to 'sample-domain1'
 #   DOMAIN_NAMESPACE          - defaults to 'sample-domain1-ns'
-#   MODEL_CONFIGMAP_DIR       - defaults to '${WORKDIR}/model-configmap' 
-#                               (a directory populated by stage-model-configmap.sh)
+#   MODEL_CONFIGMAP_DIR       - defaults to 'model-configmaps/uid-DOMAIN_UID' 
+#                               (a directory populated by stage-model-configmap.sh
+#                                relative to WORKDIRE)
 #
 
 set -eu
@@ -44,4 +46,4 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
-$MIISAMPLEDIR/utils/create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${MODEL_CONFIGMAP_DIR} ${1:-} ${2:-}
+$WORKDIR/utils/create-configmap.sh -c ${DOMAIN_UID}-wdt-config-map -f ${WORKDIR}/${MODEL_CONFIGMAP_DIR} ${1:-} ${2:-}

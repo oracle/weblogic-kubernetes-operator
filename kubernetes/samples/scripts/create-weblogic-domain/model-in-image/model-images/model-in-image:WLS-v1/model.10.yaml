@@ -14,8 +14,8 @@ topology:
             DynamicServers:
                 ServerTemplate:  'cluster-1-template'
                 ServerNamePrefix: 'managed-server'
-                DynamicClusterSize: 5
-                MaxDynamicClusterSize: 5
+                DynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
+                MaxDynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
                 CalculatedListenPorts: false
     Server:
         'admin-server':
@@ -23,11 +23,11 @@ topology:
     ServerTemplate:
         'cluster-1-template':
             Cluster: 'cluster-1'
-            ListenPort : '@@PROP:MANSVR_PORT@@'
+            ListenPort: 8001
 
 appDeployments:
     Application:
-        myear:
-            SourcePath: 'wlsdeploy/applications/myapp'
+        myapp:
+            SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'

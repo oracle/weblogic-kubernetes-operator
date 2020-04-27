@@ -112,6 +112,8 @@ if [ "$DO_CLEAN" = "true" ]; then
   doCommand -c cd \$WORKDIR/..
   doCommand -c rm -fr ./model-in-image-sample-work-dir
   doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
+  doCommand -c mkdir -p \$WORKDIR
+  doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR
 
   # TBD update to delete all images with name 'MODEL_IMAGE_NAME:*'
 
@@ -182,9 +184,7 @@ wait_parms="-d $DOMAIN_UID -n $DOMAIN_NAMESPACE"
 if [ "$DO_MAIN" = "true" ]; then
 
   doCommand  -c "export INCLUDE_CONFIGMAP=false"
-  doCommand  "\$MIIWRAPPERDIR/stage-workdir.sh"
   doCommand  "\$MIIWRAPPERDIR/stage-tooling.sh"
-  doCommand  "\$MIIWRAPPERDIR/stage-model-image.sh"
   doCommand  "\$MIIWRAPPERDIR/build-model-image.sh"
   doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
@@ -192,22 +192,22 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
 
   #TBD bug in operator is only starting up one server
-  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
-  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2 $wait_parms"
+  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
+  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 2 $wait_parms -q"
   
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
 
-  [ ! "$DRY_RUN" = "true" ] && testapp internal "Hello World!"
-  [ ! "$DRY_RUN" = "true" ] && testapp traefik  "Hello World!"
+  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "Hello World!"
+  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "Hello World!"
 
   # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   #   TBD export wallet
   #   TBD import wallet to wallet secret 
   #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
   #   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
-  #   doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+  #   doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
   # fi
   # Cheat to speedup a subsequent roll/shutdown.
   # diefast
@@ -234,17 +234,17 @@ if [ "$DO_UPDATE" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand  "\$MIIWRAPPERDIR/create-model-configmap.sh"
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
-  doCommand  "\$MIISAMPLEDIR/utils/patch-restart-version.sh $wait_parms"
+  doCommand  "\$WORKDIR/utils/patch-restart-version.sh $wait_parms"
 
   #TBD bug in operator is only starting up one server
-  #doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
-  doCommand  -c "\$MIISAMPLEDIR/utils/wl-pod-wait.sh -p 2 $wait_parms"
+  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
+  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 2 $wait_parms -q"
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
 
-  [ ! "$DRY_RUN" = "true" ] && testapp internal "mynewdatasource"
-  [ ! "$DRY_RUN" = "true" ] && testapp traefik  "mynewdatasource"
+  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "mynewdatasource"
+  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "mynewdatasource"
 
 fi
 

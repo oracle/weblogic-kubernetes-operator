@@ -5,9 +5,8 @@
 #   This file can be modified to customize the behavior of the
 #   other scripts in this sample wrapper.
 #
-#   It is copied to WORKDIR from this directory by 'stage-workdir.sh',
-#   and is automatically loaded from its WORKDIR location by every script
-#   in this test (except for 'stage-workdir.sh').
+#   If present in the WORKDIR location, the sample wrapper scripts
+#   will source this file before doing anything else.
 # 
 
 # export DOMAIN_UID=
@@ -61,15 +60,19 @@
 
 # export MODEL_IMAGE_TAG=
 # ::: Model image tag.
-#  Defaults to 'v1'. See MODEL_IMAGE_NAME for more info.
+#  Defaults to 'WDT_DOMAIN_TYPE-v1'. See MODEL_IMAGE_NAME for more info.
 
 # export MODEL_DIR=
-# ::: Location of staged model files for the model image.
+# ::: Location of staged model files for the model image relative to WORKDIR.
 #  Location of staged model .zip, .properties, and .yaml files that are
 #  copied into the model image by the './build-model-image.sh' script.
 #  Default is:
-#   'WORKDIR/models/image--$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}'
-#  which is populated by the './stage-model-image.sh' script.
+#   'model-images/$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}'
+
+# export ARCHIVE_SOURCEDIR=
+# ::: Location of archive source dir for the model image relative to WORKDIR
+#  This is used to create $MODEL_DIR/archive.zip and must
+#  contain a 'wlsdeploy' directory. Defaults to 'archives/archive-v1'.
 
 # export INCLUDE_MODEL_CONFIGMAP
 # ::: Tell sample to include a configuration.model.configMap
@@ -81,9 +84,9 @@
 
 # export MODEL_CONFIGMAP_DIR=
 # ::: Configmap model files.
-#  Location of staged model files that will be loaded at runtime from a
-#  configmap specified by the domain resource. Default is 
-#  'WORKDIR/model-configmap', which is populated by the 
+#  Location of staged model files relative to WORKDIR that will be
+#  loaded at runtime from a configmap specified by the domain resource.
+#  Default is 'model-configmap/uid-DOMAIN_UID', which is populated by the 
 #  './stage-model-configmap.sh' script and used by
 #  'create-model-configmap.sh'.  See also INCLUDE_MODEL_CONFIGMAP.
 
@@ -117,6 +120,12 @@
 # ::: Domain resource template
 #  Used by './stage-domain-resource.sh' as a template for generating a domain
 #  resource yaml file in WORKDIR. Defaults to 
-#  'sample-domain-resource/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
+#  'domain-resources/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
+
+# export DOMAIN_RESOURCE_FILENAME=
+# ::: Domain resource template
+#  Used by './stage-domain-resource.sh' as a template for generating a domain
+#  resource yaml file in WORKDIR. Defaults to 
+#  'domain-resources/mii-DOMAIN_UID.yaml'
 
 # TBD Move DB_NAMESPACE here from env.sh for clarity (used for setting up the DB urls), can the DB port change?

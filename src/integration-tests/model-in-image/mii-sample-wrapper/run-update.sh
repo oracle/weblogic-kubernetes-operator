@@ -93,7 +93,7 @@ echo "@@"
 echo "@@ ######################################################################"
 echo "@@"
 
-$MIISAMPLEDIR/utils/patch-restart-version.sh -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
+$WORKDIR/utils/patch-restart-version.sh -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
 
 #######################################################################
 # Optionally wait for pods to roll and reach the new restart version.
@@ -103,7 +103,7 @@ if [ "${1:-}" = "-wait" ]; then
   echo "@@ ######################################################################"
   echo "@@"
 
-  $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
+  $WORKDIR/utils/wl-pod-wait.sh -p 3 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
 
   echo "@@"
   echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."

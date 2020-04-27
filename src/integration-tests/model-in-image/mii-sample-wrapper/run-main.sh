@@ -57,13 +57,21 @@ set -eu
 set -o pipefail
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-source SCRIPTDIR/env-init.sh
+source $SCRIPTDIR/env-init.sh
 
 #######################################################################
 # Setup a working directory WORKDIR for running the sample. By default,
 # WORKDIR is '/tmp/$USER/model-in-image-sample-work-dir'.
 
-$SCRIPTDIR/stage-workdir.sh
+if [ ! -d $WORKDIR ] || [ "$(ls $WORKDIR)" = "" ]; then
+  #
+  # Copy over the sample to WORKDIR
+  #
+
+  mkdir -p $WORKDIR
+  cp -r $MIISAMPLEDIR/* $WORKDIR
+  cp $SCRIPTDIR/env-custom.sh $WORKDIR
+fi
 
 #######################################################################
 # Stage the latest WebLogic Deploy Tooling and WebLogic Image Tool
@@ -71,12 +79,6 @@ $SCRIPTDIR/stage-workdir.sh
 # http_proxy and https_proxy must be set.
 
 $SCRIPTDIR/stage-tooling.sh
-
-#######################################################################
-# Stage sample model yaml, sample model properties, and sample app
-# to the 'WORKDIR/model' dir.
-
-$SCRIPTDIR/stage-model-image.sh
 
 #######################################################################
 # Build a model image. 
@@ -126,7 +128,7 @@ if [ "${1:-}" = "-wait" ]; then
   echo "@@ ######################################################################"
   echo "@@"
 
-  $MIISAMPLEDIR/utils/wl-pod-wait.sh -p 3 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
+  $WORKDIR/utils/wl-pod-wait.sh -p 3 -d $DOMAIN_UID -n $DOMAIN_NAMESPACE
   
   echo "@@"
   echo "@@ Info: Voila! Script '$(basename $0)' completed successfully! All pods ready."

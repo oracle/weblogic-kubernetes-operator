@@ -26,9 +26,8 @@
 #   anything that's already in '/tmp/$USER/prestaged.'
 #
 
-# TBD add dry run output for create-model-configmap.sh
-# TBD add dry run output for curl?
-# TBD try get console to work via VNC + firefox + /etc/hosts
+# TBD Add dry run output for curl? Note - you can find it in the ingress yaml comments.
+# TBD Try get console to work via VNC + firefox + /etc/hosts
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
@@ -55,32 +54,30 @@ cd $savedir
 cd $WORKDIR
 
 #
+# Copy over the sample to WORKDIR
+#
+
+cp -r $MIISAMPLEDIR/* $WORKDIR
+
+#
 # Get commands for downloading WDT and WIT installer zips
 #
 
-(
-  savedir=$(pwd)
-  mkdir $WORKDIR/models
-  cd $WORKDIR/models
-  export WORKDIR=""
-  $SCRIPTDIR/stage-tooling.sh -dry | grep dryrun | sed 's/dryrun://' > download-tooling.sh
-  chmod +x download-tooling.sh
-  cd $savedir
-)
+$SCRIPTDIR/stage-tooling.sh -dry | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-images/download-tooling.sh
+chmod +x $WORKDIR/model-images/download-tooling.sh
 
 #
 # Get commands and yaml for creating the model configmap
 #
 
 export MODEL_IMAGE_NAME=model-in-image
-
-$SCRIPTDIR/stage-model-configmap.sh
+export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
 for domain in sample-domain1 sample-domain2; do
   export DOMAIN_UID=$domain
-  $SCRIPTDIR/create-model-configmap.sh -dry yaml | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-configmap-uid-$DOMAIN_UID.yaml
-  $SCRIPTDIR/create-model-configmap.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-configmap-uid-$DOMAIN_UID.sh
-  chmod +x $WORKDIR/model-configmap-uid-$DOMAIN_UID.sh
+  $SCRIPTDIR/stage-model-configmap.sh
+  $SCRIPTDIR/create-model-configmap.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-configmaps/model-configmap-uid-$DOMAIN_UID.sh
+  chmod +x $WORKDIR/model-configmaps/model-configmap-uid-$DOMAIN_UID.sh
 done
 
 
@@ -93,46 +90,36 @@ do
   export WDT_DOMAIN_TYPE=$type
   for version in v1 v2
   do
-    export MODEL_IMAGE_NAME=model-in-image
     export MODEL_IMAGE_TAG=$type-$version
     model_image=$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG
 
-    # Force generated app archive to have this as the owner directory - e.g. archives/app-$version
-    # TBD Maybe rename to ARCHIVE_DIR so the naming convention corresponds with MODEL_DIR
-    export TARGET_ARCHIVE_OVERRIDE="archive-$version"
+    export MODEL_DIR=model-images/$model_image
 
-    # Force generated app archive to replace SAMPLE_APP_VERSION in its index.jsp with $version
-    export SAMPLE_APP_VERSION="$version"
+    export ARCHIVE_SOURCEDIR="archives/archive-$version"
 
-    model_dir_suffix=files--$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}
-    export MODEL_DIR=$WORKDIR/models/$model_dir_suffix
+    if [ ! -d "$WORKDIR/$ARCHIVE_SOURCEDIR" ]; then
+      mkdir -p "$WORKDIR/$ARCHIVE_SOURCEDIR"
+      cp -r $WORKDIR/archives/archive-v1/* $ARCHIVE_SOURCEDIR
 
-    # Generate WORKDIR/archives app archive and its corresponding model files
-    # in WORKDIR/models
-    # TBD modify the following script skip to step for zipping the archive
-    #     and instead make it part of the generated image build script
-    $SCRIPTDIR/stage-model-image.sh
+      # Rename app directory in app archive to correspond to the app version
+      # (We will update model to correspond to this directory a little bit down.)
+      mv $WORKDIR/$ARCHIVE_SOURCEDIR/wlsdeploy/applications/myapp-v1 \
+         $WORKDIR/$ARCHIVE_SOURCEDIR/wlsdeploy/applications/myapp-$version
 
-    # Rename app directory in app archive, and update model to correspond
-    # (TBD move this logic into the model/archive scripts respectively)
-
-    if [ -d "$WORKDIR/archives/$TARGET_ARCHIVE_OVERRIDE/wlsdeploy/applications/myapp" ]; then
-      # if /myapp doesn't exist, it's because myapp-$version was already created
-      # in a previous iteration of this loop
-      mv $WORKDIR/archives/$TARGET_ARCHIVE_OVERRIDE/wlsdeploy/applications/myapp \
-         $WORKDIR/archives/$TARGET_ARCHIVE_OVERRIDE/wlsdeploy/applications/myapp-$version
+      # Update app's index.jsp so it outputs its archive/app version.
+      sed -i -e "s/'v1'/'$version'/g" \
+         $WORKDIR/$ARCHIVE_SOURCEDIR/wlsdeploy/applications/myapp-$version/myapp_war/index.jsp
     fi
-    sed -i -e "s/myapp/myapp-$version/g" $MODEL_DIR/model.10.yaml
 
-    (
-      savedir=$(pwd)
-      cd $WORKDIR/models
-      export WORKDIR=.
-      export MODEL_DIR=$model_dir_suffix
-      $SCRIPTDIR/build-model-image.sh -dry | grep dryrun | sed 's/dryrun://' >> build--$model_image.sh
-      chmod +x build--$model_image.sh
-      cd $savedir
-    )
+    $SCRIPTDIR/build-model-image.sh -dry | grep dryrun | sed 's/dryrun://' \
+      > $WORKDIR/model-images/build--$model_image.sh
+    chmod +x $WORKDIR/model-images/build--$model_image.sh
+
+    if [ ! -d "$WORKDIR/$MODEL_DIR" ]; then
+      mkdir -p "$WORKDIR/$MODEL_DIR"
+      cp -r $WORKDIR/model-images/$MODEL_IMAGE_NAME:$type-v1/* "$WORKDIR/$MODEL_DIR"
+      sed -i -e "s/myapp-v1/myapp-$version/g" $MODEL_DIR/model.10.yaml
+    fi
 
     for domain in sample-domain1 sample-domain2; do
 
@@ -143,12 +130,13 @@ do
         export INCLUDE_MODEL_CONFIGMAP=$configmap
 
         if [ "$configmap" = "true" ]; then
-          domain_root=domains/$type/uid-$DOMAIN_UID/imagetag-$MODEL_IMAGE_TAG/model-configmap-yes
+          domain_root=domain-resources/$type/uid-$DOMAIN_UID/imagetag-$MODEL_IMAGE_TAG/model-configmap-yes
         else
-          domain_root=domains/$type/uid-$DOMAIN_UID/imagetag-$MODEL_IMAGE_TAG/model-configmap-no
+          domain_root=domain-resources/$type/uid-$DOMAIN_UID/imagetag-$MODEL_IMAGE_TAG/model-configmap-no
         fi
 
-        export DOMAIN_RESOURCE_FILE_NAME=$domain_root/mii-domain.yaml
+        export DOMAIN_RESOURCE_FILENAME=$domain_root/mii-domain.yaml
+
         $SCRIPTDIR/stage-domain-resource.sh
 
         $SCRIPTDIR/create-secrets.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/secrets.sh
@@ -156,16 +144,9 @@ do
         chmod +x $WORKDIR/$domain_root/secrets.sh
    
         if [ "$configmap" = "true" ]; then
-           mapdir=$WORKDIR/model-configmap
-           $MIISAMPLEDIR/utils/create-configmap.sh -dry yaml    -f $mapdir -c $domain-wdt-config-map \
-             -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
-             | grep dryrun | sed 's/dryrun://' \
-             > $WORKDIR/$domain_root/model-configmap.yaml
-           $MIISAMPLEDIR/utils/create-configmap.sh -dry kubectl -f $mapdir -c $domain-wdt-config-map \
-             -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
-             | grep dryrun | sed 's/dryrun://' \
-             > $WORKDIR/$domain_root/model-configmap.sh
-           chmod +x $WORKDIR/$domain_root/model-configmap.sh
+          $SCRIPTDIR/create-model-configmap.sh -dry kubectl | grep dryrun | sed 's/dryrun://' \
+            > $WORKDIR/$domain_root/model-configmap.sh
+          chmod +x $WORKDIR/$domain_root/model-configmap.sh
         fi
 
       done

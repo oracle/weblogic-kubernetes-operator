@@ -5,10 +5,6 @@
 # WORKDIR/custom-env.sh (which may contain customized values
 # set by the user), and does other actions that are common
 # to all of the sample's scripts.
-#
-# Assumption:
-#   WORKDIR already exists.  See 'stage-workdir.sh'.
-#
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
@@ -33,9 +29,10 @@ DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 CUSTOM_DOMAIN_NAME=${CUSTOM_DOMAIN_NAME:-domain1}
 
-MODEL_CONFIGMAP_DIR=${MODEL_CONFIGMAP_DIR:-$WORKDIR/model-configmap}
+MODEL_CONFIGMAP_DIR=${MODEL_CONFIGMAP_DIR:-model-configmaps/uid-$DOMAIN_UID}
 
-DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-$MIISAMPLEDIR/sample-domain-resource/mii-domain.yaml.template-$WDT_DOMAIN_TYPE}"
+DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-domain-resources/mii-domain.yaml.template-$WDT_DOMAIN_TYPE}"
+DOMAIN_RESOURCE_FILENAME="${DOMAIN_RESOURCE_FILENAME:-domain-resources/mii-${DOMAIN_UID}.yaml}"
 
 DB_NAMESPACE=${DB_NAMESPACE:-default}
 
@@ -55,10 +52,12 @@ BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
-MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
+MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v1}
 MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
-MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-when-changed}
-MODEL_DIR=${MODEL_DIR:-$WORKDIR/models/image--$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}}
+MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
+MODEL_DIR=${MODEL_DIR:-model-images/$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}}
+
+ARCHIVE_SOURCEDIR=${ARCHIVE_SOURCEDIR:-archives/archive-v1}
 
 INCLUDE_MODEL_CONFIGMAP=${INCLUDE_MODEL_CONFIGMAP:-false}
 
