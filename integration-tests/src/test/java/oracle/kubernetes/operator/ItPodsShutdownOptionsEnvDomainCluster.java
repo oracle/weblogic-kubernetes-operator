@@ -23,9 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * Simple JUnit test file used for testing Operator.
- *
- * <p>This test is used for applying Shutdown Properties at Domain, Cluster, Env level.
+ * This test is used for applying Shutdown Properties at Domain, Cluster, Env level.
  */
 @TestMethodOrder(Alphanumeric.class)
 public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
@@ -39,7 +37,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * @throws Exception If initializing of properties failed.
+   * @throws Exception if initialization of properties failed.
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
@@ -55,7 +53,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
    * This method gets called before every test. It creates the result/pv root directories
    * for the test. Creates the operator and domain if its not running.
    *
-   * @throws Exception If result/pv/operator/domain creation fails
+   * @throws Exception if result/pv/operator/domain creation fails
    */
   @BeforeEach
   public void prepare() throws Exception {
@@ -90,7 +88,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception If failed to delete the created objects or archive results.
+   * @throws Exception if failed to delete the created objects or archive results.
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
@@ -106,7 +104,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
    * Start domain with added shutdown options at the domain level
    * and verify values are propagated to server level.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options.
+   * @throws Exception if domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionsToDomain() throws Exception {
@@ -125,12 +123,12 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
       Assertions.assertNotNull(domain, "Domain "
           + domainNSShutOpDomain
           + "failed to create");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-admin-server", domain.getDomainNs(),"160"),
           domain.getDomainUid()
               + "-admin-server"
               + "shutdown property for timeoutseconds does not match the expected value 160");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-managed-server1",domain.getDomainNs(), "160"),
           domain.getDomainUid()
               + "-managed-server1: "
@@ -147,7 +145,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
    * Start domain with added shutdown options at the cluster level
    * and verify values are propagated to all managed servers in the cluster.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options.
+   * @throws Exception if domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionToCluster() throws Exception {
@@ -172,12 +170,12 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
       Assertions.assertNotNull(domain,
           domainNSShutOpCluster
               + " failed to create, returns null");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-admin-server", domain.getDomainNs(),"Graceful"),
           domain.getDomainUid()
               + "-admin-server: "
               + " shutdown property does not match the expected : shutdownType=Graceful");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-managed-server1", domain.getDomainNs(),"Forced"),
           domain.getDomainUid()
               + "-managed-server1: "
@@ -195,7 +193,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
   /**
    * Add shutdown env vars at domain spec level and verify the pod are Terminated and recreated.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options.
+   * @throws Exception if domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testAddShutdownOptionsEnv() throws Exception {
@@ -216,13 +214,13 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
       Assertions.assertNotNull(domain,
           domainNSShutOpEnv
               + " failed to create, returns null");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-managed-server1", domain.getDomainNs(), "Forced", "60", "false"),
           domain.getDomainUid()
               + "-managed-server1 :"
               + " shutdown properties don't not match the expected : "
               + "shutdownType=Forced, timeoutSeconds=60, ignoreSessions=false");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-admin-server", domain.getDomainNs(),"Forced", "60", "false"),
           domain.getDomainUid()
               + "-admin-server :"
@@ -239,7 +237,7 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
   /**
    * Add shutdown env vars at domain spec level and managed server level,verify env override server level.
    *
-   * @throws Exception If domain cannot be started or failed to verify shutdown options.
+   * @throws Exception if domain cannot be started or failed to verify shutdown options.
    */
   @Test
   public void testShutdownOptionsOverrideViaEnv() throws Exception {
@@ -270,13 +268,13 @@ public class ItPodsShutdownOptionsEnvDomainCluster extends ShutdownOptionsBase {
       Assertions.assertNotNull(domain,
           domainNSShutOpOverrideViaEnv
               + " failed to create, returns null");
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-managed-server1", domain.getDomainNs(), "Forced", "60"),
           domain.getDomainUid()
               + "-managed-server1 :"
               + " shutdown properties don't not match the expected : "
               + "shutdownType=Forced, timeoutSeconds=60");;
-      Assertions.assertTrue(checkShutdownUpdatedProp(domain.getDomainUid()
+      Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
               + "-admin-server", domain.getDomainNs(),"Forced", "60"),
           domain.getDomainUid()
               + "-admin-server :"

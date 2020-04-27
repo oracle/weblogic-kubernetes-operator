@@ -15,9 +15,7 @@ import oracle.kubernetes.operator.utils.TestUtils;
 
 
 /**
- * Simple JUnit test file used for testing Operator.
- *
- * <p>This test is used for testing Shutdown Properties, applied at domain, cluster, ms, env level.
+ * Base class defining the common methods for testing Shutdown Properties, supplied at domain, cluster, ms, env level.
  */
 
 public class ShutdownOptionsBase extends BaseTest {
@@ -49,7 +47,7 @@ public class ShutdownOptionsBase extends BaseTest {
   }
 
   /**
-   * Send request to web app deployed on wls.
+   * Send request to web app deployed on WebLogic.
    *
    * @param testAppPath - URL path for webapp
    * @param domain      - Domain where webapp is deployed
@@ -62,12 +60,12 @@ public class ShutdownOptionsBase extends BaseTest {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
       testAppUrl.append(domain.getHostNameForCurl());
+      testAppUrl.append(":" + domain.getLoadBalancerWebPort());
       testAppUrl.append("/");
       if (domain.getLoadBalancerName().equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
       testAppUrl.append(testAppPath);
-      // curl cmd to call webapp
 
       StringBuffer webServiceUrl = new StringBuffer("curl --silent --noproxy '*' ");
       webServiceUrl
@@ -83,42 +81,21 @@ public class ShutdownOptionsBase extends BaseTest {
   }
 
   /**
-   * Shutdown managed server and returns spent shutdown time.
-   *
-   * @throws Exception If failed to shutdown the server.
-   */
-  protected static long shutdownServer(String serverName, String domainNS, String domainUid) throws Exception {
-    long startTime;
-    startTime = System.currentTimeMillis();
-    String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
-    LoggerHelper.getLocal().log(Level.INFO, "command to shutdown server <" + serverName + "> is: " + cmd);
-    ExecResult result = ExecCommand.exec(cmd);
-    long terminationTime = 0;
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
-    TestUtils.checkPodCreated(domainUid + "-" + serverName, domainNS);
-    long endTime = System.currentTimeMillis();
-    terminationTime = endTime - startTime;
-    return terminationTime;
-  }
-
-  /**
-   * Check the applied properties are set in the pod.
+   * Check the shutdown properties values in the pod.
    *
    * @param podName - name of the pod
-   * @param domainNS - domain namespace
+   * @param podNS - pod namespace
    * @param props - set of properties to check
-   * @throws Exception If failed verify the property update.
+   * @throws Exception if failed to verify the shutdown properties values.
    */
-  protected static boolean checkShutdownUpdatedProp(String podName, String domainNS, String... props)
+  protected static boolean checkShutdownProp(String podName, String podNS, String... props)
       throws Exception {
 
     HashMap<String, Boolean> propFound = new HashMap<String, Boolean>();
     StringBuffer cmd = new StringBuffer("kubectl get pod ");
     cmd.append(podName);
     cmd.append(" -o yaml ");
-    cmd.append(" -n ").append(domainNS);
+    cmd.append(" -n ").append(podNS);
     cmd.append(" | grep SHUTDOWN -A 1 ");
 
     LoggerHelper.getLocal().log(Level.INFO,
@@ -138,28 +115,6 @@ public class ShutdownOptionsBase extends BaseTest {
       found = true;
     }
     return found;
-  }
-
-  /**
-   * Check the applied properties are set in the pod.
-   *
-   * @param delayTime - time to set delay to extend webapp opened session.
-   * @param domain - domain namespace
-   * @return termination time of managed server1
-   * @throws Exception If failed verify the property update.
-   */
-  protected long verifyShutdown(long delayTime, Domain domain) throws Exception {
-
-    // invoke servlet to keep sessions opened, terminate pod and check shutdown time
-    if (delayTime > 0) {
-      SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, domain);
-      new Thread(sessionDelay).start();
-      // sleep 5 secs before shutdown
-      Thread.sleep(5 * 1000);
-    }
-    long terminationTime = shutdownServer("managed-server1", domain.getDomainNs(), domain.getDomainUid());
-    LoggerHelper.getLocal().log(Level.INFO, " termination time: " + terminationTime);
-    return terminationTime;
   }
 }
 
