@@ -407,30 +407,6 @@ public class TestUtils {
   }
 
   /**
-   * exec command but do not throw a runtime exception if the command has a non-zero return code.
-   * @param cmd command
-   * @param debug debug flag
-   * @return executor
-   * @throws Exception on failure
-   */
-  public static ExecResult execAndIgnoreNonzeroReturnCode(String cmd, boolean debug) throws Exception {
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0 || debug) {
-      LoggerHelper.getLocal().log(Level.INFO,
-          "\nCommand "
-              + cmd
-              + "\nreturn value: "
-              + result.exitValue()
-              + "\nstderr = "
-              + result.stderr()
-              + "\nstdout = "
-              + result.stdout());
-    }
-
-    return result;
-  }
-
-  /**
    * Check PV is released.
    * @param pvBaseName PV base name
    * @param namespace namespace
