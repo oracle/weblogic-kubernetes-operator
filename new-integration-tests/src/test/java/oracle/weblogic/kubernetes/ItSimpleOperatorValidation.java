@@ -19,7 +19,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -38,11 +37,8 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static org.awaitility.Awaitility.with;
@@ -160,45 +156,6 @@ class ItSimpleOperatorValidation implements LoggedTest {
                 condition.getRemainingTimeInMS()))
         .until(operatorIsRunning(opNamespace));
 
-  }
-
-  @AfterEach
-  public void tearDown() {
-    // To Do: Remove this after we have common cleanup
-    // uninstall operator release
-    logger.info("Uninstall Operator in namespace {0}", opNamespace);
-    if (opHelmParams != null) {
-      uninstallOperator(opHelmParams);
-    }
-    // Delete service account from unique opNamespace
-    logger.info("Delete service account in namespace {0}", opNamespace);
-    if (serviceAccount != null) {
-      assertDoesNotThrow(() -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
-          serviceAccount.getMetadata().getNamespace()),
-          "deleteServiceAccount failed with ApiException");
-    }
-    // Delete domain namespaces
-    logger.info("Deleting domain namespace {0}", domainNamespace1);
-    if (domainNamespace1 != null) {
-      assertDoesNotThrow(() -> deleteNamespace(domainNamespace1),
-          "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + domainNamespace1);
-    }
-
-    logger.info("Deleting domain namespace {0}", domainNamespace2);
-    if (domainNamespace2 != null) {
-      assertDoesNotThrow(() -> deleteNamespace(domainNamespace2),
-          "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + domainNamespace2);
-    }
-
-    // Delete opNamespace
-    logger.info("Deleting Operator namespace {0}", opNamespace);
-    if (opNamespace != null) {
-      assertDoesNotThrow(() -> deleteNamespace(opNamespace),
-          "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + opNamespace);
-    }
   }
 
 }

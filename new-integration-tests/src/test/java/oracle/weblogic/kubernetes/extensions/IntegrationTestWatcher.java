@@ -13,6 +13,7 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -296,6 +297,8 @@ public class IntegrationTestWatcher implements
   @Override
   public void afterAll(ExtensionContext context) {
     printHeader(String.format("Ending Test Suite %s", className), "+");
+    logger.info("Starting cleanup after test class");
+    CleanupUtil.cleanup(namespaces);
   }
 
 
