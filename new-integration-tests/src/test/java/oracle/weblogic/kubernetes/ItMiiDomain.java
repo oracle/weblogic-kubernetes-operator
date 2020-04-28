@@ -534,7 +534,7 @@ class ItMiiDomain implements LoggedTest {
     // app here is what is in the original app dir plus the replacement in the second app dir
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
-    final String adminServerPodName = domainUid1 + "-admin-server";
+    final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
     
@@ -571,27 +571,15 @@ class ItMiiDomain implements LoggedTest {
     // push the image to OCIR to make the test work in multi node cluster
     pushImageIfNeeded(miiImagePatchAppV2);
 
-    // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, domainNamespace, miiImagePatchAppV2);
-    
-    // check if domain resource has been patched with the new image    
-    checkDomainPatched(domainUid, domainNamespace, miiImagePatchAppV2);
-
-    // check and wait for the admin server pod to be patched with the new image
-    checkPodImagePatched(
+    // patch the domain resource with the new image and verify that the domain resource is patched, 
+    // and all server pods are patched as well.
+    patchAndVerify(
         domainUid,
         domainNamespace,
         adminServerPodName,
+        managedServerPrefix,
+        replicaCount,
         miiImagePatchAppV2);
-
-    // check and wait for the managed server pods to be patched with the new image
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodImagePatched(
-          domainUid,
-          domainNamespace,
-          managedServerPrefix + i,
-          miiImagePatchAppV2);
-    }
 
     // check and wait for the app to be ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -618,7 +606,7 @@ class ItMiiDomain implements LoggedTest {
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String appDir3 = "sample-app-3";
-    final String adminServerPodName = domainUid1 + "-admin-server";
+    final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
@@ -662,27 +650,15 @@ class ItMiiDomain implements LoggedTest {
     // push the image to OCIR to make the test work in multi node cluster
     pushImageIfNeeded(miiImageAddSecondApp);
 
-    // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, domainNamespace, miiImageAddSecondApp);
-    
-    // check if the domain resource has been patched with the new image   
-    checkDomainPatched(domainUid, domainNamespace, miiImageAddSecondApp);
-
-    // check and wait for the admin server pod to be patched with the new image
-    checkPodImagePatched(
+    // patch the domain resource with the new image and verify that the domain resource is patched, 
+    // and all server pods are patched as well.
+    patchAndVerify(
         domainUid,
         domainNamespace,
         adminServerPodName,
-        miiImagePatchAppV2);
-
-    // check and wait for the managed server pods to be patched with the new image
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodImagePatched(
-          domainUid,
-          domainNamespace,
-          managedServerPrefix + i,
-          miiImageAddSecondApp);
-    }
+        managedServerPrefix,
+        replicaCount,
+        miiImageAddSecondApp);
     
     // check and wait for the new app to be ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -1082,6 +1058,38 @@ class ItMiiDomain implements LoggedTest {
                 podName, domNamespace)));
 
   }
+
+  private void patchAndVerify(
+      final String domainUid,
+      final String domainNamespace,
+      final String adminServerPodName,
+      final String managedServerPrefix,
+      final int replicaCount,
+      final String image
+  ) {
+    // modify the domain resource to use the new image
+    patchDomainResourceIamge(domainUid, domainNamespace, image);
+    
+    // check if domain resource has been patched with the new image    
+    checkDomainPatched(domainUid, domainNamespace, image);
+
+    // check and wait for the admin server pod to be patched with the new image
+    checkPodImagePatched(
+        domainUid,
+        domainNamespace,
+        adminServerPodName,
+        image);
+
+    // check and wait for the managed server pods to be patched with the new image
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodImagePatched(
+          domainUid,
+          domainNamespace,
+          managedServerPrefix + i,
+          image);
+    }
+  }
+
 
   private void checkPodReady(String podName, String domainUid, String domNamespace) {
     withStandardRetryPolicy
