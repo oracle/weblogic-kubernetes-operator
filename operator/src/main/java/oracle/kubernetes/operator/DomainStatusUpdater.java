@@ -78,7 +78,7 @@ public class DomainStatusUpdater {
    * @param next the next step
    * @return the new step
    */
-  static Step createStatusUpdateStep(Step next) {
+  public static Step createStatusUpdateStep(Step next) {
     return new StatusUpdateStep(next);
   }
 
@@ -407,19 +407,31 @@ public class DomainStatusUpdater {
         return new ServerStatus()
             .withServerName(serverName)
             .withState(getRunningState(serverName))
-            .withDesiredState(getDesiredState(serverName, clusterName))
-            .withHealth(serverHealth.get(serverName))
+            .withDesiredState(getDesiredState(serverName, clusterName, serverName.equals(adminServerName)))
+            .withHealth(serverHealth == null ? null : serverHealth.get(serverName))
             .withClusterName(clusterName)
             .withNodeName(getNodeName(serverName))
             .withIsAdminServer(serverName.equals(adminServerName));
       }
 
       private String getRunningState(String serverName) {
-        return serverState.getOrDefault(serverName, SHUTDOWN_STATE);
+        if (serverState != null) {
+          return serverState.getOrDefault(serverName, SHUTDOWN_STATE);
+        }
+        return SHUTDOWN_STATE;
       }
 
-      private String getDesiredState(String serverName, String clusterName) {
-        return getDomain().getServer(serverName, clusterName).getDesiredState();
+      private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
+        boolean shouldStart = isAdminServer | shouldStart(serverName);
+        return shouldStart
+            ? getDomain().getServer(serverName, clusterName).getDesiredState()
+            : SHUTDOWN_STATE;
+      }
+
+      private boolean shouldStart(final String serverName) {
+        return getServerStartupInfos()
+            .filter(s -> Objects.equals(serverName, s.getServerName()))
+            .anyMatch(s -> !s.isServiceOnly());
       }
 
       Integer getReplicaSetting() {
