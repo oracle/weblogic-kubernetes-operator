@@ -539,6 +539,10 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .withFailMessage("installTraefik() did not return true")
         .isTrue();
 
+    // DEBUG: check the Traefik image is pulled
+    assertTrue(doesImageExist("traefik"),
+        String.format("Image %s does not exist", "traefik:1.7.20"));
+
     // verify that Traefik is installed
     String cmd = "helm ls -n " + tfNamespace;
     assertThat(runCmdAndCheckResultContainsString(cmd, tfHelmParams.getReleaseName()))
