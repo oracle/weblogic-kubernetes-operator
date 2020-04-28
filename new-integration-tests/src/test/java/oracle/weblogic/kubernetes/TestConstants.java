@@ -42,4 +42,6 @@ public interface TestConstants {
   public static final String INGRESS_SAMPLE_CHART_DIR =
       PROJECT_ROOT + "/../kubernetes/samples/charts/ingress-per-domain";
   public static final String TRAEFIK_RELEASE_NAME = "traefik-operator" + BUILD_ID;
+  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
+      System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
 }
