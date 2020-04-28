@@ -30,4 +30,6 @@ public interface TestConstants {
       .orElse("");
   public static final String BRANCH_NAME_FROM_JENKINS = Optional.ofNullable(System.getenv("BRANCH"))
       .orElse("");
+  public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
+      System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
 }
