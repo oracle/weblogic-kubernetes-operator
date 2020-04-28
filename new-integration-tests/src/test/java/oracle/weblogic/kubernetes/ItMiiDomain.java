@@ -151,7 +151,8 @@ class ItMiiDomain implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         .atMost(6, MINUTES).await();
 
-    withQuickRetryPolicy = with().pollDelay(1, SECONDS)
+    // create a reusable quick retry policy
+    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(5, SECONDS).await();
 
@@ -333,6 +334,7 @@ class ItMiiDomain implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
     
+    // check and wait for the app to be accessible in all server pods
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
           domainUid,
@@ -563,7 +565,7 @@ class ItMiiDomain implements LoggedTest {
             "The second version of the app is not supposed to be running.");   
     }
  
-    // create another image with app V2 
+    // create an image with app V2 
     miiImagePatchAppV2 = updateImageWithAppV2Patch(
         String.format("%s-%s", MII_IMAGE_NAME, "test-patch-app-v2"),
         Arrays.asList(appDir1, appDir2));
@@ -581,7 +583,7 @@ class ItMiiDomain implements LoggedTest {
         replicaCount,
         miiImagePatchAppV2);
 
-    // check and wait for the app to be ready
+    // check and wait for the V2 app to be ready
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
           domainUid,
@@ -592,7 +594,7 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V2 + i);
     }
 
-    logger.info("The cluster has been rolling started, and the version 2 application has been deployed correctly.");
+    logger.info("The cluster has been rolling restarted, and the version 2 application has been deployed correctly.");
   }
 
   @Test
@@ -610,7 +612,7 @@ class ItMiiDomain implements LoggedTest {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
-    // check and V2 app is still running
+    // check and V2 app is still running after the previous test
     for (int i = 1; i <= replicaCount; i++) {
       quickCheckAppRunning(
           domainUid,
@@ -635,10 +637,8 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V3,
           "The second app is not supposed to be running!!");
     }
-   
-    logger.info("About to patch the domain with new image");
-    
-    // create another image with an additional app
+
+    // create an image with an additional app
     miiImageAddSecondApp = updateImageWithApp3(
         String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
@@ -649,6 +649,8 @@ class ItMiiDomain implements LoggedTest {
   
     // push the image to OCIR to make the test work in multi node cluster
     pushImageIfNeeded(miiImageAddSecondApp);
+   
+    logger.info("About to patch the domain with new image"); 
 
     // patch the domain resource with the new image and verify that the domain resource is patched, 
     // and all server pods are patched as well.
@@ -671,7 +673,7 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V3);
     }
  
-    // check and wait for the original app to be ready
+    // check and wait for V2 app to be ready
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
           domainUid,

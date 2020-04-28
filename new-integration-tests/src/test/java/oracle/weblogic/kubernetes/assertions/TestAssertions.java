@@ -78,7 +78,7 @@ public class TestAssertions {
    * @param namespace in which the pod is running
    * @param podName name of the WebLogic server pod
    * @param image name of the image that the pod is supposed to use
-   * @return true if the domain is patched
+   * @return true if the pod is patched correctly
    */
   public static Callable<Boolean> podImagePatched(
       String domainUid,
