@@ -516,7 +516,7 @@ public class ItElasticLogging extends BaseTest {
             .append("'")
             .toString();
     LoggerHelper.getLocal().log(Level.INFO, "Command to search: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = ExecCommand.exec(cmd);
 
     return result.stdout();
   }
