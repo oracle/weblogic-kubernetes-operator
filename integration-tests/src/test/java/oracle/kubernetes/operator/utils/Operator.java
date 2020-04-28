@@ -309,7 +309,7 @@ public class Operator {
     StringBuffer cmd = new StringBuffer("");
     if (operatorMap.containsKey("operatorGitVersion")
         && operatorMap.containsKey("operatorGitVersionDir")) {
-      TestUtils.exec(
+      TestUtils.execOrAbortProcess(
           "cd "
               + operatorMap.get("operatorGitVersionDir")
               + " && git clone -b "
@@ -489,7 +489,7 @@ public class Operator {
       ExecCommand.exec("kubectl --grace-period=1 --timeout=1s delete namespace " + operatorNS + " --ignore-not-found");
       Thread.sleep(10000);
       // create operator namespace
-      TestUtils.exec("kubectl create namespace " + operatorNS, true);
+      ExecCommand.exec("kubectl create namespace " + operatorNS);
     }
     if (opSA) {
       // create operator service account
@@ -586,7 +586,7 @@ public class Operator {
     String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operatorNS;
     LoggerHelper.getLocal().log(Level.INFO, "Undeploy Operator using command:\n" + cmd);
 
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
 
     LoggerHelper.getLocal().log(Level.INFO, "stdout : \n" + result.stdout());
 
@@ -603,7 +603,7 @@ public class Operator {
     String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operatorNS;
     LoggerHelper.getLocal().log(Level.INFO, "Deploy Operator using command:\n" + cmd);
 
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
 
     LoggerHelper.getLocal().log(Level.INFO, "Checking if operator pod is running");
     verifyPodCreated();
@@ -634,7 +634,7 @@ public class Operator {
             + getOperatorNamespace()
             + " -o jsonpath=\"{.items[0].metadata.name}\"";
     LoggerHelper.getLocal().log(Level.INFO, "Command to query Operator pod name: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
 
     return result.stdout().trim();
   }
@@ -657,18 +657,18 @@ public class Operator {
    */
   public void writePodLog(String logLocation) throws Exception {
     //create dir
-    TestUtils.exec("mkdir -p " + logLocation);
+    TestUtils.execOrAbortProcess("mkdir -p " + logLocation);
 
     //write operator pod describe
     String cmd = "kubectl describe pod " + getOperatorPodName() + " -n "
         + getOperatorNamespace() + " >> " + logLocation
         + "/pod-describe." + operatorNS + "." + getOperatorPodName();
-    TestUtils.exec(cmd, true);
+    ExecCommand.exec(cmd);
 
     //write operator pod logs
     cmd = "kubectl logs pod/" + getOperatorPodName() + " -n "
         + getOperatorNamespace() + " >> " + logLocation
         + "/pod-log." + operatorNS + "." + getOperatorPodName();
-    TestUtils.exec(cmd, true);
+    ExecCommand.exec(cmd);
   }
 }
