@@ -43,12 +43,12 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
-    if (FULLTEST) {
-      namespaceList = new StringBuffer();
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-      initialize(APP_PROPS_FILE, testClassName);
-    }
+    Assumptions.assumeTrue(FULLTEST);
+    namespaceList = new StringBuffer();
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
+
   }
 
   /**
@@ -60,34 +60,34 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
   @BeforeEach
   public void prepare() throws Exception {
     // initialize test properties and create the directories
-    if (FULLTEST) {
-      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
-      createResultAndPvDirs(testClassName);
-      // create operator1
-      if (operator1 == null) {
-        ArrayList<String> targetDomainsNS = new ArrayList<String>();
-        targetDomainsNS.add(domainNSShutOpMS);
-        targetDomainsNS.add(domainNSShutOpMSForced);
-        targetDomainsNS.add(domainNSShutOpMSIgnoreSessions);
-        targetDomainsNS.add(domainNSShutOpMSTimeout);
-        targetDomainsNS.add(domainNSShutOpOverrideViaCluster);
-        Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
-        operatorMap.put("domainNamespaces",targetDomainsNS);
-        operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assertions.assertNotNull(operator1);
-        namespaceList.append((String)operatorMap.get("namespace"));
-        namespaceList.append(" ")
-            .append(domainNSShutOpOverrideViaCluster)
-            .append(" ")
-            .append(domainNSShutOpMS)
-            .append(" ")
-            .append(domainNSShutOpMSForced)
-            .append(" ")
-            .append(domainNSShutOpMSIgnoreSessions)
-            .append(" ")
-            .append(domainNSShutOpMSTimeout);
-      }
+    Assumptions.assumeTrue(FULLTEST);
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if operator1 and domain are running, if not creating");
+    createResultAndPvDirs(testClassName);
+    // create operator1
+    if (operator1 == null) {
+      ArrayList<String> targetDomainsNS = new ArrayList<String>();
+      targetDomainsNS.add(domainNSShutOpMS);
+      targetDomainsNS.add(domainNSShutOpMSForced);
+      targetDomainsNS.add(domainNSShutOpMSIgnoreSessions);
+      targetDomainsNS.add(domainNSShutOpMSTimeout);
+      targetDomainsNS.add(domainNSShutOpOverrideViaCluster);
+      Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, testClassName);
+      operatorMap.put("domainNamespaces",targetDomainsNS);
+      operator1 = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      Assertions.assertNotNull(operator1);
+      namespaceList.append((String)operatorMap.get("namespace"));
+      namespaceList.append(" ")
+          .append(domainNSShutOpOverrideViaCluster)
+          .append(" ")
+          .append(domainNSShutOpMS)
+          .append(" ")
+          .append(domainNSShutOpMSForced)
+          .append(" ")
+          .append(domainNSShutOpMSIgnoreSessions)
+          .append(" ")
+          .append(domainNSShutOpMSTimeout);
     }
+
   }
 
   /**
@@ -97,12 +97,12 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
-      tearDown(new Object() {
-      }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+    Assumptions.assumeTrue(FULLTEST);
+    tearDown(new Object() {
+    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
 
-      LoggerHelper.getLocal().log(Level.INFO, "SUCCESS");
-    }
+    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - tearDown");
+
   }
 
   /**
@@ -133,7 +133,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
       domain = createDomain(domainNSShutOpMS, shutdownPropOpt);
       Assertions.assertNotNull(domain, "domain "
           + domainNSShutOpMS
-          + " failed to create, returns null");
+          + " failed to create domain " + domainNSShutOpMS);
       Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
           + "-admin-server", "Graceful"),
           domain.getDomainUid()
@@ -185,7 +185,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
       domain = createDomain(domainNSShutOpMSIgnoreSessions, shutdownPropOpt);
       Assertions.assertNotNull(domain,
           domainNSShutOpMSIgnoreSessions
-              + " failed to create, returns null");
+              + " failed to create domain " + domainNSShutOpMSIgnoreSessions);
       Assertions.assertTrue(
           checkShutdownProp(domain.getDomainUid()
               + "-managed-server1", domain.getDomainNs(),"160", "false"),
@@ -241,7 +241,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
       domain = createDomain(domainNSShutOpMSTimeout, shutdownPropOpt);
       Assertions.assertNotNull(domain,
           domainNSShutOpMSTimeout
-              + " failed to create, returns null");
+              + " failed to create domain " + domainNSShutOpMSTimeout);
       Assertions.assertTrue(
           checkShutdownProp(domain.getDomainUid() + "-managed-server1", domain.getDomainNs(),"10", "false"),
           domain.getDomainUid()
@@ -293,7 +293,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
       domain = createDomain(domainNSShutOpMSForced, shutdownPropOpt);
       Assertions.assertNotNull(domain,
           domainNSShutOpMSForced
-              + " failed to create, returns null");
+              + " failed to create domain " + domainNSShutOpMSForced);
       Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
           + "-managed-server1",domain.getDomainNs(), "Forced"),
           domain.getDomainUid()
@@ -356,7 +356,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
       domain = createDomain(domainNSShutOpOverrideViaCluster, shutdownPropOpt);
       Assertions.assertNotNull(domain,
           domainNSShutOpOverrideViaCluster
-              + " failed to create, returns null");
+              + " failed to create domain " + domainNSShutOpOverrideViaCluster);
       // scale up to 2 replicas to check both managed servers in the cluster
       scaleCluster(2, domain);
       Assertions.assertTrue(checkShutdownProp(domain.getDomainUid()
@@ -391,11 +391,11 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
   }
 
   /**
-   * Shutdown managed server and returns duration of shutdown in milliseconds.
+   * Restart managed server and returns duration of shutdown in milliseconds.
    *
-   * @throws Exception if failed to shutdown the server.
+   * @throws Exception if failed to restart the server.
    */
-  private static long shutdownServer(String serverName, String domainNS, String domainUid) throws Exception {
+  private static long restartServer(String serverName, String domainNS, String domainUid) throws Exception {
     long startTime;
     startTime = System.currentTimeMillis();
     String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
@@ -428,7 +428,7 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
       // sleep 5 secs before shutdown
       Thread.sleep(5 * 1000);
     }
-    long terminationTime = shutdownServer("managed-server1", domain.getDomainNs(), domain.getDomainUid());
+    long terminationTime = restartServer("managed-server1", domain.getDomainNs(), domain.getDomainUid());
     LoggerHelper.getLocal().log(Level.INFO, " termination time: " + terminationTime);
     return terminationTime;
   }
