@@ -548,9 +548,7 @@ class ItMiiDomain implements LoggedTest {
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V1 + i,
-            String.format("App sample-war/index.jsp is not running in namespace %s as expected.", 
-                domainNamespace));
+            APP_RESPONSE_V1 + i);
     }
  
     // check and make sure that the version 2 app is NOT running
@@ -561,8 +559,7 @@ class ItMiiDomain implements LoggedTest {
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V2 + i,
-            "The second version of the app is not supposed to be running.");   
+            APP_RESPONSE_V2 + i);   
     }
  
     // create an image with app V2 
@@ -620,8 +617,7 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i,
           "8001",
           "sample-war/index.jsp",
-          APP_RESPONSE_V2 + i,
-          "The expected app is not accessible inside the server pods");
+          APP_RESPONSE_V2 + i);
     }
 
     logger.info("App version 2 is still running");
@@ -634,8 +630,7 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i,
           "8001",
           "sample-war-3/index.jsp",
-          APP_RESPONSE_V3,
-          "The second app is not supposed to be running!!");
+          APP_RESPONSE_V3);
     }
 
     // create an image with an additional app
@@ -1142,15 +1137,13 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPod(
+        .until(() -> appAccessibleInPod(
                 domainUid, 
                 ns, 
                 podName, 
                 internalPort, 
                 appPath, 
-                expectedStr),
-            String.format(
-                "App %s is not ready on pod %s in namespace %s", appPath, podName, domainNamespace)));
+                expectedStr));
 
   }
   
@@ -1160,8 +1153,7 @@ class ItMiiDomain implements LoggedTest {
       String podName,
       String internalPort,
       String appPath, 
-      String expectedStr,
-      String failMessage
+      String expectedStr
   ) {
    
     // check if the app is accessible inside of a server pod
@@ -1174,14 +1166,13 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appAccessibleInPod(
+        .until(() -> appAccessibleInPod(
                 domainUid, 
                 ns,
                 podName, 
                 internalPort, 
                 appPath, 
-                expectedStr),
-            failMessage));
+                expectedStr));
 
   }
   
@@ -1191,8 +1182,7 @@ class ItMiiDomain implements LoggedTest {
       String podName,
       String internalPort,
       String appPath, 
-      String expectedStr,
-      String failMessage
+      String expectedStr
   ) {
    
     // check if the app is not running inside of a server pod
@@ -1205,14 +1195,13 @@ class ItMiiDomain implements LoggedTest {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> appNotAccessibleInPod(
+        .until(() -> appNotAccessibleInPod(
                 domainUid, 
                 ns, 
                 podName,
                 internalPort, 
                 appPath, 
-                expectedStr),
-            failMessage));
+                expectedStr));
   }
    
   private void checkDomainPatched(

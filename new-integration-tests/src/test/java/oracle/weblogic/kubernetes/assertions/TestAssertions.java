@@ -217,7 +217,7 @@ public class TestAssertions {
    * @param expectedStr the expected response from the application
    * @return true if the command succeeds 
    */
-  public static Callable<Boolean> appAccessibleInPod(
+  public static boolean appAccessibleInPod(
       String domainUID,
       String domainNS,
       String podName,
@@ -225,9 +225,7 @@ public class TestAssertions {
       String appPath,
       String expectedStr
   ) {
-    return () -> {
-      return Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
-    };
+    return Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
   }
 
   /**
@@ -241,7 +239,7 @@ public class TestAssertions {
    * @param expectedStr the expected response from the application
    * @return true if the command succeeds 
    */
-  public static Callable<Boolean> appNotAccessibleInPod(
+  public static boolean appNotAccessibleInPod(
       String domainUID,
       String domainNS,
       String podName,
@@ -249,9 +247,7 @@ public class TestAssertions {
       String appPath,
       String expectedStr
   ) {
-    return () -> {
-      return !Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
-    };
+    return !Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
   }
 
   /**
