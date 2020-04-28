@@ -74,11 +74,10 @@ public class CleanupUtil {
         deleteNamespacedArtifacts(namespace);
       }
 
-      Thread.sleep(30 * 1000); // I am using Thread.sleep for a one time 30 sec sleep.
-      // If put 30 seconds in pollDelay in below, its going to sleep 30 seconds for every namespace.
+      Thread.sleep(30 * 1000); // Using Thread.sleep for a one time 30 sec sleep.
+      // If pollDelay is set to 30 seconds below, its going to sleep 30 seconds for every namespace.
 
       // wait for the artifacts to be deleted, waiting for a maximum of 3 minutes
-      // with pollDelay 0, since already waited for 30 seconds
       ConditionFactory withStandardRetryPolicy = with().pollDelay(0, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(3, MINUTES).await();
@@ -103,7 +102,7 @@ public class CleanupUtil {
   /**
    * Delete domains in the given namespace, if exists.
    *
-   * @param namespace name of the namespace
+   * @param namespace name
    */
   private static void deleteDomains(String namespace) {
     try {
@@ -120,7 +119,7 @@ public class CleanupUtil {
   /**
    * Uninstalls the operator.
    *
-   * @param namespace name of the namespace
+   * @param namespace name
    */
   private static void uninstallOperator(String namespace) {
     HelmParams opHelmParams = new HelmParams()
@@ -132,7 +131,7 @@ public class CleanupUtil {
   /**
    * Returns true if the namespace is operator namespace, otherwise false.
    *
-   * @param namespace name of the namespace
+   * @param namespace name
    * @return true if the namespace is operator namespace, otherwise false
    * @throws ApiException when Kubernetes cluster query fails
    */
@@ -143,7 +142,7 @@ public class CleanupUtil {
   /**
    * Returns true if artifacts doesn't exists in the Kubernetes cluster.
    *
-   * @param namespace name of the namespace
+   * @param namespace name
    * @return true if no artifacts exists otherwise false
    */
   public static Callable<Boolean> artifactsDoesntExist(String namespace) {
@@ -380,7 +379,7 @@ public class CleanupUtil {
   /**
    * Deletes artifacts in the Kubernetes cluster in the given namespace.
    *
-   * @param namespace name of the namespace
+   * @param namespace name
    */
   public static void deleteNamespacedArtifacts(String namespace) {
     logger.info("Deleting artifacts in namespace {0}", namespace);
