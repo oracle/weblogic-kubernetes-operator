@@ -509,9 +509,11 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       V1Namespace namespace = (V1Namespace) response.getObject();
       String phase = namespace.getStatus().getPhase();
-      logger.info(
+      logger.fine(
           "Deletion of namespace " + namespace.getMetadata().getName() + " is in phase: " + phase);
       if (!phase.equals("Terminating")) {
+        logger.warning("Attempt to delete namespace " + namespace.getMetadata().getName()
+            + " failed because it is in phase: " + phase);
         return false;
       }
     }
@@ -1176,7 +1178,8 @@ public class Kubernetes implements LoggedTest {
           "Received after-deletion status of the requested object, will be deleting "
           + "service account in background!");
       V1ServiceAccount serviceAccount = (V1ServiceAccount) response.getObject();
-      logger.info("Deleted Service Account serviceAccount: " + serviceAccount);
+      logger.info(
+          "Deleting Service Account " + serviceAccount.getMetadata().getName() + " in background.");
     }
 
     return true;
@@ -1359,7 +1362,7 @@ public class Kubernetes implements LoggedTest {
    *     name is provided than the first container in the Pod is used.
    * @param redirectToStdout copy Process output to stdout
    * @param command The command to run
-   * @return output from the command
+   * @return result of command execution
    * @throws IOException if an I/O error occurs.
    * @throws ApiException if Kubernetes client API call fails
    * @throws InterruptedException if any thread has interrupted the current thread

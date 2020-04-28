@@ -545,7 +545,7 @@ public class TestActions {
    *     name is provided than the first container in the Pod is used.
    * @param redirectToStdout copy Process output to stdout
    * @param command The command to run
-   * @return output from the command
+   * @return result of command execution
    * @throws IOException if an I/O error occurs.
    * @throws ApiException if Kubernetes client API call fails
    * @throws InterruptedException if any thread has interrupted the current thread

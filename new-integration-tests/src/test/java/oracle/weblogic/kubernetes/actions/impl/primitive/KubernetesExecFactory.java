@@ -1,10 +1,9 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import io.kubernetes.client.openapi.models.V1Pod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.KubernetesExec;
 
 /** A factory for objects which can execute commands in Kubertenes containers. */
 public interface KubernetesExecFactory {
