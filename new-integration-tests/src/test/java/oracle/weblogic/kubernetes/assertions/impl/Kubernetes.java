@@ -14,12 +14,15 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
 
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumes;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Kubernetes {
@@ -298,6 +301,25 @@ public class Kubernetes {
         }
       }
     }
+  }
+
+  /**
+   * Check if a persistent volume is in a given state.
+   *
+   * @param name name of the persistent volume
+   * @param state state of the persistent volume to match
+   * @return true if state matches otherwise false
+   */
+  public static boolean isPersistentVolumeInState(String name, String state) {
+    V1PersistentVolumeList list = listPersistentVolumes();
+    if (list != null) {
+      for (V1PersistentVolume item : list.getItems()) {
+        if (item.getMetadata().getName().equals(name)) {
+          return item.getStatus().getPhase().equals(state);
+        }
+      }
+    }
+    return false;
   }
 
   public static boolean loadBalancerReady(String domainUid) {
