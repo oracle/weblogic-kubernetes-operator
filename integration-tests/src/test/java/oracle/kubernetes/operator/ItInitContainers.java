@@ -392,7 +392,7 @@ public class ItInitContainers extends BaseTest {
 
     // Apply the new yaml to update the domain
     LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-    ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+    ExecResult exec = TestUtils.execOrAbortProcess("kubectl apply -f " + path.toString());
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
   }
 

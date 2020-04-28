@@ -209,7 +209,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
             true,
             RestCertType.SELF_SIGNED);
     String command = " kubectl delete namespace " + operator.getOperatorNamespace();
-    TestUtils.exec(command);
+    TestUtils.execOrAbortProcess(command);
     try {
       operator.callHelmInstall();
       gotException = false;

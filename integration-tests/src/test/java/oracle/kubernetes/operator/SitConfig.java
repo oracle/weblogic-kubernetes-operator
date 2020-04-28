@@ -98,7 +98,7 @@ public class SitConfig extends BaseTest {
     if (!OPENSHIFT) {
       fqdn = TestUtils.getHostName();
     } else {
-      ExecResult result = TestUtils.exec("hostname -i");
+      ExecResult result = TestUtils.execOrAbortProcess("hostname -i");
       fqdn = result.stdout().trim();
     }
     String jdbcUrl = "jdbc:mysql://" + fqdn + ":" + mysqldbport + "/";
@@ -206,7 +206,7 @@ public class SitConfig extends BaseTest {
     content = content.replaceAll("@DOMAIN_UID@", domainUid);
     content = content.replaceAll("@MYSQLPORT@", mysqldbport);
     Files.write(dst, content.getBytes(charset));
-    ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
+    ExecResult result = TestUtils.execOrAbortProcess("kubectl create -f " + mysqlYamlFile);
     Assertions.assertEquals(0, result.exitValue());
   }
 
@@ -229,7 +229,7 @@ public class SitConfig extends BaseTest {
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
-        TestUtils.exec(
+        TestUtils.execOrAbortProcess(
             kubeExecCmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
@@ -259,7 +259,7 @@ public class SitConfig extends BaseTest {
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
-        TestUtils.exec(
+        TestUtils.execOrAbortProcess(
             kubeExecCmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
@@ -294,7 +294,7 @@ public class SitConfig extends BaseTest {
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
-        TestUtils.exec(
+        TestUtils.execOrAbortProcess(
             kubeExecCmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
@@ -326,7 +326,7 @@ public class SitConfig extends BaseTest {
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
-        TestUtils.exec(
+        TestUtils.execOrAbortProcess(
             kubeExecCmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
@@ -358,7 +358,7 @@ public class SitConfig extends BaseTest {
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
-        TestUtils.exec(
+        TestUtils.execOrAbortProcess(
             kubeExecCmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
@@ -399,7 +399,7 @@ public class SitConfig extends BaseTest {
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
-        TestUtils.exec(
+        TestUtils.execOrAbortProcess(
             kubeExecCmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
@@ -437,7 +437,7 @@ public class SitConfig extends BaseTest {
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
     ExecResult result =
-        TestUtils.exec(
+        TestUtils.execOrAbortProcess(
             kubeExecCmd
                 + " 'sh runSitConfigTests.sh "
                 + fqdn
@@ -471,7 +471,7 @@ public class SitConfig extends BaseTest {
       String kubeExecCmd =
           "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
       ExecResult result =
-          TestUtils.exec(
+          TestUtils.execOrAbortProcess(
               kubeExecCmd
                   + " 'sh runSitConfigTests.sh "
                   + fqdn
@@ -517,7 +517,7 @@ public class SitConfig extends BaseTest {
         domain.getDomainNs());
     String kubeExecCmd =
         "kubectl -n " + domain.getDomainNs() + "  exec -it " + adminpodname + "  -- bash -c";
-    TestUtils.exec(kubeExecCmd + " 'wlst.sh create-jdbc-resource.py'", true);
+    TestUtils.execOrAbortProcess(kubeExecCmd + " 'wlst.sh create-jdbc-resource.py'", true);
   }
 
   /**
@@ -542,7 +542,7 @@ public class SitConfig extends BaseTest {
           StandardOpenOption.TRUNCATE_EXISTING);
 
       // delete the old secret and add new secret to domain.yaml
-      TestUtils.exec("kubectl delete secret -n "
+      TestUtils.execOrAbortProcess("kubectl delete secret -n "
           + domain.getDomainNs() + " "
           + domain.getDomainUid() + "-" + oldSecret, true);
       String cmd =
@@ -556,8 +556,8 @@ public class SitConfig extends BaseTest {
               + TestUtils.getHostName()
               + " --from-literal=dbusername=root"
               + " --from-literal=dbpassword=root123";
-      TestUtils.exec(cmd, true);
-      TestUtils.exec("kubectl apply -f " + domainYaml, true);
+      TestUtils.execOrAbortProcess(cmd, true);
+      TestUtils.execOrAbortProcess("kubectl apply -f " + domainYaml, true);
     }
 
     int clusterReplicas =
@@ -576,9 +576,9 @@ public class SitConfig extends BaseTest {
             + "-sitconfigcm --from-file="
             + (String)domain.getDomainMap().get("configOverridesFile")
             + " -o yaml --dry-run | kubectl replace -f -";
-    TestUtils.exec(cmd, true);
+    TestUtils.execOrAbortProcess(cmd, true);
     cmd = "kubectl describe cm -n " + domain.getDomainNs() + " " + domain.getDomainUid() + "-sitconfigcm";
-    TestUtils.exec(cmd, true);
+    TestUtils.execOrAbortProcess(cmd, true);
 
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(domain.getDomainUid(), domain.getDomainNs(), patchStr);
