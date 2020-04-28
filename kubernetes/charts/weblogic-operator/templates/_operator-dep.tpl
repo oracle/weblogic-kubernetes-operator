@@ -58,8 +58,15 @@ spec:
         {{- end }}
         resources:
           requests:
-            cpu: "100m"
-            memory: "512Mi"
+            cpu: {{ .cpuRequests | default "100m" }}
+            memory: {{ .memoryRequests | default "512Mi" }}
+          limits:
+            {{- if .cpuLimits}}
+            cpu: {{ .cpuLimits }}
+            {{- end }}
+            {{- if .memoryLimits}}
+            memory: {{ .memoryLimits }}
+            {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/operator/config"
