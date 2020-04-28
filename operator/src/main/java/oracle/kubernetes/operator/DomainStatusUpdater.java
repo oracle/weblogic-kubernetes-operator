@@ -399,19 +399,19 @@ public class DomainStatusUpdater {
       Map<String, ServerStatus> getServerStatuses(final String adminServerName) {
         return getServerNames().stream()
             .collect(Collectors.toMap(Function.identity(),
-                s -> createServerStatus(s,adminServerName)));
+                s -> createServerStatus(s, Objects.equals(s, adminServerName))));
       }
 
-      private ServerStatus createServerStatus(String serverName, String adminServerName) {
+      private ServerStatus createServerStatus(String serverName, boolean isAdminServer) {
         String clusterName = getClusterName(serverName);
         return new ServerStatus()
             .withServerName(serverName)
             .withState(getRunningState(serverName))
-            .withDesiredState(getDesiredState(serverName, clusterName, serverName.equals(adminServerName)))
+            .withDesiredState(getDesiredState(serverName, clusterName, isAdminServer))
             .withHealth(serverHealth == null ? null : serverHealth.get(serverName))
             .withClusterName(clusterName)
             .withNodeName(getNodeName(serverName))
-            .withIsAdminServer(serverName.equals(adminServerName));
+            .withIsAdminServer(isAdminServer);
       }
 
       private String getRunningState(String serverName) {
