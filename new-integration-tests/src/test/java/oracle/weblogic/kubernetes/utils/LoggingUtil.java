@@ -381,7 +381,7 @@ public class LoggingUtil {
     } catch (TimeoutException ex) {
       logger.warning("Copy timed out");
     } catch (InterruptedException ex) {
-      logger.warning("Copy interuppted");
+      logger.warning("Copy interrupted");
     } finally {
       if (copyJob != null && !copyJob.isDone()) {
         logger.info("Cancelling the copy job");
