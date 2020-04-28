@@ -3,8 +3,10 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
@@ -13,6 +15,7 @@ import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
+import oracle.kubernetes.operator.utils.Secret;
 import oracle.kubernetes.operator.utils.TestUtils;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -92,7 +95,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
    * @param modelFiles names of model files to copy
    */
   protected void createCmAndPatchDomain(Domain domain, String destDir, String[] modelFiles) {
-    // copy model files that contains JDBC DS to a dir to re-create cm
+    // copy model files that contains JDBC DS to a dir. to re-create cm
     copyTestModelFiles(destDir, modelFiles);
 
     // re-create cm to update config and verify cm is created successfully
@@ -130,7 +133,37 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   }
 
   /**
-   * Copy model files from source dir to test dir.
+   * Create secret to update config and patch domain to change domain-level restart version.
+   * @param domain the Domain object where to patch domain and update domain config values
+   * @param destDir destination directory name to copy model files to
+   * @param modelFiles names of model files to copy
+   */
+  protected Secret createSecretImageAndPatchDomain(Domain domain,
+                                                    String jdbcUrl,
+                                                    String mysqldbport,
+                                                    String wdtModelFile,
+                                                    String wdtModelPropFile) {
+    // create a secret with jdbc url, username and password
+    final String domainNS = domain.getDomainNs();
+    Secret secret = createSecrets(domainNS, jdbcUrl);
+
+    // patch domain to adding the secret name and verify domain restarted successfully
+    modifyDomainYamlWithSecretName(domain, secret.getSecretName());
+
+    // replace secret name token with real secret name
+    Map<String, Object> domainMap = domain.getDomainMap();
+    final String resultsDir = (String) domainMap.get("resultDir");
+    final String destDir = resultsDir + "/samples/model-in-image";
+    copyAndUpdateModelFileWSecret(destDir, wdtModelFile, secret.getSecretName());
+
+    final String imageName = (String) domainMap.get("image") + "_secret";
+    createImageAndPatchDomain(domain, imageName, wdtModelFile, wdtModelPropFile);
+
+    return secret;
+  }
+
+  /**
+   * Copy model files from source dir. to test dir.
    * @param destDir destination directory name to copy model files to
    * @param modelFiles names of model files to copy
    */
@@ -151,6 +184,37 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     } catch (Exception ex) {
       ex.printStackTrace();
       fail("Failed to copy model files", ex.getCause());
+    }
+  }
+
+  /**
+   * Copy model files from source dir. to test dir. and replace JDBC URL token with real value.
+   * @param destDir destination directory name to copy model files to
+   * @param modelFiles names of model files to copy
+   * @param secretName secret name to create
+   */
+  protected void copyAndUpdateModelFileWSecret(String destDir, String modelFile, String secretName) {
+    LoggerHelper.getLocal().log(Level.INFO, "Copy and modify test modelFile");
+    final String origDir = BaseTest.getProjectRoot()
+        + "/integration-tests/src/test/resources/model-in-image";
+
+    try {
+      Files.deleteIfExists(Paths.get(destDir + "/" + modelFile));
+
+      // copy MySQL yaml file
+      final Path src = Paths.get(origDir + "/" + modelFile);
+      final Path dst = Paths.get(destDir + "/" + modelFile);
+      LoggerHelper.getLocal().log(Level.INFO, "Copying " + src.toString() + " to " + dst.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      String content = new String(Files.readAllBytes(src), charset);
+      Files.write(dst, content.getBytes(charset));
+      content = new String(Files.readAllBytes(dst), charset);
+      LoggerHelper.getLocal().log(Level.INFO, "Replace secret name token with " + secretName);
+      content = content.replaceAll("SECRET_NAME", secretName);
+      Files.write(dst, content.getBytes(charset));
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      fail("Failed to copy and modify test modelFile", ex.getCause());
     }
   }
 
@@ -224,7 +288,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
       .append(WdtDomainType.WLS.geWdtDomainType());
 
     try {
-      // creating a new or updating an existing image
+      // create a new or update an existing image
       LoggerHelper.getLocal().log(Level.INFO, "Command to create domain image: "
           + createDomainImageScriptCmd);
       result = ExecCommand.exec(createDomainImageScriptCmd.toString(), true, additionalEnvMap);
@@ -284,6 +348,148 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
 
       fail(errorMsg.toString(), ex.getCause());
     }
+  }
+
+  /**
+   * Modify the domain yaml to change image name and verify the domain restarted.
+   * @param domain the Domain where to change the image name
+   * @param imageName image name to be updated in the Domain
+   */
+  protected void modifyDomainYamlWithSecretName(Domain domain, String secretName) {
+    // get domain namespace name
+    Map<String, Object> domainMap = domain.getDomainMap();
+    final String domainNS = domainMap.get("namespace").toString();
+    ExecResult result = null;
+
+    StringBuffer getExistSecretsCmd = new StringBuffer("kubectl -n ");
+    getExistSecretsCmd
+        .append(domainNS)
+        .append(" get domain ")
+        .append(domain.getDomainUid())
+        .append(" -o jsonpath='{.spec.configuration.secrets}' | sed 's/[][]//g'");
+    LoggerHelper.getLocal().log(Level.INFO, "Command to get existing secrets: " + getExistSecretsCmd);
+
+    try {
+      // get existing secret names in domain
+      result = TestUtils.exec(getExistSecretsCmd.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Existing secrets are: " + result.stdout());
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(getExistSecretsCmd)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
+    }
+
+    String allSecrets = secretName;
+    if (!result.stdout().isEmpty()) {
+      // append new secret name to existing secret names in domain
+      allSecrets += "," + result.stdout().trim();
+    }
+
+    StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
+    patchDomainCmd
+        .append(domainNS)
+        .append(" patch domain ")
+        .append(domain.getDomainUid())
+        .append(" --type='json' ")
+        .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"")
+        .append(allSecrets)
+        .append("\"] }]'");
+    LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
+
+    try {
+      // patch the domain
+      LoggerHelper.getLocal().log(Level.INFO, "Adding [" + allSecrets + "] to domain dynamically");
+      result = TestUtils.exec(patchDomainCmd.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(patchDomainCmd)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
+
+      fail(errorMsg.toString(), ex.getCause());
+    }
+  }
+
+  /**
+   * Create a MySQL pod.
+   * @param domain the Domain where to change the image name
+   * @param mysqldbport MySQL DB port number
+   */
+  protected void createMySql(Domain domain, String destDir, String mysqldbport) {
+    Map<String, Object> domainMap = domain.getDomainMap();
+    final String domainNS = domainMap.get("namespace").toString();
+    final String domainUid = domain.getDomainUid();
+    final String mysqlYamlFile = "mysql-dbservices.ymlt";
+    final String origDir = BaseTest.getProjectRoot()
+        + "/integration-tests/src/test/resources/mysql";
+    String createMysqlCmd = null;
+    ExecResult result = null;
+
+    try {
+      Files.deleteIfExists(Paths.get(destDir));
+      Files.createDirectories(Paths.get(destDir));
+
+      // copy mysql yaml file
+      final Path src = Paths.get(origDir + "/" + mysqlYamlFile);
+      final Path dst = Paths.get(destDir + "/" + mysqlYamlFile);
+      LoggerHelper.getLocal().log(Level.INFO, "Copying " + src.toString() + " to " + dst.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      String content = new String(Files.readAllBytes(src), charset);
+      Files.write(dst, content.getBytes(charset));
+      content = new String(Files.readAllBytes(dst), charset);
+      content = content.replaceAll("@NAMESPACE@", domainNS);
+      content = content.replaceAll("@DOMAIN_UID@", domainUid);
+      content = content.replaceAll("@MYSQLPORT@", mysqldbport);
+      Files.write(dst, content.getBytes(charset));
+
+      createMysqlCmd = "kubectl create -f " + destDir + "/" + mysqlYamlFile;
+      LoggerHelper.getLocal().log(Level.INFO, "Command to create mysql: " + createMysqlCmd);
+      result = TestUtils.exec(createMysqlCmd);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(createMysqlCmd)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
+
+      fail(errorMsg.toString(), ex.getCause());
+    }
+  }
+
+  /**
+   * Create a secret that contains the username, password and JDBC URL to MySQL.
+   * @param domainNS domain namespace name
+   * @param jdbcUrl JDBC URL to MySQL
+   */
+  protected Secret createSecrets(String domainNS, String jdbcUrl) {
+    Secret secret = null;
+    try {
+      final String secretName = "mii-config-update-secret";
+      final String username = "root";
+      final String password = "root123";
+      LoggerHelper.getLocal().log(Level.INFO, "jdbcUrl: " + jdbcUrl);
+
+      // create a secret with JDBC URL, username and password
+      secret = new Secret(domainNS, secretName, jdbcUrl, username, password);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      fail("Failed to create Secret");
+    }
+
+    return secret;
   }
 
   /**
@@ -348,7 +554,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     String jdbcDsStr = "";
 
     try {
-      // copy verification file to test dir
+      // copy verification file to test dir.
       final String origDir = BaseTest.getProjectRoot()
           + "/integration-tests/src/test/resources/model-in-image/scripts";
       final String pyFileName = "verify-jdbc-resource.py";
@@ -409,5 +615,45 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
     }
 
     return jdbcDsStr;
+  }
+
+  /**
+   * Build a webapp to deploy to the cluster. It's used to established
+   * a connection to MySQL DB
+   * @param domain the Domain object where to get domain config values
+   * @param scriptName secret name containing the username, password and JDBC URL to MySQL
+   */
+  protected void buildApp(Domain domain, String scriptName) {
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String resultsDir = (String) domainMap.get("resultDir");
+    ExecResult result = null;
+
+    StringBuffer buildAppCmd = new StringBuffer("export WDT_VERSION=");
+    buildAppCmd.append(BaseTest.WDT_VERSION)
+        .append(" && ")
+        .append(resultsDir)
+        .append("/samples/model-in-image/")
+        .append(scriptName)
+        .append(" ")
+        .append(getUserProjectsDir())
+        .append(" ")
+        .append(domain.getDomainUid())
+        .append(" ")
+        .append(getProjectRoot())
+        .append("/integration-tests/src/test/resources/model-in-image");
+    LoggerHelper.getLocal().log(Level.INFO, "Command to build app: " + buildAppCmd);
+    try {
+      result = TestUtils.exec(buildAppCmd.toString());
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
+      errorMsg
+          .append(buildAppCmd)
+          .append(" failed, returned ")
+          .append(result.stdout())
+          .append("\n")
+          .append(result.stderr());
+      fail(errorMsg.toString());
+    }
   }
 }
