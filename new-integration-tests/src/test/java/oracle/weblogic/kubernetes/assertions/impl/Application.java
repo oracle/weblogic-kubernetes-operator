@@ -15,10 +15,11 @@ public class Application {
 
   /**
    * Check if an application is accessible inside a WebLogic server pod.
+   *
    * @param domainUID identifier of the Kubernetes domain custom resource instance
-   * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param domainNS Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
-   * @param port internal port of the managed servers
+   * @param port internal port of the managed server running in the pod
    * @param appPath the path to access the application
    * @return true if the command succeeds 
    */

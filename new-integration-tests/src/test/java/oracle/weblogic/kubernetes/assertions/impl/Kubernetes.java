@@ -113,14 +113,14 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod has been patched with an expected image.
+   * Checks if a WebLogic server pod has been patched with an expected image.
    *
-   * @param namespace in which the pod is running
+   * @param namespace Kubernetes namespace in which the pod is running
    * @param domainUid the label the pod is decorated with
+   * @param podName name of the WebLogic server pod
    * @param image name of the image to check for
-   * @param podName name of the pod to check for
    * @return true if pod's image has been patched
-   * @throws ApiException when there is error in querying the cluster
+   * @throws ApiException when there is an error in querying the Kubernetes cluster
    */
   public static boolean isPodImagePatched(
       String namespace,
@@ -136,12 +136,11 @@ public class Kubernetes {
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null && pod.getSpec() != null) {
       List<V1Container> containers = pod.getSpec().getContainers();
-      for (V1Container c : containers) {
-        // find the weblogic server container
-        if (c.getName().equals("weblogic-server")) {
-          if (c.getImage().equals(image)) {
-            podPatched = true;
-          }
+      for (V1Container container : containers) {
+        // look for the weblogic server container
+        if (container.getName().equals("weblogic-server")
+            && (container.getImage().equals(image))) {
+          podPatched = true;
         }
       }
     }

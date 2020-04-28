@@ -78,12 +78,12 @@ public class Domain {
   }
 
   /**
-   * Checks if domain resource has been patched with a new image.
+   * Checks if the domain resource has been patched with a new image.
    *
-   * @param domainUID domain UID of the domain object
-   * @param namespace in which the domain object exists
-   * @param image image that has been patch
-   * @return true if domain object 's image does not match what is expected
+   * @param domainUID identifier of the domain resource
+   * @param namespace in which the domain exists
+   * @param image name of the image that the pod is supposed to use
+   * @return true if domain resource's image does not match the expected value
    */
   public static Callable<Boolean> domainResourceImagePatched(
       String domainUID,
@@ -96,7 +96,8 @@ public class Domain {
         domain = oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes
                 .getDomainCustomResource(domainUID, namespace);
       } catch (ApiException apex) {
-        logger.info(apex.getMessage());
+        logger.severe("Failed to obtain the domain resource object from the API server", apex);
+        return false;
       }
       
       boolean domainPatched = (domain.spec().image().equals(image));

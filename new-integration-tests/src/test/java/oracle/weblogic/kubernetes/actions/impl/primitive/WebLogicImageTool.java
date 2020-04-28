@@ -54,14 +54,10 @@ public class WebLogicImageTool {
       return false;
     } 
 
-    logger.info("Image Tool is ready");
-    
     // download WDT if it is not in the expected location 
     if (!downloadWdt()) {
       return false;
     } 
-    
-    logger.info("WDT installer is ready");
 
     // delete the old cache entry for the WDT installer
     if (!deleteEntry()) {

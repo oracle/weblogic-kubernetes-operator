@@ -72,12 +72,12 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a WebLogic domain custom resource has been patched with a new image.
+   * Check if a WebLogic server pod has been patched with a new image.
    *
    * @param domainUid ID of the domain
-   * @param namespace in which the domain custom resource object exists
+   * @param namespace in which the pod is running
    * @param podName name of the WebLogic server pod
-   * @param image that was used to patch the domain resource
+   * @param image name of the image that the pod is supposed to use
    * @return true if the domain is patched
    */
   public static Callable<Boolean> podImagePatched(
@@ -210,9 +210,9 @@ public class TestAssertions {
    * Check if an application is accessible inside a WebLogic server pod.
    * 
    * @param domainUID unique identifier of the Kubernetes domain custom resource instance
-   * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param domainNS Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
-   * @param port internal port of the managed servers
+   * @param port internal port of the managed server running in the pod
    * @param appPath the path to access the application
    * @param expectedStr the expected response from the application
    * @return true if the command succeeds 
@@ -234,9 +234,9 @@ public class TestAssertions {
    * Check if an application is Not running inside a WebLogic server pod.
    * .
    * @param domainUID unique identifier of the Kubernetes domain custom resource instance
-   * @param domainNS Kubernetes namespace where the WebLogic servers are running
+   * @param domainNS Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
-   * @param port internal port of the managed servers
+   * @param port internal port of the managed server running in the pod
    * @param appPath the path to access the application
    * @param expectedStr the expected response from the application
    * @return true if the command succeeds 
