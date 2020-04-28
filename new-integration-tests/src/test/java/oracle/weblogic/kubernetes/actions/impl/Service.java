@@ -3,9 +3,13 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.Map;
+
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Service {
 
@@ -34,13 +38,23 @@ public class Service {
   /**
    * Get a Kubernetes Service.
    *
-   * @param name name of the Service
-   * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param namespace name of namespace
+   * @param serviceName name of the Service
+   * @param label       a Map of key value pairs the service is decorated with
+   * @param namespace   name of namespace
    * @return V1Service object if found otherwise null
    */
-  public static V1Service getService(String name,String labelSelector, String namespace) {
-    return Kubernetes.getService(namespace, labelSelector, name);
+  public static V1Service getService(
+      String serviceName,
+      Map<String, String> label,
+      String namespace) {
+    V1Service v1Service;
+    try {
+      v1Service = Kubernetes.getService(serviceName, label, namespace);
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      return null;
+    }
+    return v1Service;
   }
 
 }

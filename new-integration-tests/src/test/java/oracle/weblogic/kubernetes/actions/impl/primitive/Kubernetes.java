@@ -6,7 +6,9 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.logging.Level;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -1278,46 +1280,47 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List all Kubernetes services in given namespace.
-   *
-   * @param namespace Namespace in which to list all services
-   * @param labelSelectors with which the services are decorated
-   * @return V1ServiceList list of Kubernetes services
-   */
-  public static V1ServiceList listServices(String namespace, String labelSelectors) {
-    V1ServiceList v1ServiceList = null;
-    try {
-      v1ServiceList
-          = coreV1Api.listNamespacedService(
-              namespace, // namespace in which to look for the pods.
-              Boolean.FALSE.toString(), // pretty print output.
-              Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-              null, // continue to query when there is more results to return.
-              null, // selector to restrict the list of returned objects by their fields
-              labelSelectors, // selector to restrict the list of returned objects by their labels.
-              null, // maximum number of responses to return for a list call.
-              null, // shows changes that occur after that particular version of a resource.
-              null, // Timeout for the list/watch call.
-              Boolean.FALSE // Watch for changes to the described resources.
-          );
-    } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
-      return null;
-    }
-    return v1ServiceList;
-  }
-
-  /**
-   * Returns the V1Service object given the following parameters.
-   * @param namespace in which to check for the service existence
-   * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param serviceName name of the Service to return
+   * Get V1Service object for the given service name, label and namespace.
+   * @param serviceName name of the service to look for
+   * @param label the key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
    * @return V1Service object if found otherwise null
+   * @throws ApiException when there is error in querying the cluster
    */
-  public static V1Service getService(String namespace, String labelSelector, String serviceName) {
-    V1ServiceList services = listServices(namespace, labelSelector);
-    for (var service : services.getItems()) {
-      if (serviceName.equals(service.getMetadata().getName())) {
+  public static V1Service getService(
+      String serviceName, Map<String, String> label, String namespace)
+      throws ApiException {
+    String labelSelector = null;
+    if (label != null) {
+      String key = label.keySet().iterator().next().toString();
+      String value = label.get(key).toString();
+      labelSelector = String.format("%s in (%s)", key, value);
+      logger.info(labelSelector);
+    }
+    V1ServiceList v1ServiceList
+        = coreV1Api.listServiceForAllNamespaces(
+        Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+        null, // continue to query when there is more results to return.
+        null, // selector to restrict the list of returned objects by their fields
+        labelSelector, // selector to restrict the list of returned objects by their labels.
+        null, // maximum number of responses to return for a list call.
+        Boolean.FALSE.toString(), // pretty print output.
+        null, // shows changes that occur after that particular version of a resource.
+        null, // Timeout for the list/watch call.
+        Boolean.FALSE // Watch for changes to the described resources.
+    );
+    for (V1Service service : v1ServiceList.getItems()) {
+      if (service.getMetadata().getName().equals(serviceName.trim())
+          && service.getMetadata().getNamespace().equals(namespace.trim())) {
+        logger.info("Service Name : " + service.getMetadata().getName());
+        logger.info("Service Namespace : " + service.getMetadata().getNamespace());
+        Map<String, String> labels = service.getMetadata().getLabels();
+        if (labels != null) {
+          for (Map.Entry<String, String> entry : labels.entrySet()) {
+            logger.log(Level.INFO, "Label Key: {0} Label Value: {1}",
+                new Object[]{entry.getKey(), entry.getValue()});
+          }
+        }
         return service;
       }
     }

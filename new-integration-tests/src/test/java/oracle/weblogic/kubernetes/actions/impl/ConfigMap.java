@@ -33,7 +33,7 @@ public class ConfigMap {
   }
 
   /**
-   * List Kubernetes ConfigMaps in a namesapce.
+   * List Kubernetes ConfigMaps in a namespace.
    *
    * @param namespace name of namespace
    * @return List of ConfigMaps in a namespace

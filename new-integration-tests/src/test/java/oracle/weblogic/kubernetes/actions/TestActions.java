@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions;
 
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
@@ -450,13 +451,16 @@ public class TestActions {
 
   /**
    * Returns the V1Service object given the following parameters.
-   * @param namespace in which to check for the service existence
-   * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param name name of the Service to return
+   * @param serviceName name of the Service to return
+   * @param label       a Map of key value pairs the service is decorated with
+   * @param namespace   in which to check for the service existence
    * @return V1Service object if found otherwise null
    */
-  public static V1Service  getService(String name, String namespace, String labelSelector) {
-    return Service.getService(namespace, labelSelector, name);
+  public static V1Service  getService(
+      String serviceName,
+      Map<String, String> label,
+      String namespace) {
+    return Service.getService(serviceName, label, namespace);
   }
 
   // ------------------------ service account  --------------------------

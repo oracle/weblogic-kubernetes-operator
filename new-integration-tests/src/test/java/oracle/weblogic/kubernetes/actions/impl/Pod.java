@@ -21,7 +21,7 @@ public class Pod {
   }
 
   /**
-   * List Kubernetes pods in a namesapce.
+   * List Kubernetes pods in a namespace.
    *
    * @param namespace name of namespace
    * @param labelSelectors with which pods are decorated
