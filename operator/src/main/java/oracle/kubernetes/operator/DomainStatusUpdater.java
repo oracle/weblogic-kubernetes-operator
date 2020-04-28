@@ -422,8 +422,7 @@ public class DomainStatusUpdater {
       }
 
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
-        boolean shouldStart = isAdminServer | shouldStart(serverName);
-        return shouldStart
+        return isAdminServer | shouldStart(serverName)
             ? getDomain().getServer(serverName, clusterName).getDesiredState()
             : SHUTDOWN_STATE;
       }
