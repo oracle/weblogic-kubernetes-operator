@@ -89,7 +89,7 @@ public class ItSitConfigDomainInPV extends SitConfig {
   @AfterAll
   public static void staticUnPrepare() throws Exception {
     if (FULLTEST) {
-      ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
+      ExecResult result = TestUtils.execOrAbortProcess("kubectl delete -f " + mysqlYamlFile);
       LoggerHelper.getLocal().log(Level.INFO, "Deleting domain...");
       if (domain != null) {
         domain.destroy();

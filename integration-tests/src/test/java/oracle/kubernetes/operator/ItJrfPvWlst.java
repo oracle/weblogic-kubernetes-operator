@@ -59,7 +59,7 @@ public class ItJrfPvWlst extends BaseTest {
     if (QUICKTEST) {
       createResultAndPvDirs(testClassName);
       
-      TestUtils.exec(
+      TestUtils.execOrAbortProcess(
           "cp -rf " 
           + BaseTest.getProjectRoot() 
           + "/kubernetes/samples/scripts " 
