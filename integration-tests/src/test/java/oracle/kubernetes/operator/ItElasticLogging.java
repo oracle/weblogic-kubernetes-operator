@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -514,7 +515,7 @@ public class ItElasticLogging extends BaseTest {
             .append("'")
             .toString();
     LoggerHelper.getLocal().log(Level.INFO, "Command to search: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = ExecCommand.exec(cmd);
 
     return result.stdout();
   }
