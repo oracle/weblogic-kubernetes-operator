@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -58,12 +59,6 @@ public class IntegrationTestWatcher implements
   private String methodName;
   private List namespaces = null;
   private static final String START_TIME = "start time";
-
-  /**
-   * Directory to store logs.
-   */
-  private static final String LOGS_DIR = System.getProperty("RESULT_ROOT",
-        System.getProperty("java.io.tmpdir"));
 
   /**
    * Determine if this resolver supports resolution of an argument for the
@@ -129,6 +124,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("BeforeAll failed %s", className), "!");
     collectLogs(context, "beforeAll");
+    throw throwable;
   }
 
   /**
@@ -153,6 +149,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("BeforeEach failed for %s", methodName), "!");
     collectLogs(context, "beforeEach");
+    throw throwable;
   }
 
   /**
@@ -252,6 +249,7 @@ public class IntegrationTestWatcher implements
       throws Throwable {
     printHeader(String.format("AfterEach failed for %s", methodName), "!");
     collectLogs(context, "afterEach");
+    throw throwable;
   }
 
   /**
@@ -326,7 +324,7 @@ public class IntegrationTestWatcher implements
     }
     Path resultDir = null;
     try {
-      resultDir = Files.createDirectories(Paths.get(LOGS_DIR,
+      resultDir = Files.createDirectories(Paths.get(TestConstants.LOGS_DIR,
               extensionContext.getRequiredTestClass().getSimpleName(),
               getExtDir(extensionContext, failedStage)));
     } catch (IOException ex) {

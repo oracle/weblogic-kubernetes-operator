@@ -190,10 +190,10 @@ public class ItMonitoringExporter extends BaseTest {
               + domainNS2
               + "-image:" + currentDateTime;
           String cmd = "docker rmi -f " + image;
-          TestUtils.exec(cmd, true);
+          TestUtils.execOrAbortProcess(cmd, true);
         }
         String cmd = "docker rmi -f " + domainNS2 + "-image:" + currentDateTime;
-        TestUtils.exec(cmd, true);
+        TestUtils.execOrAbortProcess(cmd, true);
       }
       if (operator != null) {
         operator.destroy();
@@ -248,7 +248,7 @@ public class ItMonitoringExporter extends BaseTest {
       Files.createDirectories(Paths.get(destLoc));
     }
     String crdCmd = " cp " + srcLoc + "/" + fileName + " " + destLoc;
-    TestUtils.exec(crdCmd, true);
+    TestUtils.execOrAbortProcess(crdCmd, true);
     crdCmd =
         "cd "
             + destLoc
@@ -260,7 +260,7 @@ public class ItMonitoringExporter extends BaseTest {
             + args
             + " | tee "
             + outLogFile;
-    TestUtils.exec(crdCmd, true);
+    TestUtils.execOrAbortProcess(crdCmd, true);
     crdCmd = " cat " + destLoc + "/" + outLogFile;
     ExecResult result = ExecCommand.exec(crdCmd);
     assertFalse(
@@ -385,7 +385,7 @@ public class ItMonitoringExporter extends BaseTest {
     cmd.append(" -n " + domainNS1);
 
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
-    TestUtils.exec(cmd.toString());
+    TestUtils.execOrAbortProcess(cmd.toString());
   }
 
   /**
@@ -860,7 +860,7 @@ public class ItMonitoringExporter extends BaseTest {
     // apply new domain yaml and verify pod restart
     String crdCmd =
         " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml";
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
 
     TestUtils.checkPodReady(domainNS2 + "-admin-server", domainNS2);
     TestUtils.checkPodReady(domainNS2 + "-managed-server-1", domainNS2);
@@ -889,7 +889,7 @@ public class ItMonitoringExporter extends BaseTest {
         " kubectl -n " + monitoringNS + " get cm prometheus-server -oyaml > "
             + monitoringExporterEndToEndDir
             + "/cm.yaml";
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
     ExecResult result = ExecCommand.exec("cat " + monitoringExporterEndToEndDir + "/cm.yaml");
     LoggerHelper.getLocal().log(Level.INFO, " output for cm " + result.stdout());
     replaceStringInFile(
@@ -900,7 +900,7 @@ public class ItMonitoringExporter extends BaseTest {
         + " apply -f "
         + monitoringExporterEndToEndDir
         + "/cm.yaml";
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
   }
 
   private static String getPodName(String labelExp, String namespace) throws Exception {
@@ -1095,12 +1095,12 @@ public class ItMonitoringExporter extends BaseTest {
             + wlsUser
             + "  --from-literal=password="
             + wlsPassword;
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
 
     // apply new domain yaml and verify pod restart
     crdCmd =
         " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domainInImage.yaml";
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
 
     TestUtils.checkPodReady(domainNS2 + "-admin-server", domainNS2);
     TestUtils.checkPodReady(domainNS2 + "-managed-server-1", domainNS2);
@@ -1109,7 +1109,7 @@ public class ItMonitoringExporter extends BaseTest {
     replaceStringInFile(monitoringExporterEndToEndDir + "/util/curl.yaml", "default", domainNS2);
     // apply curl to the pod
     crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/util/curl.yaml";
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
 
     TestUtils.checkPodReady("curl", domainNS2);
     // access metrics
@@ -1119,7 +1119,7 @@ public class ItMonitoringExporter extends BaseTest {
             + ":"
             + wlsPassword
             + "@" + domainNS2 + "-managed-server-1:8001/wls-exporter/metrics";
-    ExecResult result = TestUtils.exec(crdCmd);
+    ExecResult result = TestUtils.execOrAbortProcess(crdCmd);
     assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
     crdCmd =
         "kubectl exec -n " + domainNS2 + " curl -- curl http://"
@@ -1127,7 +1127,7 @@ public class ItMonitoringExporter extends BaseTest {
             + ":"
             + wlsPassword
             + "@" + domainNS2 + "-managed-server-2:8001/wls-exporter/metrics";
-    result = TestUtils.exec(crdCmd);
+    result = TestUtils.execOrAbortProcess(crdCmd);
     assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
   }
 
@@ -1143,7 +1143,7 @@ public class ItMonitoringExporter extends BaseTest {
             + oldImageName
             + " "
             + newImageName;
-    ExecResult result = TestUtils.exec(dockerLoginAndTagCmd);
+    ExecResult result = TestUtils.execOrAbortProcess(dockerLoginAndTagCmd);
     LoggerHelper.getLocal().log(Level.INFO,
         "cmd "
             + dockerLoginAndTagCmd
@@ -1164,7 +1164,7 @@ public class ItMonitoringExporter extends BaseTest {
     String crdCmd = " cp " + resourceExporterDir + "/promvalues.yaml"
         + " " + monitoringExporterEndToEndDir
         + "/prometheus/promvalues.yaml";
-    TestUtils.exec(crdCmd, true);
+    TestUtils.execOrAbortProcess(crdCmd, true);
     String promalertmanagerPort = String.valueOf(32500 + getNewSuffixCount());
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/prometheus/promvalues.yaml", "32500", promalertmanagerPort);
@@ -1223,7 +1223,7 @@ public class ItMonitoringExporter extends BaseTest {
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
             + "  -X POST http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/datasources/"
             + "  --data-binary @grafana/datasource.json";
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
 
     crdCmd =
         " cd "
@@ -1231,7 +1231,7 @@ public class ItMonitoringExporter extends BaseTest {
             + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
             + "  -X POST http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
-    TestUtils.exec(crdCmd);
+    TestUtils.execOrAbortProcess(crdCmd);
     crdCmd = " cd "
         + monitoringExporterEndToEndDir
         + " && "
@@ -1310,7 +1310,7 @@ public class ItMonitoringExporter extends BaseTest {
         if (new File(pvDir).exists()) {
 
           LoggerHelper.getLocal().log(Level.INFO, "Deleting pv created dir " + pvDir);
-          TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"rm -rf " + pvDir + "\"");
+          TestUtils.execOrAbortProcess("/usr/local/packages/aime/ias/run_as_root \"rm -rf " + pvDir + "\"");
         }
       }
     }
