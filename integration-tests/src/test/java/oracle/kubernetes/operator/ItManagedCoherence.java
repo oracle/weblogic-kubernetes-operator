@@ -330,7 +330,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy);
 
     LoggerHelper.getLocal().log(Level.INFO, "curlCmd is " + curlCmd.toString());
-    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
+    ExecResult result = ExecCommand.exec(curlCmd.toString());
 
     return result;
   }
@@ -352,7 +352,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
+    ExecResult result = ExecCommand.exec(curlCmd.toString());
     return result;
   }
 
@@ -373,7 +373,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
+    ExecResult result = ExecCommand.exec(curlCmd.toString());
     return result;
   }
 
@@ -394,7 +394,7 @@ public class ItManagedCoherence extends BaseTest {
         .append(appToDeploy)
         .append("/")
         .append(appToDeploy);
-    ExecResult result = TestUtils.exec(curlCmd.toString(), true);
+    ExecResult result = ExecCommand.exec(curlCmd.toString());
     return result;
   }
 }
