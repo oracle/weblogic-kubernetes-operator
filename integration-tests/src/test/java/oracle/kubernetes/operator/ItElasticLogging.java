@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -424,7 +425,7 @@ public class ItElasticLogging extends BaseTest {
 
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
-      result = TestUtils.exec(cmd);
+      result = ExecCommand.exec(cmd);
       LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
       if (null != result.stdout()) {
         break;
