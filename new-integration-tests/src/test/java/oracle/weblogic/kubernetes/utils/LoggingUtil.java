@@ -232,6 +232,13 @@ public class LoggingUtil {
     }
   }
 
+  /**
+   * Copy files from persistent volume to local folder.
+   * @param namespace name of the namespace
+   * @param hostPath the persistent volume host path
+   * @param destinationPath destination folder to copy the files to
+   * @throws ApiException when pod interaction fails
+   */
   private static void copyFromPV(String namespace, String hostPath, Path destinationPath) throws ApiException {
     V1Pod pvPod = null;
     try {
@@ -247,17 +254,15 @@ public class LoggingUtil {
   }
 
   /**
-   * Create a nginx pod named "pv-pod" with persistent volume from claimName param. The claimName makes this pod to
-   * access the PV mount from PVS of interest
+   * Creates temporary pod with persistent volume claim and persistent volume using host path.
    *
    * @param namespace name of the namespace
-   * @param claimName persistent volume claim name
-   * @return V1Pod object
+   * @param hostPath host path from ineterested persistent volume
+   * @return V1Pod pod object
    * @throws ApiException when create pod fails
    */
   private static V1Pod setupPVPod(String namespace, String hostPath) throws ApiException {
 
-    // wait for the pod to come up
     ConditionFactory withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(5, SECONDS)
         .atMost(1, MINUTES).await();
@@ -270,7 +275,7 @@ public class LoggingUtil {
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
             .storageClassName(namespace + "-weblogic-domain-storage-class")
-            .putCapacityItem("storage", Quantity.fromString("10Gi"))
+            .putCapacityItem("storage", Quantity.fromString("2Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .hostPath(new V1HostPathVolumeSource().path(hostPath)))
         .metadata(new V1ObjectMetaBuilder()
@@ -324,15 +329,21 @@ public class LoggingUtil {
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pv-pod to be ready in namespace {0}, "
-                + "(elapsed time {1} , remaining time {2}",
+            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
+                + "(elapsed time {2} , remaining time {3}",
+                podName,
                 namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(podReady("pv-pod-" + namespace, null, namespace));
+        .until(podReady(podName, null, namespace));
     return pvPod;
   }
 
+  /**
+   * Delete the temporary pv pod.
+   * @param namespace name
+   * @throws ApiException when pod deletion fails
+   */
   private static void cleanupPVPod(String namespace) throws ApiException {
     Kubernetes.deletePod("pv-pod-" + namespace, namespace);
     Kubernetes.deletePvc("pv-pod-pvc-" + namespace, namespace);
@@ -344,6 +355,13 @@ public class LoggingUtil {
   // and discard it after a minute.
   // This won't be necessary once the bug is fixed in the api.
   // https://github.com/kubernetes-client/java/issues/861
+  /**
+   * Copy the persistent volume mount directory to local file system.
+   * @param pvPod V1Pod object to copy from
+   * @param srcPath location of the source path
+   * @param destinationPath location for the destination path
+   * @throws ApiException when copy fails
+   */
   private static void copyDirectoryFromPod(V1Pod pvPod, String srcPath, Path destinationPath) throws ApiException {
     Future<String> copyJob = null;
     try {
