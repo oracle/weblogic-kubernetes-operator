@@ -32,7 +32,7 @@ public class LoggingUtil {
   /**
    * Collect logs for artifacts in Kubernetes cluster for current running test object. This method can be called
    * anywhere in the test by passing the test instance object and list namespaces.
-   * 
+   *
    * <p>The collected logs are written in the LOGS_DIR/IT_TEST_CLASSNAME/CURRENT_TIMESTAMP directory.
    *
    * @param itInstance the integration test instance
@@ -110,8 +110,12 @@ public class LoggingUtil {
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
-    // get all Domain objects in given namespace
-
+    // get all pod objects in given namespace
+    try {
+      writeToFile(Kubernetes.listPods(namespace, null), resultDir.toString(), namespace + "_all_pods.log");
+    } catch (Exception ex) {
+      logger.warning("Listing pods failed, not collecting any data pods");
+    }
 
     // get domain/operator pods
     for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
