@@ -521,7 +521,8 @@ public class ItElasticLogging extends BaseTest {
   }
 
   private void downloadWlsLoggingExporterJars() throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO,"In downloadWlsLoggingExporterJars, attempting to get file " + loggingExpArchiveLoc);
+    LoggerHelper.getLocal().log(Level.INFO,
+        "In downloadWlsLoggingExporterJars, attempting to get file " + loggingExpArchiveLoc);
     File loggingJatReposDir = new File(loggingExpArchiveLoc);
     File wlsLoggingExpFile =
         new File(loggingExpArchiveLoc + "/" + wlsLoggingExpJar);
