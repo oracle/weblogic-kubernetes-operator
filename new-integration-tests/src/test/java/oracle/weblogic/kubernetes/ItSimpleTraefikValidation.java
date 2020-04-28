@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_SAMPLE_VALUE_FILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -522,7 +523,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
 
     // Helm install parameters
     tfHelmParams = new HelmParams()
-        .releaseName("traefik-operator")
+        .releaseName(TRAEFIK_RELEASE_NAME)
         .namespace(tfNamespace)
         .repoUrl(GOOGLE_REPO_URL)
         .repoName("stable")
@@ -539,7 +540,7 @@ class ItSimpleTraefikValidation implements LoggedTest {
         .withFailMessage("installTraefik() did not return true")
         .isTrue();
 
-    // DEBUG: check the Traefik image is pulled
+    // check the Traefik image is pulled
     assertTrue(doesImageExist("traefik"),
         String.format("Image %s does not exist", "traefik:1.7.20"));
 

@@ -41,4 +41,5 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/charts/traefik/values.yaml";
   public static final String INGRESS_SAMPLE_CHART_DIR =
       PROJECT_ROOT + "/../kubernetes/samples/charts/ingress-per-domain";
+  public static final String TRAEFIK_RELEASE_NAME = "traefik-operator" + BUILD_ID;
 }
