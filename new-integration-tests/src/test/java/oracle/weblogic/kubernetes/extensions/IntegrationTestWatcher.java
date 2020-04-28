@@ -294,7 +294,7 @@ public class IntegrationTestWatcher implements
   public void afterAll(ExtensionContext context) {
     printHeader(String.format("Ending Test Suite %s", className), "+");
     logger.info("Starting cleanup after test class");
-    //CleanupUtil.cleanup(namespaces);
+    CleanupUtil.cleanup(namespaces);
   }
 
 
