@@ -166,7 +166,7 @@ public class LoadBalancer {
   private String getKubernetesNamespaceToUpdate(String domainNamespace) throws Exception {
     String cmd = "helm get values traefik-operator ";
     cmd = cmd + " --namespace traefik ";
-    ExecResult result = TestUtils.exec(cmd, true);
+    ExecResult result = ExecCommand.exec(cmd);
     Map<String, Object> yamlMap = TestUtils.loadYamlFromString(result.stdout());
     LoggerHelper.getLocal().log(Level.INFO, "map " + yamlMap);
     if (yamlMap.containsKey("kubernetes")) {
