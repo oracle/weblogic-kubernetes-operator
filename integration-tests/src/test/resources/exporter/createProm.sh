@@ -3,35 +3,65 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
 domainNS=$4
-domainNS1=$5
 resourceExporterDir=$2
 promVersionArgs=$3
 monitoringExporterEndToEndDir=${monitoringExporterDir}/src/samples/kubernetes/end2end
+CHARTNAME=prometheus
+CHARTNS=monitortestns
 
-
+function checkPod() {
+  max=20
+  count=0
+  echo "Checking pods $CHARTNAME-server and $CHARTNAME-alertmanager"
+  serverpod=$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{print $1 }')
+  alertpod=$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{print $1 }')
+  while test $count -lt $max; do
+    if test "$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{ print $2 }')" = 2/2; then
+      echo "$CHARTNAME-server  pod is running now."
+      if test "$(kubectl get po -n $CHARTNS | grep $CHARTNAME-alertmanager | awk '{ print $2 }')" = 2/2; then
+        echo "$CHARTNAME-alertmanager  pod is running now."
+        echo "Finished - [createProm.sh] ..."
+        exit 0;
+      fi
+    fi
+    count=`expr $count + 1`
+    sleep 5
+  done
+  echo "ERROR: $CHARTNAME pods failed to start."
+  echo
+  kubectl describe pod/${alertpod} -n $CHARTNS
+  kubectl describe pod/${serverpod} -n $CHARTNS
+  exit 1
+}
 sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
 
-kubectl create ns monitortestns
+kubectl create ns $CHARTNS
 
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
-kubectl get pv -n monitortestns
-kubectl get pvc -n monitortestns
+kubectl get pv -n $CHARTNS
+kubectl get pvc -n $CHARTNS
 
 HELM_VERSION=$(helm version --short --client)
+if [[ "$HELM_VERSION" =~ "v2" ]]; then
+  echo "Detected unsupported Helm version [${HELM_VERSION}]"
+  exit -1
+fi
 
 helm repo update
 
 export appname=prometheus
-for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitoring --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n $CHARTNS `;do echo "deleting $p "; kubectl delete ${p} -n $CHARTNS --force --grace-period=0 --ignore-not-found; done
 
-if [[ "$HELM_VERSION" =~ "v2" ]]; then
-  helm install --wait --name prometheus --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
-elif [[ "$HELM_VERSION" =~ "v3" ]]; then
-  helm install prometheus --wait --namespace monitortestns --values  ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml stable/prometheus  --version ${promVersionArgs}
-POD_NAME=$(kubectl get pod -l app=prometheus -n monitortestns -o jsonpath="{.items[0].metadata.name}")
-else
-    echo "Detected Unsuppoted Helm Version [${HELM_VERSION}]"
-    exit 1
+
+echo "Installing $CHARTNAME helm chart."
+helm install --debug $CHARTNAME stable/$CHARTNAME --namespace $CHARTNS \
+  --values ${monitoringExporterEndToEndDir}/$CHARTNAME/promvalues.yaml --version ${promVersionArgs}
+script_status=$?
+echo "status $script_status "
+if [ $script_status != 0 ]; then
+    echo "createProm.sh returned: $script_status"
+    exit $script_status
 fi
-echo "Finished - [createProm.sh] ..."
+echo "Wait until $CHARTNAME pod is running."
+checkPod

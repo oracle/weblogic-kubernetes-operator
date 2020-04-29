@@ -15,7 +15,7 @@ if [ ${SHARED_CLUSTER} = "true" ]; then
     docker push $REPO_REGISTRY/weblogick8s/webhook-log:$tag
     if [ ! "$?" = "0" ] ; then
        echo "Error: Could not push the image to $REPO_REGISTRY".
-      #exit 1
+       exit 1
     fi
     sed -i "s/webhook-log:1.0/$REPO_REGISTRY\/weblogick8s\/webhook-log:$tag/g"  ${resourceExporterDir}/server.yaml
     sed -i "s/IfNotPresent/Always/g"  ${resourceExporterDir}/server.yaml

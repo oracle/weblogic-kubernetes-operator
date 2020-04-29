@@ -332,21 +332,6 @@ public class ItMonitoringExporter extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - deployRunMonitoringExporter");
   }
 
-  /**
-   * create operator, domain, run some verification tests to check domain runtime.
-   *
-   * @throws Exception exception
-   */
-  private Domain createVerifyDomain(int number, Operator operator) throws Exception {
-    LoggerHelper.getLocal().log(Level.INFO, "create domain with UID : test" + number);
-    Domain domain = TestUtils.createDomain(createDomainMap(number));
-    domain.verifyDomainCreated();
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-    LoggerHelper.getLocal().log(Level.INFO, "verify that domain is managed by operator");
-    operator.verifyDomainExists(domain.getDomainUid());
-    return domain;
-  }
-
   private static void startExporter(Domain domain, Operator operator)
       throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "deploy exporter ");
