@@ -1768,7 +1768,7 @@ public class Kubernetes implements LoggedTest {
    * Get Ingress in the given namespace by name.
    *
    * @param namespace name of the namespace
-   * @param name name of the Ingress
+   * @param name name of the Ingress object
    * @return ExtensionsV1beta1Ingress Ingress object when found, otherwise null
    * @throws ApiException when get fails
    */
