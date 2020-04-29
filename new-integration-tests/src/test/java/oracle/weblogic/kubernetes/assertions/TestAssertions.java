@@ -192,7 +192,7 @@ public class TestAssertions {
    * Check if a persistent volume is in a given state.
    *
    * @param name name of the persistent volume
-   * @param state state of the persistent volume to match
+   * @param state desired state of the persistent volume to match
    * @return true if state matches otherwise false
    */
   public static Callable<Boolean> isPersistentVolumeInState(String name, String state) {
