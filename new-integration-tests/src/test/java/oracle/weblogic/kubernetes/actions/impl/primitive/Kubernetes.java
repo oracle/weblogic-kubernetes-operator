@@ -290,11 +290,11 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete the deployment.
+   * Delete a deployment.
    *
    * @param namespace namespace in which to delete the deployment
    * @param name deployment name
-   * @return true if deletion is successful
+   * @return true if deletion was successful
    * @throws ApiException when delete fails
    */
   public static boolean deleteDeployment(String namespace, String name) throws ApiException {
@@ -1084,7 +1084,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete the Kubernetes Persistent Volume.
+   * Delete a Kubernetes Persistent Volume.
    *
    * @param name name of the Persistent Volume
    * @return true if successful
@@ -1109,7 +1109,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete the Kubernetes Persistent Volume Claim.
+   * Delete a Kubernetes Persistent Volume Claim.
    *
    * @param name name of the Persistent Volume Claim
    * @param namespace name of the namespace
@@ -1325,7 +1325,7 @@ public class Kubernetes implements LoggedTest {
    * Delete a Kubernetes Service.
    *
    * @param name name of the Service
-   * @param namespace name of namespace
+   * @param namespace name of the namespace
    * @return true if successful
    */
   public static boolean deleteService(String name, String namespace) {
@@ -1359,7 +1359,8 @@ public class Kubernetes implements LoggedTest {
     if (list.isSuccess()) {
       return list.getObject();
     } else {
-      logger.warning("Failed to list services, status code {0}", list.getHttpStatusCode());
+      logger.warning("Failed to list services in namespace {0}, status code {1}",
+          namespace, list.getHttpStatusCode());
       return null;
     }
   }
@@ -1368,12 +1369,12 @@ public class Kubernetes implements LoggedTest {
 
 
   /**
-   * Delete job.
+   * Delete a job.
    *
    * @param namespace name of the namespace
    * @param name name of the job
-   * @return true if delete is successful
-   * @throws ApiException when delete job fails
+   * @return true if delete was successful
+   * @throws ApiException when deletion of job fails
    */
   public static boolean deleteJob(String namespace, String name) throws ApiException {
     try {
@@ -1429,11 +1430,11 @@ public class Kubernetes implements LoggedTest {
 
 
   /**
-   * Delete replica set.
+   * Delete a replica set.
    *
    * @param namespace name of the namespace
    * @param name name of the replica set
-   * @return true if delete is successful
+   * @return true if delete was successful
    * @throws ApiException if delete fails
    */
   public static boolean deleteReplicaSet(String namespace, String name) throws ApiException {
@@ -1565,12 +1566,12 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete role in the given namespace.
+   * Delete a rolebinding in the given namespace.
    *
    * @param namespace name of the namespace
-   * @param name name of the role
-   * @return return true if deletion is successful
-   * @throws ApiException when delete fails
+   * @param name name of the rolebinding to delete
+   * @return return true if deletion was successful
+   * @throws ApiException when delete rolebinding fails
    */
   public static boolean deleteNamespacedRoleBinding(String namespace, String name)
       throws ApiException {
@@ -1593,7 +1594,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List role bindings in a given name space.
+   * List role bindings in a given namespace.
    *
    * @param namespace name of the namespace
    * @return V1RoleBindingList list of {@link V1RoleBinding} objects
@@ -1624,11 +1625,11 @@ public class Kubernetes implements LoggedTest {
 
 
   /**
-   * Delete role in the Kubernetes cluster.
+   * Delete a cluster role.
    *
    * @param name name of the cluster role to delete
-   * @return true if deletion is successful
-   * @throws ApiException when delete fails
+   * @return true if deletion was successful
+   * @throws ApiException when delete cluster role fails
    */
   public static boolean deleteClusterRole(String name) throws ApiException {
     try {
@@ -1650,7 +1651,7 @@ public class Kubernetes implements LoggedTest {
 
 
   /**
-   * List roles in the Kubernetes cluster.
+   * List cluster roles in the Kubernetes cluster.
    *
    * @param labelSelector labels to narrow the list
    * @return V1ClusterRoleList list of {@link V1ClusterRole} objects
@@ -1678,11 +1679,11 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete role in the Kubernetes cluster in the given namespace.
+   * Delete a role in the Kubernetes cluster in the given namespace.
    *
    * @param namespace name of the namespace
    * @param name name of the role to delete
-   * @return true if deletion is successful
+   * @return true if deletion was successful
    * @throws ApiException when delete fails
    */
   public static boolean deleteNamespacedRole(String namespace, String name) throws ApiException {
@@ -1711,7 +1712,7 @@ public class Kubernetes implements LoggedTest {
    * @return V1RoleList list of {@link V1Role} object
    * @throws ApiException when listing fails
    */
-  public static V1RoleList listNamespacedRole(String namespace) throws ApiException {
+  public static V1RoleList listNamespacedRoles(String namespace) throws ApiException {
     V1RoleList roles;
     try {
       roles = rbacAuthApi.listNamespacedRole(
@@ -1734,13 +1735,13 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List Ingress extensions in the given namespace.
+   * List Ingresses in the given namespace.
    *
    * @param namespace name of the namespace
    * @return ExtensionsV1beta1IngressList list of {@link ExtensionsV1beta1Ingress} objects
    * @throws ApiException when listing fails
    */
-  public static ExtensionsV1beta1IngressList listIngressExtensions(String namespace) throws ApiException {
+  public static ExtensionsV1beta1IngressList listNamespacedIngresses(String namespace) throws ApiException {
     ExtensionsV1beta1IngressList ingressList;
     try {
       ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
@@ -1764,18 +1765,18 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Get Ingress extension in the given namespace by name.
+   * Get Ingress in the given namespace by name.
    *
    * @param namespace name of the namespace
-   * @param name name of the Ingress extension
-   * @return ExtensionsV1beta1Ingress Ingress extension object when found, otherwise null
+   * @param name name of the Ingress
+   * @return ExtensionsV1beta1Ingress Ingress object when found, otherwise null
    * @throws ApiException when get fails
    */
-  public static ExtensionsV1beta1Ingress getIngressExtension(String namespace, String name)
+  public static ExtensionsV1beta1Ingress getNamespacedIngress(String namespace, String name)
       throws ApiException {
     try {
       for (ExtensionsV1beta1Ingress item
-          : listIngressExtensions(namespace).getItems()) {
+          : listNamespacedIngresses(namespace).getItems()) {
         if (name.equals(item.getMetadata().getName())) {
           return item;
         }
