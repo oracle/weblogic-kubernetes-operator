@@ -8,8 +8,8 @@ resources:
       JdbcResource:
         JDBCDataSourceParams:
           JNDIName: [
-            jdbc/generic2,
-            jdbc/special2
+            jdbc/mydatasource1,
+            jdbc/mydatasource2
           ]
           GlobalTransactionsProtocol: TwoPhaseCommit
         JDBCDriverParams:

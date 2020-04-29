@@ -16,6 +16,7 @@ topology:
                 ServerNamePrefix: 'managed-server'
                 DynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
                 MaxDynamicClusterSize: '@@PROP:CLUSTER_SIZE@@'
+                MinDynamicClusterSize: '0'
                 CalculatedListenPorts: false
     Server:
         'admin-server':

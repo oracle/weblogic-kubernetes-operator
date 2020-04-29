@@ -79,21 +79,6 @@ fi
 # We're done, but let's print out some help.
 #
 
-function get_kube_address() {
-  # address of kubectl master DNS
-  kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
-}
-
-function get_host_address() {
-  # address of current machine
-  echo $(hostname).$(dnsdomainname)
-}
-
-function get_sample_host() {
-  # host that we're setting on each ingress for the domain
-  tr [A-Z_] [a-z-] <<< ${DOMAIN_UID}.mii-sample.org
-}
-
 function get_exec_command() {
   # Echo a kubectl exec command that invoke's the sample application
   # using a 'curl' from the admin server pod.
@@ -106,21 +91,9 @@ function get_exec_command() {
   echo "kubectl exec -n $DOMAIN_NAMESPACE $admin_service_name -- bash -c \"curl -s -S -m 10 http://$cluster_service_name:8001/myapp_war/index.jsp\""
 }
 
-function get_curl_command() {
-  # Echo a curl command you can use to invoke the sample application
-  # via the Traefik load balancer listening on port 30305.
-  # The '$1' parm must be a DNS address suitable for accessing the port.
-  echo "curl -s -S -m 10 -H 'host: $(get_sample_host)' http://$1:30305/myapp_war/index.jsp"
-}
-
-# TBD the following help is now out of date
-#     see ../utils-misc for more up-to-date help -
-#     or see the generated ingress' yaml comments
-#     in WORKDIR/ingresses
-#
 # TBD consider adding a utility that generates the the
-#     following help for the sample...
-#
+#     following help for the sample... see also
+#     ingress help
 
 cat << EOF
 @@
@@ -141,17 +114,6 @@ cat << EOF
       - The sample's admin server pod must be running.
       - The sample's cluster pods must be running and ready.
       - Run: '$(get_exec_command)'
-
-   To invoke the sample's web app via the Traefik load balancer:
-      - Traefik must be running, monitoring namespace '$DOMAIN_NAMESPACE',
-        and listening on external port 30305.
-      - Traefik ingresses must have been deployed 
-        (see 'stage-and-create-ingresses.sh' helper script).
-      - The sample's cluster pods must be running and ready.
-      - Run one of:
-         '$(get_curl_command $(get_host_address))'
-                 - or -
-         '$(get_curl_command $(get_kube_address))'
 
     NOTE! If the introspector job fails or you see unexpected issues, then
           see 'User Guide->Manage WebLogic Domains->Model in Image->Debugging'

@@ -56,6 +56,7 @@ if [ "$(old_cksum)" = "$(latest_cksum)" ]; then
   exit 0
 fi
 
+#mvn clean install -DskipTests -Dcheckstyle.skip
 mvn clean install
 docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "$OPER_IMAGE_NAME:$OPER_IMAGE_TAG"  --build-arg VERSION=$OPER_JAR_VERSION --no-cache=true .
 

@@ -8,8 +8,8 @@
 #   for cutting and pasting into the sample 
 #   documentation. It uses the templates and helper
 #   scripts in the sample to generate the following
-#   in '/tmp/$USER/prestaged' stripped of any
-#   significant references to environment variables, etc:
+#   in '/tmp/miisample' stripped of any significant
+#   references to environment variables, etc:
 #
 #      - model archives (applications)
 #      - model files (wl config)
@@ -23,11 +23,8 @@
 # WARNING!
 #   
 #   This script is destructive! It deletes
-#   anything that's already in '/tmp/$USER/prestaged.'
+#   anything that's already in '/tmp/miisample'
 #
-
-# TBD Add dry run output for curl? Note - you can find it in the ingress yaml comments.
-# TBD Try get console to work via VNC + firefox + /etc/hosts
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
@@ -37,20 +34,16 @@ set -e
 set -o pipefail
 set -u
 
-export WORKDIR=/tmp/$USER/prestaged
+export WORKDIR=/tmp/miisample
 
 echo "@@ Info: Starting '$(basename $0)'. See target directory '$WORKDIR'."
 
-#
-# Remove old prestaged output.  Avoid using env var in 'rm -fr' for safety.
-#
+if [ -d $WORKDIR ] && [ "$(ls $WORKDIR)" ]; then
+  echo "@@ Error: Target dir $WORKDIR already exists."
+  exit 1
+fi
 
-savedir=$(pwd)
-cd $(dirname $WORKDIR)
-rm -fr ./prestaged
-mkdir -p ./prestaged
-cd $savedir
-
+mkdir -p $WORKDIR
 cd $WORKDIR
 
 #

@@ -31,7 +31,6 @@ source $SCRIPTDIR/env-init.sh
 
 DRY_RUN=""
 if [ "${1:-}" = "-dry" ]; then
-  # TBD add error checking for parameterization
   DRY_RUN="-dry $2"
 fi
 

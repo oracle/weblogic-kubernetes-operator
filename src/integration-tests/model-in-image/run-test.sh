@@ -149,7 +149,7 @@ doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 #
 
 if [ "$DO_OPER" = "true" ]; then
-  doCommand  "\$TESTDIR/build-wl-operator.sh" 
+  doCommand  "\$TESTDIR/build-operator.sh" 
 fi
 
 #
@@ -168,7 +168,7 @@ if [ "$DO_DB" = "true" ]; then
 fi
 
 if [ "$DO_OPER" = "true" ]; then
-  doCommand  "\$TESTDIR/deploy-wl-operator.sh"
+  doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
 if [ "$DO_TRAEFIK" = "true" ]; then
@@ -191,10 +191,7 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
 
-  #TBD bug in operator is only starting up one server
-  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
-  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 2 $wait_parms -q"
-  
+  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
@@ -202,10 +199,11 @@ if [ "$DO_MAIN" = "true" ]; then
   [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "Hello World!"
   [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "Hello World!"
 
+  # TBD add JRF specific testing
   # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  #   TBD export wallet
-  #   TBD import wallet to wallet secret 
-  #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
+  #   export wallet
+  #   import wallet to wallet secret 
+  #   set env var to tell creat-domain-resource to uncomment wallet secret
   #   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
   #   doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
   # fi
@@ -223,9 +221,10 @@ fi
 
 if [ "$DO_UPDATE" = "true" ]; then
 
+  # JRF specific testing
   # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  #   TBD import wallet to wallet secret again
-  #   TBD set env var to tell creat-domain-resource to uncomment wallet secret
+  #   import wallet to wallet secret again
+  #   set env var to tell creat-domain-resource to uncomment wallet secret
   # fi
 
   doCommand  -c "export INCLUDE_MODEL_CONFIGMAP=true"
@@ -236,9 +235,7 @@ if [ "$DO_UPDATE" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
   doCommand  "\$WORKDIR/utils/patch-restart-version.sh $wait_parms"
 
-  #TBD bug in operator is only starting up one server
-  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
-  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 2 $wait_parms -q"
+  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
