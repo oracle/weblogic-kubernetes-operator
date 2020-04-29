@@ -12,12 +12,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import io.kubernetes.client.Exec;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.extended.generic.GenericKubernetesApi;
 import io.kubernetes.client.extended.generic.KubernetesApiResponse;
@@ -59,6 +59,12 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
@@ -94,12 +100,7 @@ public class Kubernetes implements LoggedTest {
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
 
-  private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
-  // Even though we don't need input data for this call, the API server is
-  // returning 400 Bad Request any time we set these to false.  There is likely some bug in the
-  // client
-  private static final boolean stdin = true;
-  private static final boolean tty = true;
+  private static ConditionFactory withStandardRetryPolicy = null;
 
   static {
     try {
@@ -109,6 +110,10 @@ public class Kubernetes implements LoggedTest {
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       initializeGenericKubernetesApiClients();
+      // create standard, reusable retry/backoff policy
+      withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
@@ -490,11 +495,10 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Delete a namespace for the given name. Delete is asynchronous, so for a time you will see the
-   * namespace in the Terminating state.
+   * Delete a namespace for the given name.
    *
    * @param name name of namespace
-   * @return true if successful delete request and status is 'Terminating', false otherwise.
+   * @return true if successful delete request, false otherwise.
    */
   public static boolean deleteNamespace(String name) {
 
@@ -506,19 +510,31 @@ public class Kubernetes implements LoggedTest {
       return false;
     }
 
-    if (response.getObject() != null) {
-      V1Namespace namespace = (V1Namespace) response.getObject();
-      String phase = namespace.getStatus().getPhase();
-      logger.fine(
-          "Deletion of namespace " + namespace.getMetadata().getName() + " is in phase: " + phase);
-      if (!phase.equals("Terminating")) {
-        logger.warning("Attempt to delete namespace " + namespace.getMetadata().getName()
-            + " failed because it is in phase: " + phase);
-        return false;
-      }
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for namespace {0} to be deleted "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                name,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> namespaceDeleted(name),
+            String.format("namespaceExists failed with ApiException for namespace %s",
+                name)));
 
     return true;
+  }
+
+  private static Callable<Boolean> namespaceDeleted(String namespace) throws ApiException {
+    return new Callable<Boolean>() {
+      @Override
+      public Boolean call() throws Exception {
+        List<String> namespaces = listNamespaces();
+        if (!namespaces.contains(namespace)) {
+          return true;
+        }
+        return  false;
+      }
+    };
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------
@@ -1357,10 +1373,10 @@ public class Kubernetes implements LoggedTest {
   /**
    * Execute a command in a container.
    *
-   * @param pod The pod where the command is run
-   * @param containerName The container in the Pod where the command is run. If no container
-   *     name is provided than the first container in the Pod is used.
-   * @param redirectToStdout copy Process output to stdout
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
    * @param command The command to run
    * @return result of command execution
    * @throws IOException if an I/O error occurs.
@@ -1387,12 +1403,15 @@ public class Kubernetes implements LoggedTest {
                 try {
                   ByteStreams.copy(proc.getInputStream(), copyOut);
                 } catch (IOException ex) {
-                  logger.warning("Exception reading from input stream.", ex);
+                  // "Pipe broken" is expected when process is finished so don't log
+                  if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
+                    logger.warning("Exception reading from input stream.", ex);
+                  }
                 }
               });
       out.start();
 
-      // wait for the Process, which represents the executing command, to terminate
+      // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
       // wait for reading thread to finish any last remaining output
@@ -1400,10 +1419,10 @@ public class Kubernetes implements LoggedTest {
         out.join();
       }
 
-      // Read data from Process's stdout
+      // Read data from process's stdout
       String stdout = read(copyOut.getInputStream());
 
-      // Read from Process's stderr, if data available
+      // Read from process's stderr, if data available
       String stderr = (proc.getErrorStream().available() != 0) ? read(proc.getErrorStream()) : null;
 
       return new ExecResult(proc.exitValue(), stdout, stderr);
@@ -1415,7 +1434,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Create an object which can execute commands in Kubertenes container.
+   * Create an object which can execute commands in a Kubernetes container.
    *
    * @param pod The pod where the command is run
    * @param containerName The container in the Pod where the command is run. If no container
@@ -1423,40 +1442,15 @@ public class Kubernetes implements LoggedTest {
    * @return object for executing a command in a container of the pod
    */
   public static KubernetesExec createKubernetesExec(V1Pod pod, String containerName) {
-    KubernetesExec kubernetesExec = EXEC_FACTORY.create(pod, containerName);
-    kubernetesExec.setStdin(stdin);
-    kubernetesExec.setTty(tty);
-    return kubernetesExec;
+    return new KubernetesExec()
+        .apiClient(apiClient) // the Kubernetes api client to dispatch the "exec" command
+        .pod(pod) // The pod where the command is to be run
+        .containerName(containerName) // the container in which the command is to be run
+        .passStdinAsStream() // pass a stdin stream into the container
+        .stdinIsTty(); // stdin is a TTY (only applies if stdin is true)
   }
 
   //------------------------
-
-  /**
-   * KubernetesExec object for executing a command in the container of a pod.
-   */
-  public static class KubernetesExecImpl extends KubernetesExec {
-
-    private final V1Pod pod;
-    private final String containerName;
-
-    KubernetesExecImpl(V1Pod pod, String containerName) {
-      this.pod = pod;
-      this.containerName = containerName;
-    }
-
-    /**
-     * Execute a command in a container.
-     *
-     * @param command the command to run
-     * @return the process which mediates the execution
-     * @throws ApiException if a Kubernetes-specific problem arises
-     * @throws IOException if another problem occurs while trying to run the command
-     */
-    @Override
-    public Process exec(String... command) throws ApiException, IOException {
-      return new Exec(apiClient).exec(pod, command, containerName, isStdin(), isTty());
-    }
-  }
 
   private static String read(InputStream is) throws IOException {
     StringBuilder sb = new StringBuilder();

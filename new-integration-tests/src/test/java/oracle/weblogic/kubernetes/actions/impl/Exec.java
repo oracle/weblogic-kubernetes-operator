@@ -15,10 +15,10 @@ public class Exec {
   /**
    * Execute a command in a container.
    *
-   * @param pod The pod where the command is run
-   * @param containerName The container in the Pod where the command is run. If no container
-   *     name is provided than the first container in the Pod is used.
-   * @param redirectToStdout copy Process output to stdout
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
    * @param command The command to run
    * @return result of command execution
    * @throws IOException if an I/O error occurs.
