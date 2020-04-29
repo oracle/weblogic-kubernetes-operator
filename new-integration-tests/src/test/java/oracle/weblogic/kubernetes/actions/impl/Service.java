@@ -27,7 +27,7 @@ public class Service {
   /**
    * Delete a Kubernetes Service.
    *
-   * @param name name of the Service
+   * @param name      name of the Service
    * @param namespace name of namespace
    * @return true if successful
    */
@@ -58,17 +58,17 @@ public class Service {
   }
 
   /**
-  * Returns NodePort of admin service.
-  *
-  * @param serviceName name of admin server service 
-  * @param label the key value pair with which the service is decorated with
-  * @param namespace the namespace in which to check for the service
-  * @return AdminNodePort of the Kubernetes service if exits else -1
-  */
+   * Returns NodePort of admin service.
+   *
+   * @param serviceName name of admin server service
+   * @param label       the key value pair with which the service is decorated with
+   * @param namespace   the namespace in which to check for the service
+   * @return AdminNodePort of the Kubernetes service if exits else -1
+   */
   public static int getAdminServiceNodePortString(
       String serviceName,
       Map<String, String> label,
-      String namespace)  {
+      String namespace) {
 
     int adminNodePort = -1;
     try {

@@ -249,6 +249,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * List all deployments in a given namespace.
+   *
    * @param namespace Namespace in which to list the deployments
    * @return V1DeploymentList of deployments in the Kubernetes cluster
    */
@@ -263,12 +264,13 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- pods -----------------------------------------
-  
+
   /**
    * Returns the V1Pod object given the following parameters.
-   * @param namespace in which to check for the pod existence
+   *
+   * @param namespace     in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName name of the pod to return
+   * @param podName       name of the pod to return
    * @return V1Pod object if found otherwise null
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) {
@@ -283,9 +285,10 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * Get the creationTimestamp for a given pod with following parameters.
-   * @param namespace in which to check for the pod existence
+   *
+   * @param namespace     in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName name of the pod 
+   * @param podName       name of the pod
    * @return creationTimestamp from metadata section of the Pod
    */
   public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
@@ -304,7 +307,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Get a pod's log.
    *
-   * @param name name of the Pod
+   * @param name      name of the Pod
    * @param namespace name of the Namespace
    * @return log as a String
    */
@@ -315,7 +318,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Get a pod's log.
    *
-   * @param name name of the Pod
+   * @param name      name of the Pod
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
    * @return log as a String
@@ -345,7 +348,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete a Kubernetes Pod.
    *
-   * @param name name of the pod
+   * @param name      name of the pod
    * @param namespace name of namespace
    * @return true if successful
    */
@@ -371,7 +374,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * List all pods in given namespace.
    *
-   * @param namespace Namespace in which to list all pods
+   * @param namespace      Namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
    * @return V1PodList list of pods
    */
@@ -380,17 +383,17 @@ public class Kubernetes implements LoggedTest {
     try {
       v1PodList
           = coreV1Api.listNamespacedPod(
-              namespace, // namespace in which to look for the pods.
-              Boolean.FALSE.toString(), // pretty print output.
-              Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-              null, // continue to query when there is more results to return.
-              null, // selector to restrict the list of returned objects by their fields
-              labelSelectors, // selector to restrict the list of returned objects by their labels.
-              null, // maximum number of responses to return for a list call.
-              null, // shows changes that occur after that particular version of a resource.
-              null, // Timeout for the list/watch call.
-              Boolean.FALSE // Watch for changes to the described resources.
-          );
+          namespace, // namespace in which to look for the pods.
+          Boolean.FALSE.toString(), // pretty print output.
+          Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // continue to query when there is more results to return.
+          null, // selector to restrict the list of returned objects by their fields
+          labelSelectors, // selector to restrict the list of returned objects by their labels.
+          null, // maximum number of responses to return for a list call.
+          null, // shows changes that occur after that particular version of a resource.
+          null, // Timeout for the list/watch call.
+          Boolean.FALSE // Watch for changes to the described resources.
+      );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
       return null;
@@ -399,6 +402,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- namespaces -----------------------------------
+
   /**
    * Create a Kubernetes namespace.
    *
@@ -456,6 +460,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * List namespaces in the Kubernetes cluster.
+   *
    * @return List of all Namespace names in the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -488,6 +493,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * List namespaces in the Kubernetes cluster as V1NamespaceList.
+   *
    * @return V1NamespaceList of Namespace in the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -539,6 +545,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------
+
   /**
    * Create a Domain Custom Resource.
    *
@@ -609,14 +616,14 @@ public class Kubernetes implements LoggedTest {
     if (!response.isSuccess()) {
       logger.warning(
           "Failed to delete Domain Custom Resource '" + domainUid + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "domain custom resource in background!");
+              + "domain custom resource in background!");
     }
 
     return true;
@@ -660,16 +667,16 @@ public class Kubernetes implements LoggedTest {
    * operation will replace the "spec.restartVersion" to a value of "2".
    *
    * <p>[
-   *      {"op": "replace", "path": "/spec/restartVersion", "value": "2" }
-   *    ]
+   * {"op": "replace", "path": "/spec/restartVersion", "value": "2" }
+   * ]
    *
-   * @param domainUid unique domain identifier
-   * @param namespace name of namespace
+   * @param domainUid   unique domain identifier
+   * @param namespace   name of namespace
    * @param patchString JSON Patch document as a String
    * @return true if patch is successful otherwise false
    */
   public static boolean patchCustomResourceDomainJsonPatch(String domainUid, String namespace,
-      String patchString) {
+                                                           String patchString) {
     return patchDomainCustomResource(
         domainUid, // name of custom resource domain
         namespace, // name of namespace
@@ -684,16 +691,16 @@ public class Kubernetes implements LoggedTest {
    * JSON object fragment would add/replace the "spec.restartVersion" to a value of "1".
    *
    * <p>{
-   *      "spec" : { "restartVersion" : "1" }
-   *    }
+   * "spec" : { "restartVersion" : "1" }
+   * }
    *
-   * @param domainUid unique domain identifier
-   * @param namespace name of namespace
+   * @param domainUid   unique domain identifier
+   * @param namespace   name of namespace
    * @param patchString JSON Patch document as a String
    * @return true if patch is successful otherwise false
    */
   public static boolean patchCustomResourceDomainJsonMergePatch(String domainUid, String namespace,
-      String patchString) {
+                                                                String patchString) {
     return patchDomainCustomResource(
         domainUid, // name of custom resource domain
         namespace, // name of namespace
@@ -705,15 +712,15 @@ public class Kubernetes implements LoggedTest {
   /**
    * Patch the Domain Custom Resource.
    *
-   * @param domainUid unique domain identifier
-   * @param namespace name of namespace
-   * @param patch patch data in format matching the specified media type
+   * @param domainUid   unique domain identifier
+   * @param namespace   name of namespace
+   * @param patch       patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document:
-   *     "application/json-patch+json", "application/merge-patch+json",
+   *                    "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace,
-      V1Patch patch, String patchFormat) {
+                                                  V1Patch patch, String patchFormat) {
 
     // GenericKubernetesApi uses CustomObjectsApi calls
     KubernetesApiResponse<Domain> response = crdClient.patch(
@@ -737,7 +744,7 @@ public class Kubernetes implements LoggedTest {
    * Converts the response to appropriate type.
    *
    * @param response response object to convert
-   * @param type the type to convert into
+   * @param type     the type to convert into
    * @return the Java object of the type the response object is converted to
    */
   @SuppressWarnings("unchecked")
@@ -764,6 +771,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- config map ---------------------------
+
   /**
    * Create a Kubernetes Config Map.
    *
@@ -837,7 +845,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete Kubernetes Config Map.
    *
-   * @param name name of the Config Map
+   * @param name      name of the Config Map
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
@@ -854,13 +862,14 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "config map in background!");
+              + "config map in background!");
     }
 
     return true;
   }
 
   // --------------------------- secret ---------------------------
+
   /**
    * Create a Kubernetes Secret.
    *
@@ -906,7 +915,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete a Kubernetes Secret.
    *
-   * @param name name of the Secret
+   * @param name      name of the Secret
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
@@ -923,7 +932,7 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "secret in background!");
+              + "secret in background!");
     }
 
     return true;
@@ -931,6 +940,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * List secrets in the Kubernetes cluster.
+   *
    * @param namespace Namespace in which to query
    * @return V1SecretList of secrets in the Kubernetes cluster
    */
@@ -945,6 +955,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- pv/pvc ---------------------------
+
   /**
    * Create a Kubernetes Persistent Volume.
    *
@@ -978,7 +989,7 @@ public class Kubernetes implements LoggedTest {
    * Create a Kubernetes Persistent Volume Claim.
    *
    * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes persistent volume claim
-    configuration data
+   *                              configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -1036,7 +1047,7 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "persistent volume in background!");
+              + "persistent volume in background!");
     }
 
     return true;
@@ -1045,7 +1056,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete the Kubernetes Persistent Volume Claim.
    *
-   * @param name name of the Persistent Volume Claim
+   * @param name      name of the Persistent Volume Claim
    * @param namespace name of the namespace
    * @return true if successful
    */
@@ -1056,14 +1067,14 @@ public class Kubernetes implements LoggedTest {
     if (!response.isSuccess()) {
       logger.warning(
           "Failed to delete persistent volume claim '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "persistent volume claim in background!");
+              + "persistent volume claim in background!");
     }
 
     return true;
@@ -1071,6 +1082,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * List all persistent volumes in the Kubernetes cluster.
+   *
    * @return V1PersistentVolumeList of Persistent Volumes in Kubernetes cluster
    */
   public static V1PersistentVolumeList listPersistentVolumes() {
@@ -1086,6 +1098,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * List persistent volumes in the Kubernetes cluster based on the label.
+   *
    * @param labels String containing the labels the PV is decorated with
    * @return V1PersistentVolumeList list of Persistent Volumes
    * @throws ApiException when listing fails
@@ -1113,6 +1126,7 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * List persistent volume claims in the namespace.
+   *
    * @param namespace name of the namespace in which to list
    * @return V1PersistentVolumeClaimList of Persistent Volume Claims in namespace
    */
@@ -1128,6 +1142,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- service account ---------------------------
+
   /**
    * Create a Kubernetes Service Account.
    *
@@ -1173,7 +1188,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete a Kubernetes Service Account.
    *
-   * @param name name of the Service Account
+   * @param name      name of the Service Account
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
@@ -1190,7 +1205,7 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "service account in background!");
+              + "service account in background!");
     }
 
     return true;
@@ -1258,7 +1273,7 @@ public class Kubernetes implements LoggedTest {
   /**
    * Delete a Kubernetes Service.
    *
-   * @param name name of the Service
+   * @param name      name of the Service
    * @param namespace name of namespace
    * @return true if successful
    */
@@ -1275,7 +1290,7 @@ public class Kubernetes implements LoggedTest {
     if (response.getObject() != null) {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "service in background!");
+              + "service in background!");
     }
 
     return true;
@@ -1283,9 +1298,10 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * Get V1Service object for the given service name, label and namespace.
+   *
    * @param serviceName name of the service to look for
-   * @param label the key value pair with which the service is decorated with
-   * @param namespace the namespace in which to check for the service
+   * @param label       the key value pair with which the service is decorated with
+   * @param namespace   the namespace in which to check for the service
    * @return V1Service object if found otherwise null
    * @throws ApiException when there is error in querying the cluster
    */
@@ -1332,16 +1348,16 @@ public class Kubernetes implements LoggedTest {
   /**
    * Returns NodePort of a admin server service.
    *
-   * @param serviceName name of admin server service 
-   * @param label the key value pair with which the service is decorated with
-   * @param namespace the namespace in which to check for the service
+   * @param serviceName name of admin server service
+   * @param label       the key value pair with which the service is decorated with
+   * @param namespace   the namespace in which to check for the service
    * @return AdminNodePort of the Kubernetes service if exits else -1
    * @throws ApiException when there is error in querying the cluster
    */
   public static int getAdminServiceNodePort(
-      String serviceName, 
-      Map<String, String> label, 
-      String namespace) throws ApiException  { 
+      String serviceName,
+      Map<String, String> label,
+      String namespace) throws ApiException {
 
     V1Service service = getService(serviceName, label, namespace);
     if (service == null) {
@@ -1361,6 +1377,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- jobs ---------------------------
+
   /**
    * Get a list of all jobs in the given namespace.
    *
@@ -1378,6 +1395,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- replica sets ---------------------------
+
   /**
    * Get a list of all replica sets in the given namespace.
    *
@@ -1400,7 +1418,7 @@ public class Kubernetes implements LoggedTest {
    * Create a Cluster Role Binding.
    *
    * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
-   *     data
+   *                           data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */

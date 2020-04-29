@@ -128,6 +128,7 @@ class ItMiiConfigMap implements LoggedTest {
 
   /**
    * Install Operator.
+   *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
    *                   by the JUnit engine parameter resolution mechanism
    */
@@ -179,7 +180,7 @@ class ItMiiConfigMap implements LoggedTest {
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
-                  REPO_SECRET_NAME, opNamespace));
+        REPO_SECRET_NAME, opNamespace));
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<String, Object>();
@@ -228,13 +229,12 @@ class ItMiiConfigMap implements LoggedTest {
   }
 
   /**
-   *  Deploy a WebLogic domain with a defined configmap.
-   *  in configuration/model section of the domain resource
-   *  The configmap has a sparse wdt model file that define a JDBC 
-   *  datasource targeted to the cluster
-   *  Once the WebLogic domain is up, verify the DataSource configuration 
-   *  using the RestAPI call thru adminserver public NodePort
-  */
+   * Deploy a WebLogic domain with a defined ConfigMap.
+   * in configuration/model section of the domain resource
+   * The ConfigMap has a sparse wdt model file that define a JDBC DataSource targeted to cluster
+   * Once the WebLogic domain is up, verify the DataSource configuration
+   * using the RestAPI call thru adminserver's  public NodePort
+   */
   @Test
   @Order(1)
   @DisplayName("Create model in image domain with a configmap")
@@ -303,10 +303,10 @@ class ItMiiConfigMap implements LoggedTest {
     Map<String, String> data = new HashMap<>();
     String configMapName = "dsconfigmap";
     String cmData = null;
-    cmData  = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
         String.format("readString operation failed for %s", dsModelFile));
     assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
-    data.put("model.jdbc.yaml",cmData);
+    data.put("model.jdbc.yaml", cmData);
 
     V1ObjectMeta meta = new V1ObjectMeta()
         .labels(labels)
@@ -320,7 +320,7 @@ class ItMiiConfigMap implements LoggedTest {
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
 
-    // Create the domain custom resource with a predefined configmap 
+    // Create the domain custom resource with a predefined configmap
     // in configuration/model section
     Domain domain = new Domain()
         .apiVersion(API_VERSION)
@@ -418,24 +418,24 @@ class ItMiiConfigMap implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i);
     }
 
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external",null,domainNamespace);
-    oracle.weblogic.kubernetes.utils.ExecResult result = null; 
+    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    oracle.weblogic.kubernetes.utils.ExecResult result = null;
     try {
-      checkJdbc =  new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+      checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
       checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-             .append("/management/wls/latest/datasources/id/TestDataSource/")
-             .append(" -o /dev/null")
-             .append(" -w %{http_code});")
-             .append("echo ${status}");      
+          .append("/management/wls/latest/datasources/id/TestDataSource/")
+          .append(" -o /dev/null")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
       logger.info("CURL command {0}", new String(checkJdbc));
-      result = exec(new String(checkJdbc),true);
+      result = exec(new String(checkJdbc), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
       fail("Got unexpected exception" + ex);
     }
 
     logger.info("Curl command returns {0}", result.toString());
-    assertEquals("200",result.stdout(),"Datasource configuration not found");
+    assertEquals("200", result.stdout(), "Datasource configuration not found");
     logger.info("Found the DataSource configuration ");
   }
 
@@ -470,8 +470,8 @@ class ItMiiConfigMap implements LoggedTest {
     logger.info("Delete service account in namespace {0}", opNamespace);
     if (serviceAccount != null) {
       assertDoesNotThrow(() -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
-              serviceAccount.getMetadata().getNamespace()),
-              "deleteServiceAccount failed with ApiException");
+          serviceAccount.getMetadata().getNamespace()),
+          "deleteServiceAccount failed with ApiException");
     }
     // Delete domain namespaces
     logger.info("Deleting domain namespace {0}", domainNamespace);

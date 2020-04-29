@@ -134,6 +134,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   /**
    * Install Operator.
+   *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
    *                   by the JUnit engine parameter resolution mechanism
    */
@@ -185,7 +186,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
-                  REPO_SECRET_NAME, opNamespace));
+        REPO_SECRET_NAME, opNamespace));
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<String, Object>();
@@ -234,13 +235,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
   }
 
   /**
-   *  Start a WebLogic domain with out any pre-defined configmap.
-   *  Create a ConfigMap with a sparse JDBC model file
-   *  Patch the domain resource with the ConfigMap
-   *  Update the Restart Version of the domain resource 
-   *  Verify rolling re-start of domain by comparing PodCreationTimestamp 
-   *  Verify the DataSource configuration using the RestAPI call 
-  */
+   * Start a WebLogic domain with out any pre-defined ConfigMap.
+   * Create a ConfigMap with a sparse JDBC model file
+   * Patch the domain resource with the ConfigMap which is targeted to cluster
+   * Update the Restart Version of the domain resource
+   * Verify rolling re-start of domain by comparing PodCreationTimestamp
+   * before rolling re-start and after rolling re-start
+   * Verify the DataSource configuration using the RestAPI call to admin server
+   */
   @Test
   @Order(1)
   @DisplayName("Create model in image domain with no configmap")
@@ -388,11 +390,11 @@ class ItMiiConfigMapOverride implements LoggedTest {
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceCreated(adminServerPodName);
-    String adminPodCreationTime = getPodCreationTimestamp(domainNamespace,"",adminServerPodName);
+    String adminPodCreationTime = getPodCreationTimestamp(domainNamespace, "", adminServerPodName);
     assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
 
-    String []  managedPodCreationeTimes  = new String[replicaCount];
+    String[] managedPodCreationeTimes = new String[replicaCount];
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
@@ -407,12 +409,12 @@ class ItMiiConfigMapOverride implements LoggedTest {
     Map<String, String> data = new HashMap<>();
     String configMapName = "dsconfigmap";
     String cmData = null;
-    StringBuffer patchStr  = null;
+    StringBuffer patchStr = null;
 
-    cmData  = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
         String.format("readString operation failed for %s", dsModelFile));
     assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
-    data.put("model.jdbc.yaml",cmData);
+    data.put("model.jdbc.yaml", cmData);
 
     V1ObjectMeta meta = new V1ObjectMeta()
         .labels(labels)
@@ -427,33 +429,33 @@ class ItMiiConfigMapOverride implements LoggedTest {
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
 
-    patchStr  = new StringBuffer("[{");
+    patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
-            .append(" \"path\": \"/spec/configuration/model/configMap\",")
-            .append(" \"value\":  \"" + configMapName + "\"")
-            .append(" }]");
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
     logger.log(Level.INFO, "ConfigMap Patch String: {0}", patchStr);
 
     patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() -> 
-        patchDomainCustomResource(domainUid,domainNamespace,patch,"application/json-patch+json"),
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
 
-    patchStr  = new StringBuffer("[{");
+    patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
-            .append(" \"path\": \"/spec/restartVersion\",")
-            .append(" \"value\": \"2\"")
-            .append(" }]");
+        .append(" \"path\": \"/spec/restartVersion\",")
+        .append(" \"value\": \"2\"")
+        .append(" }]");
     logger.log(Level.INFO, "RestartVersion Patch String: {0}", patchStr);
 
     patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() -> 
-        patchDomainCustomResource(domainUid,domainNamespace,patch,"application/json-patch+json"),
+    boolean rvPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
     logger.info("Snooze for 2 minutes for Introspector to kick off");
-    try { 
+    try {
       TimeUnit.MINUTES.sleep(2);
     } catch (java.lang.InterruptedException ie) {
       logger.info("Got InterruptedException during Thread.sleep");
@@ -471,38 +473,38 @@ class ItMiiConfigMapOverride implements LoggedTest {
     // check managed server pods re-started sequentially
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be restarted in namespace {1}",
-                        managedServerPrefix + i, domainNamespace);
+          managedServerPrefix + i, domainNamespace);
       // checkPodDeleted(managedServerPrefix + i);
       checkPodRunning(managedServerPrefix + i);
       checkServiceCreated(managedServerPrefix + i);
     }
 
-    String newAdminPodCreationTime = getPodCreationTimestamp(domainNamespace,"",adminServerPodName);
+    String newAdminPodCreationTime = getPodCreationTimestamp(domainNamespace, "", adminServerPodName);
     assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
     if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {
       logger.info("NewAdminPodCreationTime {0} BeforeAdminPodCreationTime ${1}",
-           newAdminPodCreationTime,adminPodCreationTime);
+          newAdminPodCreationTime, adminPodCreationTime);
       fail("New pod creation time must be later than the original timestamp");
     }
-    oracle.weblogic.kubernetes.utils.ExecResult result = null; 
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external",null,domainNamespace);
+    oracle.weblogic.kubernetes.utils.ExecResult result = null;
+    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
     try {
-      checkJdbc =  new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+      checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
       checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-             .append("/management/wls/latest/datasources/id/TestDataSource/")
-             .append(" -o /dev/null")
-             .append(" -w %{http_code});")
-             .append("echo ${status}");      
+          .append("/management/wls/latest/datasources/id/TestDataSource/")
+          .append(" -o /dev/null")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
       logger.info("CURL command {0}", new String(checkJdbc));
-      result = exec(new String(checkJdbc),true);
+      result = exec(new String(checkJdbc), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
       fail("Got unexpected exception" + ex);
     }
 
     logger.info("Curl command returns {0}", result.toString());
-    assertEquals("200",result.stdout(),"Datasource configuration not found");
+    assertEquals("200", result.stdout(), "Datasource configuration not found");
     logger.info("Found the DataSource configuration ");
   }
 
@@ -537,8 +539,8 @@ class ItMiiConfigMapOverride implements LoggedTest {
     logger.info("Delete service account in namespace {0}", opNamespace);
     if (serviceAccount != null) {
       assertDoesNotThrow(() -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
-              serviceAccount.getMetadata().getNamespace()),
-              "deleteServiceAccount failed with ApiException");
+          serviceAccount.getMetadata().getNamespace()),
+          "deleteServiceAccount failed with ApiException");
     }
     // Delete domain namespaces
     logger.info("Deleting domain namespace {0}", domainNamespace);

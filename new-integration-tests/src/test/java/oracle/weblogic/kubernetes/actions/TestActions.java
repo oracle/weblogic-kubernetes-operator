@@ -47,32 +47,35 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 public class TestActions {
 
   // ----------------------   pod  ---------------------------------
-  
+
   /**
    * Get the creationTimestamp for a given pod with following parameters.
-   * @param namespace in which to check for the pod existence
+   *
+   * @param namespace     in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName name of the pod 
+   * @param podName       name of the pod
    * @return creationTimestamp from metadata section of the Pod
    */
   public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
-    return Pod.getPodCreationTimestamp(namespace,labelSelector,podName);
+    return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
- 
+
   /**
    * Get the Pod object with following parameters.
-   * @param namespace in which to check for the pod existence
+   *
+   * @param namespace     in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName name of the pod 
+   * @param podName       name of the pod
    * @return V1Pod pod object
    **/
   public static V1Pod getPod(String namespace, String labelSelector, String podName) {
-    return Pod.getPod(namespace,labelSelector,podName);
+    return Pod.getPod(namespace, labelSelector, podName);
   }
 
   /**
    * Get a pod's log.
-   * @param podName name of the pod
+   *
+   * @param podName   name of the pod
    * @param namespace name of the namespace
    * @return log as a String
    **/
@@ -105,8 +108,8 @@ public class TestActions {
   /**
    * Makes a REST call to the Operator to scale the domain.
    *
-   * @param domainUid domainUid of the domain
-   * @param clusterName cluster in the domain to scale
+   * @param domainUid    domainUid of the domain
+   * @param clusterName  cluster in the domain to scale
    * @param numOfServers number of servers to scale upto.
    * @return true on success, false otherwise
    */
@@ -128,6 +131,7 @@ public class TestActions {
   /**
    * Image Name for the Operator. Uses branch name for image tag in local runs
    * and branch name, build id for image tag in Jenkins runs.
+   *
    * @return image name
    */
   public static String getOperatorImageName() {
@@ -136,6 +140,7 @@ public class TestActions {
 
   /**
    * Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+   *
    * @param image image name and tag in 'name:tag' format
    * @return true on success
    */
@@ -174,7 +179,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-      String namespace) throws ApiException {
+                                                                      String namespace) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace);
   }
 
@@ -214,15 +219,15 @@ public class TestActions {
   /**
    * Patch the Domain Custom Resource.
    *
-   * @param domainUid unique domain identifier
-   * @param namespace name of namespace
-   * @param patch patch data in format matching the specified media type
+   * @param domainUid   unique domain identifier
+   * @param namespace   name of namespace
+   * @param patch       patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document:
-   *     "application/json-patch+json", "application/merge-patch+json",
+   *                    "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
-      String patchFormat) {
+                                                  String patchFormat) {
     return Domain.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 
@@ -324,7 +329,7 @@ public class TestActions {
    * Create a Kubernetes Persistent Volume.
    *
    * @param persistentVolume V1PersistentVolume object containing persistent volume
-   *     configuration data
+   *                         configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -346,7 +351,7 @@ public class TestActions {
    * Create a Kubernetes Persistent Volume Claim.
    *
    * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes
-   *     persistent volume claim configuration data
+   *                              persistent volume claim configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -358,7 +363,7 @@ public class TestActions {
   /**
    * Delete the Kubernetes Persistent Volume Claim.
    *
-   * @param name name of the Persistent Volume Claim
+   * @param name      name of the Persistent Volume Claim
    * @param namespace name of the namespace
    * @return true if successful, false otherwise
    */
@@ -382,7 +387,7 @@ public class TestActions {
   /**
    * Delete Kubernetes Secret.
    *
-   * @param name name of the Secret
+   * @param name      name of the Secret
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
@@ -404,10 +409,10 @@ public class TestActions {
   }
 
   /**
-   /**
+   * /**
    * Delete Kubernetes Config Map.
    *
-   * @param name name of the Config Map
+   * @param name      name of the Config Map
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
@@ -416,11 +421,11 @@ public class TestActions {
   }
 
   /**
-  * List Kubernetes ConfigMaps in a namespace.
-  *
-  * @param namespace name of namespace
-  * @return List of ConfigMaps in a namespace
-  */
+   * List Kubernetes ConfigMaps in a namespace.
+   *
+   * @param namespace name of namespace
+   * @return List of ConfigMaps in a namespace
+   */
   public static V1ConfigMapList listConfigMaps(String namespace) {
     return ConfigMap.list(namespace);
   }
@@ -441,7 +446,7 @@ public class TestActions {
   /**
    * Delete Kubernetes Service.
    *
-   * @param name name of the Service
+   * @param name      name of the Service
    * @param namespace name of namespace
    * @return true if successful
    */
@@ -451,12 +456,13 @@ public class TestActions {
 
   /**
    * Returns the V1Service object given the following parameters.
+   *
    * @param serviceName name of the Service to return
    * @param label       a Map of key value pairs the service is decorated with
    * @param namespace   in which to check for the service existence
    * @return V1Service object if found otherwise null
    */
-  public static V1Service  getService(
+  public static V1Service getService(
       String serviceName,
       Map<String, String> label,
       String namespace) {
@@ -464,11 +470,11 @@ public class TestActions {
   }
 
   /**
-   * Returns NodePort of a admin service. 
+   * Returns NodePort of a admin service.
    *
-   * @param serviceName name of admin service 
-   * @param label the key value pair with which the service is decorated with
-   * @param namespace the namespace in which to check for the service
+   * @param serviceName name of admin service
+   * @param label       the key value pair with which the service is decorated with
+   * @param namespace   the namespace in which to check for the service
    * @return AdminNodePort of the Kubernetes service if exits else -1
    */
   public static int getAdminServiceNodePort(
@@ -495,7 +501,7 @@ public class TestActions {
   /**
    * Delete a Kubernetes Service Account.
    *
-   * @param name name of the Service Account
+   * @param name      name of the Service Account
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
@@ -509,7 +515,7 @@ public class TestActions {
    * Create a Cluster Role Binding.
    *
    * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
-   *     data
+   *                           data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -570,9 +576,10 @@ public class TestActions {
 
   /**
    * Log in to a Docker registry.
+   *
    * @param registryName registry name
-   * @param username user
-   * @param password password
+   * @param username     user
+   * @param password     password
    * @return true if successfull
    */
   public static boolean dockerLogin(String registryName, String username, String password) {
@@ -581,6 +588,7 @@ public class TestActions {
 
   /**
    * Push an image to a registry.
+   *
    * @param image fully qualified docker image, image name:image tag
    * @return true if successfull
    */
@@ -590,6 +598,7 @@ public class TestActions {
 
   /**
    * Delete docker image.
+   *
    * @param image image name:image tag
    * @return true if delete image is successful
    */
@@ -599,9 +608,10 @@ public class TestActions {
 
   /**
    * Create Docker registry configuration in json object.
+   *
    * @param username username for the Docker registry
    * @param password password for the Docker registry
-   * @param email email for the Docker registry
+   * @param email    email for the Docker registry
    * @param registry Docker registry name
    * @return json object for the Docker registry configuration
    */
