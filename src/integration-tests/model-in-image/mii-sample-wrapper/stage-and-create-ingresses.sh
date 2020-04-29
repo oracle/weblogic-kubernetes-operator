@@ -70,7 +70,9 @@ function get_help() {
   # $1 is echo prefix
   # $2 is service name
   echo "${1:-}"
-  echo "${1:-} This is a Traefik ingress for service '${2}'. Sample curl access:"
+  echo "${1:-} This is a Traefik ingress for service '${2}'."
+  echo "${1:-}"
+  echo "${1:-} Sample curl access:"
   echo "${1:-}"
   echo "${1:-}  Using 'localhost':"
   echo "${1:-}   $(get_curl_command $2) \\"
@@ -102,11 +104,11 @@ do
 
   echo "@@ Info: Generating ingress file '$target_yaml'."
 
+  save_yaml=""
   if [ -e "$target_yaml" ]; then
     save_yaml="$(dirname $target_yaml)/old/$(basename $target_yaml).$(timestamp)"
     mkdir -p "$(dirname $save_yaml)"
     cp "$target_yaml" "$save_yaml"
-    echo "@@ Notice! Saving old version of the ingress file to '$save_yaml'."
   fi
 
   if [ "${service_name/admin//}" = "$service_name" ]; then
@@ -147,13 +149,14 @@ EOF
     # make the host resolvable by the browser), so we don't set the host. This
     # has the limitation  that only one  admin ingress and  therefore only one
     # admin console on one domain-uid should be deployed per Traefik node port,
-    # since they all listen on the same host...
+    # since more than one would try route form the same port...
 
-    [ ! "$DOMAIN_UID" = "sample-domain1" ] && continue
+    if [ "$DOMAIN_UID" = "sample-domain1" ]; then
     
   cat << EOF > "$target_yaml"
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -173,10 +176,18 @@ spec:
           serviceName: $(get_service_name $service_name)
           servicePort: 7001
 EOF
+    fi
   fi
 
+  if [ ! -z "$save_yaml" ]; then
+    if [ "$(cat $save_yaml)" = "$(cat $target_yaml)" ]; then
+      rm $save_yaml
+    else
+      echo "@@ Notice! Saved old version of the ingress file to '$save_yaml'."
+    fi
+  fi
 
-  if [ ! "$DRY_RUN" = "true" ]; then
+  if [ ! "$DRY_RUN" = "true" ] && [ -e "$target_yaml" ]; then
     echo "@@ Info: Creating traefik ingresses."
 
     kubectl delete -f "$target_yaml" --ignore-not-found
