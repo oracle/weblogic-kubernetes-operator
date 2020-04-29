@@ -77,7 +77,7 @@ public class ConfigMapHelper {
   /**
    * Factory for {@link Step} that deletes introspector config map.
    *
-   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
+   * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
    * @param namespace Namespace
    * @param next Next processing step
    * @return Step for deleting introspector config map
@@ -422,7 +422,7 @@ public class ConfigMapHelper {
           packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
           data.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
         }
-        LOGGER.info(
+        LOGGER.fine(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
             wlsDomainConfig);
@@ -592,7 +592,7 @@ public class ConfigMapHelper {
     }
 
     protected void logConfigMapDeleted() {
-      LOGGER.info(getConfigMapDeletedMessageKey());
+      LOGGER.fine(getConfigMapDeletedMessageKey());
     }
 
     private Step deleteSitConfigMap(Step next) {

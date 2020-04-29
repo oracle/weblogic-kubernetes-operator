@@ -105,8 +105,8 @@ public class ItOperatorUpgrade extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
-      TestUtils.exec("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
+      TestUtils.execOrAbortProcess("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+      TestUtils.execOrAbortProcess("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
       // Make sure domain CRD is deleted form k8s 
       ExecResult result = ExecCommand.exec("kubectl get crd domains.weblogic.oracle",true);
       Assertions.assertEquals(1, result.exitValue());
@@ -158,7 +158,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Checks the expected Upgraded Version of CustomResourceDefintion (CRD) 
+   * Checks the expected Upgraded Version of CustomResourceDefintion (CRD).
    *
    * @throws Exception when version does not match
    */
@@ -171,8 +171,8 @@ public class ItOperatorUpgrade extends BaseTest {
             + getCrdVersion()
             + " in a loop ");
     for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
-      exec = TestUtils.exec(
-              "kubectl get crd domains.weblogic.oracle -o jsonpath='{.spec.versions[?(@.storage==true)].name}'", true);
+      exec = ExecCommand.exec(
+              "kubectl get crd domains.weblogic.oracle -o jsonpath='{.spec.versions[?(@.storage==true)].name}'");
       if (exec.stdout().contains(getCrdVersion())) {
         LoggerHelper.getLocal().log(Level.INFO, "Got Expected CRD Version");
         result = true;
@@ -193,7 +193,7 @@ public class ItOperatorUpgrade extends BaseTest {
   /**
    * Check whether the WebLogic server instances are still RUNNING 
    * not restarted due to Operator Upgrade by comparing the creationTimestamp
-   * before and after upgrade
+   * before and after upgrade.
    *
    * @throws Exception If restarted
    */
@@ -223,7 +223,7 @@ public class ItOperatorUpgrade extends BaseTest {
       throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     opUpgradeTmpDir = getResultDir() + "/operatorupgrade";
-    TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+    TestUtils.execOrAbortProcess("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");

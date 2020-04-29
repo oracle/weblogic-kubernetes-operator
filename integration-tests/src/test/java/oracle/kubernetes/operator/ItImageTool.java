@@ -202,7 +202,7 @@ public class ItImageTool extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Command to get pod's image name: " + cmd);
 
     try {
-      result = TestUtils.exec(cmd);
+      result = TestUtils.execOrAbortProcess(cmd);
 
       Assumptions.assumeTrue((result.stdout()).equals(weblogicImageTagWIT),
           "Failed to use the image <" + weblogicImageTagWIT + "> built by imagetool");

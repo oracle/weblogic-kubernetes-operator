@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -38,10 +41,15 @@ public class MiiBaseTest extends BaseTest {
     domainMap.put("logHomeOnPV", "true");
     //domainMap.put("wdtDomainType", "WLS");
 
+    // To get unique image name
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
+
     if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-modelinimage-" + suffixCount + ":latest");
+      domainMap.put("image", prefix.toLowerCase() + "-modelinimage:" + currentDateTime);
     } else {
-      domainMap.put("image", "modelinimage-" + suffixCount + ":latest");
+      domainMap.put("image", "modelinimage:" + currentDateTime);
     }
     return domainMap;
   }
@@ -165,7 +173,7 @@ public class MiiBaseTest extends BaseTest {
     try {
       // patching the domain
       LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-      result = TestUtils.exec(patchDomainCmd.toString());
+      result = TestUtils.execOrAbortProcess(patchDomainCmd.toString());
       LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
 
       // verify the domain restarted
@@ -220,7 +228,7 @@ public class MiiBaseTest extends BaseTest {
 
     // Apply the new yaml to update the domain crd
     LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-    ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+    ExecResult exec = TestUtils.execOrAbortProcess("kubectl apply -f " + path.toString());
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
   }
@@ -247,7 +255,7 @@ public class MiiBaseTest extends BaseTest {
     try {
       // patching the domain
       LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-      result = TestUtils.exec(patchDomainCmd.toString());
+      result = TestUtils.execOrAbortProcess(patchDomainCmd.toString());
       LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
 
       // verify the domain restarted
@@ -278,7 +286,7 @@ public class MiiBaseTest extends BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "Command to get restartVersion: " + getVersionCmd);
     try {
-      ExecResult result = TestUtils.exec(getVersionCmd.toString());
+      ExecResult result = TestUtils.execOrAbortProcess(getVersionCmd.toString());
       String existinVersion = result.stdout();
       LoggerHelper.getLocal().log(Level.INFO, "Existing restartVersion is: " + existinVersion);
 

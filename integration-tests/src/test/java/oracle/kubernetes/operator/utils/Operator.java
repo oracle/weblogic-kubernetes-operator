@@ -219,13 +219,7 @@ public class Operator {
    * @throws Exception exception
    */
   public void destroy() throws Exception {
-    String cmd = "UnSuppored Helm Version [" + BaseTest.HELM_VERSION + "]";
-    if (BaseTest.HELM_VERSION.equals("V2")) {
-      cmd = "helm del --purge " + operatorMap.get("releaseName");
-    } 
-    if (BaseTest.HELM_VERSION.equals("V3")) {
-      cmd = "helm uninstall " + operatorMap.get("releaseName") + " --namespace " +  operatorMap.get("namespace");
-    } 
+    String cmd = "helm uninstall " + operatorMap.get("releaseName") + " --namespace " +  operatorMap.get("namespace");
     
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
@@ -315,7 +309,7 @@ public class Operator {
     StringBuffer cmd = new StringBuffer("");
     if (operatorMap.containsKey("operatorGitVersion")
         && operatorMap.containsKey("operatorGitVersionDir")) {
-      TestUtils.exec(
+      TestUtils.execOrAbortProcess(
           "cd "
               + operatorMap.get("operatorGitVersionDir")
               + " && git clone -b "
@@ -325,44 +319,22 @@ public class Operator {
       cmd.append(operatorMap.get("operatorGitVersionDir"))
           .append("/weblogic-kubernetes-operator");
       
-      if (BaseTest.HELM_VERSION.equals("V2")) { 
-        cmd.append(" && helm install kubernetes/charts/weblogic-operator ")
-           .append(" --name ")
-            .append(operatorMap.get("releaseName"));
-      }
-      if (BaseTest.HELM_VERSION.equals("V3")) {
-        cmd.append(" && helm install ")
+      cmd.append(" && helm install ")
            .append(operatorMap.get("releaseName"))
             .append(" kubernetes/charts/weblogic-operator");
-      } 
     } else {
       cmd.append("cd ");
       cmd.append(BaseTest.getProjectRoot());
-      if (BaseTest.HELM_VERSION.equals("V2")) { 
-        cmd.append(" && helm install kubernetes/charts/weblogic-operator ")
-           .append(" --name ")
-            .append(operatorMap.get("releaseName"));
-      }
-
-      if (BaseTest.HELM_VERSION.equals("V3")) { 
-        cmd.append(" && helm install ")
-           .append(operatorMap.get("releaseName"))
-            .append(" kubernetes/charts/weblogic-operator");
-      } 
-
-    }
-    cmd.append(" --values ")
-       .append(generatedInputYamlFile)
-       .append(" --namespace ")
-       .append(operatorNS)
-       .append(" --set \"imagePullPolicy=")
-       .append(imagePullPolicy)
-        .append("\" ");
-
-    if (BaseTest.HELM_VERSION.equals("V2")) { 
-      cmd.append(" --wait --timeout 180");
-    }
-    if (BaseTest.HELM_VERSION.equals("V3")) { 
+      cmd.append(" && helm install ")
+          .append(operatorMap.get("releaseName"))
+          .append(" kubernetes/charts/weblogic-operator");
+      cmd.append(" --values ")
+          .append(generatedInputYamlFile)
+          .append(" --namespace ")
+          .append(operatorNS)
+          .append(" --set \"imagePullPolicy=")
+          .append(imagePullPolicy)
+          .append("\" ");
       cmd.append(" --wait --timeout 3m0s");
     }
 
@@ -389,15 +361,9 @@ public class Operator {
         .append(" --set \"")
         .append(upgradeSet)
         .append("\" --reuse-values ");
-
-    if (BaseTest.HELM_VERSION.equals("V2")) { 
-      cmd.append(" --wait --timeout 180");
-    }
-    if (BaseTest.HELM_VERSION.equals("V3")) { 
-      cmd.append("--namespace ")
-          .append(operatorMap.get("namespace"))
-          .append(" --wait --timeout 3m0s");
-    }
+    cmd.append("--namespace ")
+        .append(operatorMap.get("namespace"))
+        .append(" --wait --timeout 3m0s");
 
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -419,9 +385,7 @@ public class Operator {
         .append(" && helm get values ")
         .append(operatorMap.get("releaseName"));
 
-    if (BaseTest.HELM_VERSION.equals("V3")) { 
-      cmd.append(" --namespace " +  operatorMap.get("namespace"));
-    }
+    cmd.append(" --namespace " +  operatorMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -525,7 +489,7 @@ public class Operator {
       ExecCommand.exec("kubectl --grace-period=1 --timeout=1s delete namespace " + operatorNS + " --ignore-not-found");
       Thread.sleep(10000);
       // create operator namespace
-      TestUtils.exec("kubectl create namespace " + operatorNS, true);
+      ExecCommand.exec("kubectl create namespace " + operatorNS);
     }
     if (opSA) {
       // create operator service account
@@ -622,7 +586,7 @@ public class Operator {
     String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operatorNS;
     LoggerHelper.getLocal().log(Level.INFO, "Undeploy Operator using command:\n" + cmd);
 
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
 
     LoggerHelper.getLocal().log(Level.INFO, "stdout : \n" + result.stdout());
 
@@ -639,7 +603,7 @@ public class Operator {
     String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operatorNS;
     LoggerHelper.getLocal().log(Level.INFO, "Deploy Operator using command:\n" + cmd);
 
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
 
     LoggerHelper.getLocal().log(Level.INFO, "Checking if operator pod is running");
     verifyPodCreated();
@@ -670,7 +634,7 @@ public class Operator {
             + getOperatorNamespace()
             + " -o jsonpath=\"{.items[0].metadata.name}\"";
     LoggerHelper.getLocal().log(Level.INFO, "Command to query Operator pod name: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
 
     return result.stdout().trim();
   }
@@ -688,23 +652,23 @@ public class Operator {
   }
 
   /**
-   * writes operator pod describe and logs to a file
+   * writes operator pod describe and logs to a file.
    * @param logLocation - location where the logs to be written
    */
   public void writePodLog(String logLocation) throws Exception {
     //create dir
-    TestUtils.exec("mkdir -p " + logLocation);
+    TestUtils.execOrAbortProcess("mkdir -p " + logLocation);
 
     //write operator pod describe
     String cmd = "kubectl describe pod " + getOperatorPodName() + " -n "
         + getOperatorNamespace() + " >> " + logLocation
         + "/pod-describe." + operatorNS + "." + getOperatorPodName();
-    TestUtils.exec(cmd, true);
+    ExecCommand.exec(cmd);
 
     //write operator pod logs
     cmd = "kubectl logs pod/" + getOperatorPodName() + " -n "
         + getOperatorNamespace() + " >> " + logLocation
         + "/pod-log." + operatorNS + "." + getOperatorPodName();
-    TestUtils.exec(cmd, true);
+    ExecCommand.exec(cmd);
   }
 }

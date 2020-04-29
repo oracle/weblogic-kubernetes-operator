@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
@@ -200,6 +201,11 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       final String wdtModelPropFile = "model.jdbc.properties";
       createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
 
+      // push the image to docker repository
+      if (BaseTest.SHARED_CLUSTER) {
+        TestUtils.loginAndPushImageToOcir(imageName);
+      }
+
       // update domain yaml with new image tag and
       // apply the domain yaml, verify domain rolling-restarted successfully
       modifyDomainYamlWithImageName(domain, domainNS, imageName);
@@ -379,6 +385,11 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
       final String wdtModelFile = "model.jdbc.yaml";
       final String wdtModelPropFile = "model.jdbc.properties";
       createDomainImage(domainMap, imageName, wdtModelFile, wdtModelPropFile);
+
+      // push the image to docker repository
+      if (BaseTest.SHARED_CLUSTER) {
+        TestUtils.loginAndPushImageToOcir(imageName);
+      }
 
       // update domain yaml with new image tag and
       // apply the domain yaml, verify domain rolling-restarted
@@ -587,7 +598,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
 
     try {
       LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
-      result = TestUtils.exec(cmdStrBuff.toString());
+      result = TestUtils.execOrAbortProcess(cmdStrBuff.toString());
       LoggerHelper.getLocal().log(Level.INFO, "JDBC DS info from server pod: " + result.stdout());
       jdbcDsStr  = result.stdout();
     } catch (Exception ex) {
@@ -637,7 +648,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
           .append(domainNS)
           .append(" -o=jsonpath='{.items[0].metadata.name}' | grep admin-server");
       LoggerHelper.getLocal().log(Level.INFO, "Command to get pod name: " + cmdStrBuff);
-      result = TestUtils.exec(cmdStrBuff.toString());
+      result = TestUtils.execOrAbortProcess(cmdStrBuff.toString());
       String adminPodName = result.stdout();
       LoggerHelper.getLocal().log(Level.INFO, "pod name is: " + adminPodName);
 
@@ -651,7 +662,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
           .append(BaseTest.getAppLocationInPod())
           .append("'");
       LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
-      TestUtils.exec(cmdStrBuff.toString(), true);
+      TestUtils.execOrAbortProcess(cmdStrBuff.toString(), true);
 
       TestUtils.copyFileViaCat(
           Paths.get(tempDir, pyFileName).toString(),
@@ -670,7 +681,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
           .append(pyFileName)
           .append("'");
       LoggerHelper.getLocal().log(Level.INFO, "Command to exec: " + cmdStrBuff);
-      result = TestUtils.exec(cmdStrBuff.toString(), true);
+      result = ExecCommand.exec(cmdStrBuff.toString());
       jdbcDsStr  = result.stdout();
       //clean up
       LoggerHelper.getLocal().log(Level.INFO, "Deleting: " + destDir + "/" + pyFileName);
@@ -724,7 +735,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
         .append("kubectl get pod -n ")
         .append(domainNS)
         .append(" -o=jsonpath='{.items[1].metadata.name}' | grep managed-server1");
-    String msPodName = TestUtils.exec(cmdStrBuff.toString()).stdout();
+    String msPodName = TestUtils.execOrAbortProcess(cmdStrBuff.toString()).stdout();
 
     // access the application deployed in managed-server1
     cmdStrBuff = new StringBuffer();
@@ -738,7 +749,7 @@ public class ItModelInImageConfigUpdate extends MiiBaseTest {
         .append("'");
 
     try {
-      ExecResult exec = TestUtils.exec(cmdStrBuff.toString(), true);
+      ExecResult exec = ExecCommand.exec(cmdStrBuff.toString());
       appStr = exec.stdout();
     } catch (Exception ex) {
       LoggerHelper.getLocal().log(Level.INFO, "Varify app failed:\n " + ex.getMessage());

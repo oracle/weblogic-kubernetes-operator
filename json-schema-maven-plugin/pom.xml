@@ -33,6 +33,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>${junit-version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -47,6 +48,10 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <properties>
+        <junit-version>4.13</junit-version>
+    </properties>
 
     <build>
         <plugins>

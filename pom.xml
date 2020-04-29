@@ -10,10 +10,10 @@
   <version>3.0.0</version>
 
   <modules>
-    <module>build-tools</module>
     <module>operator</module>
     <module>swagger</module>
     <module>integration-tests</module>
+    <module>new-integration-tests</module>
     <module>kubernetes</module>
     <module>json-schema-maven-plugin</module>
     <module>json-schema</module>
@@ -80,7 +80,7 @@
               <configuration>
                 <consoleOutput>true</consoleOutput>
                 <configLocation>${checkstyle.config.location}</configLocation>
-                <suppressionsLocation>weblogic-kubernetes-operator/checkstyle/suppressions.xml</suppressionsLocation>
+                <suppressionsLocation>${root.basedir}/build-tools/checkstyle/suppressions.xml</suppressionsLocation>
                 <encoding>UTF-8</encoding>
                 <failOnViolation>true</failOnViolation>
                 <violationSeverity>warning</violationSeverity>
@@ -90,11 +90,6 @@
             </execution>
           </executions>
           <dependencies>
-            <dependency>
-              <groupId>oracle.kubernetes</groupId>
-              <artifactId>build-tools</artifactId>
-              <version>1.0</version>
-            </dependency>
             <dependency>
               <groupId>com.puppycrawl.tools</groupId>
               <artifactId>checkstyle</artifactId>
@@ -110,7 +105,7 @@
           <configuration>
             <sourceEncoding>utf-8</sourceEncoding>
             <rulesets>
-              <ruleset>weblogic-kubernetes-operator/pmd/weblogicx-ruleset.xml</ruleset>
+              <ruleset>${root.basedir}/build-tools/pmd/weblogicx-ruleset.xml</ruleset>
             </rulesets>
             <printFailingErrors>true</printFailingErrors>
             <failOnViolation>false</failOnViolation>
@@ -124,11 +119,6 @@
             </execution>
           </executions>
           <dependencies>
-            <dependency>
-              <groupId>oracle.kubernetes</groupId>
-              <artifactId>build-tools</artifactId>
-              <version>1.0</version>
-            </dependency>
             <dependency>
               <groupId>net.sourceforge.pmd</groupId>
               <artifactId>pmd-java</artifactId>
@@ -249,6 +239,24 @@
       </plugin>
 
       <plugin>
+        <groupId>org.commonjava.maven.plugins</groupId>
+        <artifactId>directory-maven-plugin</artifactId>
+        <version>0.1</version>
+        <executions>
+          <execution>
+            <id>directories</id>
+            <goals>
+              <goal>highest-basedir</goal>
+            </goals>
+            <phase>initialize</phase>
+            <configuration>
+              <property>root.basedir</property>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin-version}</version>
@@ -283,7 +291,7 @@
         <configuration>
           <xmlOutput>true</xmlOutput>
           <failOnError>false</failOnError>
-          <excludeFilterFile>weblogic-kubernetes-operator/spotbugs/exclude-common.xml</excludeFilterFile>
+          <excludeFilterFile>${root.basedir}/build-tools/spotbugs/exclude-common.xml</excludeFilterFile>
         </configuration>
         <executions>
           <execution>
@@ -294,11 +302,6 @@
           </execution>
         </executions>
         <dependencies>
-          <dependency>
-            <groupId>oracle.kubernetes</groupId>
-            <artifactId>build-tools</artifactId>
-            <version>1.0</version>
-          </dependency>
           <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs</artifactId>
@@ -376,48 +379,6 @@
             </executions>
           </plugin>
 
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>${maven-failsafe-plugin-version}</version>
-            <configuration> <!-- run tests in parallel -->
-              <argLine>
-                --illegal-access=permit
-              </argLine>
-              <encoding>UTF-8</encoding>
-              <argLine>${failsafeArgLine}</argLine>
-              <failIfNoTests>false</failIfNoTests>
-              <systemPropertyVariables>
-                <!-- Add any system properties here -->
-                <!--<project.build.directory>${project.build.directory}</project.build.directory> -->
-                <!--<weblogic.operator.root.directory>${basedir}/..</weblogic.operator.root.directory> -->
-                <!--<TAGS>${env.TAGS}</TAGS> -->
-                <maxThreads>3</maxThreads>
-              </systemPropertyVariables>
-            </configuration>
-
-            <executions>
-              <execution>
-                <id>acceptance-test</id>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-                <phase>integration-test</phase>
-                <configuration>
-                  <!-- do not run unit or integration tests -->
-                  <excludes>
-                    <exclude>**/*Test.java</exclude>
-                    <exclude>**/*IT.java</exclude>
-                  </excludes>
-                  <!-- just run acceptance tests -->
-                  <includes>
-                    <include>**/*AT.java</include>
-                  </includes>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
@@ -429,58 +390,13 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.version}</version>
             <executions>
-
               <execution>
-                <id>pre-unit-test</id>
+                <id>prepare-agent</id>
                 <goals>
                   <goal>prepare-agent</goal>
                 </goals>
-                <configuration>
-                  <destFile>${sonar.jacoco.reportPath}</destFile>
-                  <append>true</append>
-                  <propertyName>surefireArgLine</propertyName>
-                </configuration>
               </execution>
-
-              <execution>
-                <id>post-unit-test</id>
-                <phase>test</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-                <configuration>
-                  <outputDirectory>${jacoco.outputDir}</outputDirectory>
-                  <dataFile>${sonar.jacoco.reportPath}</dataFile>
-                </configuration>
-              </execution>
-
-              <execution>
-                <id>pre-integration-test</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>prepare-agent-integration</goal>
-                </goals>
-                <configuration>
-                  <destFile>${sonar.jacoco.itReportPath}</destFile>
-                  <append>true</append>
-                  <propertyName>failsafeArgLine</propertyName>
-                </configuration>
-              </execution>
-              <execution>
-                <id>post-integration-test</id>
-                <phase>post-integration-test</phase>
-                <goals>
-                  <goal>report-integration</goal>
-                </goals>
-                <configuration>
-                  <dataFile>${sonar.jacoco.itReportPath}</dataFile>
-                  <append>true</append>
-                  <outputDirectory>$jacoco.itOutputDir}</outputDirectory>
-                </configuration>
-              </execution>
-
             </executions>
           </plugin>
         </plugins>
@@ -540,7 +456,12 @@
       <dependency>
         <groupId>io.kubernetes</groupId>
         <artifactId>client-java</artifactId>
-        <version>8.0.0</version>
+        <version>${client-java-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.kubernetes</groupId>
+        <artifactId>client-java-extended</artifactId>
+        <version>${client-java-version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -551,11 +472,6 @@
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-junit</artifactId>
         <version>2.0.0.0</version>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junit-version}</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
@@ -721,6 +637,16 @@
         <version>1.14</version>
       </dependency>
       <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons.io.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.swagger</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>${swagger-core-version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.httpunit</groupId>
         <artifactId>httpunit</artifactId>
         <version>1.7.3</version>
@@ -729,6 +655,16 @@
         <groupId>com.appscode.voyager</groupId>
         <artifactId>client-java</artifactId>
         <version>0.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-core</artifactId>
+        <version>${assertj.core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.awaitility</groupId>
+        <artifactId>awaitility</artifactId>
+        <version>${awaitility-version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -743,6 +679,11 @@
   </dependencies>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <src-integration-test>${project.basedir}/src/test/java</src-integration-test>
+    <resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
     <java.version.range>11</java.version.range>
     <maven.version.range>[3.5.2,)</maven.version.range>
     <maven-enforcer-plugin-version>3.0.0-M3</maven-enforcer-plugin-version>
@@ -753,9 +694,9 @@
     <maven-jar-plugin-version>3.2.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.1.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.8.2</maven-site-plugin-version>
-    <maven-surefire-plugin-version>3.0.0-M4</maven-surefire-plugin-version>
-    <surefire-logger-api-version>3.0.0-M3</surefire-logger-api-version>
-    <maven-checkstyle-plugin-version>3.1.0</maven-checkstyle-plugin-version>
+    <maven-surefire-plugin-version>2.22.2</maven-surefire-plugin-version>
+    <surefire-logger-api-version>2.22.2</surefire-logger-api-version>
+    <maven-checkstyle-plugin-version>3.1.1</maven-checkstyle-plugin-version>
     <maven-pmd-plugin-version>3.13.0</maven-pmd-plugin-version>
     <maven-release-plugin-version>3.0.0-M1</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.1.1</maven-javadoc-plugin-version>
@@ -767,7 +708,10 @@
     <swagger-core-version>1.6.0</swagger-core-version>
     <jodatime-version>2.10.5</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
-    <junit-version>4.13</junit-version>
+    <assertj.core.version>3.15.0</assertj.core.version>
+    <commons.io.version>2.6</commons.io.version>
+    <awaitility-version>4.0.2</awaitility-version>
+    <client-java-version>8.0.0</client-java-version>
     <junit.jupiter.version>5.6.0</junit.jupiter.version>
     <junit.vintage.version>5.6.0</junit.vintage.version>
     <junit.platform.version>1.6.0</junit.platform.version>
@@ -781,18 +725,9 @@
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
-    <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-    <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-    <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
-    <sonar.jacoco.itReportPath>${project.basedir}/../target/jacoco-it.exec</sonar.jacoco.itReportPath>
-    <sonar.language>java</sonar.language>
     <jacoco.version>0.8.5</jacoco.version>
-    <jacoco.outputDir>${project.basedir}/../target/jacoco</jacoco.outputDir>
-    <jacoco.itOutputDir>${project.basedir}/../target/jacoco-it</jacoco.itOutputDir>
-    <jacoco.destFile>${project.basedir}/../target/jacoco.exec</jacoco.destFile>
-    <jacoco.skip>false</jacoco.skip>
-    <checkstyle.config.location>weblogic-kubernetes-operator/checkstyle/customized_google_checks.xml
-    </checkstyle.config.location>
+    <aggregate.report.dir>buildtime-reports/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
+    <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
   </properties>
 
 </project>

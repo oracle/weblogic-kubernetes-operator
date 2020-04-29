@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,6 +79,13 @@ public class Domain {
   private boolean createDomainResource = true;
   private boolean createLoadBalancer = true;
   private String domainHomeSourceType = "";
+
+  private static final String SSL_ENABLED_KEY = "sslEnabled";
+  private boolean sslEnabled = false;
+  private static final String ADMIN_SERVER_SSL_PORT_KEY = "adminServerSSLPort";
+  private static final String MANAGED_SERVER_SSL_PORT_KEY = "managedServerSSLPort";
+  private int adminServerSslPort;
+  private int managedServerSslPort;
 
   public Domain() throws Exception {
     domainMap = new HashMap<String, Object>();
@@ -143,7 +151,7 @@ public class Domain {
   public void verifyDomainCreated(int maxIterations) throws Exception {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
-    ExecResult result = TestUtils.exec(command.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(command.toString());
     if (!result.stdout().contains(domainUid)) {
       throw new RuntimeException("FAILURE: domain not found, exiting!");
     }
@@ -278,6 +286,28 @@ public class Domain {
 
 
   /**
+   * Verifies the SSL listeners in the domain are active by making an SSL connection to each one.
+   *
+   * @throws Exception If an error occurred
+   */
+  public List<ExecResult> verifySslListeners() throws Exception {
+    List execResults = new ArrayList<ExecResult>(1 + initialManagedServerReplicas);
+    // Check admin server's SSL port
+    execResults.add(verifyWebLogicSslListener(domainUid + "-" + adminServerName, "$ADMIN_SERVER_SSL_PORT"));
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
+      // check managed server's SSL port
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        LoggerHelper.getLocal().log(Level.INFO,
+                "Checking if managed server's SSL port (" + managedServerNameBase + i + ") is active.");
+        execResults.add(verifyWebLogicSslListener(domainUid + "-" + managedServerNameBase + i,
+                "$MANAGED_SERVER_SSL_PORT"));
+      }
+    }
+
+    return  execResults;
+  }
+
+  /**
    * verify servers are ready.
    *
    * @throws RuntimeException if WLS pod is not ready and pod output doesn't contain 1/1
@@ -360,6 +390,37 @@ public class Domain {
     }
   }
 
+
+  private ExecResult verifyWebLogicSslListener(String podName, String sslPortEnvVariable) throws Exception {
+    ExecResult execResult = null;
+    if (sslEnabled) {
+      LoggerHelper.getLocal().log(Level.INFO,
+              "Checking the SSL port of WebLogic server " + podName + " in " + domainUid);
+      StringBuffer wlsServerCurlCmd = getCurlCmdForHttps(podName, sslPortEnvVariable);
+
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + wlsServerCurlCmd.toString());
+      execResult = ExecCommand.exec(wlsServerCurlCmd.toString());
+    }
+
+    return  execResult;
+  }
+
+
+  private StringBuffer getCurlCmdForHttps(String podName, String sslPortEnvVariable) {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl exec -n ")
+            .append(domainNS)
+            .append(" ")
+            .append(podName)
+            .append(" -- ")
+            .append("/bin/bash -c 'curl -v -k https://$HOSTNAME:")
+            .append(sslPortEnvVariable)
+            .append("/weblogic/ready'");
+
+    return cmd;
+  }
+
+
   /**
    * Verify nodeport by accessing admin REST endpoint.
    *
@@ -390,7 +451,7 @@ public class Domain {
           .append(password)
           .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
       LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
-      ExecResult result = TestUtils.exec(cmd.toString());
+      ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
       String output = result.stdout().trim();
       LoggerHelper.getLocal().log(Level.INFO, "output " + output);
       if (!output.equals("200")) {
@@ -503,7 +564,7 @@ public class Domain {
         .append("/management/weblogic/latest/edit/appDeployments")
         .append(" --write-out %{http_code} ");
     LoggerHelper.getLocal().log(Level.INFO, "Command to deploy webapp " + cmd);
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
     String output = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "curl output " + output + " \n err " + result.stderr());
     if (!output.contains("202")) {
@@ -533,7 +594,7 @@ public class Domain {
         .append(webappName)
         .append(" --write-out %{http_code} -o /dev/null");
     LoggerHelper.getLocal().fine("Command to undeploy webapp " + cmd);
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
     String output = result.stdout().trim();
     if (!output.contains("200")) {
       throw new RuntimeException(
@@ -767,7 +828,7 @@ public class Domain {
         .append(domainUid)
         .append("/domain.yaml");
     LoggerHelper.getLocal().log(Level.INFO, "Running " + cmd);
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
 
@@ -786,7 +847,7 @@ public class Domain {
         .append("/weblogic-domains/")
         .append(domainUid)
         .append("/domain.yaml");
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
     String output = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO,
         "command to delete domain " + cmd + " \n returned " + output);
@@ -803,7 +864,7 @@ public class Domain {
     if (domainMap.containsKey("image")
         && !(((String)domainMap.get("image")).startsWith("container-registry.oracle.com"))) {
       String cmd = "docker rmi -f " + domainMap.get("image");
-      TestUtils.exec(cmd, true);
+      TestUtils.execOrAbortProcess(cmd, true);
     }
   }
 
@@ -815,7 +876,7 @@ public class Domain {
   public void shutdown() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String cmd = "kubectl delete domain " + domainUid + " -n " + domainNS;
-    ExecResult result = TestUtils.exec(cmd.toString(), true);
+    ExecResult result = ExecCommand.exec(cmd.toString());
     verifyDomainDeleted(replicas);
   }
 
@@ -1012,7 +1073,7 @@ public class Domain {
         .append(responseBodyFile);
     LoggerHelper.getLocal().log(Level.INFO, "cmd for curl " + cmd);
 
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
 
     String output = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "output " + output);
@@ -1083,7 +1144,7 @@ public class Domain {
         .append(domainNS)
         .append(" | grep Endpoints | awk '{print $2}'");
 
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
     LoggerHelper.getLocal().log(Level.INFO, "Cluster service Endpoint " + result.stdout());
     return new StringTokenizer(result.stdout(), ",").countTokens();
   }
@@ -1100,7 +1161,7 @@ public class Domain {
 
     LoggerHelper.getLocal().log(Level.INFO, "Cmd to get the admins service node port " + cmd);
 
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
     return new Integer(result.stdout().trim()).intValue();
   }
 
@@ -1231,8 +1292,8 @@ public class Domain {
                   + "/weblogic-domains/"
                   + domainUid
                   + "/domain_new.yaml");
-      LoggerHelper.getLocal().log(Level.INFO, "kubectl execut with command: " + command.toString());
-      TestUtils.exec(command.toString());
+      LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + command.toString());
+      TestUtils.execOrAbortProcess(command.toString());
 
       // verify the servers in the domain are being restarted in a sequence
       verifyAdminServerRestarted();
@@ -1285,8 +1346,8 @@ public class Domain {
     // kubectl apply the new constructed domain_new.yaml
     StringBuffer command = new StringBuffer();
     command.append("kubectl apply  -f ").append(newDomainYamlFile);
-    LoggerHelper.getLocal().log(Level.INFO, "kubectl execut with command: " + command.toString());
-    TestUtils.exec(command.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + command.toString());
+    TestUtils.execOrAbortProcess(command.toString());
 
     // verify the servers in the domain are being restarted in a sequence
     verifyAdminServerRestarted();
@@ -1362,10 +1423,10 @@ public class Domain {
                 + "\""
                 + changedProperty
                 + "\"");
-    LoggerHelper.getLocal().log(Level.INFO, "kubectl execut with command: " + command.toString());
-    TestUtils.exec(command.toString());
+    LoggerHelper.getLocal().log(Level.INFO, "kubectl execute with command: " + command.toString());
+    TestUtils.execOrAbortProcess(command.toString());
 
-    String result = ((TestUtils.exec(command.toString())).stdout());
+    String result = ((TestUtils.execOrAbortProcess(command.toString())).stdout());
     LoggerHelper.getLocal().log(Level.INFO,
         "in the method findServerPropertyChange, " + command.toString() + " return " + result);
     if (!result.contains(changedProperty)) {
@@ -1475,7 +1536,7 @@ public class Domain {
         String.format(
             "kubectl label secret %s weblogic.domainUID=%s -n %s",
             secret.getSecretName(), domainUid, domainNS);
-    TestUtils.exec(labelCmd);
+    TestUtils.execOrAbortProcess(labelCmd);
   }
   
   /**
@@ -1652,7 +1713,7 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = TestUtils.exec(curlCmd, true);
+      ExecResult result = ExecCommand.exec(curlCmd);
       String responseCode = result.stdout().trim();
       if (result.exitValue() != 0 || !responseCode.equals("200")) {
         LoggerHelper.getLocal().log(Level.INFO,
@@ -1748,9 +1809,9 @@ public class Domain {
     }
     // copy samples to RESULT_DIR
     if (Files.exists(Paths.get(resultsDir + "/samples"))) {
-      TestUtils.exec("rm -rf " + resultsDir + "/samples");
+      TestUtils.execOrAbortProcess("rm -rf " + resultsDir + "/samples");
     }
-    TestUtils.exec("cp -rf "
+    TestUtils.execOrAbortProcess("cp -rf "
             + (domainMap.containsKey("projectRoot")
             ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
             + "/kubernetes/samples "
@@ -1758,7 +1819,7 @@ public class Domain {
         true);
 
     if (domainHomeSourceType.equals("FromModel")) {
-      TestUtils.exec("cp -rf "
+      TestUtils.execOrAbortProcess("cp -rf "
               + (domainMap.containsKey("projectRoot")
               ? domainMap.get("projectRoot") : BaseTest.getProjectRoot())
               + "/integration-tests/src/test/resources/model-in-image "
@@ -1833,6 +1894,11 @@ public class Domain {
     }
     LoggerHelper.getLocal().log(Level.INFO, "pvSharing for this domain is: " + pvSharing);
 
+    if (domainMap.containsKey(SSL_ENABLED_KEY)) {
+      sslEnabled = ((Boolean) domainMap.getOrDefault(SSL_ENABLED_KEY, Boolean.FALSE)).booleanValue();
+      adminServerSslPort = ((Integer) domainMap.getOrDefault(ADMIN_SERVER_SSL_PORT_KEY, 7002)).intValue();
+      managedServerSslPort = ((Integer) domainMap.getOrDefault(MANAGED_SERVER_SSL_PORT_KEY, 8002)).intValue();
+    }
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
@@ -1939,7 +2005,7 @@ public class Domain {
             + domainNS
             + " | grep Node:";
 
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
     String nodePortHost = result.stdout();
     // LoggerHelper.getLocal().log(Level.INFO, "nodePortHost "+nodePortHost);
     if (nodePortHost.contains(":") && nodePortHost.contains("/")) {
@@ -1958,7 +2024,7 @@ public class Domain {
         .append(" -n ")
         .append(domainNS)
         .append(" | grep \"Node Port:\"");
-    ExecResult result = TestUtils.exec(cmd.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmd.toString());
     String output = result.stdout();
     if (output.contains("Node Port")) {
       return output.substring(output.indexOf(":") + 1).trim();
@@ -2003,7 +2069,7 @@ public class Domain {
           .append(resultsDir)
           .append("/docker-images");
       LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + removeAndClone);
-      TestUtils.exec(removeAndClone.toString());
+      TestUtils.execOrAbortProcess(removeAndClone.toString());
     }
   }
 
@@ -2076,7 +2142,7 @@ public class Domain {
     }
 
     String command = "kubectl create -f " + domainYaml;
-    ExecResult result = TestUtils.exec(command);
+    ExecResult result = TestUtils.execOrAbortProcess(command);
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + result.stdout().trim());
   }
 
@@ -2223,7 +2289,7 @@ public class Domain {
               + "/docker-images/OracleWebLogic/samples/"
               + "12213-domain-home-in-image-wdt/simple-topology.yaml");
       ExecResult exec =
-          TestUtils.exec(
+          TestUtils.execOrAbortProcess(
               "cat " + resultsDir
                   + "/docker-images/OracleWebLogic/samples/"
                   + "12213-domain-home-in-image-wdt/simple-topology.yaml");
@@ -2234,7 +2300,7 @@ public class Domain {
       createDomainJobTemplateFile.append(
           "/samples/scripts/create-weblogic-domain/domain-home-on-pv/"
               + "create-domain-job-template.yaml");
-      TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
+      TestUtils.execOrAbortProcess("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
     }
   }
 
@@ -2430,7 +2496,7 @@ public class Domain {
               + domainMap.get("configOverrides")
               + " --from-file "
               + configOverridesFile;
-      TestUtils.exec(cmd);
+      TestUtils.execOrAbortProcess(cmd);
 
       // create label for configmap
       cmd =
@@ -2442,7 +2508,7 @@ public class Domain {
               + domainMap.get("configOverrides")
               + " weblogic.domainUID="
               + domainUid;
-      TestUtils.exec(cmd);
+      TestUtils.execOrAbortProcess(cmd);
 
       // create secret for custom sit config t3 public address
       // create datasource secret for user and password
@@ -2456,7 +2522,7 @@ public class Domain {
               + TestUtils.getHostName()
               + " --from-literal=dbusername=root"
               + " --from-literal=dbpassword=root123";
-      TestUtils.exec(cmd);
+      TestUtils.execOrAbortProcess(cmd);
     }
   }
 
@@ -2559,7 +2625,7 @@ public class Domain {
     String adminPodName = domainUid + "-" + adminServerName;
     LoggerHelper.getLocal().log(Level.INFO,
         "Writing admin pod(" + adminPodName + ") log");
-    TestUtils.exec("kubectl logs " + adminPodName + " -n "
+    TestUtils.execOrAbortProcess("kubectl logs " + adminPodName + " -n "
         + domainNS + " > " + resultsDir + "/pod-" + adminPodName + ".log", true);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
@@ -2568,7 +2634,7 @@ public class Domain {
         String msPodName = domainUid + "-" + managedServerNameBase + i;
         LoggerHelper.getLocal().log(Level.INFO,
             "Writing managed pod(" + msPodName + ") log");
-        TestUtils.exec("kubectl logs " + msPodName
+        TestUtils.execOrAbortProcess("kubectl logs " + msPodName
             + " -n " + domainNS + " > " + resultsDir + "/pod-" + msPodName + ".log", true);
       }
     }
@@ -2590,6 +2656,6 @@ public class Domain {
 
     String contentToAppend = "  overridesConfigMap: " + domainMap.get("overridesConfigMap");
     Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
-    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+    TestUtils.execOrAbortProcess("kubectl apply -f " + domainYaml, true);
   }
 }

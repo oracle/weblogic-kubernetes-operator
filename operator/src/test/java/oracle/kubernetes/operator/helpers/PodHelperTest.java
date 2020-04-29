@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -102,7 +102,7 @@ public class PodHelperTest {
 
     testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test

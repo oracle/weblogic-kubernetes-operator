@@ -37,7 +37,7 @@ WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
 UPDATE_RCUPWD_FLAG=""
-WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom -skipWLSModuleScanning"
+WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 ROLLBACK_ERROR=3
@@ -577,7 +577,6 @@ function generateMergedModel() {
   ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
   ret=$?
-  trace "RETURNING $ret"
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Failed: Validate Model Failed "
     if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
@@ -703,7 +702,7 @@ function contain_returncode() {
 #   4 -  output file
 #
 function encrypt_decrypt_model() {
-  trace "Entering encrypt_wdtmodel"
+  trace "Entering encrypt_wdtmodel $1"
 
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
   local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
@@ -716,12 +715,15 @@ function encrypt_decrypt_model() {
     ${SCRIPTPATH}/encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "WDT Failed to encrypt_decrypt_model failure. Check logs for error."
+    trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
+    "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
+    "creation of the domain. You can either reset the password to the original one and try again or delete "\
+    "and recreate the domain."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exitOrLoop
   fi
 
-  trace "Exiting encrypt_wdtmodel"
+  trace "Exiting encrypt_wdtmodel $1"
 }
 
 # encrypt_decrypt_domain_secret
@@ -732,7 +734,7 @@ function encrypt_decrypt_model() {
 #   4 -  output file
 
 function encrypt_decrypt_domain_secret() {
-  trace "Entering encrypt_decrypt_domain_secret"
+  trace "Entering encrypt_decrypt_domain_secret $1"
   # Do not use trap for this startServer.sh fail for some not zero function call
 
   local tmp_output="/tmp/tmp_encrypt_decrypt_output.file"
@@ -755,8 +757,9 @@ function encrypt_decrypt_domain_secret() {
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
-    "described in runtimeEncryptionSecret in the domain resource has been changed since the creation of the domain. " \
-    " You can either reset the password to the original one and try again or delete the domain and recreates it."
+    "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
+    "creation of the domain. You can either reset the password to the original one and try again or delete "\
+    "and recreate the domain."
     trace SEVERE "$(cat ${WDT_OUTPUT})"
     exitOrLoop
   fi
@@ -783,7 +786,7 @@ function error_handler() {
 
 function start_trap() {
     set -eE
-    trap 'error_handler $? $LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
+    trap 'error_handler $? $BASH_LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
 }
 
 function stop_trap() {
