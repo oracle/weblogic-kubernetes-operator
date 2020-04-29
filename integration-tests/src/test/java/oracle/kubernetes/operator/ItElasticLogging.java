@@ -104,7 +104,7 @@ public class ItElasticLogging extends BaseTest {
                 .append("/")
                 .append(elasticStackYamlLoc);
         LoggerHelper.getLocal().log(Level.INFO, "Command to Install Elastic Stack: " + cmd.toString());
-        TestUtils.exec(cmd.toString());
+        TestUtils.execOrAbortProcess(cmd.toString());
 
         LoggerHelper.getLocal().log(Level.INFO, "Creating Operator & waiting for the script to complete execution");
         Map<String, Object> operatorMap = createOperatorMap(
@@ -188,7 +188,7 @@ public class ItElasticLogging extends BaseTest {
               .append("/")
               .append(elasticStackYamlLoc);
       LoggerHelper.getLocal().log(Level.INFO, "Command to uninstall Elastic Stack: " + cmd.toString());
-      TestUtils.exec(cmd.toString());
+      TestUtils.execOrAbortProcess(cmd.toString());
 
       // Restore the test env
       Files.delete(new File(loggingYamlFileLoc + "/" + loggingYamlFile).toPath());
@@ -545,7 +545,7 @@ public class ItElasticLogging extends BaseTest {
       // Make sure downloading completed
       while (i < BaseTest.getMaxIterationsPod()) {
         try {
-          ExecResult result = TestUtils.exec(getJars.toString());
+          ExecResult result = TestUtils.execOrAbortProcess(getJars.toString());
           LoggerHelper.getLocal().log(Level.INFO,"exit code: " + result.exitValue());
           LoggerHelper.getLocal().log(Level.INFO,"Result: " + result.stdout());
         } catch (RuntimeException rtect) {
@@ -583,7 +583,7 @@ public class ItElasticLogging extends BaseTest {
       // Make sure downloading completed
       while (i < BaseTest.getMaxIterationsPod()) {
         try {
-          ExecResult result = TestUtils.exec(getJars.toString());
+          ExecResult result = TestUtils.execOrAbortProcess(getJars.toString());
           LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
           LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
         } catch (RuntimeException rtect) {
@@ -665,7 +665,7 @@ public class ItElasticLogging extends BaseTest {
         .append("'");
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLisDir.toString());
 
-    ExecResult result = TestUtils.exec(cmdLisDir.toString());
+    ExecResult result = TestUtils.execOrAbortProcess(cmdLisDir.toString());
     LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
     LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
 
@@ -679,14 +679,14 @@ public class ItElasticLogging extends BaseTest {
         .append(domainUid)
         .append("/lib/'");
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLisDir.toString());
-    result = TestUtils.exec(cmdLisDir.toString());
+    result = TestUtils.execOrAbortProcess(cmdLisDir.toString());
     LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
     LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
 
     cmdLisDir.setLength(0);
     cmdLisDir = new StringBuffer("ls -l " + loggingExpArchiveLoc);
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdLisDir.toString());
-    result = TestUtils.exec(cmdLisDir.toString());
+    result = TestUtils.execOrAbortProcess(cmdLisDir.toString());
     LoggerHelper.getLocal().log(Level.INFO, "exit code: " + result.exitValue());
     LoggerHelper.getLocal().log(Level.INFO, "Result: " + result.stdout());
 

@@ -361,16 +361,16 @@ public class TestUtils {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
-    exec(cmdDelJob.toString());
+    execOrAbortProcess(cmdDelJob.toString());
 
     StringBuffer cmdDelPvc = new StringBuffer("kubectl delete pvc ");
     cmdDelPvc.append(pvcName).append(" -n ").append(namespace);
     LoggerHelper.getLocal().log(Level.INFO, "Deleting PVC " + cmdDelPvc);
-    exec(cmdDelPvc.toString());
+    execOrAbortProcess(cmdDelPvc.toString());
   }
 
-  public static ExecResult exec(String cmd) throws Exception {
-    return exec(cmd, false);
+  public static ExecResult execOrAbortProcess(String cmd) throws Exception {
+    return execOrAbortProcess(cmd, false);
   }
 
   /**
@@ -380,7 +380,7 @@ public class TestUtils {
    * @return executor
    * @throws Exception on failure
    */
-  public static ExecResult exec(String cmd, boolean debug) throws Exception {
+  public static ExecResult execOrAbortProcess(String cmd, boolean debug) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0 || debug) {
       LoggerHelper.getLocal().log(Level.INFO,
@@ -1374,7 +1374,7 @@ public class TestUtils {
         .append("'");
 
     LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.exec(cmdKubectlSh.toString());
+    TestUtils.execOrAbortProcess(cmdKubectlSh.toString());
   }
 
   /**
@@ -1547,7 +1547,7 @@ public class TestUtils {
                 "/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh ")
             .append("-d ")
             .append(domainUid);
-    TestUtils.exec(cmd.toString(), true);
+    TestUtils.execOrAbortProcess(cmd.toString(), true);
   }
 
   /**
@@ -2000,7 +2000,7 @@ public class TestUtils {
             + " -u ****** -p ******* "
             + "\" && docker push "
             + image;
-    ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
+    ExecResult result = TestUtils.execOrAbortProcess(dockerLoginAndPushCmd);
     LoggerHelper.getLocal().log(Level.INFO,
         "cmd "
             + cmdForDebug
@@ -2029,7 +2029,7 @@ public class TestUtils {
             + " -p "
             + patchStr
             + " --type merge";
-    return exec(cmd, true);
+    return execOrAbortProcess(cmd, true);
   }
 
   /**
@@ -2044,12 +2044,12 @@ public class TestUtils {
     String cmd = "kubectl -n " + namespace
         + " delete configmap " + cmName
         + " --ignore-not-found";
-    TestUtils.exec(cmd);
+    TestUtils.execOrAbortProcess(cmd);
 
     cmd = "kubectl -n " + namespace
         + " create configmap " + cmName
         + " --from-file=" + fileOrDirPath;
-    TestUtils.exec(cmd, true);
+    TestUtils.execOrAbortProcess(cmd, true);
 
     // create label for configmap
     cmd =
@@ -2059,7 +2059,7 @@ public class TestUtils {
             + cmName
             + " "
             + label;
-    TestUtils.exec(cmd);
+    TestUtils.execOrAbortProcess(cmd);
   }
 
   /**
