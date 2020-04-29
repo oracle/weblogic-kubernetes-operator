@@ -57,4 +57,27 @@ public class Service {
     return v1Service;
   }
 
+  /**
+  * Returns NodePort of admin service.
+  *
+  * @param serviceName name of admin server service 
+  * @param label the key value pair with which the service is decorated with
+  * @param namespace the namespace in which to check for the service
+  * @return AdminNodePort of the Kubernetes service if exits else -1
+  */
+  public static int getAdminServiceNodePortString(
+      String serviceName,
+      Map<String, String> label,
+      String namespace)  {
+
+    int adminNodePort = -1;
+    try {
+      adminNodePort = Kubernetes.getAdminServiceNodePort(serviceName, label, namespace);
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      return -1;
+    }
+    return adminNodePort;
+  }
+
 }

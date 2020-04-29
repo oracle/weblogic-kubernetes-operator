@@ -463,6 +463,22 @@ public class TestActions {
     return Service.getService(serviceName, label, namespace);
   }
 
+  /**
+   * Returns NodePort of a admin service. 
+   *
+   * @param serviceName name of admin service 
+   * @param label the key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
+   * @return AdminNodePort of the Kubernetes service if exits else -1
+   */
+  public static int getAdminServiceNodePort(
+      String serviceName,
+      Map<String, String> label,
+      String namespace) {
+
+    return Service.getAdminServiceNodePortString(serviceName, label, namespace);
+  }
+
   // ------------------------ service account  --------------------------
 
   /**

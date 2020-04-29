@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -51,6 +50,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
@@ -79,6 +79,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
@@ -228,7 +229,7 @@ class ItMiiConfigMap implements LoggedTest {
 
   /**
    *  Deploy a WebLogic domain with a defined configmap.
-   *  in configuration/model section of the domain resource.
+   *  in configuration/model section of the domain resource
    *  The configmap has a sparse wdt model file that define a JDBC 
    *  datasource targeted to the cluster
    *  Once the WebLogic domain is up, verify the DataSource configuration 
@@ -350,7 +351,7 @@ class ItMiiConfigMap implements LoggedTest {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(30711))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
                 .replicas(replicaCount)
@@ -381,7 +382,6 @@ class ItMiiConfigMap implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
-
 
     // check admin server pod exist
     logger.info("Check for admin server pod {0} existence in namespace {1}",
@@ -418,30 +418,22 @@ class ItMiiConfigMap implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i);
     }
 
+    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external",null,domainNamespace);
     oracle.weblogic.kubernetes.utils.ExecResult result = null; 
     try {
-      String hostname = null;
-      if (System.getenv("K8S_NODEPORT_HOST") == null) {
-        hostname = InetAddress.getLocalHost().getHostName();
-      } else {
-        hostname = System.getenv("K8S_NODEPORT_HOST");
-      }
-         
       checkJdbc =  new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkJdbc.append("http://" + hostname + ":30711")
+      checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
              .append("/management/wls/latest/datasources/id/TestDataSource/")
              .append(" -o /dev/null")
              .append(" -w %{http_code});")
              .append("echo ${status}");      
       logger.info("CURL command {0}", new String(checkJdbc));
       result = exec(new String(checkJdbc),true);
-    } catch (java.net.UnknownHostException uhe) {
-      logger.info("UnknownHostException is received {0}", uhe);
-      fail("Got UnknownHostException");
     } catch (Exception ex) {
-      logger.info("Unexpected exception  {0}", ex);
-      fail("Got unexpected exception");
+      logger.info("Caught unexpected exception {0}", ex);
+      fail("Got unexpected exception" + ex);
     }
+
     logger.info("Curl command returns {0}", result.toString());
     assertEquals("200",result.stdout(),"Datasource configuration not found");
     logger.info("Found the DataSource configuration ");

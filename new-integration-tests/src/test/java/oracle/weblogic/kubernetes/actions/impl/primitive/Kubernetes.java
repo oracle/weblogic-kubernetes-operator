@@ -48,6 +48,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
@@ -1325,6 +1327,37 @@ public class Kubernetes implements LoggedTest {
       }
     }
     return null;
+  }
+
+  /**
+   * Returns NodePort of a admin server service.
+   *
+   * @param serviceName name of admin server service 
+   * @param label the key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
+   * @return AdminNodePort of the Kubernetes service if exits else -1
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static int getAdminServiceNodePort(
+      String serviceName, 
+      Map<String, String> label, 
+      String namespace) throws ApiException  { 
+
+    V1Service service = getService(serviceName, label, namespace);
+    if (service == null) {
+      logger.info("Could not find the service ${0} in namespace ${1}", serviceName, namespace);
+      return -1;
+    }
+    V1ServiceSpec v1ServiceSpec = service.getSpec();
+    List<V1ServicePort> portList = v1ServiceSpec.getPorts();
+    for (int i = 0; i < portList.size(); i++) {
+      if (portList.get(i).getName().equals("default")) {
+        logger.info(portList.get(i).toString());
+        return portList.get(i).getNodePort().intValue();
+      }
+    }
+    // return -1 if there is no Port with name default
+    return -1;
   }
 
   // --------------------------- jobs ---------------------------

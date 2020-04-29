@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -54,6 +53,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
@@ -82,6 +82,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -234,20 +235,18 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   /**
    *  Start a WebLogic domain with out any pre-defined configmap.
-   *  Create a ConfigMap with a with a sparse JDBC model file
+   *  Create a ConfigMap with a sparse JDBC model file
    *  Patch the domain resource with the ConfigMap
-   *  Update the Restart Version of the domain resource to trigger 
-   *  rolling re-start of the Domain
-   *  Verify the DataSource configuration 
-   *  using the RestAPI call thru adminserver public NodePort
+   *  Update the Restart Version of the domain resource 
+   *  Verify rolling re-start of domain by comparing PodCreationTimestamp 
+   *  Verify the DataSource configuration using the RestAPI call 
   */
   @Test
   @Order(1)
-  @DisplayName("Create model in image domain with a configmap")
+  @DisplayName("Create model in image domain with no configmap")
   @Slow
   @MustNotRunInParallel
   public void testCreateMiiDomainConfigMapOverride() {
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
@@ -332,7 +331,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(30711))))
+                        .nodePort(0))))
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
                 .replicas(replicaCount)
@@ -350,7 +349,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));
 
-
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
@@ -362,7 +360,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
-
 
     // check admin server pod exist
     logger.info("Check for admin server pod {0} existence in namespace {1}",
@@ -489,28 +486,21 @@ class ItMiiConfigMapOverride implements LoggedTest {
       fail("New pod creation time must be later than the original timestamp");
     }
     oracle.weblogic.kubernetes.utils.ExecResult result = null; 
+    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external",null,domainNamespace);
     try {
-      String hostname = null;
-      if (System.getenv("K8S_NODEPORT_HOST") == null) {
-        hostname = InetAddress.getLocalHost().getHostName();
-      } else {
-        hostname = System.getenv("K8S_NODEPORT_HOST");
-      }
       checkJdbc =  new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkJdbc.append("http://" + hostname + ":30711")
+      checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
              .append("/management/wls/latest/datasources/id/TestDataSource/")
              .append(" -o /dev/null")
              .append(" -w %{http_code});")
              .append("echo ${status}");      
       logger.info("CURL command {0}", new String(checkJdbc));
       result = exec(new String(checkJdbc),true);
-    } catch (java.net.UnknownHostException uhe) {
-      logger.info("UnknownHostException is received {0}", uhe);
-      fail("Got UnknownHostException");
     } catch (Exception ex) {
-      logger.info("Unexpected exception  {0}", ex);
-      fail("Got unexpected exception");
+      logger.info("Caught unexpected exception {0}", ex);
+      fail("Got unexpected exception" + ex);
     }
+
     logger.info("Curl command returns {0}", result.toString());
     assertEquals("200",result.stdout(),"Datasource configuration not found");
     logger.info("Found the DataSource configuration ");
