@@ -9,21 +9,29 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
 function usage {
-  echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> [-h]"
+  echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> -n <nameSpace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]"
   echo "  -s RCU Schema Prefix (needed)"
   echo "  -t RCU Schema Type (optional)"
   echo "      (supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb) "
   echo "  -d RCU Oracle Database URL (optional) "
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
   echo "  -p FMW Infrastructure ImagePull Secret (optional) "
-  echo "      (default: docker-store) "
+  echo "      (default: none) "
   echo "  -i FMW Infrastructure Image (optional) "
   echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3) "
+  echo "  -n Namespace for rcu pod (optional)"
+  echo "      (default: default)"
+  echo "  -q password for Database SYSDBA user.(optional)"
+  echo "      (default: Oradoc_db1)"
+  echo "  -r password for all schema owner (regular user).(optional)"
+  echo "      (default: Oradoc_db1)"
+  echo "  -o Output directory for the generated yaml files. (optional)"
+  echo "      (default: rcuoutput)"
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:s:d:p:i:t:" opt; do
+while getopts ":h:s:d:p:i:t:n:q:r:o:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
     ;;
@@ -34,6 +42,14 @@ while getopts ":h:s:d:p:i:t:" opt; do
     p) pullsecret="${OPTARG}"
     ;;
     i) fmwimage="${OPTARG}"
+    ;;
+    n) nameSpace="${OPTARG}"
+    ;;
+    q) sysPassword="${OPTARG}"
+    ;;
+    r) schemaPassword="${OPTARG}"
+    ;;
+    o) rcuOutputDir="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -56,38 +72,61 @@ if [ -z ${rcuType} ]; then
 fi
 
 if [ -z ${pullsecret} ]; then
-  pullsecret="docker-store"
+  pullsecret="none"
+  pullsecretPrefix="#"
 fi
 
 if [ -z ${fmwimage} ]; then
  fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3"
 fi
 
+if [ -z ${nameSpace} ]; then
+ nameSpace="default"
+fi
+
+if [ -z ${sysPassword} ]; then
+ sysPassword="Oradoc_db1"
+fi
+
+if [ -z ${schemaPassword} ]; then
+ schemaPassword="Oradoc_db1"
+fi
+
+if [ -z ${rcuOutputDir} ]; then
+ rcuOutputDir="rcuoutput"
+fi
+
 echo "ImagePullSecret[$pullsecret] Image[${fmwimage}] dburl[${dburl}] rcuType[${rcuType}]"
+
+mkdir -p ${rcuOutputDir}
+rcuYaml=${rcuOutputDir}/rcu.yaml
+rm -f ${rcuYaml}
+rcuYamlTemp=${scriptDir}/common/template/rcu.yaml.template
+cp $rcuYamlTemp $rcuYaml
 
 #kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
 # Modify the ImagePullSecret based on input
-sed -i -e '$d' ${scriptDir}/common/rcu.yaml
-echo '           - name: docker-store' >> ${scriptDir}/common/rcu.yaml
-sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/rcu.yaml
-sed -i -e "s?image:.*?image: ${fmwimage}?g" ${scriptDir}/common/rcu.yaml
-kubectl apply -f ${scriptDir}/common/rcu.yaml
+sed -i -e "s:%NAMESPACE%:${nameSpace}:g" $rcuYaml
+sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${pullsecret}:g" $rcuYaml
+sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${pullsecretPrefix}:g" $rcuYaml
+sed -i -e "s?image:.*?image: ${fmwimage}?g" $rcuYaml
+kubectl apply -f $rcuYaml
 
 # Make sure the rcu deployment Pod is RUNNING
-checkPod rcu default
-checkPodState rcu default "1/1"
+checkPod rcu $nameSpace
+checkPodState rcu $nameSpace "1/1"
 sleep 5
-kubectl get po/rcu 
+kubectl get po/rcu -n $nameSpace 
 
 # Generate the default password files for rcu command
-echo "Oradoc_db1" > pwd.txt
-echo "Oradoc_db1" >> pwd.txt
+echo "$sysPassword" > pwd.txt
+echo "$schemaPassword" >> pwd.txt
 
-kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/createRepository.sh' < ${scriptDir}/common/createRepository.sh 
-kubectl exec -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt 
+kubectl -n $nameSpace exec -i rcu -- bash -c 'cat > /u01/oracle/createRepository.sh' < ${scriptDir}/common/createRepository.sh 
+kubectl -n $nameSpace exec -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt 
 rm -rf createRepository.sh pwd.txt
 
-kubectl exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
+kubectl -n $nameSpace exec -it rcu /bin/bash /u01/oracle/createRepository.sh ${dburl} ${schemaPrefix} ${rcuType}
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not create the RCU Repository";
