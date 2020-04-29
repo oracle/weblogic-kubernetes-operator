@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 import static io.kubernetes.client.util.Yaml.dump;
@@ -22,12 +23,6 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  * A utility class to collect logs for artifacts in Kubernetes cluster.
  */
 public class LoggingUtil {
-
-  /**
-   * Directory to store logs.
-   */
-  private static final String LOGS_DIR = System.getProperty("RESULT_ROOT",
-        System.getProperty("java.io.tmpdir"));
 
   /**
    * Collect logs for artifacts in Kubernetes cluster for current running test object. This method can be called
@@ -43,7 +38,7 @@ public class LoggingUtil {
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
       Path resultDir = Files.createDirectories(
-          Paths.get(LOGS_DIR, itInstance.getClass().getSimpleName(),
+          Paths.get(TestConstants.LOGS_DIR, itInstance.getClass().getSimpleName(),
               resultDirExt));
       for (var namespace : namespaces) {
         LoggingUtil.generateLog((String) namespace, resultDir);

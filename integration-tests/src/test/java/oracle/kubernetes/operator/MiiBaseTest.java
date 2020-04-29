@@ -173,7 +173,7 @@ public class MiiBaseTest extends BaseTest {
     try {
       // patching the domain
       LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-      result = TestUtils.exec(patchDomainCmd.toString());
+      result = TestUtils.execOrAbortProcess(patchDomainCmd.toString());
       LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
 
       // verify the domain restarted
@@ -228,7 +228,7 @@ public class MiiBaseTest extends BaseTest {
 
     // Apply the new yaml to update the domain crd
     LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-    ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+    ExecResult exec = TestUtils.execOrAbortProcess("kubectl apply -f " + path.toString());
     LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
   }
@@ -255,7 +255,7 @@ public class MiiBaseTest extends BaseTest {
     try {
       // patching the domain
       LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-      result = TestUtils.exec(patchDomainCmd.toString());
+      result = TestUtils.execOrAbortProcess(patchDomainCmd.toString());
       LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
 
       // verify the domain restarted
@@ -286,7 +286,7 @@ public class MiiBaseTest extends BaseTest {
 
     LoggerHelper.getLocal().log(Level.INFO, "Command to get restartVersion: " + getVersionCmd);
     try {
-      ExecResult result = TestUtils.exec(getVersionCmd.toString());
+      ExecResult result = TestUtils.execOrAbortProcess(getVersionCmd.toString());
       String existinVersion = result.stdout();
       LoggerHelper.getLocal().log(Level.INFO, "Existing restartVersion is: " + existinVersion);
 
