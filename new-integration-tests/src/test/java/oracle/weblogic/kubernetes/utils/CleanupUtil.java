@@ -52,26 +52,22 @@ public class CleanupUtil {
     try {
       // If namespace list is empty or null return
       if (namespaces == null || namespaces.isEmpty()) {
+        logger.info("Nothing to cleanup");
         return;
       }
-      // iterate through the namespaces and delete domain as a
-      // first entity if its not operator namespace
+      // delete domains if any exists
       for (var namespace : namespaces) {
-        if (!isOperatorNamespace(namespace)) {
-          deleteDomains(namespace);
-        }
+        deleteDomains(namespace);
       }
-      // iterate through the namespaces and delete operator if
-      // its operator namespace.
+      // delete operators if any exists
       for (var namespace : namespaces) {
-        if (isOperatorNamespace(namespace)) {
-          uninstallWebLogicOperator(namespace);
-        }
+        uninstallWebLogicOperator(namespace);
       }
 
-      // Delete artifacts in namespace used by the test class
+      // Delete artifacts in namespace used by the test class and the namespace itself
       for (var namespace : namespaces) {
         deleteNamespacedArtifacts(namespace);
+        deleteNamespace(namespace);
       }
 
       // Using Thread.sleep for a one time 30 sec sleep.
@@ -97,6 +93,16 @@ public class CleanupUtil {
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
             .until(nothingFoundInNamespace(namespace));
+
+        logger.info("Check for namespace {0} existence", namespace);
+        withStandardRetryPolicy
+            .conditionEvaluationListener(
+                condition -> logger.info("Waiting for namespace to be deleted {0}, "
+                    + "(elapsed time {1} , remaining time {2}",
+                    namespace,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until(namespaceNotFound(namespace));
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
@@ -134,18 +140,7 @@ public class CleanupUtil {
   }
 
   /**
-   * Returns true if the namespace is a operator namespace, otherwise false.
-   *
-   * @param namespace name of the namespace
-   * @return true if the namespace is a operator namespace, otherwise false
-   * @throws ApiException when Kubernetes cluster query fails
-   */
-  public static boolean isOperatorNamespace(String namespace) throws ApiException {
-    return !Kubernetes.listPods(namespace, "weblogic.operatorName").getItems().isEmpty();
-  }
-
-  /**
-   * Returns true if no artifacts exists in the Kubernetes cluster.
+   * Returns true if no artifacts exists in the given namespace.
    *
    * @param namespace name of the namespace
    * @return true if no artifacts exists, otherwise false
@@ -374,30 +369,40 @@ public class CleanupUtil {
         logger.warning("Failed to list namespaced role bindings");
       }
 
-      // get namespaces
-      try {
-        if (Kubernetes.listNamespaces().contains(namespace)) {
-          logger.info("Namespace still exists!!!");
-          List<String> items = Kubernetes.listNamespaces();
-          for (var item : items) {
-            logger.info(item);
-          }
-          nothingFound = false;
-        }
-      } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list namespaces");
-      }
-
       return nothingFound;
     };
 
   }
 
   /**
+   * Return true if the namespace was not found.
+   *
+   * @param namespace name of the namespace
+   * @return true if namespace was not found, otherwise false
+   */
+  public static Callable<Boolean> namespaceNotFound(String namespace) {
+    return () -> {
+      boolean notFound = true;
+      // get namespaces
+      try {
+        List<String> namespaceList = Kubernetes.listNamespaces();
+        if (namespaceList.contains(namespace)) {
+          logger.info("Namespace still exists!!!");
+          logger.info(namespace);
+          notFound = false;
+        }
+      } catch (Exception ex) {
+        logger.warning(ex.getMessage());
+        logger.warning("Failed to list namespaces");
+      }
+      return notFound;
+    };
+  }
+
+  /**
    * Deletes artifacts in the Kubernetes cluster in the given namespace.
    *
-   * @param namespace name
+   * @param namespace name of the namespace
    */
   public static void deleteNamespacedArtifacts(String namespace) {
     logger.info("Deleting artifacts in namespace {0}", namespace);
@@ -530,7 +535,15 @@ public class CleanupUtil {
       logger.warning(ex.getMessage());
       logger.warning("Failed to delete service accounts");
     }
-    // Delete namespace
+
+  }
+
+  /**
+   * Delete a namespace.
+   *
+   * @param namespace name of the namespace
+   */
+  public static void deleteNamespace(String namespace) {
     try {
       Kubernetes.deleteNamespace(namespace);
     } catch (Exception ex) {
