@@ -505,6 +505,8 @@ public class DomainStatusUpdater {
                   Optional.ofNullable(cluster.getDynamicServersConfig())
                         .flatMap(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs()))
                         .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
+                  Optional.ofNullable(cluster.getServerConfigs())
+                      .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
                 }
               });
         return result;
