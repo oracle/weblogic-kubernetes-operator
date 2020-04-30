@@ -9,7 +9,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
 function usage {
-  echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> -n <namespace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]"
+  echo "usage: ${script} -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -u <imagePullPolicy> -p <docker-store> -n <namespace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]"
   echo "  -s RCU Schema Prefix (required)"
   echo "  -t RCU Schema Type (optional)"
   echo "      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb) "
@@ -19,19 +19,21 @@ function usage {
   echo "      (default: none) "
   echo "  -i FMW Infrastructure Image (optional) "
   echo "      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4) "
+  echo "  -u FMW Infrastructure ImagePullPolicy (optional) "
+  echo "      (default: IfNotPresent) "
   echo "  -n Namespace for RCU pod (optional)"
   echo "      (default: default)"
   echo "  -q password for database SYSDBA user. (optional)"
   echo "      (default: Oradoc_db1)"
   echo "  -r password for all schema owner (regular user). (optional)"
   echo "      (default: Oradoc_db1)"
-  echo "  -o Output directory for the generated YAML files. (optional)"
+  echo "  -o Output directory for the generated YAML file. (optional)"
   echo "      (default: rcuoutput)"
   echo "  -h Help"
   exit $1
 }
 
-while getopts ":h:s:d:p:i:t:n:q:r:o:" opt; do
+while getopts ":h:s:d:p:i:t:n:q:r:o:u:" opt; do
   case $opt in
     s) schemaPrefix="${OPTARG}"
     ;;
@@ -50,6 +52,8 @@ while getopts ":h:s:d:p:i:t:n:q:r:o:" opt; do
     r) schemaPassword="${OPTARG}"
     ;;
     o) rcuOutputDir="${OPTARG}"
+    ;;
+    u) imagePullPolicy="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -80,6 +84,10 @@ if [ -z ${fmwimage} ]; then
  fmwimage="container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
 fi
 
+if [ -z ${imagePullPolicy} ]; then
+ imagePullPolicy="IfNotPresent"
+fi
+
 if [ -z ${namespace} ]; then
  namespace="default"
 fi
@@ -107,6 +115,7 @@ cp $rcuYamlTemp $rcuYaml
 #kubectl run rcu --generator=run-pod/v1 --image ${jrf_image} -- sleep infinity
 # Modify the ImagePullSecret based on input
 sed -i -e "s:%NAMESPACE%:${namespace}:g" $rcuYaml
+sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" $rcuYaml
 sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${pullsecret}:g" $rcuYaml
 sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${pullsecretPrefix}:g" $rcuYaml
 sed -i -e "s?image:.*?image: ${fmwimage}?g" $rcuYaml

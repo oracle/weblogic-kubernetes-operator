@@ -22,8 +22,8 @@ This script generates the RCU schema based `schemaPrefix` and `dburl`.
 The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
 ```
-$ ./create-rcu-schema.sh  -h
-usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -p <docker-store> -n <namespace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]
+./create-rcu-schema.sh -h
+usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -u <imagePullPolicy> -p <docker-store> -n <namespace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]
   -s RCU Schema Prefix (required)
   -t RCU Schema Type (optional)
       (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb)
@@ -33,6 +33,8 @@ usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <schemaType> -d <dburl> -i <i
       (default: none)
   -i FMW Infrastructure Image (optional)
       (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4)
+  -u FMW Infrastructure ImagePullPolicy (optional)
+      (default: IfNotPresent)
   -n Namespace for RCU pod (optional)
       (default: default)
   -q password for database SYSDBA user. (optional)
