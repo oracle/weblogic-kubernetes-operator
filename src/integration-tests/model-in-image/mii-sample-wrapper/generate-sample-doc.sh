@@ -113,7 +113,7 @@ if [ ! -z "$phase" ]; then
   export WDT_DOMAIN_TYPE=$type
   export MODEL_IMAGE_TAG=$type-$image_version
   model_image=$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG
-  export MODEL_DIR=model-images/$model_image
+  export MODEL_DIR=model-images/${MODEL_IMAGE_NAME}__${MODEL_IMAGE_TAG}
   export ARCHIVE_SOURCEDIR="archives/archive-$archive_version"
   export DOMAIN_UID=$domain
   export INCLUDE_MODEL_CONFIGMAP=$configmap
@@ -167,7 +167,7 @@ if [ ! -z "$phase" ]; then
 
     mkdir -p "$work_root"
     # make sure app path in model corresponds to current app/archive version
-    cp -r $WORKDIR/model-images/$MODEL_IMAGE_NAME:$type-v1/* "$work_root"
+    cp -r $WORKDIR/model-images/${MODEL_IMAGE_NAME}__$type-v1/* "$work_root"
     sed -i -e "s/myapp-v1/myapp-$archive_version/g" $work_root/model.10.yaml
 
     if [ ! -d "$sample_root" ]; then

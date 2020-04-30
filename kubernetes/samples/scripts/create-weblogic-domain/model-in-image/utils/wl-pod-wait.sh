@@ -63,7 +63,7 @@ timeout_secs=$timeout_secs_def
 
 syntax_error=false
 verbose=true
-report_interval=10
+report_interval=120
 
 while [ ! "${1:-}" = "" ]; do
   if [ ! "$1" = "-?" ] && [ ! "$1" = "-q" ] && [ "${2:-}" = "" ]; then
