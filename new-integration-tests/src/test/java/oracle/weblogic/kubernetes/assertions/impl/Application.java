@@ -47,8 +47,8 @@ public class Application {
         .defaultCommandParams()
         .command(cmd)
         .saveResults(true)
-        .redirect(true)
-        .verbose(true);
+        .redirect(false)
+        .verbose(false);
     return Command.withParams(params).executeAndVerify(expectedStr);
   } 
 }

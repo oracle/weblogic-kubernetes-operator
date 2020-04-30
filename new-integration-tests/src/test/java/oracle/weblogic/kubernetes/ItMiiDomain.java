@@ -6,12 +6,14 @@ package oracle.weblogic.kubernetes;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
@@ -533,65 +535,107 @@ class ItMiiDomain implements LoggedTest {
   @MustNotRunInParallel
   public void testPatchAppV2() {
     
-    // app here is what is in the original app dir plus the replacement in the second app dir
+    // app in the new image contains what is in the original app dir sample-app, 
+    // plus the replacement in the second app dir sample-app-2.
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
     
-    // check and make sure that V1 app is running
-    for (int i = 1; i <= replicaCount; i++) {
-      quickCheckAppRunning(
+    // The verification of app's continuous availability during patching can be enabled 
+    // using the following system property for now because it fails intermittently right now.
+    // We'll remove the property and enable it all the time once the product problem (tracked
+    // by owls-81575) is fixed.
+    final String enableAppAvailbilityCheck = 
+        System.getProperty("weblogic.operator.enableAppAvailabilityCheck", "false");
+    Thread accountingThread = null;
+    List<Integer> appAvailability = new ArrayList<Integer>();
+    
+    if (enableAppAvailbilityCheck.equalsIgnoreCase("true")) {
+      // start a new thread to collect the availability data of the app while the
+      // main thread performs patching operation, and checking of the results.
+      accountingThread =
+          new Thread(
+              () -> {
+                collectAppAvaiability(
+                    domainUid,
+                    domainNamespace,
+                    appAvailability,
+                    managedServerPrefix,
+                    replicaCount,
+                    "8001",
+                    "sample-war/index.jsp");
+              });
+      accountingThread.start();
+    }
+   
+    try {
+      // check and make sure that V1 app is running
+      for (int i = 1; i <= replicaCount; i++) {
+        quickCheckAppRunning(
             domainUid,
             domainNamespace,
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
             APP_RESPONSE_V1 + i);
-    }
+      }
  
-    // check and make sure that the version 2 app is NOT running
-    for (int i = 1; i <= replicaCount; i++) {
-      quickCheckAppNotRunning(
+      // check and make sure that the version 2 app is NOT running
+      for (int i = 1; i <= replicaCount; i++) {
+        quickCheckAppNotRunning(
             domainUid,
             domainNamespace,
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
             APP_RESPONSE_V2 + i);   
-    }
+      }
  
-    // create an image with app V2 
-    miiImagePatchAppV2 = updateImageWithAppV2Patch(
-        String.format("%s-%s", MII_IMAGE_NAME, "test-patch-app-v2"),
-        Arrays.asList(appDir1, appDir2));
+      // create an image with app V2 
+      miiImagePatchAppV2 = updateImageWithAppV2Patch(
+          String.format("%s-%s", MII_IMAGE_NAME, "test-patch-app-v2"),
+          Arrays.asList(appDir1, appDir2));
 
-    // push the image to OCIR to make the test work in multi node cluster
-    pushImageIfNeeded(miiImagePatchAppV2);
+      // push the image to OCIR to make the test work in multi node cluster
+      pushImageIfNeeded(miiImagePatchAppV2);
 
-    // patch the domain resource with the new image and verify that the domain resource is patched, 
-    // and all server pods are patched as well.
-    patchAndVerify(
-        domainUid,
-        domainNamespace,
-        adminServerPodName,
-        managedServerPrefix,
-        replicaCount,
-        miiImagePatchAppV2);
-
-    // check and wait for the V2 app to be ready
-    for (int i = 1; i <= replicaCount; i++) {
-      checkAppRunning(
+      // patch the domain resource with the new image and verify that the domain resource is patched, 
+      // and all server pods are patched as well.
+      patchAndVerify(
           domainUid,
           domainNamespace,
-          managedServerPrefix + i,
-          "8001",
-          "sample-war/index.jsp",
-          APP_RESPONSE_V2 + i);
-    }
+          adminServerPodName,
+          managedServerPrefix,
+          replicaCount,
+          miiImagePatchAppV2);
 
-    logger.info("The cluster has been rolling restarted, and the version 2 application has been deployed correctly.");
+      // check and wait for the V2 app to be ready
+      for (int i = 1; i <= replicaCount; i++) {
+        checkAppRunning(
+            domainUid,
+            domainNamespace,
+            managedServerPrefix + i,
+            "8001",
+            "sample-war/index.jsp",
+            APP_RESPONSE_V2 + i);
+      } 
+    } finally {
+    
+      if (accountingThread != null) {
+        try {
+          accountingThread.join();
+        } catch (InterruptedException ie) {
+          // do nothing
+        }
+  
+        assertTrue(appAlwaysAvailable(appAvailability),
+            "App does not always avaiable when the domain is being patched with a newer version of the app.");
+      }
+    }
+    
+    logger.info("The cluster has been rolling restarted, and the version 2 app has been deployed correctly.");
   }
 
   @Test
@@ -632,7 +676,7 @@ class ItMiiDomain implements LoggedTest {
           "sample-war-3/index.jsp",
           APP_RESPONSE_V3);
     }
-
+   
     // create an image with an additional app
     miiImageAddSecondApp = updateImageWithApp3(
         String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
@@ -668,7 +712,7 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V3);
     }
  
-    // check and wait for V2 app to be ready
+    // check and wait for the V2 app to be ready
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
           domainUid,
@@ -751,7 +795,7 @@ class ItMiiDomain implements LoggedTest {
     }
 
     // clean up the download directory so that we always get the latest
-    // versions of the tools
+    // versions of the tools in every run of the test class.
     try {
       cleanupDirectory(DOWNLOAD_DIR);
     } catch (IOException | RuntimeException e) {    
@@ -1058,22 +1102,22 @@ class ItMiiDomain implements LoggedTest {
 
   private void patchAndVerify(
       final String domainUid,
-      final String domainNamespace,
+      final String namespace,
       final String adminServerPodName,
       final String managedServerPrefix,
       final int replicaCount,
       final String image
   ) {
     // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, domainNamespace, image);
+    patchDomainResourceIamge(domainUid, namespace, image);
     
     // check if domain resource has been patched with the new image    
-    checkDomainPatched(domainUid, domainNamespace, image);
+    checkDomainPatched(domainUid, namespace, image);
 
     // check and wait for the admin server pod to be patched with the new image
     checkPodImagePatched(
         domainUid,
-        domainNamespace,
+        namespace,
         adminServerPodName,
         image);
 
@@ -1081,7 +1125,7 @@ class ItMiiDomain implements LoggedTest {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodImagePatched(
           domainUid,
-          domainNamespace,
+          namespace,
           managedServerPrefix + i,
           image);
     }
@@ -1114,13 +1158,13 @@ class ItMiiDomain implements LoggedTest {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domNamespace),
             String.format(
-                "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
+                "Service %s is not ready in namespace %s", serviceName, domNamespace)));
 
   }
 
   private void checkAppRunning(
       String domainUid,
-      String ns,
+      String namespace,
       String podName,
       String internalPort,
       String appPath, 
@@ -1134,12 +1178,12 @@ class ItMiiDomain implements LoggedTest {
             + "(elapsed time {3}ms, remaining time {4}ms)",
             appPath,
             podName,
-            domainNamespace,
+            namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until(() -> appAccessibleInPod(
                 domainUid, 
-                ns, 
+                namespace, 
                 podName, 
                 internalPort, 
                 appPath, 
@@ -1149,7 +1193,7 @@ class ItMiiDomain implements LoggedTest {
   
   private void quickCheckAppRunning(
       String domainUid,
-      String ns,
+      String namespace,
       String podName,
       String internalPort,
       String appPath, 
@@ -1163,12 +1207,12 @@ class ItMiiDomain implements LoggedTest {
             + "(elapsed time {3}ms, remaining time {4}ms)",
             appPath,
             podName,
-            domainNamespace,
+            namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until(() -> appAccessibleInPod(
                 domainUid, 
-                ns,
+                namespace,
                 podName, 
                 internalPort, 
                 appPath, 
@@ -1178,7 +1222,7 @@ class ItMiiDomain implements LoggedTest {
   
   private void quickCheckAppNotRunning(
       String domainUid,
-      String ns,
+      String namespace,
       String podName,
       String internalPort,
       String appPath, 
@@ -1192,12 +1236,12 @@ class ItMiiDomain implements LoggedTest {
             + "(elapsed time {3}ms, remaining time {4}ms)",
             appPath,
             podName,
-            domainNamespace,
+            namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until(() -> appNotAccessibleInPod(
                 domainUid, 
-                ns, 
+                namespace, 
                 podName,
                 internalPort, 
                 appPath, 
@@ -1206,7 +1250,7 @@ class ItMiiDomain implements LoggedTest {
    
   private void checkDomainPatched(
       String domainUid,
-      String ns,
+      String namespace,
       String image 
   ) {
    
@@ -1216,18 +1260,18 @@ class ItMiiDomain implements LoggedTest {
             condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
             + "(elapsed time {2}ms, remaining time {3}ms)",
             domainUid,
-            ns,
+            namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainResourceImagePatched(domainUid, ns, image),
+        .until(assertDoesNotThrow(() -> domainResourceImagePatched(domainUid, namespace, image),
             String.format(
-               "Domain %s is not patched in namespace %s with image %s", domainUid, domainNamespace, image)));
+               "Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)));
 
   }
   
   private void checkPodImagePatched(
       String domainUid,
-      String ns,
+      String namespace,
       String podName,
       String image
   ) {
@@ -1238,15 +1282,77 @@ class ItMiiDomain implements LoggedTest {
             condition -> logger.info("Waiting for pod {0} to be patched in namespace {1} "
             + "(elapsed time {2}ms, remaining time {3}ms)",
             podName,
-            ns,
+            namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podImagePatched(domainUid, ns, podName, image),
+        .until(assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, image),
             String.format(
                "Domain %s pod %s is not patched with image %s in namespace %s.",
                domainUid,
                podName,
-               domainNamespace,
+               namespace,
                image)));
+  }
+  
+  private static void collectAppAvaiability(
+      String domainUid,
+      String namespace,
+      List<Integer> appAvailability,
+      String managedServerPrefix,
+      int replicaCount,
+      String internalPort,
+      String appPath
+  ) {
+    boolean v2AppAvailable = false;
+    // ping the app periodically to check its availability across the duration
+    // of patching the domain with newer version of the app.
+    do {
+      v2AppAvailable = appAccessibleInPod(
+                            domainUid, 
+                            namespace,
+                            managedServerPrefix + replicaCount, 
+                            internalPort, 
+                            appPath, 
+                            APP_RESPONSE_V2 + replicaCount);
+
+      int count = 0;
+      for (int i = 1; i <= replicaCount; i++) {
+        if (appAccessibleInPod(
+            domainUid, 
+            namespace,
+            managedServerPrefix + i, 
+            internalPort, 
+            appPath, 
+            "Hello World")) {  
+          count++;
+        }
+      }
+      appAvailability.add(count);
+      
+      // the following log messages are temporarily here for debugging purposes.
+      // This part of the code is disabled by default right now, and can be enabled by
+      // -Dweblogic.operator.enableAppAvailabilityCheck=true.
+      // TODO remove these log messages when this verification is fully enabled.
+      if (count == 0) {
+        logger.info("XXXXXXXXXXX: app not available XXXXXXXX");
+      } else {
+        logger.info("YYYYYYYYYYY: app available YYYYYYYY count = " + count);   
+      }
+      try {
+        TimeUnit.MILLISECONDS.sleep(50);
+      } catch (InterruptedException ie) {
+        // do nothing
+      }
+    } while (!v2AppAvailable);
+  }
+  
+  private static boolean appAlwaysAvailable(List<Integer> appAvailability) {
+    for (Integer count: appAvailability) {
+      if (count == 0) {
+        logger.warning("App was not continuously available during patching.");
+        return false;
+      }
+    }
+    return true;
   }
 }
