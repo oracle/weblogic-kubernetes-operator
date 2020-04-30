@@ -229,7 +229,6 @@ if [ "$DO_UPDATE" = "true" ]; then
 
   doCommand  -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
-  doCommand  "\$MIIWRAPPERDIR/stage-model-configmap.sh"
   doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand  "\$MIIWRAPPERDIR/create-model-configmap.sh"
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"

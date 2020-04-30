@@ -94,12 +94,17 @@ spec:
     serverStartState: "RUNNING"
     replicas: 2
 
+  # Change the restartVersion to force the introspector job to rerun
+  # and apply any new model configuration, to also force a subsequent
+  # roll of your domain's WebLogic pods.
+  restartVersion: '1'
+
   configuration:
 
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "RestrictedJRF"
+      domainType: "WLS"
 
       # Optional configmap for additional models and variable files
       #configMap: @@DOMAIN_UID@@-wdt-config-map

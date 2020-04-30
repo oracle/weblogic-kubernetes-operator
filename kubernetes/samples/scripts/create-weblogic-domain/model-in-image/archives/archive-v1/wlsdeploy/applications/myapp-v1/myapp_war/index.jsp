@@ -25,10 +25,16 @@
 
     MBeanServer mbs = (MBeanServer)ic.lookup("java:comp/env/jmx/runtime");
 
-    ObjectName jvmRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JVMRuntime");
-    out.println("Free JVM Heap " + mbs.getAttribute(jvmRuntime, "HeapFreePercent") + "%.");
+    // display the current server's cluster name
+    Set<ObjectInstance> clusterRuntimes = mbs.queryMBeans(new ObjectName("*:Type=ClusterRuntime,*"), null);
+    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s:":":"));
+    for (ObjectInstance clusterRuntime : clusterRuntimes) {
+       String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), "Name");
+       out.println("  Cluster '" + cName + "'");
+    }
     out.println();
 
+    // display local data sources
     ObjectName jdbcRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JDBCServiceRuntime");
     ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, "JDBCDataSourceRuntimeMBeans");
     out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length!=1)?"s:":":"));
@@ -39,15 +45,6 @@
     }
     out.println();
 
-    Set<ObjectInstance> clusterRuntimes = mbs.queryMBeans(new ObjectName("*:Type=ClusterRuntime,*"), null);
-    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s:":":"));
-    for (ObjectInstance clusterRuntime : clusterRuntimes) {
-       String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), "Name");
-       out.println("  Cluster '" + cName + "'");
-    }
-    out.println();
-
-    out.println();
     out.println("*****************************************************************");
 
   } catch (Throwable t) {

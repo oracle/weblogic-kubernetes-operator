@@ -34,8 +34,8 @@
 #                               Default is 'domain-resources/mii-$DOMAIN_UID.yaml'.
 #
 #   DOMAIN_RESOURCE_TEMPLATE  - Use as the domain resource template relative
-#                               to WORKDIR. Default 
-#                               'domain-resources/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
+#                               to SCRIPTDIR. Default 
+#                               'mii-domain.yaml.template-WDT_DOMAIN_TYPE'
 #
 
 set -eu
@@ -64,7 +64,7 @@ function timestamp() {
 mkdir -p $(dirname $WORKDIR/$DOMAIN_RESOURCE_FILENAME)
 
 echo "@@"
-echo "@@ Info: Creating domain resource file 'WORKDIR/DOMAIN_RESOURCE_FILENAME' from 'WORKDIR/DOMAIN_RESOURCE_TEMPLATE'"
+echo "@@ Info: Creating domain resource file 'WORKDIR/DOMAIN_RESOURCE_FILENAME' from 'SCRIPTDIR/DOMAIN_RESOURCE_TEMPLATE'"
 
 if [ -e "$WORKDIR/$DOMAIN_RESOURCE_FILENAME" ]; then
   save_file=$(dirname $DOMAIN_RESOURCEFILENAME)/mii-domain-saved/$(basename $DOMAIN_RESOURCEFILENAME).$(timestamp)
@@ -77,7 +77,7 @@ fi
 
 echo "@@"
 
-cp "$WORKDIR/$DOMAIN_RESOURCE_TEMPLATE" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+cp "$SCRIPTDIR/$DOMAIN_RESOURCE_TEMPLATE" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 
 for template_var in WDT_DOMAIN_TYPE \
                     CUSTOM_DOMAIN_NAME \

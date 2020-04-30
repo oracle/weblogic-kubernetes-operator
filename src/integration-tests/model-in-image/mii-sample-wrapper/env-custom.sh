@@ -86,9 +86,8 @@
 # ::: Configmap model files.
 #  Location of staged model files relative to WORKDIR that will be
 #  loaded at runtime from a configmap specified by the domain resource.
-#  Default is 'model-configmap/uid-DOMAIN_UID', which is populated by the 
-#  './stage-model-configmap.sh' script and used by
-#  'create-model-configmap.sh'.  See also INCLUDE_MODEL_CONFIGMAP.
+#  Default is 'model-configmap/datasource'.
+#  See also INCLUDE_MODEL_CONFIGMAP.
 
 # export DOWNLOAD_WDT=
 # ::: When to download the WDT installer zip.
@@ -119,13 +118,13 @@
 # export DOMAIN_RESOURCE_TEMPLATE=
 # ::: Domain resource template
 #  Used by './stage-domain-resource.sh' as a template for generating a domain
-#  resource yaml file in WORKDIR. Defaults to 
-#  'domain-resources/mii-domain.yaml.template-WDT_DOMAIN_TYPE'
+#  resource yaml files in WORKDIR. Relative to SCRIPTDIR. Defaults to 
+#  'mii-domain.yaml.template-WDT_DOMAIN_TYPE'
 
 # export DOMAIN_RESOURCE_FILENAME=
 # ::: Domain resource template
-#  Used by './stage-domain-resource.sh' as a template for generating a domain
-#  resource yaml file in WORKDIR. Defaults to 
+#  Used by './stage-domain-resource.sh' as a target for generating a domain
+#  resource yaml file in WORKDIR. Relative to WORKDIR. Defaults to 
 #  'domain-resources/mii-DOMAIN_UID.yaml'
 
 # TBD Move DB_NAMESPACE here from env.sh for clarity (used for setting up the DB urls), can the DB port change?

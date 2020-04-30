@@ -94,6 +94,11 @@ spec:
     serverStartState: "RUNNING"
     replicas: 2
 
+  # Change the restartVersion to force the introspector job to rerun
+  # and apply any new model configuration, to also force a subsequent
+  # roll of your domain's WebLogic pods.
+  restartVersion: '1'
+
   configuration:
 
     # Settings for domainHomeSourceType 'FromModel'
