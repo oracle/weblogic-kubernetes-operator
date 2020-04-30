@@ -871,7 +871,7 @@ public class ItMonitoringExporter extends BaseTest {
                                                   String domainNS,
                                                   String domainUid) throws Exception {
     String crdCmd =
-        " kubectl -n " + monitoringNS + " get cm prometheus-server -oyaml > "
+        " kubectl -n " + monitoringNS + " get cm prometheus-server -o yaml > "
             + monitoringExporterEndToEndDir
             + "/cm.yaml";
     TestUtils.execOrAbortProcess(crdCmd);
