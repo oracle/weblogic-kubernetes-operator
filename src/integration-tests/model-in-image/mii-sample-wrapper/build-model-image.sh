@@ -86,68 +86,35 @@ cat << EOF
 
 dryrun:#!/bin/bash
 dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
-dryrun:# using the contents of '$MODEL_DIR'.
+dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
 dryrun:
-dryrun:set -eu
-dryrun:
-dryrun:echo "@@ STEP 1"
-dryrun:echo "@@ Recreate the archive zip in case the source changed"
+dryrun:set -eux
 dryrun:
 dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
 dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
 dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
 dryrun:
-dryrun:echo "@@ STEP 2"
-dryrun:echo "@@ Locate the model files we will put in the image"
-dryrun:
-dryrun:cd $WORKDIR/$(dirname $MODEL_DIR)
-dryrun:MODEL_YAML_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
-dryrun:MODEL_ARCHIVE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"
-dryrun:MODEL_VARIABLE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
-dryrun:echo @@ Info: MODEL_YAML_FILES=\${MODEL_YAML_FILES}
-dryrun:echo @@ Info: MODEL_ARCHIVE_FILES=\${MODEL_ARCHIVE_FILES}
-dryrun:echo @@ Info: MODEL_VARIABLE_FILES=\${MODEL_VARIABLE_FILES}
-dryrun:
-dryrun:echo "@@ STEP 2"
-dryrun:echo "@@ Unzip image tool. (You can use 'stage-tooling.sh'"
-dryrun:echo "@@ to retrieve the WIT and WDT zips)."
-dryrun:
 dryrun:cd $WORKDIR/model-images
 dryrun:unzip -o weblogic-image-tool.zip
-dryrun:
-dryrun:echo "@@ STEP 3"
-dryrun:echo "@@ Setup image tool cache directory, it will use"
-dryrun:echo "@@ the WLSIMG_CACHEDIR env var to find its cache."
 dryrun:
 dryrun:mkdir -p $WORKDIR/model-images/imagetool/cache
 dryrun:export WLSIMG_CACHEDIR=$WORKDIR/model-images/imagetool/cache
 dryrun:
-dryrun:echo "@@ STEP 4"
-dryrun:echo "@@ Setup the image tool build directory, it will"
-dryrun:echo "@@ use the WLSIMG_BLDDIR to find this directory."
-dryrun:
 dryrun:mkdir -p $WORKDIR/model-images/imagetool/bld
 dryrun:export WLSIMG_BLDDIR=$WORKDIR/model-images/imagetool/bld
 dryrun:
-dryrun:echo "@@ STEP 5"
-dryrun:echo "@@ Put the location of the WDT zip installer in the "
-dryrun:echo "@@ image tool cache as type 'wdt' with version "
-dryrun:echo "@@ 'latestversion'. When we later create the image using"
-dryrun:echo "@@ the image tool, this cache entry will be referenced"
-dryrun:echo "@@ using '--wdtVersion latestversion'."
-dryrun:
 dryrun:$IMGTOOL cache deleteEntry \\
-dryrun:  --key wdt_latestversion
+dryrun:  --key wdt_latest
 dryrun:
 dryrun:$IMGTOOL cache addInstaller \\
 dryrun:  --type wdt \\
-dryrun:  --version latestversion \\
+dryrun:  --version latest \\
 dryrun:  --path ${WORKDIR}/model-images/weblogic-deploy-tooling.zip
 dryrun:
-dryrun:echo "@@ STEP 6"
-dryrun:echo "@@ Use the image tool to build image '$MODEL_IMAGE'"
+dryrun:MODEL_YAML_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
+dryrun:MODEL_ARCHIVE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"
+dryrun:MODEL_VARIABLE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
 dryrun:
-dryrun:set -x
 dryrun:$IMGTOOL update \\
 dryrun:  --tag $MODEL_IMAGE \\
 dryrun:  --fromImage $BASE_IMAGE \\
@@ -155,13 +122,9 @@ dryrun:  \${MODEL_YAML_FILES:+--wdtModel \${MODEL_YAML_FILES}} \\
 dryrun:  \${MODEL_VARIABLE_FILES:+--wdtVariables \${MODEL_VARIABLE_FILES}} \\
 dryrun:  \${MODEL_ARCHIVE_FILES:+--wdtArchive \${MODEL_ARCHIVE_FILES}} \\
 dryrun:  --wdtModelOnly \\
-dryrun:  --wdtVersion latestversion \\
 dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
-dryrun:set +x
 dryrun:
-dryrum:echo "@@"
 dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=$SECONDS."
-dryrun:echo "@@"
 
 EOF
 

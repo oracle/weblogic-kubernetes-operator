@@ -67,7 +67,7 @@ echo "@@"
 echo "@@ Info: Creating domain resource file 'WORKDIR/DOMAIN_RESOURCE_FILENAME' from 'SCRIPTDIR/DOMAIN_RESOURCE_TEMPLATE'"
 
 if [ -e "$WORKDIR/$DOMAIN_RESOURCE_FILENAME" ]; then
-  save_file=$(dirname $DOMAIN_RESOURCEFILENAME)/mii-domain-saved/$(basename $DOMAIN_RESOURCEFILENAME).$(timestamp)
+  save_file=$(dirname $DOMAIN_RESOURCE_FILENAME)/mii-domain-saved/$(basename $DOMAIN_RESOURCEFILENAME).$(timestamp)
   echo "@@"
   echo "@@ Notice! An old version of the domain resource file already exists and will be replaced."
   echo "@@ Notice! Saving old version of the domain resource file to 'WORKDIR/${save_file}'"
