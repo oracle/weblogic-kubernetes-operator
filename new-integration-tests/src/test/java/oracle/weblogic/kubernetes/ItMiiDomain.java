@@ -350,7 +350,7 @@ class ItMiiDomain implements LoggedTest {
     logger.info(String.format("Domain %s is fully started - servers are running and application is deployed corretly.",
         domainUid));
   }
-  
+
   @Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
@@ -738,6 +738,7 @@ class ItMiiDomain implements LoggedTest {
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
 
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace1),
             "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domainNamespace1);
@@ -980,7 +981,7 @@ class ItMiiDomain implements LoggedTest {
             .env(env)
             .redirect(true));
 
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool",  image));
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
     /* Check image exists using docker images | grep image tag.
      * Tag name is unique as it contains date and timestamp.
