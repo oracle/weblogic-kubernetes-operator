@@ -260,11 +260,8 @@ public class ItMonitoringExporter extends BaseTest {
             + args
             + " | tee "
             + outLogFile;
-    TestUtils.execOrAbortProcess(crdCmd, true);
-    crdCmd = " cat " + destLoc + "/" + outLogFile;
-    ExecResult result = ExecCommand.exec(crdCmd);
-    assertFalse(
-        result.stdout().contains("BUILD FAILURE"), "Shell script failed: " + result.stdout());
+    ExecResult result = TestUtils.execOrAbortProcess(crdCmd, true);
+    assertNotNull(result, "Result of execution is null");
     LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
   }
 
@@ -912,7 +909,7 @@ public class ItMonitoringExporter extends BaseTest {
         i++;
       }
     }
-    assertNotNull(labelExp + " was not created, can't find running pod ", podName);
+    assertNotNull(podName, labelExp + " was not created, can't find running pod ");
     return podName;
   }
 
@@ -1171,6 +1168,7 @@ public class ItMonitoringExporter extends BaseTest {
 
 
     String webhookPod = getPodName("app=webhook", "webhook");
+    assertNotNull(webhookPod, "Can't retrieve webhook pod name");
     TestUtils.checkPodReady(webhookPod, "webhook");
 
     //update with current WDT version
@@ -1197,7 +1195,7 @@ public class ItMonitoringExporter extends BaseTest {
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
     String podName = getPodName("app=grafana", monitoringNS);
-    assertNotNull("Grafana pod was not created", podName);
+    assertNotNull(podName, "Grafana pod was not created");
     TestUtils.checkPodReady(podName, monitoringNS);
 
     String myhost = domain.getHostNameForCurl();
@@ -1223,10 +1221,10 @@ public class ItMonitoringExporter extends BaseTest {
         + "curl -v  -H 'Content-Type: application/json' "
         + " -X GET http://admin:12345678@" + myhost + ":" + grafanaPort + "/api/dashboards/db/weblogic-server-dashboard";
     ExecResult result = ExecCommand.exec(crdCmd);
-    assertTrue(result.stdout().contains("wls_jvm_uptime"));
+    assertTrue(result.stdout().contains("wls_jvm_uptime"), "Can't find expected metrics via grafana dashboard");
     assertTrue(
         checkMetricsViaPrometheus(searchKey, expectedVal),
-        "Can't find expected metrics");
+        "Can't find expected metrics via prometheus dashboard");
   }
 
 
