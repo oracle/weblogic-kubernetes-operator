@@ -67,7 +67,7 @@
 #  Location of staged model .zip, .properties, and .yaml files that are
 #  copied into the model image by the './build-model-image.sh' script.
 #  Default is:
-#   'model-images/$(basename $MODEL_IMAGE_NAME):${MODEL_IMAGE_TAG}'
+#   'model-images/$(basename $MODEL_IMAGE_NAME)__${MODEL_IMAGE_TAG}'
 
 # export ARCHIVE_SOURCEDIR=
 # ::: Location of archive source dir for the model image relative to WORKDIR
