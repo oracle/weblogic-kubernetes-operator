@@ -34,35 +34,9 @@ public class KubernetesExec {
     return this;
   }
 
-  /**
-   * Get the API client for these exec operations.
-   *
-   * @return The API client that will be used.
-   */
-  public ApiClient getApiClient() {
-    return apiClient;
-  }
-
-  public void setApiClient(ApiClient apiClient) {
-    this.apiClient = apiClient;
-  }
-
   public KubernetesExec pod(V1Pod pod) {
     this.pod = pod;
     return this;
-  }
-
-  /**
-   * Get the Kubernetes pod where the command is to be run.
-   *
-   * @return Kubernetes pod object
-   */
-  public V1Pod getPod() {
-    return pod;
-  }
-
-  public void setPod(V1Pod pod) {
-    this.pod = pod;
   }
 
 
@@ -71,53 +45,14 @@ public class KubernetesExec {
     return this;
   }
 
-  /**
-   * Get the name of the container in which the command is to be run.
-   *
-   * @return name of the container
-   */
-  public String getContainerName() {
-    return containerName;
-  }
-
-  public void setContainerName(String containerName) {
-    this.containerName = containerName;
-  }
-
   public KubernetesExec passStdinAsStream() {
     this.passStdinAsStream = true;
     return this;
   }
 
-  /**
-   * Is a stdin stream passed into the container.
-   *
-   * @return true if configured to pass a stdin stream into the container, otherwise false
-   */
-  public boolean getPassStdInAsStream() {
-    return this.passStdinAsStream;
-  }
-
-  public void setPassStdinAsStream(boolean passStdinAsStream) {
-    this.passStdinAsStream = passStdinAsStream;
-  }
-
   public KubernetesExec stdinIsTty() {
     this.stdinIsTty = true;
     return this;
-  }
-
-  /**
-   * Is stdin a TTY.
-   *
-   * @return true if stdin is a TTY, otherwise false
-   */
-  public boolean getStdinIsTty() {
-    return this.stdinIsTty;
-  }
-
-  public void setStdinIsTty(boolean stdinIsTty) {
-    this.stdinIsTty = stdinIsTty;
   }
 
   /**
@@ -129,6 +64,6 @@ public class KubernetesExec {
    * @throws IOException if another problem occurs while trying to run the command
    */
   public Process exec(String... command) throws ApiException, IOException {
-    return new Exec(apiClient).exec(pod, command, containerName, true, true);
+    return new Exec(apiClient).exec(pod, command, containerName, passStdinAsStream, stdinIsTty);
   }
 }
