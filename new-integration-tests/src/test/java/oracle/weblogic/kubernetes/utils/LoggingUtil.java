@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -18,33 +19,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import org.awaitility.core.ConditionFactory;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPersistentVolumeInState;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
@@ -112,7 +102,7 @@ public class LoggingUtil {
       logger.warning(ex.getMessage());
     }
 
-    List<V1PersistentVolume> pvList = null;
+    List<V1PersistentVolume> pvList = new ArrayList<>();
     for (var pv : Kubernetes.listPersistentVolumes().getItems()) {
       for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
         if (pv.getSpec().getStorageClassName()
@@ -120,13 +110,12 @@ public class LoggingUtil {
             && pv.getMetadata().getName()
                 .equals(pvc.getSpec().getVolumeName())) {
           pvList.add(pv);
-          String claimName = pvc.getMetadata().getName();
           String pvName = pv.getMetadata().getName();
-          String hostPath = pv.getSpec().getHostPath().getPath();
+          String pvcName = pvc.getMetadata().getName();
           try {
-            copyFromPV(namespace, hostPath,
+            copyFromPV(namespace, pvcName, pvName,
                 Files.createDirectories(
-                    Paths.get(resultDir, claimName, pvName)));
+                    Paths.get(resultDir, pvcName, pvName)));
           } catch (ApiException ex) {
             logger.warning(ex.getResponseBody());
           } catch (IOException ex) {
@@ -135,12 +124,10 @@ public class LoggingUtil {
         }
       }
     }
-    if (pvList != null) {
-      try {
-        writeToFile(pvList, resultDir, ".list.persistent-volumes.log");
-      } catch (IOException ex) {
-        Logger.getLogger(LoggingUtil.class.getName()).log(Level.SEVERE, null, ex);
-      }
+    try {
+      writeToFile(pvList, resultDir, ".list.persistent-volumes.log");
+    } catch (IOException ex) {
+      logger.warning(ex.getMessage());
     }
 
     // get secrets
@@ -224,19 +211,26 @@ public class LoggingUtil {
     }
   }
 
-  /**
+/**
    * Copy files from persistent volume to local folder.
-   * @param namespace name of the namespace, used for creating temporary pod.
-   * @param srcPath the path to be mounted in persistent volume for temporary pod to access
+   * @param namespace name of the namespace, used for creating temporary pod in it.
+   * @param pvcName name of the persistent volume claim
+   * @param pvName name of the persistent volume from which the contents needs to be archived
    * @param destinationPath destination folder to copy the files to
    * @throws ApiException when pod interaction fails
    */
-  private static void copyFromPV(String namespace, String srcPath, Path destinationPath) throws ApiException {
+  private static void copyFromPV(
+      String namespace,
+      String pvcName,
+      String pvName,
+      Path destinationPath) throws ApiException {
+
     V1Pod pvPod = null;
     try {
-      // create a temporary pod to get access to the interested persistent volume
-      pvPod = setupPVPod(namespace, hostPath);
-      copyDirectoryFromPod(pvPod, hostPath, destinationPath);
+      // create a temporary pod
+      pvPod = setupPVPod(namespace, pvcName, pvName);
+      // copy from the temporary pod to local folder
+      copyDirectoryFromPod(pvPod, destinationPath);
     } finally {
       // remove the temporary pod
       if (pvPod != null) {
@@ -246,55 +240,20 @@ public class LoggingUtil {
   }
 
   /**
-   * Creates temporary pod with persistent volume claim and persistent volume using host path.
+   * Create a temporary pod to get access to the persistent volume.
    *
-   * @param namespace name of the namespace
-   * @param hostPath host path from ineterested persistent volume
-   * @return V1Pod pod object
+   * @param namespace name of the namespace in which to create the temporary pod
+   * @param pvcName name of the persistent volume claim
+   * @param pvName name of the persistent volume from which the contents needs to be archived
+   * @return V1Pod temporary pod object
    * @throws ApiException when create pod fails
    */
-  private static V1Pod setupPVPod(String namespace, String hostPath) throws ApiException {
+  private static V1Pod setupPVPod(String namespace, String pvcName, String pvName)
+      throws ApiException {
 
     ConditionFactory withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(5, SECONDS)
         .atMost(1, MINUTES).await();
-
-    // create a pvc and pv to get access to the host path of the target pv
-    final String pvcName = "pv-pod-pvc-" + namespace;
-    final String pvName = "pv-pod-pv-" + namespace;
-
-    V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(new V1PersistentVolumeSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName(namespace + "-weblogic-domain-storage-class")
-            .putCapacityItem("storage", Quantity.fromString("2Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
-            .hostPath(new V1HostPathVolumeSource().path(hostPath)))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(pvName)
-            .build());
-    TestActions.createPersistentVolume(v1pv);
-
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(new V1PersistentVolumeClaimSpec()
-            .volumeName(pvName)
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName(namespace + "-weblogic-domain-storage-class")
-            .resources(new V1ResourceRequirements()
-                .putRequestsItem("storage", Quantity.fromString("2Gi"))))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(pvcName)
-            .withNamespace(namespace)
-            .build());
-    TestActions.createPersistentVolumeClaim(v1pvc);
-
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pv to be bound, "
-                + "(elapsed time {0} , remaining time {1}",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(isPersistentVolumeInState(pvName, "Bound"));
 
     final String podName = "pv-pod-" + namespace;
     V1Pod podBody = new V1Pod()
@@ -317,7 +276,8 @@ public class LoggingUtil {
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");
-    V1Pod pvPod = Kubernetes.createPod(namespace, podBody);
+    V1Pod pvPod = null;
+    pvPod = Kubernetes.createPod(namespace, podBody);
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -342,24 +302,25 @@ public class LoggingUtil {
     Kubernetes.deletePv("pv-pod-pv-" + namespace);
   }
 
-  // there is currently a bug in the copy API which leaves i/o stream left open
-  // and copy not to exit. As a temporary fix using a Thread to do the copy
-  // and discard it after a minute.
-  // This won't be necessary once the bug is fixed in the api.
+  // The io.kubernetes.client.Copy.copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
+  // API has a bug which leaves the i/o stream left open and copyDirectoryFromPod not to exit. As  a
+  // temporary fix using a Thread to do the copy and discard it after a minute. The assumption here
+  // is that the copying of persistsent volume will be done in a minute. If we feel that we need more
+  // time for the copy to complete then we can increase the wait time.
+  // This won't be necessary once the bug is fixed in the api. Here is the issue # for the API bug.
   // https://github.com/kubernetes-client/java/issues/861
   /**
-   * Copy the persistent volume mount directory to local file system.
+   * Copy the mounted persistent volume directory to local file system.
    * @param pvPod V1Pod object to copy from
-   * @param srcPath location of the source path
    * @param destinationPath location for the destination path
    * @throws ApiException when copy fails
    */
-  private static void copyDirectoryFromPod(V1Pod pvPod, String srcPath, Path destinationPath) throws ApiException {
+  private static void copyDirectoryFromPod(V1Pod pvPod, Path destinationPath) throws ApiException {
     Future<String> copyJob = null;
     try {
       Runnable copy = () -> {
         try {
-          logger.info("Copying from PV path {0} to {1}", srcPath, destinationPath.toString());
+          logger.info("Copying the contents of PV to {0}", destinationPath.toString());
           Kubernetes.copyDirectoryFromPod(pvPod, "/shared", destinationPath);
         } catch (IOException | ApiException ex) {
           logger.warning(ex.getMessage());
@@ -380,10 +341,6 @@ public class LoggingUtil {
         copyJob.cancel(true);
       }
     }
-  }
-
-  private enum DA {
-    SERVICEACCOUNT, SECRETS, JOBS, DEPLOYMENTS, PODS, DOMAIN, DOMAINS
   }
 
 }
