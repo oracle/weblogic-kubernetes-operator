@@ -72,7 +72,7 @@ function parseYaml {
 function parseProperties {
   while IFS='=' read -r key value
   do
-    echo export ${key}=\"${value}\" >>$2
+    echo "export ${key}=\"${value}\"" >> $2
   done < $1
 }
 
@@ -93,7 +93,7 @@ function parseCommonInputs {
   tmpFile=$(mktemp /tmp/javaoptions_tmp-XXXXXXXXX.dat)  
   parseYaml ${valuesInputFile} ${exportValuesFile}
 
-  if [ -n valuesInputFile1 ]; then
+  if [ -n ${valuesInputFile1} ]; then
    parseProperties ${valuesInputFile1} ${exportValuesFile}
   fi 
 
@@ -327,7 +327,7 @@ function createFiles {
     fi
   fi
 
-  #dcrOutput="${domainOutputDir}/domain.yaml"
+  dcrOutput="${domainOutputDir}/domain.yaml"
 
   domainName=${domainUID}
 
@@ -542,64 +542,6 @@ function createFiles {
     logHomeOnPVPrefix="${enabledPrefix}"
     logHomeOnPV=true
   fi
-
-  # Generate the yaml file for creating the domain resource
-  #modelFile="${domainOutputDir}/wdt_model.yaml"
-  #echo updating ${modelFile}
-  #echo Generating ${dcrOutput}
-
-  #cp ${dcrInput} ${dcrOutput}
-  #sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${modelFile}
-  #sed -i -e "s:%NAMESPACE%:$namespace:g" ${modelFile}
-  #sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${modelFile}
-  #sed -i -e "s:%DOMAIN_HOME_SOURCE_TYPE%:${domainHomeSourceType}:g" ${modelFile}
-  #sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${modelFile}
-  #sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${modelFile}
-  #sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${modelFile}
-  #sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${modelFile}
-  #sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${modelFile}
-  #sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${modelFile}
-  #sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${modelFile}
-  #sed -i -e "s:%LOG_HOME%:${logHome}:g" ${modelFile}
-  #sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${modelFile}
-  #sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${modelFile}
-  #sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${modelFile}
-  #sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${modelFile}
-  #sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${modelFile}
-  #sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${modelFile}
-  #sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${modelFile}
-  #sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${modelFile}
-  #sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${modelFile}
-  #sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${modelFile}
-  #sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${modelFile}
-  #sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${modelFile}
-  #sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${modelFile}
-  #sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${modelFile}
-  #sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${modelFile}
-  # MII settings are used for model-in-image integration testing
-  #sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${modelFile}
-  #sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${modelFile}
-  #sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${modelFile}
-  #sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${modelFile}
-
-  #buildServerPodResources
-  #if [ -z "${serverPodResources}" ]; then
-  #  sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${modelFile}
-  #else
-  #  sed -i -e "s:%OPTIONAL_SERVERPOD_RESOURCES%:${serverPodResources}:g" ${modelFile}
-  #fi
-
-  #if [ "${domainHomeInImage}" == "true" ]; then
- 
-    # now we know which image to use, update the domain yaml file
-  #  if [ -z $image ]; then
-  #    sed -i -e "s|%WEBLOGIC_IMAGE%|${defaultImageName}|g" ${modelFile}
-  #  else
-  #    sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${modelFile}
-  #  fi
-  #else
-  #  sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${modelFile}
-  #fi
 
   # Remove any "...yaml-e" and "...properties-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e

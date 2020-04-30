@@ -27,8 +27,8 @@ kubernetes:
     imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
 
     # Identify which Secret contains the credentials for pulling an image
-    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
-    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets: 
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  %WEBLOGIC_IMAGE_PULL_SECRET_NAME%:
 
     # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
     # how to create that Secret at the end of this file)
@@ -49,7 +49,7 @@ kubernetes:
     # An (optional) in-pod location for data storage of default and custom file stores.
     # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
     # data storage directories are determined from the WebLogic domain home configuration.
-    #dataHome: "%DATA_HOME%"
+    dataHome: "%DATA_HOME%"
 
     # Istio service mesh support is experimental.
     %ISTIO_PREFIX%experimental:
