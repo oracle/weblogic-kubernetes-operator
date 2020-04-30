@@ -83,11 +83,11 @@ fi
 echo "${sysPassword}" > pwd.txt
 echo "${schemaPassword}" >> pwd.txt
 
-kubectl -n $namespace exec -i rcu -- bash -c 'cat > /u01/oracle/dropRepository.sh' < ${scriptDir}/common/dropRepository.sh
-kubectl -n $namespace exec -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt
+kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/dropRepository.sh' < ${scriptDir}/common/dropRepository.sh
+kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/pwd.txt' < pwd.txt
 rm -rf dropRepository.sh pwd.txt
 
-kubectl -n $namespace  exec -it rcu /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix} ${rcuType} ${sysPassword}
+kubectl exec -n $namespace -it rcu /bin/bash /u01/oracle/dropRepository.sh ${dburl} ${schemaPrefix} ${rcuType} ${sysPassword}
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not drop the RCU Repository based on dburl[${dburl}] schemaPrefix[${schemaPrefix}]  ";
