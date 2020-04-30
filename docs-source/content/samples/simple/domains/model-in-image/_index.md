@@ -15,9 +15,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
    - [Prerequisites for JRF domains](#prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
-     - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model configmap
-     - [Update2 use case](#update2-use-case): Deploying a concurrent duplicate WebLogic domain (TBD)
-     - [Update3 use case](#update3-use-case): Deploying an updated application (TBD)
+   - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model configmap
    - [Accessing the WebLogic Server Administration Console](#accessing-the-weblogic-server-administration-console)
    - [Cleanup](#cleanup)
 
@@ -41,18 +39,18 @@ The `JRF` domain path through the sample includes additional steps required for 
 
 #### Use cases
 
-This sample demonstrates four Model in Image use cases:
+This sample demonstrates two Model in Image use cases:
 
 - [Initial](#initial-use-case): An initial WebLogic domain
 {{%expand "Use case details" %}}
 - Image `model-in-image:WLS-v1` with:
   - A WebLogic installation
   - A WebLogic Deploy Tooling (WDT) installation
-    - A WDT archive with `v1` of an exploded Java EE web application
-    - A WDT model with:
-      - A WebLogic Administration Server
-      - A WebLogic cluster
-      - A reference to the web application
+  - A WDT archive with version `v1` of an exploded Java EE web application
+  - A WDT model with:
+    - A WebLogic Administration Server
+    - A WebLogic cluster
+    - A reference to the web application
 - Kubernetes secrets:
   - WebLogic credentials
   - Required WDT runtime password
@@ -73,29 +71,6 @@ This sample demonstrates four Model in Image use cases:
   - Same as Initial use case plus:
      - `spec.model.configMap` referencing the configmap
      - References to data source secrets
-{{% /expand%}}
-
-- [Update2](#update2-use-case): Deploying a concurrent duplicate WebLogic domain (TBD)
-{{%expand "Use case details" %}}
-- Image `model-in-image:WLS-v1`:
-  - Same image as Initial use case
-- Kubernetes secrets and configmap:
-  - Similar to Update1, except names are decorated with a new domain UID
-- A domain resource:
-  - Similar to Update1, except:
-     - Its secret/configmap references are decorated with a new domain UID
-     - Has a changed `env` `var` that sets a new domain name
-{{% /expand%}}
-
-- [Update3](#update3-use-case): Deploying an updated application (TBD)
-{{%expand "Use case details" %}}
-- Image `model-in-image:WLS-v2`:
-  - Updated web application `v2` at the `myapp-v2` path
-  - Updated model that points to the new web application path
-- Kubernetes secrets and configmap:
-  - Same as Update1
-- A domain resource:
-  - Same as Update1, except `spec.image: model-in-image:WLS-v2`
 {{% /expand%}}
 
 #### Sample directory structure
@@ -299,7 +274,7 @@ For references to the relevant user documentation, see:
 
    Do one of the following:
 
-   - Option 1 (recommended), set up access to an existing WebLogic image in in the [Oracle Container Registry](http://container-registry.oracle.com):
+   - Option 1 (recommended), set up access to an existing WebLogic image in the [Oracle Container Registry](http://container-registry.oracle.com):
 
      {{%expand "Click here for details." %}}
 
@@ -354,7 +329,7 @@ For references to the relevant user documentation, see:
 
    ./imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
-     --version wdt_latest \
+     --version latest \
      --path /tmp/mii-sample/model-images/weblogic-deploy-tooling.zip
    ```
 
@@ -635,24 +610,24 @@ OK, that's enough exploring. Let's move on to zipping up this archive to our ima
 
 #### Initial use case - image creation step - staging a ZIP of the archive
 
-When we create our image, we will use the files in staging directory `/tmp/mii-sample/model-in-image:WLS-v1`. In preparation, we need it to contain a ZIP of the WDT application archive.
+When we create our image, we will use the files in staging directory `/tmp/mii-sample/model-in-image__WLS-v1`. In preparation, we need it to contain a ZIP of the WDT application archive.
 
 **Please run the following commands to create your application archive ZIP and put the ZIP in the expected directory:**
 
 ```
 # Delete existing archive.zip in case we have an old leftover version
-rm -f /tmp/mii-sample/model-images/model-in-image:WLS-v1/archive.zip
+rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
 # Move to the directory which contains the source files for our archive
 cd /tmp/mii-sample/archives/archive-v1
 
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
-zip -q -r /tmp/mii-sample/model-images/model-in-image:WLS-v1/archive.zip wlsdeploy
+zip -q -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
 #### Initial use case - image creation step - staging model files
 
-In this step we simply explore the staged WDT model YAML and properties in directory `/tmp/mii-sample/model-in-image:WLS-v1`. The model in this directory references the web app in our archive, configures a WebLogic administration server, and configures a WebLogic cluster. It happens to consist of only two files `model.10.properties`, a file with a single property, and `model.10.yaml`, a YAML file with our WebLogic configuration `model.10.yaml`.
+In this step we simply explore the staged WDT model YAML and properties in directory `/tmp/mii-sample/model-in-image__WLS-v1`. The model in this directory references the web app in our archive, configures a WebLogic administration server, and configures a WebLogic cluster. It happens to consist of only two files `model.10.properties`, a file with a single property, and `model.10.yaml`, a YAML file with our WebLogic configuration `model.10.yaml`.
 
 {{%expand "Click here to expand `model.10.properties`." %}}
 
@@ -783,9 +758,9 @@ By this point we have staged all of the files needed for image `model-in-image:W
 {{%expand "Click here to expand." %}}
 
   - /tmp/mii-sample/model-images/weblogic-deploy-tooling.zip
-  - /tmp/mii-sample/model-images/model-in-image:WLS-v1/model.10.yaml
-  - /tmp/mii-sample/model-images/model-in-image:WLS-v1/model.10.properties
-  - /tmp/mii-sample/model-images/model-in-image:WLS-v1/archive.zip
+  - /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml
+  - /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties
+  - /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
 If you don't see the `weblogic-deploy-tooling.zip` file it means you missed a step in the prerequisites.
 
@@ -802,9 +777,9 @@ Now let's use the image tool to create an image named `model-in-image:WLS-v1` th
   /tmp/mii-sample/model-images/imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-    --wdtModel /tmp/mii-sample/model-images/model-in-image:WLS-v1/model.10.yaml \
-    --wdtVariables /tmp/mii-sample/model-images/model-in-image:WLS-v1/model.10.properties \
-    --wdtArchive /tmp/mii-sample/model-images/model-in-image:WLS-v1/archive.zip \
+    --wdtModel /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml \
+    --wdtVariables /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties \
+    --wdtArchive /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip \
     --wdtModelOnly \
     --wdtDomainType WLS
   ```
@@ -1817,18 +1792,6 @@ That's it!
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-## Update2 use case
-
-A duplicated domain.
-
-TBD
-
-## Update3 use case
-
-An application update.
-
-TBD
-
 ## Accessing the WebLogic Server Administration Console
 
 {{% notice warning %}} This sample externally exposes the WebLogic Server Administration Console using a plain text HTTP port. This is _not_ secure and should not be done in production deployments.
@@ -1877,10 +1840,10 @@ The login credentials are `weblogic/welcome1`.
 
 6. Delete the domain's namespace:
    ```
-   kubectl delete namepsace sample-domain1-ns
+   kubectl delete namespace sample-domain1-ns
    ```
 
-7. Delete the images you may bave created in this sample:
+7. Delete the images you may have created in this sample:
    ```
    docker image rm model-in-image:WLS-v1
    docker image rm model-in-image:WLS-v2

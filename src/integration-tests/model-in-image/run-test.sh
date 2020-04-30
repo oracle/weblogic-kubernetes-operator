@@ -49,7 +49,7 @@ function usage() {
     -dry      : Dry run - show but don't do.
 
     -clean    : Call cleanup.sh, pre-delete MII image
-                '$MODEL_IMAGE_NAME:*', and delete WORKDIR.
+                'MODEL_IMAGE_NAME:*', and delete WORKDIR.
                 (Reuses artifacts from previous run, if any.)
                 IMPORTANT: This implicitly enables '-oper' and '-traefik'.
 
