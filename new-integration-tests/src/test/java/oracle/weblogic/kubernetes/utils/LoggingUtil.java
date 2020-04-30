@@ -35,6 +35,7 @@ import org.awaitility.core.ConditionFactory;
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
@@ -244,29 +245,33 @@ public class LoggingUtil {
    *
    * @param namespace name of the namespace in which to create the temporary pod
    * @param pvcName name of the persistent volume claim
-   * @param pvName name of the persistent volume from which the contents needs to be archived
+   * @param pvName name of the persistent volume from which the contents needs to be copied
    * @return V1Pod temporary pod object
    * @throws ApiException when create pod fails
    */
   private static V1Pod setupPVPod(String namespace, String pvcName, String pvName)
       throws ApiException {
 
-    ConditionFactory withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(5, SECONDS)
+    ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
+        .and().with().pollInterval(2, SECONDS)
         .atMost(1, MINUTES).await();
 
+    // Create the temporary pod with oraclelinux image
+    // oraclelinux:7-slim is not useful, missing tar utility
     final String podName = "pv-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
             .containers(Arrays.asList(
                 new V1Container()
                     .name("pv-container")
-                    .image("nginx")
+                    .image("oraclelinux")
                     .imagePullPolicy("IfNotPresent")
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
                             .name(pvName)
-                            .mountPath("/shared")))))
+                            .mountPath("/shared")))
+                    .addCommandItem("tailf")
+                    .addArgsItem("/dev/null")))
             .volumes(Arrays.asList(
                 new V1Volume()
                     .name(pvName)
@@ -293,13 +298,29 @@ public class LoggingUtil {
 
   /**
    * Delete the temporary pv pod.
-   * @param namespace name
+   * @param namespace name of the namespace
    * @throws ApiException when pod deletion fails
    */
   private static void cleanupPVPod(String namespace) throws ApiException {
-    Kubernetes.deletePod("pv-pod-" + namespace, namespace);
-    Kubernetes.deletePvc("pv-pod-pvc-" + namespace, namespace);
-    Kubernetes.deletePv("pv-pod-pv-" + namespace);
+    final String podName = "pv-pod-" + namespace;
+
+    ConditionFactory withStandardRetryPolicy = with().pollDelay(5, SECONDS)
+        .and().with().pollInterval(5, SECONDS)
+        .atMost(1, MINUTES).await();
+
+    // Delete the temporary pod
+    Kubernetes.deletePod(podName, namespace);
+
+    // Wait for the pod to be deleted
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
+                + "(elapsed time {2} , remaining time {3}",
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(podDoesNotExist(podName, null, namespace));
   }
 
   // The io.kubernetes.client.Copy.copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
