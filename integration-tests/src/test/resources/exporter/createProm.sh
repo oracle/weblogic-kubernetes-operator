@@ -37,6 +37,12 @@ sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEn
 
 kubectl create ns $CHARTNS
 
+sed -i "s/monitoring/${chartNS}/g" ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
+sed -i "s/monitoring/${chartNS}/g" ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
+sed -i "s/pv-prom/pv-testprom/g" ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
+sed -i "s/pv-alert/pv-testalert/g" ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
+cat ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
+cat ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
 kubectl get pv -n $CHARTNS

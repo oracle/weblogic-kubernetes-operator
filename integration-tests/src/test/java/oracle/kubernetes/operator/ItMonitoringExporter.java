@@ -155,14 +155,13 @@ public class ItMonitoringExporter extends BaseTest {
         upgradeTraefikHostName();
       }
       deployRunMonitoringExporter(domain, operator);
-
       String testAppName = "httpsessionreptestapp";
       String scriptName = "buildDeployAppInPod.sh";
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-      setupPv();
     }
     if (!isPromGrafanaWebhookSqlInstalled) {
+      setupPv();
       installPrometheusGrafanaWebHookMySqlCoordinator();
     }
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
@@ -1021,19 +1020,7 @@ public class ItMonitoringExporter extends BaseTest {
         monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "pv-prometheus", "pv-testprometheus");
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "pv-alert", "pv-testalert");
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "pv-grafana", "pv-testgrafana");
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "monitoring", monitoringNS);
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "monitoring", monitoringNS);
-    replaceStringInFile(
-        monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "monitoring", monitoringNS);
-
+    LoggerHelper.getLocal().log(Level.INFO, " prepared persistence files for Prometheus, Grafana, SQL");
   }
 
   /**

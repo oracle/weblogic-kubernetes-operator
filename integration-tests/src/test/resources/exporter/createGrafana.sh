@@ -34,6 +34,8 @@ export appname=grafana
 for p in `kubectl get po -l app=$appname -o name -n $CHARTNS `;do echo deleting $p; kubectl delete ${p} -n $CHARTNS --force --grace-period=0 --ignore-not-found; done
 
 kubectl --namespace $CHARTNS create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
+sed -i "s/monitoring/${chartNS}/g" ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
+sed -i "s/pv-grafana/pv-testgrafana/g" ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 
 kubectl apply -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 echo "Detected Helm Version [${HELM_VERSION}]"
