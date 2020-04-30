@@ -80,7 +80,8 @@ public class LoggingUtil {
 
     // get service accounts
     try {
-      writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir, namespace + ".list.service-accounts.log");
+      writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir,
+          namespace + ".list.service-accounts.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }
@@ -98,11 +99,13 @@ public class LoggingUtil {
 
     // get pvc
     try {
-      writeToFile(Kubernetes.listPersistentVolumeClaims(namespace), resultDir, namespace + ".list.persistent-volume-claims.log");
+      writeToFile(Kubernetes.listPersistentVolumeClaims(namespace), resultDir,
+          namespace + ".list.persistent-volume-claims.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }
 
+    // archive persistent volume contents
     List<V1PersistentVolume> pvList = new ArrayList<>();
     for (var pv : Kubernetes.listPersistentVolumes().getItems()) {
       for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
@@ -125,6 +128,7 @@ public class LoggingUtil {
         }
       }
     }
+    // write pv list
     try {
       writeToFile(pvList, resultDir, ".list.persistent-volumes.log");
     } catch (IOException ex) {
@@ -133,14 +137,16 @@ public class LoggingUtil {
 
     // get secrets
     try {
-      writeToFile(Kubernetes.listSecrets(namespace), resultDir, namespace + ".list.secrets.log");
+      writeToFile(Kubernetes.listSecrets(namespace), resultDir,
+          namespace + ".list.secrets.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }
 
     // get configmaps
     try {
-      writeToFile(Kubernetes.listConfigMaps(namespace), resultDir, namespace + ".list.configmaps.log");
+      writeToFile(Kubernetes.listConfigMaps(namespace), resultDir,
+          namespace + ".list.configmaps.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }
@@ -161,7 +167,8 @@ public class LoggingUtil {
 
     // get replicasets
     try {
-      writeToFile(Kubernetes.listReplicaSets(namespace), resultDir, namespace + ".list.replica-sets.log");
+      writeToFile(Kubernetes.listReplicaSets(namespace), resultDir,
+          namespace + ".list.replica-sets.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }
@@ -185,7 +192,8 @@ public class LoggingUtil {
       for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
         if (pod.getMetadata() != null) {
           String podName = pod.getMetadata().getName();
-          writeToFile(Kubernetes.getPodLog(podName, namespace), resultDir, namespace + ".pod." + podName + ".log");
+          writeToFile(Kubernetes.getPodLog(podName, namespace), resultDir,
+              namespace + ".pod." + podName + ".log");
         }
       }
     } catch (Exception ex) {
@@ -201,7 +209,8 @@ public class LoggingUtil {
    * @param fileName name of the log file
    * @throws IOException when write fails
    */
-  private static void writeToFile(Object obj, String resultDir, String fileName) throws IOException {
+  private static void writeToFile(Object obj, String resultDir, String fileName)
+      throws IOException {
     logger.info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
@@ -246,7 +255,7 @@ public class LoggingUtil {
    * @param namespace name of the namespace in which to create the temporary pod
    * @param pvcName name of the persistent volume claim
    * @param pvName name of the persistent volume from which the contents needs to be copied
-   * @return V1Pod temporary pod object
+   * @return V1Pod temporary copy pod object
    * @throws ApiException when create pod fails
    */
   private static V1Pod setupPVPod(String namespace, String pvcName, String pvName)
@@ -268,21 +277,20 @@ public class LoggingUtil {
                     .imagePullPolicy("IfNotPresent")
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()
-                            .name(pvName)
+                            .name(pvName) // mount the persistent volume to /shared inside the pod
                             .mountPath("/shared")))
                     .addCommandItem("tailf")
                     .addArgsItem("/dev/null")))
             .volumes(Arrays.asList(
                 new V1Volume()
-                    .name(pvName)
+                    .name(pvName) // the persistent volume that needs to be archived
                     .persistentVolumeClaim(
                         new V1PersistentVolumeClaimVolumeSource()
-                            .claimName(pvcName)))))
+                            .claimName(pvcName))))) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");
-    V1Pod pvPod = null;
-    pvPod = Kubernetes.createPod(namespace, podBody);
+    V1Pod pvPod = Kubernetes.createPod(namespace, podBody);
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -293,12 +301,13 @@ public class LoggingUtil {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(podReady(podName, null, namespace));
+
     return pvPod;
   }
 
   /**
    * Delete the temporary pv pod.
-   * @param namespace name of the namespace
+   * @param namespace name of the namespace in which the copy pod running
    * @throws ApiException when pod deletion fails
    */
   private static void cleanupPVPod(String namespace) throws ApiException {
@@ -336,7 +345,8 @@ public class LoggingUtil {
    * @param destinationPath location for the destination path
    * @throws ApiException when copy fails
    */
-  private static void copyDirectoryFromPod(V1Pod pvPod, Path destinationPath) throws ApiException {
+  private static void copyDirectoryFromPod(V1Pod pvPod, Path destinationPath)
+      throws ApiException {
     Future<String> copyJob = null;
     try {
       Runnable copy = () -> {
