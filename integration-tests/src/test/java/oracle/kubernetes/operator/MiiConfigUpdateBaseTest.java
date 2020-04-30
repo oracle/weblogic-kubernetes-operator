@@ -242,7 +242,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
 
   /**
    * Create a new or update an existing image using model in image.
-   * @param domainMap a Java Map object that storing key and value pairs used to create the Domain
+   * @param domainMap a Java Map object stores key and value pairs used to create the Domain
    * @param imageName image name to be created or updated
    * @param modelFile a model to describe a WebLogic Server domain configuration.
    * @param modelPropFile a file to specify values of variable tokens declared in model file(s) at runtime
@@ -472,7 +472,7 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
   /**
    * Create a secret that contains the username, password and JDBC URL to MySQL.
    * @param domainNS domain namespace name
-   * @param jdbcUrl JDBC URL to MySQL
+   * @param jdbcUrl JDBC URL to connect to MySQL
    */
   protected Secret createSecrets(String domainNS, String jdbcUrl) {
     Secret secret = null;
@@ -621,7 +621,8 @@ public class MiiConfigUpdateBaseTest extends MiiBaseTest {
    * Build a webapp to deploy to the cluster. It's used to established
    * a connection to MySQL DB
    * @param domain the Domain object where to get domain config values
-   * @param scriptName secret name containing the username, password and JDBC URL to MySQL
+   * @param scriptName secret name containing the username, password
+   *        and JDBC URL to connect to  MySQL
    */
   protected void buildApp(Domain domain, String scriptName) {
     Map<String, Object> domainMap = domain.getDomainMap();

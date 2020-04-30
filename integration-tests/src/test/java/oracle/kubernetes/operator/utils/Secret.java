@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.utils;
 import java.util.logging.Level;
 
 public class Secret {
-
   protected String secretName;
   protected String namespace;
   protected String username;
@@ -18,12 +17,12 @@ public class Secret {
   }
 
   /**
-   * Construct secret.
-   * @param namespace namespace
-   * @param secretName name
-   * @param username username
-   * @param password password
-   * @throws Exception on failure
+   * Construct a secret object.
+   * @param namespace domain namespace where to create the secret in
+   * @param secretName secret name to create
+   * @param username user name used by MySQL for authentication purposes
+   * @param password password used by MySQL for authorization purposes
+   * @throws Exception if creating a secret fails
    */
   public Secret(String namespace, String secretName, String username, String password)
       throws Exception {
@@ -60,13 +59,13 @@ public class Secret {
   }
 
   /**
-   * Construct secret.
-   * @param namespace namespace
-   * @param secretName name
-   * @param jdbcUrl jdbc url
-   * @param username username
-   * @param password password
-   * @throws Exception on failure
+   * Construct a secret object.
+   * @param namespace domain namespace where to create the secret in
+   * @param secretName secret name to create
+   * @param jdbcUrl JDBC URL to access to MySQL
+   * @param username user name used by MySQL for authentication purposes
+   * @param password password used by MySQL for authorization purposes
+   * @throws Exception if creating a secret fails
    */
   public Secret(String namespace, String secretName, String jdbcUrl,
                 String username, String password) throws Exception {
