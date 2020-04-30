@@ -8,7 +8,7 @@
 #   for cutting and pasting into the sample 
 #   documentation. It uses the templates and helper
 #   scripts in the sample to generate the following
-#   in '/tmp/miisample' stripped of any significant
+#   in '/tmp/mii-sample' stripped of any significant
 #   references to environment variables, etc:
 #
 #      - model archives (applications)
@@ -20,11 +20,9 @@
 #      - configmap, and domain resource
 #      - traefik ingress yaml
 #
-# WARNING!
-#   
-#   This script is destructive! It deletes
-#   anything that's already in '/tmp/miisample'
-#
+#   Note: If '/tmp/mii-sample' already exists, this
+#         script will exit immediately with a non-zero
+#         exit code.
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
@@ -34,7 +32,7 @@ set -e
 set -o pipefail
 set -u
 
-export WORKDIR=/tmp/miisample
+export WORKDIR=/tmp/mii-sample
 
 echo "@@ Info: Starting '$(basename $0)'. See target directory '$WORKDIR'."
 
@@ -59,93 +57,161 @@ cp -r $MIISAMPLEDIR/* $WORKDIR
 $SCRIPTDIR/stage-tooling.sh -dry | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-images/download-tooling.sh
 chmod +x $WORKDIR/model-images/download-tooling.sh
 
-#
-# Get commands and yaml for creating the model configmap
-#
-
 export MODEL_IMAGE_NAME=model-in-image
 export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
-for domain in sample-domain1 sample-domain2; do
-  export DOMAIN_UID=$domain
-  $SCRIPTDIR/stage-model-configmap.sh
-  $SCRIPTDIR/create-model-configmap.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/model-configmaps/model-configmap-uid-$DOMAIN_UID.sh
-  chmod +x $WORKDIR/model-configmaps/model-configmap-uid-$DOMAIN_UID.sh
-done
+# these phases match the phases in the MII sample
+function known_phase() {
+  # An initial domain with admin server, web-app 'v1', and a single cluster 'cluster-1' with 2 replicas.
+  [ $domain_num -eq 1 ] \
+   && [ "$image_version" = "v1" ] \
+   && [ "$configmap" = "false" ] \
+   && [ "$archive_version" = "v1" ] && echo "initial"
 
+  # Same as initial, plus a data source targeted to 'cluster-1' which is dynamically supplied using a model configmap. 
+  [ $domain_num -eq 1 ] \
+   && [ "$image_version" = "v1" ] \
+   && [ "$configmap" = "true" ] \
+   && [ "$archive_version" = "v1" ] && echo "update1"
+
+  # Same as update1, with a second domain with its own uid 'sample-domain2' that's based on the update1 domain's resource file.
+  [ $domain_num -eq 2 ] \
+   && [ "$image_version" = "v1" ] \
+   && [ "$configmap" = "true" ] \
+   && [ "$archive_version" = "v1" ] && echo "update2"
+
+  # Similar to update1, except deploy an updated web-app 'v2' while keeping the original app in the archive.
+  [ $domain_num -eq 1 ] \
+   && [ "$image_version" = "v2" ] \
+   && [ "$configmap" = "true" ] \
+   && [ "$archive_version" = "v2" ] && echo "update3"
+
+  # TBD
+  ## Same as update2, except with a second cluster 'cluster-2' with 1 replica, and the 'v2' web-app targeted to both clusters. 
+  #[ $domain_num -eq 1 ] \
+  # && [ "$image_version" = "v3" ] \
+  # && [ "$configmap" = "true" ] \
+  # && [ "$archive_version" = "v2" ] && echo "update4"
+}
 
 #
 # Get everything else
 #
 
-for type in WLS JRF
-do
+for domain_num in 1 2; do
+for image_version in v1 v2 v3; do
+for configmap in true false; do
+for archive_version in v1 v2; do
+for type in WLS JRF; do
+set +e
+phase=$(known_phase)
+set -e
+if [ ! -z "$phase" ]; then
+
+  domain=sample-domain$domain_num
+
   export WDT_DOMAIN_TYPE=$type
-  for version in v1 v2
-  do
-    export MODEL_IMAGE_TAG=$type-$version
-    model_image=$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG
+  export MODEL_IMAGE_TAG=$type-$image_version
+  model_image=$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG
+  export MODEL_DIR=model-images/$model_image
+  export ARCHIVE_SOURCEDIR="archives/archive-$archive_version"
+  export DOMAIN_UID=$domain
+  export INCLUDE_MODEL_CONFIGMAP=$configmap
 
-    export MODEL_DIR=model-images/$model_image
 
-    export ARCHIVE_SOURCEDIR="archives/archive-$version"
-
-    if [ ! -d "$WORKDIR/$ARCHIVE_SOURCEDIR" ]; then
-      mkdir -p "$WORKDIR/$ARCHIVE_SOURCEDIR"
-      cp -r $WORKDIR/archives/archive-v1/* $ARCHIVE_SOURCEDIR
-
-      # Rename app directory in app archive to correspond to the app version
-      # (We will update model to correspond to this directory a little bit down.)
-      mv $WORKDIR/$ARCHIVE_SOURCEDIR/wlsdeploy/applications/myapp-v1 \
-         $WORKDIR/$ARCHIVE_SOURCEDIR/wlsdeploy/applications/myapp-$version
-
-      # Update app's index.jsp so it outputs its archive/app version.
-      sed -i -e "s/'v1'/'$version'/g" \
-         $WORKDIR/$ARCHIVE_SOURCEDIR/wlsdeploy/applications/myapp-$version/myapp_war/index.jsp
+  sample_root=""
+  work_root="$WORKDIR/$ARCHIVE_SOURCEDIR"
+  if [ ! "$archive_version" = "v1" ]; then
+    if [ ! -d "$work_root" ]; then
+      sample_root="$MIISAMPLEDIR/$ARCHIVE_SOURCEDIR.new"
+    else
+      sample_root="$MIISAMPLEDIR/$ARCHIVE_SOURCEDIR.maybe" 
     fi
 
-    $SCRIPTDIR/build-model-image.sh -dry | grep dryrun | sed 's/dryrun://' \
-      > $WORKDIR/model-images/build--$model_image.sh
-    chmod +x $WORKDIR/model-images/build--$model_image.sh
+    mkdir -p "$work_root"
+    cp -r $WORKDIR/archives/archive-v1/* $work_root
 
-    if [ ! -d "$WORKDIR/$MODEL_DIR" ]; then
-      mkdir -p "$WORKDIR/$MODEL_DIR"
-      cp -r $WORKDIR/model-images/$MODEL_IMAGE_NAME:$type-v1/* "$WORKDIR/$MODEL_DIR"
-      sed -i -e "s/myapp-v1/myapp-$version/g" $MODEL_DIR/model.10.yaml
+    # Rename app directory in app archive to correspond to the app version
+    # (We will update model to correspond to this directory a little bit down.)
+    mkdir -p $work_root/wlsdeploy/applications/myapp-$archive_version
+    cp -r $work_root/wlsdeploy/applications/myapp-v1/* \
+             $work_root/wlsdeploy/applications/myapp-$archive_version
+
+    # Update app's index.jsp so it outputs its correct archive/app version.
+
+    sed -i -e "s/'v1'/'$archive_version'/g" \
+       $work_root/wlsdeploy/applications/myapp-$archive_version/myapp_war/index.jsp
+
+    if [ ! -d "$sample_root" ]; then
+       mkdir -p $sample_root
+       cp -r $work_root/* $sample_root
+    fi
+  fi
+
+  # TBD may differ from documentation - need to manually check
+
+  work_file=$WORKDIR/model-images/build--$model_image.sh
+  $SCRIPTDIR/build-model-image.sh -dry | grep dryrun | sed 's/dryrun://' > $work_file
+  chmod +x $work_file
+
+  # set up image staging files
+
+  sample_root=""
+  work_root="$WORKDIR/$MODEL_DIR"
+  if [ ! "$image_version" = "v1" ]; then
+    if [ ! -d "$work_root" ]; then
+      sample_root="$MIISAMPLEDIR/$MODEL_DIR.new"
+    else
+      sample_root="$MIISAMPLEDIR/$MODEL_DIR.maybe" 
     fi
 
-    for domain in sample-domain1 sample-domain2; do
+    mkdir -p "$work_root"
+    # make sure app path in model corresponds to current app/archive version
+    cp -r $WORKDIR/model-images/$MODEL_IMAGE_NAME:$type-v1/* "$work_root"
+    sed -i -e "s/myapp-v1/myapp-$archive_version/g" $work_root/model.10.yaml
 
-      export DOMAIN_UID=$domain
-      $SCRIPTDIR/stage-and-create-ingresses.sh -nocreate
+    if [ ! -d "$sample_root" ]; then
+       mkdir -p $sample_root
+       cp -r $work_root/* $sample_root
+    fi
+  fi
 
-      for configmap in true false; do
-        export INCLUDE_MODEL_CONFIGMAP=$configmap
+  # setup ingresses
 
-        if [ "$configmap" = "true" ]; then
-          domain_root=domain-resources/$type/uid-$DOMAIN_UID/imagetag-$MODEL_IMAGE_TAG/model-configmap-yes
-        else
-          domain_root=domain-resources/$type/uid-$DOMAIN_UID/imagetag-$MODEL_IMAGE_TAG/model-configmap-no
-        fi
+  $SCRIPTDIR/stage-and-create-ingresses.sh -nocreate
 
-        export DOMAIN_RESOURCE_FILENAME=$domain_root/mii-domain.yaml
+  # setup domain resource and its associated script for creating secrets & configmap
 
-        $SCRIPTDIR/stage-domain-resource.sh
+  domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
+  if [ "$configmap" = "true" ]; then
+    domain_path=$domain_path-ds
+  fi
 
-        $SCRIPTDIR/create-secrets.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/secrets.sh
-        $SCRIPTDIR/create-secrets.sh -dry yaml | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_root/secrets.yaml
-        chmod +x $WORKDIR/$domain_root/secrets.sh
+  export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
+  $SCRIPTDIR/stage-domain-resource.sh
+  sed -i -e "s/\"domain1\"/\"domain$domain_num\"/g" $WORKDIR/$domain_path.yaml
+
+  #$SCRIPTDIR/create-secrets.sh -dry yaml | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_path.secrets.yaml
+  $SCRIPTDIR/create-secrets.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_path.secrets.sh
+  chmod +x $WORKDIR/$domain_path.secrets.sh
    
-        if [ "$configmap" = "true" ]; then
-          $SCRIPTDIR/create-model-configmap.sh -dry kubectl | grep dryrun | sed 's/dryrun://' \
-            > $WORKDIR/$domain_root/model-configmap.sh
-          chmod +x $WORKDIR/$domain_root/model-configmap.sh
-        fi
-
-      done
-    done
-  done
+  if [ "$configmap" = "true" ]; then
+    $SCRIPTDIR/create-model-configmap.sh -dry kubectl | grep dryrun | sed 's/dryrun://' \
+     > $WORKDIR/$domain_path.model-configmap.sh
+    chmod +x $WORKDIR/$domain_path.model-configmap.sh
+  fi
+fi
 done
+done
+done
+done
+done
+
+mkdir -p $MIISAMPLEDIR/domain-resources/JRF
+mkdir -p $MIISAMPLEDIR/domain-resources/WLS
+cp $WORKDIR/ingresses/*.yaml $MIISAMPLEDIR/ingresses
+cp $WORKDIR/domain-resources/JRF/mii*.yaml $MIISAMPLEDIR/domain-resources/JRF
+cp $WORKDIR/domain-resources/WLS/mii*.yaml $MIISAMPLEDIR/domain-resources/WLS
 
 echo "@@"
 echo "@@ ##############################################"

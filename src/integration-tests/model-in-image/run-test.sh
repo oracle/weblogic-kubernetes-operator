@@ -98,8 +98,10 @@ done
 # We check that WORKDIR ends in "model-in-image-sample-work-dir" as a safety feature.
 # (We're going to 'rm -fr' this directory, and its safer to do that without relying on env vars).
 
-if [ ! "$(basename $WORKDIR)" = "model-in-image-sample-work-dir" ]; then
-  trace "Error: This test requires WORKDIR to end in 'model-in-image-sample-work-dir'. WORKDIR='$WORKDIR'."
+bname=$(basename $WORKDIR)
+if [ ! "$bname" = "model-in-image-sample-work-dir" ] \
+   && [ ! "$bname" = "mii-sample" ] ; then
+  trace "Error: This test requires WORKDIR to end in 'mii-sample' or 'model-in-image-sample-work-dir'. WORKDIR='$WORKDIR'."
   exit 1
 fi
 
@@ -110,7 +112,11 @@ fi
 if [ "$DO_CLEAN" = "true" ]; then
   doCommand -c mkdir -p \$WORKDIR
   doCommand -c cd \$WORKDIR/..
-  doCommand -c rm -fr ./model-in-image-sample-work-dir
+  if [ "$bname" = "mii-sample" ]; then
+    doCommand -c rm -fr ./mii-sample
+  else
+    doCommand -c rm -fr ./model-in-image-sample-work-dir
+  fi
   doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
   doCommand -c mkdir -p \$WORKDIR
   doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR
@@ -191,7 +197,8 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
 
-  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
+  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
+  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
@@ -234,7 +241,8 @@ if [ "$DO_UPDATE" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
   doCommand  "\$WORKDIR/utils/patch-restart-version.sh $wait_parms"
 
-  doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
+  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
+  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
 
   # Cheat to speedup a subsequent roll/shutdown.
   [ ! "$DRY_RUN" = "true" ] && diefast
