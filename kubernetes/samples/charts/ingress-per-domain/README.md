@@ -19,6 +19,22 @@ $ helm install ingress-per-domain --name my-ingress --namespace my-domain-namesp
 ```
 The Ingress resource will be created in the same namespace as the WebLogic domain cluster.
 
+Sample `values.yaml` for the Nginx Ingress:
+```
+type: NGINX
+
+# WLS domain as backend to the load balancer
+wlsDomain:
+  domainUID: domain1
+  clusterName: cluster1
+  managedServerPort: 8001
+
+# Nginx specific values
+nginx:
+  # hostname used by host-routing
+  hostname: domain1.org
+```
+
 Sample `values.yaml` for the Traefik Ingress:
 ```
 type: TRAEFIK

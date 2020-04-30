@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -88,6 +89,40 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a pod is ready in a given namespace.
+   *
+   * @param namespace in which to check if the pod is ready
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if the pod is in the ready condition, false otherwise
+   * @throws ApiException when there is an error in querying the cluster
+   */
+  public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
+    boolean status = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
    * Checks if a pod exists in a given namespace and in Terminating state.
    * @param namespace in which to check for the pod
    * @param domainUid the label the pod is decorated with
@@ -112,7 +147,7 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a Operator pod running in a given namespace.
+   * Checks if an operator pod is running in a given namespace.
    * The method assumes the operator name to starts with weblogic-operator-
    * and decorated with label weblogic.operatorName:namespace
    * @param namespace in which to check for the pod existence
@@ -129,6 +164,32 @@ public class Kubernetes {
       logger.info("Pod doesn't exist");
     }
     return status;
+  }
+
+  /**
+   * Checks if a Nginx pod is running in the specified namespace.
+   * The method assumes that the Nginx pod name contains "nginx-ingress-controller".
+   *
+   * @param namespace in which to check if the Nginx pod is running
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException when there is an error in querying the cluster
+   */
+  public static boolean isNginxPodRunning(String namespace) throws ApiException {
+
+    return isPodRunning(namespace, null, "nginx-ingress-controller");
+  }
+
+  /**
+   * Check whether the Nginx pod is ready in the specified namespace.
+   * The method assumes that the Nginx pod name starts with "nginx-ingress-controller".
+   *
+   * @param namespace in which to check if the Nginx pod is ready
+   * @return true if the pod is in the ready state, false otherwise
+   * @throws ApiException when there is an error in querying the cluster
+   */
+  public static boolean isNginxPodReady(String namespace) throws ApiException {
+
+    return isPodReady(namespace, null, "nginx-ingress-controller");
   }
 
   /**
@@ -154,7 +215,7 @@ public class Kubernetes {
             Boolean.FALSE // Watch for changes to the described resources.
         );
     for (V1Pod item : v1PodList.getItems()) {
-      if (item.getMetadata().getName().startsWith(podName.trim())) {
+      if (item.getMetadata().getName().contains(podName.trim())) {
         logger.info("Pod Name :" + item.getMetadata().getName());
         logger.info("Pod Namespace :" + item.getMetadata().getNamespace());
         logger.info("Pod UID :" + item.getMetadata().getUid());

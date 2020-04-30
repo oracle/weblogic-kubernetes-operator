@@ -18,7 +18,9 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -1327,5 +1329,36 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
-  //------------------------
+  //------------------------ Ingress -------------------------------------------
+
+  /**
+   * List the ingresses in the namespace.
+   *
+   * @param namespace the namespace which contains the ingresses
+   * @return ExtensionsV1beta1IngressList list of the ingresses
+   * @throws ApiException if api call throws error
+   */
+  public static ExtensionsV1beta1IngressList listIngress(String namespace) throws ApiException {
+    ExtensionsV1beta1IngressList ingressList;
+    try {
+      ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
+      ingressList = apiInstance.listNamespacedIngress(
+          namespace, // namespace
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type \"BOOKMARK\".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          null, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | When specified with a watch call, shows changes that occur
+          // after that particular version of a resource.
+          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+          ALLOW_WATCH_BOOKMARKS // Boolean | Watch for changes to the described resources
+      );
+      return ingressList;
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+  }
 }
