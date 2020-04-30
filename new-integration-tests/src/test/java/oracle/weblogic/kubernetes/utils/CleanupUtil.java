@@ -41,7 +41,7 @@ public class CleanupUtil {
   /**
    * Cleanup Kubernetes artifacts in the namespaces used by the test class.
    *
-   * <p>Tries to gracefully delete the WebLogic domains and WebLogic Operator in the namespaces, if found.
+   * <p>Tries to gracefully delete any existing WebLogic domains and WebLogic Operator in the namespaces.
    * Then deletes everything in the namespaces.
    *
    * <p>Waits for the deletion task to be completed, for up to 10 minutes.
