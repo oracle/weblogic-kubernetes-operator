@@ -107,7 +107,7 @@ public class ItMonitoringExporter extends BaseTest {
    * This method gets called before every test. It creates the result/pv root directories
    * for the test. Creates the operator and domain if its not running.
    *
-   * @throws Exception exception if result/pv/operator/domain creation fails
+   * @throws Exception if result/pv/operator/domain creation fails
    */
   @BeforeEach
   public void prepare() throws Exception {
@@ -162,7 +162,7 @@ public class ItMonitoringExporter extends BaseTest {
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
       setupPv();
     }
-    if(!isPromGrafanaWebhookSqlInstalled) {
+    if (!isPromGrafanaWebhookSqlInstalled) {
       installPrometheusGrafanaWebHookMySqlCoordinator();
     }
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
@@ -418,7 +418,8 @@ public class ItMonitoringExporter extends BaseTest {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-    assertTrue(checkMetricsViaPrometheus(testappPrometheusSearchKey, "httpsessionreptestapp"));
+    assertTrue(checkMetricsViaPrometheus(testappPrometheusSearchKey, "httpsessionreptestapp"),
+        "prometheus does not contain the expected metrics for httpsessionreptestapp");
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethodName);
   }
@@ -709,7 +710,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to change monitoring exporter configuration with invalid username.
    *
-   * @throws Exception exception
+   * @throws Exception if the expected exception message does not match
    */
   private void test15_ChangeConfigInvalidUser() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -728,7 +729,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to change monitoring exporter configuration with invalid password.
    *
-   * @throws Exception exception
+   * @throws Exception if the expected exception message does not match
    */
   private void test16_ChangeConfigInvalidPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -746,7 +747,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to change monitoring exporter configuration with empty username.
    *
-   * @throws Exception if test fails
+   * @throws Exception if the expected exception message does not match
    */
   private void test17_ChangeConfigEmptyUser() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -765,7 +766,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to change monitoring exporter configuration with empty pass.
    *
-   * @throws Exception if test fails
+   * @throws Exception if the expected exception message does not match
    */
   private void test18_ChangeConfigEmptyPass() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
@@ -784,7 +785,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Install prometheus and grafana with latest version of chart.
    *
-   * @throws Exception if test fails
+   * @throws Exception if test fails to verify metrics
    */
   @Test
   @Order(3)
@@ -809,7 +810,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Test End to End example from MonitoringExporter github project.
    *
-   * @throws Exception if test fails
+   * @throws Exception if test fails to execute all of the steps or if the expected metrics does not match
    */
   @Test
   @Order(1)
