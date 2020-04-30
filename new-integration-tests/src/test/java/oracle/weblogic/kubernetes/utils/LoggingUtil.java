@@ -324,7 +324,7 @@ public class LoggingUtil {
   }
 
   // The io.kubernetes.client.Copy.copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
-  // API has a bug which leaves the i/o stream left open and copyDirectoryFromPod not to exit. As  a
+  // API has a bug which keeps the i/o stream open and copyDirectoryFromPod not to exit. As  a
   // temporary fix using a Thread to do the copy and discard it after a minute. The assumption here
   // is that the copying of persistsent volume will be done in a minute. If we feel that we need more
   // time for the copy to complete then we can increase the wait time.
