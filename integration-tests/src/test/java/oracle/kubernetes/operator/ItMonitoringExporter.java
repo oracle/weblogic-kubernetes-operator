@@ -58,9 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ItMonitoringExporter extends BaseTest {
 
-  private static int number = 5;
   private static Operator operator = null;
-
   private static Domain domain = null;
   private static String myhost = "";
   private static String metricsUrl = "";
@@ -81,14 +79,13 @@ public class ItMonitoringExporter extends BaseTest {
       "heap_free_current%7Bname%3D%22managed-server2%22%7D%5B15s%5D";
   private static String testappPrometheusSearchKey =
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22httpsessionreptestapp%22%7D%5B15s%5D";
-  String oprelease = "op" + number;
-  private int waitTime = 5;
   private static String testClassName;
   private static StringBuffer namespaceList;
   private static String domainNS1;
   private static String domainNS2;
   private static String currentDateTime;
   private static final String monitoringNS = "monitortestns";
+  private static boolean isPromGrafanaWebhookSqlInstalled = false;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -99,12 +96,11 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
-    if (FULLTEST) {
-      namespaceList = new StringBuffer();
-      testClassName = new Object() {
-      }.getClass().getEnclosingClass().getSimpleName();
-      initialize(APP_PROPS_FILE, testClassName);
-    }
+    Assumptions.assumeTrue(FULLTEST);
+    namespaceList = new StringBuffer();
+    testClassName = new Object() {
+    }.getClass().getEnclosingClass().getSimpleName();
+    initialize(APP_PROPS_FILE, testClassName);
   }
 
   /**
@@ -115,61 +111,61 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @BeforeEach
   public void prepare() throws Exception {
-    if (FULLTEST) {
-      if (operator == null) {
-        createResultAndPvDirs(testClassName);
-        wlsUser = BaseTest.getUsername();
-        wlsPassword = BaseTest.getPassword();
+    Assumptions.assumeTrue(FULLTEST);
+    if (operator == null) {
+      createResultAndPvDirs(testClassName);
+      wlsUser = BaseTest.getUsername();
+      wlsPassword = BaseTest.getPassword();
 
-        metricsUrl = exporterUrl + "metrics";
-        monitoringExporterDir = getResultDir() + "/monitoring";
-        monitoringExporterScriptDir = getResultDir() + "/scripts";
-        resourceExporterDir =
-            BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
-        configPath = resourceExporterDir;
-        monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-        LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
+      metricsUrl = exporterUrl + "metrics";
+      monitoringExporterDir = getResultDir() + "/monitoring";
+      monitoringExporterScriptDir = getResultDir() + "/scripts";
+      resourceExporterDir =
+          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
+      configPath = resourceExporterDir;
+      monitoringExporterEndToEndDir = monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if operator and domain are running, if not creating");
 
-        Map<String, Object> operatorMap =
-            createOperatorMap(getNewSuffixCount(), true, "monexp");
-        domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
-        domainNS2 = "monexp-domainns-" + getNewSuffixCount();
-        ((ArrayList<String>) operatorMap.get("domainNamespaces")).add(domainNS2);
-        operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
-        Assertions.assertNotNull(operator);
+      Map<String, Object> operatorMap =
+          createOperatorMap(getNewSuffixCount(), true, "monexp");
+      domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
+      domainNS2 = "monexp-domainns-" + getNewSuffixCount();
+      ((ArrayList<String>) operatorMap.get("domainNamespaces")).add(domainNS2);
+      operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.SELF_SIGNED);
+      Assertions.assertNotNull(operator);
 
-        namespaceList.append((String)operatorMap.get("namespace"));
-        namespaceList.append(" ").append(domainNS1).append(" ").append(domainNS2);
-      }
-      if (domain == null) {
-        Map<String, Object> wlstDomainMap = createDomainMap(getNewSuffixCount(), "monexp");
-        wlstDomainMap.put("namespace", domainNS1);
-        wlstDomainMap.put("domainUID", domainNS1);
-        wlstDomainMap.put("createDomainPyScript",
-            "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
-        domain = TestUtils.createDomain(wlstDomainMap);
-        domain.verifyDomainCreated();
-
-        myhost = domain.getHostNameForCurl();
-        exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
-        LoggerHelper.getLocal().log(Level.INFO, "LB_TYPE is set to: " + System.getenv("LB_TYPE"));
-        boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
-        if (isTraefik) {
-          LoggerHelper.getLocal().log(Level.INFO, "Upgrading Traefik");
-          upgradeTraefikHostName();
-        }
-        deployRunMonitoringExporter(domain, operator);
-
-        String testAppName = "httpsessionreptestapp";
-        String scriptName = "buildDeployAppInPod.sh";
-        domain.buildDeployJavaAppInPod(
-            testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-        setupPv();
-        installPrometheusGrafanaWebHookMySqlCoordinator();
-      }
-      domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
-
+      namespaceList.append((String)operatorMap.get("namespace"));
+      namespaceList.append(" ").append(domainNS1).append(" ").append(domainNS2);
     }
+    if (domain == null) {
+      Map<String, Object> wlstDomainMap = createDomainMap(getNewSuffixCount(), "monexp");
+      wlstDomainMap.put("namespace", domainNS1);
+      wlstDomainMap.put("domainUID", domainNS1);
+      wlstDomainMap.put("createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py");
+      domain = TestUtils.createDomain(wlstDomainMap);
+      domain.verifyDomainCreated();
+
+      myhost = domain.getHostNameForCurl();
+      exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
+      LoggerHelper.getLocal().log(Level.INFO, "LB_TYPE is set to: " + System.getenv("LB_TYPE"));
+      boolean isTraefik = (domain.getLoadBalancerName().equalsIgnoreCase("TRAEFIK"));
+      if (isTraefik) {
+        LoggerHelper.getLocal().log(Level.INFO, "Upgrading Traefik");
+        upgradeTraefikHostName();
+      }
+      deployRunMonitoringExporter(domain, operator);
+
+      String testAppName = "httpsessionreptestapp";
+      String scriptName = "buildDeployAppInPod.sh";
+      domain.buildDeployJavaAppInPod(
+          testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+      setupPv();
+    }
+    if(!isPromGrafanaWebhookSqlInstalled) {
+      installPrometheusGrafanaWebHookMySqlCoordinator();
+    }
+    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
   }
 
   /**
@@ -179,35 +175,35 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
-    if (FULLTEST) {
-      if (domain != null) {
-        domain.destroy();
-        TestUtils.deleteWeblogicDomainResources(domainNS1);
-        if (BaseTest.SHARED_CLUSTER) {
+    Assumptions.assumeTrue(QUICKTEST);
+    if (domain != null) {
+      domain.destroy();
+      TestUtils.deleteWeblogicDomainResources(domainNS1);
+      if (BaseTest.SHARED_CLUSTER) {
 
-          String image = System.getenv("REPO_REGISTRY")
-              + "/weblogick8s/"
-              + domainNS2
-              + "-image:" + currentDateTime;
-          String cmd = "docker rmi -f " + image;
-          TestUtils.execOrAbortProcess(cmd, true);
-        }
-        String cmd = "docker rmi -f " + domainNS2 + "-image:" + currentDateTime;
+        String image = System.getenv("REPO_REGISTRY")
+            + "/weblogick8s/"
+            + domainNS2
+            + "-image:" + currentDateTime;
+        String cmd = "docker rmi -f " + image;
         TestUtils.execOrAbortProcess(cmd, true);
       }
-      if (operator != null) {
-        operator.destroy();
-      }
-      try {
-        uninstallWebHookPrometheusGrafanaMySql();
-      } catch (Exception ex) {
-        LoggerHelper.getLocal().log(Level.INFO,
-            "Exception caught while uninstalling webhook/prometheus/Grafana/Mysql " + ex.getMessage());
-      }
-
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
-      LoggerHelper.getLocal().log(Level.INFO,"SUCCESS");
+      String cmd = "docker rmi -f " + domainNS2 + "-image:" + currentDateTime;
+      TestUtils.execOrAbortProcess(cmd, true);
     }
+    if (operator != null) {
+      operator.destroy();
+    }
+    try {
+      uninstallWebHookPrometheusGrafanaMySql();
+    } catch (Exception ex) {
+      LoggerHelper.getLocal().log(Level.INFO,
+          "Exception caught while uninstalling webhook/prometheus/Grafana/Mysql " + ex.getMessage());
+    }
+
+    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
+    LoggerHelper.getLocal().log(Level.INFO,"SUCCESS");
+
   }
 
   /**
@@ -261,8 +257,18 @@ public class ItMonitoringExporter extends BaseTest {
             + " | tee "
             + outLogFile;
     ExecResult result = TestUtils.execOrAbortProcess(crdCmd, true);
+    if (result.exitValue() != 0) {
+      throw new Exception(
+          "FAILURE: Command "
+              + crdCmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
+    }
     assertNotNull(result, "Result of execution is null");
     LoggerHelper.getLocal().log(Level.INFO, "Result output from  the command " + crdCmd + " : " + result.stdout());
+    assertFalse(result.stdout().contains("returned: 1"), "script failed");
   }
 
   /**
@@ -1015,6 +1021,12 @@ public class ItMonitoringExporter extends BaseTest {
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
+        monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "pv-prometheus", "pv-testprometheus");
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "pv-alert", "pv-testalert");
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "pv-grafana", "pv-testgrafana");
+    replaceStringInFile(
         monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "monitoring", monitoringNS);
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "monitoring", monitoringNS);
@@ -1177,6 +1189,7 @@ public class ItMonitoringExporter extends BaseTest {
     //update with current Exporter version
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh",
         "1.1.1", MONITORING_EXPORTER_VERSION);
+    isPromGrafanaWebhookSqlInstalled = true;
 
   }
 
