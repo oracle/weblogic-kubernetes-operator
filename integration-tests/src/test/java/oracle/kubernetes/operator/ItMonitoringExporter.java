@@ -157,12 +157,13 @@ public class ItMonitoringExporter extends BaseTest {
       deployRunMonitoringExporter(domain, operator);
       String testAppName = "httpsessionreptestapp";
       String scriptName = "buildDeployAppInPod.sh";
+      setupPv();
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
     }
     if (!isPromGrafanaWebhookSqlInstalled) {
-      setupPv();
       installPrometheusGrafanaWebHookMySqlCoordinator();
+      isPromGrafanaWebhookSqlInstalled = true;
     }
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
   }
@@ -1177,8 +1178,6 @@ public class ItMonitoringExporter extends BaseTest {
     //update with current Exporter version
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh",
         "1.1.1", MONITORING_EXPORTER_VERSION);
-    isPromGrafanaWebhookSqlInstalled = true;
-
   }
 
   static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
