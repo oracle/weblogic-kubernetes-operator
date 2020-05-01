@@ -430,14 +430,16 @@ function checkWDTVersion() {
       trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
       "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
       "in the image is ${wdt_version}, you can create another image with an updated version of the WebLogic Deploy " \
-      "Tool and redeploy the domain again."
+      "Tool and redeploy the domain again. To bypass this check, set environment variable " \
+      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
       exitOrLoop
     fi
   else
       trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
       "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
-      "in the image cannot be determined, you can create another image with an updated version of the WebLogic " \
-      "Deploy Tool and redeploy the domain again."
+      "in the image cannot be determined, you can create another image with an updated version of the WebLogic Deploy" \
+      " Tool and redeploy the domain again. To bypass this check, set environment variable " \
+      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
     exitOrLoop
   fi
 
