@@ -145,7 +145,7 @@ public class Nginx {
   public static List<String> getIngressList(String namespace) throws ApiException {
 
     List<String> ingressNames = new ArrayList<>();
-    ExtensionsV1beta1IngressList ingressList = Kubernetes.listIngress(namespace);
+    ExtensionsV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
     List<ExtensionsV1beta1Ingress> listOfIngress = ingressList.getItems();
 
     listOfIngress.forEach(ingress -> {
