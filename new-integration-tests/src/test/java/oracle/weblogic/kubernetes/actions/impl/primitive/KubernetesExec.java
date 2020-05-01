@@ -29,27 +29,54 @@ public class KubernetesExec {
   // If true, stdin is a TTY (only applies if stdin is true)
   private boolean stdinIsTty;
 
+  /**
+   * Set the API client for subsequent exec commands.
+   *
+   * @param apiClient the API client to use to exec commands
+   * @return a KubernetesExec instance for executing commands using a Kubernetes api client
+   */
   public KubernetesExec apiClient(ApiClient apiClient) {
     this.apiClient = apiClient;
     return this;
   }
 
+  /**
+   * Set the Kubernetes pod where the command is to be run.
+   *
+   * @param pod the pod where the command is to be run
+   * @return a KubernetesExec instance for executing commands in a pod
+   */
   public KubernetesExec pod(V1Pod pod) {
     this.pod = pod;
     return this;
   }
 
-
+  /**
+   * Set the name of the container of the pod where the command is to be run.
+   *
+   * @param containerName the name of the container in the pod where the command is to be run.
+   * @return a KubernetesExec instance for executing commands in a container of a pod
+   */
   public KubernetesExec containerName(String containerName) {
     this.containerName = containerName;
     return this;
   }
 
+  /**
+   * Enable passing a stdin stream into the container of pod where the command is to be run.
+   *
+   * @return a KubernetesExec instance where a stdin stream will be passed to the container
+   */
   public KubernetesExec passStdinAsStream() {
     this.passStdinAsStream = true;
     return this;
   }
 
+  /**
+   * Enable the stdin input stream as a TTY terminal.
+   *
+   * @return a KubernetesExec instance where a stdin stream will be a TTY terminal
+   */
   public KubernetesExec stdinIsTty() {
     this.stdinIsTty = true;
     return this;
