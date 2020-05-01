@@ -527,6 +527,12 @@ class ItSimpleNginxValidation implements LoggedTest {
         .nodePortsHttp(nodeporthttp)
         .nodePortsHttps(nodeporthttps);
 
+    // DEBUG: run docker pull docker pull quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0
+    String cmd = "docker pull quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0";
+    logger.info("DEBUG: running command: " + cmd);
+    logger.info("stdout=" +  assertDoesNotThrow(() -> ExecCommand.exec(cmd).stdout()));
+    logger.info("stderr=" + assertDoesNotThrow(() -> ExecCommand.exec(cmd).stderr()));
+
     // install Nginx
     assertThat(installNginx(nginxParams))
         .as("Test installNginx returns true")
@@ -543,10 +549,10 @@ class ItSimpleNginxValidation implements LoggedTest {
         NGINX_RELEASE_NAME, nginxNamespace);
 
     // DEBUG: check the nginx docker image exists
-    String cmd = "docker images";
+    String cmd2 = "docker images";
     logger.info("DEBUG: running command: " + cmd);
-    logger.info("stdout=" +  assertDoesNotThrow(() -> ExecCommand.exec(cmd).stdout()));
-    logger.info("stderr=" + assertDoesNotThrow(() -> ExecCommand.exec(cmd).stderr()));
+    logger.info("stdout=" +  assertDoesNotThrow(() -> ExecCommand.exec(cmd2).stdout()));
+    logger.info("stderr=" + assertDoesNotThrow(() -> ExecCommand.exec(cmd2).stderr()));
     //assertTrue(doesImageExist("nginx-ingress-controller"),
     //    String.format("Image nginx-ingress-controller does not exist"));
 
