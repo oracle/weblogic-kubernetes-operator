@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -542,8 +543,12 @@ class ItSimpleNginxValidation implements LoggedTest {
         NGINX_RELEASE_NAME, nginxNamespace);
 
     // DEBUG: check the nginx docker image exists
-    assertTrue(doesImageExist("nginx-ingress-controller"),
-        String.format("Image nginx-ingress-controller does not exist"));
+    String cmd = "docker images";
+    logger.info("DEBUG: running command: " + cmd);
+    logger.info("stdout=" +  assertDoesNotThrow(() -> ExecCommand.exec(cmd).stdout()));
+    logger.info("stderr=" + assertDoesNotThrow(() -> ExecCommand.exec(cmd).stderr()));
+    //assertTrue(doesImageExist("nginx-ingress-controller"),
+    //    String.format("Image nginx-ingress-controller does not exist"));
 
     // first wait 5 seconds, then check if the Nginx pod is ready.
     with().pollDelay(5, SECONDS)
