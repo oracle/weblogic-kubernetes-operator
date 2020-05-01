@@ -201,17 +201,17 @@ function updateDomainHome {
   sleep 30
   max=30
   count=0
-  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
-  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domainupdate.yaml"
+  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt"
+  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
   while [ $? -eq 1 -a $count -lt $max ]; do
     sleep 5
-    #kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
+    #kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt"
     count=`expr $count + 1`
-    kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domainupdate.yaml"
+    kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
   done
-  kubectl cp $POD_NAME:/shared/wdt/domainupdate.yaml ${domainOutputDir}/domain.yaml
+  kubectl cp $POD_NAME:${domainPVMountPath}/wdt/domainupdate.yaml ${domainOutputDir}/domain.yaml
   touch donee
-  kubectl cp donee $POD_NAME:/shared/wdt/
+  kubectl cp donee $POD_NAME:${domainPVMountPath}/wdt/
   rm -rf donee
 
   echo "Waiting for the job to complete..."

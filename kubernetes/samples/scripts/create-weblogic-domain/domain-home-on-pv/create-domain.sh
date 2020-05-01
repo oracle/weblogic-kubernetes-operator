@@ -204,17 +204,17 @@ function createDomainHome {
   sleep 30
   max=30
   count=0
-  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
-  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domaincreate.yaml"
+  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt"
+  kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
   while [ $? -eq 1 -a $count -lt $max ]; do
     sleep 5
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt'
+    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt"
     count=`expr $count + 1`
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c 'ls -l /shared/wdt' | grep "domaincreate.yaml"
+    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
   done
-  kubectl cp $POD_NAME:/shared/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
+  kubectl cp $POD_NAME:${domainPVMountPath}/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
   touch donee
-  kubectl cp donee $POD_NAME:/shared/wdt/
+  kubectl cp donee $POD_NAME:${domainPVMountPath}/wdt/
   rm -rf donee
 
   echo "Waiting for the job to complete..."

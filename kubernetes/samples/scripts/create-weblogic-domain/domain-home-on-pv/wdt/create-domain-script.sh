@@ -73,7 +73,8 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
-WDT_DIR=${WDT_DIR:-/shared/wdt}
+#WDT_DIR=${WDT_DIR:-/shared/wdt}
+WDT_DIR=${DOMAIN_ROOT_DIR}/wdt
 WDT_VERSION=${WDT_VERSION:-1.7.2}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
