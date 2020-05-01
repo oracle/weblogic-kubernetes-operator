@@ -75,7 +75,7 @@ This sample demonstrates two Model in Image use cases:
 
 #### Sample directory structure
 
-Take a moment to familiarize yourself with the samples directory structure. Don't worry if you don't understand the meaning of all of the terms; the sample will describe them as it steps you through each use case.
+Take a moment to familiarize yourself with the sample's directory structure. Don't worry if you don't understand the meaning of all of the terms; the sample will describe them as it steps you through each use case.
 
 Location | Description |
 ------------- | ----------- |
@@ -521,7 +521,13 @@ In this use case, we set up an initial WebLogic domain. This involves:
 
 After the domain resource is deployed, the WebLogic operator will start an 'introspector job' that converts your models into a WebLogic configuration, and then the operator will pass this configuration to each WebLogic Server in the domain.
 
-> **Note:** If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
+{{% notice note %}}
+Perform the steps in [Prerequisites for all domain types](#prerequisites-for-all-domain-types) before performing the steps in this use case.
+{{% /notice %}}
+
+{{% notice note %}}
+If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
+{{% /notice %}}
 
 #### Image creation - Introduction
 
@@ -540,9 +546,10 @@ Let's walk through the steps for creating the image `model-in-image:WLS-v1`:
 
 The sample includes a predefined archive directory in `/tmp/archives/archive-v1` that we will use to create an archive ZIP file for the image.
 
-The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an 'exploded' sample JSP web application in the directory, `myapp-v1`. Two useful aspects to remember about WDT archives are:
-  - They can contain multiple applications, libraries, and other components.
-  - They have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md) which always has `wlsdeploy` as the top directory.
+The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an 'exploded' sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
+  - A model image can contain multiple WDT archives.
+  - WDT archives themselves can contain multiple applications, libraries, and other components.
+  - WDT archives have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md) which always has `wlsdeploy` as the top directory.
 
 {{%expand "Let's take a moment to look at the web application source. Click here to see the JSP code in the archive." %}}
 
@@ -758,16 +765,12 @@ A Model in Image image can contain multiple properties files, archive ZIP files,
 
 At this point, we have staged all of the files needed for image `model-in-image:WLS-v1`, they include:
 
-{{%expand "Click here to expand." %}}
-
   - `/tmp/mii-sample/model-images/weblogic-deploy-tooling.zip`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
 
 If you don't see the `weblogic-deploy-tooling.zip` file, then it means that you missed a step in the prerequisites.
-
-{{% /expand%}}
 
 Now let's use the Image Tool to create an image named `model-in-image:WLS-v1` that's layered on a base WebLogic image. We've already set up this tool during the prerequisite steps at the beginning of this sample.
 
@@ -777,7 +780,7 @@ Run the following commands to create the model image and verify that it worked:
 
   ```
   cd /tmp/mii-sample/model-images
-  /tmp/mii-sample/model-images/imagetool/bin/imagetool.sh update \
+  ./imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
     --wdtModel /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml \
@@ -786,6 +789,8 @@ Run the following commands to create the model image and verify that it worked:
     --wdtModelOnly \
     --wdtDomainType WLS
   ```
+
+If you don't see the `imagetool` directory, then it means that you missed a step in the prerequisites.
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
@@ -881,9 +886,9 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   {{% /expand%}}
 
-  If you're following the `JRF` path through the sample, then you also need to deploy the secrets referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
+  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
 
-  If you're domain type is `JRF`, run the following commands to deploy its required secrets:
+  If you're domain type is `JRF`, run the following commands to deploy its additional required secrets:
 
   {{%expand "Click here to expand." %}}
 
@@ -1396,6 +1401,10 @@ This use case demonstrates dynamically adding a data source to your running doma
 
 For a detailed discussion of model updates, see [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user guide.
 
+{{% notice note %}}
+Perform the steps in [Prerequisites for all domain types](#prerequisites-for-all-domain-types) before performing the steps in this use case.
+{{% /notice %}}
+
 {{% notice warning %}}
 The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update, before attempting a dynamic update in production.
 {{% /notice %}}
@@ -1486,14 +1495,18 @@ Let's go through the steps:
 
     We're ready to deploy the data source!
 
-   Run the following command:
+   Run the following commands:
 
    {{%expand "Click here to expand." %}}
+
    ```
    kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map --ignore-not-found
    kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map --from-file=/tmp/mii-sample/model-configmaps/datasource
    kubectl -n sample-domain1-ns label  configmap sample-domain1-wdt-config-map weblogic.domainUID=sample-domain1
    ```
+
+   - If you've created your own datasource file, then substitute the file name in the `--from-file=` parameter. 
+     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the configmap, or it can reference a directory, in which case it populates the configmap with all of the files in the designated directory.
 
    - About deleting and recreating the configmap:
      - We delete a configmap before creating it, otherwise the create command will fail if the configmap already exists.
@@ -1893,6 +1906,8 @@ The login credentials are `weblogic/welcome1`.
    This deletes the domain and any related resources that are labeled with the domain UID `sample-domain1` and `sample-domain2`.
 
    It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
+
+   > Note: When you delete a domain, the operator should detect your domain deletion and shutdown its pods. Please wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can use the `kubectl get pods -n sample-domain1-ns --watch` command to watch the pods exit (ctrl-c to exit).
 
 2. If you set up the Traefik load balancer:
 
