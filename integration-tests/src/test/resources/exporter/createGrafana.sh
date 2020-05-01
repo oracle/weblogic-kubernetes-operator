@@ -31,7 +31,7 @@ function checkPod() {
 
 helm repo update
 export appname=grafana
-for p in `kubectl get po -l app=$appname -o name -n $CHARTNS `;do echo deleting $p; kubectl delete ${p} -n $CHARTNS --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app.kubernetes.io/name=$appname -o name -n $CHARTNS `;do echo deleting $p; kubectl delete ${p} -n $CHARTNS --force --grace-period=0 --ignore-not-found; done
 
 kubectl --namespace $CHARTNS create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
 sed -i "s/monitoring/${CHARTNS}/g" ${monitoringExporterEndToEndDir}/grafana/persistence.yaml

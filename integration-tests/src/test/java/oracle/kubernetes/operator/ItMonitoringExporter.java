@@ -360,13 +360,16 @@ public class ItMonitoringExporter extends BaseTest {
 
 
     StringBuffer cmd = new StringBuffer("helm upgrade ");
-    cmd.append("--reuse-values ")
+    cmd.append(" traefik-ingress-" + domainNS1)
+        .append(" " + chartDir)
+        .append(" --debug ")
+        .append("--namespace " + domainNS1)
+        .append(" --reuse-values ")
         .append("--set ")
         .append("\"")
-        .append("traefik.hostname=")
+        .append("kubernetes.namespaces=")
         .append("\"")
-        .append(" traefik-ingress-" + domainNS1 + " " + chartDir);
-    cmd.append(" -n " + domainNS1);
+        .append(" --wait");
 
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     TestUtils.execOrAbortProcess(cmd.toString());
@@ -1198,7 +1201,7 @@ public class ItMonitoringExporter extends BaseTest {
     resultStatus = ExecCommand.exec(crdCmd);
     LoggerHelper.getLocal().log(Level.INFO, "Status of the pods " + resultStatus.stdout());
 
-    String podName = getPodName("app=grafana", monitoringNS);
+    String podName = getPodName("app.kubernetes.io/name", monitoringNS);
     assertNotNull(podName, "Grafana pod was not created");
     TestUtils.checkPodReady(podName, monitoringNS);
 

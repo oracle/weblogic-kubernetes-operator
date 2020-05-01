@@ -27,7 +27,7 @@ kubectl -n monitortestns delete secret grafana-secret --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml --ignore-not-found
 
 export appname=grafana
-for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitortestns --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app.kubernetes.io/name=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitortestns --force --grace-period=0 --ignore-not-found; done
 
 kubectl delete -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml --ignore-not-found
