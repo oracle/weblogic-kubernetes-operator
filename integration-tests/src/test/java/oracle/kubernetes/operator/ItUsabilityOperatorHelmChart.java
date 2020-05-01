@@ -653,7 +653,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       LoggerHelper.getLocal().log(Level.INFO, "Deleting operator to check that domain functionality is not effected");
       operator.destroy();
       operator = null;
-      domain.testWlsLivenessProbe();
+      //domain.testWlsLivenessProbe();
+      //Check domain is still up and running
+      domain.verifyDomainCreated();
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null) {

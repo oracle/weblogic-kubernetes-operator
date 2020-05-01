@@ -44,6 +44,7 @@ public class ItMultipleClusters extends BaseTest {
   private static String testClassName;
   private static String domainNS1;
   private static StringBuffer namespaceList;
+  private int retriesToResolveServiceName = 15;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -142,7 +143,7 @@ public class ItMultipleClusters extends BaseTest {
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      String[] pods = {
+      /* String[] pods = {
           DOMAINUID + "-" + domain.getAdminServerName(),
           DOMAINUID + "-managed-server",
           DOMAINUID + "-managed-server1",
@@ -150,7 +151,21 @@ public class ItMultipleClusters extends BaseTest {
           DOMAINUID + "-new-managed-server1",
           DOMAINUID + "-new-managed-server2",
       };
-      verifyServersStatus(domain, pods);
+      verifyServersStatus(domain, pods); */
+      String cluster2PodName1 = DOMAINUID + "-new-managed-server1";
+      String cluster2PodName2 = DOMAINUID + "-new-managed-server2";
+
+      TestUtils.checkPodReady(cluster2PodName1, domainNS1);
+      TestUtils.checkPodReady(cluster2PodName2, domainNS1);
+
+      TestUtils.checkServiceCreated(cluster2PodName1, domainNS1);
+      TestUtils.checkServiceCreated(cluster2PodName2, domainNS1);
+
+      TestUtils.resolveServiceName(cluster2PodName1,
+          DOMAINUID + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+      TestUtils.resolveServiceName(cluster2PodName2,
+          DOMAINUID + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+
       testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
@@ -187,7 +202,7 @@ public class ItMultipleClusters extends BaseTest {
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      String[] pods = {
+      /* String[] pods = {
           domainuid + "-" + domain.getAdminServerName(),
           domainuid + "-managed-server",
           domainuid + "-managed-server1",
@@ -195,7 +210,21 @@ public class ItMultipleClusters extends BaseTest {
           domainuid + "-new-managed-server1",
           domainuid + "-new-managed-server2",
       };
-      verifyServersStatus(domain, pods);
+      verifyServersStatus(domain, pods); */
+
+      String cluster2PodName1 = DOMAINUID + "-new-managed-server1";
+      String cluster2PodName2 = DOMAINUID + "-new-managed-server2";
+
+      TestUtils.checkPodReady(cluster2PodName1, domainNS1);
+      TestUtils.checkPodReady(cluster2PodName2, domainNS1);
+
+      TestUtils.checkServiceCreated(cluster2PodName1, domainNS1);
+      TestUtils.checkServiceCreated(cluster2PodName2, domainNS1);
+
+      TestUtils.resolveServiceName(cluster2PodName1,
+          DOMAINUID + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+      TestUtils.resolveServiceName(cluster2PodName2,
+          DOMAINUID + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
 
       testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
@@ -217,7 +246,7 @@ public class ItMultipleClusters extends BaseTest {
   @Test
   public void testCreateDomainTwoClusterWdtInImage() throws Exception {
     Assumptions.assumeTrue(FULLTEST);
-    String domainuid = "twoclusterdomainwdt";
+    String domainUid = "twoclusterdomainwdt";
     String testMethodName = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -227,7 +256,7 @@ public class ItMultipleClusters extends BaseTest {
     try {
       Map<String, Object> domainMap =
           createDomainInImageMap(getNewSuffixCount(), true, testClassName);
-      domainMap.put("domainUID", domainuid);
+      domainMap.put("domainUID", domainUid);
       domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put("namespace", domainNS1);
       domainMap.put(
@@ -236,14 +265,28 @@ public class ItMultipleClusters extends BaseTest {
               + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      String[] pods = {
-          domainuid + "-" + domain.getAdminServerName(),
-          domainuid + "-managed-server1",
-          domainuid + "-managed-server2",
-          domainuid + "-managed-server-21",
-          domainuid + "-managed-server-22",
+      /* String[] pods = {
+          domainUid + "-" + domain.getAdminServerName(),
+          domainUid + "-managed-server1",
+          domainUid + "-managed-server2",
+          domainUid + "-managed-server-21",
+          domainUid + "-managed-server-22",
       };
-      verifyServersStatus(domain, pods);
+      verifyServersStatus(domain, pods); */
+      String cluster2PodName1 = domainUid + "-managed-server-21";
+      String cluster2PodName2 = domainUid + "-managed-server-22";
+
+      TestUtils.checkPodReady(cluster2PodName1, domainNS1);
+      TestUtils.checkPodReady(cluster2PodName2, domainNS1);
+
+      TestUtils.checkServiceCreated(cluster2PodName1, domainNS1);
+      TestUtils.checkServiceCreated(cluster2PodName2, domainNS1);
+
+      TestUtils.resolveServiceName(cluster2PodName1,
+          domainUid + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+      TestUtils.resolveServiceName(cluster2PodName2,
+          domainUid + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+
       testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;

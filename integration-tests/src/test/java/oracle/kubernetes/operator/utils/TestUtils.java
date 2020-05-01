@@ -228,6 +228,51 @@ public class TestUtils {
     }
   }
 
+  /**
+   * Resole a servive name inside a pod.
+   * @param serviceName service name to resolve
+   * @param podName name of the pod
+   * @param namespace namespace of the pod
+   * @throws Exception if a service name can not be resolved
+   */
+  public static void resolveServiceName(
+      String serviceName, String podName, String namespace, int numberOfRetries)
+      throws Exception {
+
+    String appLocationInPod = BaseTest.getAppLocationInPod();
+    String scriptLocationInPod = appLocationInPod + "/resolveServiceName.py";
+
+    // copy py script to check if managed service name can be resolved in admin pod
+    TestUtils.kubectlexec(podName, namespace," -- mkdir -p " + appLocationInPod);
+
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/resolveServiceName.py",
+        scriptLocationInPod,
+        podName,
+        namespace);
+
+    TestUtils.kubectlexec(podName, namespace, " chmod +x " + scriptLocationInPod);
+    int i = 0;
+    while (i < numberOfRetries) {
+      ExecResult result = TestUtils.kubectlexecNoCheck(podName, namespace,
+          " python " + scriptLocationInPod + " " + serviceName);
+      if (result.exitValue() != 0 && !result.stdout().contains(serviceName)) {
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Could not resolve the service name " + serviceName + " in pod " + podName + " namespace " + namespace);
+        LoggerHelper.getLocal().log(Level.INFO, "Command stdout = " + result.stdout() + " stderr = " + result.stderr());
+        if (i == (numberOfRetries - 1)) {
+          throw new RuntimeException(
+              "FAILURE: Could not resolve service name " + serviceName
+                  + " in pod " + podName + " namespace " + namespace);
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Service name " + serviceName + " resolved");
+        break;
+      }
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
+  }
 
   /**
    * Creates input file.
@@ -1374,7 +1419,7 @@ public class TestUtils {
         .append("'");
 
     LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.execOrAbortProcess(cmdKubectlSh.toString());
+    TestUtils.execOrAbortProcess(cmdKubectlSh.toString(), true);
   }
 
   /**
