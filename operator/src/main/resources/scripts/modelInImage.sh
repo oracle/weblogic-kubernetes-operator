@@ -428,15 +428,15 @@ function checkWDTVersion() {
     versionGE ${wdt_version} ${WDT_MINIMUM_VERSION}
     if [ $? != "0" ] ; then
       trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
-      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the Weblogic Deploy Tool installed " \
-      "in the image is ${wdt_version}, you can create another image with an updated version of the Weblogic Deploy " \
+      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "in the image is ${wdt_version}, you can create another image with an updated version of the WebLogic Deploy " \
       "Tool and redeploy the domain again."
       exitOrLoop
     fi
   else
       trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
-      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the Weblogic Deploy Tool installed " \
-      "in the image cannot be determined, you can create another image with an updated version of the Weblogic " \
+      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "in the image cannot be determined, you can create another image with an updated version of the WebLogic " \
       "Deploy Tool and redeploy the domain again."
     exitOrLoop
   fi
