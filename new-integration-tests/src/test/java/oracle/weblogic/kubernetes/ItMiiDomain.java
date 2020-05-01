@@ -626,7 +626,7 @@ class ItMiiDomain implements LoggedTest {
     
       if (accountingThread != null) {
         try {
-          accountingThread.join(50);
+          accountingThread.join(1000);
         } catch (InterruptedException ie) {
           // do nothing
         }
@@ -1254,16 +1254,18 @@ class ItMiiDomain implements LoggedTest {
       String internalPort,
       String appPath
   ) {
-    boolean v2AppAvailable = false;
+    boolean v2AppAvailable = true;
     // ping the app periodically to check its availability across the duration
     // of patching the domain with newer version of the app.
     do {
-      v2AppAvailable = appAccessibleInPod(
+      for (int i = 1; i <= replicaCount; i++) {
+        v2AppAvailable = v2AppAvailable && appAccessibleInPod(
                             namespace,
                             managedServerPrefix + replicaCount, 
                             internalPort, 
                             appPath, 
-                            APP_RESPONSE_V2 + replicaCount);
+                            APP_RESPONSE_V2 + i);
+      }
 
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {

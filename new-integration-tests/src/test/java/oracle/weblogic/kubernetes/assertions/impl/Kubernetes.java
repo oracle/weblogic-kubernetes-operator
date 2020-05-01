@@ -191,7 +191,7 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().startsWith(podName.trim())) {
-        logger.info(String.format("Pod Name :%s, Pod Namespace :%s, Pod UID :%s, Pod Status :%s",
+        logger.fine(String.format("Pod Name :%s, Pod Namespace :%s, Pod UID :%s, Pod Status :%s",
             item.getMetadata().getName(),
             item.getMetadata().getNamespace(),
             item.getMetadata().getUid(),
