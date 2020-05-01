@@ -228,7 +228,7 @@ public class DomainStatusUpdater {
     }
 
     public Step createRetry(DomainStatusUpdaterContext context, Step next) {
-      return Step.chain(createDomainRefreshStep(context), updaterStep, next);
+      return Step.chain(createDomainRefreshStep(context), updaterStep);
     }
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {
