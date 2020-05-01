@@ -40,6 +40,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -79,6 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -99,9 +101,11 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -122,6 +126,8 @@ class ItMiiDomain implements LoggedTest {
   private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
   private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
   private static final String APP_RESPONSE_V3 = "How are you doing!";
+
+  private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -317,6 +323,9 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    logger.info("Check admin server status by calling read state command");
+    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -1255,7 +1264,7 @@ class ItMiiDomain implements LoggedTest {
       String image 
   ) {
    
-    // check if the app is accessible inside of a server pod
+    // check if the domain is patched with the new image
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
@@ -1355,5 +1364,17 @@ class ItMiiDomain implements LoggedTest {
       }
     }
     return true;
+  }
+
+  private void checkServerReadyStatusByExec(String podName, String namespace) {
+    ExecResult execResult = assertDoesNotThrow(
+        () -> execCommand(namespace, podName, null, true, READ_STATE_COMMAND));
+    if (execResult.exitValue() == 0) {
+      logger.info("execResult: " + execResult);
+      assertEquals("RUNNING", execResult.stdout(),
+          "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
+    } else {
+      fail("Ready command failed with exit status code: " + execResult.exitValue());
+    }
   }
 }

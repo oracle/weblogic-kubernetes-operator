@@ -142,7 +142,7 @@ public class ItServerDiscovery extends BaseTest {
 
     String cmd = "kubectl apply -f " + testDomainYamlFile;
     LoggerHelper.getLocal().log(Level.INFO, "Start a new managed server, managed-server3 using command:\n" + cmd);
-    TestUtils.exec(cmd);
+    TestUtils.execOrAbortProcess(cmd);
 
     LoggerHelper.getLocal().log(Level.INFO, "Restart the Operator");
     operator.startUsingReplicas();
@@ -185,7 +185,7 @@ public class ItServerDiscovery extends BaseTest {
     // Stop admin server
     String cmd = "kubectl delete po/" + adminServerPodName + " -n " + domainNS;
     LoggerHelper.getLocal().log(Level.INFO, "Stop admin server <" + adminServerPodName + "> using command:\n" + cmd);
-    TestUtils.exec(cmd);
+    TestUtils.execOrAbortProcess(cmd);
 
     LoggerHelper.getLocal().log(Level.INFO, "Check if admin pod <" + adminServerPodName + "> is deleted");
     TestUtils.checkPodDeleted(adminServerPodName, domainNS);
@@ -197,7 +197,7 @@ public class ItServerDiscovery extends BaseTest {
       String msPodName = domainUid + "-" + managedServerNameBase + i;
       cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
       LoggerHelper.getLocal().log(Level.INFO, "Stop managed server <" + msPodName + "> using command:\n" + cmd);
-      TestUtils.exec(cmd);
+      TestUtils.execOrAbortProcess(cmd);
 
       LoggerHelper.getLocal().log(Level.INFO, "Checking if ms pod <" + msPodName + "> is deleted");
       TestUtils.checkPodDeleted(msPodName, domainNS);

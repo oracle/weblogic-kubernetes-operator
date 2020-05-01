@@ -191,10 +191,11 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().startsWith(podName.trim())) {
-        logger.info("Pod Name :" + item.getMetadata().getName());
-        logger.info("Pod Namespace :" + item.getMetadata().getNamespace());
-        logger.info("Pod UID :" + item.getMetadata().getUid());
-        logger.info("Pod Status :" + item.getStatus().getPhase());
+        logger.info(String.format("Pod Name :%s, Pod Namespace :%s, Pod UID :%s, Pod Status :%s",
+            item.getMetadata().getName(),
+            item.getMetadata().getNamespace(),
+            item.getMetadata().getUid(),
+            item.getStatus().getPhase()));
         return item;
       }
     }

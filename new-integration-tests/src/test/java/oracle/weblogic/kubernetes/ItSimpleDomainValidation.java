@@ -81,7 +81,7 @@ class ItSimpleDomainValidation implements LoggedTest {
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
             .storageClassName(domainUid + "-weblogic-domain-storage-class")
-            .volumeName(domainUid + "-weblogic-pv")
+            .volumeName(pvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("10Gi"))))
         .metadata(new V1ObjectMetaBuilder()

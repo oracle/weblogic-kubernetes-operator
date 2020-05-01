@@ -246,7 +246,7 @@ public class ItPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
     testCompletedSuccessfully = false;
 
-    TestUtils.exec("docker images", true);
+    TestUtils.execOrAbortProcess("docker images", true);
     LoggerHelper.getLocal().log(Level.INFO,
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
@@ -416,7 +416,7 @@ public class ItPodsRestart extends BaseTest {
 
       // Apply the new yaml to update the domain
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      ExecResult exec = TestUtils.execOrAbortProcess("kubectl apply -f " + path.toString());
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
 
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the admin server pod is recreated");
@@ -424,7 +424,7 @@ public class ItPodsRestart extends BaseTest {
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
-      TestUtils.exec("kubectl apply -f " + originalYaml);
+      TestUtils.execOrAbortProcess("kubectl apply -f " + originalYaml);
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the admin server pod is recreated");
       domain.verifyAdminServerRestarted();
     }
@@ -464,14 +464,14 @@ public class ItPodsRestart extends BaseTest {
 
       // Apply the new yaml to update the domain crd
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      ExecResult exec = TestUtils.execOrAbortProcess("kubectl apply -f " + path.toString());
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the cluster is restarted");
       domain.verifyManagedServersRestarted();
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
-      TestUtils.exec("kubectl apply -f " + originalYaml);
+      TestUtils.execOrAbortProcess("kubectl apply -f " + originalYaml);
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the cluster is restarted");
       domain.verifyManagedServersRestarted();
     }
@@ -515,14 +515,14 @@ public class ItPodsRestart extends BaseTest {
 
       // Apply the new yaml to update the domain crd
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      ExecResult exec = TestUtils.execOrAbortProcess("kubectl apply -f " + path.toString());
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the managed server is restarted");
       domain.verifyManagedServersRestarted();
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
-      TestUtils.exec("kubectl apply -f " + originalYaml);
+      TestUtils.execOrAbortProcess("kubectl apply -f " + originalYaml);
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the managed server is restarted");
       domain.verifyManagedServersRestarted();
     }
@@ -562,7 +562,7 @@ public class ItPodsRestart extends BaseTest {
 
       // Apply the new yaml to update the domain crd
       LoggerHelper.getLocal().log(Level.INFO, "kubectl apply -f {0}", path.toString());
-      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      ExecResult exec = TestUtils.execOrAbortProcess("kubectl apply -f " + path.toString());
       LoggerHelper.getLocal().log(Level.INFO, exec.stdout());
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
       this.domain.verifyAdminServerRestarted();
@@ -570,7 +570,7 @@ public class ItPodsRestart extends BaseTest {
     } finally {
       LoggerHelper.getLocal().log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
-      TestUtils.exec("kubectl apply -f " + originalYaml);
+      TestUtils.execOrAbortProcess("kubectl apply -f " + originalYaml);
       LoggerHelper.getLocal().log(Level.INFO, "Verifying if the domain is restarted");
       this.domain.verifyAdminServerRestarted();
       this.domain.verifyManagedServersRestarted();

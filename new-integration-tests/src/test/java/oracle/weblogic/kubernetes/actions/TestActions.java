@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.google.gson.JsonObject;
@@ -12,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -21,6 +23,7 @@ import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -36,6 +39,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -492,10 +496,10 @@ public class TestActions {
 
   /**
    * Log in to a Docker registry.
-   * @param registryName registry name
-   * @param username user
-   * @param password password
-   * @return true if successfull
+   * @param registryName name of Docker registry
+   * @param username username for the Docker registry
+   * @param password password for the Docker registry
+   * @return true if successful, false otherwise
    */
   public static boolean dockerLogin(String registryName, String username, String password) {
     return Docker.login(registryName, username, password);
@@ -529,6 +533,38 @@ public class TestActions {
    */
   public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
     return Docker.createDockerConfigJson(username, password, email, registry);
+  }
+
+  // ----------------------- Execute a Command   ---------------------------
+
+  /**
+   * Execute a command in a container.
+   *
+   * @param namespace The Kubernertes namespace that the pod is in
+   * @param podName The name of the pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param command The command to run
+   * @return result of command execution
+   * @throws IOException if an I/O error occurs.
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static ExecResult execCommand(
+      String namespace,
+      String podName,
+      String containerName,
+      boolean redirectToStdout,
+      String... command
+  ) throws IOException, ApiException, InterruptedException {
+    final V1Pod pod = oracle.weblogic.kubernetes.assertions.impl.Kubernetes
+        .getPod(namespace, null, podName);
+    if (pod == null) {
+      throw new IllegalArgumentException(
+          String.format("The pod %s does not exist in namespace %s!", podName, namespace));
+    }
+    return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 
   // ------------------------ where does this go  -------------------------

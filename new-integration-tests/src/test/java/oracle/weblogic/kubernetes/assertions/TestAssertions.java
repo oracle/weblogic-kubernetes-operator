@@ -225,7 +225,7 @@ public class TestAssertions {
       String appPath,
       String expectedStr
   ) {
-    return Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
+    return Application.appAccessibleInPod(domainNS, podName, port, appPath, expectedStr);
   }
 
   /**
@@ -247,7 +247,7 @@ public class TestAssertions {
       String appPath,
       String expectedStr
   ) {
-    return !Application.appAccessibleInPod(domainUID, domainNS, podName, port, appPath, expectedStr);
+    return !Application.appAccessibleInPod(domainNS, podName, port, appPath, expectedStr);
   }
 
   /**
