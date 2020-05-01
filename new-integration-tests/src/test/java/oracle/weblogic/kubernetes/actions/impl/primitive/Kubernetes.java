@@ -1420,10 +1420,10 @@ public class Kubernetes implements LoggedTest {
       }
 
       // Read data from process's stdout
-      String stdout = read(copyOut.getInputStream());
+      String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      String stderr = (proc.getErrorStream().available() != 0) ? read(proc.getErrorStream()) : null;
+      String stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
 
       return new ExecResult(proc.exitValue(), stdout, stderr);
     } finally {
@@ -1436,9 +1436,9 @@ public class Kubernetes implements LoggedTest {
   /**
    * Create an object which can execute commands in a Kubernetes container.
    *
-   * @param pod The pod where the command is run
-   * @param containerName The container in the Pod where the command is run. If no container
-   *     name is provided than the first container in the Pod is used.
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
    * @return object for executing a command in a container of the pod
    */
   public static KubernetesExec createKubernetesExec(V1Pod pod, String containerName) {
@@ -1452,7 +1452,7 @@ public class Kubernetes implements LoggedTest {
 
   //------------------------
 
-  private static String read(InputStream is) throws IOException {
+  private static String readExecCmdData(InputStream is) {
     StringBuilder sb = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(
         new InputStreamReader(is, Charsets.UTF_8))) {
