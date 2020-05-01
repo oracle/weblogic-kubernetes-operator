@@ -3,11 +3,19 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.Callable;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.custom.V1Patch;
@@ -50,13 +58,19 @@ import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
 // to run kubectl.
 public class Kubernetes implements LoggedTest {
 
-  public static Random RANDOM = new Random(System.currentTimeMillis());
   private static String PRETTY = "false";
   private static Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static String RESOURCE_VERSION = "";
@@ -86,6 +100,8 @@ public class Kubernetes implements LoggedTest {
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
 
+  private static ConditionFactory withStandardRetryPolicy = null;
+
   static {
     try {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
@@ -94,6 +110,10 @@ public class Kubernetes implements LoggedTest {
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       initializeGenericKubernetesApiClients();
+      // create standard, reusable retry/backoff policy
+      withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
@@ -478,7 +498,7 @@ public class Kubernetes implements LoggedTest {
    * Delete a namespace for the given name.
    *
    * @param name name of namespace
-   * @return true if successful delete, false otherwise
+   * @return true if successful delete request, false otherwise.
    */
   public static boolean deleteNamespace(String name) {
 
@@ -490,13 +510,31 @@ public class Kubernetes implements LoggedTest {
       return false;
     }
 
-    if (response.getObject() != null) {
-      logger.info(
-          "Received after-deletion status of the requested object, will be deleting namespace"
-              + " in background!");
-    }
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for namespace {0} to be deleted "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                name,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> namespaceDeleted(name),
+            String.format("namespaceExists failed with ApiException for namespace %s",
+                name)));
 
     return true;
+  }
+
+  private static Callable<Boolean> namespaceDeleted(String namespace) throws ApiException {
+    return new Callable<Boolean>() {
+      @Override
+      public Boolean call() throws Exception {
+        List<String> namespaces = listNamespaces();
+        if (!namespaces.contains(namespace)) {
+          return true;
+        }
+        return  false;
+      }
+    };
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------
@@ -1155,6 +1193,9 @@ public class Kubernetes implements LoggedTest {
       logger.info(
           "Received after-deletion status of the requested object, will be deleting "
           + "service account in background!");
+      V1ServiceAccount serviceAccount = (V1ServiceAccount) response.getObject();
+      logger.info(
+          "Deleting Service Account " + serviceAccount.getMetadata().getName() + " in background.");
     }
 
     return true;
@@ -1327,5 +1368,127 @@ public class Kubernetes implements LoggedTest {
     return true;
   }
 
+  // --------------------------- Exec   ---------------------------
+
+  /**
+   * Execute a command in a container.
+   *
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param command The command to run
+   * @return result of command execution
+   * @throws IOException if an I/O error occurs.
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static ExecResult exec(V1Pod pod, String containerName, boolean redirectToStdout,
+      String... command)
+      throws IOException, ApiException, InterruptedException {
+
+    // Execute command using Kubernetes API
+    KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
+    final Process proc = kubernetesExec.exec(command);
+
+    final CopyingOutputStream copyOut =
+        redirectToStdout ? new CopyingOutputStream(System.out) : new CopyingOutputStream(null);
+
+    // Start a thread to begin reading the output stream of the command
+    Thread out = null;
+    try {
+      out =
+          new Thread(
+              () -> {
+                try {
+                  ByteStreams.copy(proc.getInputStream(), copyOut);
+                } catch (IOException ex) {
+                  // "Pipe broken" is expected when process is finished so don't log
+                  if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
+                    logger.warning("Exception reading from input stream.", ex);
+                  }
+                }
+              });
+      out.start();
+
+      // wait for the process, which represents the executing command, to terminate
+      proc.waitFor();
+
+      // wait for reading thread to finish any last remaining output
+      if (out != null) {
+        out.join();
+      }
+
+      // Read data from process's stdout
+      String stdout = readExecCmdData(copyOut.getInputStream());
+
+      // Read from process's stderr, if data available
+      String stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+
+      return new ExecResult(proc.exitValue(), stdout, stderr);
+    } finally {
+      if (proc != null) {
+        proc.destroy();
+      }
+    }
+  }
+
+  /**
+   * Create an object which can execute commands in a Kubernetes container.
+   *
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @return object for executing a command in a container of the pod
+   */
+  public static KubernetesExec createKubernetesExec(V1Pod pod, String containerName) {
+    return new KubernetesExec()
+        .apiClient(apiClient) // the Kubernetes api client to dispatch the "exec" command
+        .pod(pod) // The pod where the command is to be run
+        .containerName(containerName) // the container in which the command is to be run
+        .passStdinAsStream() // pass a stdin stream into the container
+        .stdinIsTty(); // stdin is a TTY (only applies if stdin is true)
+  }
+
   //------------------------
+
+  private static String readExecCmdData(InputStream is) {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(is, Charsets.UTF_8))) {
+      int c = 0;
+      while ((c = reader.read()) != -1) {
+        sb.append((char) c);
+      }
+    } catch (IOException e) {
+      logger.warning("Exception thrown " + e);
+    }
+    return sb.toString().trim();
+  }
+
+  /**
+   * Simple class to redirect/copy data to both the stdout stream and a buffer
+   * which can be read from later.
+   */
+  private static class CopyingOutputStream extends OutputStream {
+
+    final OutputStream out;
+    final ByteArrayOutputStream copy = new ByteArrayOutputStream();
+
+    CopyingOutputStream(OutputStream out) {
+      this.out = out;
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+      if (out != null) {
+        out.write(b);
+      }
+      copy.write(b);
+    }
+
+    public InputStream getInputStream() {
+      return new ByteArrayInputStream(copy.toByteArray());
+    }
+  }
 }
