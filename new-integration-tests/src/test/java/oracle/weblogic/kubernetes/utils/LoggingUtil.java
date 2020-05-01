@@ -179,7 +179,6 @@ public class LoggingUtil {
     } catch (Exception ex) {
       logger.warning("Listing domain failed, not collecting any data for domain");
     }
-
     // get pods
     try {
       writeToFile(Kubernetes.listPods(namespace, null), resultDir, namespace + ".list.pods.log");
@@ -221,7 +220,7 @@ public class LoggingUtil {
     }
   }
 
-/**
+  /**
    * Copy files from persistent volume to local folder.
    * @param namespace name of the namespace, used for creating temporary pod in it.
    * @param pvcName name of the persistent volume claim

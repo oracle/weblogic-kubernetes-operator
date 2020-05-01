@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -36,6 +37,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -70,13 +72,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -88,9 +88,11 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -106,6 +108,8 @@ class ItMiiDomain implements LoggedTest {
   // domain constants
   private static final String DOMAIN_VERSION = "v7";
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+
+  private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -299,6 +303,9 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    logger.info("Check admin server status by calling read state command");
+    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -498,7 +505,10 @@ class ItMiiDomain implements LoggedTest {
   }
 
 
-  private void tearDown() {
+  // This method is needed in this test class, since the cleanup util
+  // won't cleanup the images.
+  @AfterAll
+  void tearDown() {
 
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
@@ -519,51 +529,6 @@ class ItMiiDomain implements LoggedTest {
     // delete the domain image created for the test
     if (miiImage != null) {
       deleteImage(miiImage);
-    }
-
-  }
-
-  /**
-   * Uninstall Operator, delete service account, domain namespace and
-   * operator namespace.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    tearDown();
-    // uninstall operator release
-    logger.info("Uninstall Operator in namespace {0}", opNamespace);
-    if (opHelmParams != null) {
-      uninstallOperator(opHelmParams);
-    }
-    // Delete service account from unique opNamespace
-    logger.info("Delete service account in namespace {0}", opNamespace);
-    if (serviceAccount != null) {
-      assertDoesNotThrow(() -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
-              serviceAccount.getMetadata().getNamespace()),
-              "deleteServiceAccount failed with ApiException");
-    }
-    // Delete domain namespaces
-    logger.info("Deleting domain namespace {0}", domainNamespace);
-    if (domainNamespace != null) {
-      assertDoesNotThrow(() -> deleteNamespace(domainNamespace),
-          "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + domainNamespace);
-    }
-
-    // Delete domain namespaces
-    logger.info("Deleting domain namespace {0}", domainNamespace1);
-    if (domainNamespace1 != null) {
-      assertDoesNotThrow(() -> deleteNamespace(domainNamespace1),
-              "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + domainNamespace1);
-    }
-
-    // Delete opNamespace
-    logger.info("Deleting Operator namespace {0}", opNamespace);
-    if (opNamespace != null) {
-      assertDoesNotThrow(() -> deleteNamespace(opNamespace),
-          "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + opNamespace);
     }
 
   }
@@ -755,6 +720,25 @@ class ItMiiDomain implements LoggedTest {
             String.format(
                 "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
 
+  }
+
+  private void checkServerReadyStatusByExec(String podName, String namespace) {
+    final V1Pod pod = assertDoesNotThrow(() -> oracle.weblogic.kubernetes.assertions.impl.Kubernetes
+        .getPod(namespace, null, podName));
+
+    if (pod != null) {
+      ExecResult execResult = assertDoesNotThrow(
+          () -> execCommand(pod, null, true, READ_STATE_COMMAND));
+      if (execResult.exitValue() == 0) {
+        logger.info("execResult: " + execResult);
+        assertEquals("RUNNING", execResult.stdout(),
+            "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
+      } else {
+        fail("Ready command failed with exit status code: " + execResult.exitValue());
+      }
+    } else {
+      fail("Did not find pod " + podName + " in namespace " + namespace);
+    }
   }
 
 }
