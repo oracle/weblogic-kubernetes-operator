@@ -106,8 +106,9 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
   }
 
   /**
-   * Start domain with added shutdown options at the managed server level
-   * and verify values are propagated to specified server level but effecting admin setting.
+   * Start domain with added shutdown options at the managed server1
+   * and verify the values (shutdownType=Forced) are propagated to specified server1 level
+   * but not effecting other servers shutdown options (admin server still has shutdownType=Graceful).
    *
    * @throws Exception if domain cannot be started or failed to verify shutdown options
    */
@@ -159,7 +160,9 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
 
   /**
    * Start domain with added shutdown options at the managed server level with IgnoreSessions=false
-   * and verify values are propagated to specified server level. Server shuts down only after sessions are ended.
+   * and verify values are propagated to specified server level.
+   * Invoke web application to keep Open Session for 80 secs, verify that managed server1
+   * shuts down only after sessions are ended by checking shutdown time > 80 sec.
    *
    * @throws Exception if domain cannot be started or failed to verify shutdown options.
    */
@@ -215,8 +218,9 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
   }
 
   /**
-   * Add shutdown option Timeout at managed server level and verify all pods are Terminated
-   * according to the setting.
+   * Add shutdown option timeout=10 secs and ignoreSessions=false at managed server1 level.
+   * Invoke webapp to keep http session opened for 80 sec, verify that shutdown time of managed server1
+   * is less then the period of the time http sessions are opened due timeout=10 option.
    *
    * @throws Exception if domain cannot be started or failed to verify shutdown options.
    */
@@ -268,8 +272,9 @@ public class ItPodsShutdownMS extends ShutdownOptionsBase {
   }
 
   /**
-   * Add shutdown option Forced at managed server level and verify all pods are Terminated according
-   * to the setting.
+   * Add shutdown option shutdownType=Forced at managed server1 level.
+   * Invoke webapp to keep http session opened for 80 sec, verify that shutdown time of managed server1
+   * is less then the period of the time http sessions are opened due shutdownType=Forced option.
    *
    * @throws Exception if domain cannot be started or failed to verify shutdown options.
    */
