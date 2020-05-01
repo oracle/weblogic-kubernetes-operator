@@ -335,7 +335,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   public void testCreateIngress() {
 
     // create an ingress in domain namespace
-    assertThat(createIngress(domainNamespace, domainUid))
+    assertThat(assertDoesNotThrow(() -> createIngress(domainNamespace, domainUid)))
             .as("Test createIngress returns true")
             .withFailMessage("createIngress() did not return true")
             .isTrue();

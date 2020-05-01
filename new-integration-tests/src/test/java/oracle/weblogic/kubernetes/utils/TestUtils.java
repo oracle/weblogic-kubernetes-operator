@@ -40,6 +40,7 @@ public class TestUtils {
       if (!managedServers.containsValue(false)) {
         break;
       } else {
+        Thread.sleep(100);
         ExecResult result = ExecCommand.exec(curlCmd, true);
 
         String response = result.stdout().trim();

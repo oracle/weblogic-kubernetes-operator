@@ -7,19 +7,31 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressBackend;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressSpec;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
-import static oracle.weblogic.kubernetes.TestConstants.INGRESS_SAMPLE_CHART_DIR;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
  * Utility class for Nginx ingress controller.
  */
 public class Nginx {
+
+  public static final String INGRESS_API_VERSION = "extensions/v1beta1";
+  public static final String INGRESS_KIND = "Ingress";
+  public static final String INGRESS_NGINX_CLASS = "nginx";
+
   /**
    * Install Helm chart.
    *
@@ -53,22 +65,74 @@ public class Nginx {
 
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * This method assumes the cluster name is "cluster-1" and the managed server port is 8001.
    *
-   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
+   * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @return true on success, false otherwise
+   * @throws ApiException if api call throws error
    */
-  public static boolean createIngress(String domainNamespace, String domainUid) {
-    HelmParams ingressParam = new HelmParams()
-        .releaseName(domainUid + "-ingress")
-        .namespace(domainNamespace)
-        .chartDir(INGRESS_SAMPLE_CHART_DIR);
+  public static boolean createIngress(String domainNamespace, String domainUid) throws ApiException {
+    return createIngress(domainNamespace, domainUid, "cluster-1", 8001);
 
-    HashMap<String, Object> values = new HashMap();
-    values.put("wlsDomain.domainUID", domainUid);
-    values.put("nginx.hostname", domainUid + ".org");
+  }
 
-    Helm.install(ingressParam, values);
+  /**
+   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   *
+   * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
+   * @param domainUid the WebLogic domainUid which is backend to the ingress
+   * @param clusterName the name of the WebLogic domain cluster
+   * @param managedServerPort the port number of the Weblogic domain managed servers
+   * @return true on success, false otherwise
+   * @throws ApiException if api call throws error
+   */
+  public static boolean createIngress(String domainNamespace,
+                                      String domainUid,
+                                      String clusterName,
+                                      int managedServerPort) throws ApiException {
+
+    // set the annotation for kubernetes.io/ingress.class to nginx
+    HashMap<String, String> annotation = new HashMap<>();
+    annotation.put("kubernetes.io/ingress.class", INGRESS_NGINX_CLASS);
+
+    // set the http ingress paths
+    ExtensionsV1beta1HTTPIngressPath httpIngressPath = new ExtensionsV1beta1HTTPIngressPath()
+        .path(null)
+        .backend(new ExtensionsV1beta1IngressBackend()
+                .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+                .servicePort(new IntOrString(managedServerPort))
+        );
+    ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList();
+    httpIngressPaths.add(httpIngressPath);
+
+    // set the ingress rule
+    ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
+        .host(domainUid + ".org")
+        .http(new ExtensionsV1beta1HTTPIngressRuleValue()
+              .paths(httpIngressPaths)
+        );
+    ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
+    ingressRules.add(ingressRule);
+
+    // set the ingress
+    ExtensionsV1beta1Ingress ingress = new ExtensionsV1beta1Ingress()
+        .apiVersion(INGRESS_API_VERSION)
+        .kind(INGRESS_KIND)
+        .metadata(new V1ObjectMeta()
+                  .name(domainUid + "-nginx")
+                  .namespace(domainNamespace)
+                  .annotations(annotation))
+        .spec(new ExtensionsV1beta1IngressSpec()
+              .rules(ingressRules)
+        );
+
+    try {
+      Kubernetes.createIngress(domainNamespace, ingress);
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
     return true;
   }
 

@@ -208,7 +208,7 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @return true on success, false otherwise
    */
-  public static boolean createIngress(String domainNamespace, String domainUid) {
+  public static boolean createIngress(String domainNamespace, String domainUid) throws ApiException {
     return Nginx.createIngress(domainNamespace, domainUid);
   }
 
