@@ -76,15 +76,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
@@ -161,8 +158,8 @@ class ItMiiDomain implements LoggedTest {
 
     // create a reusable quick retry policy
     withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(3, SECONDS)
-        .atMost(7, SECONDS).await();
+        .and().with().pollInterval(4, SECONDS)
+        .atMost(10, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -727,10 +724,9 @@ class ItMiiDomain implements LoggedTest {
     logger.info("The cluster has been rolling started, and the two applications are both running correctly.");
   }
 
-  /**
-   * Uninstall Operator, delete service account, domain namespace and
-   * operator namespace.
-   */
+  // This method is needed in this test class, since the cleanup util
+  // won't cleanup the images.
+
   @AfterAll
   public void tearDownAll() {
     // Delete domain custom resource
@@ -748,42 +744,6 @@ class ItMiiDomain implements LoggedTest {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace1),
             "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
-
-    // uninstall operator release
-    logger.info("Uninstall Operator in namespace {0}", opNamespace);
-    if (opHelmParams != null) {
-      uninstallOperator(opHelmParams);
-    }
-    // Delete service account from unique opNamespace
-    logger.info("Delete service account in namespace {0}", opNamespace);
-    if (serviceAccount != null) {
-      assertDoesNotThrow(() -> deleteServiceAccount(serviceAccount.getMetadata().getName(),
-              serviceAccount.getMetadata().getNamespace()),
-              "deleteServiceAccount failed with ApiException");
-    }
-    // Delete domain namespaces
-    logger.info("Deleting domain namespace {0}", domainNamespace);
-    if (domainNamespace != null) {
-      assertDoesNotThrow(() -> deleteNamespace(domainNamespace),
-          "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + domainNamespace);
-    }
-
-    // Delete domain namespaces
-    logger.info("Deleting domain namespace {0}", domainNamespace1);
-    if (domainNamespace1 != null) {
-      assertDoesNotThrow(() -> deleteNamespace(domainNamespace1),
-              "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + domainNamespace1);
-    }
-
-    // Delete opNamespace
-    logger.info("Deleting Operator namespace {0}", opNamespace);
-    if (opNamespace != null) {
-      assertDoesNotThrow(() -> deleteNamespace(opNamespace),
-          "deleteNamespace failed with ApiException");
-      logger.info("Deleted namespace: " + opNamespace);
-    }
 
     // delete the domain images created in the test class
     if (miiImage != null) {
