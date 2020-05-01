@@ -58,10 +58,10 @@ public class TestAssertions {
   /**
    * Check if a WebLogic domain custom resource has been patched with a new image.
    *
-   * @param domainUid ID of the domain
-   * @param namespace in which the domain custom resource object exists
-   * @param image that was used to patch the domain resource
-   * @return true if the domain is patched
+   * @param domainUid ID of the domain resource
+   * @param namespace Kubernetes namespace in which the domain custom resource object exists
+   * @param image name of the image that was used to patch the domain resource
+   * @return true if the domain is patched correctly
    */
   public static Callable<Boolean> domainResourceImagePatched(
       String domainUid,
@@ -74,10 +74,10 @@ public class TestAssertions {
   /**
    * Check if a WebLogic server pod has been patched with a new image.
    *
-   * @param domainUid ID of the domain
-   * @param namespace in which the pod is running
+   * @param domainUid ID of the domain resource
+   * @param namespace Kubernetes namespace in which the domain custom resource object exists
    * @param podName name of the WebLogic server pod
-   * @param image name of the image that the pod is supposed to use
+   * @param image name of the image that was used to patch the domain resource
    * @return true if the pod is patched correctly
    */
   public static Callable<Boolean> podImagePatched(
@@ -187,7 +187,7 @@ public class TestAssertions {
   /**
    * Check if a admin server pod admin node port is accessible.
    *
-   * @param domainUid domainUID id of the domain in which admin server pod is running
+   * @param domainUid domainUid id of the domain in which admin server pod is running
    * @param namespace in which the WebLogic server pod exists
    * @return true if the admin node port is accessible otherwise false
    */
@@ -209,45 +209,41 @@ public class TestAssertions {
   /**
    * Check if an application is accessible inside a WebLogic server pod.
    * 
-   * @param domainUID unique identifier of the Kubernetes domain custom resource instance
-   * @param domainNS Kubernetes namespace where the WebLogic server pod is running
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
-   * @param appPath the path to access the application
+   * @param appPath path to access the application
    * @param expectedStr the expected response from the application
    * @return true if the command succeeds 
    */
   public static boolean appAccessibleInPod(
-      String domainUID,
-      String domainNS,
+      String namespace,
       String podName,
       String port,
       String appPath,
       String expectedStr
   ) {
-    return Application.appAccessibleInPod(domainNS, podName, port, appPath, expectedStr);
+    return Application.appAccessibleInPod(namespace, podName, port, appPath, expectedStr);
   }
 
   /**
    * Check if an application is Not running inside a WebLogic server pod.
    * .
-   * @param domainUID unique identifier of the Kubernetes domain custom resource instance
-   * @param domainNS Kubernetes namespace where the WebLogic server pod is running
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
-   * @param appPath the path to access the application
+   * @param appPath path to access the application
    * @param expectedStr the expected response from the application
    * @return true if the command succeeds 
    */
   public static boolean appNotAccessibleInPod(
-      String domainUID,
-      String domainNS,
+      String namespace,
       String podName,
       String port,
       String appPath,
       String expectedStr
   ) {
-    return !Application.appAccessibleInPod(domainNS, podName, port, appPath, expectedStr);
+    return !Application.appAccessibleInPod(namespace, podName, port, appPath, expectedStr);
   }
 
   /**

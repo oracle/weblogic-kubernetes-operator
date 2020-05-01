@@ -116,7 +116,7 @@ public class Kubernetes {
    * Checks if a WebLogic server pod has been patched with an expected image.
    *
    * @param namespace Kubernetes namespace in which the pod is running
-   * @param domainUid the label the pod is decorated with
+   * @param domainUid label that the pod is decorated with
    * @param podName name of the WebLogic server pod
    * @param image name of the image to check for
    * @return true if pod's image has been patched

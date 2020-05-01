@@ -1416,7 +1416,7 @@ public class Kubernetes implements LoggedTest {
 
       // wait for reading thread to finish any last remaining output
       if (out != null) {
-        // need to timeout here, otherwise the command can take a couple of seconds to return.
+        // need to time out here, otherwise the command can take a couple of seconds to return.
         // don't know if we'll need a different timeout value for different environments.
         out.join(1000);
       }

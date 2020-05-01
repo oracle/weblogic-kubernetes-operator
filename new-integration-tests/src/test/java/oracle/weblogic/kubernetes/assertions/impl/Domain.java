@@ -81,9 +81,9 @@ public class Domain {
    * Checks if the domain resource has been patched with a new image.
    *
    * @param domainUID identifier of the domain resource
-   * @param namespace in which the domain exists
+   * @param namespace Kubernetes namespace in which the domain exists
    * @param image name of the image that the pod is supposed to use
-   * @return true if domain resource's image does not match the expected value
+   * @return true if domain resource's image matches the expected value
    */
   public static Callable<Boolean> domainResourceImagePatched(
       String domainUID,

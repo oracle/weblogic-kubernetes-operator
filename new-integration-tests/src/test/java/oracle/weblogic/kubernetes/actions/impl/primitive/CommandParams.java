@@ -28,7 +28,8 @@ public class CommandParams {
   
   // The stderr of the command execution
   private String stderr;
-  
+
+  // Whether to turn on verbose logging  
   private boolean verbose = true;
   
   public CommandParams defaults() {

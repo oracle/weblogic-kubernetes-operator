@@ -125,7 +125,7 @@ class ItMiiDomain implements LoggedTest {
   // app constants
   private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
   private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
-  private static final String APP_RESPONSE_V3 = "How are you doing!";
+  private static final String APP_RESPONSE_V3 = "How are you doing! You have reached server managed-server";
 
   private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
@@ -348,7 +348,6 @@ class ItMiiDomain implements LoggedTest {
     // check and wait for the app to be accessible in all server pods
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
-          domainUid,
           domainNamespace,
           managedServerPrefix + i,
           "8001",
@@ -545,15 +544,15 @@ class ItMiiDomain implements LoggedTest {
   public void testPatchAppV2() {
     
     // app in the new image contains what is in the original app dir sample-app, 
-    // plus the replacement in the second app dir sample-app-2.
+    // plus the replacements or/and additions in the second app dir sample-app-2.
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
     
-    // The verification of app's continuous availability during patching can be enabled 
-    // using the following system property for now because it fails intermittently right now.
+    // The verification of app's continuous availability during patching is turned off
+    // because it fails intermittently right now. It can be enabled using the following system property.
     // We'll remove the property and enable it all the time once the product problem (tracked
     // by owls-81575) is fixed.
     final String enableAppAvailbilityCheck = 
@@ -568,7 +567,6 @@ class ItMiiDomain implements LoggedTest {
           new Thread(
               () -> {
                 collectAppAvaiability(
-                    domainUid,
                     domainNamespace,
                     appAvailability,
                     managedServerPrefix,
@@ -583,7 +581,6 @@ class ItMiiDomain implements LoggedTest {
       // check and make sure that V1 app is running
       for (int i = 1; i <= replicaCount; i++) {
         quickCheckAppRunning(
-            domainUid,
             domainNamespace,
             managedServerPrefix + i,
             "8001",
@@ -594,7 +591,6 @@ class ItMiiDomain implements LoggedTest {
       // check and make sure that the version 2 app is NOT running
       for (int i = 1; i <= replicaCount; i++) {
         quickCheckAppNotRunning(
-            domainUid,
             domainNamespace,
             managedServerPrefix + i,
             "8001",
@@ -623,7 +619,6 @@ class ItMiiDomain implements LoggedTest {
       // check and wait for the V2 app to be ready
       for (int i = 1; i <= replicaCount; i++) {
         checkAppRunning(
-            domainUid,
             domainNamespace,
             managedServerPrefix + i,
             "8001",
@@ -634,7 +629,7 @@ class ItMiiDomain implements LoggedTest {
     
       if (accountingThread != null) {
         try {
-          accountingThread.join();
+          accountingThread.join(50);
         } catch (InterruptedException ie) {
           // do nothing
         }
@@ -654,7 +649,8 @@ class ItMiiDomain implements LoggedTest {
   @MustNotRunInParallel
   public void testAddSecondApp() {
     
-    // app here is what is in the original app dir plus the delta in the second app dir
+    // the existing app is the combination of what are in appDir1 and appDir2 as in test case number 4,
+    // the second app is in appDir3.
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String appDir3 = "sample-app-3";
@@ -665,7 +661,6 @@ class ItMiiDomain implements LoggedTest {
     // check and V2 app is still running after the previous test
     for (int i = 1; i <= replicaCount; i++) {
       quickCheckAppRunning(
-          domainUid,
           domainNamespace,
           managedServerPrefix + i,
           "8001",
@@ -675,18 +670,17 @@ class ItMiiDomain implements LoggedTest {
 
     logger.info("App version 2 is still running");
     
-    // check and make sure that the new app is not already running
+    // check and make sure that the new app is NOT already running
     for (int i = 1; i <= replicaCount; i++) {
       quickCheckAppNotRunning(
-          domainUid,
           domainNamespace,
           managedServerPrefix + i,
           "8001",
           "sample-war-3/index.jsp",
-          APP_RESPONSE_V3);
+          APP_RESPONSE_V3 + i);
     }
    
-    // create an image with an additional app
+    // create an image with the additional app
     miiImageAddSecondApp = updateImageWithApp3(
         String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
@@ -713,18 +707,16 @@ class ItMiiDomain implements LoggedTest {
     // check and wait for the new app to be ready
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
-          domainUid,
           domainNamespace,
           managedServerPrefix + i,
           "8001",
           "sample-war-3/index.jsp",
-          APP_RESPONSE_V3);
+          APP_RESPONSE_V3 + i);
     }
  
     // check and wait for the V2 app to be ready
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
-          domainUid,
           domainNamespace,
           managedServerPrefix + i,
           "8001",
@@ -866,7 +858,7 @@ class ItMiiDomain implements LoggedTest {
     List<String> modelList = 
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
    
-    // build an application archive using what is in resources/apps/APP_NAME
+    // build an application archive
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -903,8 +895,7 @@ class ItMiiDomain implements LoggedTest {
     String appName1 = appDirList1.get(0);
     String appName2 = appDirList2.get(0);
     
-    // build an application archive using for the first app, which is the same after
-    // patching the original app.
+    // build an application archive that contains the existing app
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -914,7 +905,8 @@ class ItMiiDomain implements LoggedTest {
             appName1));
     
     logger.info("Successfully created app zip file: " + appName1);
-        
+     
+    // build an application archive that contains the new app
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -936,15 +928,15 @@ class ItMiiDomain implements LoggedTest {
   }
 
   /**
-   * Patch the domain resource with a new image that contains a newer version of the application.
+   * Patch the domain resource with a new image.
    * Here is an example of the JSON patch string that is constructed in this method.
    * [
    *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
    * ]
    * 
-   * @param domainUid the unique identifier of the domain resource
-   * @param namespace the Kubernetes namespace that the domain is hosted
-   * @param image the name of the image that contains a newer version of the application
+   * @param domainUid unique identifier of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param image name of the new image
    */
   private void patchDomainResourceIamge(
       String domainUid,
@@ -1126,7 +1118,6 @@ class ItMiiDomain implements LoggedTest {
 
     // check and wait for the admin server pod to be patched with the new image
     checkPodImagePatched(
-        domainUid,
         namespace,
         adminServerPodName,
         image);
@@ -1134,7 +1125,6 @@ class ItMiiDomain implements LoggedTest {
     // check and wait for the managed server pods to be patched with the new image
     for (int i = 1; i <= replicaCount; i++) {
       checkPodImagePatched(
-          domainUid,
           namespace,
           managedServerPrefix + i,
           image);
@@ -1173,11 +1163,10 @@ class ItMiiDomain implements LoggedTest {
   }
 
   private void checkAppRunning(
-      String domainUid,
       String namespace,
       String podName,
       String internalPort,
-      String appPath, 
+      String appPath,
       String expectedStr
   ) {
    
@@ -1192,7 +1181,6 @@ class ItMiiDomain implements LoggedTest {
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until(() -> appAccessibleInPod(
-                domainUid, 
                 namespace, 
                 podName, 
                 internalPort, 
@@ -1202,11 +1190,10 @@ class ItMiiDomain implements LoggedTest {
   }
   
   private void quickCheckAppRunning(
-      String domainUid,
       String namespace,
       String podName,
       String internalPort,
-      String appPath, 
+      String appPath,
       String expectedStr
   ) {
    
@@ -1221,7 +1208,6 @@ class ItMiiDomain implements LoggedTest {
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until(() -> appAccessibleInPod(
-                domainUid, 
                 namespace,
                 podName, 
                 internalPort, 
@@ -1231,11 +1217,10 @@ class ItMiiDomain implements LoggedTest {
   }
   
   private void quickCheckAppNotRunning(
-      String domainUid,
       String namespace,
       String podName,
       String internalPort,
-      String appPath, 
+      String appPath,
       String expectedStr
   ) {
    
@@ -1250,7 +1235,6 @@ class ItMiiDomain implements LoggedTest {
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until(() -> appNotAccessibleInPod(
-                domainUid, 
                 namespace, 
                 podName,
                 internalPort, 
@@ -1264,7 +1248,7 @@ class ItMiiDomain implements LoggedTest {
       String image 
   ) {
    
-    // check if the domain is patched with the new image
+    // check if the domain resource has been patched with the given image
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
@@ -1280,13 +1264,12 @@ class ItMiiDomain implements LoggedTest {
   }
   
   private void checkPodImagePatched(
-      String domainUid,
       String namespace,
       String podName,
       String image
   ) {
    
-    // check if the app is accessible inside of a server pod
+    // check if the server pod has been patched with the given image
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be patched in namespace {1} "
@@ -1297,15 +1280,13 @@ class ItMiiDomain implements LoggedTest {
             condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, image),
             String.format(
-               "Domain %s pod %s is not patched with image %s in namespace %s.",
-               domainUid,
+               "Pod od %s is not patched with image %s in namespace %s.",
                podName,
                namespace,
                image)));
   }
   
   private static void collectAppAvaiability(
-      String domainUid,
       String namespace,
       List<Integer> appAvailability,
       String managedServerPrefix,
@@ -1318,7 +1299,6 @@ class ItMiiDomain implements LoggedTest {
     // of patching the domain with newer version of the app.
     do {
       v2AppAvailable = appAccessibleInPod(
-                            domainUid, 
                             namespace,
                             managedServerPrefix + replicaCount, 
                             internalPort, 
@@ -1328,7 +1308,6 @@ class ItMiiDomain implements LoggedTest {
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {
         if (appAccessibleInPod(
-            domainUid, 
             namespace,
             managedServerPrefix + i, 
             internalPort, 

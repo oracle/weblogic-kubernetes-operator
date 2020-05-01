@@ -26,8 +26,7 @@ public class Application {
    * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
-   * @param appPath the path to access the application
-   *
+   * @param appPath path to access the application
    * @return true if the command succeeds 
    */
   public static boolean appAccessibleInPod(
@@ -50,9 +49,8 @@ public class Application {
       ExecResult execResult = execCommand(
           namespace,
           podName, 
-          //"weblogic-server", // container name
-          null,
-          true, // redirectOutput
+          "weblogic-server", // container name
+          false, // redirectOutput
           cmd);
       if (execResult.exitValue() == 0
           && execResult.stdout() != null 
