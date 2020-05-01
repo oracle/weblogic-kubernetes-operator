@@ -367,7 +367,7 @@ public class ItMonitoringExporter extends BaseTest {
         .append(" --reuse-values ")
         .append("--set ")
         .append("\"")
-        .append("kubernetes.namespaces=")
+        .append("traefik.hostname=")
         .append("\"")
         .append(" --wait");
 
