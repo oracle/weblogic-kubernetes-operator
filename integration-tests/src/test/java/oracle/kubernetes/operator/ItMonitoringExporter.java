@@ -1162,6 +1162,14 @@ public class ItMonitoringExporter extends BaseTest {
             + " " + domainNS1
             + " " + domainNS2,
             "createPromGrafanaMySqlCoordWebhook.out");
+    executeShelScript(
+        resourceExporterDir,
+        monitoringExporterScriptDir,
+        "createGrafana.sh",
+        monitoringExporterDir
+            + " " + resourceExporterDir
+            + " " + GRAFANA_CHART_VERSION,
+        "createGrafana.out");
 
 
     String webhookPod = getPodName("app=webhook", "webhook");

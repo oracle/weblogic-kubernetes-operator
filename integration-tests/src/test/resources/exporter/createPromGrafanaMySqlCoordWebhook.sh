@@ -20,13 +20,13 @@ if [ $script_status != 0 ]; then
     echo "createProm.sh returned: $script_status"
     exit $script_status
 fi
-echo "Installing Grafana ..."
-sh $scriptDir/createGrafana.sh $monitoringExporterDir $resourceExporterDir $grafanaVersionArgs
-script_status=$?
-if [ $script_status != 0 ]; then
-    echo "createGrafana.sh returned: $script_status"
-    exit $script_status
-fi
+#echo "Installing Grafana ..."
+#sh $scriptDir/createGrafana.sh $monitoringExporterDir $resourceExporterDir $grafanaVersionArgs
+#script_status=$?
+#if [ $script_status != 0 ]; then
+#    echo "createGrafana.sh returned: $script_status"
+#    exit $script_status
+#fi
 echo "Installing mysql"
 sh $scriptDir/createMySql.sh $monitoringExporterDir $resourceExporterDir $domainNS1
 script_status=$?
