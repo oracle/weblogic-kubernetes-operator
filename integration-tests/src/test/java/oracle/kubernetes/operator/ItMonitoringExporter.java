@@ -85,7 +85,6 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS2;
   private static String currentDateTime;
   private static final String monitoringNS = "monitortestns";
-  private static boolean isPromGrafanaWebhookSqlInstalled = false;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -157,13 +156,10 @@ public class ItMonitoringExporter extends BaseTest {
       deployRunMonitoringExporter(domain, operator);
       String testAppName = "httpsessionreptestapp";
       String scriptName = "buildDeployAppInPod.sh";
-      setupPv();
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-    }
-    if (!isPromGrafanaWebhookSqlInstalled) {
+      setupPv();
       installPrometheusGrafanaWebHookMySqlCoordinator();
-      isPromGrafanaWebhookSqlInstalled = true;
     }
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
   }
