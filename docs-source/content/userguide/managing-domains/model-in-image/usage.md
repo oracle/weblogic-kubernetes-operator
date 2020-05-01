@@ -11,7 +11,7 @@ description = "Steps for creating and deploying Model in Image images and their 
 
    - [WebLogic Server Kubernetes Operator](#1-weblogic-server-kubernetes-operator)
    - [WebLogic Server image](#2-weblogic-server-image)
-   - [Optional WDT model config map](#3-optional-wdt-model-config-map)
+   - [Optional WDT model configmap](#3-optional-wdt-model-configmap)
    - [Required runtime encryption secret](#4-required-runtime-encryption-secret)
    - [Secrets for model macros](#5-secrets-for-model-macros)
    - [Domain resource attributes](#6-domain-resource-attributes)
@@ -48,11 +48,11 @@ There are two methods for layering Model in Image artifacts on top of a base ima
 
 For more information about model file syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
 
-#### 3. Optional WDT model config map
+#### 3. Optional WDT model configmap
 
-You can create a WDT model config map that defines additional model `.yaml` and `.properties` files beyond what you've already supplied in your image, and then reference this config map using your domain resource's `configuration.model.configMap` attribute. This is optional if the supplied image already fully defines your model.
+You can create a WDT model configmap that defines additional model `.yaml` and `.properties` files beyond what you've already supplied in your image, and then reference this configmap using your domain resource's `configuration.model.configMap` attribute. This is optional if the supplied image already fully defines your model.
 
-WDT model config map files will be merged with the WDT files defined in your image at runtime before your domain home is created. The config map files can add to, remove from, or alter the model configuration that you supplied within your image.
+WDT model configmap files will be merged with the WDT files defined in your image at runtime before your domain home is created. The configmap files can add to, remove from, or alter the model configuration that you supplied within your image.
 
 For example, place additional `.yaml` and `.properties` files in a directory called `/home/acmeuser/wdtoverride` and run the following commands:
 
@@ -65,12 +65,12 @@ For example, place additional `.yaml` and `.properties` files in a directory cal
     weblogic.domainUID=MY-DOMAINUID
   ```
 
-See [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) for a discussion of model file syntax and loading order, and see [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) for a discussion of using WDT model config maps to update the model configuration of a running domain.
+See [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) for a discussion of model file syntax and loading order, and see [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) for a discussion of using WDT model configmaps to update the model configuration of a running domain.
 
 
 #### 4. Required runtime encryption secret
 
-Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime config map or log. You can safely change the `password` that you set, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
+Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime configmap or log. You can safely change the `password` that you set, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
 
 **NOTE**: Because the runtime encryption password does not need to be shared and needs to exist only for the life of a domain, you may want to use a password generator.
 
@@ -105,8 +105,8 @@ The following domain resource attributes are specific to Model in Image domains.
 | -------------------------                    |  ------------------ |
 | `domainHomeSourceType`                       |  Required. Set to `FromModel`. |
 | `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic pod every time the pod restarts.|
-| `configuration.model.configMap`             | Optional. Set if you have stored additional models in a config map as per [Optional WDT model config map](#3-optional-wdt-model-config-map). |
-| `configuration.secrets`                      | Optional. Set this array if your image or config map models contain macros that reference custom Kubernetes secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
+| `configuration.model.configMap`             | Optional. Set if you have stored additional models in a configmap as per [Optional WDT model configmap](#3-optional-wdt-model-config-map). |
+| `configuration.secrets`                      | Optional. Set this array if your image or configmap models contain macros that reference custom Kubernetes secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#4-required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/type_def.md).|
 

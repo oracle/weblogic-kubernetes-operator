@@ -22,7 +22,7 @@ If you want to make a WebLogic domain home configuration change to a running Mod
 
   - Changing secrets or environment variables that are referenced by macros in your model files.
 
-  - Specifying a new or updated WDT config map that contains model files and use your domain resource `configuration.model.configMap` field to reference the map.
+  - Specifying a new or updated WDT configmap that contains model files and use your domain resource `configuration.model.configMap` field to reference the map.
 
   - Supplying a new image with new or changed model files.
 
@@ -32,7 +32,7 @@ After the changes are in place, you can tell the operator to load the changes an
 
  - Check for [Supported and unsupported updates](#supported-and-unsupported-updates).
 
- - If you specify multiple model files in your image or WDT config map, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
+ - If you specify multiple model files in your image or WDT configmap, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
  - You can use the WDT Discover Domain Tool to help generate your model file updates. See [Using the WDT Discover Domain Tool](#using-the-wdt-discover-domain-tool).
 
@@ -52,7 +52,7 @@ Similar to Domain in Image, if you make a direct runtime WebLogic configuration 
 
 _How do Model in Image updates work during runtime?_
 
-After you make a change to your domain resource `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a config map named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Manager Server in the domain.
+After you make a change to your domain resource `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a configmap named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Manager Server in the domain.
 
 _Can we use custom configuration overrides to do the updates instead?_
 
@@ -188,7 +188,7 @@ Here's an example script for adding a data source to a WebLogic cluster named `c
 
 This example references a database running in the `default` namespace that is accessed with the URL `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, user `sys as dba`, and password `Oradoc_db1`. Note that you can still add this data source even if there's no database running at this location.
 
-{{% notice note %}} If you already have a WDT config map deployed for your running domain, as is true for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, then you should ensure that any updated config map that you supply includes any needed files that were in the original WDT config map. For example, the Model in Image sample puts files in a directory that it uses to stage its config map in `$WORKDIR/wdtconfigmap`.
+{{% notice note %}} If you already have a WDT configmap deployed for your running domain, as is true for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, then you should ensure that any updated configmap that you supply includes any needed files that were in the original WDT configmap. For example, the Model in Image sample puts files in a directory that it uses to stage its configmap in `$WORKDIR/wdtconfigmap`.
 {{% /notice %}}
 
 
@@ -257,7 +257,7 @@ This example references a database running in the `default` namespace that is ac
               TestConnectionsOnReserve: true
   EOF
 
-  # Create a config map containing the model snippet
+  # Create a configmap containing the model snippet
 
   $SAMPLEDIR/create_configmap.sh \
     -n ${DOMAIN_NAMESPACE} \

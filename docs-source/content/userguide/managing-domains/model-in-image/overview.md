@@ -24,7 +24,7 @@ It enables:
 
  - Defining a WebLogic domain home configuration using WebLogic Deploy Tool (WDT) model files and application archives.
  - Embedding model files and archives in a custom Docker image, and using the WebLogic Image Tool (WIT) to generate this image.
- - Supplying additional model files using a Kubernetes config map.
+ - Supplying additional model files using a Kubernetes configmap.
  - Supplying Kubernetes secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
  - Updating WDT model files at runtime. For example, you can add a data source to a running domain. Note that all such updates currently cause the domain to 'roll' in order to take effect.
  - Deploying standard WLS domains, Restricted JRF domains, or JRF domains.
@@ -43,13 +43,13 @@ When you deploy a Model in Image domain resource:
     - Runs WDT tooling to generate a domain home.
     - Packages the domain home and passes it to the operator.
   - After the introspector job completes:
-    - The operator creates a config map named `DOMAIN_UID-weblogic-domain-introspect-cm` and puts the packaged domain home in it.
+    - The operator creates a configmap named `DOMAIN_UID-weblogic-domain-introspect-cm` and puts the packaged domain home in it.
     - The operator subsequently boots your domain's WebLogic Server pods.
-    - The pods will obtain their domain home from the config map.
+    - The pods will obtain their domain home from the configmap.
 
 #### Runtime updates overview
 
-Model updates can be applied at runtime by changing the image, secrets, or WDT model config map after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+Model updates can be applied at runtime by changing the image, secrets, or WDT model configmap after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 #### Continuous integration and delivery (CI/CD)
 

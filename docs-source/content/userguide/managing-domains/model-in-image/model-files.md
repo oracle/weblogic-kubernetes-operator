@@ -86,11 +86,11 @@ Some notes about the sample model file:
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
-During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT config map described in [Optional WDT model config map]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-config-map" >}}).
+During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT configmap described in [Optional WDT model configmap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-configmap" >}}).
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` is a numeric number that specifies the desired order, and then is determined alphabetically as a tie-breaker. File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`.
 
-If an image file and config map file both have the same name, then both files are loaded.
+If an image file and configmap file both have the same name, then both files are loaded.
 
 For example, if you have these files in the image directory `/u01/model_home/models`:
 
@@ -101,7 +101,7 @@ my-model.10.yaml
 y.yaml  
 ```
 
-And you have these files in the config map:
+And you have these files in the configmap:
 
 ```
 jdbc-dev-urlprops.10.yaml
