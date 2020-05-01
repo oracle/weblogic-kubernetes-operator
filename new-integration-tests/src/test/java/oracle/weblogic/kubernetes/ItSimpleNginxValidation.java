@@ -75,7 +75,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
@@ -405,12 +404,6 @@ class ItSimpleNginxValidation implements LoggedTest {
       logger.info("Deleted namespace: " + opNamespace);
     }
 
-    // delete ingress
-    assertThat(deleteIngress(domainNamespace, domainUid))
-        .as("Test uninstallIngress returns true")
-        .withFailMessage("uninstallIngress() did not return true")
-        .isTrue();
-
     // uninstall Nginx release
     if (nginxHelmParams != null) {
       assertThat(uninstallNginx(nginxHelmParams))
@@ -548,6 +541,10 @@ class ItSimpleNginxValidation implements LoggedTest {
     logger.info("Nginx release {0} status is deployed in namespace {1}",
         NGINX_RELEASE_NAME, nginxNamespace);
 
+    // DEBUG: check the nginx docker image exists
+    assertTrue(doesImageExist("nginx-ingress-controller"),
+        String.format("Image nginx-ingress-controller does not exist"));
+
     // first wait 5 seconds, then check if the Nginx pod is ready.
     with().pollDelay(5, SECONDS)
         .and().with().pollInterval(5, SECONDS)
@@ -556,7 +553,7 @@ class ItSimpleNginxValidation implements LoggedTest {
                 "Waiting for Nginx to be ready (elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .await().atMost(5, MINUTES)
+        .await().atMost(10, MINUTES)
         .until(isNginxReady(nginxNamespace));
   }
 

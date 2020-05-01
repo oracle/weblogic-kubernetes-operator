@@ -137,20 +137,6 @@ public class Nginx {
   }
 
   /**
-   * Delete an ingress which name containing the specified domainUid in the specified domain namespace.
-   *
-   * @param domainNamespace the domain namespace which contains the ingress to delete
-   * @param domainUid the WebLogic domainUid which is backend to the ingress
-   * @return true on success, false otherwise
-   */
-  public static boolean deleteIngress(String domainNamespace, String domainUid) {
-    HelmParams ingressParam = new HelmParams()
-        .releaseName(domainUid + "-ingress")
-        .namespace(domainNamespace);
-    return Helm.uninstall(ingressParam);
-  }
-
-  /**
    * Get a list of ingresses in the specified namespace.
    *
    * @param namespace the namespace to which the ingresses belong

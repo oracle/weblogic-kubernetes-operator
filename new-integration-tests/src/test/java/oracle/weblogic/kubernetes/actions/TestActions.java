@@ -232,17 +232,6 @@ public class TestActions {
     return Nginx.uninstall(params);
   }
 
-  /**
-   * Delete an ingress which name containing the specified domainUid in the specified domain namespace.
-   *
-   * @param domainNamespace the domain namespace which contains the ingress to delete
-   * @param domainUid the WebLogic domainUid which is backend to the ingress
-   * @return true on success, false otherwise
-   */
-  public static boolean deleteIngress(String domainNamespace, String domainUid) {
-    return Nginx.deleteIngress(domainNamespace, domainUid);
-  }
-
   // -------------------------  namespaces -------------------------------
 
   /**
