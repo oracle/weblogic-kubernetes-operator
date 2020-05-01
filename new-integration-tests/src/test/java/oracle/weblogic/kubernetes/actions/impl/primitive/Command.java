@@ -41,7 +41,8 @@ public class Command {
 
   /**
    * Execute a command.
-   * @return true on success
+   *
+   * @return true if the execution succeeded with an exitValue of zero
    */
   public boolean execute() {
     if (params.verbose()) {
@@ -73,7 +74,7 @@ public class Command {
    * Execute a command and verify the response.
    *
    * @params expectedResponse the expected response to verify
-   * @return true on success
+   * @return true if the execution succeeded and response contains the expected value
    */
   public boolean executeAndVerify(String expectedResponse) {
     if (params.verbose()) {
