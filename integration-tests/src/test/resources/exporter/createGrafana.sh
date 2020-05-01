@@ -40,7 +40,7 @@ sed -i "s/pv-grafana/pv-testgrafana/g" ${monitoringExporterEndToEndDir}/grafana/
 kubectl apply -f ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 echo "Detected Helm Version [${HELM_VERSION}]"
 if [[ "$HELM_VERSION" =~ "v3" ]]; then
-   helm install  $CHARTNAME --wait --namespace $CHARTNS --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
+   helm install  $CHARTNAME --wait --debug --namespace $CHARTNS --values  ${monitoringExporterEndToEndDir}/grafana/values.yaml stable/grafana --version ${grafanaVersionArgs}
    script_status=$?
     echo "status $script_status "
     if [ $script_status != 0 ]; then
