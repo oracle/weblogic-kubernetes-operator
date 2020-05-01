@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class ConfigMap {
@@ -32,13 +31,4 @@ public class ConfigMap {
     return Kubernetes.deleteConfigMap(name, namespace);
   }
 
-  /**
-   * List Kubernetes ConfigMaps in a namespace.
-   *
-   * @param namespace name of namespace
-   * @return List of ConfigMaps in a namespace
-  */
-  public static V1ConfigMapList list(String namespace) {
-    return Kubernetes.listConfigMaps(namespace);
-  }
 }

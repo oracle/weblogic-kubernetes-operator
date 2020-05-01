@@ -16,8 +16,12 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 
 The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/userguide/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{< relref "/samples/_index.md" >}}).
 
+{{% notice tip %}} Step through the [Tutorial](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/hands-on-lab/README.md)
+using the operator to deploy and run a WebLogic domain container-packaged web application on an Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) cluster.
+{{% /notice %}}
+
 ***
-##### Current release
+#### Current release
 
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.5.0.
 This release was published on February 26, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
@@ -48,6 +52,9 @@ The planned feature changes in 3.0.0-rc1 are:
 
 ***
 
+#### Recent changes and known issues
+
+See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
 
 #### Operator earlier versions
 
@@ -94,17 +101,6 @@ The [User guide]({{< relref "/userguide/_index.md" >}}) provides detailed inform
 
 Please refer to our [samples]({{< relref "/samples/_index.md" >}}) for information about the available sample code.
 
-### Need more help? Have a suggestion? Come and say, "Hello!"
-
-We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
-or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
-please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include
-details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
-
-### Recent changes and known issues
-
-See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
-
 ### Developer guide
 
 Developers interested in this project are encouraged to read the [Developer guide]({{< relref "/developerguide/_index.md" >}}) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.
@@ -118,6 +114,13 @@ Documentation for APIs:
 * See the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
 * See the [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
+
+### Need more help? Have a suggestion? Come and say, "Hello!"
+
+We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
+or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
+please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include
+details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
 
 ### Contributing to the operator
 

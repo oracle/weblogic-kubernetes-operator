@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +12,6 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -40,48 +41,12 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
 // directly call the methods in the impl classes
 public class TestActions {
-
-  // ----------------------   pod  ---------------------------------
-
-  /**
-   * Get the creationTimestamp for a given pod with following parameters.
-   *
-   * @param namespace     in which to check for the pod existence
-   * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName       name of the pod
-   * @return creationTimestamp from metadata section of the Pod
-   */
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
-    return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
-  }
-
-  /**
-   * Get the Pod object with following parameters.
-   *
-   * @param namespace     in which to check for the pod existence
-   * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName       name of the pod
-   * @return V1Pod pod object
-   **/
-  public static V1Pod getPod(String namespace, String labelSelector, String podName) {
-    return Pod.getPod(namespace, labelSelector, podName);
-  }
-
-  /**
-   * Get a pod's log.
-   *
-   * @param podName   name of the pod
-   * @param namespace name of the namespace
-   * @return log as a String
-   **/
-  public static String getPodLog(String podName, String namespace) {
-    return Pod.getPodLog(podName, namespace);
-  }
 
   // ----------------------   operator  ---------------------------------
 
@@ -420,16 +385,6 @@ public class TestActions {
     return ConfigMap.delete(name, namespace);
   }
 
-  /**
-   * List Kubernetes ConfigMaps in a namespace.
-   *
-   * @param namespace name of namespace
-   * @return List of ConfigMaps in a namespace
-   */
-  public static V1ConfigMapList listConfigMaps(String namespace) {
-    return ConfigMap.list(namespace);
-  }
-
   // -------------------------- Service ---------------------------------
 
   /**
@@ -481,7 +436,6 @@ public class TestActions {
       String serviceName,
       Map<String, String> label,
       String namespace) {
-
     return Service.getAdminServiceNodePortString(serviceName, label, namespace);
   }
 
@@ -576,11 +530,17 @@ public class TestActions {
 
   /**
    * Log in to a Docker registry.
+<<<<<<< HEAD
    *
-   * @param registryName registry name
-   * @param username     user
-   * @param password     password
-   * @return true if successfull
+   * @param registryName name of Docker registry
+   * @param username     username for the Docker registry
+   * @param password     password for the Docker registry
+=======
+   * @param registryName name of Docker registry
+   * @param username username for the Docker registry
+   * @param password password for the Docker registry
+>>>>>>> 3ac21f7735f434846d742370b38610f103784fea
+   * @return true if successful, false otherwise
    */
   public static boolean dockerLogin(String registryName, String username, String password) {
     return Docker.login(registryName, username, password);
@@ -619,6 +579,82 @@ public class TestActions {
     return Docker.createDockerConfigJson(username, password, email, registry);
   }
 
+  // ----------------------- Execute a Command   ---------------------------
+
+  /**
+   * Execute a command in a container.
+   *
+<<<<<<< HEAD
+   * @param pod              The pod where the command is to be run
+   * @param containerName    The container in the Pod where the command is to be run. If no
+   *                         container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param command          The command to run
+   * @return result of command execution
+   * @throws IOException          if an I/O error occurs.
+   * @throws ApiException         if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
+                                       String... command)
+=======
+   * @param pod The pod where the command is to be run
+   * @param containerName The container in the Pod where the command is to be run. If no
+   *     container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param command The command to run
+   * @return result of command execution
+   * @throws IOException if an I/O error occurs.
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
+      String... command)
+>>>>>>> 3ac21f7735f434846d742370b38610f103784fea
+      throws IOException, ApiException, InterruptedException {
+    return Exec.exec(pod, containerName, redirectToStdout, command);
+  }
+
+<<<<<<< HEAD
+  // ----------------------   pod  ---------------------------------
+
+  /**
+   * Get the creationTimestamp for a given pod with following parameters.
+   *
+   * @param namespace     in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName       name of the pod
+   * @return creationTimestamp from metadata section of the Pod
+   **/
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
+    return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
+  }
+
+  /**
+   * Get the Pod object with following parameters.
+   *
+   * @param namespace     in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName       name of the pod
+   * @return V1Pod pod object
+   **/
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) {
+    return Pod.getPod(namespace, labelSelector, podName);
+  }
+
+  /**
+   * Get a pod's log.
+   *
+   * @param podName   name of the pod
+   * @param namespace name of the namespace
+   * @return log as a String
+   **/
+  public static String getPodLog(String podName, String namespace) {
+    return Pod.getPodLog(podName, namespace);
+  }
+
+=======
+>>>>>>> 3ac21f7735f434846d742370b38610f103784fea
   // ------------------------ where does this go  -------------------------
 
   /**

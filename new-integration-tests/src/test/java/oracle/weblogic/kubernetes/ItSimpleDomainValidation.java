@@ -23,7 +23,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,10 +30,6 @@ import org.junit.jupiter.api.Test;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -165,35 +160,4 @@ class ItSimpleDomainValidation implements LoggedTest {
         .until(domainExists(domainUid, "v7", namespace));
   }
 
-  /**
-   * Delete artifacts.
-   */
-  @AfterAll
-  public void cleanup() {
-
-    // Delete domain custom resource
-    assertTrue(deleteDomainCustomResource(domainUid, namespace), "Domain failed to be deleted, "
-        + "look at the above console log messages for failure reason in ApiException responsebody");
-    logger.info("Deleted Domain Custom Resource {0} from {1}", domainUid, namespace);
-
-    // Delete service account from unique namespace
-    assertTrue(deleteServiceAccount(serviceAccount.getMetadata().getName(),
-        serviceAccount.getMetadata().getNamespace()), "Service account failed to be deleted, "
-        + "look at the above console log messages for failure reason in ApiException responsebody");
-    logger.info("Deleted service account \'" + serviceAccount.getMetadata().getName()
-        + "\' in namespace: " + serviceAccount.getMetadata().getNamespace());
-
-    // Delete the persistent volume claim and persistent volume
-    assertTrue(deletePersistentVolumeClaim(pvcName, namespace),
-        "Persistent volume claim deletion failed, "
-        + "look at the above console log messages for failure reason in ApiException responsebody");
-
-    assertTrue(deletePersistentVolume(pvName), "Persistent volume deletion failed, "
-        + "look at the above console log messages for failure reason in ApiException responsebody");
-
-    // Delete namespace
-    assertTrue(TestActions.deleteNamespace(namespace), "Namespace failed to be deleted, "
-        + "look at the above console log messages for failure reason in ApiException responsebody");
-    logger.info("Deleted namespace: {0}", namespace);
-  }
 }
