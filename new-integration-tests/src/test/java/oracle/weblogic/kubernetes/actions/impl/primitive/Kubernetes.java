@@ -1418,7 +1418,7 @@ public class Kubernetes implements LoggedTest {
       if (out != null) {
         // need to time out here, otherwise the command can take a couple of seconds to return.
         // don't know if we'll need a different timeout value for different environments.
-        out.join(1000);
+        out.join(1500);
       }
 
       // Read data from process's stdout

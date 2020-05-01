@@ -161,8 +161,8 @@ class ItMiiDomain implements LoggedTest {
 
     // create a reusable quick retry policy
     withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(2, SECONDS)
-        .atMost(5, SECONDS).await();
+        .and().with().pollInterval(3, SECONDS)
+        .atMost(7, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
