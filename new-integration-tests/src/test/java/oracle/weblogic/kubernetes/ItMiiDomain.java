@@ -84,6 +84,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodKubectl;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -626,7 +627,7 @@ class ItMiiDomain implements LoggedTest {
     
       if (accountingThread != null) {
         try {
-          accountingThread.join(1000);
+          accountingThread.join();
         } catch (InterruptedException ie) {
           // do nothing
         }
@@ -1078,6 +1079,7 @@ class ItMiiDomain implements LoggedTest {
 
     // check and wait for the admin server pod to be patched with the new image
     checkPodImagePatched(
+        domainUid,
         namespace,
         adminServerPodName,
         image);
@@ -1085,6 +1087,7 @@ class ItMiiDomain implements LoggedTest {
     // check and wait for the managed server pods to be patched with the new image
     for (int i = 1; i <= replicaCount; i++) {
       checkPodImagePatched(
+          domainUid,
           namespace,
           managedServerPrefix + i,
           image);
@@ -1224,6 +1227,7 @@ class ItMiiDomain implements LoggedTest {
   }
   
   private void checkPodImagePatched(
+      String domainUid,
       String namespace,
       String podName,
       String image
@@ -1240,10 +1244,10 @@ class ItMiiDomain implements LoggedTest {
             condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, image),
             String.format(
-               "Pod od %s is not patched with image %s in namespace %s.",
+               "Pod %s is not patched with image %s in namespace %s.",
                podName,
-               namespace,
-               image)));
+               image,
+               namespace)));
   }
   
   private static void collectAppAvaiability(
@@ -1254,12 +1258,17 @@ class ItMiiDomain implements LoggedTest {
       String internalPort,
       String appPath
   ) {
-    boolean v2AppAvailable = true;
+    boolean v2AppAvailable;
+ 
     // ping the app periodically to check its availability across the duration
     // of patching the domain with newer version of the app.
+    // Note: we use the "kubectl exec" command in this method only. This is to avoid
+    // problems when two threads accessing the same pod at the same time via Kubernetes
+    // Java client.
     do {
+      v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
-        v2AppAvailable = v2AppAvailable && appAccessibleInPod(
+        v2AppAvailable = v2AppAvailable && appAccessibleInPodKubectl(
                             namespace,
                             managedServerPrefix + i, 
                             internalPort, 
@@ -1269,7 +1278,7 @@ class ItMiiDomain implements LoggedTest {
 
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {
-        if (appAccessibleInPod(
+        if (appAccessibleInPodKubectl(
             namespace,
             managedServerPrefix + i, 
             internalPort, 
@@ -1290,7 +1299,7 @@ class ItMiiDomain implements LoggedTest {
         logger.info("YYYYYYYYYYY: app available YYYYYYYY count = " + count);   
       }
       try {
-        TimeUnit.MILLISECONDS.sleep(50);
+        TimeUnit.MILLISECONDS.sleep(100);
       } catch (InterruptedException ie) {
         // do nothing
       }

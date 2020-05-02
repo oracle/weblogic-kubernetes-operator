@@ -78,7 +78,7 @@ public class Domain {
   }
 
   /**
-   * Checks if the domain resource has been patched with a new image.
+   * Check if the domain resource has been patched with a new image.
    *
    * @param domainUID identifier of the domain resource
    * @param namespace Kubernetes namespace in which the domain exists
