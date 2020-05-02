@@ -62,5 +62,4 @@ public class NginxParams {
     values.values().removeIf(Objects::isNull);
     return values;
   }
-
 }

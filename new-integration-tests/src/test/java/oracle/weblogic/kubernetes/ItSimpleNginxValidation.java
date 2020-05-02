@@ -115,7 +115,6 @@ class ItSimpleNginxValidation implements LoggedTest {
   private static final String DOMAIN_VERSION = "v7";
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 
-
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
@@ -126,7 +125,6 @@ class ItSimpleNginxValidation implements LoggedTest {
   private static int nodeportshttps;
 
   private String domainUid = "domain1";
-
   private final String managedServerNameBase = "managed-server";
   private final int replicaCount = 2;
 
@@ -149,7 +147,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     opNamespace = namespaces.get(0);
 
     // get a new unique domain namespace
-    logger.info("Creating an unique namespace for WebLogic Domain");
+    logger.info("Creating an unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -323,20 +321,21 @@ class ItSimpleNginxValidation implements LoggedTest {
 
   @Test
   @Order(2)
-  @DisplayName("Create an ingress per domain")
+  @DisplayName("Create an ingress for a WebLogic domain in the specified domain namespace")
   public void testCreateIngress() {
 
     // create an ingress in domain namespace
     assertThat(assertDoesNotThrow(() -> createIngress(domainNamespace, domainUid)))
-            .as("Test createIngress returns true")
-            .withFailMessage("createIngress() did not return true")
+            .as("createIngress succeeds")
+            .withFailMessage(String.format("failed to create an ingress for domain %s in namespace %s",
+                domainUid, domainNamespace))
             .isTrue();
 
     // check the ingress is created
     String ingressName = domainUid + "-nginx";
     assertThat(assertDoesNotThrow(() -> getIngressList(domainNamespace)))
-        .as(String.format("get the ingress %s in namespace %s", ingressName, domainNamespace))
-        .withFailMessage(String.format("can not get ingress %s in namespace %s", ingressName, domainNamespace))
+        .as(String.format("found the ingress %s in namespace %s", ingressName, domainNamespace))
+        .withFailMessage(String.format("can not find ingress %s in namespace %s", ingressName, domainNamespace))
         .contains(ingressName);
 
     logger.info("ingress is created in namespace {0}", domainNamespace);
@@ -425,13 +424,12 @@ class ItSimpleNginxValidation implements LoggedTest {
         .chartDir(OPERATOR_CHART_DIR);
 
     // operator chart values to override
-    OperatorParams opParams =
-        new OperatorParams()
-            .helmParams(opHelmParams)
-            .image(operatorImage)
-            .imagePullSecrets(secretNameMap)
-            .domainNamespaces(Arrays.asList(domainNamespace))
-            .serviceAccount(serviceAccountName);
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .image(operatorImage)
+        .imagePullSecrets(secretNameMap)
+        .domainNamespaces(Arrays.asList(domainNamespace))
+        .serviceAccount(serviceAccountName);
 
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
@@ -473,6 +471,7 @@ class ItSimpleNginxValidation implements LoggedTest {
         .repoName(STABLE_REPO_NAME)
         .chartName(NGINX_CHART_NAME);
 
+    // Nginx chart values to override
     NginxParams nginxParams = new NginxParams()
         .helmParams(nginxHelmParams)
         .nodePortsHttp(nodeportshttp)
@@ -480,8 +479,8 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     // install Nginx
     assertThat(installNginx(nginxParams))
-        .as("Test installNginx returns true")
-        .withFailMessage("installNginx() did not return true")
+        .as("Nginx is installed successfully")
+        .withFailMessage("Nginx installation is failed")
         .isTrue();
 
     // verify that Nginx is installed
@@ -493,15 +492,14 @@ class ItSimpleNginxValidation implements LoggedTest {
     logger.info("Nginx release {0} status is deployed in namespace {1}",
         NGINX_RELEASE_NAME, nginxNamespace);
 
-    // first wait 5 seconds, then check if the Nginx pod is ready.
-    with().pollDelay(5, SECONDS)
-        .and().with().pollInterval(5, SECONDS)
+    // wait until the Nginx pod is ready.
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for Nginx to be ready (elapsed time {0}ms, remaining time {1}ms)",
+                "Waiting for Nginx to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                nginxNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .await().atMost(5, MINUTES)
         .until(isNginxReady(nginxNamespace));
   }
 

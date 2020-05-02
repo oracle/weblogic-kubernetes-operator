@@ -18,7 +18,6 @@ public class Nginx {
    */
   public static Callable<Boolean> isRunning(String namespace) {
     return () -> Kubernetes.isNginxPodRunning(namespace);
-
   }
 
   /**
@@ -30,5 +29,4 @@ public class Nginx {
   public static Callable<Boolean> isReady(String namespace) {
     return () -> Kubernetes.isNginxPodReady(namespace);
   }
-
 }

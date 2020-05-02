@@ -95,7 +95,7 @@ public class Kubernetes {
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
    * @return true if the pod is in the ready condition, false otherwise
-   * @throws ApiException when there is an error in querying the cluster
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
     boolean status = false;
@@ -172,7 +172,7 @@ public class Kubernetes {
    *
    * @param namespace in which to check if the Nginx pod is running
    * @return true if the pod is running, otherwise false
-   * @throws ApiException when there is an error in querying the cluster
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isNginxPodRunning(String namespace) throws ApiException {
 
@@ -185,7 +185,7 @@ public class Kubernetes {
    *
    * @param namespace in which to check if the Nginx pod is ready
    * @return true if the pod is in the ready state, false otherwise
-   * @throws ApiException when there is an error in querying the cluster
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isNginxPodReady(String namespace) throws ApiException {
 

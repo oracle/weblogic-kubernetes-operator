@@ -74,7 +74,7 @@ public class TestUtils {
   }
 
   /**
-   * Get the next free port between range from to to.
+   * Get the next free port between from and to.
    *
    * @param from range starting point
    * @param to range ending port

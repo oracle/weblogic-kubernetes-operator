@@ -33,7 +33,7 @@ public class Nginx {
   private static final String INGRESS_NGINX_CLASS = "nginx";
 
   /**
-   * Install Helm chart.
+   * Install Nginx Helm chart.
    *
    * @param params the parameters to Helm install command such as release name, namespace, repo url or chart dir,
    *               chart name and chart values
@@ -44,7 +44,7 @@ public class Nginx {
   }
 
   /**
-   * Upgrade a Helm release.
+   * Upgrade Nginx Helm release.
    *
    * @param params the parameters to Helm upgrade command such as release name, namespace and chart values to override
    * @return true on success, false otherwise
@@ -54,7 +54,7 @@ public class Nginx {
   }
 
   /**
-   * Uninstall a Helm release.
+   * Uninstall Nginx Helm release.
    *
    * @param params the parameters to Helm uninstall command such as release name and namespace
    * @return true on success, false otherwise
@@ -123,8 +123,7 @@ public class Nginx {
                   .namespace(domainNamespace)
                   .annotations(annotation))
         .spec(new ExtensionsV1beta1IngressSpec()
-              .rules(ingressRules)
-        );
+              .rules(ingressRules));
 
     // create the ingress
     try {
@@ -149,9 +148,12 @@ public class Nginx {
     ExtensionsV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
     List<ExtensionsV1beta1Ingress> listOfIngress = ingressList.getItems();
 
-    listOfIngress.forEach(ingress ->
-        ingressNames.add(ingress.getMetadata().getName())
-    );
+    listOfIngress.forEach(ingress -> {
+      if (ingress.getMetadata() != null) {
+        ingressNames.add(ingress.getMetadata().getName());
+      }
+    });
+
     return ingressNames;
   }
 }

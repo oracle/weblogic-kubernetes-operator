@@ -77,7 +77,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-
 // TODO ryan - in here we want to implement all of the kubernetes
 // primitives that we need, using the API, not spawning a process
 // to run kubectl.
@@ -1912,6 +1911,33 @@ public class Kubernetes implements LoggedTest {
         .stdinIsTty(); // stdin is a TTY (only applies if stdin is true)
   }
 
+  /**
+   * Create an Ingress in the specified namespace.
+   *
+   * @param namespace the namespace in which the ingress will be created
+   * @param ingressBody ExtensionsV1beta1Ingress object, representing the ingress details
+   * @return the ingress created
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static ExtensionsV1beta1Ingress createIngress(String namespace, ExtensionsV1beta1Ingress ingressBody)
+      throws ApiException {
+    ExtensionsV1beta1Ingress ingress;
+    try {
+      ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
+      ingress = apiInstance.createNamespacedIngress(
+          namespace, //namespace
+          ingressBody, // ExtensionsV1beta1Ingress object, representing the ingress details
+          PRETTY, // pretty print output
+          null, // when present, indicates that modifications should not be persisted
+          null // a name associated with the actor or entity that is making these changes
+      );
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+
+    return ingress;
+  }
 
   //------------------------
 
@@ -1953,33 +1979,5 @@ public class Kubernetes implements LoggedTest {
     public InputStream getInputStream() {
       return new ByteArrayInputStream(copy.toByteArray());
     }
-  }
-
-  /**
-   * Create an Ingress in the specified namespace.
-   *
-   * @param namespace the namespace in which the ingress will be created
-   * @param ingressBody ExtensionsV1beta1Ingress object, representing the ingress details
-   * @return the created ingress
-   * @throws ApiException if api call throws error
-   */
-  public static ExtensionsV1beta1Ingress createIngress(String namespace, ExtensionsV1beta1Ingress ingressBody)
-      throws ApiException {
-    ExtensionsV1beta1Ingress ingress;
-    try {
-      ExtensionsV1beta1Api apiInstance = new ExtensionsV1beta1Api(apiClient);
-      ingress = apiInstance.createNamespacedIngress(
-          namespace, //namespace
-          ingressBody, // ExtensionsV1beta1Ingress object, representing the ingress details
-          PRETTY, // pretty print output
-          null, // when present, indicates that modifications should not be persisted
-          null // a name associated with the actor or entity that is making these changes
-      );
-    } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
-      throw apex;
-    }
-
-    return ingress;
   }
 }

@@ -36,9 +36,6 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
-  public static final String PROJECT_ROOT = System.getProperty("user.dir");
-  public static final String INGRESS_SAMPLE_CHART_DIR =
-      PROJECT_ROOT + "/../kubernetes/samples/charts/ingress-per-domain";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;

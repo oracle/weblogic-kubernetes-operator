@@ -210,6 +210,7 @@ public class TestActions {
    * @param domainNamespace the WebLogic domain namespace in which to create the ingress
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createIngress(String domainNamespace, String domainUid) throws ApiException {
     return Nginx.createIngress(domainNamespace, domainUid);
