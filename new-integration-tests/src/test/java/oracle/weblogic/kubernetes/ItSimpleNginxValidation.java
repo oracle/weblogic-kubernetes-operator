@@ -115,8 +115,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   private static final String DOMAIN_VERSION = "v7";
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 
-  private static HelmParams opHelmParams = null;
-  private static V1ServiceAccount serviceAccount = null;
+
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
@@ -127,7 +126,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   private static int nodeporthttps;
 
   private String domainUid = "domain1";
-  private String miiImage = null;
+
   private final String managedServerNameBase = "managed-server";
   private final int replicaCount = 2;
 
@@ -181,7 +180,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     String managedServerPrefix = domainUid + "-" + managedServerNameBase;
 
     // create image with model files
-    miiImage = createImageAndVerify();
+    String miiImage = createImageAndVerify();
 
     // push the image to OCIR to make the test work in multi node cluster
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
@@ -207,7 +206,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    Map<String, String> adminSecretMap = new HashMap();
+    Map<String, String> adminSecretMap = new HashMap<>();
     adminSecretMap.put("username", "weblogic");
     adminSecretMap.put("password", "welcome1");
     secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
@@ -220,7 +219,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    Map<String, String> encryptionSecretMap = new HashMap();
+    Map<String, String> encryptionSecretMap = new HashMap<>();
     encryptionSecretMap.put("username", "weblogicenc");
     encryptionSecretMap.put("password", "weblogicenc");
     secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
@@ -347,9 +346,20 @@ class ItSimpleNginxValidation implements LoggedTest {
   @Order(3)
   @DisplayName("Verify the application can be accessed through the ingress controller ")
   public void testSampleAppThroughIngressController() throws Exception {
+
+    List<String> managedServerNames = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(managedServerNameBase + i);
+    }
+
+    // check that Nginx can access the sample apps from all managed servers in the domain
     String curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %1s' http://%2s:%3s/sample-war/index.jsp",
         domainUid + ".org", K8S_NODEPORT_HOST, nodeporthttp);
-    verifyIngressController(curlCmd, 50);
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
+        .as("Nginx can access the sample app from all managed servers in the domain")
+        .withFailMessage("Nginx can not access the sample app from one or more of the managed servers")
+        .isTrue();
+
   }
 
   /**
@@ -403,7 +413,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %1s in namespace %2s",
         REPO_SECRET_NAME, opNamespace));
 
     // map with secret
@@ -411,7 +421,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     secretNameMap.put("name", REPO_SECRET_NAME);
 
     // Helm install parameters
-    opHelmParams = new HelmParams()
+    HelmParams opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
@@ -495,22 +505,6 @@ class ItSimpleNginxValidation implements LoggedTest {
                 condition.getRemainingTimeInMS()))
         .await().atMost(10, MINUTES)
         .until(isNginxReady(nginxNamespace));
-  }
-
-  /**
-   * Verify the ingress controller can route the app to all managed servers.
-   *
-   * @param curlCmd curl command to ping apps through ingress controller
-   * @param maxIterations max iterations to call curl command
-   * @throws Exception if the ingress controller can not route the app to one or more servers
-   */
-  private void verifyIngressController(String curlCmd, int maxIterations) throws Exception {
-    List<String> managedServerNames = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
-    }
-
-    callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, maxIterations);
   }
 
   /**

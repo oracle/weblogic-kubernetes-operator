@@ -21,46 +21,57 @@ public class TestUtils {
    * @param curlCmd curl command to call the sample app
    * @param managedServerNames managed server names that the sample app response should return
    * @param maxIterations max iterations to call the curl command
-   * @throws Exception if the web app can not hit one or more managed servers
+   * @return true if the web app can hit all managed servers, false otherwise
    */
-  public static void callWebAppAndCheckForServerNameInResponse(String curlCmd,
-                                                               List<String> managedServerNames,
-                                                               int maxIterations) throws Exception {
+  public static boolean callWebAppAndCheckForServerNameInResponse(
+                          String curlCmd,
+                          List<String> managedServerNames,
+                          int maxIterations) {
 
-    // map with server names and boolean values
-    HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
-    managedServerNames.forEach(managedServerName -> {
-      managedServers.put(managedServerName, false);
-    });
+    // first map all server names with false
+    HashMap<String, Boolean> managedServers = new HashMap<>();
+    managedServerNames.forEach(managedServerName ->
+        managedServers.put(managedServerName, false)
+    );
 
     logger.info("Calling webapp at most {0} times using command: {1}", maxIterations, curlCmd);
 
     // check the response contains managed server name
     for (int i = 1; i <= maxIterations; i++) {
-      if (!managedServers.containsValue(false)) {
-        break;
-      } else {
-        Thread.sleep(100);
-        ExecResult result = ExecCommand.exec(curlCmd, true);
 
-        String response = result.stdout().trim();
-        managedServers.keySet().forEach(key -> {
-          if (response.contains(key)) {
-            managedServers.put(key, true);
-          }
-        });
+      if (!managedServers.containsValue(false)) {
+        return true;
+      } else {
+        try {
+          // sometimes the pod is not ready even the condition check is ready, sleep a little bit
+          Thread.sleep(100);
+          ExecResult result = ExecCommand.exec(curlCmd, true);
+
+          String response = result.stdout().trim();
+          managedServers.keySet().forEach(key -> {
+            if (response.contains(key)) {
+              managedServers.put(key, true);
+
+            }
+          });
+        } catch (Exception e) {
+          logger.info("Got exceptions while running command: " + curlCmd);
+          return false;
+        }
       }
     }
 
     // after the max iterations, check if any managedserver value is false
-    managedServers.entrySet().forEach(entry -> {
-      if (entry.getValue()) {
-        logger.info("The sample app can be accessed from the server " + entry.getKey());
+    managedServers.forEach((key, value) -> {
+      if (value) {
+        logger.info("The sample app can be accessed from the server " + key);
       } else {
-        throw new RuntimeException(
-            "FAILURE: The sample app can not be accessed from the server " + entry.getKey());
+        logger.info("FAILURE: The sample app can not be accessed from the server " + key);
       }
     });
+
+    // final check if any managed server value is false
+    return !managedServers.containsValue(false);
   }
 
   /**
@@ -88,7 +99,7 @@ public class TestUtils {
    * @param port port number to check
    * @return true if the port is free, false otherwise
    */
-  public static boolean isLocalPortFree(int port) {
+  private static boolean isLocalPortFree(int port) {
     try {
       new ServerSocket(port).close();
       return true;

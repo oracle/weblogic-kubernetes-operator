@@ -191,8 +191,7 @@ public class TestActions {
     return Domain.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 
-  // ------------------------   ingress controller ----------------------
-
+  // ------------------------   Ingress Controller ----------------------
 
   /**
    * Install Nginx ingress controller.
@@ -564,9 +563,9 @@ public class TestActions {
    *
    * @param namespace in which to list all the ingresses
    * @return list of ingress names in the specified namespace
-   * @throws Exception if any error occurs
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static List<String> getIngressList(String namespace) throws Exception {
+  public static List<String> getIngressList(String namespace) throws ApiException {
     return Nginx.getIngressList(namespace);
   }
 

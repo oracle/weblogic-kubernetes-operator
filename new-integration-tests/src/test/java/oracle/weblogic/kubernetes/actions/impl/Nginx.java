@@ -28,14 +28,14 @@ import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
  */
 public class Nginx {
 
-  public static final String INGRESS_API_VERSION = "extensions/v1beta1";
-  public static final String INGRESS_KIND = "Ingress";
-  public static final String INGRESS_NGINX_CLASS = "nginx";
+  private static final String INGRESS_API_VERSION = "extensions/v1beta1";
+  private static final String INGRESS_KIND = "Ingress";
+  private static final String INGRESS_NGINX_CLASS = "nginx";
 
   /**
    * Install Helm chart.
    *
-   * @param params the parameters to Helm install command such as namespace, release name, repo url or chart dir,
+   * @param params the parameters to Helm install command such as release name, namespace, repo url or chart dir,
    *               chart name and chart values
    * @return true on success, false otherwise
    */
@@ -46,7 +46,7 @@ public class Nginx {
   /**
    * Upgrade a Helm release.
    *
-   * @param params the parameters to Helm upgrade command such as namespace, release name and chart values to override
+   * @param params the parameters to Helm upgrade command such as release name, namespace and chart values to override
    * @return true on success, false otherwise
    */
   public static boolean upgrade(NginxParams params) {
@@ -70,11 +70,10 @@ public class Nginx {
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @return true on success, false otherwise
-   * @throws ApiException if api call throws error
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createIngress(String domainNamespace, String domainUid) throws ApiException {
     return createIngress(domainNamespace, domainUid, "cluster-1", 8001);
-
   }
 
   /**
@@ -83,9 +82,9 @@ public class Nginx {
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param clusterName the name of the WebLogic domain cluster
-   * @param managedServerPort the port number of the Weblogic domain managed servers
+   * @param managedServerPort the port number of the WebLogic domain managed servers
    * @return true on success, false otherwise
-   * @throws ApiException if api call throws error
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createIngress(String domainNamespace,
                                       String domainUid,
@@ -103,7 +102,7 @@ public class Nginx {
                 .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
                 .servicePort(new IntOrString(managedServerPort))
         );
-    ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList();
+    ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
     httpIngressPaths.add(httpIngressPath);
 
     // set the ingress rule
@@ -137,10 +136,11 @@ public class Nginx {
   }
 
   /**
-   * Get a list of ingresses in the specified namespace.
+   * Get a list of ingress names in the specified namespace.
    *
    * @param namespace the namespace to which the ingresses belong
-   * @return a list of ingresses in the namespace
+   * @return a list of ingress names in the namespace
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static List<String> getIngressList(String namespace) throws ApiException {
 
@@ -148,10 +148,9 @@ public class Nginx {
     ExtensionsV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
     List<ExtensionsV1beta1Ingress> listOfIngress = ingressList.getItems();
 
-    listOfIngress.forEach(ingress -> {
-      ingressNames.add(ingress.getMetadata().getName());
-
-    });
+    listOfIngress.forEach(ingress ->
+        ingressNames.add(ingress.getMetadata().getName())
+    );
     return ingressNames;
   }
 }
