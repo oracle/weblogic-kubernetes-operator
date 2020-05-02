@@ -7,7 +7,7 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-
+WDT_MINIMUM_VERSION="1.7.3"
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
@@ -283,6 +283,11 @@ function createWLDomain() {
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
+  checkModelDirectoryExtensions
+  if [ "true" != "${WDT_BYPASS_WDT_VERSION_CHECK}" ] ; then
+    checkWDTVersion
+  fi
+
   # copy the filter related files to the wdt lib
 
   cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib
@@ -382,6 +387,63 @@ function checkDirNotExistsOrEmpty() {
   fi
 
   trace "Exiting checkDirNotExistsOrEmpty"
+}
+
+# limit the file extensions in the model directories
+
+function checkModelDirectoryExtensions() {
+  trace "Entering checkModelDirectoryExtensions"
+
+  cd ${IMG_MODELS_HOME}
+  counter=$(ls  -I  "*.yaml" -I "*.zip" -I "*.properties" | wc -l)
+  if [ $counter -ne 0 ] ; then
+    trace SEVERE "Model image directory ${IMG_MODELS_HOME} contains files with unsupported extensions. " \
+      "Expected extensions: .yaml, .properties, or .zip"
+    trace SEVERE "Model image directory files with unsupported extensions: " \
+      "'$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
+    exitOrLoop
+  fi
+  if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
+    cd ${WDT_CONFIGMAP_ROOT}
+    counter=$(ls  -I  "*.yaml" -I "*.properties" | wc -l)
+    if [ $counter -ne 0 ] ; then
+      trace SEVERE "Model configmap directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extensions. " \
+      "Expected extensions: .yaml or .properties"
+      trace SEVERE "Model configmap directory files with unsupported extensions: " \
+        "'$(ls -I "*.yaml" -I "*.properties")'"
+      exitOrLoop
+    fi
+  fi
+
+  trace "Exiting checkModelDirectoryExtensions"
+}
+
+# Check for WDT version
+
+function checkWDTVersion() {
+  trace "Entering checkWDTVersion"
+  unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
+  local wdt_version="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
+  if  [ ! -z ${wdt_version} ]; then
+    versionGE ${wdt_version} ${WDT_MINIMUM_VERSION}
+    if [ $? != "0" ] ; then
+      trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
+      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "in the image is ${wdt_version}, you can create another image with an updated version of the WebLogic Deploy " \
+      "Tool and redeploy the domain again. To bypass this check, set environment variable " \
+      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
+      exitOrLoop
+    fi
+  else
+      trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
+      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "in the image cannot be determined, you can create another image with an updated version of the WebLogic Deploy" \
+      " Tool and redeploy the domain again. To bypass this check, set environment variable " \
+      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
+    exitOrLoop
+  fi
+
+  trace "Exiting checkWDTVersion"
 }
 
 # getSecretsMD5
