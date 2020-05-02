@@ -36,6 +36,7 @@ import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.awaitility.core.ConditionFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -78,6 +79,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getIngressList;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -348,6 +350,21 @@ class ItSimpleNginxValidation implements LoggedTest {
     String curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %1s' http://%2s:%3s/sample-war/index.jsp",
         domainUid + ".org", K8S_NODEPORT_HOST, nodeporthttp);
     verifyIngressController(curlCmd, 50);
+  }
+
+  /**
+   * TODO: remove this after Sankar's PR is merged
+   * The cleanup framework did not uninstall Nginx release. Do it here for now.
+   */
+  @AfterAll
+  public void tearDownAll() {
+    // uninstall Nginx release
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
   }
 
   /**
