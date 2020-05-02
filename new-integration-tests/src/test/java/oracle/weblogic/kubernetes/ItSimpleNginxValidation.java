@@ -122,8 +122,8 @@ class ItSimpleNginxValidation implements LoggedTest {
   private static String dockerConfigJson = "";
   private static HelmParams nginxHelmParams = null;
   private static String nginxNamespace = null;
-  private static int nodeporthttp;
-  private static int nodeporthttps;
+  private static int nodeportshttp;
+  private static int nodeportshttps;
 
   private String domainUid = "domain1";
 
@@ -162,8 +162,8 @@ class ItSimpleNginxValidation implements LoggedTest {
     installAndVerifyOperator();
 
     // get a free node port for Nginx
-    nodeporthttp = getNextFreePort(30305, 30405);
-    nodeporthttps = getNextFreePort(30443, 30543);
+    nodeportshttp = getNextFreePort(30305, 30405);
+    nodeportshttps = getNextFreePort(30443, 30543);
 
     // install and verify Nginx
     installAndVerifyNginx();
@@ -335,8 +335,8 @@ class ItSimpleNginxValidation implements LoggedTest {
     // check the ingress is created
     String ingressName = domainUid + "-nginx";
     assertThat(assertDoesNotThrow(() -> getIngressList(domainNamespace)))
-        .as(String.format("get the ingress %1s in namespace %2s", ingressName, domainNamespace))
-        .withFailMessage(String.format("can not get ingress %1s in namespace %2s", ingressName, domainNamespace))
+        .as(String.format("get the ingress %s in namespace %s", ingressName, domainNamespace))
+        .withFailMessage(String.format("can not get ingress %s in namespace %s", ingressName, domainNamespace))
         .contains(ingressName);
 
     logger.info("ingress is created in namespace {0}", domainNamespace);
@@ -353,18 +353,17 @@ class ItSimpleNginxValidation implements LoggedTest {
     }
 
     // check that Nginx can access the sample apps from all managed servers in the domain
-    String curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %1s' http://%2s:%3s/sample-war/index.jsp",
-        domainUid + ".org", K8S_NODEPORT_HOST, nodeporthttp);
+    String curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
+        domainUid + ".org", K8S_NODEPORT_HOST, nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Nginx can access the sample app from all managed servers in the domain")
         .withFailMessage("Nginx can not access the sample app from one or more of the managed servers")
         .isTrue();
-
   }
 
   /**
    * TODO: remove this after Sankar's PR is merged
-   * The cleanup framework did not uninstall Nginx release. Do it here for now.
+   * The cleanup framework does not uninstall Nginx release. Do it here for now.
    */
   @AfterAll
   public void tearDownAll() {
@@ -378,7 +377,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   }
 
   /**
-   * Prepare and install WebLogic operator.
+   * Install WebLogic operator and wait until the operator pod is ready.
    */
   private static void installAndVerifyOperator() {
 
@@ -386,8 +385,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     logger.info("Creating service account");
     String serviceAccountName = opNamespace + "-sa";
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(
-            new V1ObjectMeta()
+        .metadata(new V1ObjectMeta()
                 .namespace(opNamespace)
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
@@ -413,7 +411,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %1s in namespace %2s",
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
         REPO_SECRET_NAME, opNamespace));
 
     // map with secret
@@ -477,8 +475,8 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     NginxParams nginxParams = new NginxParams()
         .helmParams(nginxHelmParams)
-        .nodePortsHttp(nodeporthttp)
-        .nodePortsHttps(nodeporthttps);
+        .nodePortsHttp(nodeportshttp)
+        .nodePortsHttps(nodeportshttps);
 
     // install Nginx
     assertThat(installNginx(nginxParams))
@@ -503,7 +501,7 @@ class ItSimpleNginxValidation implements LoggedTest {
                 "Waiting for Nginx to be ready (elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .await().atMost(10, MINUTES)
+        .await().atMost(5, MINUTES)
         .until(isNginxReady(nginxNamespace));
   }
 

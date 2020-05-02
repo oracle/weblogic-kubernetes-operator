@@ -126,6 +126,7 @@ public class Nginx {
               .rules(ingressRules)
         );
 
+    // create the ingress
     try {
       Kubernetes.createIngress(domainNamespace, ingress);
     } catch (ApiException apex) {

@@ -14,8 +14,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
  */
 public class NginxParams {
 
-  // only add the values which need to be updated here
-  // the default values are here:
+  // Only add the values which need to be updated here.
+  // The default values can be found here:
   // https://github.com/helm/charts/blob/master/stable/nginx-ingress/values.yaml
   private static final String NODEPORTS_HTTP = "controller.service.nodePorts.http";
   private static final String NODEPORTS_HTTPS = "controller.service.nodePorts.https";

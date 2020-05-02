@@ -17,9 +17,8 @@ public class Nginx {
    * @return true if the Nginx pod is running, false otherwise
    */
   public static Callable<Boolean> isRunning(String namespace) {
-    return () -> {
-      return Kubernetes.isNginxPodRunning(namespace);
-    };
+    return () -> Kubernetes.isNginxPodRunning(namespace);
+
   }
 
   /**
@@ -29,9 +28,7 @@ public class Nginx {
    * @return true if the Nginx pod is in the ready state, false otherwise
    */
   public static Callable<Boolean> isReady(String namespace) {
-    return () -> {
-      return Kubernetes.isNginxPodReady(namespace);
-    };
+    return () -> Kubernetes.isNginxPodReady(namespace);
   }
 
 }

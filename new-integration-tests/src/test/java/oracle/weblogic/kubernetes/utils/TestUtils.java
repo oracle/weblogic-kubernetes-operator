@@ -51,7 +51,6 @@ public class TestUtils {
           managedServers.keySet().forEach(key -> {
             if (response.contains(key)) {
               managedServers.put(key, true);
-
             }
           });
         } catch (Exception e) {
@@ -64,9 +63,9 @@ public class TestUtils {
     // after the max iterations, check if any managedserver value is false
     managedServers.forEach((key, value) -> {
       if (value) {
-        logger.info("The sample app can be accessed from the server " + key);
+        logger.info("The sample app can be accessed from the server {0}", key);
       } else {
-        logger.info("FAILURE: The sample app can not be accessed from the server " + key);
+        logger.info("FAILURE: The sample app can not be accessed from the server {0}", key);
       }
     });
 
