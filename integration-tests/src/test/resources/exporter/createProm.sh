@@ -61,7 +61,7 @@ for p in `kubectl get po -l app=$appname -o name -n $CHARTNS `;do echo "deleting
 
 
 echo "Installing $CHARTNAME helm chart."
-helm install --debug $CHARTNAME stable/$CHARTNAME --namespace $CHARTNS \
+helm install --debug --wait $CHARTNAME stable/$CHARTNAME --namespace $CHARTNS \
   --values ${monitoringExporterEndToEndDir}/$CHARTNAME/promvalues.yaml --version ${promVersionArgs}
 script_status=$?
 echo "status $script_status "

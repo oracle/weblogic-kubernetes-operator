@@ -12,10 +12,8 @@ kubectl delete ns webhook
 HELM_VERSION=$(helm version --short --client)
 echo "Detected Helm Version [${HELM_VERSION}]"
 #delete grafana, prometheus
-if [[ "$HELM_VERSION" =~ "v2" ]]; then
-   helm delete --purge grafana
-   helm delete --purge prometheus
-elif [[ "$HELM_VERSION" =~ "v3" ]]; then
+
+if [[ "$HELM_VERSION" =~ "v3" ]]; then
    helm uninstall grafana  --namespace monitortestns
    helm uninstall prometheus  --namespace monitortestns
 else
@@ -41,6 +39,5 @@ kubectl delete -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
 #delete database
 kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql.yaml --ignore-not-found
 kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/persistence.yaml --ignore-not-found
-#kubectl delete -f ${monitoringExporterEndToEndDir}/mysql/mysql-secret.yaml
 kubectl delete -f ${monitoringExporterEndToEndDir}/util/curl.yaml
 echo "Run the script [deletePromGrafanaMySqlCoordWebhook.sh] ..."
