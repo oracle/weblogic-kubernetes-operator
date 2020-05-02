@@ -87,7 +87,7 @@ public class TestAssertions {
       String image
   ) throws ApiException {
     return () -> {
-      return Kubernetes.isPodImagePatched(namespace, domainUid, podName, image);
+      return Kubernetes.podImagePatched(namespace, domainUid, podName, image);
     };
   }
 
@@ -187,7 +187,7 @@ public class TestAssertions {
   /**
    * Check if a admin server pod admin node port is accessible.
    *
-   * @param domainUid domainUid id of the domain in which admin server pod is running
+   * @param domainUid id of the domain in which admin server pod is running
    * @param namespace in which the WebLogic server pod exists
    * @return true if the admin node port is accessible otherwise false
    */
@@ -214,7 +214,7 @@ public class TestAssertions {
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
    * @param appPath path to access the application
-   * @param expectedStr the expected response from the application
+   * @param expectedResponse the expected response from the application
    * @return true if the command succeeds 
    */
   public static boolean appAccessibleInPodKubectl(
@@ -222,9 +222,9 @@ public class TestAssertions {
       String podName,
       String port,
       String appPath,
-      String expectedStr
+      String expectedResponse
   ) {
-    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedStr);
+    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
@@ -235,7 +235,7 @@ public class TestAssertions {
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
    * @param appPath path to access the application
-   * @param expectedStr the expected response from the application
+   * @param expectedResponse the expected response from the application
    * @return true if the command succeeds 
    */
   public static boolean appAccessibleInPod(
@@ -243,9 +243,9 @@ public class TestAssertions {
       String podName,
       String port,
       String appPath,
-      String expectedStr
+      String expectedResponse
   ) {
-    return Application.appAccessibleInPod(namespace, podName, port, appPath, expectedStr);
+    return Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
@@ -255,7 +255,7 @@ public class TestAssertions {
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
    * @param appPath path to access the application
-   * @param expectedStr the expected response from the application
+   * @param expectedResponse the expected response from the application
    * @return true if the command succeeds 
    */
   public static boolean appNotAccessibleInPod(
@@ -263,9 +263,9 @@ public class TestAssertions {
       String podName,
       String port,
       String appPath,
-      String expectedStr
+      String expectedResponse
   ) {
-    return !Application.appAccessibleInPod(namespace, podName, port, appPath, expectedStr);
+    return !Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**

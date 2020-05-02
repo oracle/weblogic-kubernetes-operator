@@ -122,7 +122,7 @@ public class Kubernetes {
    * @return true if pod's image has been patched
    * @throws ApiException when there is an error in querying the Kubernetes cluster
    */
-  public static boolean isPodImagePatched(
+  public static boolean podImagePatched(
       String namespace,
       String domainUid,
       String podName,
