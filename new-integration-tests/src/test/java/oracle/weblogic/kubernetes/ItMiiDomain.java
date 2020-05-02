@@ -1261,7 +1261,7 @@ class ItMiiDomain implements LoggedTest {
       for (int i = 1; i <= replicaCount; i++) {
         v2AppAvailable = v2AppAvailable && appAccessibleInPod(
                             namespace,
-                            managedServerPrefix + replicaCount, 
+                            managedServerPrefix + i, 
                             internalPort, 
                             appPath, 
                             APP_RESPONSE_V2 + i);
