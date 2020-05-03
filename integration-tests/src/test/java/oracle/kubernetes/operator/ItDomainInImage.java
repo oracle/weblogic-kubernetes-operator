@@ -112,6 +112,7 @@ public class ItDomainInImage extends BaseTest {
       domainMap.remove("clusterType");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
+      domain.enablePrecreateService();
       testBasicUseCases(domain, true);
       testClusterScaling(operator1, domain, false);
       testCompletedSuccessfully = true;
@@ -157,6 +158,7 @@ public class ItDomainInImage extends BaseTest {
 
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
+      domain.enablePrecreateService();
       List<ExecResult> execResultList = domain.verifySslListeners();
       Assert.assertTrue(execResultList.size() > 0);
       for (ExecResult execResult : execResultList) {
@@ -207,7 +209,7 @@ public class ItDomainInImage extends BaseTest {
       domainMap.put("createDomainFilesDir", "wdt");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-
+      domain.enablePrecreateService();
       testBasicUseCases(domain, false);
       testClusterScaling(operator1, domain, true);
       testCompletedSuccessfully = true;
