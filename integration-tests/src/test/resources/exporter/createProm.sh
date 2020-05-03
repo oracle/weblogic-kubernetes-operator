@@ -10,12 +10,14 @@ CHARTNAME=prometheus
 CHARTNS=monitortestns
 
 function checkPod() {
-  max=20
+  max=15
   count=0
   echo "Checking pods $CHARTNAME-server and $CHARTNAME-alertmanager"
   serverpod=$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{print $1 }')
   alertpod=$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{print $1 }')
   while test $count -lt $max; do
+    kubectl get po -n $CHARTNS | grep $CHARTNAME-server
+    kubectl get po -n $CHARTNS | grep $CHARTNAME-alertmanager
     if test "$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{ print $2 }')" = 2/2; then
       echo "$CHARTNAME-server  pod is running now."
       if test "$(kubectl get po -n $CHARTNS | grep $CHARTNAME-alertmanager | awk '{ print $2 }')" = 2/2; then
@@ -61,14 +63,14 @@ for p in `kubectl get po -l app=$appname -o name -n $CHARTNS `;do echo "deleting
 
 
 echo "Installing $CHARTNAME helm chart."
-helm install --debug  $CHARTNAME stable/$CHARTNAME --namespace $CHARTNS \
+helm install  $CHARTNAME stable/$CHARTNAME --namespace $CHARTNS \
   --values ${monitoringExporterEndToEndDir}/$CHARTNAME/promvalues.yaml --version ${promVersionArgs}
 script_status=$?
 echo "status $script_status "
-helm status $CHARTNAME --namespace $CHARTNS -o yaml
 if [ $script_status != 0 ]; then
     echo "createProm.sh returned: $script_status"
     echo "ERROR: createProm.sh failed"
+    helm status $CHARTNAME --namespace $CHARTNS
     helm uninstall $CHARTNAME --namespace $CHARTNS
     exit $script_status
 fi
