@@ -65,9 +65,11 @@ helm install --debug  $CHARTNAME stable/$CHARTNAME --namespace $CHARTNS \
   --values ${monitoringExporterEndToEndDir}/$CHARTNAME/promvalues.yaml --version ${promVersionArgs}
 script_status=$?
 echo "status $script_status "
-echo helm status $CHARTNAME --namespace $CHARTNS -o yaml
+helm status $CHARTNAME --namespace $CHARTNS -o yaml
 if [ $script_status != 0 ]; then
     echo "createProm.sh returned: $script_status"
+    echo "ERROR: createProm.sh failed"
+    helm uninstall $CHARTNAME --namespace $CHARTNS
     exit $script_status
 fi
 echo "Wait until $CHARTNAME pod is running."

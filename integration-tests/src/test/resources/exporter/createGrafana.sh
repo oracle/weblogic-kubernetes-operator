@@ -45,6 +45,8 @@ if [[ "$HELM_VERSION" =~ "v3" ]]; then
     echo "status $script_status "
     if [ $script_status != 0 ]; then
        echo "createGrafana.sh returned: $script_status"
+       echo "ERROR: createGrafana.sh failed"
+       helm uninstall $CHARTNAME --namespace $CHARTNS
        exit $script_status
     fi
 else

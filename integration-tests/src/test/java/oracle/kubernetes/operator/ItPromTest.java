@@ -136,8 +136,8 @@ public class ItPromTest extends BaseTest {
     if (!installPromGrafanaWebHookMySqlCoord) {
       gitCloneBuildMonitoringExporter();
       setupPv();
+      installPrometheusGrafanaWebHookMySqlCoordinator();
     }
-    installPrometheusGrafanaWebHookMySqlCoordinator();
     assertTrue(installPromGrafanaWebHookMySqlCoord, "ERROR: Failed to install 3rd party deployments");
   }
 
