@@ -73,6 +73,7 @@ if [ $script_status != 0 ]; then
     echo "createProm.sh returned: $script_status"
     echo "ERROR: createProm.sh failed"
     helm status $CHARTNAME --namespace $CHARTNS
+    kubectl get events -n $CHARTNS  --sort-by='.metadata.creationTimestamp'
     helm uninstall $CHARTNAME --namespace $CHARTNS
     exit $script_status
 fi

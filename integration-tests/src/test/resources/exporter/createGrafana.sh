@@ -46,6 +46,7 @@ if [[ "$HELM_VERSION" =~ "v3" ]]; then
     if [ $script_status != 0 ]; then
        echo "createGrafana.sh returned: $script_status"
        echo "ERROR: createGrafana.sh failed"
+       kubectl get events -n $CHARTNS  --sort-by='.metadata.creationTimestamp'
        helm uninstall $CHARTNAME --namespace $CHARTNS
        exit $script_status
     fi
