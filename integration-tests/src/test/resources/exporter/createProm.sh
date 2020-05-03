@@ -46,10 +46,6 @@ sed -i "s/pv-alert/pv-testalert/g" ${monitoringExporterEndToEndDir}/prometheus/a
 cat ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
 cat ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
 
-#FIXME
-kubectl delete pv pv-grafana
-kubectl delete pv pv-prometheus
-kubectl delete pv pv-alertmanager
 
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml
 kubectl apply -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml
