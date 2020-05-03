@@ -85,6 +85,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String domainNS2;
   private static String currentDateTime;
   private static final String monitoringNS = "monitortestns";
+  private static boolean installPromGrafanaWebHookMySqlCoord = false;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -162,6 +163,7 @@ public class ItMonitoringExporter extends BaseTest {
       installPrometheusGrafanaWebHookMySqlCoordinator();
     }
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
+    assertTrue(installPromGrafanaWebHookMySqlCoord, "ERROR: Failed to install 3rd party deployments");
   }
 
   /**
@@ -1185,6 +1187,7 @@ public class ItMonitoringExporter extends BaseTest {
     //update with current Exporter version
     replaceStringInFile(monitoringExporterEndToEndDir + "/demo-domains/domainBuilder/build.sh",
         "1.1.1", MONITORING_EXPORTER_VERSION);
+    installPromGrafanaWebHookMySqlCoord = true;
   }
 
   static void checkPromGrafana(String searchKey, String expectedVal) throws Exception {
