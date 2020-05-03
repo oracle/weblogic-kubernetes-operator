@@ -632,6 +632,8 @@ class ItMiiDomain implements LoggedTest {
           // do nothing
         }
   
+        // check the app availability data that we have collected, and see if
+        // the app has been available all the time since the beginning of this test method
         assertTrue(appAlwaysAvailable(appAvailability),
             "App does not always avaiable when the domain is being patched with a newer version of the app.");
       }
@@ -679,7 +681,7 @@ class ItMiiDomain implements LoggedTest {
     }
    
     // create an image with the additional app
-    miiImageAddSecondApp = updateImageWithApp3(
+    miiImageAddSecondApp = updateImageWithSampleApp3(
         String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
@@ -837,7 +839,7 @@ class ItMiiDomain implements LoggedTest {
     return image;
   }
 
-  private String updateImageWithApp3(
+  private String updateImageWithSampleApp3(
       String imageName,
       List<String> appDirList1,
       List<String> appDirList2,
@@ -1299,7 +1301,7 @@ class ItMiiDomain implements LoggedTest {
         logger.info("YYYYYYYYYYY: app available YYYYYYYY count = " + count);   
       }
       try {
-        TimeUnit.MILLISECONDS.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(200);
       } catch (InterruptedException ie) {
         // do nothing
       }
