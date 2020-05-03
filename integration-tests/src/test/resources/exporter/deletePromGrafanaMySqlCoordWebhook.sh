@@ -31,7 +31,7 @@ kubectl delete -f ${monitoringExporterEndToEndDir}/prometheus/persistence.yaml -
 kubectl delete -f ${monitoringExporterEndToEndDir}/prometheus/alert-persistence.yaml --ignore-not-found
 
 export appname=prometheus
-for p in `kubectl get po -l app=$appname -o name -n monitoring `;do echo $p; kubectl delete ${p} -n monitortestns --force --grace-period=0 --ignore-not-found; done
+for p in `kubectl get po -l app=$appname -o name -n monitortestns `;do echo $p; kubectl delete ${p} -n monitortestns --force --grace-period=0 --ignore-not-found; done
 
 #delete coordinator
 kubectl delete -f ${resourceExporterDir}/coordinator_${domainNS}.yaml
