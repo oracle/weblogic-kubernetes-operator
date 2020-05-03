@@ -14,7 +14,7 @@ function checkPod() {
   count=0
   echo "Checking pods $CHARTNAME-server and $CHARTNAME-alertmanager"
   serverpod=$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{print $1 }')
-  alertpod=$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{print $1 }')
+  alertpod=$(kubectl get po -n $CHARTNS | grep $CHARTNAME-alertmanager | awk '{print $1 }')
   while test $count -lt $max; do
     kubectl get po -n $CHARTNS | grep $CHARTNAME-server
     kubectl get po -n $CHARTNS | grep $CHARTNAME-alertmanager
