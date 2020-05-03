@@ -18,6 +18,7 @@ function checkPod() {
   while test $count -lt $max; do
     kubectl get po -n $CHARTNS | grep $CHARTNAME-server
     kubectl get po -n $CHARTNS | grep $CHARTNAME-alertmanager
+    kubectl logs ${alertpod} -n $CHARTNS -c prometheus-alertmanager
     if test "$(kubectl get po -n $CHARTNS | grep $CHARTNAME-server | awk '{ print $2 }')" = 2/2; then
       echo "$CHARTNAME-server  pod is running now."
       if test "$(kubectl get po -n $CHARTNS | grep $CHARTNAME-alertmanager | awk '{ print $2 }')" = 2/2; then
@@ -33,6 +34,8 @@ function checkPod() {
   echo
   kubectl describe pod/${alertpod} -n $CHARTNS
   kubectl describe pod/${serverpod} -n $CHARTNS
+  kubectl get events -n $CHARTNS  --sort-by='.metadata.creationTimestamp'
+  kubectl logs ${alertpod} -n $CHARTNS -c prometheus-alertmanager
   exit 1
 }
 sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
