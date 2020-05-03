@@ -23,9 +23,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 ### Introduction
 
 
-This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}); these have a domain resource with `domainHomeSourceType: FromModel`.
-
-Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
+This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md).
 
@@ -55,6 +53,7 @@ This sample demonstrates two Model in Image use cases:
   - WebLogic credentials
   - Required WDT runtime password
 - A domain resource with:
+  - `spec.domainHomeSourceType: FromModel`.
   - `spec.image: model-in-image:WLS-v1`
   - References to the secrets
 {{% /expand%}}

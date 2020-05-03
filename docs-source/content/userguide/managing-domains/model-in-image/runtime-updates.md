@@ -126,7 +126,7 @@ As was mentioned in the [overview](#overview), one way to tell the operator to a
 
  - If you have your domain's resource file, then you can alter this file and call `kubectl apply -f` on the file.
 
- - You can use the Kubernetes `get` and `patch` commands. Here's a sample automation script:
+ - You can use the Kubernetes `get` and `patch` commands. Here's a sample automation script that takes a namespace as the first parameter (default `sample-domain1-ns`) and that takes a domain uid as the second parameter (default `sample-domain1`):
 
    ```
    #!/bin/bash
@@ -184,150 +184,186 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 
 #### Example of adding a data source
 
-Here's an example script for adding a data source to a WebLogic cluster named `cluster-1` for a domain resource in namespace, `sample-domain1-ns`, with domain UID, `sample-domain1`. This example is designed to work on top of the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
+Here's an example for adding a data source to a running model domain. We make the following assumptions about the domain resource, the database, and the data source:
 
-This example references a database running in the `default` namespace that is accessed with the URL `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, user `sys as dba`, and password `Oradoc_db1`. Note that you can still add this data source even if there's no database running at this location.
+ - Domain resource:
+   - Is in namespace `sample-domain1-ns`. 
+   - Has domain UID `sample-domain1`.
+   - Has a cluster named `cluster-1`.
+ - Data source:
+   - Targeted to WebLogic cluster `cluster-1`.
+   - References an Oracle database `devpdb.k8s`.
+     - Running in the `default` Kubernetes namespace with port 1521 on the `oracle-db` Kubernetes service.
+     - Which can therefore be accessed with a `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s` thin driver URL.
+   - Assumes the user is `sys as dba` and the password `Oradoc_db1`. 
+   - Sets `JDBCConnectionPoolParams.InitialCapacity` to `0`.
+     - This allows the datasource to deploy without errors even when there's no database running at this location.
 
-{{% notice note %}} If you already have a WDT configmap deployed for your running domain, as is true for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, then you should ensure that any updated configmap that you supply includes any needed files that were in the original WDT configmap. For example, the Model in Image sample puts files in a directory that it uses to stage its configmap in `$WORKDIR/wdtconfigmap`.
-{{% /notice %}}
+This example is designed to work on top of the 'Initial use case' described in the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample and is the same as the the `Update1 use case` in the sample.
 
+Here are the steps.
 
-  ```
-  #!/bin/bash
+1. Copy the following datasource WDT model to a file with the `.yaml` extension, let's put it in `~/datasource.yaml`.
 
-  set -eu
+   ```
+   resources:
+     JDBCSystemResource:
+       mynewdatasource:
+         Target: 'cluster-1'
+         JdbcResource:
+           JDBCDataSourceParams:
+             JNDIName: [
+               jdbc/mydatasource1,
+               jdbc/mydatasource2
+             ]
+             GlobalTransactionsProtocol: TwoPhaseCommit
+           JDBCDriverParams:
+             DriverName: oracle.jdbc.xa.client.OracleXADataSource
+             URL: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:url@@'
+             PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:password@@'
+             Properties:
+               user:
+                 Value: 'sys as sysdba'
+               oracle.net.CONNECT_TIMEOUT:
+                 Value: 5000
+               oracle.jdbc.ReadTimeout:
+                 Value: 30000
+           JDBCConnectionPoolParams:
+               InitialCapacity: 0
+               MaxCapacity: 1
+               TestTableName: SQL ISVALID
+               TestConnectionsOnReserve: true
 
-  # Assume SAMPLEDIR references the 'kubernetes/samples/scripts/create-weblogic-domain/model-in-image' directory within the operator source.
+   ```
 
-  # Assume the DB is running in the following namespace
+1. Create a secret with the expected url, username, and password for the database and with a name and keys that correspond to the `@@SECRET` macros in the datasource model:
 
-  DB_NAMESPACE="default"
+   ```
+   kubectl -n sample-domain1-ns delete secret \
+     sample-domain1-datasource-secret \
+     --ignore-not-found
+   kubectl -n sample-domain1-ns create secret generic \
+     sample-domain1-datasource-secret \
+      --from-literal=password=Oradoc_db1 --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+   kubectl -n sample-domain1-ns label  secret \
+     sample-domain1-datasource-secret \
+     weblogic.domainUID=sample-domain1
+   ```
 
-  # Assume DOMAIN_UID is the following
+   - About deleting and recreating the secret:
+     - We delete a secret before creating, otherwise the create command will fail if the secret already exists.
+     - This allows us to change the secret when using the `kubectl create secret` verb.
 
-  DOMAIN_UID=sample-domain1
+   - We name and label secrets using their associated domain UID for two reasons:
+     - To make it obvious which secret belongs to which domains.
+     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
 
-  # Assume DOMAIN_NAMESPACE is the following
+1. _Deploy the data source YAML in a configmap._
 
-  DOMAIN_NAMESPACE=sample-domain1-ns
+   This step can be done before or after deploying the secret. The configmap can have any name but the same name must be referenced by the domain resource that you want to load the data source, and the configmap must be deployed to the same namespace as the domain resource (we will update the domain resource in the next step).
 
-  # Assume the DB URL and password are defined in a secret as follows
+   Run the following commands:
 
-  $SAMPLEDIR/create_secret.sh \
-    -n ${DOMAIN_NAMESPACE} \
-    -s ${DOMAIN_UID}-new-db-access-secret \
-    -l password=Oradoc_db1 \
-    -l url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+   ```
+   kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map --ignore-not-found
+   kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map --from-file=~/datasource.yaml
+   kubectl -n sample-domain1-ns label  configmap sample-domain1-wdt-config-map weblogic.domainUID=sample-domain1
+   ```
 
-  # Assume WORKDIR is your working directory, default is /tmp/$USER/model-in-image-sample-work-dir
+   - Note that if you already have a WDT configmap deployed for your running domain, then you should ensure that any updated configmap that you supply includes any needed files that were in the original WDT configmap. You can do this by adding additional `--from-file` parameters to the `kubectl create configmap` command line.
+     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the configmap, or it can reference a directory, in which case it populates the configmap with all of the files in the designated directory.
 
-  cd ${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
+   - About deleting and recreating the configmap:
+     - We delete a configmap before creating it, otherwise the create command will fail if the configmap already exists.
+     - This allows us to change the configmap when using the `kubectl create configmap` verb.
 
-  # Create a WDT configmap with the datasource WDT yaml snippet
+   - We name and label configmap using their associated domain UID for two reasons:
+     - To make it obvious which configmap belong to which domains.
+     - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-  mkdir -p ./wdtconfigmap
+1. _Update your domain resource file to refer to the configmap and its secret, and apply it._
 
-  cat << EOF > wdtconfigmap/datasource.yaml
-  resources:
-    JDBCSystemResource:
-      mynewdatasource:
-        Target: 'cluster-1'
-        JdbcResource:
-          JDBCDataSourceParams:
-            JNDIName: [
-              jdbc/generic2,
-              jdbc/special2
-            ]
-            GlobalTransactionsProtocol: TwoPhaseCommit
-          JDBCDriverParams:
-            DriverName: oracle.jdbc.xa.client.OracleXADataSource
-            URL:               '@@SECRET:sample-domain1-new-db-access-secret:url@@'
-            PasswordEncrypted: '@@SECRET:sample-domain1-new-db-access-secret:password@@'
-            Properties:
-              user:
-                Value: 'sys as sysdba'
-              oracle.net.CONNECT_TIMEOUT:
-                Value: 5000
-              oracle.jdbc.ReadTimeout:
-                Value: 30000
-          JDBCConnectionPoolParams:
-              InitialCapacity: 0
-              MaxCapacity: 1                # Optionally include comments like this
-              TestTableName: SQL ISVALID       
-              TestConnectionsOnReserve: true
-  EOF
+   - Add the secret to its `spec.configuration.secrets` stanza:
 
-  # Create a configmap containing the model snippet
+     ```
+     spec:
+       ...
+       configuration:
+         ...
+         secrets:
+         - sample-domain1-datasource-secret
+     ```
+     (Leave any existing secrets in place.)
 
-  $SAMPLEDIR/create_configmap.sh \
-    -n ${DOMAIN_NAMESPACE} \
-    -c ${DOMAIN_UID}-wdt-config-map \
-    -f ./wdtconfigmap
+   - Change its `spec.configuration.model.configMap` to look like:
 
-  ```
+     ```
+     spec:
+       ...
+       configuration:
+         ...
+         model:
+           ...
+           configMap: sample-domain1-wdt-config-map
+      ```
+    - Apply your changed domain resource:
 
-  Now use `kubectl -n sample-domain1-ns edit domain sample-domain1` to:
+      ```
+      kubectl apply -f your-domain-resource.yaml
+      ```
 
-  - Make sure your `spec.configuration.model.configMap` value is set to `sample-domain1-wdt-config-map`.
+1. _Restart the domain._
 
-  - Add the new secret `sample-domain1-new-db-access-secret` to the `configuration.model.secrets` list.
+   Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to 'roll' the domain.
 
-  - Add the `spec.restartVersion` and set it if it's not already set, or alter the `restartVersion`. A `restartVersion` can be set to any value; it only needs to be different than the previous value.
+   When a running model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
 
-  Your edit session, after it's completed, should look something like this:
+   One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. There are multiple ways to make this modification, here are two:
 
-  ```
-  ...
+   - Option 1: Live edit your domain.
+     - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
+     - Edit the value of the `spec.restartVersion` field and save.
+       - The field is a string, but most folks simply use a number in this field and increment it with each restart.
+   - Option 2: Or, dynamically change your domain using `kubectl patch`.
+     - To get the current `restartVersion` call:
+       ```
+       kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
+       ```
+     - Choose a new restart version that's different from the current restart version.
+       - The field is a string, but most folks simply use a number in this field and increment it with each restart.
+     - Use `kubectl patch` to set to the new value. For example, assuming the new restart version is `2`:
+       ```
+       kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
+       ```
 
-  spec:
+1. _Wait for your domain to roll._
 
-    ...
+   The operator should then rerun the introspector job and subsequently roll your domain's WebLogic pods one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
 
-    configuration:
-      model:
-        configMap: sample-domain1-wdt-config-map
-        domainType: WLS
-        runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
-      secrets:
-      - sample-domain1-new-db-access-secret
-      - sample-domain1-rcu-access
-    domainHome: /u01/domains/sample-domain1
-    domainHomeSourceType: FromModel
-    image: model-in-image:v1
+   ```
+   NAME                                         READY STATUS              RESTARTS   AGE
+   sample-domain1-admin-server                  1/1   Running             0          132m
+   sample-domain1-managed-server1               1/1   Running             0          129m
+   sample-domain1-managed-server2               1/1   Running             0          131m
+   sample-domain1-introspect-domain-job-tmxmh   0/1   Pending             0          0s
+   sample-domain1-introspect-domain-job-tmxmh   0/1   ContainerCreating   0          0s
+   sample-domain1-introspect-domain-job-tmxmh   1/1   Running             0          1s
+   sample-domain1-introspect-domain-job-tmxmh   0/1   Completed           0          56s
+   sample-domain1-introspect-domain-job-tmxmh   0/1   Terminating         0          57s
+   sample-domain1-admin-server                  1/1   Terminating         0          133m
+   sample-domain1-admin-server                  0/1   Pending             0          0s
+   sample-domain1-admin-server                  0/1   ContainerCreating   0          0s
+   sample-domain1-admin-server                  0/1   Running             0          2s
+   sample-domain1-admin-server                  1/1   Running             0          32s
+   sample-domain1-managed-server2               0/1   Terminating         0          133m
+   sample-domain1-managed-server2               0/1   Pending             0          0s
+   sample-domain1-managed-server2               0/1   ContainerCreating   0          0s
+   sample-domain1-managed-server2               0/1   Running             0          2s
+   sample-domain1-managed-server2               1/1   Running             0          40s
+   sample-domain1-managed-server1               0/1   Terminating         0          134m
+   sample-domain1-managed-server1               0/1   Pending             0          0s
+   sample-domain1-managed-server1               0/1   ContainerCreating   0          0s
+   sample-domain1-managed-server1               1/1   Running             0          33s
+   ```
 
-    ...
-
-    restartVersion: "15"
-
-    ...
-  ```
-
-The operator should then rerun the introspector job and subsequently roll your domain's WebLogic pods one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
-
-  ```
-  NAME                                         READY STATUS              RESTARTS   AGE
-  sample-domain1-admin-server                  1/1   Running             0          132m
-  sample-domain1-managed-server1               1/1   Running             0          129m
-  sample-domain1-managed-server2               1/1   Running             0          131m
-  sample-domain1-introspect-domain-job-tmxmh   0/1   Pending             0          0s
-  sample-domain1-introspect-domain-job-tmxmh   0/1   ContainerCreating   0          0s
-  sample-domain1-introspect-domain-job-tmxmh   1/1   Running             0          1s
-  sample-domain1-introspect-domain-job-tmxmh   0/1   Completed           0          56s
-  sample-domain1-introspect-domain-job-tmxmh   0/1   Terminating         0          57s
-  sample-domain1-admin-server                  1/1   Terminating         0          133m
-  sample-domain1-admin-server                  0/1   Pending             0          0s
-  sample-domain1-admin-server                  0/1   ContainerCreating   0          0s
-  sample-domain1-admin-server                  0/1   Running             0          2s
-  sample-domain1-admin-server                  1/1   Running             0          32s
-  sample-domain1-managed-server2               0/1   Terminating         0          133m
-  sample-domain1-managed-server2               0/1   Pending             0          0s
-  sample-domain1-managed-server2               0/1   ContainerCreating   0          0s
-  sample-domain1-managed-server2               0/1   Running             0          2s
-  sample-domain1-managed-server2               1/1   Running             0          40s
-  sample-domain1-managed-server1               0/1   Terminating         0          134m
-  sample-domain1-managed-server1               0/1   Pending             0          0s
-  sample-domain1-managed-server1               0/1   ContainerCreating   0          0s
-  sample-domain1-managed-server1               1/1   Running             0          33s
-  ```
-
-To debug problem updates, see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+To debug problem updates, for example if the introspector enters an "Error" status, see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).

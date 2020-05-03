@@ -24,7 +24,7 @@ When a domain is first deployed, the operator will copy its OPSS wallet file fro
       > ewallet.p12
     ```
 
-Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -s` command to export the wallet file (pass `-?` to this script's command-line arguments and defaults).
+Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss_wallet.sh -s` command to export the wallet file (pass `-?` to see this script's command-line arguments and defaults).
 
 To reuse the wallet:
   - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain and make sure that your domain resource `configuration.opss.walletPasswordSecret` attribute names this secret.
@@ -48,6 +48,6 @@ Here's sample code for deploying the OPSS wallet password and wallet file secret
       weblogic.domainUID=sample-domain1
     ```
 
-Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/opss_wallet_util.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command-line arguments and defaults).
+Alternatively, you can use the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss_wallet.sh -r` command to deploy a local wallet file as a secret (pass `-?` to see this script's command-line arguments and defaults).
 
 See also, [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#7-prerequisites-for-jrf-domain-types" >}}).
