@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -49,11 +50,13 @@ public class DomainStatus {
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
-  private List<ServerStatus> servers = new ArrayList<>();
+  // sorted list of ServerStatus
+  List<ServerStatus> servers = new ArrayList<>();
 
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
-  private List<ClusterStatus> clusters = new ArrayList<>();
+  // sorted list of ClusterStatus
+  List<ClusterStatus> clusters = new ArrayList<>();
 
   @Description(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
@@ -278,9 +281,9 @@ public class DomainStatus {
    * @return a sorted list of ServerStatus containing status of WebLogic servers in this domain
    */
   public List<ServerStatus> getServers() {
-    List<ServerStatus> sortedServers = new ArrayList<>(servers);
-    sortedServers.sort(Comparator.naturalOrder());
-    return sortedServers;
+    synchronized (servers) {
+      return new ArrayList<>(servers);
+    }
   }
 
   /**
@@ -289,11 +292,15 @@ public class DomainStatus {
    * @param servers servers
    */
   public void setServers(List<ServerStatus> servers) {
-    if (isServersEqualIgnoringOrder(servers, this.servers)) {
-      return;
-    }
+    synchronized (this.servers) {
+      if (isServersEqualIgnoringOrder(servers, this.servers)) {
+        return;
+      }
+      List<ServerStatus> sortedServers = new ArrayList<>(servers);
+      sortedServers.sort(Comparator.naturalOrder());
 
-    this.servers = servers;
+      this.servers = sortedServers;
+    }
   }
 
   private boolean isServersEqualIgnoringOrder(List<ServerStatus> servers1, List<ServerStatus> servers2) {
@@ -317,13 +324,16 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addServer(ServerStatus server) {
-    for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
-      if (Objects.equals(it.next().getServerName(), server.getServerName())) {
-        it.remove();
+    synchronized (servers) {
+      for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
+        if (Objects.equals(it.next().getServerName(), server.getServerName())) {
+          it.remove();
+        }
       }
-    }
 
-    servers.add(server);
+      servers.add(server);
+      Collections.sort(servers);
+    }
     return this;
   }
 
@@ -333,9 +343,9 @@ public class DomainStatus {
    * @return a sorted list of ClusterStatus containing status of WebLogic clusters in this domain
    */
   public List<ClusterStatus> getClusters() {
-    List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
-    sortedClusters.sort(Comparator.naturalOrder());
-    return sortedClusters;
+    synchronized (clusters) {
+      return new ArrayList<>(clusters);
+    }
   }
 
   /**
@@ -343,11 +353,16 @@ public class DomainStatus {
    * @param clusters the list of clusters to use
    */
   public void setClusters(List<ClusterStatus> clusters) {
-    if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
-      return;
-    }
+    synchronized (this.clusters) {
+      if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
+        return;
+      }
 
-    this.clusters = clusters;
+      List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
+      sortedClusters.sort(Comparator.naturalOrder());
+
+      this.clusters = sortedClusters;
+    }
   }
 
   private boolean isClustersEqualIgnoringOrder(List<ClusterStatus> clusters1, List<ClusterStatus> clusters2) {
@@ -360,13 +375,16 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addCluster(ClusterStatus cluster) {
-    for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
-      if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
-        it.remove();
+    synchronized (clusters) {
+      for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
+        if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
+          it.remove();
+        }
       }
-    }
 
-    clusters.add(cluster);
+      clusters.add(cluster);
+      Collections.sort(clusters);
+    }
     return this;
   }
 
