@@ -207,6 +207,9 @@ public class ItDomainInImage extends BaseTest {
           BaseTest.getProjectRoot()
               + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml");
       domainMap.put("createDomainFilesDir", "wdt");
+      // set cluster size based on the config in domain model yaml
+      domainMap.put("configuredManagedServerCount", 3);
+      domainMap.put("initialManagedServerReplicas", 3);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       domain.enablePrecreateService();
