@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
@@ -333,12 +332,8 @@ public class IntegrationTestWatcher implements
     } catch (IOException ex) {
       logger.warning(ex.getMessage());
     }
-    try {
-      for (var namespace : namespaces) {
-        LoggingUtil.generateLog((String)namespace, resultDir);
-      }
-    } catch (IOException | ApiException ex) {
-      logger.warning(ex.getMessage());
+    for (var namespace : namespaces) {
+      LoggingUtil.collectLogs((String)namespace, resultDir.toString());
     }
   }
 

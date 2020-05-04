@@ -69,6 +69,22 @@ public class TestAssertions {
   }
 
   /**
+   * Check a named pod does not exist in the given namespace.
+   *
+   * @param podName name of the pod to check for
+   * @param domainUid Uid of WebLogic domain
+   * @param namespace namespace in which to check for the pod
+   * @return true if the pod does not exist in the namespace otherwise false
+   * @throws ApiException when cluster query fails
+   */
+  public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace)
+      throws ApiException {
+    return () -> {
+      return !Kubernetes.doesPodExist(namespace, domainUid, podName);
+    };
+  }
+
+  /**
    * Check if a Kubernetes pod is in running/ready state.
    *
    * @param podName   name of the pod to check for
@@ -187,4 +203,5 @@ public class TestAssertions {
   public static boolean isHelmReleaseDeployed(String releaseName, String namespace) {
     return Helm.isReleaseDeployed(releaseName, namespace);
   }
+
 }
