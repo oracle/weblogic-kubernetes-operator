@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
@@ -248,6 +249,36 @@ public class DomainStatusTest {
   }
 
   @Test
+  public void verifyThat_addServers_serverSortedInExpectedOrdering() {
+    ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
+    ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
+    ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
+    ServerStatus adminServer = new ServerStatus().withServerName("admin-server").withIsAdminServer(true);
+    ServerStatus standAloneServerA = new ServerStatus().withServerName("a");
+
+    domainStatus.addServer(cluster1Server1).addServer(cluster2Server1)
+        .addServer(cluster1Server2).addServer(standAloneServerA).addServer(adminServer);
+
+    assertThat(domainStatus.servers,
+        contains(adminServer, standAloneServerA, cluster1Server1, cluster1Server2, cluster2Server1));
+  }
+
+  @Test
+  public void verifyThat_setServers_serverSortedInExpectedOrdering() {
+    ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
+    ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
+    ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
+    ServerStatus adminServer = new ServerStatus().withServerName("admin-server").withIsAdminServer(true);
+    ServerStatus standAloneServerA = new ServerStatus().withServerName("a");
+
+    domainStatus.setServers(Arrays.asList(cluster1Server1,
+        cluster2Server1, cluster1Server2, standAloneServerA, adminServer));
+
+    assertThat(domainStatus.servers,
+        contains(adminServer, standAloneServerA, cluster1Server1, cluster1Server2, cluster2Server1));
+  }
+
+  @Test
   public void verifyThat_getServers_serverInExpectedOrdering() {
     ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
     ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
@@ -262,6 +293,30 @@ public class DomainStatusTest {
 
     assertThat(serverStatuses,
         contains(adminServer, standAloneServerA, cluster1Server1, cluster1Server2, cluster2Server1));
+  }
+
+  @Test
+  public void verifyThat_addClusters_clustersSortedInExpectedOrdering() {
+    ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster-1");
+    ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster-2");
+    ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster-10");
+
+    domainStatus.addCluster(cluster10).addCluster(cluster1).addCluster(cluster2);
+
+    assertThat(domainStatus.clusters, contains(cluster1, cluster2, cluster10));
+  }
+
+  @Test
+  public void verifyThat_setClusters_clustersSortedInExpectedOrdering() {
+    ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster-1");
+    ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster-2");
+    ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster-10");
+
+    domainStatus.setClusters(Arrays.asList(cluster10, cluster1, cluster2));
+
+    List<ClusterStatus> clusterStatuses = domainStatus.clusters;
+
+    assertThat(clusterStatuses, contains(cluster1, cluster2, cluster10));
   }
 
   @Test

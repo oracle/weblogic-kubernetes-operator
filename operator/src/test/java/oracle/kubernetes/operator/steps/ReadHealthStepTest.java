@@ -13,6 +13,7 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
@@ -33,6 +34,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
@@ -63,11 +65,17 @@ public class ReadHealthStepTest {
   private static final int ADMIN_PORT_NUM = 3456;
   private static final String MANAGED_SERVER1 = "managed-server1";
   private static final int MANAGED_SERVER1_PORT_NUM = 8001;
+  private static final String CONFIGURED_CLUSTER_NAME = "conf-cluster-1";
+  private static final String CONFIGURED_MANAGED_SERVER1 = "conf-managed-server1";
+  private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
+  private static final String DYNAMIC_MANAGED_SERVER1 = "dyn-managed-server1";
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
   private static final WlsDomainConfigSupport configSupport =
       new WlsDomainConfigSupport(DOMAIN_NAME)
           .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
           .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
+          .withWlsCluster(CONFIGURED_CLUSTER_NAME, CONFIGURED_MANAGED_SERVER1)
+          .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, DYNAMIC_MANAGED_SERVER1)
           .withAdminServerName(ADMIN_NAME);
   V1Service service;
   Step next;
@@ -132,6 +140,42 @@ public class ReadHealthStepTest {
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
+
+    withHttpClientStep.apply(packet);
+
+    assertThat(
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
+        is(0));
+  }
+
+  @Test
+  public void withHttpClientStep_forConfiguredServer_decrementRemainingServerHealthRead() {
+    Packet packet =
+        Stub.createStub(PacketStub.class)
+            .withServerName(CONFIGURED_MANAGED_SERVER1)
+            .withGetKeyReturnValue(httpClientStub);
+    packet.put(
+        ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
+    configureServiceWithClusterName(CONFIGURED_CLUSTER_NAME);
+
+    withHttpClientStep.apply(packet);
+
+    assertThat(
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
+        is(0));
+  }
+
+  @Test
+  public void withHttpClientStep_forDynamicServer_decrementRemainingServerHealthRead() {
+    Packet packet =
+        Stub.createStub(PacketStub.class)
+            .withServerName(DYNAMIC_MANAGED_SERVER1)
+            .withGetKeyReturnValue(httpClientStub);
+    packet.put(
+        ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
+    configureServiceWithClusterName(DYNAMIC_CLUSTER_NAME);
 
     withHttpClientStep.apply(packet);
 
@@ -281,6 +325,10 @@ public class ReadHealthStepTest {
       V1ServiceSpec v1ServiceSpec = new V1ServiceSpec().clusterIP("127.0.0.1").ports(ports);
       return v1ServiceSpec;
     }
+  }
+
+  private void configureServiceWithClusterName(String clusterName) {
+    service.setMetadata(new V1ObjectMeta().putLabelsItem(CLUSTERNAME_LABEL, clusterName));
   }
 
   static class MockStep extends Step {
