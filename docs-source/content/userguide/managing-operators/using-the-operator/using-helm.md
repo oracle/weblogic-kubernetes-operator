@@ -36,9 +36,10 @@ Show all of the values your operator Helm release is using:
 $ helm get values --all weblogic-operator
 ```
 
-List the Helm releases that have been installed in this Kubernetes cluster:
+List the Helm releases for a specified namespace or all namespaces:
 ```
-$ helm list
+$ helm list namespace
+$ helm list --all-namespaces
 ```
 
 Get the status of the operator Helm release:
