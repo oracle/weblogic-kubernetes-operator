@@ -1342,7 +1342,7 @@ If you see an error, then consult [Debugging]({{< relref "/userguide/managing-do
 
 #### Invoke the web application
 
-Now that all the initial use case resources have been deployed, let's invoke the sample web application through the Traefik load balancer port. The web application will report if it finds any data sources.
+Now that all the initial use case resources have been deployed, let's invoke the sample web application through the Traefik load balancer port. Note that the web application will report if it finds any data sources, but we don't expect it to find any because the model doesn't contain any at this point.
 
 Run one of the following commands:
 
@@ -1378,8 +1378,7 @@ You should see output like the following:
   Found 1 local cluster runtime:
     Cluster 'cluster-1'
 
-  Found 1 local data source:
-    Datasource 'mynewdatasource': State='Running'
+  Found 0 local data sources:
 
   *****************************************************************
   </pre></body></html>
