@@ -59,16 +59,44 @@ public abstract class Step {
   }
 
   private static void addLink(Step stepGroup1, Step stepGroup2) {
-    lastStep(stepGroup1).next = stepGroup2;
+    Step lastStep = lastStepIfNoDuplicate(stepGroup1, stepGroup2);
+    if (lastStep != null) {
+      // add steps in stepGroup2 to the end of stepGroup1 only if no steps
+      // appears in both groups to avoid introducing a loop
+      lastStep.next = stepGroup2;
+    }
   }
 
-  private static Step lastStep(Step stepGroup) {
-    Step s = stepGroup;
+  /**
+   * Return last step in stepGroup1, or null if any step appears in both step groups.
+   *
+   * @param stepGroup1 Step that we want to find the last step for
+   * @param stepGroup2 Step to check for duplicates
+   *
+   * @return last step in stepGroup1, or null if any step appears in both step groups.
+   */
+  private static Step lastStepIfNoDuplicate(Step stepGroup1, Step stepGroup2) {
+    Step s = stepGroup1;
+    List<Step> stepGroup2Array = stepToArray(stepGroup2);
     while (s.next != null) {
+      if (stepGroup2Array.contains(s.next)) {
+        return null;
+      }
       s = s.next;
     }
     return s;
   }
+
+  private static List<Step> stepToArray(Step stepGroup) {
+    ArrayList<Step> stepsArray = new ArrayList<>();
+    Step s = stepGroup;
+    while (s != null) {
+      stepsArray.add(s);
+      s = s.next;
+    }
+    return stepsArray;
+  }
+
 
   String getName() {
     String name = getClass().getName();
