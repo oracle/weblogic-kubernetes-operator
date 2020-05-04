@@ -53,7 +53,7 @@ This sample demonstrates two Model in Image use cases:
   - WebLogic credentials
   - Required WDT runtime password
 - A domain resource with:
-  - `spec.domainHomeSourceType: FromModel`.
+  - `spec.domainHomeSourceType: FromModel`
   - `spec.image: model-in-image:WLS-v1`
   - References to the secrets
 {{% /expand%}}
@@ -119,7 +119,7 @@ For references to the relevant user documentation, see:
    git checkout develop
    ```
 
-   > **Note:** We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
+   > **Note**: We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
    {{% /expand%}}
@@ -143,7 +143,7 @@ For references to the relevant user documentation, see:
    {{%expand "Click here for details." %}}
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
-   > **Note:** Skip the Quick Start steps for obtaining a WebLogic image because you will be creating your own Docker image.
+   > **Note**: Skip the Quick Start steps for obtaining a WebLogic image because you will be creating your own Docker image.
    {{% /expand%}}
 
 1. _Make sure there are no conflicting WebLogic related domains, Ingresses, secrets, or config maps that are already deployed to namespace `sample-domain1-ns`._
@@ -162,7 +162,7 @@ For references to the relevant user documentation, see:
 
    For example, if the `get domains` command reveals domain `mydomain`, then call `kubectl delete domain mydomain -n sample-domain1-ns` to shut it down.
 
-   > **WARNING:** If you delete an existing domain, then wait for its pods to shut down. To monitor the sample domain namespace as pods shut down, use `kubectl get pods -n sample-domain1-ns -w` and type `ctrl-c` to exit.
+   > **WARNING:** If you delete an existing domain, then you must wait for its pods to shut down. To monitor the sample domain namespace as pods shut down, use `kubectl get pods -n sample-domain1-ns -w` (`ctrl-c` to exit).
    {{% /expand%}}
 
 
@@ -265,9 +265,9 @@ For references to the relevant user documentation, see:
    ```
       {{% /expand%}}
 
-   > Note: If you're interested in the details of the `curl` commands we use to access each cluster through its Ingress, see the comments embedded within the `/tmp/mii-sample/ingresses` YAML files.
+   > **NOTE**: If you're interested in the details of the `curl` commands we use to access each cluster through its Ingress, see the comments embedded within the `/tmp/mii-sample/ingresses` YAML files.
 
-   > Note: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters. For more on information Ingresses and load balancers, see TBD.
+   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters. For more on information Ingresses and load balancers, see TBD.
 
 1. _Set up access to a base WebLogic 12.2.1.4 image for this sample that will be used for creating the sample's model images._
 
@@ -299,7 +299,7 @@ For references to the relevant user documentation, see:
 
    {{%expand "Click here for details." %}}
 
-   Both WDT and WIT are required to create your own Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory. Make sure that the files are named `weblogic-deploy-tooling.zip` and `weblogic-image-tool.zip`.
+   Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory. Make sure that the files are named `weblogic-deploy-tooling.zip` and `weblogic-image-tool.zip`.
 
    For example, visit the GitHub [WebLogic Deploy Tooling Releses](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.0` and `1.8.4` respectively, call:
 
@@ -486,7 +486,7 @@ Alternatively, use the sample's wallet utility:
       # Name of secret with walletFile containing base64 encoded opss wallet
       walletFileSecret: sample-domain1-opss-walletfile-secret
 ```
-> **Note:** The sample JRF domain resource files included in `/tmp/mii-sample/domain-resources` already have the above YAML stanza.
+> **Note**: The sample JRF domain resource files included in `/tmp/mii-sample/domain-resources` already have the above YAML stanza.
 
 See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}) for instructions.
 
@@ -536,10 +536,10 @@ Overall, a Model in Image image must contain a WebLogic installation, a WebLogic
 
 Let's walk through the steps for creating the image `model-in-image:WLS-v1`:
 
-  - Understanding a basic WDT archive's structure
-  - Creating a WDT archive ZIP file that contains a web application.
-  - Creating a WDT YAML model that references the web application, and defining a WDT `properties` file.
-  - Using the WebLogic Image Tool to create a model image from these files.
+- [Understanding our first archive](#understanding-our-first-archive)
+- [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
+- [Staging model files](#staging-model-files)
+- [Creating the image with WIT](#creating-the-image-with-wit)
 
 #### Understanding our first archive
 
@@ -547,8 +547,8 @@ The sample includes a predefined archive directory in `/tmp/archives/archive-v1`
 
 The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an 'exploded' sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
   - A model image can contain multiple WDT archives.
-  - WDT archives themselves can contain multiple applications, libraries, and other components.
-  - WDT archives have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md) which always has `wlsdeploy` as the top directory.
+  - WDT archives can contain multiple applications, libraries, and other components.
+  - WDT archives have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md), which always has `wlsdeploy` as the top directory.
 
 {{%expand "Let's take a moment to look at the web application source. Click here to see the JSP code in the archive." %}}
 
@@ -613,7 +613,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 ```
 {{% /expand%}}
 
-If you expand the application, you can see that it reveals important details about the WebLogic Server that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. You can also see that application output reports that it's at version 'v1'; we will update this to 'v2' in a future use case to demonstrate upgrading the application.
+If you expand the application, you can see that it reveals important details about the WebLogic Server that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. You can also see that application output reports that it's at version `v1`; we will update this to `v2` in a future use case to demonstrate upgrading the application.
 
 Next, we'll move on to creating a ZIP file of this archive in our image's staging directory.
 
@@ -748,7 +748,7 @@ The model files:
 - Leverage macros to inject external values:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
   - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
-    - We set this environment variable later on in this sample using an `env` field in its domain resource.
+    - We set this environment variable later in this sample using an `env` field in its domain resource.
     - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image._
   - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
     - This secret is in turn referenced using the `weblogicCredentialsSecret` field in the domain resource.
@@ -760,7 +760,7 @@ A Model in Image image can contain multiple properties files, archive ZIP files,
 
 #### Creating the image with WIT
 
-> **JRF Note:** If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
+> **JRF Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
 
 At this point, we have staged all of the files needed for image `model-in-image:WLS-v1`, they include:
 
@@ -926,7 +926,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 Now let's create a domain resource; a domain resource is the key resource that tells the operator how to deploy a WebLogic domain.
 
-First, copy the following to a file called `mii-initial.yaml` or similar, or plan to use the file `domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that's included in the sample source.
+First, copy the following to a file called `mii-initial.yaml` or similar, or plan to use the file `domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
   {{%expand "Click here to expand the WLS domain resource YAML." %}}
   ```
@@ -1405,7 +1405,7 @@ Perform the steps in [Prerequisites for all domain types](#prerequisites-for-all
 {{% /notice %}}
 
 {{% notice warning %}}
-The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update, before attempting a dynamic update in production.
+The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update before attempting a dynamic update in production.
 {{% /notice %}}
 
 Let's go through the steps:
@@ -1504,7 +1504,7 @@ Let's go through the steps:
    kubectl -n sample-domain1-ns label  configmap sample-domain1-wdt-config-map weblogic.domainUID=sample-domain1
    ```
 
-   - If you've created your own datasource file, then substitute the file name in the `--from-file=` parameter. 
+   - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter.
      - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the configmap, or it can reference a directory, in which case it populates the configmap with all of the files in the designated directory.
 
    - About deleting and recreating the configmap:
@@ -1560,9 +1560,9 @@ Let's go through the steps:
       {{% /expand%}}
 
 
-1. _Restart the domain._
+1. _Restart ('roll') the domain._
 
-   Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to 'roll' the domain.
+   Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to roll the domain.
 
    When a model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
    One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. There are multiple ways to make this modification, here are three:
@@ -1570,15 +1570,15 @@ Let's go through the steps:
    - Option 1: Live edit your domain.
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
      - Edit the value of the `spec.restartVersion` field and save.
-       - The field is a string, but most folks simply use a number in this field and increment it with each restart.
+       - The field is a string; typically, you use a number in this field and increment it with each restart.
    - Option 2: Or, dynamically change your domain using `kubectl patch`.
      - To get the current `restartVersion` call:
        ```
        kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
        ```
      - Choose a new restart version that's different from the current restart version.
-       - The field is a string, but most folks simply use a number in this field and increment it with each restart.
-     - Use `kubectl patch` to set to the new value. For example, assuming the new restart version is `2`:
+       - The field is a string; typically, you use a number in this field and increment it with each restart.
+     - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
        ```
        kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
        ```
@@ -1592,12 +1592,12 @@ Let's go through the steps:
 
     Now that you've started a domain roll, you'll need to wait for it to complete if you want to verify that the data source was deployed.
 
-   - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for pods to cycle back to their `ready` state.
+   - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
 
    - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`; this is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
      {{%expand "Click here to expand the `wl-pod-wait.sh` usage." %}}
-     ```
+   ```
      $ ./wl-pod-wait.sh -?
 
        Usage:
@@ -1631,11 +1631,11 @@ Let's go through the steps:
                            have reached the desired criteria.
 
          -?              : This help.
-     ```
+   ```
      {{% /expand%}}
 
      {{%expand "Click here to expand sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
-     ```
+   ```
      @@ [2020-04-30T13:53:19][seconds=0] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
      @@ [2020-04-30T13:53:19][seconds=0] Info:   ready='true'
      @@ [2020-04-30T13:53:19][seconds=0] Info:   image='model-in-image:WLS-v1'
@@ -1825,10 +1825,10 @@ Let's go through the steps:
 
 
      @@ [2020-04-30T13:57:09][seconds=230] Info: Success!
-     ```
+  ```
      {{% /expand%}}
 
-1. After your domain is up and running, you can call the sample web application to determine if the data source deployed.
+1. After your domain is up and running, you can call the sample web application to determine if the data source was deployed.
 
    Send a web application request to the load balancer:
 
@@ -1906,7 +1906,7 @@ The login credentials are `weblogic/welcome1`.
 
    It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
 
-   > Note: When you delete a domain, the operator should detect your domain deletion and shutdown its pods. Please wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can use the `kubectl get pods -n sample-domain1-ns --watch` command to watch the pods exit (ctrl-c to exit).
+   > **Note**: When you delete a domain, the operator should detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
 
 2. If you set up the Traefik load balancer:
 

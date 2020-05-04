@@ -260,7 +260,7 @@ Here are the steps.
 
 1. Deploy the data source YAML in a configmap.
 
-   This step can be done before or after deploying the secret. The configmap can have any name but the same name must be referenced by the domain resource that you want to load the data source, and the configmap must be deployed to the same namespace as the domain resource (we will update the domain resource in the next step).
+   This step can be done before or after deploying the secret. The configmap can have any name but the same name must be referenced by the domain resource `spec.configuration.model.configMap`, and the configmap must be deployed to the same namespace as the domain resource.  (We will update the domain resource in the next step.)
 
    Run the following commands:
 
@@ -312,9 +312,9 @@ Here are the steps.
       kubectl apply -f your-domain-resource.yaml
       ```
 
-1. Restart the domain.
+1. Restart ('roll') the domain.
 
-   Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to 'roll' the domain.
+   Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to roll the domain.
 
    When a running model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
 
@@ -323,20 +323,20 @@ Here are the steps.
    - Option 1: Live edit your domain.
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
      - Edit the value of the `spec.restartVersion` field and save.
-       - The field is a string; typically, you can use a number in this field and increment it with each restart.
+       - The field is a string; typically, you use a number in this field and increment it with each restart.
    - Option 2: Or, dynamically change your domain using `kubectl patch`.
      - To get the current `restartVersion` call:
        ```
        kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
        ```
      - Choose a new restart version that's different from the current restart version.
-       - The field is a string; typically, you can use a number in this field and increment it with each restart.
+       - The field is a string; typically, you use a number in this field and increment it with each restart.
      - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
        ```
        kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
        ```
 
-1. Wait for your domain to restart.
+1. Wait for your domain to roll.
 
    The operator should then rerun the introspector job and subsequently restart your domain's WebLogic pods, one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
 
