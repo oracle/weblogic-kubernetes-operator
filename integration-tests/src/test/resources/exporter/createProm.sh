@@ -36,6 +36,7 @@ function checkPod() {
   kubectl describe pod/${serverpod} -n $CHARTNS
   kubectl get events -n $CHARTNS  --sort-by='.metadata.creationTimestamp'
   kubectl logs ${alertpod} -n $CHARTNS -c prometheus-alertmanager
+  kubectl logs ${prompod} -n $CHARTNS -c prometheus-server
   exit 1
 }
 sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
@@ -65,7 +66,7 @@ helm repo update
 
 export appname=prometheus
 for p in `kubectl get po -l app=$appname -o name -n $CHARTNS `;do echo "deleting $p "; kubectl delete ${p} -n $CHARTNS --force --grace-period=0 --ignore-not-found; done
-
+sleep 15
 
 echo "Installing $CHARTNAME helm chart."
 helm install  $CHARTNAME stable/$CHARTNAME --namespace $CHARTNS \
