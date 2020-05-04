@@ -11,6 +11,7 @@ import java.util.Map;
 
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsMachineConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 
@@ -32,6 +33,16 @@ public class WlsDomainConfigSupport {
 
   public WlsDomainConfigSupport withWlsServer(String serverName, Integer listenPort) {
     addWlsServer(serverName, listenPort);
+    return this;
+  }
+
+  public WlsDomainConfigSupport withWlsCluster(String clusterName, String... serverNames) {
+    addWlsCluster(clusterName, serverNames);
+    return this;
+  }
+
+  public WlsDomainConfigSupport withDynamicWlsCluster(String clusterName, String... serverNames) {
+    addDynamicWlsCluster(clusterName, serverNames);
     return this;
   }
 
@@ -125,6 +136,20 @@ public class WlsDomainConfigSupport {
   }
 
   /**
+   * Adds a dynamic WLS cluster to the configuration, including its member servers.
+   *
+   * @param clusterName the name of the cluster
+   * @param serverNames the names of the servers
+   */
+  public void addDynamicWlsCluster(String clusterName, String... serverNames) {
+    ClusterConfigBuilder builder = new DynamicClusterConfigBuilder(clusterName);
+    for (String serverName : serverNames) {
+      builder.addServer(serverName);
+    }
+    wlsClusters.put(clusterName, builder.build());
+  }
+
+  /**
    * Creates a domain configuration, based on the defined servers and clusters.
    *
    * @return a domain configuration, or null
@@ -172,6 +197,10 @@ public class WlsDomainConfigSupport {
       this.name = name;
     }
 
+    String getName() {
+      return name;
+    }
+
     void addServer(String serverName) {
       addServer(serverName, null);
     }
@@ -185,6 +214,20 @@ public class WlsDomainConfigSupport {
       for (WlsServerConfig serverConfig : serverConfigs) {
         wlsClusterConfig.addServerConfig(serverConfig);
       }
+      return wlsClusterConfig;
+    }
+  }
+
+  static class DynamicClusterConfigBuilder extends ClusterConfigBuilder {
+    DynamicClusterConfigBuilder(String name) {
+      super(name);
+    }
+
+    WlsClusterConfig build() {
+      WlsDynamicServersConfig wlsDynamicServersConfig = new WlsDynamicServersConfig();
+      wlsDynamicServersConfig.setServerConfigs(serverConfigs);
+      wlsDynamicServersConfig.setDynamicClusterSize(serverConfigs.size());
+      WlsClusterConfig wlsClusterConfig = new WlsClusterConfig(getName(), wlsDynamicServersConfig);
       return wlsClusterConfig;
     }
   }
