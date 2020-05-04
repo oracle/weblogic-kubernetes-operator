@@ -12,7 +12,7 @@ domainRuntime()
 state(clusterName,'Cluster')
 
 #deploy(sys.argv[4],sys.argv[5],sys.argv[6],upload='false',remote='false')
-deploy(appName=appName, path=appPath, targets=clusterName, upload='false', remote='false')
+deploy(appName=appName, path=appPath, targets=clusterName, upload='false', remote='false', timeout=600000)
 
 #cd ('AppDeployments')
 #myapps=cmo.getAppDeployments()
