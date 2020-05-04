@@ -37,6 +37,9 @@ function checkPod() {
   kubectl get events -n $CHARTNS  --sort-by='.metadata.creationTimestamp'
   kubectl logs ${alertpod} -n $CHARTNS -c prometheus-alertmanager
   kubectl logs ${prompod} -n $CHARTNS -c prometheus-server
+  kubectl logs ${alertpod} -n $CHARTNS -c prometheus-alertmanager-configmap-reload
+  kubectl logs ${prompod} -n $CHARTNS -c prometheus-server-configmap-reload
+  echo "createProm.sh returned: 1"
   exit 1
 }
 sed -i "s/default;domain1/${domainNS};${domainNS}/g" ${monitoringExporterEndToEndDir}/prometheus/promvalues.yaml
@@ -59,7 +62,8 @@ kubectl get pvc -n $CHARTNS
 HELM_VERSION=$(helm version --short --client)
 if [[ "$HELM_VERSION" =~ "v2" ]]; then
   echo "Detected unsupported Helm version [${HELM_VERSION}]"
-  exit -1
+  echo "createProm.sh returned: 1"
+  exit 1
 fi
 
 helm repo update

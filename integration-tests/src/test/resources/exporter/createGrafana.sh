@@ -24,7 +24,10 @@ function checkPod() {
     sleep 5
   done
   echo "ERROR: $CHARTNAME pod failed to start."
-  echo
+  echo "createGrafana.sh returned: 1"
+  kubectl describe pod/${grafanapod} -n $CHARTNS
+  kubectl logs pod/${grafanapod} -n $CHARTNS -c init-chown-data
+  kubectl logs pod/${grafanapod} -n $CHARTNS -c grafana
   kubectl describe pod/${grafanapod} -n $CHARTNS
   exit 1
 }
@@ -33,7 +36,7 @@ helm repo update
 export appname=grafana
 for p in `kubectl get po -l app.kubernetes.io/name=$appname -o name -n $CHARTNS `;do echo deleting $p; kubectl delete ${p} -n $CHARTNS --force --grace-period=0 --ignore-not-found; done
 
-kubectl --namespace $CHARTNS create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
+kubectl -n $CHARTNS create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678
 sed -i "s/monitoring/${CHARTNS}/g" ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 sed -i "s/pv-grafana/pv-testgrafana/g" ${monitoringExporterEndToEndDir}/grafana/persistence.yaml
 
