@@ -14,7 +14,7 @@ topology:
             DynamicServers:
                 ServerTemplate:  "cluster-1-template"
                 ServerNamePrefix: "managed-server"
-                DynamicClusterSize: 2
+                DynamicClusterSize: 5
                 MaxDynamicClusterSize: 5
                 CalculatedListenPorts: false
     Server:
