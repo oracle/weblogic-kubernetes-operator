@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -117,13 +118,14 @@ public class ReadHealthStep extends Step {
           domainConfig = scan.getWlsDomainConfig();
         }
         String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
+        // standalone server that does not belong to any cluster
         WlsServerConfig serverConfig = domainConfig.getServerConfig(serverName);
 
         if (serverConfig == null) {
-          // dynamic server
+          // dynamic or configured server in a cluster
           String clusterName = service.getMetadata().getLabels().get(CLUSTERNAME_LABEL);
           WlsClusterConfig cluster = domainConfig.getClusterConfig(clusterName);
-          serverConfig = cluster.getDynamicServersConfig().getServerConfig(serverName);
+          serverConfig = findServerConfig(cluster, serverName);
         }
 
         if (httpClient == null) {
@@ -179,6 +181,16 @@ public class ReadHealthStep extends Step {
             t);
         return doNext(packet);
       }
+    }
+
+
+    private WlsServerConfig findServerConfig(WlsClusterConfig wlsClusterConfig, String serverName) {
+      for (WlsServerConfig serverConfig: wlsClusterConfig.getServerConfigs()) {
+        if (Objects.equals(serverName, serverConfig.getName())) {
+          return serverConfig;
+        }
+      }
+      return null;
     }
 
     private Pair<String, ServerHealth> createServerHealthFromResult(Result restResult)
