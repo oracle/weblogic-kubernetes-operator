@@ -13,13 +13,9 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-<<<<<<< HEAD
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
-=======
-import java.util.concurrent.Callable;
->>>>>>> 3ac21f7735f434846d742370b38610f103784fea
 
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
@@ -79,11 +75,8 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-<<<<<<< HEAD
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-=======
->>>>>>> 3ac21f7735f434846d742370b38610f103784fea
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -318,7 +311,6 @@ public class Kubernetes implements LoggedTest {
     } catch (ApiException apex) {
       logger.warning(apex.getResponseBody());
       throw apex;
-<<<<<<< HEAD
     }
     return deployments;
   }
@@ -348,37 +340,6 @@ public class Kubernetes implements LoggedTest {
       logger.warning(apex.getResponseBody());
       throw apex;
     }
-=======
-    }
-    return deployments;
-  }
-
-  /**
-   * Delete a deployment.
-   *
-   * @param namespace namespace in which to delete the deployment
-   * @param name deployment name
-   * @return true if deletion was successful
-   * @throws ApiException when delete fails
-   */
-  public static boolean deleteDeployment(String namespace, String name) throws ApiException {
-    try {
-      AppsV1Api apiInstance = new AppsV1Api(apiClient);
-      apiInstance.deleteNamespacedDeployment(
-          name, // String | deployment object name.
-          namespace, // String | namespace in which the deployment exists.
-          PRETTY, // String | If 'true', then the output is pretty printed.
-          null, // String | When present, indicates that modifications should not be persisted.
-          GRACE_PERIOD, // Integer | The duration in seconds before the object should be deleted.
-          null, // Boolean | Deprecated: use the PropagationPolicy.
-          FOREGROUND, // String | Whether and how garbage collection will be performed.
-          null // V1DeleteOptions.
-      );
-    } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
-      throw apex;
-    }
->>>>>>> 3ac21f7735f434846d742370b38610f103784fea
     return true;
   }
 
@@ -1485,7 +1446,6 @@ public class Kubernetes implements LoggedTest {
     }
   }
 
-<<<<<<< HEAD
   /**
    * Get V1Service object for the given service name, label and namespace.
    *
@@ -1568,11 +1528,6 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- jobs ---------------------------
 
-=======
-  // --------------------------- jobs ---------------------------
-
-
->>>>>>> 3ac21f7735f434846d742370b38610f103784fea
   /**
    * Delete a job.
    *

@@ -530,16 +530,10 @@ public class TestActions {
 
   /**
    * Log in to a Docker registry.
-<<<<<<< HEAD
    *
    * @param registryName name of Docker registry
    * @param username     username for the Docker registry
    * @param password     password for the Docker registry
-=======
-   * @param registryName name of Docker registry
-   * @param username username for the Docker registry
-   * @param password password for the Docker registry
->>>>>>> 3ac21f7735f434846d742370b38610f103784fea
    * @return true if successful, false otherwise
    */
   public static boolean dockerLogin(String registryName, String username, String password) {
@@ -584,7 +578,6 @@ public class TestActions {
   /**
    * Execute a command in a container.
    *
-<<<<<<< HEAD
    * @param pod              The pod where the command is to be run
    * @param containerName    The container in the Pod where the command is to be run. If no
    *                         container name is provided than the first container in the Pod is used.
@@ -597,25 +590,10 @@ public class TestActions {
    */
   public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
                                        String... command)
-=======
-   * @param pod The pod where the command is to be run
-   * @param containerName The container in the Pod where the command is to be run. If no
-   *     container name is provided than the first container in the Pod is used.
-   * @param redirectToStdout copy process output to stdout
-   * @param command The command to run
-   * @return result of command execution
-   * @throws IOException if an I/O error occurs.
-   * @throws ApiException if Kubernetes client API call fails
-   * @throws InterruptedException if any thread has interrupted the current thread
-   */
-  public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
-      String... command)
->>>>>>> 3ac21f7735f434846d742370b38610f103784fea
       throws IOException, ApiException, InterruptedException {
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 
-<<<<<<< HEAD
   // ----------------------   pod  ---------------------------------
 
   /**
@@ -653,8 +631,6 @@ public class TestActions {
     return Pod.getPodLog(podName, namespace);
   }
 
-=======
->>>>>>> 3ac21f7735f434846d742370b38610f103784fea
   // ------------------------ where does this go  -------------------------
 
   /**
