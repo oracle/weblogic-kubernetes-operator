@@ -187,23 +187,23 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 Here's an example for adding a data source to a running model domain. We make the following assumptions about the domain resource, the database, and the data source:
 
  - Domain resource:
-   - Is in namespace `sample-domain1-ns`. 
+   - Is in namespace `sample-domain1-ns`.
    - Has domain UID `sample-domain1`.
    - Has a cluster named `cluster-1`.
  - Data source:
    - Targeted to WebLogic cluster `cluster-1`.
    - References an Oracle database `devpdb.k8s`.
      - Running in the `default` Kubernetes namespace with port 1521 on the `oracle-db` Kubernetes service.
-     - Which can therefore be accessed with a `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s` thin driver URL.
-   - Assumes the user is `sys as dba` and the password `Oradoc_db1`. 
+     - Therefore, can be accessed with a `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s` thin driver URL.
+   - Assumes the user is `sys as dba` and the password `Oradoc_db1`.
    - Sets `JDBCConnectionPoolParams.InitialCapacity` to `0`.
-     - This allows the datasource to deploy without errors even when there's no database running at this location.
+     - This allows the data source to deploy without errors even when there's no database running at this location.
 
-This example is designed to work on top of the 'Initial use case' described in the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample and is the same as the the `Update1 use case` in the sample.
+This example is designed to work on top of the 'Initial use case' described in the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, and is the same as the [Update1 use case]({{< relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" >}}) in the sample.
 
 Here are the steps.
 
-1. Copy the following datasource WDT model to a file with the `.yaml` extension, let's put it in `~/datasource.yaml`.
+1. Copy the following data source WDT model to a file with the `.yaml` extension; let's put it in `~/datasource.yaml`.
 
    ```
    resources:
@@ -236,7 +236,7 @@ Here are the steps.
 
    ```
 
-1. Create a secret with the expected url, username, and password for the database and with a name and keys that correspond to the `@@SECRET` macros in the datasource model:
+1. Create a secret with the expected URL, user name, and password for the database and with a name and keys that correspond to the `@@SECRET` macros in the data source model:
 
    ```
    kubectl -n sample-domain1-ns delete secret \
@@ -251,14 +251,14 @@ Here are the steps.
    ```
 
    - About deleting and recreating the secret:
-     - We delete a secret before creating, otherwise the create command will fail if the secret already exists.
+     - We delete a secret before creating it, otherwise the create command will fail if the secret already exists.
      - This allows us to change the secret when using the `kubectl create secret` verb.
 
    - We name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
 
-1. _Deploy the data source YAML in a configmap._
+1. Deploy the data source YAML in a configmap.
 
    This step can be done before or after deploying the secret. The configmap can have any name but the same name must be referenced by the domain resource that you want to load the data source, and the configmap must be deployed to the same namespace as the domain resource (we will update the domain resource in the next step).
 
@@ -277,11 +277,11 @@ Here are the steps.
      - We delete a configmap before creating it, otherwise the create command will fail if the configmap already exists.
      - This allows us to change the configmap when using the `kubectl create configmap` verb.
 
-   - We name and label configmap using their associated domain UID for two reasons:
+   - We name and label the configmap using their associated domain UID for two reasons:
      - To make it obvious which configmap belong to which domains.
-     - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
 
-1. _Update your domain resource file to refer to the configmap and its secret, and apply it._
+1. Update your domain resource file to refer to the configmap and its secret, and apply it.
 
    - Add the secret to its `spec.configuration.secrets` stanza:
 
@@ -312,7 +312,7 @@ Here are the steps.
       kubectl apply -f your-domain-resource.yaml
       ```
 
-1. _Restart the domain._
+1. Restart the domain.
 
    Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to 'roll' the domain.
 
@@ -323,22 +323,22 @@ Here are the steps.
    - Option 1: Live edit your domain.
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
      - Edit the value of the `spec.restartVersion` field and save.
-       - The field is a string, but most folks simply use a number in this field and increment it with each restart.
+       - The field is a string; typically, you can use a number in this field and increment it with each restart.
    - Option 2: Or, dynamically change your domain using `kubectl patch`.
      - To get the current `restartVersion` call:
        ```
        kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
        ```
      - Choose a new restart version that's different from the current restart version.
-       - The field is a string, but most folks simply use a number in this field and increment it with each restart.
-     - Use `kubectl patch` to set to the new value. For example, assuming the new restart version is `2`:
+       - The field is a string; typically, you can use a number in this field and increment it with each restart.
+     - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
        ```
        kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
        ```
 
-1. _Wait for your domain to roll._
+1. Wait for your domain to restart.
 
-   The operator should then rerun the introspector job and subsequently roll your domain's WebLogic pods one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
+   The operator should then rerun the introspector job and subsequently restart your domain's WebLogic pods, one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
 
    ```
    NAME                                         READY STATUS              RESTARTS   AGE
