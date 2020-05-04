@@ -30,7 +30,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @NotNull
   private String state;
 
-  @Description("Desired state of this WebLogic Server.")
+  @Description("Desired state of this WebLogic Server. Values are RUNNING, ADMIN, or SHUTDOWN.")
   @Expose
   private String desiredState;
 
