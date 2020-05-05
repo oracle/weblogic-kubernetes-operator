@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -12,6 +13,7 @@ import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -57,6 +59,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Expose
   private KubernetesResource clusterService = new KubernetesResource();
 
+  @Description("Whether to allow the number of replicas to drop below the minimum dynamic cluster "
+      + "size configured in the WebLogic domain home configuration.")
+  private Boolean allowReplicasBelowMinDynClusterSize;
+
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
     configuration.fillInFrom(this);
@@ -83,6 +89,22 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   public void setReplicas(Integer replicas) {
     this.replicas = replicas;
+  }
+
+  /**
+   * Whether to allow number of replicas to drop below the minimum dynamic cluster size configured
+   * in the WebLogic domain home configuration.
+   *
+   * @return whether to allow number of replicas to drop below the minimum dynamic cluster size
+   *     configured in the WebLogic domain home configuration.
+   */
+  public boolean isAllowReplicasBelowMinDynClusterSize() {
+    return Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
+        .orElse(KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+  }
+
+  public void setAllowReplicasBelowMinDynClusterSize(boolean value) {
+    allowReplicasBelowMinDynClusterSize = value;
   }
 
   @Nullable
@@ -145,6 +167,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append("serverStartPolicy", serverStartPolicy)
         .append("clusterService", clusterService)
         .append("maxUnavailable", maxUnavailable)
+        .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
         .toString();
   }
 
@@ -167,6 +190,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(serverStartPolicy, cluster.serverStartPolicy)
         .append(clusterService, cluster.clusterService)
         .append(maxUnavailable, cluster.maxUnavailable)
+        .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
         .isEquals();
   }
 
@@ -179,6 +203,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(serverStartPolicy)
         .append(clusterService)
         .append(maxUnavailable)
+        .append(allowReplicasBelowMinDynClusterSize)
         .toHashCode();
   }
 

@@ -1029,6 +1029,10 @@ window.onload = function() {
           "description": "The name of this cluster. Required",
           "type": "string"
         },
+        "allowReplicasBelowMinDynClusterSize": {
+          "description": "Whether to allow number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration.",
+          "type": "boolean"
+        },
         "serverPod": {
           "description": "Configuration affecting server pods.",
           "$ref": "#/definitions/ServerPod"

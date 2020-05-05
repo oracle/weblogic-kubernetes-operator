@@ -319,6 +319,20 @@ public abstract class DomainTestBase {
   }
 
   @Test
+  public void afterAllowReplicasBelowMinDynamicClusterSizeSetForCluster_canReadIt() {
+    configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
+
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(false));
+  }
+
+  @Test
+  public void whenAllowReplicasBelowMinDynamicClusterSizeNotSet_readGetDefaultValue() {
+    configureCluster("cluster1");
+
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(true));
+  }
+
+  @Test
   public void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
     configureServer(SERVER1).withDesiredState("STAND-BY");
     configureCluster(CLUSTER_NAME).withDesiredState("NEVER");

@@ -25,6 +25,7 @@ public interface KubernetesConstants {
 
   boolean DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME = true;
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
+  boolean DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE = true;
 
   String CONTAINER_NAME = "weblogic-server";
 
