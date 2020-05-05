@@ -26,8 +26,8 @@ public class TestAssertions {
    * @param namespace in which is operator is running
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> operatorIsRunning(String namespace) {
-    return Operator.isRunning(namespace);
+  public static Callable<Boolean> operatorIsReady(String namespace) {
+    return Operator.isReady(namespace);
   }
 
   /**

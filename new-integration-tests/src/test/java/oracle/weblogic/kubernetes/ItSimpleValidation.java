@@ -31,6 +31,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
+import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -64,7 +65,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -105,7 +105,7 @@ class ItSimpleValidation implements LoggedTest {
     opNamespace = namespaces.get(0);
 
     logger.info("Assigning unique namespace for Domain");
-    assertNotNull(namespaces.get(0), "Namespace is null");
+    assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace1 = namespaces.get(1);
 
 
@@ -285,11 +285,11 @@ class ItSimpleValidation implements LoggedTest {
         .atMost(5, MINUTES).await()
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                + "(elapsed time {1}ms, remaining time {2}ms)",
                 opNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(operatorIsRunning(opNamespace));
+        .until(TestAssertions.operatorIsReady(opNamespace));
 
   }
 

@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -119,12 +120,20 @@ public class Kubernetes {
    * @return true if pod exists and running otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isOperatorPodRunning(String namespace) throws ApiException {
+  public static boolean isOperatorPodReady(String namespace) throws ApiException {
     boolean status = false;
     String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
     V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
     if (pod != null) {
-      status = pod.getStatus().getPhase().equals(RUNNING);
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
     } else {
       logger.info("Pod doesn't exist");
     }
