@@ -160,91 +160,87 @@ For references to the relevant user documentation, see:
 
 1. _Set up Ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains._
 
-    Run one of the following commands:
+    - Option 1 of 2: To deploy the Ingresses, one option is to use your favorite editor to cut and paste the following YAML to a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
 
-    - To deploy the Ingresses, one option is to use your favorite editor to cut and paste the following YAML to a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
+       ```
+       apiVersion: extensions/v1beta1
+       kind: Ingress
+       metadata:
+         name: traefik-ingress-sample-domain1-admin-server
+         namespace: sample-domain1-ns
+         labels:
+           weblogic.domainUID: sample-domain1
+         annotations:
+           kubernetes.io/ingress.class: traefik
+       spec:
+         rules:
+         - host:
+           http:
+             paths:
+             - path: /console
+               backend:
+                 serviceName: sample-domain1-admin-server
+                 servicePort: 7001
+       ---
+       apiVersion: extensions/v1beta1
+       kind: Ingress
+       metadata:
+         name: traefik-ingress-sample-domain1-cluster-cluster-1
+         namespace: sample-domain1-ns
+         labels:
+           weblogic.domainUID: sample-domain1
+         annotations:
+           kubernetes.io/ingress.class: traefik
+       spec:
+         rules:
+         - host: sample-domain1-cluster-cluster-1.mii-sample.org
+           http:
+             paths:
+             - path:
+               backend:
+                 serviceName: sample-domain1-cluster-cluster-1
+                 servicePort: 8001
+       ---
+       apiVersion: extensions/v1beta1
+       kind: Ingress
+       metadata:
+         name: traefik-ingress-sample-domain1-cluster-cluster-2
+         namespace: sample-domain1-ns
+         labels:
+           weblogic.domainUID: sample-domain1
+         annotations:
+           kubernetes.io/ingress.class: traefik
+       spec:
+         rules:
+         - host: sample-domain1-cluster-cluster-2.mii-sample.org
+           http:
+             paths:
+             - path:
+               backend:
+                 serviceName: sample-domain1-cluster-cluster-2
+                 servicePort: 8001
+       ---
+       apiVersion: extensions/v1beta1
+       kind: Ingress
+       metadata:
+         name: traefik-ingress-sample-domain2-cluster-cluster-1
+         namespace: sample-domain1-ns
+         labels:
+           weblogic.domainUID: sample-domain2
+         annotations:
+           kubernetes.io/ingress.class: traefik
+       spec:
+         rules:
+         - host: sample-domain2-cluster-cluster-1.mii-sample.org
+           http:
+             paths:
+             - path:
+               backend:
+                 serviceName: sample-domain2-cluster-cluster-1
+                 servicePort: 8001
+       ```
 
-      {{%expand "Click here for the contents of the YAML file." %}}
-   ```
-   apiVersion: extensions/v1beta1
-   kind: Ingress
-   metadata:
-     name: traefik-ingress-sample-domain1-admin-server
-     namespace: sample-domain1-ns
-     labels:
-       weblogic.domainUID: sample-domain1
-     annotations:
-       kubernetes.io/ingress.class: traefik
-   spec:
-     rules:
-     - host:
-       http:
-         paths:
-         - path: /console
-           backend:
-             serviceName: sample-domain1-admin-server
-             servicePort: 7001
-   ---
-   apiVersion: extensions/v1beta1
-   kind: Ingress
-   metadata:
-     name: traefik-ingress-sample-domain1-cluster-cluster-1
-     namespace: sample-domain1-ns
-     labels:
-       weblogic.domainUID: sample-domain1
-     annotations:
-       kubernetes.io/ingress.class: traefik
-   spec:
-     rules:
-     - host: sample-domain1-cluster-cluster-1.mii-sample.org
-       http:
-         paths:
-         - path:
-           backend:
-             serviceName: sample-domain1-cluster-cluster-1
-             servicePort: 8001
-   ---
-   apiVersion: extensions/v1beta1
-   kind: Ingress
-   metadata:
-     name: traefik-ingress-sample-domain1-cluster-cluster-2
-     namespace: sample-domain1-ns
-     labels:
-       weblogic.domainUID: sample-domain1
-     annotations:
-       kubernetes.io/ingress.class: traefik
-   spec:
-     rules:
-     - host: sample-domain1-cluster-cluster-2.mii-sample.org
-       http:
-         paths:
-         - path:
-           backend:
-             serviceName: sample-domain1-cluster-cluster-2
-             servicePort: 8001
-   ---
-   apiVersion: extensions/v1beta1
-   kind: Ingress
-   metadata:
-     name: traefik-ingress-sample-domain2-cluster-cluster-1
-     namespace: sample-domain1-ns
-     labels:
-       weblogic.domainUID: sample-domain2
-     annotations:
-       kubernetes.io/ingress.class: traefik
-   spec:
-     rules:
-     - host: sample-domain2-cluster-cluster-1.mii-sample.org
-       http:
-         paths:
-         - path:
-           backend:
-             serviceName: sample-domain2-cluster-cluster-1
-             servicePort: 8001
-   ```
-      {{% /expand%}}
-
-   - Another option for deploying this sample's Ingresses is to run `kubectl apply -f` on each of the Ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
+   - Option 2 of 2: Another option for deploying this sample's Ingresses is to run `kubectl apply -f` on each of the Ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
 
       {{%expand "Click here for details." %}}
    ```
@@ -259,7 +255,9 @@ For references to the relevant user documentation, see:
 
    > **NOTE**: If you're interested in the details of the `curl` commands we use to access each cluster through its Ingress, see the comments embedded within the `/tmp/mii-sample/ingresses` YAML files.
 
-   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters. For more on information Ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
+   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters. 
+
+   For more on information Ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
 
 1. _Set up access to a base WebLogic 12.2.1.4 image for this sample that will be used for creating the sample's model images._
 
@@ -1484,8 +1482,7 @@ Let's go through the steps:
 
       Do one the following:
 
-      {{%expand "Click here to expand." %}}
-  - Option 1: Update your current domain resource file from the Initial use case.
+    - Option 1: Update your current domain resource file from the Initial use case.
       - Add the secret to its `spec.configuration.secrets` stanza:
 
           ```
@@ -1498,7 +1495,7 @@ Let's go through the steps:
           ```
          (Leave any existing secrets in place.)
 
-    - Change its `spec.configuration.model.configMap` to look like:
+      - Change its `spec.configuration.model.configMap` to look like:
 
           ```
           spec:
@@ -1509,18 +1506,17 @@ Let's go through the steps:
                 ...
                 configMap: sample-domain1-wdt-config-map
            ```
-    - Apply your changed domain resource:
+      - Apply your changed domain resource:
 
           ```
           kubectl apply -f your-domain-resource.yaml
           ```
 
-  - Option 2: Or, use the similarly updated domain resource file that is supplied with the sample:
+    - Option 2: Or, use the similarly updated domain resource file that is supplied with the sample:
 
         ```
         kubectl apply -f /tmp/miisample/domain-resources/mii-update1-d1-WLS-v1-ds.yaml
         ```
-      {{% /expand%}}
 
 
 1. _Restart ('roll') the domain._
@@ -1529,11 +1525,12 @@ Let's go through the steps:
 
    When a model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
    One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. There are multiple ways to make this modification, here are three:
-   {{%expand "Click here to expand." %}}
+
    - Option 1: Live edit your domain.
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
      - Edit the value of the `spec.restartVersion` field and save.
        - The field is a string; typically, you use a number in this field and increment it with each restart.
+
    - Option 2: Or, dynamically change your domain using `kubectl patch`.
      - To get the current `restartVersion` call:
        ```
@@ -1541,6 +1538,7 @@ Let's go through the steps:
        ```
      - Choose a new restart version that's different from the current restart version.
        - The field is a string; typically, you use a number in this field and increment it with each restart.
+
      - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
        ```
        kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
@@ -1548,7 +1546,6 @@ Let's go through the steps:
    - Option 3: Or, use the sample helper script.
      - Call `/tmp/mii-sample/utils/patch-restart-version.sh -n sample-domain1-ns -d sample-domain1`.
      - This will perform the same `kubectl get` and `kubectl patch` commands as Option 2.
-   {{% /expand%}}
 
 
 1. _Wait for the roll._
