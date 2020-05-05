@@ -180,6 +180,38 @@ public class LoggingUtil {
       logger.warning(ex.getMessage());
     }
 
+    // get cluster roles
+    try {
+      writeToFile(Kubernetes.listClusterRoles(null), resultDir,
+          "list.cluster-roles.log");
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+    }
+
+    // get cluster role bindings
+    try {
+      writeToFile(Kubernetes.listClusterRoleBindings(null), resultDir,
+          "list.cluster-rolebindings.log");
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+    }
+
+    // get namespaced roles
+    try {
+      writeToFile(Kubernetes.listNamespacedRoles(namespace), resultDir,
+          namespace + ".list.cluster-roles.log");
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+    }
+
+    // get namespaced rolebindings
+    try {
+      writeToFile(Kubernetes.listNamespacedRoleBinding(namespace), resultDir,
+          namespace + ".list.cluster-rolebindings.log");
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+    }
+
     // get domain objects in the given namespace
     try {
       writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.log");
