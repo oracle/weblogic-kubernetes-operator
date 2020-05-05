@@ -27,18 +27,20 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 #### 2. WebLogic Server image
 
-Model in Image requires creating a 'final' deployable image that has WebLogic Server and WDT installed, plus your model and application files.
+Model in Image requires creating a 'final' deployable image that has WebLogic Server and WDT installed, plus optionally your model and application files.
 
 You can start with a WebLogic Server 12.2.1.3 or later pre-built base image obtained from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or similar, manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}), or build a base image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). For an example of the first approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
-After you have a base image, Model in Image requires layering the following directory structure for its (optional) WDT models artifacts and (required) WDT binaries:
+After you have a base image, Model in Image requires layering the following directory structure for its (optional) WDT model artifacts and (required) WDT binaries:
 
 | Directory                | Contents                           | Extension   |
 | ------------------------ | ---------------------------------- | ----------- |
 | `/u01/wdt/models`         | Optional domain model YAML files   | `.yaml`       |
 | `/u01/wdt/models`         | Optional model variable files      | `.properties` |
-| `/u01/wdt/models`         | Optional application archives      | `.zip`        |
+| `/u01/wdt/models`         | Application archives               | `.zip`        |
 | `/u01/wdt/weblogic-deploy`| Unzipped WebLogic deploy install   |             |
+
+> Note: Model YAML and variable files are optional in a Model in Image image `/u01/wdt/models` directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a configmap referenced by the domain resource `spec.model.configMap` field. Application archives, if any, must be supplied in the Model in Image image; application archives are not supported in a `spec.model.configMap`.
 
 There are two methods for layering Model in Image artifacts on top of a base image:
 
