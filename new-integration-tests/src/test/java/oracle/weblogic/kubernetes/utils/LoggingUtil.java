@@ -199,7 +199,7 @@ public class LoggingUtil {
     // get namespaced roles
     try {
       writeToFile(Kubernetes.listNamespacedRoles(namespace), resultDir,
-          namespace + ".list.cluster-roles.log");
+          namespace + ".list.roles.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }
@@ -207,7 +207,7 @@ public class LoggingUtil {
     // get namespaced rolebindings
     try {
       writeToFile(Kubernetes.listNamespacedRoleBinding(namespace), resultDir,
-          namespace + ".list.cluster-rolebindings.log");
+          namespace + ".list.rolebindings.log");
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
     }
