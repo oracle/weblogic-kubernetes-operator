@@ -666,7 +666,8 @@ class ItMiiDomain implements LoggedTest {
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")
-                                    .runtimeEncryptionSecret(encryptionSecretName))));
+                                    .runtimeEncryptionSecret(encryptionSecretName))
+                        .introspectorJobActiveDeadlineSeconds(300L)));
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
             domainUid, domNamespace);
