@@ -114,10 +114,6 @@ For references to the relevant user documentation, see:
    mkdir /tmp/operator-source
    cd /tmp/operator-source
    git clone https://github.com/oracle/weblogic-kubernetes-operator.git
-
-   # TBD remove the following steps once 3.0 is released on master:
-   cd weblogic-kubernetes-operator
-   git checkout develop
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
