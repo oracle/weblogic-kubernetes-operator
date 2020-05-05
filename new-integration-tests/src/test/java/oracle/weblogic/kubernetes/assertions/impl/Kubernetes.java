@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -88,6 +89,40 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a pod is ready in a given namespace.
+   *
+   * @param namespace in which to check if the pod is ready
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if the pod is in the ready condition, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
+    boolean status = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
    * Checks if a pod exists in a given namespace and in Terminating state.
    * @param namespace in which to check for the pod
    * @param domainUid the label the pod is decorated with
@@ -119,12 +154,20 @@ public class Kubernetes {
    * @return true if pod exists and running otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isOperatorPodRunning(String namespace) throws ApiException {
+  public static boolean isOperatorPodReady(String namespace) throws ApiException {
     boolean status = false;
     String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
     V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
     if (pod != null) {
-      status = pod.getStatus().getPhase().equals(RUNNING);
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
     } else {
       logger.info("Pod doesn't exist");
     }
@@ -155,10 +198,10 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().startsWith(podName.trim())) {
-        logger.info("Pod Name :" + item.getMetadata().getName());
-        logger.info("Pod Namespace :" + item.getMetadata().getNamespace());
-        logger.info("Pod UID :" + item.getMetadata().getUid());
-        logger.info("Pod Status :" + item.getStatus().getPhase());
+        logger.info("Pod Name: " + item.getMetadata().getName());
+        logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
+        logger.info("Pod UID: " + item.getMetadata().getUid());
+        logger.info("Pod Status: " + item.getStatus().getPhase());
         return item;
       }
     }

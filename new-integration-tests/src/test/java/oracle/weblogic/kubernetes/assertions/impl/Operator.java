@@ -16,9 +16,9 @@ public class Operator {
    * @param namespace in which to check for the operator pod
    * @return true if found and running otherwise false
    */
-  public static Callable<Boolean> isRunning(String namespace) {
+  public static Callable<Boolean> isReady(String namespace) {
     return () -> {
-      return Kubernetes.isOperatorPodRunning(namespace);
+      return Kubernetes.isOperatorPodReady(namespace);
     };
   }
 
