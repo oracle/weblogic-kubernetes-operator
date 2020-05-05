@@ -38,7 +38,7 @@ $ helm get values --all weblogic-operator
 
 List the Helm releases for a specified namespace or all namespaces:
 ```
-$ helm list namespace
+$ helm list --namespace <namespace>
 $ helm list --all-namespaces
 ```
 
