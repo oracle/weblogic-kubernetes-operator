@@ -46,14 +46,6 @@ containerdConfigPatches:
 nodes:
   - role: control-plane
     image: kindest/node:${kind_version}
-    # this 'tricks' apiserver into listening on 0.0.0.0:6443
-    extraPortMappings:
-      - containerPort: 6443
-        hostPort: 6443
-        listenAddress: "0.0.0.0"  # needed on gitlab DinD runner so we can talk to it from another container
-        protocol: tcp
-  - role: worker
-    image: kindest/node:${kind_version}
     extraMounts:
       - hostPath: ${PV_ROOT}
         containerPath: ${PV_ROOT}
@@ -62,16 +54,14 @@ EOF
 kubectl cluster-info --context kind-kind
 kubectl get node -o wide
 
-echo 'Checking for required ENVVARs'
-[[ -z "$DOCKER_USERNAME" ]] && { echo "Error: DOCKER_USERNAME must be set"; exit 1; }
-[[ -z "$DOCKER_PASSWORD" ]] && { echo "Error: DOCKER_PASSWORD must be set"; exit 1; }
-[[ -z "$DOCKER_EMAIL" ]] && { echo "Error: DOCKER_EMAIL must be set"; exit 1; }
-[[ -z "$REPO_USERNAME" ]] && { echo "Error: REPO_USERNAME must be set"; exit 1; }
-[[ -z "$REPO_PASSWORD" ]] && { echo "Error: REPO_PASSWORD must be set"; exit 1; }
-[[ -z "$REPO_REGISTRY" ]] && { echo "Error: REPO_REGISTRY must be set"; exit 1; }
-[[ -z "$REPO_EMAIL" ]] && { echo "Error: REPO_EMAIL must be set"; exit 1; }
-[[ -z "$OCR_USERNAME" ]] && { echo "Error: OCR_USERNAME must be set"; exit 1; }
-[[ -z "$OCR_PASSWORD" ]] && { echo "Error: OCR_PASSWORD must be set"; exit 1; }
+echo 'Connect the registry to the cluster network'
+docker network connect "kind" "${reg_name}"
+
+# tell https://tilt.dev to use the registry
+# https://docs.tilt.dev/choosing_clusters.html#discovering-the-registry
+for node in $(kind get nodes); do
+  kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}";
+done
 
 echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
