@@ -12,7 +12,7 @@ public class Pod {
   /**
    * Delete Kubernetes Pod.
    *
-   * @param name      name of the pod
+   * @param name name of the pod
    * @param namespace name of namespace
    * @return true if successful, false otherwise
    */
@@ -23,7 +23,7 @@ public class Pod {
   /**
    * List Kubernetes pods in a namespace.
    *
-   * @param namespace      name of namespace
+   * @param namespace name of namespace
    * @param labelSelectors with which pods are decorated
    * @return V1PodList list of pods
    */
@@ -34,8 +34,8 @@ public class Pod {
   /**
    * Get a pod's log.
    *
-   * @param podName   name of the pod
-   * @param namespace name of the Namespace
+   * @param podName name of the pod
+   * @param namespace name of the namespace
    * @return log as a String
    */
   public static String getPodLog(String podName, String namespace) {
@@ -45,9 +45,9 @@ public class Pod {
   /**
    * Get the creationTimestamp for a given pod with following parameters.
    *
-   * @param namespace     in which to check for the pod existence
+   * @param namespace namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName       name of the pod
+   * @param podName  name of the pod
    * @return creationTimestamp from metadata section of the pod
    */
   public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
@@ -57,9 +57,9 @@ public class Pod {
   /**
    * Get the Kubernetes pod object with following parameters.
    *
-   * @param namespace     in which to check for the pod existence
+   * @param namespace namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName       name of the pod
+   * @param podName name of the pod
    * @return V1Pod pod object
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) {

@@ -70,9 +70,9 @@ public class TestAssertions {
   /**
    * Check if a Kubernetes pod has been deleted in the given namespace.
    *
-   * @param podName   name of the pod to check for
+   * @param podName name of the pod to check for
    * @param domainUid UID of WebLogic domain in which the pod exists
-   * @param namespace in which the pod does not exist
+   * @param namespace namespace in which the pod does not exist
    * @return true if the pod does not exist in the namespace otherwise false
    */
   public static Callable<Boolean> wasPodDeleted(

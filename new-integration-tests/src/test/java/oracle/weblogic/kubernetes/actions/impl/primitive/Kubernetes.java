@@ -451,9 +451,9 @@ public class Kubernetes implements LoggedTest {
   /**
    * Get the creationTimestamp for a given pod with following parameters.
    *
-   * @param namespace     in which to check for the pod existence
+   * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName       name of the pod
+   * @param podName  name of the pod
    * @return creationTimestamp from metadata section of the Pod
    */
   public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
@@ -1450,8 +1450,8 @@ public class Kubernetes implements LoggedTest {
    * Get V1Service object for the given service name, label and namespace.
    *
    * @param serviceName name of the service to look for
-   * @param label       the key value pair with which the service is decorated with
-   * @param namespace   the namespace in which to check for the service
+   * @param label  key value pair with which the service is decorated with
+   * @param namespace namespace in which to check for the service
    * @return V1Service object if found otherwise null
    * @throws ApiException when there is error in querying the cluster
    */
@@ -1499,8 +1499,8 @@ public class Kubernetes implements LoggedTest {
    * Returns NodePort of a admin server service.
    *
    * @param serviceName name of admin server service
-   * @param label       the key value pair with which the service is decorated with
-   * @param namespace   the namespace in which to check for the service
+   * @param label key value pair with which the service is decorated with
+   * @param namespace namespace in which to check for the service
    * @return AdminNodePort of the Kubernetes service if exits else -1
    * @throws ApiException when there is error in querying the cluster
    */
