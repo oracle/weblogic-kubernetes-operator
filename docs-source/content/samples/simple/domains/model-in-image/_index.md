@@ -622,7 +622,7 @@ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 cd /tmp/mii-sample/archives/archive-v1
 
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
-zip -q -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
 #### Staging model files
@@ -764,9 +764,9 @@ Run the following commands to create the model image and verify that it worked:
   ./imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-    --wdtModel /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml \
-    --wdtVariables /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties \
-    --wdtArchive /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip \
+    --wdtModel      ./model-in-image__WLS-v1/model.10.yaml \
+    --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
+    --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
     --wdtModelOnly \
     --wdtDomainType WLS
   ```
