@@ -26,8 +26,8 @@ public class TestAssertions {
    * @param namespace in which is operator is running
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> operatorIsRunning(String namespace) {
-    return Operator.isRunning(namespace);
+  public static Callable<Boolean> operatorIsReady(String namespace) {
+    return Operator.isReady(namespace);
   }
 
   /**
@@ -91,10 +91,11 @@ public class TestAssertions {
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
+   * @throws ApiException when Kubernetes cluster query fails to get pod
    */
   public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
     return () -> {
-      return Kubernetes.isPodRunning(namespace, domainUid, podName);
+      return Kubernetes.isPodReady(namespace, domainUid, podName);
     };
   }
 
