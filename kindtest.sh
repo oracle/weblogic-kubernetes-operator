@@ -24,9 +24,20 @@ fi
 echo 'Remove old cluster (if any)...'
 kind delete cluster
 
-echo 'Create registry container unless it already exists'
+# desired cluster name; default is "kind"
+KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kind}"
+
+kind_version=$(kind version)
+kind_network='kind'
 reg_name='kind-registry'
 reg_port='5000'
+case "${kind_version}" in
+  "kind v0.7."* | "kind v0.6."* | "kind v0.5."*)
+    kind_network='bridge'
+    ;;
+esac
+
+echo 'Create registry container unless it already exists'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" != 'true' ]; then
   docker run \
@@ -34,15 +45,21 @@ if [ "${running}" != 'true' ]; then
     registry:2
 fi
 
+reg_host="${reg_name}"
+if [ "${kind_network}" = "bridge" ]; then
+    reg_host="$(docker inspect -f '{{.NetworkSettings.IPAddress}}' "${reg_name}")"
+fi
+echo "Registry Host: ${reg_host}"
+
 echo 'Create a cluster with the local registry enabled in containerd'
 kind_version='v1.15.7@sha256:e2df133f80ef633c53c0200114fce2ed5e1f6947477dbc83261a6a921169488d'
-cat <<EOF | kind create cluster --config=-
+cat <<EOF | kind create cluster --name "${KIND_CLUSTER_NAME}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${reg_port}"]
-    endpoint = ["http://${reg_name}:${reg_port}"]
+    endpoint = ["http://${reg_host}:${reg_port}"]
 nodes:
   - role: control-plane
     image: kindest/node:${kind_version}
@@ -54,14 +71,22 @@ EOF
 kubectl cluster-info --context kind-kind
 kubectl get node -o wide
 
-echo 'Connect the registry to the cluster network'
-docker network connect "kind" "${reg_name}"
-
-# tell https://tilt.dev to use the registry
-# https://docs.tilt.dev/choosing_clusters.html#discovering-the-registry
-for node in $(kind get nodes); do
-  kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${reg_port}";
+for node in $(kind get nodes --name "${KIND_CLUSTER_NAME}"); do
+  kubectl annotate node "${node}" tilt.dev/registry=localhost:${reg_port};
 done
+
+if [ "${kind_network}" != "bridge" ]; then
+  containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
+  needs_connect="true"
+  for c in $containers; do
+    if [ "$c" = "${reg_name}" ]; then
+      needs_connect="false"
+    fi
+  done
+  if [ "${needs_connect}" = "true" ]; then
+    docker network connect "${kind_network}" "${reg_name}" || true
+  fi
+fi
 
 echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
