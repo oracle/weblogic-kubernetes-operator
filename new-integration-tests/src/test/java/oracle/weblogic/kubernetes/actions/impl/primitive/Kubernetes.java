@@ -12,6 +12,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -42,6 +44,8 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -245,7 +249,7 @@ public class Kubernetes implements LoggedTest {
             V1SecretList.class, // the api list type class
             "", // the api group
             "v1", // the api version
-            "serviceaccounts", // the resource plural
+            "secrets", // the resource plural
             apiClient //the api client
         );
 
@@ -637,6 +641,40 @@ public class Kubernetes implements LoggedTest {
         return  false;
       }
     };
+  }
+
+  // --------------------------- Events ---------------------------------------------------
+
+  /**
+   * List events in a namespace.
+   *
+   * @param namespace name of the namespace in which to list events
+   * @return List of {@link V1Event} objects
+   * @throws ApiException when listing events fails
+   */
+  public static List<V1Event> listNamespacedEvents(String namespace) throws ApiException {
+    List<V1Event> events = null;
+    try {
+      V1EventList list = coreV1Api.listNamespacedEvent(
+          namespace, // String | namespace.
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          null, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+      );
+      events = list.getItems();
+      events.sort(Comparator.comparing(e -> e.getMetadata().getCreationTimestamp()));
+      Collections.reverse(events);
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+    return events;
   }
 
   // --------------------------- Custom Resource Domain -----------------------------------

@@ -40,7 +40,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -154,7 +154,7 @@ class ItSimpleOperatorValidation implements LoggedTest {
                 opNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(operatorIsRunning(opNamespace));
+        .until(operatorIsReady(opNamespace));
 
   }
 
