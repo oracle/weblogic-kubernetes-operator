@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,26 +47,15 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -165,60 +153,12 @@ class ItSimpleValidation implements LoggedTest {
 
   }
 
-  @Test
-  @Order(1)
-  @DisplayName("Create a MII image")
-  public void testCreatingMiiImage() {
-
-    logger.info("WDT model directory is {0}", MODEL_DIR);
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
-
-    logger.info("Building an application archive using what is in resources/apps/APP_NAME");
-    boolean archiveBuilt = buildAppArchive(
-        defaultAppParams()
-            .srcDir(APP_NAME));
-
-    assertThat(archiveBuilt)
-        .as("Create an app archive")
-        .withFailMessage("Failed to create app archive for " + APP_NAME)
-        .isTrue();
-
-    logger.info("Building the archive list");
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    List<String> archiveList = Collections.singletonList(zipFile);
-
-    logger.info("Setting additional environment variables for WIT");
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-
-    logger.info("Building an image using WebLogic Image Tool");
-    boolean success = createMiiImage(
-        defaultWitParams()
-            .modelImageName(IMAGE_NAME)
-            .modelImageTag(IMAGE_TAG)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
-
-    assertThat(success)
-        .as("Test the Docker image creation")
-        .withFailMessage("Failed to create the image using WebLogic Image Tool")
-        .isTrue();
-
-    dockerImageExists(IMAGE_NAME, IMAGE_TAG);
-  }
-
   /**
-   * Install Operator and verify Operator is running.
+   * Install Operator and verify operator is running.
    */
   @Test
-  @Order(2)
-  @DisplayName("Install the operator")
+  @Order(1)
+  @DisplayName("Install operator and verify its running")
   @Slow
   @MustNotRunInParallel
   public void testInstallingOperator() {
@@ -296,10 +236,10 @@ class ItSimpleValidation implements LoggedTest {
   }
 
   /**
-   * Create a simple domain.
+   * Create domain.
    */
   @Test
-  @Order(3)
+  @Order(2)
   @DisplayName("Create a domain")
   @Slow
   public void testCreatingDomain() {
