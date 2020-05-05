@@ -27,7 +27,7 @@ public class Service {
   /**
    * Delete a Kubernetes Service.
    *
-   * @param name      name of the Service
+   * @param name name of the Service
    * @param namespace name of namespace
    * @return true if successful
    */
@@ -39,8 +39,8 @@ public class Service {
    * Get a Kubernetes Service.
    *
    * @param serviceName name of the Service
-   * @param label       a Map of key value pairs the service is decorated with
-   * @param namespace   name of namespace
+   * @param label Map of key value pair with which the service is decorated with
+   * @param namespace name of namespace
    * @return V1Service object if found otherwise null
    */
   public static V1Service getService(
@@ -61,8 +61,8 @@ public class Service {
    * Returns NodePort of admin service.
    *
    * @param serviceName name of admin server service
-   * @param label       the key value pair with which the service is decorated with
-   * @param namespace   the namespace in which to check for the service
+   * @param label key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
    * @return AdminNodePort of the Kubernetes service if exits else -1
    */
   public static int getAdminServiceNodePortString(

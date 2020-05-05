@@ -186,7 +186,7 @@ public class TestActions {
    *
    * @param domainUid unique domain identifier
    * @param namespace name of namespace
-   * @param patch  patch data in format matching the specified media type
+   * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document:
    *                    "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
@@ -294,7 +294,7 @@ public class TestActions {
    * Create a Kubernetes Persistent Volume.
    *
    * @param persistentVolume V1PersistentVolume object containing persistent volume
-   *                         configuration data
+   *     configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -316,7 +316,7 @@ public class TestActions {
    * Create a Kubernetes Persistent Volume Claim.
    *
    * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes
-   *                              persistent volume claim configuration data
+   *     persistent volume claim configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -374,7 +374,6 @@ public class TestActions {
   }
 
   /**
-   * /**
    * Delete Kubernetes Config Map.
    *
    * @param name name of the Config Map
@@ -469,7 +468,7 @@ public class TestActions {
    * Create a Cluster Role Binding.
    *
    * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
-   *                           data
+   *     data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */

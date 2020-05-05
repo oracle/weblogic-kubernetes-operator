@@ -14,6 +14,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 
+
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
  */
@@ -68,17 +69,18 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a Kubernetes pod has been deleted in the given namespace.
+   * Check a named pod does not exist in the given namespace.
    *
    * @param podName name of the pod to check for
-   * @param domainUid UID of WebLogic domain in which the pod exists
-   * @param namespace namespace in which the pod does not exist
+   * @param domainUid Uid of WebLogic domain
+   * @param namespace namespace in which to check for the pod
    * @return true if the pod does not exist in the namespace otherwise false
+   * @throws ApiException when cluster query fails
    */
-  public static Callable<Boolean> wasPodDeleted(
-      String podName, String domainUid, String namespace) throws ApiException {
+  public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace)
+      throws ApiException {
     return () -> {
-      return Kubernetes.doesPodNotExist(namespace, domainUid, podName);
+      return !Kubernetes.doesPodExist(namespace, domainUid, podName);
     };
   }
 
@@ -201,4 +203,5 @@ public class TestAssertions {
   public static boolean isHelmReleaseDeployed(String releaseName, String namespace) {
     return Helm.isReleaseDeployed(releaseName, namespace);
   }
+
 }

@@ -273,26 +273,6 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Returns the configuration for the dynamic WLS server with the given name.
-   *
-   * @param serverName name of the WLS server
-   * @return The WlsServerConfig object containing configuration of the WLS server with the given
-   *     name. This methods return null if no WLS configuration is found for the given server name.
-   */
-  public synchronized WlsServerConfig getServerConfig(String serverName) {
-    WlsServerConfig result = null;
-    if (serverName != null && serverConfigs != null) {
-      for (WlsServerConfig serverConfig : serverConfigs) {
-        if (serverConfig.getName().equals(serverName)) {
-          result = serverConfig;
-          break;
-        }
-      }
-    }
-    return result;
-  }
-
-  /**
    * Return the server template associated with this dynamic servers configuration.
    *
    * @return The server template associated with this dynamic servers configuration
