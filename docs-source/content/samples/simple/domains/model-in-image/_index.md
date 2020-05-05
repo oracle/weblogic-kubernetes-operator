@@ -1875,10 +1875,12 @@ The login credentials are `weblogic/welcome1`.
    kubectl delete namespace traefik
    ```
 
-3. If you set up a database:
+3. If you set up a database for `JRF`...
+   {{%expand "...then click here." %}}
    ```
    /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
+   {{% /expand%}}
 
 4. Delete the operator and its namespace:
    ```
@@ -1896,7 +1898,12 @@ The login credentials are `weblogic/welcome1`.
    docker image rm model-in-image:WLS-v1
    docker image rm model-in-image:WLS-v2
    docker image rm model-in-image:WLS-v3
+   ```
+
+   {{%expand "Click here if you created JRF images." %}}
+   ```
    docker image rm model-in-image:JRF-v1
    docker image rm model-in-image:JRF-v2
    docker image rm model-in-image:JRF-v3
    ```
+   {{% /expand%}}
