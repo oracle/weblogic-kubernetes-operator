@@ -534,7 +534,7 @@ Let's walk through the steps for creating the image `model-in-image:WLS-v1`:
 
 #### Understanding our first archive
 
-The sample includes a predefined archive directory in `/tmp/archives/archive-v1` that we will use to create an archive ZIP file for the image.
+The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that we will use to create an archive ZIP file for the image.
 
 The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an 'exploded' sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
   - A model image can contain multiple WDT archives.
