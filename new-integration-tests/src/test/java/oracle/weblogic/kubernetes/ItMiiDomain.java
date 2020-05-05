@@ -81,7 +81,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRunning;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
@@ -136,7 +136,7 @@ class ItMiiDomain implements LoggedTest {
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
+        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -225,7 +225,7 @@ class ItMiiDomain implements LoggedTest {
                 opNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(operatorIsRunning(opNamespace));
+        .until(operatorIsReady(opNamespace));
 
   }
 
