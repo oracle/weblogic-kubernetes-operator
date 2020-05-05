@@ -263,7 +263,7 @@ For references to the relevant user documentation, see:
 
    > **NOTE**: If you're interested in the details of the `curl` commands we use to access each cluster through its Ingress, see the comments embedded within the `/tmp/mii-sample/ingresses` YAML files.
 
-   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters. For more on information Ingresses and load balancers, see TBD.
+   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters. For more on information Ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
 
 1. _Set up access to a base WebLogic 12.2.1.4 image for this sample that will be used for creating the sample's model images._
 
@@ -425,8 +425,6 @@ For reference:
   - JRF image models in this sample have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
 ##### Reusing or sharing RCU tables
-
-TBD Rename to something like `Saving and restoring JRF domain OPSS wallets`?
 
 Note that when you successfully deploy your JRF domain resource for the first time, the introspector job will initialize the RCU tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
 
