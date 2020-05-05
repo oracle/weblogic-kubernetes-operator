@@ -76,8 +76,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of integration tests")
-// Every test class needs to tagged with this annotation for log collection, diagnostic messages logging
-// and namespace creation.
+// Every test class needs to tagged with this annotation for
+// diagnostic log collection in case of failures and for test cleanup.
 @IntegrationTest
 class ItSimpleValidation implements LoggedTest {
 
