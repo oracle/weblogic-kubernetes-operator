@@ -21131,7 +21131,8 @@ spec:
                         this WebLogic Server.
                       type: string
                     desiredState:
-                      description: Desired state of this WebLogic Server.
+                      description: Desired state of this WebLogic Server. Values are
+                        RUNNING, ADMIN, or SHUTDOWN.
                       type: string
                     clusterName:
                       description: WebLogic cluster name, if the server is part of

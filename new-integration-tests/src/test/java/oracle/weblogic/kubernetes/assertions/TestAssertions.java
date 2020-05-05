@@ -27,8 +27,8 @@ public class TestAssertions {
    * @param namespace in which is operator is running
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> operatorIsRunning(String namespace) {
-    return Operator.isRunning(namespace);
+  public static Callable<Boolean> operatorIsReady(String namespace) {
+    return Operator.isReady(namespace);
   }
 
   /**
@@ -106,16 +106,33 @@ public class TestAssertions {
   }
 
   /**
+   * Check a named pod does not exist in the given namespace.
+   *
+   * @param podName name of the pod to check for
+   * @param domainUid Uid of WebLogic domain
+   * @param namespace namespace in which to check for the pod
+   * @return true if the pod does not exist in the namespace otherwise false
+   * @throws ApiException when cluster query fails
+   */
+  public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace)
+      throws ApiException {
+    return () -> {
+      return !Kubernetes.doesPodExist(namespace, domainUid, podName);
+    };
+  }
+
+  /**
    * Check if a Kubernetes pod is in running/ready state.
    *
    * @param podName   name of the pod to check for
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
+   * @throws ApiException when Kubernetes cluster query fails to get pod
    */
   public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
     return () -> {
-      return Kubernetes.isPodRunning(namespace, domainUid, podName);
+      return Kubernetes.isPodReady(namespace, domainUid, podName);
     };
   }
 
@@ -286,4 +303,5 @@ public class TestAssertions {
   public static boolean isHelmReleaseDeployed(String releaseName, String namespace) {
     return Helm.isReleaseDeployed(releaseName, namespace);
   }
+
 }
