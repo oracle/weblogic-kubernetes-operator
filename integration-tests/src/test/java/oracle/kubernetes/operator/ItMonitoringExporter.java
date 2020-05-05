@@ -173,7 +173,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @AfterAll
   public static void staticUnPrepare() throws Exception {
-    Assumptions.assumeTrue(QUICKTEST);
+    Assumptions.assumeTrue(FULLTEST);
     if (domain != null) {
       domain.destroy();
       TestUtils.deleteWeblogicDomainResources(domainNS1);
