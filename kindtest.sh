@@ -63,6 +63,8 @@ containerdConfigPatches:
 nodes:
   - role: control-plane
     image: kindest/node:${kind_version}
+  - role: kind-worker
+    image: kindest/node:${kind_version}
     extraMounts:
       - hostPath: ${PV_ROOT}
         containerPath: ${PV_ROOT}
