@@ -40,11 +40,7 @@ server:
   securityContext:
     runAsNonRoot: false
     runAsUser: 0
-#  securityContext:
-#    runAsUser: 65534
-#    runAsNonRoot: true
-#    runAsGroup: 65534
-#    fsGroup: 65534
+
   global:
     evaluation_interval: 1m
     scrape_interval: 10s
