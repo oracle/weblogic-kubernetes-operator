@@ -523,7 +523,7 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 The goal of the initial use case 'image creation' is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that we will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
-Overall, a Model in Image image must contain a WebLogic installation, a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory, your WDT model YAML and properties files in its `/u01/wdt/models` directory, and your WDT model archive files in the same directory.
+Overall, a Model in Image image must contain a WebLogic installation and also a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image may optionally also contain your WDT model YAML and properties files in the same `/u01/wdt/models` directory; we demonstrate this in this sample. If you do not specify WDT model YAML in your `/u01/wdt/models` directory, then the model YAML must be supplied dynamically using a Kubernetes configmap that is referenced by your domain resource `spec.model.configMap` attribute. We will provide an example of using a model configmap later in this sample.
 
 Let's walk through the steps for creating the image `model-in-image:WLS-v1`:
 
