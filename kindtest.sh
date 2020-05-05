@@ -8,9 +8,18 @@ else
 fi
 mkdir -m777 -p "${kinddir}"
 export RESULT_ROOT="${kinddir}/wl_k8s_test_results"
+if [ -d "$RESULT_ROOT" ]; then
+  rm -Rf "$RESULT_ROOT/*"
+else
+  mkdir -m777 "$RESULT_ROOT"
+fi
+
 export PV_ROOT="${kinddir}/k8s-pvroot"
-mkdir -m777 "$RESULT_ROOT"
-mkdir -m777 "$PV_ROOT"
+if [ -d "$PV_ROOT" ]; then
+  rm -Rf "$PV_ROOT/*"
+else
+  mkdir -m777 "$PV_ROOT"
+fi
 
 echo 'Remove old cluster (if any)...'
 kind delete cluster
@@ -24,11 +33,6 @@ if [ "${running}" != 'true' ]; then
     -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
     registry:2
 fi
-
-echo 'Create cluster...'
-cp kind-config.yaml.template "$RESULT_ROOT/kind-config.yaml"
-sed -i -e "s|HOSTPATH|${PV_ROOT}|g" "$RESULT_ROOT/kind-config.yaml"
-kind create cluster --config="$RESULT_ROOT/kind-config.yaml"
 
 echo 'Create a cluster with the local registry enabled in containerd'
 kind_version='v1.15.7@sha256:e2df133f80ef633c53c0200114fce2ed5e1f6947477dbc83261a6a921169488d'
