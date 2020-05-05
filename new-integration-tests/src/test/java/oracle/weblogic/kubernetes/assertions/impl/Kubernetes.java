@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -81,6 +82,40 @@ public class Kubernetes {
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
       status = pod.getStatus().getPhase().equals(RUNNING);
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
+   * Checks if a pod is ready in a given namespace.
+   *
+   * @param namespace in which to check if the pod is ready
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if the pod is in the ready condition, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
+    boolean status = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
     } else {
       logger.info("Pod doesn't exist");
     }

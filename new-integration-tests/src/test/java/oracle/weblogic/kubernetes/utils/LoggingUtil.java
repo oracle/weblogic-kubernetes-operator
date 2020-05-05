@@ -78,6 +78,13 @@ public class LoggingUtil {
   public static void collectLogs(String namespace, String resultDir) {
     logger.info("Collecting logs in namespace : {0}", namespace);
 
+    // get events
+    try {
+      writeToFile(Kubernetes.listNamespacedEvents(namespace), resultDir, namespace + ".list.events.log");
+    } catch (Exception ex) {
+      logger.warning("Listing events failed, not collecting any data for events");
+    }
+
     // get service accounts
     try {
       writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir,
@@ -130,7 +137,7 @@ public class LoggingUtil {
     }
     // write pv list
     try {
-      writeToFile(pvList, resultDir, ".list.persistent-volumes.log");
+      writeToFile(pvList, resultDir, "list.persistent-volumes.log");
     } catch (IOException ex) {
       logger.warning(ex.getMessage());
     }
