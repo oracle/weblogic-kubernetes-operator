@@ -96,7 +96,7 @@ For references to the relevant user documentation, see:
 
 ### Prerequisites for all domain types
 
-1. _Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`._
+1. _Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`. Most users should choose `WLS`._
 
    {{%expand "Click here for details." %}}
    - The first time you try this sample, we recommend that you choose `WLS` even if you're familiar with `JRF`.
@@ -108,7 +108,8 @@ For references to the relevant user documentation, see:
 
 1. _Get the operator source and put it in `/tmp/operator-source`._
 
-   {{%expand "Click here for details." %}}
+   For example:
+
    ```
    mkdir /tmp/operator-source
    cd /tmp/operator-source
@@ -122,11 +123,9 @@ For references to the relevant user documentation, see:
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
-   {{% /expand%}}
 
 1. _Copy the sample to an empty working directory; for example, use directory `/tmp/mii-sample`._
 
-   {{%expand "Click here for details." %}}
 
    ```
    mkdir /tmp/mii-sample
@@ -136,15 +135,12 @@ For references to the relevant user documentation, see:
    > **Note**: If the working directory already exists, then you should delete or rename the old directory prior to copying over the sample files. It is important to start with a directory that contains only this sample's original source files.
 
    > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
-   {{% /expand%}}
 
 1. _Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik load balancer is managing the same namespace and listening on port 30305._
 
-   {{%expand "Click here for details." %}}
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
    > **Note**: Skip the Quick Start steps for obtaining a WebLogic image because you will be creating your own Docker image.
-   {{% /expand%}}
 
 1. _Make sure there are no conflicting WebLogic related domains, Ingresses, secrets, or config maps that are already deployed to namespace `sample-domain1-ns`._
 
@@ -172,7 +168,7 @@ For references to the relevant user documentation, see:
 
     - To deploy the Ingresses, one option is to use your favorite editor to cut and paste the following YAML to a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
 
-      {{%expand "Click here for details." %}}
+      {{%expand "Click here for the contents of the YAML file." %}}
    ```
    apiVersion: extensions/v1beta1
    kind: Ingress
@@ -297,8 +293,6 @@ For references to the relevant user documentation, see:
 
 1. _Download the latest WebLogic Deploying Tooling and WebLogic Image Tool installer ZIP files to your `/tmp/mii-sample/model-images` directory._
 
-   {{%expand "Click here for details." %}}
-
    Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory. Make sure that the files are named `weblogic-deploy-tooling.zip` and `weblogic-image-tool.zip`.
 
    For example, visit the GitHub [WebLogic Deploy Tooling Releses](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.0` and `1.8.4` respectively, call:
@@ -309,11 +303,8 @@ For references to the relevant user documentation, see:
    curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.4/imagetool.zip \
      -o /tmp/mii-sample/model-images/weblogic-image-tool.zip
    ```
-   {{% /expand%}}
 
 1. _Set up the WebLogic Image Tool._
-
-   {{%expand "Click here for details." %}}
 
    To set up the WebLogic Image Tool, run the following commands:
 
@@ -334,14 +325,12 @@ For references to the relevant user documentation, see:
 
    These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP installer. We will use WIT later in the sample for creating model images. If you want, take a moment to peruse the tool help: `/tmp/mii-sample/model-images/imagetool/bin/imagetool.sh -h`.
 
-   {{% /expand%}}
 
 1. _If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains)._
 
-   > __NOTE__: Skip the JRF section if you're **not** using a `JRF` domain type.
-
-
 ### Prerequisites for JRF domains
+
+> __NOTE__: Skip this section if you're using a `WLS` domain type.
 
 {{%expand "Click here to see JRF prerequisites" %}}
 
@@ -436,6 +425,8 @@ For reference:
   - JRF image models in this sample have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
 ##### Reusing or sharing RCU tables
+
+TBD Rename to something like `Saving and restoring JRF domain OPSS wallets`?
 
 Note that when you successfully deploy your JRF domain resource for the first time, the introspector job will initialize the RCU tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
 
@@ -641,9 +632,6 @@ In this step, we explore the staged WDT model YAML file and properties in direct
 {{%expand "Click here to expand `model.10.properties`." %}}
 
 ```
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-
 CLUSTER_SIZE=5
 ```
 
@@ -653,8 +641,6 @@ CLUSTER_SIZE=5
 
 
 ```
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
@@ -694,8 +680,6 @@ appDeployments:
 {{%expand "Click here to expand the JRF `model.10.yaml`, and note the RCUDbInfo stanza and its references to a DOMAIN_UID-rcu-access secret." %}}
 
 ```
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
@@ -775,8 +759,6 @@ Now let's use the Image Tool to create an image named `model-in-image:WLS-v1` th
 
 Run the following commands to create the model image and verify that it worked:
 
-{{%expand "Click here to expand." %}}
-
   ```
   cd /tmp/mii-sample/model-images
   ./imagetool/bin/imagetool.sh update \
@@ -807,8 +789,6 @@ When the command succeeds, it should end with output like:
 
 Also, if you call the `docker images` command, then you should see a Docker image named `model-in-image:WLS-v1`.
 
-{{% /expand%}}
-
 #### Deploy resources - Introduction
 
 Let's deploy our new image to namespace `sample-domain1-ns`. In this series of steps, we will:
@@ -827,8 +807,6 @@ Let's deploy our new image to namespace `sample-domain1-ns`. In this series of s
 First, let's deploy the secrets needed by both `WLS` and `JRF` type model domains. In this case, we have two secrets.
 
 Run the following `kubectl` commands to deploy the required secrets:
-
-  {{%expand "Click here to expand." %}}
 
   ```
   echo "@@ Info: Setting up secret 'sample-domain1-weblogic-credentials'."
@@ -856,8 +834,6 @@ Run the following `kubectl` commands to deploy the required secrets:
     sample-domain1-runtime-encryption-secret \
     weblogic.domainUID=sample-domain1
   ```
-
-  {{% /expand%}}
 
   You might be curious about the secrets you just deployed. Some things of note:
 
@@ -889,7 +865,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   If you're domain type is `JRF`, run the following commands to deploy its additional required secrets:
 
-  {{%expand "Click here to expand." %}}
+  {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
   ```
   echo "@@ Info: Setting up secret 'sample-domain1-rcu-access'."
@@ -926,12 +902,10 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 Now let's create a domain resource; a domain resource is the key resource that tells the operator how to deploy a WebLogic domain.
 
-First, copy the following to a file called `mii-initial.yaml` or similar, or plan to use the file `domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
+First, copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or plan to use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
   {{%expand "Click here to expand the WLS domain resource YAML." %}}
   ```
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
@@ -1194,6 +1168,8 @@ spec:
   kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
   ```
 
+  > Note: If you are choosing not to use the predefined domain resource yaml file and instead created your own domain resource file earlier, then substitute your custom file name in the above command. You might recall that we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+
   If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector job run and your WebLogic Server pods start. The output should look something like this:
 
   {{%expand "Click here to expand." %}}
@@ -1344,7 +1320,7 @@ If you see an error, then consult [Debugging]({{< relref "/userguide/managing-do
 
 Now that all the initial use case resources have been deployed, let's invoke the sample web application through the Traefik load balancer port. Note that the web application will report if it finds any data sources, but we don't expect it to find any because the model doesn't contain any at this point.
 
-Run one of the following commands:
+Send a web application request to the load balancer:
 
    ```
    curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
@@ -1358,8 +1334,6 @@ Or, if Traefik is unavailable and your Administration Server pod is running, you
    ```
 
 You should see output like the following:
-
-  {{%expand "Click here to expand the expected web application output." %}}
 
   ```
   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
@@ -1383,7 +1357,6 @@ You should see output like the following:
   *****************************************************************
   </pre></body></html>
   ```
-  {{% /expand%}}
 
   **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
 
@@ -1421,12 +1394,8 @@ Let's go through the steps:
 
    Here's a handy data source model configuration that meets these criteria:
 
-   {{%expand "Click here to expand." %}}
 
    ```
-   # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
-   # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
-
    resources:
      JDBCSystemResource:
        mynewdatasource:
@@ -1456,9 +1425,8 @@ Let's go through the steps:
                TestConnectionsOnReserve: true
 
    ```
-   {{% /expand%}}
 
-   You can cut and paste the above model snippet to a file and then use it for your configmap, or alternatively, you can use the same data source that's already there for you in `/tmp/mii-domain/model-configmaps/model.20.datasource.yaml`.
+   You can cut and paste the above model snippet to a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where we deploy the model configmap, or alternatively, you can simply use the same data source that's already there for you in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
 
 1. _Deploy the data source secret._
 
@@ -1466,7 +1434,6 @@ Let's go through the steps:
 
    Run the following commands:
 
-   {{%expand "Click here to expand." %}}
    ```
    kubectl -n sample-domain1-ns delete secret \
      sample-domain1-datasource-secret \
@@ -1478,6 +1445,8 @@ Let's go through the steps:
      sample-domain1-datasource-secret \
      weblogic.domainUID=sample-domain1
    ```
+
+   {{%expand "Click here for details about secret creation, naming, and labeling." %}}
 
    - About deleting and recreating the secret:
      - We delete a secret before creating, otherwise the create command will fail if the secret already exists.
@@ -1495,7 +1464,6 @@ Let's go through the steps:
 
    Run the following commands:
 
-   {{%expand "Click here to expand." %}}
 
    ```
    kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map --ignore-not-found
@@ -1503,8 +1471,10 @@ Let's go through the steps:
    kubectl -n sample-domain1-ns label  configmap sample-domain1-wdt-config-map weblogic.domainUID=sample-domain1
    ```
 
-   - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter.
+   - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier).
      - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the configmap, or it can reference a directory, in which case it populates the configmap with all of the files in the designated directory.
+
+   {{%expand "Click here for details about configmap creation, naming, and labeling." %}}
 
    - About deleting and recreating the configmap:
      - We delete a configmap before creating it, otherwise the create command will fail if the configmap already exists.

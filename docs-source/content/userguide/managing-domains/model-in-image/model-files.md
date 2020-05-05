@@ -88,7 +88,13 @@ Refer to this section if you need to control the order in which your model files
 
 During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT configmap described in [Optional WDT model configmap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-configmap" >}}).
 
-The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` is a numeric number that specifies the desired order, and then is determined alphabetically as a tie-breaker. File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`.
+The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` specifies the desired order, and secondly determined alphabetically as a tie-breaker. Additional details:
+
+ * Embedding a `.##.` in a filename is optional and can appear anywhere in the file name before the `properties` or `yaml` extension.
+   * The precedence of file names that include more than one `.##.` is undefined. 
+   * The number can be any integer greater than or equal to zero. 
+ * File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`  
+ * If two files share the same number, the loading order is determined alphabetically as a tie-breaker. 
 
 If an image file and configmap file both have the same name, then both files are loaded.
 
