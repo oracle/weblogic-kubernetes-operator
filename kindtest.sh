@@ -102,7 +102,7 @@ fi
 echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 
 echo 'Remove old cluster (if any)...'
-kind delete cluster --name ${kind_name}
+kind delete cluster --name ${kind_name} --kubeconfig "${RESULT_ROOT}/kubeconfig"
 
 kind_version=$(kind version)
 kind_network='kind'
