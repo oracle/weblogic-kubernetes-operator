@@ -51,10 +51,11 @@ suspendOnDebugStartup: false
 
 ```
 
-If you don't know the release name of the operator, you can use `helm ls` to list all the releases:
+If you don't know the release name of the operator, you can use `helm list` to list all the releases for a specified namespace or all namespaces:
 
 ```
-$ helm ls
+$ helm list --namespace <namespace>
+$ helm list --all-namespaces
 ```
 
 #### Add a Kubernetes namespace to the operator
