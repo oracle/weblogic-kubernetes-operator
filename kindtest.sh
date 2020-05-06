@@ -66,7 +66,7 @@ while getopts ":h:n:o:v:" opt; do
 done
 
 function versionprop {
-  grep "${1}" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
+  grep "${1}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
 }
 
 kind_image=$(versionprop "${k8s_version}")
