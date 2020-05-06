@@ -5,6 +5,11 @@
 # This script provisions a Kubernetes cluster using Kind (https://kind.sigs.k8s.io/) and runs the new
 # integration test suite against that cluster.
 #
+# To install Kind:
+#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.8.0/kind-$(uname)-amd64
+#    chmod +x ./kind
+#    mv ./kind /some-dir-in-your-PATH/kind
+#
 # Kind creates Kubernetes nodes on your local box by running each node as a Docker container. This
 # makes it very easy to setup and tear down clusters. Presently, this script creates a cluster with a
 # master node and a worker node. Each node will run the same Kubernetes version. Future enhancements to
