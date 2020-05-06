@@ -17,7 +17,7 @@ public class Helm {
 
   /**
    * Installs a Helm chart.
-   * @param helmParams the parameters to helm install command like namespace, release name,
+   * @param helmParams the parameters to Helm install command like namespace, release name,
    *                   repo url or chart dir, chart name
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
@@ -45,20 +45,31 @@ public class Helm {
             + "repo url, chart name or chart dir must be provided")
         .isFalse();
 
-    //chart reference to be used in helm install
+    //chart reference to be used in Helm install
     String chartRef = helmParams.getChartDir();
 
     // use repo url as chart reference if provided
-    if (helmParams.getChartName() != null && helmParams.getRepoUrl() != null) {
-      Helm.addRepo(helmParams.getChartName(), helmParams.getRepoUrl());
-      chartRef = helmParams.getRepoUrl();
+    if (helmParams.getRepoUrl() != null && helmParams.getChartName() != null) {
+      if (helmParams.getRepoName() != null) {
+        // call 'helm repo add <repo_name> <repo_url>' first to add the repo
+        addRepo(helmParams.getRepoName(), helmParams.getRepoUrl());
+        chartRef = helmParams.getRepoName() + "/" + helmParams.getChartName();
+      } else {
+        chartRef = helmParams.getChartName() + " --repo " + helmParams.getRepoUrl();
+      }
     }
 
     logger.fine("Installing a chart in namespace {0} using chart reference {1}", namespace, chartRef);
 
-    // build helm install command
+    // build Helm install command
     String installCmd = String.format("helm install %1s %2s --namespace %3s ",
         helmParams.getReleaseName(), chartRef, helmParams.getNamespace());
+
+    // if we have chart values file
+    String chartValuesFile = helmParams.getChartValuesFile();
+    if (chartValuesFile != null) {
+      installCmd = installCmd + " --values " + chartValuesFile;
+    }
 
     // add override chart values
     installCmd = installCmd + valuesToString(chartValues);
@@ -70,8 +81,8 @@ public class Helm {
 
   /**
    * Upgrade a Helm release.
-   * @param params the parameters to helm install command like namespace, release name,
-   *                   repo url or chart dir, chart name
+   * @param params the parameters to Helm upgrade command such as namespace, release name,
+   *               repo url or chart dir and chart name
    * @param chartValues the values to override in a chart
    * @return true on success, false otherwise
    */
@@ -94,13 +105,13 @@ public class Helm {
         .isNotNull()
         .isNotEmpty();
 
-    //chart reference to be used in helm upgrade
+    // chart reference to be used in Helm upgrade
     String chartDir = params.getChartDir();
 
     logger.fine("Upgrading a release in namespace {0} using chart reference {1}", namespace, chartDir);
 
-    // build helm upgrade command
-    String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s ",
+    // build Helm upgrade command
+    String upgradeCmd = String.format("helm upgrade %1s %2s --namespace %3s --reuse-values",
         params.getReleaseName(), chartDir, params.getNamespace());
 
     // add override chart values
@@ -112,7 +123,7 @@ public class Helm {
 
   /**
    * Uninstall a Helm release.
-   * @param params the parameters to helm uninstall command, release name and namespace
+   * @param params the parameters to Helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstall(HelmParams params) {
@@ -151,12 +162,12 @@ public class Helm {
 
   /**
    * Add a chart repository.
-   * @param chartName the name of the chart
-   * @param repoUrl reposiroty url
+   * @param repoName the name of the repo
+   * @param repoUrl repository url
    * @return true on success, false otherwise
    */
-  public static boolean addRepo(String chartName, String repoUrl) {
-    String addRepoCmd = "helm add repo " + chartName + " " + repoUrl;
+  public static boolean addRepo(String repoName, String repoUrl) {
+    String addRepoCmd = "helm repo add " + repoName + " " + repoUrl;
     return exec(addRepoCmd);
   }
 
