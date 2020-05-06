@@ -32,4 +32,6 @@ public interface TestConstants {
       .orElse("");
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
+  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
+      System.getProperty("java.io.tmpdir")) + "/ittestspvroot";
 }
