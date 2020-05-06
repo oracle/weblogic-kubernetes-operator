@@ -93,7 +93,8 @@ function parseCommonInputs {
   tmpFile=$(mktemp /tmp/javaoptions_tmp-XXXXXXXXX.dat)  
   parseYaml ${valuesInputFile} ${exportValuesFile}
 
-  if [ -n ${valuesInputFile1} ]; then
+  #if [ -n ${valuesInputFile1} ]; then
+  if [ ! -z ${valuesInputFile1} ]; then
    parseProperties ${valuesInputFile1} ${exportValuesFile}
   fi 
 
