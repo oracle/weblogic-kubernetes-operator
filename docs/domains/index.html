@@ -1030,7 +1030,7 @@ window.onload = function() {
           "type": "string"
         },
         "allowReplicasBelowMinDynClusterSize": {
-          "description": "Whether to allow the number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration.",
+          "description": "If true (the default), the number of replicas is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration. Otherwise, the operator will ensure that the number of replicas is not below the minimum dynamic cluster. This setting applies to dynamic clusters only.",
           "type": "boolean"
         },
         "serverPod": {
