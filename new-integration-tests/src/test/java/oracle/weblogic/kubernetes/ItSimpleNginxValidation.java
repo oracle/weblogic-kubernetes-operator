@@ -129,13 +129,14 @@ class ItSimpleNginxValidation implements LoggedTest {
   private final int replicaCount = 2;
   private final String managedServerNameBase = "managed-server";
   private final String clusterName = "cluster-1";
+  private final int managedServerPort = 8001;
   private String domainUid = "domain1";
   private String managedServerPrefix;
   private String curlCmd;
   private List<String> managedServerNames;
 
   /**
-   * Install operator and Nginx.
+   * Install operator and NGINX.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -147,29 +148,29 @@ class ItSimpleNginxValidation implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         .atMost(5, MINUTES).await();
 
-    // get a new unique operator namespace
-    logger.info("Creating an unique namespace for operator");
+    // get a unique operator namespace
+    logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    // get a new unique domain namespace
-    logger.info("Creating an unique namespace for WebLogic domain");
+    // get a unique domain namespace
+    logger.info("Get a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    // get a new unique Nginx namespace
-    logger.info("Creating an unique namespace for Nginx");
+    // get a unique NGINX namespace
+    logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     nginxNamespace = namespaces.get(2);
 
     // install and verify operator
     installAndVerifyOperator();
 
-    // get a free node port for Nginx
+    // get a free node port for NGINX
     nodeportshttp = getNextFreePort(30305, 30405);
     nodeportshttps = getNextFreePort(30443, 30543);
 
-    // install and verify Nginx
+    // install and verify NGINX
     installAndVerifyNginx();
   }
 
@@ -186,7 +187,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     // create image with model files
     String miiImage = createImageAndVerify();
 
-    // push the image to OCIR to make the test work in multi node cluster
+    // push the image to registry to make the test work in multi node cluster
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
@@ -331,7 +332,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   public void testCreateIngress() {
 
     // create an ingress in domain namespace
-    assertThat(assertDoesNotThrow(() -> createIngress(domainNamespace, domainUid)))
+    assertThat(assertDoesNotThrow(() -> createIngress(domainNamespace, domainUid, clusterName, managedServerPort)))
             .as("createIngress succeeds")
             .withFailMessage(String.format("failed to create an ingress for domain %s in namespace %s",
                 domainUid, domainNamespace))
@@ -349,8 +350,8 @@ class ItSimpleNginxValidation implements LoggedTest {
 
   @Test
   @Order(3)
-  @DisplayName("Verify the application can be accessed through the ingress controller ")
-  public void testSampleAppThroughIngressController() throws Exception {
+  @DisplayName("Verify the application can be accessed through the ingress controller")
+  public void testSampleAppThroughIngressController() {
 
     managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -359,7 +360,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     // check that Nginx can access the sample apps from all managed servers in the domain
     curlCmd = String.format("curl --silent --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-        domainUid + ".org", K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Nginx can access the sample app from all managed servers in the domain")
         .withFailMessage("Nginx can not access the sample app from one or more of the managed servers")
@@ -429,7 +430,7 @@ class ItSimpleNginxValidation implements LoggedTest {
       checkPodDoesNotExist(managedServerPrefix + i);
     }
 
-    // check Nginx can access the remaining managed server in the domain
+    // check that NGINX can access the remaining managed server in the domain
     managedServerNames.clear();
     managedServerNames.add(managedServerNameBase + "1");
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
@@ -440,11 +441,11 @@ class ItSimpleNginxValidation implements LoggedTest {
 
   /**
    * TODO: remove this after Sankar's PR is merged
-   * The cleanup framework does not uninstall Nginx release. Do it here for now.
+   * The cleanup framework does not uninstall NGINX release. Do it here for now.
    */
   @AfterAll
   public void tearDownAll() {
-    // uninstall Nginx release
+    // uninstall NGINX release
     if (nginxHelmParams != null) {
       assertThat(uninstallNginx(nginxHelmParams))
           .as("Test uninstallNginx returns true")
@@ -537,7 +538,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   }
 
   /**
-   * Install Nginx and wait until the Nginx pod is ready.
+   * Install NGINX and wait until the NGINX pod is ready.
    */
   private static void installAndVerifyNginx() {
 
@@ -549,32 +550,32 @@ class ItSimpleNginxValidation implements LoggedTest {
         .repoName(STABLE_REPO_NAME)
         .chartName(NGINX_CHART_NAME);
 
-    // Nginx chart values to override
+    // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
         .helmParams(nginxHelmParams)
         .nodePortsHttp(nodeportshttp)
         .nodePortsHttps(nodeportshttps);
 
-    // install Nginx
+    // install NGINX
     assertThat(installNginx(nginxParams))
-        .as("Nginx is installed successfully")
-        .withFailMessage("Nginx installation is failed")
+        .as("NGINX is installed successfully")
+        .withFailMessage("NGINX installation is failed")
         .isTrue();
 
-    // verify that Nginx is installed
-    logger.info("Checking Nginx release {0} status in namespace {1}",
+    // verify that NGINX is installed
+    logger.info("Checking NGINX release {0} status in namespace {1}",
         NGINX_RELEASE_NAME, nginxNamespace);
     assertTrue(isHelmReleaseDeployed(NGINX_RELEASE_NAME, nginxNamespace),
-        String.format("Nginx release %s is not in deployed status in namespace %s",
+        String.format("NGINX release %s is not in deployed status in namespace %s",
             NGINX_RELEASE_NAME, nginxNamespace));
-    logger.info("Nginx release {0} status is deployed in namespace {1}",
+    logger.info("NGINX release {0} status is deployed in namespace {1}",
         NGINX_RELEASE_NAME, nginxNamespace);
 
-    // wait until the Nginx pod is ready.
+    // wait until the NGINX pod is ready.
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for Nginx to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                "Waiting for NGINX to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
                 nginxNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))

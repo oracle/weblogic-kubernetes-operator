@@ -105,7 +105,7 @@ public class Helm {
         .isNotNull()
         .isNotEmpty();
 
-    //chart reference to be used in Helm upgrade
+    // chart reference to be used in Helm upgrade
     String chartDir = params.getChartDir();
 
     logger.fine("Upgrading a release in namespace {0} using chart reference {1}", namespace, chartDir);

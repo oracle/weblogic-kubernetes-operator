@@ -31,20 +31,20 @@ public class TestAssertions {
   }
 
   /**
-   * Check if Nginx is running.
+   * Check if NGINX is running.
    *
-   * @param namespace in which to check if Nginx is running
-   * @return true if Nginx is running, false otherwise
+   * @param namespace in which to check if NGINX is running
+   * @return true if NGINX is running, false otherwise
    */
   public static Callable<Boolean> isNginxRunning(String namespace) {
     return Nginx.isRunning(namespace);
   }
 
   /**
-   * Check if there are ready Nginx pods in the specified namespace.
+   * Check if there are ready NGINX pods in the specified namespace.
    *
-   * @param namespace in which to check if Nginx pods are in the ready state
-   * @return true if there are ready Nginx pods in the specified namespace , false otherwise
+   * @param namespace in which to check if NGINX pods are in the ready state
+   * @return true if there are ready NGINX pods in the specified namespace , false otherwise
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);

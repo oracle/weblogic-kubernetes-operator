@@ -175,10 +175,10 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a Nginx pod is running in the specified namespace.
-   * The method assumes that the Nginx pod name contains "nginx-ingress-controller".
+   * Checks if a NGINX pod is running in the specified namespace.
+   * The method assumes that the NGINX pod name contains "nginx-ingress-controller".
    *
-   * @param namespace in which to check if the Nginx pod is running
+   * @param namespace in which to check if the NGINX pod is running
    * @return true if the pod is running, otherwise false
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -188,10 +188,10 @@ public class Kubernetes {
   }
 
   /**
-   * Check whether the Nginx pod is ready in the specified namespace.
-   * The method assumes that the Nginx pod name starts with "nginx-ingress-controller".
+   * Check whether the NGINX pod is ready in the specified namespace.
+   * The method assumes that the NGINX pod name starts with "nginx-ingress-controller".
    *
-   * @param namespace in which to check if the Nginx pod is ready
+   * @param namespace in which to check if the NGINX pod is ready
    * @return true if the pod is in the ready state, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -224,10 +224,10 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
-        logger.info("Pod Name :" + item.getMetadata().getName());
-        logger.info("Pod Namespace :" + item.getMetadata().getNamespace());
-        logger.info("Pod UID :" + item.getMetadata().getUid());
-        logger.info("Pod Status :" + item.getStatus().getPhase());
+        logger.info("Pod Name: " + item.getMetadata().getName());
+        logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
+        logger.info("Pod UID: " + item.getMetadata().getUid());
+        logger.info("Pod Status: " + item.getStatus().getPhase());
         return item;
       }
     }

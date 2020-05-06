@@ -37,14 +37,17 @@ public class TestUtils {
     logger.info("Calling webapp at most {0} times using command: {1}", maxIterations, curlCmd);
 
     // check the response contains managed server name
-    for (int i = 1; i <= maxIterations; i++) {
+    for (int i = 0; i < maxIterations; i++) {
 
-      if (!managedServers.containsValue(false)) {
-        return true;
-      } else {
+      if (managedServers.containsValue(false)) {
         try {
           // sometimes the pod is not ready even the condition check is ready, sleep a little bit
           Thread.sleep(100);
+        } catch (InterruptedException ignore) {
+          // ignore
+        }
+
+        try {
           ExecResult result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
@@ -57,10 +60,13 @@ public class TestUtils {
           logger.info("Got exceptions while running command: " + curlCmd);
           return false;
         }
+      } else {
+        return true;
       }
     }
 
-    // after the max iterations, check if any managedserver value is false
+    // after the max iterations, if hit here, then the sample app can not be accessed from at least one server
+    // log the sample app accessibility information and return false
     managedServers.forEach((key, value) -> {
       if (value) {
         logger.info("The sample app can be accessed from the server {0}", key);
@@ -69,16 +75,15 @@ public class TestUtils {
       }
     });
 
-    // final check if any managed server value is false
-    return !managedServers.containsValue(false);
+    return false;
   }
 
   /**
    * Get the next free port between from and to.
    *
    * @param from range starting point
-   * @param to range ending port
-   * @return the port number which is free
+   * @param to range ending point
+   * @return the next free port number, if there is no free port between the range, return the ending point
    */
   public static int getNextFreePort(int from, int to) {
     int port;

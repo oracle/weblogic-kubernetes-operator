@@ -196,7 +196,7 @@ public class TestActions {
   // ------------------------   Ingress Controller ----------------------
 
   /**
-   * Install Nginx ingress controller.
+   * Install NGINX ingress controller.
    *
    * @param params the parameters to Helm install command, such as release name, namespace, repo url,
    *               repo name and chart name
@@ -211,15 +211,18 @@ public class TestActions {
    *
    * @param domainNamespace the WebLogic domain namespace in which to create the ingress
    * @param domainUid WebLogic domainUid which is backend to the ingress
+   * @param clusterName the name of the WebLogic domain cluster
+   * @param managedServerPort the port number of the WebLogic domain managed servers
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createIngress(String domainNamespace, String domainUid) throws ApiException {
-    return Nginx.createIngress(domainNamespace, domainUid);
+  public static boolean createIngress(String domainNamespace, String domainUid, String clusterName,
+                                      int managedServerPort) throws ApiException {
+    return Nginx.createIngress(domainNamespace, domainUid, clusterName, managedServerPort);
   }
 
   /**
-   * Upgrade Nginx release.
+   * Upgrade NGINX release.
    *
    * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
    * @return true on success, false otherwise
@@ -229,7 +232,7 @@ public class TestActions {
   }
 
   /**
-   * Uninstall the Nginx release.
+   * Uninstall the NGINX release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
    * @return true on success, false otherwise
