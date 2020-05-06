@@ -35,7 +35,7 @@ public class FileUtils {
     File file = new File(dir);
     if (!(file.exists() && file.isDirectory())) {
       file.mkdirs();
-      logger.fine("Made a new dir {0}.", dir);
+      logger.fine("Made a new directory {0}.", dir);
     }
   }
 
@@ -74,7 +74,7 @@ public class FileUtils {
    */
   public static void cleanupDirectory(String dir) throws IOException {
     File file = new File(dir);
-    logger.fine("Cleaning up directory {0}.", dir);
+    logger.info("Cleaning up directory {0}.", dir);
     if (!file.exists()) {
       // nothing to do
       return;
@@ -102,9 +102,10 @@ public class FileUtils {
         try {
           copy(source, destPath.resolve(srcPath.relativize(source)));
         } catch (IOException e) {
-          logger.severe(String.format("Failed to copy file %s", source), e);
+          String msg = String.format("Failed to copy file %s to %s", source, destDir);
+          logger.severe(msg, e);
           // cannot throw non runtime exception. the caller checks throwable
-          throw new RuntimeException("Failed to copy file " + source);
+          throw new RuntimeException(msg);
         }
       });
     }

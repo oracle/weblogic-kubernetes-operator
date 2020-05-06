@@ -84,10 +84,11 @@ public class TestAssertions {
       String domainUid,
       String namespace,
       String podName,
+      String containerName,
       String image
   ) throws ApiException {
     return () -> {
-      return Kubernetes.podImagePatched(namespace, domainUid, podName, image);
+      return Kubernetes.podImagePatched(namespace, domainUid, podName, containerName, image);
     };
   }
 

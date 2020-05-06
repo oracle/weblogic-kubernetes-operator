@@ -73,7 +73,7 @@ public class Command {
   /**
    * Execute a command and verify the response.
    *
-   * @params expectedResponse the expected response to verify
+   * @param expectedResponse the expected response to verify
    * @return true if the execution succeeded and response contains the expected value
    */
   public boolean executeAndVerify(String expectedResponse) {

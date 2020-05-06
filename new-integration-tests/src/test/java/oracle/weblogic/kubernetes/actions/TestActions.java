@@ -538,10 +538,10 @@ public class TestActions {
   // ----------------------- Execute a Command   ---------------------------
 
   /**
-   * Execute a command in a container.
+   * Execute a command in a container of a Kubernetes pod.
    *
    * @param namespace The Kubernertes namespace that the pod is in
-   * @param podName The name of the pod where the command is to be run
+   * @param podName The name of the Kubernetes pod where the command is expected to run
    * @param containerName The container in the Pod where the command is to be run. If no
    *     container name is provided than the first container in the Pod is used.
    * @param redirectToStdout copy process output to stdout
@@ -558,6 +558,8 @@ public class TestActions {
       boolean redirectToStdout,
       String... command
   ) throws IOException, ApiException, InterruptedException {
+    // get the pod given the namespace and name of the pod
+    // no label selector is needed (thus null below)
     final V1Pod pod = oracle.weblogic.kubernetes.assertions.impl.Kubernetes
         .getPod(namespace, null, podName);
     if (pod == null) {

@@ -12,11 +12,11 @@ import java.util.List;
 public class AppParams {
 
   // A list of directories under resources/apps that are part of the application.
-  // Note: the order of the directory names are significant. Files are copied into
+  // Note: the order of the directory names is significant. Files are copied into
   // the staging directory in this order. 
   private List<String> srcDirList;
   
-  // The name of the final ear file.
+  // The name of the final archive file.
   // The name of the first dir in srcDirList will be used if the appName is absent.
   private String appName;
   

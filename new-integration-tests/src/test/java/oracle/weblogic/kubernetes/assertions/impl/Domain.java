@@ -82,7 +82,7 @@ public class Domain {
    *
    * @param domainUID identifier of the domain resource
    * @param namespace Kubernetes namespace in which the domain exists
-   * @param image name of the image that the pod is supposed to use
+   * @param image name of the image that the pod is expected to be using
    * @return true if domain resource's image matches the expected value
    */
   public static Callable<Boolean> domainResourceImagePatched(

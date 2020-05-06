@@ -120,7 +120,7 @@ class ItMiiDomain implements LoggedTest {
   private static final String DOMAIN_VERSION = "v7";
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   
-  // app constants
+  // application constants
   private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
   private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
   private static final String APP_RESPONSE_V3 = "How are you doing! You have reached server managed-server";
@@ -161,6 +161,14 @@ class ItMiiDomain implements LoggedTest {
     withQuickRetryPolicy = with().pollDelay(0, SECONDS)
         .and().with().pollInterval(4, SECONDS)
         .atMost(10, SECONDS).await();
+
+    // clean up the download directory so that we always get the latest
+    // versions of the tools in every run of the test class.
+    try {
+      cleanupDirectory(DOWNLOAD_DIR);
+    } catch (IOException | RuntimeException e) {    
+      logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, e);    
+    }
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -267,7 +275,7 @@ class ItMiiDomain implements LoggedTest {
     // create image with model files
     miiImage = createInitialDomainImage();
 
-    // push the image to OCIR to make the test work in multi node cluster
+    // push the image to a registry to make the test work in multi node cluster
     pushImageIfNeeded(miiImage);
 
     // Create the repo secret to pull the image
@@ -343,7 +351,7 @@ class ItMiiDomain implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
     
-    // check and wait for the app to be accessible in all server pods
+    // check and wait for the application to be accessible in all server pods
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
           domainNamespace,
@@ -353,8 +361,8 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V1 + i);
     }
  
-    logger.info(String.format("Domain %s is fully started - servers are running and application is deployed corretly.",
-        domainUid));
+    logger.info("Domain {0} is fully started - servers are running and application is available",
+        domainUid);
   }
 
   @Test
@@ -541,15 +549,15 @@ class ItMiiDomain implements LoggedTest {
   @MustNotRunInParallel
   public void testPatchAppV2() {
     
-    // app in the new image contains what is in the original app dir sample-app, 
-    // plus the replacements or/and additions in the second app dir sample-app-2.
+    // application in the new image contains what is in the original application directory sample-app, 
+    // plus the replacements or/and additions in the second application directory sample-app-2.
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
     
-    // The verification of app's continuous availability during patching is turned off
+    // The verification of application's availability during patching is turned off
     // because it fails intermittently right now. It can be enabled using the following system property.
     // We'll remove the property and enable it all the time once the product problem (tracked
     // by owls-81575) is fixed.
@@ -559,7 +567,7 @@ class ItMiiDomain implements LoggedTest {
     List<Integer> appAvailability = new ArrayList<Integer>();
     
     if (enableAppAvailbilityCheck.equalsIgnoreCase("true")) {
-      // start a new thread to collect the availability data of the app while the
+      // start a new thread to collect the availability data of the application while the
       // main thread performs patching operation, and checking of the results.
       accountingThread =
           new Thread(
@@ -576,7 +584,7 @@ class ItMiiDomain implements LoggedTest {
     }
    
     try {
-      logger.info("Check and make sure that V1 app is still running");
+      logger.info("Check that V1 application is still running");
       for (int i = 1; i <= replicaCount; i++) {
         quickCheckAppRunning(
             domainNamespace,
@@ -586,7 +594,7 @@ class ItMiiDomain implements LoggedTest {
             APP_RESPONSE_V1 + i);
       }
  
-      logger.info("Check and make sure that the version 2 app is NOT running");
+      logger.info("Check that the version 2 application is NOT running");
       for (int i = 1; i <= replicaCount; i++) {
         quickCheckAppNotRunning(
             domainNamespace,
@@ -596,12 +604,12 @@ class ItMiiDomain implements LoggedTest {
             APP_RESPONSE_V2 + i);   
       }
  
-      logger.info("Create a new image with app V2");
+      logger.info("Create a new image with application V2");
       miiImagePatchAppV2 = updateImageWithAppV2Patch(
           String.format("%s-%s", MII_IMAGE_NAME, "test-patch-app-v2"),
           Arrays.asList(appDir1, appDir2));
 
-      // push the image to OCIR to make the test work in multi node cluster
+      // push the image to a registry to make the test work in multi node cluster
       pushImageIfNeeded(miiImagePatchAppV2);
 
       // patch the domain resource with the new image and verify that the domain resource is patched, 
@@ -615,7 +623,7 @@ class ItMiiDomain implements LoggedTest {
           replicaCount,
           miiImagePatchAppV2);
 
-      logger.info("Check and wait for the V2 app to be ready");
+      logger.info("Check and wait for the V2 application to become available");
       for (int i = 1; i <= replicaCount; i++) {
         checkAppRunning(
             domainNamespace,
@@ -633,15 +641,17 @@ class ItMiiDomain implements LoggedTest {
           // do nothing
         }
  
-        // check the app availability data that we have collected, and see if
-        // the app has been available all the time since the beginning of this test method
-        logger.info("Verify that the app was available in the duration when app was being patched"); 
+        // check the application availability data that we have collected, and see if
+        // the application has been available all the time since the beginning of this test method
+        logger.info("Verify that V2 application was available when domain {0} was being patched with image {1}",
+            domainUid, miiImagePatchAppV2); 
         assertTrue(appAlwaysAvailable(appAvailability),
-            "App does not always avaiable when the domain is being patched with a newer version of the app");
+            String.format("Application V2 was not always available when domain %s was being patched with image %s",
+                domainUid, miiImagePatchAppV2));
       }
     }
     
-    logger.info("The cluster has been rolling restarted, and the version 2 app has been deployed correctly");
+    logger.info("The version 2 application has been deployed correctly on all server Pods");
   }
 
   @Test
@@ -651,8 +661,8 @@ class ItMiiDomain implements LoggedTest {
   @MustNotRunInParallel
   public void testAddSecondApp() {
     
-    // the existing app is the combination of what are in appDir1 and appDir2 as in test case number 4,
-    // the second app is in appDir3.
+    // the existing application is the combination of what are in appDir1 and appDir2 as in test case number 4,
+    // the second application is in appDir3.
     final String appDir1 = "sample-app";
     final String appDir2 = "sample-app-2";
     final String appDir3 = "sample-app-3";
@@ -660,7 +670,7 @@ class ItMiiDomain implements LoggedTest {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
-    logger.info("Check V2 app is still running after the previous test");
+    logger.info("Check V2 application is still running after the previous test");
     for (int i = 1; i <= replicaCount; i++) {
       quickCheckAppRunning(
           domainNamespace,
@@ -670,7 +680,7 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V2 + i);
     }
 
-    logger.info("Check and make sure that the new app is NOT already running");
+    logger.info("Check that the new application is NOT already running");
     for (int i = 1; i <= replicaCount; i++) {
       quickCheckAppNotRunning(
           domainNamespace,
@@ -680,14 +690,14 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V3 + i);
     }
    
-    logger.info("Create a new image that contains the additional app");
+    logger.info("Create a new image that contains the additional application");
     miiImageAddSecondApp = updateImageWithSampleApp3(
         String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
         "model2-wls.yaml");
     
-    // push the image to OCIR to make the test work in multi node cluster
+    // push the image to a registry to make the test work in multi node cluster
     pushImageIfNeeded(miiImageAddSecondApp);
    
     // patch the domain resource with the new image and verify that the domain resource is patched, 
@@ -701,7 +711,7 @@ class ItMiiDomain implements LoggedTest {
         replicaCount,
         miiImageAddSecondApp);
     
-    logger.info("Check and wait for the new app to become ready");
+    logger.info("Check and wait for the new application to become ready");
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
           domainNamespace,
@@ -711,7 +721,7 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V3 + i);
     }
  
-    logger.info("Check and wait for the original app V2 to become ready");
+    logger.info("Check and wait for the original application V2 to become ready");
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
           domainNamespace,
@@ -721,7 +731,7 @@ class ItMiiDomain implements LoggedTest {
           APP_RESPONSE_V2 + i);
     }
 
-    logger.info("The cluster has been rolling restarted, and the two applications are both running correctly");
+    logger.info("Both of the applications are running correctly after patching");
   }
 
   // This method is needed in this test class, since the cleanup util
@@ -755,36 +765,32 @@ class ItMiiDomain implements LoggedTest {
     if (miiImageAddSecondApp != null) {
       deleteImage(miiImageAddSecondApp);
     }
-
-    // clean up the download directory so that we always get the latest
-    // versions of the tools in every run of the test class.
-    try {
-      cleanupDirectory(DOWNLOAD_DIR);
-    } catch (IOException | RuntimeException e) {    
-      logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR + " ready", e);    
-    }
   }
 
   private void pushImageIfNeeded(String image) {
-    // push the image to OCIR to make the test work in multi node cluster
+    // push the image to a registry to make the test work in multi node cluster
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
+      logger.info("docker login to registry {0}", REPO_REGISTRY);
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
-      logger.info("docker push image {0} to OCIR", image);
+      logger.info("docker push image {0} to registry {1}", image, REPO_REGISTRY);
       assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
     }
   }
 
-  private String createInitialDomainImage() {
+  private String createUniqueImageTag() {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-    // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
-    final String image = imageName + ":" + imageTag;
+    return dateFormat.format(date) + "-" + System.currentTimeMillis();
+  }
 
+  private String createImageName(String baseImageName) {
+    // Add repository name in image name for Jenkins runs
+    return REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? baseImageName : REPO_NAME + baseImageName;
+  }
+
+  private String createInitialDomainImage() {
     // build the model file list
     final List<String> modelList = 
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
@@ -792,28 +798,23 @@ class ItMiiDomain implements LoggedTest {
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
         .srcDirList(Collections.singletonList(APP_NAME))), 
-        String.format("Failed to create app archive for %s", APP_NAME));
+        String.format("Failed to create application archive for %s", APP_NAME));
 
     // build the archive list
     List<String> archiveList = 
         Collections.singletonList(String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
 
-    createImageAndVerify(imageName, imageTag, modelList, archiveList);
-
-    return image;
+    return createImageAndVerify(
+      createImageName(MII_IMAGE_NAME),
+      createUniqueImageTag(),
+      modelList,
+      archiveList);
   }
   
   private String updateImageWithAppV2Patch(
-      String imageName,
+      String baseImageName,
       List<String> appDirList
   ) {
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-    // Add repository name in image name for Jenkins runs
-    final String imageNameReal = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? imageName : REPO_NAME + imageName;
-    String image = String.format("%s:%s",  imageNameReal, imageTag);
-    
     // build the model file list
     List<String> modelList = 
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
@@ -823,7 +824,7 @@ class ItMiiDomain implements LoggedTest {
         buildAppArchive(
             defaultAppParams()
                 .srcDirList(appDirList)),
-        String.format("Failed to create app archive for %s",
+        String.format("Failed to create application archive for %s",
             APP_NAME));
 
     // build the archive list
@@ -831,60 +832,57 @@ class ItMiiDomain implements LoggedTest {
         Collections.singletonList(
             String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
     
-    createImageAndVerify(imageNameReal, imageTag, modelList, archiveList);
-    
-    return image;
+    return createImageAndVerify(
+      createImageName(baseImageName),
+      createUniqueImageTag(),
+      modelList,
+      archiveList);
   }
 
   private String updateImageWithSampleApp3(
-      String imageName,
+      String baseImageName,
       List<String> appDirList1,
       List<String> appDirList2,
       String modelFile
   ) {
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-    // Add repository name in image name for Jenkins runs
-    final String imageNameReal = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? imageName : REPO_NAME + imageName;
-    String image = String.format("%s:%s",  imageNameReal, imageTag);
-    
     // build the model file list
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
  
     String appName1 = appDirList1.get(0);
     String appName2 = appDirList2.get(0);
     
-    // build an application archive that contains the existing app
+    // build an application archive that contains the existing application artifacts
     assertTrue(
         buildAppArchive(
             defaultAppParams()
                 .srcDirList(appDirList1)
                 .appName(appName1)),
-        String.format("Failed to create app archive for %s",
+        String.format("Failed to create application archive for %s",
             appName1));
     
-    logger.info("Successfully created app zip file: " + appName1);
+    logger.info("Successfully created application zip file: " + appName1);
      
-    // build an application archive that contains the new app
+    // build an application archive that contains the new application artifacts
     assertTrue(
         buildAppArchive(
             defaultAppParams()
                 .srcDirList(appDirList2)
                 .appName(appName2)),
-        String.format("Failed to create app archive for %s",
+        String.format("Failed to create application archive for %s",
             appName2));
     
-    logger.info("Successfully cteated app zip file: " + appName2); 
+    logger.info("Successfully cteated application zip file: " + appName2); 
     
     // build the archive list with two zip files
     List<String> archiveList = Arrays.asList(
         String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
         String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
     
-    createImageAndVerify(imageNameReal, imageTag, modelList, archiveList);
-    
-    return image;
+    return createImageAndVerify(
+      createImageName(baseImageName),
+      createUniqueImageTag(),
+      modelList,
+      archiveList);
   }
 
   /**
@@ -894,35 +892,37 @@ class ItMiiDomain implements LoggedTest {
    *   {"op": "replace", "path": "/spec/image", "value": "mii-image:v2" }
    * ]
    * 
-   * @param domainUid unique identifier of the domain resource
+   * @param domainResourceName name of the domain resource
    * @param namespace Kubernetes namespace that the domain is hosted
    * @param image name of the new image
    */
-  private void patchDomainResourceIamge(
-      String domainUid,
+  private void patchDomainResourceImage(
+      String domainResourceName,
       String namespace,
       String image
   ) {
     String patch = 
         String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"%s\"}\n]\n",
             image);
-    logger.info("About to patch the domain resource with:\n" + patch);
+    logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
+        domainResourceName, namespace, patch);
 
     assertTrue(patchDomainCustomResource(
-            domainUid,
+            domainResourceName,
             namespace,
             new V1Patch(patch),
             V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch the domain resource with a  a different image.");
+        String.format("Failed to patch the domain resource {0} in namespace {1} with image {2}",
+            domainResourceName, namespace, image));
   }
 
-  private void createImageAndVerify(
+  private String createImageAndVerify(
       String imageName,
       String imageTag,
       List<String> modelList,
       List<String> archiveList
   ) {
-    final String image = imageName + ":" + imageTag;
+    final String image = String.format("%s:%s", imageName, imageTag);
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -952,6 +952,8 @@ class ItMiiDomain implements LoggedTest {
      */
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s doesn't exist", image));
+
+    return image;
   }
 
   private void createRepoSecret(String domNamespace) throws ApiException {
@@ -1071,13 +1073,22 @@ class ItMiiDomain implements LoggedTest {
       final int replicaCount,
       final String image
   ) {
-    // modify the domain resource to use the new image
-    patchDomainResourceIamge(domainUid, namespace, image);
+    logger.info(
+        "Patch the domain resource {0} in namespace {1} to use the new image {2}",
+        domainUid, namespace, image);
+
+    patchDomainResourceImage(domainUid, namespace, image);
     
-    // check if domain resource has been patched with the new image    
+    logger.info(
+        "Check that domain resource {0} in namespace {1} has been patched with image {2}",
+        domainUid, namespace, image);
     checkDomainPatched(domainUid, namespace, image);
 
     // check and wait for the admin server pod to be patched with the new image
+    logger.info(
+        "Check that admin server pod for domain resource {0} in namespace {1} has been patched with image {2}",
+        domainUid, namespace, image);
+
     checkPodImagePatched(
         domainUid,
         namespace,
@@ -1085,6 +1096,9 @@ class ItMiiDomain implements LoggedTest {
         image);
 
     // check and wait for the managed server pods to be patched with the new image
+    logger.info(
+        "Check that server pods for domain resource {0} in namespace {1} have been patched with image {2}",
+        domainUid, namespace, image);
     for (int i = 1; i <= replicaCount; i++) {
       checkPodImagePatched(
           domainUid,
@@ -1133,23 +1147,8 @@ class ItMiiDomain implements LoggedTest {
       String expectedStr
   ) {
    
-    // check if the app is accessible inside of a server pod
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for application {0} to be ready on {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
-                namespace, 
-                podName, 
-                internalPort, 
-                appPath, 
-                expectedStr));
-
+    // check if the application is accessible inside of a server pod using standard retry policy
+    checkAppIsRunning(withStandardRetryPolicy, namespace, podName, internalPort, appPath, expectedStr);
   }
   
   private void quickCheckAppRunning(
@@ -1159,11 +1158,23 @@ class ItMiiDomain implements LoggedTest {
       String appPath,
       String expectedStr
   ) {
+    // check if the application is accessible inside of a server pod using quick retry policy
+    checkAppIsRunning(withQuickRetryPolicy, namespace, podName, internalPort, appPath, expectedStr);
+  }
+
+  private void checkAppIsRunning(
+      ConditionFactory conditionFactory,
+      String namespace,
+      String podName,
+      String internalPort,
+      String appPath,
+      String expectedStr
+  ) {
    
-    // check if the app is accessible inside of a server pod
-    withQuickRetryPolicy
+    // check if the application is accessible inside of a server pod
+    conditionFactory
         .conditionEvaluationListener(
-            condition -> logger.info("Checking if application {0} is running on pod {1} in namespace {2} "
+            condition -> logger.info("Waiting for application {0} is running on pod {1} in namespace {2} "
             + "(elapsed time {3}ms, remaining time {4}ms)",
             appPath,
             podName,
@@ -1187,7 +1198,7 @@ class ItMiiDomain implements LoggedTest {
       String expectedStr
   ) {
    
-    // check if the app is not running inside of a server pod
+    // check if the application is not running inside of a server pod
     withQuickRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Checking if application {0} is not running on pod {1} in namespace {2} "
@@ -1242,7 +1253,7 @@ class ItMiiDomain implements LoggedTest {
             namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, image),
+        .until(assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, "weblogic-server", image),
             String.format(
                "Pod %s is not patched with image %s in namespace %s.",
                podName,
@@ -1258,14 +1269,14 @@ class ItMiiDomain implements LoggedTest {
       String internalPort,
       String appPath
   ) {
-    boolean v2AppAvailable;
+    boolean v2AppAvailable = false;
  
-    // ping the app periodically to check its availability across the duration
-    // of patching the domain with newer version of the app.
+    // Access the pod periodically to check application's availability across the duration
+    // of patching the domain with newer version of the application.
     // Note: we use the "kubectl exec" command in this method only. This is to avoid
     // problems when two threads accessing the same pod at the same time via Kubernetes
     // Java client.
-    do {
+    while (!v2AppAvailable)  {
       v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
         v2AppAvailable = v2AppAvailable && appAccessibleInPodKubectl(
@@ -1294,22 +1305,22 @@ class ItMiiDomain implements LoggedTest {
       // -Dweblogic.operator.enableAppAvailabilityCheck=true.
       // TODO remove these log messages when this verification is fully enabled.
       if (count == 0) {
-        logger.info("XXXXXXXXXXX: app not available XXXXXXXX");
+        logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
       } else {
-        logger.info("YYYYYYYYYYY: app available YYYYYYYY count = " + count);   
+        logger.info("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
       }
       try {
         TimeUnit.MILLISECONDS.sleep(200);
       } catch (InterruptedException ie) {
         // do nothing
       }
-    } while (!v2AppAvailable);
+    }
   }
   
   private static boolean appAlwaysAvailable(List<Integer> appAvailability) {
     for (Integer count: appAvailability) {
       if (count == 0) {
-        logger.warning("App was not continuously available during patching.");
+        logger.warning("Application was not available during patching.");
         return false;
       }
     }
@@ -1324,7 +1335,7 @@ class ItMiiDomain implements LoggedTest {
       assertEquals("RUNNING", execResult.stdout(),
           "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
     } else {
-      fail("Ready command failed with exit status code: " + execResult.exitValue());
+      fail("Read state command failed with exit status code: " + execResult.exitValue());
     }
   }
 }

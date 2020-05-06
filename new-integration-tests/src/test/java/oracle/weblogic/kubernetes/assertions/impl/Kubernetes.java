@@ -153,6 +153,7 @@ public class Kubernetes {
    * @param namespace Kubernetes namespace in which the pod is running
    * @param domainUid label that the pod is decorated with
    * @param podName name of the WebLogic server pod
+   * @param containerName name of the container
    * @param image name of the image to check for
    * @return true if pod's image has been patched
    * @throws ApiException when there is an error in querying the Kubernetes cluster
@@ -161,6 +162,7 @@ public class Kubernetes {
       String namespace,
       String domainUid,
       String podName,
+      String containerName,
       String image
   ) throws ApiException {
     boolean podPatched = false;
@@ -172,8 +174,8 @@ public class Kubernetes {
     if (pod != null && pod.getSpec() != null) {
       List<V1Container> containers = pod.getSpec().getContainers();
       for (V1Container container : containers) {
-        // look for the weblogic server container
-        if (container.getName().equals("weblogic-server")
+        // look for the container
+        if (container.getName().equals(containerName)
             && (container.getImage().equals(image))) {
           podPatched = true;
         }
@@ -234,7 +236,7 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().startsWith(podName.trim())) {
-        logger.fine(String.format("Pod Name :%s, Pod Namespace :%s, Pod UID :%s, Pod Status :%s",
+        logger.fine(String.format("Pod Name: %s, Pod Namespace: %s, Pod UID: %s, Pod Status: %s",
             item.getMetadata().getName(),
             item.getMetadata().getNamespace(),
             item.getMetadata().getUid(),
