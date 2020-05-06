@@ -62,6 +62,14 @@ class ItWitValidation implements LoggedTest {
     Map<String, String> env = new HashMap();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
+    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+    // the next JDK 14 versions are released.
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      env.put("JAVA_HOME", witJavaHome);
+    }
+    
     // build an image using WebLogic Image Tool
     boolean success = createMiiImage(
         defaultWitParams()
