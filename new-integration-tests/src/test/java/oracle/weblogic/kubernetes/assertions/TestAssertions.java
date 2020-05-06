@@ -11,9 +11,9 @@ import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
-
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -31,10 +31,30 @@ public class TestAssertions {
   }
 
   /**
-   * Check if operator Rest service is running.
+   * Check if NGINX is running.
    *
-   * @param namespace in which the operator rest service exists
-   * @return true if rest service is running otherwise false
+   * @param namespace in which to check if NGINX is running
+   * @return true if NGINX is running, false otherwise
+   */
+  public static Callable<Boolean> isNginxRunning(String namespace) {
+    return Nginx.isRunning(namespace);
+  }
+
+  /**
+   * Check if there are ready NGINX pods in the specified namespace.
+   *
+   * @param namespace in which to check if NGINX pods are in the ready state
+   * @return true if there are ready NGINX pods in the specified namespace , false otherwise
+   */
+  public static Callable<Boolean> isNginxReady(String namespace) {
+    return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if operator REST service is running.
+   *
+   * @param namespace in which the operator REST service exists
+   * @return true if REST service is running otherwise false
    */
   public static Callable<Boolean> operatorRestServiceRunning(String namespace) throws ApiException {
     return () -> {
