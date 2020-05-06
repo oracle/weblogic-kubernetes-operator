@@ -1418,8 +1418,31 @@ public class TestUtils {
         .append(String.join(" ", args).toString())
         .append("'");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.execOrAbortProcess(cmdKubectlSh.toString(), true);
+    // LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
+    // TestUtils.execOrAbortProcess(cmdKubectlSh.toString(), true);
+    int numberOfRetries = 5;
+    for (int i = 1; i <= numberOfRetries; i++) {
+      LoggerHelper.getLocal().log(Level.INFO, "Iteration " + i
+          + "/" + numberOfRetries + ", Command to call kubectl sh file " + cmdKubectlSh);
+      ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+      if (result.exitValue() != 0) {
+        if (i == numberOfRetries) {
+          new RuntimeException("FAILURE: Command "
+              + cmdKubectlSh
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
+        } else {
+          LoggerHelper.getLocal().log(Level.INFO, "Command failed with stdout = "
+              + result.stdout() + " stderr = " + result.stderr() + ", retrying deploy");
+          Thread.sleep(10 * 1000);
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Application deployed successfully, stdout = " + result.stdout());
+      }
+    }
+
   }
 
   /**
