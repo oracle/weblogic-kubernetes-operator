@@ -171,6 +171,7 @@ class ItMiiDomain implements LoggedTest {
     dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
+    logger.info("Creating repo secret {0}", REPO_SECRET_NAME);
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
             .name(REPO_SECRET_NAME)
@@ -198,7 +199,7 @@ class ItMiiDomain implements LoggedTest {
             .helmParams(opHelmParams)
             .image(operatorImage)
             .imagePullSecrets(secretNameMap)
-            .domainNamespaces(Arrays.asList(domainNamespace))
+            .domainNamespaces(Arrays.asList(domainNamespace, domainNamespace1))
             .serviceAccount(serviceAccountName);
 
     // install Operator
@@ -352,6 +353,7 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Operator upgraded in namespace {0}", opNamespace);
 
     // Create the repo secret to pull the image
+    logger.info("Creating repo secret {0}", REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
               String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
@@ -370,6 +372,7 @@ class ItMiiDomain implements LoggedTest {
              String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
+    logger.info("Creating custom domain resource");
     createDomainResource(domainUid1, domainNamespace1, adminSecretName, REPO_SECRET_NAME,
               encryptionSecretName, replicaCount);
 
