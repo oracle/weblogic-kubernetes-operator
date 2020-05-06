@@ -42,15 +42,15 @@ function usage {
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
   echo "  -o Output directory (optional) "
-  echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\$USER/kindtest) "
+  echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
   echo "  -h Help"
   exit $1
 }
 
 k8s_version="1.15.11"
 kind_name="kind"
-if [[ -z "$WORKSPACE" ]]; then
-  outdir="/scratch/$USER/kindtest"
+if [[ -z "${WORKSPACE}" ]]; then
+  outdir="/scratch/${USER}/kindtest"
 else
   outdir="${WORKSPACE}/logdir/${BUILD_TAG}"
 fi
@@ -75,7 +75,7 @@ function versionprop {
 }
 
 kind_image=$(versionprop "${k8s_version}")
-if [ -z "$kind_image" ]; then
+if [ -z "${kind_image}" ]; then
   echo "Unsupported Kubernetes version: ${k8s_version}"
   exit 1
 fi
@@ -84,19 +84,19 @@ echo "Using Kubernetes version: ${k8s_version}"
 
 mkdir -m777 -p "${outdir}"
 export RESULT_ROOT="${outdir}/wl_k8s_test_results"
-if [ -d "$RESULT_ROOT" ]; then
-  rm -Rf "$RESULT_ROOT/*"
+if [ -d "${RESULT_ROOT}" ]; then
+  rm -Rf "${RESULT_ROOT}/*"
 else
-  mkdir -m777 "$RESULT_ROOT"
+  mkdir -m777 "${RESULT_ROOT}"
 fi
 
 echo "Results will be in ${RESULT_ROOT}"
 
 export PV_ROOT="${outdir}/k8s-pvroot"
-if [ -d "$PV_ROOT" ]; then
-  rm -Rf "$PV_ROOT/*"
+if [ -d "${PV_ROOT}" ]; then
+  rm -Rf "${PV_ROOT}/*"
 else
-  mkdir -m777 "$PV_ROOT"
+  mkdir -m777 "${PV_ROOT}"
 fi
 
 echo "Persistent volume files, if any, will be in ${PV_ROOT}"
@@ -129,7 +129,7 @@ fi
 echo "Registry Host: ${reg_host}"
 
 echo 'Create a cluster with the local registry enabled in containerd'
-cat <<EOF | kind create cluster --name "${kind_name}" --config=-
+cat <<EOF | kind create cluster --name "${kind_name}" --kubeconfig "${RESULT_ROOT}/kubeconfig" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 containerdConfigPatches:
@@ -157,7 +157,7 @@ done
 if [ "${kind_network}" != "bridge" ]; then
   containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
   needs_connect="true"
-  for c in $containers; do
+  for c in ${containers}; do
     if [ "$c" = "${reg_name}" ]; then
       needs_connect="false"
     fi
@@ -176,4 +176,4 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-time mvn -pl new-integration-tests -P integration-tests verify 2>&1 | tee "$RESULT_ROOT/kindtest.log"
+time mvn -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
