@@ -61,10 +61,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   /** Whether to allow the number of replicas to drop below the minimum dynamic cluster
    *  size configured in the WebLogic domain home configuration. Default is true. */
-  @Description("If true (the default), the number of replicas is allowed to drop below the "
+  @Description("If true (the default), then the number of replicas is allowed to drop below the "
       + "minimum dynamic cluster size configured in the WebLogic domain home configuration. "
-      + "Otherwise, the operator will ensure that the number of replicas is not below "
-      + "the minimum dynamic cluster. This setting applies to dynamic clusters only."
+      + "Otherwise, the operator will ensure that the number of replicas is not less than "
+      + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only."
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
 
