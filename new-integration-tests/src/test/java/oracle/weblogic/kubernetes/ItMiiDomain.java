@@ -791,16 +791,16 @@ class ItMiiDomain implements LoggedTest {
   }
 
   private String createInitialDomainImage() {
-    // build the model file list
+    logger.info("Build the model file list that contains {0}", WDT_MODEL_FILE);
     final List<String> modelList = 
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
 
-    // build an application archive using what is in resources/apps/APP_NAME
+    logger.info("Build an application archive using what is in resources/apps/{0}", APP_NAME);
     assertTrue(buildAppArchive(defaultAppParams()
         .srcDirList(Collections.singletonList(APP_NAME))), 
         String.format("Failed to create application archive for %s", APP_NAME));
 
-    // build the archive list
+    logger.info("Build the archive list that contains {0}", String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
     List<String> archiveList = 
         Collections.singletonList(String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
 
@@ -815,11 +815,11 @@ class ItMiiDomain implements LoggedTest {
       String baseImageName,
       List<String> appDirList
   ) {
-    // build the model file list
+    logger.info("Build the model file list that contains {0}", WDT_MODEL_FILE);
     List<String> modelList = 
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
    
-    // build an application archive
+    logger.info("Build an application archive using what is in {0}", appDirList);
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -827,7 +827,7 @@ class ItMiiDomain implements LoggedTest {
         String.format("Failed to create application archive for %s",
             APP_NAME));
 
-    // build the archive list
+    logger.info("Build the archive list that contains {0}", String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
     List<String> archiveList = 
         Collections.singletonList(
             String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
@@ -845,13 +845,13 @@ class ItMiiDomain implements LoggedTest {
       List<String> appDirList2,
       String modelFile
   ) {
-    // build the model file list
+    logger.info("Build the model file list that contains {0}", modelFile);
     List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
  
     String appName1 = appDirList1.get(0);
     String appName2 = appDirList2.get(0);
     
-    // build an application archive that contains the existing application artifacts
+    logger.info("Build an application archive using what is in {0}", appDirList1);
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -860,9 +860,7 @@ class ItMiiDomain implements LoggedTest {
         String.format("Failed to create application archive for %s",
             appName1));
     
-    logger.info("Successfully created application zip file: " + appName1);
-     
-    // build an application archive that contains the new application artifacts
+    logger.info("Build an application archive usingt what is in {0}", appDirList2);
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -871,9 +869,9 @@ class ItMiiDomain implements LoggedTest {
         String.format("Failed to create application archive for %s",
             appName2));
     
-    logger.info("Successfully cteated application zip file: " + appName2); 
-    
-    // build the archive list with two zip files
+    logger.info("Build the archive list with two zip files: {0} and {1}",
+        String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
+        String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
     List<String> archiveList = Arrays.asList(
         String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
         String.format("%s/%s.zip", ARCHIVE_DIR, appName2));

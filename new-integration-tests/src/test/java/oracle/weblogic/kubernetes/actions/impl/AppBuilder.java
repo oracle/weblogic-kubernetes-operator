@@ -62,8 +62,8 @@ public class AppBuilder {
             APP_DIR + "/" + item, 
             ARCHIVE_SRC_DIR);
       }
-    } catch (IOException | RuntimeException e) {    
-      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", e);
+    } catch (IOException ioe) {    
+      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
     
