@@ -69,7 +69,7 @@ class ItWitValidation implements LoggedTest {
     if (witJavaHome != null) {
       env.put("JAVA_HOME", witJavaHome);
     }
-    
+
     // build an image using WebLogic Image Tool
     boolean success = createMiiImage(
         defaultWitParams()

@@ -1,6 +1,30 @@
 #!/bin/bash
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+# This script provisions a Kubernetes cluster using Kind (https://kind.sigs.k8s.io/) and runs the new
+# integration test suite against that cluster.
+#
+# Kind creates Kubernetes nodes on your local box by running each node as a Docker container. This
+# makes it very easy to setup and tear down clusters. Presently, this script creates a cluster with a
+# master node and a worker node. Each node will run the same Kubernetes version. Future enhancements to
+# this script could allow for the configuration of a different number of nodes or for nodes to run a
+# differing set of Kubernetes versions.
+#
+# Kind nodes do not have access to the Docker repository on the local machine. Therefore this script works
+# around this limitation by running a Docker registry in a Docker container and connecting the networks so
+# that the Kubernetes nodes have visibility to the registry. When you run tests, you will see that Docker
+# images are pushed to this local registry and then are pulled to the Kubernetes nodes as needed.
+# You can see the images on a node by running: "docker exec -it kind-worker crictl images" where kind-worker
+# is the name of the Docker container.
+#
+# As of May 6, 2020, the tests are clean on Kubernetes 1.16 with the following JDK workarounds:
+# 1. Maven must be run with OpenJDK 11.0.7, available here: https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jdk_x64_linux_11.0.7_10.tar.gz
+#    This is because of a critical bug fix. Unfortunately, the Oracle JDK 11.0.7 release was based on an earlier build and doesn't have the fix.
+# 2. The WebLogic Image Tool will not accept an OpenJDK JDK. Set WIT_JAVA_HOME to an Oracle JDK Java Home.
+#    For example, "export WIT_JAVA_HOME=/usr/java/jdk-11.0.7" before running this script.
+#
+# If you want to access the cluster, use "kubectl cluster-info --context kind-kind" where the trailing "kind" is the value of the "-n" argument.
 set -o errexit
 
 script="${BASH_SOURCE[0]}"
@@ -51,6 +75,8 @@ if [ -z "$kind_image" ]; then
   exit 1
 fi
 
+echo "Using Kubernetes version: ${k8s_version}"
+
 mkdir -m777 -p "${outdir}"
 export RESULT_ROOT="${outdir}/wl_k8s_test_results"
 if [ -d "$RESULT_ROOT" ]; then
@@ -59,12 +85,16 @@ else
   mkdir -m777 "$RESULT_ROOT"
 fi
 
+echo "Results will be in ${RESULT_ROOT}"
+
 export PV_ROOT="${outdir}/k8s-pvroot"
 if [ -d "$PV_ROOT" ]; then
   rm -Rf "$PV_ROOT/*"
 else
   mkdir -m777 "$PV_ROOT"
 fi
+
+echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 
 echo 'Remove old cluster (if any)...'
 kind delete cluster --name ${kind_name}
@@ -111,6 +141,7 @@ nodes:
         containerPath: ${PV_ROOT}
 EOF
 
+echo "Access your cluster in other terminals with: kubectl cluster-info --context \"kind-${kind_name}\""
 kubectl cluster-info --context "kind-${kind_name}"
 kubectl get node -o wide
 
