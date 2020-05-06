@@ -11,8 +11,10 @@ public class HelmParams {
   private String releaseName;
   private String namespace;
   private String repoUrl;
+  private String repoName;
   private String chartName;
   private String chartDir;
+  private String chartValuesFile;
   private String filter;
 
   public HelmParams releaseName(String releaseName) {
@@ -30,6 +32,11 @@ public class HelmParams {
     return this;
   }
 
+  public HelmParams repoName(String repoName) {
+    this.repoName = repoName;
+    return this;
+  }
+
   public HelmParams chartName(String chartName) {
     this.chartName = chartName;
     return this;
@@ -37,6 +44,11 @@ public class HelmParams {
 
   public HelmParams chartDir(String chartDir) {
     this.chartDir = chartDir;
+    return this;
+  }
+
+  public HelmParams chartValuesFile(String chartValuesFile) {
+    this.chartValuesFile = chartValuesFile;
     return this;
   }
 
@@ -57,12 +69,20 @@ public class HelmParams {
     return repoUrl;
   }
 
+  public String getRepoName() {
+    return repoName;
+  }
+
   public String getChartName() {
     return chartName;
   }
 
   public String getChartDir() {
     return chartDir;
+  }
+
+  public String getChartValuesFile() {
+    return chartValuesFile;
   }
 
   public String getFilter() {
