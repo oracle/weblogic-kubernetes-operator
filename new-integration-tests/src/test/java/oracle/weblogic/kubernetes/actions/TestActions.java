@@ -412,7 +412,7 @@ public class TestActions {
    * Returns the V1Service object given the following parameters.
    *
    * @param serviceName name of the Service to return
-   * @param label  a Map of key value pairs the service is decorated with
+   * @param label a Map of key value pairs the service is decorated with
    * @param namespace namespace in which to check for the service existence
    * @return V1Service object if found otherwise null
    */
@@ -427,7 +427,7 @@ public class TestActions {
    * Returns NodePort of a admin service.
    *
    * @param serviceName name of admin service
-   * @param label  the key value pair with which the service is decorated with
+   * @param label the key value pair with which the service is decorated with
    * @param namespace namespace in which to check for the service
    * @return AdminNodePort of the Kubernetes service if exits else -1
    */
@@ -602,8 +602,10 @@ public class TestActions {
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName name of the pod
    * @return creationTimestamp from metadata section of the Pod
+   * @throws ApiException if Kubernetes client API call fails
    **/
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) 
+      throws ApiException {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
 
@@ -614,8 +616,9 @@ public class TestActions {
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName name of the pod
    * @return V1Pod pod object
+   * @throws ApiException if Kubernetes client API call fails
    **/
-  public static V1Pod getPod(String namespace, String labelSelector, String podName) {
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     return Pod.getPod(namespace, labelSelector, podName);
   }
 
@@ -625,8 +628,9 @@ public class TestActions {
    * @param podName name of the pod
    * @param namespace name of the namespace
    * @return log as a String
+   * @throws ApiException if Kubernetes client API call fails
    **/
-  public static String getPodLog(String podName, String namespace) {
+  public static String getPodLog(String podName, String namespace) throws ApiException {
     return Pod.getPodLog(podName, namespace);
   }
 

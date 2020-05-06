@@ -137,7 +137,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
   private V1Patch patch = null;
 
   /**
-   * Install Operator.
+   * Install operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    JUnit engine parameter resolution mechanism
    */
@@ -149,11 +149,11 @@ class ItMiiConfigMapOverride implements LoggedTest {
         .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -167,7 +167,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
-    // get Operator image name
+    // get operator image name
     operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
     logger.info("Operator image name {0}", operatorImage);
@@ -194,6 +194,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<String, Object>();
     secretNameMap.put("name", REPO_SECRET_NAME);
+
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -209,14 +210,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
-    // install Operator
-    logger.info("Installing Operator in namespace {0}", opNamespace);
+    // install operator
+    logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
         String.format("Operator install failed in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
-    // list helm releases matching Operator release name in operator namespace
-    logger.info("Checking Operator release {0} status in namespace {1}",
+    // list helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
     assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
         String.format("Operator release %s is not in deployed status in namespace %s",
@@ -225,7 +226,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
         OPERATOR_RELEASE_NAME, opNamespace);
 
     // check operator is running
-    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
+    logger.info("Check operator pod is running in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for operator to be running in namespace {0} "
@@ -240,11 +241,10 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   /**
    * Start a WebLogic domain with out any pre-defined ConfigMap.
-   * Create a ConfigMap with a sparse JDBC model file
+   * Create a ConfigMap with a sparse JDBC model file.
    * Patch the domain resource with the ConfigMap which is targeted to cluster
    * Update the Restart Version of the domain resource
-   * Verify rolling re-start of domain by comparing PodCreationTimestamp
-   * before rolling re-start and after rolling re-start
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart
    * Verify the DataSource configuration using the RestAPI call to admin server
    */
   @Test
@@ -260,12 +260,12 @@ class ItMiiConfigMapOverride implements LoggedTest {
     // create image with model files
     miiImage = createImageAndVerify();
 
-    // push the image to OCIR to make the test work in multi node cluster
+    // push the image to registry to make the test work in multi node cluster
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
-      logger.info("docker push image {0} to OCIR", miiImage);
+      logger.info("docker push image {0} to registry", miiImage);
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
     }
 
@@ -363,7 +363,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
-    String adminPodCreationTime = getPodCreationTimestamp(domainNamespace, "", adminServerPodName);
+    String adminPodCreationTime = 
+         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
+        String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
     assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
 
@@ -409,7 +411,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     checkServiceCreated(adminServerPodName, domainNamespace);
     checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
 
-    // check managed server pods re-started sequentially
+    // check managed server pods restarted sequentially
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be restarted in ns {1}",
           managedServerPrefix + i, domainNamespace);
@@ -418,7 +420,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
-    String newAdminPodCreationTime = getPodCreationTimestamp(domainNamespace, "", adminServerPodName);
+    String newAdminPodCreationTime = 
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
+        String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
     assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
     if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {
@@ -436,15 +440,15 @@ class ItMiiConfigMapOverride implements LoggedTest {
           .append(" -o /dev/null")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("CURL command {0}", new String(checkJdbc));
+      logger.info("curl command {0}", new String(checkJdbc));
       result = exec(new String(checkJdbc), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
       fail("Got unexpected exception" + ex);
     }
 
-    logger.info("Curl command returns {0}", result.toString());
-    assertEquals("200", result.stdout(), "Datasource configuration not found");
+    logger.info("curl command returns {0}", result.toString());
+    assertEquals("200", result.stdout(), "DataSource configuration not found");
     logger.info("Found the DataSource configuration ");
 
   }

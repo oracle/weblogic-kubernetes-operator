@@ -350,8 +350,9 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Pod
    * @param namespace name of the Namespace
    * @return log as a String
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodLog(String name, String namespace) {
+  public static String getPodLog(String name, String namespace) throws ApiException {
     return getPodLog(name, namespace, null);
   }
 
@@ -362,8 +363,9 @@ public class Kubernetes implements LoggedTest {
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
    * @return log as a String or NULL when there is an error
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodLog(String name, String namespace, String container) {
+  public static String getPodLog(String name, String namespace, String container) throws ApiException {
     String log = null;
     try {
       log = coreV1Api.readNamespacedPodLog(
@@ -380,7 +382,7 @@ public class Kubernetes implements LoggedTest {
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
-      return null;
+      throw apex;
     }
     return log;
   }
@@ -433,12 +435,13 @@ public class Kubernetes implements LoggedTest {
   /**
    * Returns the V1Pod object given the following parameters.
    *
-   * @param namespace     in which to check for the pod existence
+   * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName       name of the pod to return
+   * @param podName name of the pod to return
    * @return V1Pod object if found otherwise null
+   * @throws ApiException if Kubernetes client API call fails
    */
-  public static V1Pod getPod(String namespace, String labelSelector, String podName) {
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList pods = listPods(namespace, labelSelector);
     for (var pod : pods.getItems()) {
       if (podName.equals(pod.getMetadata().getName())) {
@@ -455,8 +458,10 @@ public class Kubernetes implements LoggedTest {
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName  name of the pod
    * @return creationTimestamp from metadata section of the Pod
+   * @throws ApiException if Kubernetes client API call fail
    */
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) {
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) 
+      throws ApiException {
     DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
     // DateTimeFormatter dtf = DateTimeFormat.forPattern("YYYYMMDDHHmmss");
     V1Pod pod = getPod(namespace, labelSelector, podName);
@@ -475,8 +480,9 @@ public class Kubernetes implements LoggedTest {
    * @param namespace Namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
    * @return V1PodList list of pods or NULL when there is an error
+   * @throws ApiException when there is error in querying the cluster
    */
-  public static V1PodList listPods(String namespace, String labelSelectors) {
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
     V1PodList v1PodList = null;
     try {
       v1PodList
@@ -494,7 +500,7 @@ public class Kubernetes implements LoggedTest {
           );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
-      throw null;
+      throw apex;
     }
     return v1PodList;
   }
@@ -1450,10 +1456,10 @@ public class Kubernetes implements LoggedTest {
    * Get V1Service object for the given service name, label and namespace.
    *
    * @param serviceName name of the service to look for
-   * @param label  key value pair with which the service is decorated with
+   * @param label key value pair with which the service is decorated with
    * @param namespace namespace in which to check for the service
    * @return V1Service object if found otherwise null
-   * @throws ApiException when there is error in querying the cluster
+   * @throws ApiException when there is an error in querying the cluster
    */
   public static V1Service getService(
       String serviceName, Map<String, String> label, String namespace)
@@ -1501,7 +1507,7 @@ public class Kubernetes implements LoggedTest {
    * @param serviceName name of admin server service
    * @param label key value pair with which the service is decorated with
    * @param namespace namespace in which to check for the service
-   * @return AdminNodePort of the Kubernetes service if exits else -1
+   * @return AdminNodePort of the Kubernetes service if exists else -1
    * @throws ApiException when there is error in querying the cluster
    */
   public static int getAdminServiceNodePort(
@@ -1516,6 +1522,11 @@ public class Kubernetes implements LoggedTest {
     }
     V1ServiceSpec v1ServiceSpec = service.getSpec();
     List<V1ServicePort> portList = v1ServiceSpec.getPorts();
+    if (portList == null) {
+      logger.info("Got NULL portList for service ${0} in namespace ${1}", serviceName, namespace);
+      return -1;
+    }
+
     for (int i = 0; i < portList.size(); i++) {
       if (portList.get(i).getName().equals("default")) {
         logger.info(portList.get(i).toString());

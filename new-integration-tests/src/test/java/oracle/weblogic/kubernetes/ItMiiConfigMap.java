@@ -131,7 +131,7 @@ class ItMiiConfigMap implements LoggedTest {
   private StringBuffer checkJdbc = null;
 
   /**
-   * Install Operator.
+   * Install operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    JUnit engine parameter resolution mechanism
    */
@@ -143,11 +143,11 @@ class ItMiiConfigMap implements LoggedTest {
         .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
+    logger.info("Assigning unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Assigning unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -161,7 +161,7 @@ class ItMiiConfigMap implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
-    // get Operator image name
+    // get operator image name
     operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
     logger.info("Operator image name {0}", operatorImage);
@@ -188,6 +188,7 @@ class ItMiiConfigMap implements LoggedTest {
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<String, Object>();
     secretNameMap.put("name", REPO_SECRET_NAME);
+
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -203,14 +204,14 @@ class ItMiiConfigMap implements LoggedTest {
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
-    // install Operator
-    logger.info("Installing Operator in namespace {0}", opNamespace);
+    // install operator
+    logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
         String.format("Operator install failed in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
-    // list helm releases matching Operator release name in operator namespace
-    logger.info("Checking Operator release {0} status in namespace {1}",
+    // list helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
     assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
         String.format("Operator release %s is not in deployed status in namespace %s",
@@ -219,7 +220,7 @@ class ItMiiConfigMap implements LoggedTest {
         OPERATOR_RELEASE_NAME, opNamespace);
 
     // check operator is running
-    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
+    logger.info("Check operator pod is running in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for operator to be running in namespace {0} "
@@ -232,12 +233,9 @@ class ItMiiConfigMap implements LoggedTest {
   }
 
   /**
-   * Deploy a WebLogic domain with a defined ConfigMap.
-   * in configuration/model section of the domain resource
-   * The ConfigMap has a sparse wdt model file that define a JDBC DataSource 
-   * targeted to the cluster
-   * Once the WebLogic domain is up, verify the DataSource configuration
-   * using the RestAPI call thru adminserver's  public NodePort
+   * Deploy a WebLogic domain with a defined ConfigMap in configuration/model section of the domain resource.
+   * The ConfigMap has a sparse WDT model file that defines a JDBC DataSource targeted to the cluster.
+   * Verify the DataSource configuration using the RestAPI call using adminserver's public NodePort
    */
   @Test
   @Order(1)
@@ -252,12 +250,12 @@ class ItMiiConfigMap implements LoggedTest {
     // create image with model files
     miiImage = createImageAndVerify();
 
-    // push the image to OCIR to make the test work in multi node cluster
+    // push the image to registry to make the test work in multi node cluster
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
 
-      logger.info("docker push image {0} to OCIR", miiImage);
+      logger.info("docker push image {0} to registry", miiImage);
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
     }
 
@@ -366,15 +364,15 @@ class ItMiiConfigMap implements LoggedTest {
           .append(" -o /dev/null ")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("CURL command {0}", new String(checkJdbc));
+      logger.info("curl command {0}", new String(checkJdbc));
       result = exec(new String(checkJdbc), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
       fail("Got unexpected exception" + ex);
     }
 
-    logger.info("Curl command returns {0}", result.toString());
-    assertEquals("200", result.stdout(), "Datasource configuration not found");
+    logger.info("curl command returns {0}", result.toString());
+    assertEquals("200", result.stdout(), "DataSource configuration not found");
     logger.info("Found the DataSource configuration ");
 
   }
