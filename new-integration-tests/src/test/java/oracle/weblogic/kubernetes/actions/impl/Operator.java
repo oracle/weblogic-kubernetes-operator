@@ -53,9 +53,6 @@ public class Operator {
     return Helm.uninstall(params);
   }
 
-  public static boolean scaleDomain(String domainUid, String clusterName, int numOfServers) {
-    return true;
-  }
 
   /**
    * Image Name for the Operator. Uses branch name for tag in local runs
