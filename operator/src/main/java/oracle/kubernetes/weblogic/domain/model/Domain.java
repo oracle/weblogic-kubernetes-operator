@@ -298,6 +298,19 @@ public class Domain {
   }
 
   /**
+   * Returns whether the specified cluster is allowed to have replica count below the minimum
+   * dynamic cluster size configured in WebLogic domain configuration.
+   *
+   * @param clusterName the name of the cluster
+   * @return whether the specified cluster is allowed to have replica count below the minimum
+   *     dynamic cluster size configured in WebLogic domain configuration
+   */
+  public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
+  }
+
+
+  /**
    * DomainSpec is a description of a domain.
    *
    * @return Specification
