@@ -146,7 +146,10 @@ nodes:
         containerPath: ${PV_ROOT}
 EOF
 
-echo "Access your cluster in other terminals with: kubectl cluster-info --context \"kind-${kind_name}\""
+echo "Access your cluster in other terminals with:"
+echo "  export KUBECONFIG=\"${RESULT_ROOT}/kubeconfig\""
+echo "  kubectl cluster-info --context \"kind-${kind_name}\""
+export KUBECONFIG="${RESULT_ROOT}/kubeconfig"
 kubectl cluster-info --context "kind-${kind_name}"
 kubectl get node -o wide
 
