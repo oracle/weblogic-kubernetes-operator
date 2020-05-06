@@ -254,7 +254,7 @@ public class ItMonitoringExporter extends BaseTest {
             + args
             + " | tee "
             + outLogFile;
-    ExecResult result = TestUtils.execOrAbortProcess(crdCmd, true);
+    ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
       throw new Exception(
           "FAILURE: Command "
