@@ -15,9 +15,21 @@ alertmanager:
   service:
     type: NodePort
     nodePort: 32500
+ # securityContext:
+ #   runAsNonRoot: false
+ #  runAsUser: 0
+  image:
+    repository: prom/alertmanager
+    tag: v0.20.0
+    pullPolicy: Always
   securityContext:
-    runAsNonRoot: false
-    runAsUser: 0
+    runAsUser: 65534
+    runAsNonRoot: true
+    runAsGroup: 65534
+    fsGroup: 65534
+
+nodeExporter:
+  enabled: false
 
 server:
   persistentVolume:
@@ -28,10 +40,15 @@ server:
   securityContext:
     runAsNonRoot: false
     runAsUser: 0
+
   global:
     evaluation_interval: 1m
     scrape_interval: 10s
     scrape_timeout: 5s
+  image:
+    repository: prom/prometheus
+    tag: v2.16.0
+    pullPolicy: Always
 
 alertmanagerFiles:
   alertmanager.yml:
