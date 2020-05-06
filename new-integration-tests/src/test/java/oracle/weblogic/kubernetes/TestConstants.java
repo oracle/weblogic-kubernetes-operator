@@ -7,6 +7,10 @@ import java.util.Optional;
 
 public interface TestConstants {
 
+  // domain constants
+  public static final String DOMAIN_VERSION = "v7";
+  public static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
   public static final String OPERATOR_CHART_DIR =
@@ -35,4 +39,6 @@ public interface TestConstants {
 
   public static final String K8S_NODEPORT_HOST = System.getenv().getOrDefault("K8S_NODEPORT_HOST",
       System.getenv("HOST"));
+  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
+      System.getProperty("java.io.tmpdir")) + "/ittestspvroot";
 }
