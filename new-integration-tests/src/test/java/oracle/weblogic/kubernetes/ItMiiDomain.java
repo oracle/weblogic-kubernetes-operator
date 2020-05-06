@@ -126,6 +126,8 @@ class ItMiiDomain implements LoggedTest {
   private String domainUid1 = "domain2";
   private String miiImage = null;
 
+  private static Map<String, Object> secretNameMap;
+
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -185,7 +187,7 @@ class ItMiiDomain implements LoggedTest {
                   REPO_SECRET_NAME, opNamespace));
 
     // map with secret
-    Map<String, Object> secretNameMap = new HashMap<String, Object>();
+    secretNameMap = new HashMap<String, Object>();
     secretNameMap.put("name", REPO_SECRET_NAME);
     // helm install parameters
     opHelmParams = new HelmParams()
@@ -343,6 +345,7 @@ class ItMiiDomain implements LoggedTest {
             new OperatorParams()
                     .helmParams(opHelmParams)
                     .image(operatorImage)
+                    .imagePullSecrets(secretNameMap)
                     .domainNamespaces(Arrays.asList(domainNamespace,domainNamespace1))
                     .serviceAccount(serviceAccountName);
 
