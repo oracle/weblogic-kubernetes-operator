@@ -166,8 +166,8 @@ class ItMiiDomain implements LoggedTest {
     // versions of the tools in every run of the test class.
     try {
       cleanupDirectory(DOWNLOAD_DIR);
-    } catch (IOException | IllegalArgumentException e) {    
-      logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, e);    
+    } catch (IOException ioe) {    
+      logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, ioe);    
     }
 
     // get a new unique opNamespace
@@ -922,7 +922,7 @@ class ItMiiDomain implements LoggedTest {
       List<String> modelList,
       List<String> archiveList
   ) {
-    final String image = String.format("%s:%s", imageName, imageTag);
+    String image = String.format("%s:%s", imageName, imageTag);
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -930,8 +930,8 @@ class ItMiiDomain implements LoggedTest {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
-    logger.info("Create image {0}:{1} using model directory {2}",
-        imageName, imageTag, MODEL_DIR);
+    logger.info("Create image {0} using model directory {1}",
+        image, MODEL_DIR);
     boolean result = createMiiImage(
         defaultWitParams()
             .modelImageName(imageName)

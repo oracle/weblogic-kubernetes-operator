@@ -80,9 +80,6 @@ public class FileUtils {
       return;
     }
 
-    if (!file.isDirectory()) {
-      throw new IllegalArgumentException("The parameter " + dir + " should be a directory.");
-    }
     cleanDirectory(file);
 
   }
