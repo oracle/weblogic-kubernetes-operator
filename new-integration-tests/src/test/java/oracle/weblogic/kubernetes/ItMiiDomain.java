@@ -166,7 +166,7 @@ class ItMiiDomain implements LoggedTest {
     // versions of the tools in every run of the test class.
     try {
       cleanupDirectory(DOWNLOAD_DIR);
-    } catch (IOException | RuntimeException e) {    
+    } catch (IOException | IllegalArgumentException e) {    
       logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, e);    
     }
 
