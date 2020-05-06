@@ -10,7 +10,7 @@ import java.util.Objects;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 /**
- * All parameters needed to install Nginx ingress controller.
+ * All parameters needed to install NGINX ingress controller.
  */
 public class NginxParams {
 

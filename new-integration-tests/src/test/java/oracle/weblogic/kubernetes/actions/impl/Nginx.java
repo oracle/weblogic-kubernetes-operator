@@ -24,7 +24,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
- * Utility class for Nginx ingress controller.
+ * Utility class for NGINX ingress controller.
  */
 public class Nginx {
 
@@ -33,7 +33,7 @@ public class Nginx {
   private static final String INGRESS_NGINX_CLASS = "nginx";
 
   /**
-   * Install Nginx Helm chart.
+   * Install NGINX Helm chart.
    *
    * @param params the parameters to Helm install command such as release name, namespace, repo url or chart dir,
    *               chart name and chart values
@@ -44,7 +44,7 @@ public class Nginx {
   }
 
   /**
-   * Upgrade Nginx Helm release.
+   * Upgrade NGINX Helm release.
    *
    * @param params the parameters to Helm upgrade command such as release name, namespace and chart values to override
    * @return true on success, false otherwise
@@ -54,26 +54,13 @@ public class Nginx {
   }
 
   /**
-   * Uninstall Nginx Helm release.
+   * Uninstall NGINX Helm release.
    *
    * @param params the parameters to Helm uninstall command such as release name and namespace
    * @return true on success, false otherwise
    */
   public static boolean uninstall(HelmParams params) {
     return Helm.uninstall(params);
-  }
-
-  /**
-   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * This method assumes the cluster name is "cluster-1" and the managed server port is 8001.
-   *
-   * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
-   * @param domainUid the WebLogic domainUid which is backend to the ingress
-   * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean createIngress(String domainNamespace, String domainUid) throws ApiException {
-    return createIngress(domainNamespace, domainUid, "cluster-1", 8001);
   }
 
   /**
@@ -91,7 +78,7 @@ public class Nginx {
                                       String clusterName,
                                       int managedServerPort) throws ApiException {
 
-    // set the annotation for kubernetes.io/ingress.class to nginx
+    // set the annotation for kubernetes.io/ingress.class to "nginx"
     HashMap<String, String> annotation = new HashMap<>();
     annotation.put("kubernetes.io/ingress.class", INGRESS_NGINX_CLASS);
 
@@ -107,7 +94,7 @@ public class Nginx {
 
     // set the ingress rule
     ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
-        .host(domainUid + ".org")
+        .host(domainUid + ".test")
         .http(new ExtensionsV1beta1HTTPIngressRuleValue()
               .paths(httpIngressPaths)
         );
