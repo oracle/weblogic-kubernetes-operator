@@ -127,7 +127,7 @@ The following domain resource attributes are specific to Model in Image domains.
 
 A JRF domain requires an infrastructure database called an RCU database, initializing this database, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize it's RCU schema tables in the database - a process that can take several minutes.
 
-Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain, as discussed in [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
 
 __Here are the required settings for Model in Image JRF domains:__
 
@@ -135,7 +135,7 @@ __Here are the required settings for Model in Image JRF domains:__
 
 - Set `configuration.opss.walletPasswordSecret` to reference a secret that defines a `walletPassword` key. This is used to encrypt the domain's OPSS wallet file. This is a required field for JRF domains.
 
-- Set `configuration.opss.walletFileSecret` to reference a secret that contains your domain's OPSS wallet file in its `walletFile` key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its RCU database information. For more information, see [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}). This is an optional field for JRF domains, but must always be set if you want a restarted or migrated domain to access its RCU database information.
+- Set `configuration.opss.walletFileSecret` to reference a secret that contains your domain's OPSS wallet file in its `walletFile` key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its RCU database information. This is an optional field for JRF domains, but must always be set if you want a restarted or migrated domain to access its RCU database information.
 
 - Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 300 seconds. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's RCU database tables), and because Model in Image creates your domain home for you using the introspection job.
 
@@ -164,12 +164,10 @@ __Important instructions when changing an RCU schema password:__
 
 - Restart the domains. For example, change their `serverStartPolicy` from `NEVER` to `IF_NEEDED`.
 
-- Save your wallet files again, as changing your RCU schema password generates a different wallet. See [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+- Save your wallet files again, as changing your RCU schema password generates a different wallet.
 
 __References:__
 
 For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
-
-See [Reusing an RCU database between domain deployments]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
 
 See also, [Specifying RCU connection information in the model](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/rcuinfo.md) in the WDT documentation.
