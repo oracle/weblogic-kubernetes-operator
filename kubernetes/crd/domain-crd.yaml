@@ -127,13 +127,15 @@ spec:
                       for server instances without running pods.
                   annotations:
                     type: object
+                    additionalProperties:
+                      type: string
                     description: The annotations to be attached to generated resources.
-                    properties: {}
                   labels:
                     type: object
+                    additionalProperties:
+                      type: string
                     description: The labels to be attached to generated resources.
                       The label names must not start with 'weblogic.'.
-                    properties: {}
               domainHome:
                 type: string
                 description: The folder for the WebLogic Domain. Not required. Defaults
@@ -199,13 +201,15 @@ spec:
                           even for server instances without running pods.
                       annotations:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: The annotations to be attached to generated resources.
-                        properties: {}
                       labels:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: The labels to be attached to generated resources.
                           The label names must not start with 'weblogic.'.
-                        properties: {}
                   serverPod:
                     type: object
                     description: Configuration affecting server pods.
@@ -460,8 +464,9 @@ spec:
                                 options:
                                   description: 'Optional: Extra command options if
                                     any.'
+                                  additionalProperties:
+                                    type: string
                                   type: object
-                                  properties: {}
                                 secretRef:
                                   description: LocalObjectReference contains enough
                                     information to let you locate the referenced object
@@ -1680,8 +1685,9 @@ spec:
                                     properties that are passed to the CSI driver.
                                     Consult your driver's documentation for supported
                                     values.
+                                  additionalProperties:
+                                    type: string
                                   type: object
-                                  properties: {}
                               required:
                               - driver
                             name:
@@ -1862,21 +1868,24 @@ spec:
                         properties:
                           requests:
                             type: object
+                            additionalProperties:
+                              type: string
                             description: 'Requests describes the minimum amount of
                               compute resources required. If Requests is omitted for
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                            properties: {}
                           limits:
                             type: object
+                            additionalProperties:
+                              type: string
                             description: 'Limits describes the maximum amount of compute
                               resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                            properties: {}
                       annotations:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: The annotations to be attached to generated resources.
-                        properties: {}
                       env:
                         type: array
                         description: A list of environment variables to add to a server.
@@ -2043,9 +2052,10 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
                       nodeSelector:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: Selector which must match a node's labels for
                           the pod to be scheduled on that node.
-                        properties: {}
                       volumeMounts:
                         type: array
                         description: Additional volume mounts for the server pod.
@@ -2089,9 +2099,10 @@ spec:
                           - name
                       labels:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: The labels to be attached to generated resources.
                           The label names must not start with 'weblogic.'.
-                        properties: {}
                       runtimeClassName:
                         type: string
                         description: 'RuntimeClassName refers to a RuntimeClass object
@@ -2378,13 +2389,15 @@ spec:
                                     omitted for a container, it defaults to Limits
                                     if that is explicitly specified, otherwise to
                                     an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  additionalProperties:
+                                    type: string
                                   type: object
-                                  properties: {}
                                 limits:
                                   description: 'Limits describes the maximum amount
                                     of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  additionalProperties:
+                                    type: string
                                   type: object
-                                  properties: {}
                             securityContext:
                               description: SecurityContext holds security configuration
                                 that will be applied to a container. Some fields are
@@ -3701,13 +3714,15 @@ spec:
                                     omitted for a container, it defaults to Limits
                                     if that is explicitly specified, otherwise to
                                     an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  additionalProperties:
+                                    type: string
                                   type: object
-                                  properties: {}
                                 limits:
                                   description: 'Limits describes the maximum amount
                                     of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                  additionalProperties:
+                                    type: string
                                   type: object
-                                  properties: {}
                             securityContext:
                               description: SecurityContext holds security configuration
                                 that will be applied to a container. Some fields are
@@ -5001,8 +5016,9 @@ spec:
                                             whose key field is "key", the operator
                                             is "In", and the values array contains
                                             only "value". The requirements are ANDed.
+                                          additionalProperties:
+                                            type: string
                                           type: object
-                                          properties: {}
                                     topologyKey:
                                       description: This pod should be co-located (affinity)
                                         or not co-located (anti-affinity) with the
@@ -5110,8 +5126,9 @@ spec:
                                                 is "In", and the values array contains
                                                 only "value". The requirements are
                                                 ANDed.
+                                              additionalProperties:
+                                                type: string
                                               type: object
-                                              properties: {}
                                         topologyKey:
                                           description: This pod should be co-located
                                             (affinity) or not co-located (anti-affinity)
@@ -5221,8 +5238,9 @@ spec:
                                             whose key field is "key", the operator
                                             is "In", and the values array contains
                                             only "value". The requirements are ANDed.
+                                          additionalProperties:
+                                            type: string
                                           type: object
-                                          properties: {}
                                     topologyKey:
                                       description: This pod should be co-located (affinity)
                                         or not co-located (anti-affinity) with the
@@ -5330,8 +5348,9 @@ spec:
                                                 is "In", and the values array contains
                                                 only "value". The requirements are
                                                 ANDed.
+                                              additionalProperties:
+                                                type: string
                                               type: object
-                                              properties: {}
                                         topologyKey:
                                           description: This pod should be co-located
                                             (affinity) or not co-located (anti-affinity)
@@ -5410,14 +5429,16 @@ spec:
                           - channelName
                       annotations:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: Annotations to associate with the external channel
                           service.
-                        properties: {}
                       labels:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: Labels to associate with the external channel
                           service.
-                        properties: {}
                   restartVersion:
                     type: string
                     description: If present, every time this value is updated the
@@ -5459,13 +5480,15 @@ spec:
                         annotations:
                           description: The annotations to be attached to generated
                             resources.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         labels:
                           description: The labels to be attached to generated resources.
                             The label names must not start with 'weblogic.'.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                     maxUnavailable:
                       description: The maximum number of cluster members that can
                         be temporarily unavailable. Defaults to 1.
@@ -5742,8 +5765,9 @@ spec:
                                   options:
                                     description: 'Optional: Extra command options
                                       if any.'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                   secretRef:
                                     description: LocalObjectReference contains enough
                                       information to let you locate the referenced
@@ -6994,8 +7018,9 @@ spec:
                                       properties that are passed to the CSI driver.
                                       Consult your driver's documentation for supported
                                       values.
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                 required:
                                 - driver
                               name:
@@ -7180,18 +7205,21 @@ spec:
                                 for a container, it defaults to Limits if that is
                                 explicitly specified, otherwise to an implementation-defined
                                 value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                             limits:
                               description: 'Limits describes the maximum amount of
                                 compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                         annotations:
                           description: The annotations to be attached to generated
                             resources.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         env:
                           description: A list of environment variables to add to a
                             server.
@@ -7362,8 +7390,9 @@ spec:
                         nodeSelector:
                           description: Selector which must match a node's labels for
                             the pod to be scheduled on that node.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         volumeMounts:
                           description: Additional volume mounts for the server pod.
                           type: array
@@ -7409,8 +7438,9 @@ spec:
                         labels:
                           description: The labels to be attached to generated resources.
                             The label names must not start with 'weblogic.'.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         runtimeClassName:
                           description: 'RuntimeClassName refers to a RuntimeClass
                             object in the node.k8s.io group, which should be used
@@ -7700,13 +7730,15 @@ spec:
                                       if that is explicitly specified, otherwise to
                                       an implementation-defined value. More info:
                                       https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                   limits:
                                     description: 'Limits describes the maximum amount
                                       of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                               securityContext:
                                 description: SecurityContext holds security configuration
                                   that will be applied to a container. Some fields
@@ -9047,13 +9079,15 @@ spec:
                                       if that is explicitly specified, otherwise to
                                       an implementation-defined value. More info:
                                       https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                   limits:
                                     description: 'Limits describes the maximum amount
                                       of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                               securityContext:
                                 description: SecurityContext holds security configuration
                                   that will be applied to a container. Some fields
@@ -10378,8 +10412,9 @@ spec:
                                               whose key field is "key", the operator
                                               is "In", and the values array contains
                                               only "value". The requirements are ANDed.
+                                            additionalProperties:
+                                              type: string
                                             type: object
-                                            properties: {}
                                       topologyKey:
                                         description: This pod should be co-located
                                           (affinity) or not co-located (anti-affinity)
@@ -10491,8 +10526,9 @@ spec:
                                                   is "In", and the values array contains
                                                   only "value". The requirements are
                                                   ANDed.
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
-                                                properties: {}
                                           topologyKey:
                                             description: This pod should be co-located
                                               (affinity) or not co-located (anti-affinity)
@@ -10603,8 +10639,9 @@ spec:
                                               whose key field is "key", the operator
                                               is "In", and the values array contains
                                               only "value". The requirements are ANDed.
+                                            additionalProperties:
+                                              type: string
                                             type: object
-                                            properties: {}
                                       topologyKey:
                                         description: This pod should be co-located
                                           (affinity) or not co-located (anti-affinity)
@@ -10716,8 +10753,9 @@ spec:
                                                   is "In", and the values array contains
                                                   only "value". The requirements are
                                                   ANDed.
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
-                                                properties: {}
                                           topologyKey:
                                             description: This pod should be co-located
                                               (affinity) or not co-located (anti-affinity)
@@ -10755,13 +10793,15 @@ spec:
                         annotations:
                           description: The annotations to be attached to generated
                             resources.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         labels:
                           description: The labels to be attached to generated resources.
                             The label names must not start with 'weblogic.'.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                     serverStartPolicy:
                       description: The strategy for deciding whether to start a server.
                         Legal values are NEVER, or IF_NEEDED.
@@ -11081,8 +11121,9 @@ spec:
                               type: string
                             options:
                               description: 'Optional: Extra command options if any.'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                             secretRef:
                               description: LocalObjectReference contains enough information
                                 to let you locate the referenced object inside the
@@ -12233,8 +12274,9 @@ spec:
                               description: VolumeAttributes stores driver-specific
                                 properties that are passed to the CSI driver. Consult
                                 your driver's documentation for supported values.
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                           required:
                           - driver
                         name:
@@ -12409,20 +12451,23 @@ spec:
                     properties:
                       requests:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                        properties: {}
                       limits:
                         type: object
+                        additionalProperties:
+                          type: string
                         description: 'Limits describes the maximum amount of compute
                           resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                        properties: {}
                   annotations:
                     type: object
+                    additionalProperties:
+                      type: string
                     description: The annotations to be attached to generated resources.
-                    properties: {}
                   env:
                     type: array
                     description: A list of environment variables to add to a server.
@@ -12580,9 +12625,10 @@ spec:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
                   nodeSelector:
                     type: object
+                    additionalProperties:
+                      type: string
                     description: Selector which must match a node's labels for the
                       pod to be scheduled on that node.
-                    properties: {}
                   volumeMounts:
                     type: array
                     description: Additional volume mounts for the server pod.
@@ -12625,9 +12671,10 @@ spec:
                       - name
                   labels:
                     type: object
+                    additionalProperties:
+                      type: string
                     description: The labels to be attached to generated resources.
                       The label names must not start with 'weblogic.'.
-                    properties: {}
                   runtimeClassName:
                     type: string
                     description: 'RuntimeClassName refers to a RuntimeClass object
@@ -12906,13 +12953,15 @@ spec:
                                 for a container, it defaults to Limits if that is
                                 explicitly specified, otherwise to an implementation-defined
                                 value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                             limits:
                               description: 'Limits describes the maximum amount of
                                 compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                         securityContext:
                           description: SecurityContext holds security configuration
                             that will be applied to a container. Some fields are present
@@ -14197,13 +14246,15 @@ spec:
                                 for a container, it defaults to Limits if that is
                                 explicitly specified, otherwise to an implementation-defined
                                 value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                             limits:
                               description: 'Limits describes the maximum amount of
                                 compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                         securityContext:
                           description: SecurityContext holds security configuration
                             that will be applied to a container. Some fields are present
@@ -15467,8 +15518,9 @@ spec:
                                         whose key field is "key", the operator is
                                         "In", and the values array contains only "value".
                                         The requirements are ANDed.
+                                      additionalProperties:
+                                        type: string
                                       type: object
-                                      properties: {}
                                 topologyKey:
                                   description: This pod should be co-located (affinity)
                                     or not co-located (anti-affinity) with the pods
@@ -15570,8 +15622,9 @@ spec:
                                             whose key field is "key", the operator
                                             is "In", and the values array contains
                                             only "value". The requirements are ANDed.
+                                          additionalProperties:
+                                            type: string
                                           type: object
-                                          properties: {}
                                     topologyKey:
                                       description: This pod should be co-located (affinity)
                                         or not co-located (anti-affinity) with the
@@ -15675,8 +15728,9 @@ spec:
                                         whose key field is "key", the operator is
                                         "In", and the values array contains only "value".
                                         The requirements are ANDed.
+                                      additionalProperties:
+                                        type: string
                                       type: object
-                                      properties: {}
                                 topologyKey:
                                   description: This pod should be co-located (affinity)
                                     or not co-located (anti-affinity) with the pods
@@ -15778,8 +15832,9 @@ spec:
                                             whose key field is "key", the operator
                                             is "In", and the values array contains
                                             only "value". The requirements are ANDed.
+                                          additionalProperties:
+                                            type: string
                                           type: object
-                                          properties: {}
                                     topologyKey:
                                       description: This pod should be co-located (affinity)
                                         or not co-located (anti-affinity) with the
@@ -15834,13 +15889,15 @@ spec:
                         annotations:
                           description: The annotations to be attached to generated
                             resources.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         labels:
                           description: The labels to be attached to generated resources.
                             The label names must not start with 'weblogic.'.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                     serverName:
                       description: The name of the Managed Server. Required.
                       type: string
@@ -16100,8 +16157,9 @@ spec:
                                   options:
                                     description: 'Optional: Extra command options
                                       if any.'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                   secretRef:
                                     description: LocalObjectReference contains enough
                                       information to let you locate the referenced
@@ -17352,8 +17410,9 @@ spec:
                                       properties that are passed to the CSI driver.
                                       Consult your driver's documentation for supported
                                       values.
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                 required:
                                 - driver
                               name:
@@ -17538,18 +17597,21 @@ spec:
                                 for a container, it defaults to Limits if that is
                                 explicitly specified, otherwise to an implementation-defined
                                 value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                             limits:
                               description: 'Limits describes the maximum amount of
                                 compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                              additionalProperties:
+                                type: string
                               type: object
-                              properties: {}
                         annotations:
                           description: The annotations to be attached to generated
                             resources.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         env:
                           description: A list of environment variables to add to a
                             server.
@@ -17720,8 +17782,9 @@ spec:
                         nodeSelector:
                           description: Selector which must match a node's labels for
                             the pod to be scheduled on that node.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         volumeMounts:
                           description: Additional volume mounts for the server pod.
                           type: array
@@ -17767,8 +17830,9 @@ spec:
                         labels:
                           description: The labels to be attached to generated resources.
                             The label names must not start with 'weblogic.'.
+                          additionalProperties:
+                            type: string
                           type: object
-                          properties: {}
                         runtimeClassName:
                           description: 'RuntimeClassName refers to a RuntimeClass
                             object in the node.k8s.io group, which should be used
@@ -18058,13 +18122,15 @@ spec:
                                       if that is explicitly specified, otherwise to
                                       an implementation-defined value. More info:
                                       https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                   limits:
                                     description: 'Limits describes the maximum amount
                                       of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                               securityContext:
                                 description: SecurityContext holds security configuration
                                   that will be applied to a container. Some fields
@@ -19405,13 +19471,15 @@ spec:
                                       if that is explicitly specified, otherwise to
                                       an implementation-defined value. More info:
                                       https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                                   limits:
                                     description: 'Limits describes the maximum amount
                                       of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                    additionalProperties:
+                                      type: string
                                     type: object
-                                    properties: {}
                               securityContext:
                                 description: SecurityContext holds security configuration
                                   that will be applied to a container. Some fields
@@ -20736,8 +20804,9 @@ spec:
                                               whose key field is "key", the operator
                                               is "In", and the values array contains
                                               only "value". The requirements are ANDed.
+                                            additionalProperties:
+                                              type: string
                                             type: object
-                                            properties: {}
                                       topologyKey:
                                         description: This pod should be co-located
                                           (affinity) or not co-located (anti-affinity)
@@ -20849,8 +20918,9 @@ spec:
                                                   is "In", and the values array contains
                                                   only "value". The requirements are
                                                   ANDed.
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
-                                                properties: {}
                                           topologyKey:
                                             description: This pod should be co-located
                                               (affinity) or not co-located (anti-affinity)
@@ -20961,8 +21031,9 @@ spec:
                                               whose key field is "key", the operator
                                               is "In", and the values array contains
                                               only "value". The requirements are ANDed.
+                                            additionalProperties:
+                                              type: string
                                             type: object
-                                            properties: {}
                                       topologyKey:
                                         description: This pod should be co-located
                                           (affinity) or not co-located (anti-affinity)
@@ -21074,8 +21145,9 @@ spec:
                                                   is "In", and the values array contains
                                                   only "value". The requirements are
                                                   ANDed.
+                                                additionalProperties:
+                                                  type: string
                                                 type: object
-                                                properties: {}
                                           topologyKey:
                                             description: This pod should be co-located
                                               (affinity) or not co-located (anti-affinity)
