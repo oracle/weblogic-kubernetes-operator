@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
@@ -50,19 +51,19 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         // assertFalse(true);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
 
-        // push the image to OCIR to make the test work in multi node cluster
-        if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          assertTrue(Operator.buildImage(operatorImage));
+        assertTrue(Operator.buildImage(operatorImage));
 
+        // docker login, if needed
+        if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
           assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-
-          logger.info("docker push image {0} to OCIR", operatorImage);
-          assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
-        } else {
-          assertTrue(Operator.buildImage(operatorImage));
         }
-        
+
+        // push the image
+        if (!REPO_NAME.isEmpty()) {
+          logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
+          assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
+        }
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
         // other threads
