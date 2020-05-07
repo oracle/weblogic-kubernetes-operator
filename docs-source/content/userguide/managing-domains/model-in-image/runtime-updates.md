@@ -6,6 +6,10 @@ pre = "<b> </b>"
 description = "Updating a running Model in Image domain's images and model files."
 +++
 
+{{% notice info %}}
+This feature is supported only in 3.0.0-RC1.
+{{% /notice %}}
+
 #### Contents
 
  - [Overview](#overview)
@@ -18,7 +22,7 @@ description = "Updating a running Model in Image domain's images and model files
 
 #### Overview
 
-If you want to make a WebLogic domain home configuration change to a running Model in Image domain, and you want the change to survive WebLogic pod restarts, then you can modify your existing model by one or more the following approaches:
+If you want to make a configuration change to a running Model in Image domain, and you want the change to survive WebLogic pod restarts, then you can modify your existing model using one of the following approaches:
 
   - Changing secrets or environment variables that are referenced by macros in your model files.
 
@@ -26,7 +30,7 @@ If you want to make a WebLogic domain home configuration change to a running Mod
 
   - Supplying a new image with new or changed model files.
 
-After the changes are in place, you can tell the operator to load the changes and propagate them to a running domain by altering the domain resource's `image` or `restartVersion` attribute.
+After the changes are in place, you can tell the operator to apply the changes and propagate them to a running domain by altering the domain resource's `image` or `restartVersion` attribute.
 
 #### Important notes
 
@@ -48,11 +52,11 @@ After the changes are in place, you can tell the operator to load the changes an
 
 _Why is it necessary to specify updates using model files?_
 
-Similar to Domain in Image, if you make a direct runtime WebLogic configuration update of a Model in Image domain using the WebLogic Server Administration Console or WLST scripts, then the update is ephemeral. This is because the domain home is stored in an image directory which will not survive the restart of the owning pod.
+Similar to Domain in Image, if you make a direct runtime WebLogic configuration update of a Model in Image domain using the WebLogic Server Administration Console or WLST scripts, then the update will be ephemeral. This is because the domain home is stored in an image directory which will not survive the restart of the pod.
 
 _How do Model in Image updates work during runtime?_
 
-After you make a change to your domain resource `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Manager Server in the domain.
+After you make a change to your domain resource `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Managed Server in the domain.
 
 _Can we use custom configuration overrides to do the updates instead?_
 
@@ -63,11 +67,11 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
  - You can add new MBeans or resources simply by specifying their corresponding model file YAML snippet along with their parent bean hierarchy. See [Example of adding a data source](#example-of-adding-a-data-source).
 
- - You can recreate, change, or add secrets that your model depends on. For example, you can change a database password secret.
+ - You can change or add secrets that your model references. For example, you can change a database password secret.
 
- - You can change or add environment variables that your model macros may depend on (macros that use the `@@ENV:myenvvar@@` syntax).
+ - You can change or add environment variables that your model macros reference (macros that use the `@@ENV:myenvvar@@` syntax).
 
- - You can remove a named MBean or resource by specifying a model file with an exclamation point (`!`) symbol just before the bean or resource name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
+ - You can remove a named MBean or resource by specifying a model file with an exclamation point (`!`) just before the bean or resource name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
 
    ```
    resources:
@@ -90,13 +94,13 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
    For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling#using-multiple-models) in the WebLogic Deploy Tooling documentation.
 
- - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: (a) add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and (b) add another subsequent model file that fully defines the named bean/resource but without the attribute you want to delete.
+ - There is no way to directly delete an attribute from an MBean that's already been specified by a model file. The work-around is to do this using two model files: add a model file that deletes the named bean/resource that is a parent to the attribute you want to delete, and add another model file that will be loaded after the first one, which fully defines the named bean/resource but without the attribute you want to delete.
 
  - There is no way to directly change the MBean name of an attribute. Instead, you can remove a named MBean using the `!` syntax as described above, and then add a new one as a replacement.
 
  - You cannot change the domain name at runtime.
 
- - The following types of runtime update configuration haven't been tested and are _not_ supported in this release of Model in Image. If you need to make these kinds of updates, consider shutting down your domain entirely before making the change:
+ - The following types of runtime update configuration are _not_ supported in this release of Model in Image. If you need to make these kinds of updates, shut down your domain entirely before making the change:
    * Domain topology (cluster members)
    * Network channel listen address, port, and enabled configuration
    * Server and domain log locations
@@ -116,7 +120,11 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
      * Server and domain log locations -- use the `logHome` domain setting instead
      * Node Manager access credentials
 
-   Note that it's OK, even expected, to override network access point `public` or `external` addresses and ports. Also note that external access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
+   Note that it is permitted to override network access point `public` or `external` addresses and ports. External access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
+   
+{{% notice warning %}}
+We strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster due to security considerations.
+{{% /notice %}}
 
 #### Changing a domain resource `restartVersion`
 
@@ -126,7 +134,7 @@ As was mentioned in the [overview](#overview), one way to tell the operator to a
 
  - If you have your domain's resource file, then you can alter this file and call `kubectl apply -f` on the file.
 
- - You can use the Kubernetes `get` and `patch` commands. Here's a sample automation script that takes a namespace as the first parameter (default `sample-domain1-ns`) and that takes a domain uid as the second parameter (default `sample-domain1`):
+ - You can use the Kubernetes `get` and `patch` commands. Here's a sample automation script that takes a namespace as the first parameter (default `sample-domain1-ns`) and that takes a domainUID as the second parameter (default `sample-domain1`):
 
    ```
    #!/bin/bash
@@ -155,7 +163,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 
   # (1) Run discover for your existing domain home.
 
-  /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
+  $ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
     -domain_home $DOMAIN_HOME \
     -domain_type WLS \
@@ -167,7 +175,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 
   # (3) Run discover for your existing domain home.
 
-  /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
+  $ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
     -domain_home $DOMAIN_HOME \
     -domain_type WLS \
@@ -177,193 +185,12 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 
   # (4) Compare your old and new yaml to see what changed.
 
-  diff new.yaml old.yaml
+  $ diff new.yaml old.yaml
   ```
 
 > **Note: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands.**
 
 #### Example of adding a data source
 
-Here's an example for adding a data source to a running model domain. We make the following assumptions about the domain resource, the database, and the data source:
-
- - Domain resource:
-   - Is in namespace `sample-domain1-ns`.
-   - Has domain UID `sample-domain1`.
-   - Has a cluster named `cluster-1`.
- - Data source:
-   - Targeted to WebLogic cluster `cluster-1`.
-   - References an Oracle database `devpdb.k8s`.
-     - Running in the `default` Kubernetes namespace with port 1521 on the `oracle-db` Kubernetes service.
-     - Therefore, can be accessed with a `jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s` thin driver URL.
-   - Assumes the user is `sys as dba` and the password `Oradoc_db1`.
-   - Sets `JDBCConnectionPoolParams.InitialCapacity` to `0`.
-     - This allows the data source to deploy without errors even when there's no database running at this location.
-
-This example is designed to work on top of the 'Initial use case' described in the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample, and is the same as the [Update1 use case]({{< relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" >}}) in the sample.
-
-Here are the steps.
-
-1. Copy the following data source WDT model to a file with the `.yaml` extension; let's put it in `~/datasource.yaml`.
-
-   ```
-   resources:
-     JDBCSystemResource:
-       mynewdatasource:
-         Target: 'cluster-1'
-         JdbcResource:
-           JDBCDataSourceParams:
-             JNDIName: [
-               jdbc/mydatasource1,
-               jdbc/mydatasource2
-             ]
-             GlobalTransactionsProtocol: TwoPhaseCommit
-           JDBCDriverParams:
-             DriverName: oracle.jdbc.xa.client.OracleXADataSource
-             URL: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:url@@'
-             PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:password@@'
-             Properties:
-               user:
-                 Value: 'sys as sysdba'
-               oracle.net.CONNECT_TIMEOUT:
-                 Value: 5000
-               oracle.jdbc.ReadTimeout:
-                 Value: 30000
-           JDBCConnectionPoolParams:
-               InitialCapacity: 0
-               MaxCapacity: 1
-               TestTableName: SQL ISVALID
-               TestConnectionsOnReserve: true
-
-   ```
-
-1. Create a secret with the expected URL, user name, and password for the database and with a name and keys that correspond to the `@@SECRET` macros in the data source model:
-
-   ```
-   kubectl -n sample-domain1-ns delete secret \
-     sample-domain1-datasource-secret \
-     --ignore-not-found
-   kubectl -n sample-domain1-ns create secret generic \
-     sample-domain1-datasource-secret \
-      --from-literal=password=Oradoc_db1 --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-   kubectl -n sample-domain1-ns label  secret \
-     sample-domain1-datasource-secret \
-     weblogic.domainUID=sample-domain1
-   ```
-
-   - About deleting and recreating the secret:
-     - We delete a secret before creating it, otherwise the create command will fail if the secret already exists.
-     - This allows us to change the secret when using the `kubectl create secret` verb.
-
-   - We name and label secrets using their associated domain UID for two reasons:
-     - To make it obvious which secret belongs to which domains.
-     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
-
-1. Deploy the data source YAML in a ConfigMap.
-
-   This step can be done before or after deploying the secret. The ConfigMap can have any name but the same name must be referenced by the domain resource `spec.configuration.model.configMap`, and the ConfigMap must be deployed to the same namespace as the domain resource.  (We will update the domain resource in the next step.)
-
-   Run the following commands:
-
-   ```
-   kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map --ignore-not-found
-   kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map --from-file=~/datasource.yaml
-   kubectl -n sample-domain1-ns label  configmap sample-domain1-wdt-config-map weblogic.domainUID=sample-domain1
-   ```
-
-   - Note that if you already have a WDT ConfigMap deployed for your running domain, then you should ensure that any updated ConfigMap that you supply includes any needed files that were in the original WDT ConfigMap. You can do this by adding additional `--from-file` parameters to the `kubectl create configmap` command line.
-     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
-
-   - About deleting and recreating the ConfigMap:
-     - We delete a ConfigMap before creating it, otherwise the create command will fail if the ConfigMap already exists.
-     - This allows us to change the ConfigMap when using the `kubectl create configmap` verb.
-
-   - We name and label the ConfigMap using their associated domain UID for two reasons:
-     - To make it obvious which ConfigMap belong to which domains.
-     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
-
-1. Update your domain resource file to refer to the ConfigMap and its secret, and apply it.
-
-   - Add the secret to its `spec.configuration.secrets` stanza:
-
-     ```
-     spec:
-       ...
-       configuration:
-         ...
-         secrets:
-         - sample-domain1-datasource-secret
-     ```
-     (Leave any existing secrets in place.)
-
-   - Change its `spec.configuration.model.configMap` to look like:
-
-     ```
-     spec:
-       ...
-       configuration:
-         ...
-         model:
-           ...
-           configMap: sample-domain1-wdt-config-map
-      ```
-    - Apply your changed domain resource:
-
-      ```
-      kubectl apply -f your-domain-resource.yaml
-      ```
-
-1. Restart ('roll') the domain.
-
-   Now that the data source is deployed in a ConfigMap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, let's tell the operator to roll the domain.
-
-   When a running model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
-
-   One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. There are multiple ways to make this modification, here are two:
-
-   - Option 1: Live edit your domain.
-     - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
-     - Edit the value of the `spec.restartVersion` field and save.
-       - The field is a string; typically, you use a number in this field and increment it with each restart.
-   - Option 2: Or, dynamically change your domain using `kubectl patch`.
-     - To get the current `restartVersion` call:
-       ```
-       kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
-       ```
-     - Choose a new restart version that's different from the current restart version.
-       - The field is a string; typically, you use a number in this field and increment it with each restart.
-     - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
-       ```
-       kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
-       ```
-
-1. Wait for your domain to roll.
-
-   The operator should then rerun the introspector job and subsequently restart your domain's WebLogic pods, one-by-one. You can monitor this process using the command `kubectl -n sample-domain1-ns get pods --watch`. Here's some sample output:
-
-   ```
-   NAME                                         READY STATUS              RESTARTS   AGE
-   sample-domain1-admin-server                  1/1   Running             0          132m
-   sample-domain1-managed-server1               1/1   Running             0          129m
-   sample-domain1-managed-server2               1/1   Running             0          131m
-   sample-domain1-introspect-domain-job-tmxmh   0/1   Pending             0          0s
-   sample-domain1-introspect-domain-job-tmxmh   0/1   ContainerCreating   0          0s
-   sample-domain1-introspect-domain-job-tmxmh   1/1   Running             0          1s
-   sample-domain1-introspect-domain-job-tmxmh   0/1   Completed           0          56s
-   sample-domain1-introspect-domain-job-tmxmh   0/1   Terminating         0          57s
-   sample-domain1-admin-server                  1/1   Terminating         0          133m
-   sample-domain1-admin-server                  0/1   Pending             0          0s
-   sample-domain1-admin-server                  0/1   ContainerCreating   0          0s
-   sample-domain1-admin-server                  0/1   Running             0          2s
-   sample-domain1-admin-server                  1/1   Running             0          32s
-   sample-domain1-managed-server2               0/1   Terminating         0          133m
-   sample-domain1-managed-server2               0/1   Pending             0          0s
-   sample-domain1-managed-server2               0/1   ContainerCreating   0          0s
-   sample-domain1-managed-server2               0/1   Running             0          2s
-   sample-domain1-managed-server2               1/1   Running             0          40s
-   sample-domain1-managed-server1               0/1   Terminating         0          134m
-   sample-domain1-managed-server1               0/1   Pending             0          0s
-   sample-domain1-managed-server1               0/1   ContainerCreating   0          0s
-   sample-domain1-managed-server1               1/1   Running             0          33s
-   ```
-
-To debug problem updates, for example if the introspector enters an "Error" status, see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+Please refer to [Update1 use case]({{% relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" %}})
+in the Model in Image sample for details of how to add a data source.
