@@ -31,3 +31,8 @@ weight: 5
         --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
         --wait
     ```
+
+{{% notice note %}}
+If you have reached this point while following the "Model in image" sample, please
+stop here and return to the [Model in image sample instructions]({{< relref "/samples/simple/domains/model-in-image/_index.md#resume" >}}).
+{{% /notice %}}
