@@ -134,6 +134,10 @@ For references to the relevant user documentation, see:
 
    > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
+   {{< rawhtml >}}
+   <a name="resume"></a>
+   {{< /rawhtml >}}
+   
 1. _Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik load balancer is managing the same namespace and listening on port 30305._
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
