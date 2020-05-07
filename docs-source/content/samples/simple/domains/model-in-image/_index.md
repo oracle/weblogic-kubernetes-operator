@@ -5,6 +5,10 @@ weight: 4
 description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that the operator expands into a full domain home during runtime."
 ---
 
+{{% notice info %}}
+This feature is only supported in 3.0.0-RC1.
+{{% /notice %}}
+
 ### Contents
 
    - [Introduction](#introduction)
@@ -31,7 +35,7 @@ For more information on Model in Image, see the [Model in Image user guide]({{< 
 
 #### Model in Image domain types (WLS, JRF, and Restricted JRF)
 
-There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, or a `RestrictedJRF` domain. This sample demonstrates the `WLS` and `JRF` types.
+There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, and a `RestrictedJRF` domain. This sample demonstrates the `WLS` and `JRF` types.
 
 The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an `OPSS` wallet password, and exporting/importing an `OPSS` wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products, such as Oracle Communications products.
 
