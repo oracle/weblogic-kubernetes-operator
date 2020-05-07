@@ -101,7 +101,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
   * `runtimeEncryptionSecret`: Required. Expected field is `password`. This is used by Model in Image to encrypt data while the data is passed from the introspector job to WebLogic pods. The password can be arbitrary: the only requirement is that it must stay the same for the life of a domain resource. If a domain resource is deleted then redeployed, it's fine to change the password during the interim.
   * `wdtEncryptionSecret`: Optional. Rarely used. See [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) for details.
 
-* These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`. For details, see [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+* These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`. 
 
   * `walletPasswordSecret`: The expected secret field is `walletPassword`. Used to encrypt/decrypt the wallet that's used for accessing the domain's entries in its RCU database.
   * `walletFileSecret`: Optional. The expected secret field is `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database (specify a wallet file that was obtained from the domain home while the domain was booted for the first time).

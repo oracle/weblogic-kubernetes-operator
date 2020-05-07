@@ -1,0 +1,6 @@
+Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+This directory contains stand-alone 'wrapper' scripts for automating the model-in-image sample. These scripts are NOT part of the sample - they're used by the test framework to encapsulate and automate testing of the sample, and they're used by a local 'generate' script to generate commands and yaml that can be cut and pasted into the documentation.
+
+When modifying these scripts, make sure (a) the test programs that depend on them continue to work, (b) that you try not to add dependencies on any test framework.
