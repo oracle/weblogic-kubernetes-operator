@@ -410,15 +410,15 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(clusteredServer.getServerRestartVersion(), is("3"));
 
     assertThat(nonClusteredServerWithRestartVersion.getDomainRestartVersion(), is("1"));
-    assertThat(nonClusteredServerWithRestartVersion.getClusterRestartVersion(), is(""));
+    assertThat(nonClusteredServerWithRestartVersion.getClusterRestartVersion(), nullValue());
     assertThat(nonClusteredServerWithRestartVersion.getServerRestartVersion(), is("3"));
 
     assertThat(nonClusteredServerNoRestartVersion.getDomainRestartVersion(), is("1"));
-    assertThat(nonClusteredServerNoRestartVersion.getClusterRestartVersion(), is(""));
-    assertThat(nonClusteredServerNoRestartVersion.getServerRestartVersion(), is(""));
+    assertThat(nonClusteredServerNoRestartVersion.getClusterRestartVersion(), nullValue());
+    assertThat(nonClusteredServerNoRestartVersion.getServerRestartVersion(), nullValue());
 
     assertThat(adminServer.getDomainRestartVersion(), is("1"));
-    assertThat(adminServer.getClusterRestartVersion(), is(""));
+    assertThat(adminServer.getClusterRestartVersion(), nullValue());
     assertThat(adminServer.getServerRestartVersion(), is("4"));
   }
 
@@ -1292,20 +1292,20 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     final ServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
     final ServerSpec nonClusteredServer = domain.getServer("anyServer", null);
-    assertThat(clusteredServer.getDomainRestartVersion(), is(""));
-    assertThat(clusteredServer.getClusterRestartVersion(), is(""));
-    assertThat(clusteredServer.getServerRestartVersion(), is(""));
-    assertThat(nonClusteredServer.getDomainRestartVersion(), is(""));
-    assertThat(nonClusteredServer.getClusterRestartVersion(), is(""));
-    assertThat(nonClusteredServer.getServerRestartVersion(), is(""));
+    assertThat(clusteredServer.getDomainRestartVersion(), nullValue());
+    assertThat(clusteredServer.getClusterRestartVersion(), nullValue());
+    assertThat(clusteredServer.getServerRestartVersion(), nullValue());
+    assertThat(nonClusteredServer.getDomainRestartVersion(), nullValue());
+    assertThat(nonClusteredServer.getClusterRestartVersion(), nullValue());
+    assertThat(nonClusteredServer.getServerRestartVersion(), nullValue());
   }
 
   @Test
   public void whenDomainReadFromYaml_DomainRestartVersion() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     assertThat(domain.getAdminServerSpec().getDomainRestartVersion(), is("1"));
-    assertThat(domain.getAdminServerSpec().getClusterRestartVersion(), is(""));
-    assertThat(domain.getAdminServerSpec().getServerRestartVersion(), is(""));
+    assertThat(domain.getAdminServerSpec().getClusterRestartVersion(), nullValue());
+    assertThat(domain.getAdminServerSpec().getServerRestartVersion(), nullValue());
   }
 
   @Test
@@ -1315,7 +1315,7 @@ public class DomainV2Test extends DomainTestBase {
 
     assertThat(serverSpec.getDomainRestartVersion(), is("1"));
     assertThat(serverSpec.getClusterRestartVersion(), is("2"));
-    assertThat(serverSpec.getServerRestartVersion(), is(""));
+    assertThat(serverSpec.getServerRestartVersion(), nullValue());
   }
 
   @Test
@@ -1324,7 +1324,7 @@ public class DomainV2Test extends DomainTestBase {
     ServerSpec serverSpec = domain.getServer("server2", null);
 
     assertThat(serverSpec.getDomainRestartVersion(), is("1"));
-    assertThat(serverSpec.getClusterRestartVersion(), is(""));
+    assertThat(serverSpec.getClusterRestartVersion(), nullValue());
     assertThat(serverSpec.getServerRestartVersion(), is("3"));
   }
 
