@@ -6,6 +6,10 @@ pre = "<b> </b>"
 description = "Debugging a deployed Model in Image domain."
 +++
 
+{{% notice info %}}
+This feature is supported only in 3.0.0-RC1.
+{{% /notice %}}
+
 #### Contents
 
  - [Introduction](#introduction)
