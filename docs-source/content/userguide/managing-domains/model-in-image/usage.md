@@ -10,19 +10,17 @@ description = "Steps for creating and deploying Model in Image images and their 
 This feature is supported only in 3.0.0-RC1.
 {{% /notice %}}
 
+This document describes what's needed to create and deploy a typical Model in Image domain.
+
 #### Contents
 
    - [WebLogic Server Kubernetes Operator](#weblogic-server-kubernetes-operator)
    - [WebLogic Server image](#weblogic-server-image)
-   - [Optional WDT model configmap](#optional-wdt-model-configmap)
+   - [Optional WDT model ConfigMap](#optional-wdt-model-configmap)
    - [Required runtime encryption secret](#required-runtime-encryption-secret)
    - [Secrets for model macros](#secrets-for-model-macros)
    - [Domain resource attributes](#domain-resource-attributes)
    - [Prerequisites for JRF domain types](#prerequisites-for-jrf-domain-types)
-
-#### Requirements
-
-This document describes what's needed to create and deploy a typical Model in Image domain. 
 
 #### WebLogic Server Kubernetes Operator
 
@@ -30,7 +28,7 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 #### WebLogic Server image
 
-Model in Image requires creating a Docker image that has WebLogic Server and WDT installed, plus optionally your model and application files.
+Model in Image requires creating a Docker image that has WebLogic Server and WDT installed, plus optionally, your model and application files.
 
 You can start with a WebLogic Server 12.2.1.3 or later pre-built base image obtained from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or similar, manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}), or build a base image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). For an example of the first approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
@@ -43,13 +41,13 @@ After you have a base image, Model in Image requires layering the following dire
 | `/u01/wdt/models`         | Application archives               | `.zip`        |
 | `/u01/wdt/weblogic-deploy`| Unzipped WebLogic deploy install   |             |
 
-> Note: Model YAML and variable files are optional in a Model in Image image `/u01/wdt/models` directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the domain resource `spec.model.configMap` field. Application archives, if any, must be supplied in the Model in Image image.  Application archives are not supported in a `spec.model.configMap`.
+> **Note**: Model YAML and variable files are optional in a Model in Image image `/u01/wdt/models` directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the domain resource `spec.model.configMap` field. Application archives, if any, must be supplied in the Model in Image image.  Application archives are not supported in a `spec.model.configMap`.
 
 There are two methods for layering Model in Image artifacts on top of a base image:
 
-  - **Manual Image Creation**: Use Docker commands to layer the WDT artifacts from the above table on top of your base image into a new image.
+  - Manual Image Creation: Use Docker commands to layer the WDT artifacts from the above table on top of your base image into a new image.
 
-  - **WebLogic Image Tool**: Use the convenient [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool (WIT) has built-in options for embedding WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach. For an example, see the sample's `build_image_model.sh` file in the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image` directory.
+  - WebLogic Image Tool: Use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool (WIT) has built-in options for embedding WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach. For an example, see the sample's `build_image_model.sh` file in the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image` directory.
 
 For more information about model file syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
 
@@ -110,10 +108,10 @@ The following domain resource attributes are specific to Model in Image domains.
 | -------------------------                    |  ------------------ |
 | `domainHomeSourceType`                       |  Required. Set to `FromModel`. |
 | `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic pod every time the pod restarts.|
-| `configuration.model.configMap`             | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model configmap](#optional-wdt-model-config-map). |
+| `configuration.model.configMap`             | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model configmap](#optional-wdt-model-configmap). |
 | `configuration.secrets`                      | Optional. Set this array if your image or ConfigMap models contain macros that reference custom Kubernetes secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
-| `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF` where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/type_def.md).|
+| `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/type_def.md).|
 
 **Notes**:
 
@@ -132,7 +130,7 @@ A JRF domain requires an infrastructure database, initializing this database usi
 
 Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
 
-__Here are the required settings for Model in Image JRF domains:__
+Here are the required settings for Model in Image JRF domains:
 
 - Set `configuration.model.domainType` to `JRF`.
 
@@ -153,7 +151,7 @@ __Here are the required settings for Model in Image JRF domains:__
 
   ```
 
-__Important instructions when changing an database password:__
+Important instructions when changing a database password:
 
 - Shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `NEVER`.
 
