@@ -33,6 +33,6 @@ weight: 5
     ```
 
 {{% notice note %}}
-If you have reached this point while following the "Model in image" sample, please
-stop here and return to the [Model in image sample instructions]({{< relref "/samples/simple/domains/model-in-image/_index.md#resume" >}}).
+If you have reached this point while following the "Model in Image" sample, please
+stop here and return to the [sample instructions]({{< relref "/samples/simple/domains/model-in-image/_index.md#resume" >}}).
 {{% /notice %}}

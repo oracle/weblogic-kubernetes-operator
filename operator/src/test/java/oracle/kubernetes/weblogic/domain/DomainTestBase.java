@@ -335,6 +335,12 @@ public abstract class DomainTestBase {
   }
 
   @Test
+  public void whenNoClusterSpec_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster-with-no-spec"),
+        equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
+  }
+
+  @Test
   public void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
     configureServer(SERVER1).withDesiredState("STAND-BY");
     configureCluster(CLUSTER_NAME).withDesiredState("NEVER");
