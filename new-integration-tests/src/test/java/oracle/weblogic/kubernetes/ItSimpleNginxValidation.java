@@ -117,7 +117,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   // domain constants
   private static final String DOMAIN_VERSION = "v7";
   private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
-  private static final int NUMBER_OF_CLUSTERS = 3;
+  private static final int NUMBER_OF_CLUSTERS = 2;
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
 
@@ -240,7 +240,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+    for (int i = NUMBER_OF_CLUSTERS; i >= 1; i--) {
       clusterList.add(new Cluster()
           .clusterName(CLUSTER_NAME_PREFIX + i)
           .replicas(replicaCount)

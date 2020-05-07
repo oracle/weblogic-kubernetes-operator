@@ -24,13 +24,6 @@ topology:
                 DynamicClusterSize: 5
                 MaxDynamicClusterSize: 5
                 CalculatedListenPorts: false
-        "cluster-3":
-            DynamicServers:
-                ServerTemplate:  "cluster-3-template"
-                ServerNamePrefix: "cluster-3-managed-server"
-                DynamicClusterSize: 5
-                MaxDynamicClusterSize: 5
-                CalculatedListenPorts: false
     Server:
         "admin-server":
             ListenPort: 7001
@@ -41,13 +34,10 @@ topology:
         "cluster-2-template":
             Cluster: "cluster-2"
             ListenPort: 8001
-        "cluster-3-template":
-            Cluster: "cluster-3"
-            ListenPort: 8001
 
 appDeployments:
     Application:
         myear:
             SourcePath: "wlsdeploy/applications/sample-app.ear"
             ModuleType: ear
-            Target: 'cluster-1,cluster-2,cluster-3'
+            Target: 'cluster-1,cluster-2'
