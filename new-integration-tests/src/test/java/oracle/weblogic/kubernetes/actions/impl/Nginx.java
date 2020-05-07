@@ -99,8 +99,7 @@ public class Nginx {
     ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
         .host(ingressHostname)
         .http(new ExtensionsV1beta1HTTPIngressRuleValue()
-              .paths(httpIngressPaths)
-        );
+              .paths(httpIngressPaths));
     ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
     ingressRules.add(ingressRule);
 

@@ -842,6 +842,10 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getMaxUnavailable() != null;
   }
 
+  private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
+    return cluster.isAllowReplicasBelowMinDynClusterSize();
+  }
+
   public AdminServer getAdminServer() {
     return adminServer;
   }
@@ -905,6 +909,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public List<String> getAdminServerChannelNames() {
       return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
+    }
+
+    @Override
+    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+      return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {
