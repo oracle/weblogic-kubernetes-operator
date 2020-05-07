@@ -355,7 +355,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
 
 The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your domain resource to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the domain resource files that are provided in `/tmp/mii-sample/domain-resources` already set this value.
 
-##### Be aware of RCU model attributes, domain resource attributes, and secrets
+##### Important considerations for RCU model attributes, domain resource attributes, and secrets
 
 To allow Model in Image to access the database and OPSS wallet, you must create an RCU access secret containing the database connect string, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your domain resource before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
 
@@ -460,9 +460,7 @@ After the domain resource is deployed, the WebLogic operator will start an 'intr
 
 {{% notice note %}}
 Perform the steps in [Prerequisites for all domain types](#prerequisites-for-all-domain-types) before performing the steps in this use case.
-{{% /notice %}}
 
-{{% notice note %}}
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
@@ -470,7 +468,7 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 The goal of the initial use case 'image creation' is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that we will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
-Overall, a Model in Image image must contain a WebLogic installation and also a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image may optionally also contain your WDT model YAML and properties files in the same `/u01/wdt/models` directory; we demonstrate this in this sample. If you do not specify WDT model YAML in your `/u01/wdt/models` directory, then the model YAML must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your domain resource `spec.model.configMap` attribute. We will provide an example of using a model ConfigMap later in this sample.
+Overall, a Model in Image image must contain a WebLogic installation and also a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image may optionally also contain your WDT model YAML and properties files in the same `/u01/wdt/models` directory. If you do not specify WDT model YAML in your `/u01/wdt/models` directory, then the model YAML must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your domain resource `spec.model.configMap` attribute. We will provide an example of using a model ConfigMap later in this sample.
 
 Let's walk through the steps for creating the image `model-in-image:WLS-v1`:
 
@@ -488,7 +486,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
   - WDT archives can contain multiple applications, libraries, and other components.
   - WDT archives have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md), which always has `wlsdeploy` as the top directory.
 
-{{%expand "Let's take a moment to look at the web application source. Click here to see the JSP code in the archive." %}}
+{{%expand "If you are interested in the web application source, click here to see the JSP code." %}}
 
 ```
 <%-- Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates. --%>
@@ -551,9 +549,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 ```
 {{% /expand%}}
 
-If you expand the application, you can see that it reveals important details about the WebLogic Server that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. You can also see that application output reports that it's at version `v1`; we will update this to `v2` in a future use case to demonstrate upgrading the application.
-
-Next, we'll move on to creating a ZIP file of this archive in our image's staging directory.
+The application displays important details about the WebLogic Server that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. You can also see that application output reports that it's at version `v1`; we will update this to `v2` in a future use case to demonstrate upgrading the application.
 
 #### Staging a ZIP file of the archive
 
@@ -563,32 +559,26 @@ Run the following commands to create your application archive ZIP file and put i
 
 ```
 # Delete existing archive.zip in case we have an old leftover version
-rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
+$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
 # Move to the directory which contains the source files for our archive
-cd /tmp/mii-sample/archives/archive-v1
+$ cd /tmp/mii-sample/archives/archive-v1
 
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
-zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
 #### Staging model files
 
 In this step, we explore the staged WDT model YAML file and properties in directory `/tmp/mii-sample/model-in-image__WLS-v1`. The model in this directory references the web application in our archive, configures a WebLogic Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with our WebLogic configuration `model.10.yaml`.
 
-{{%expand "Click here to expand `model.10.properties`." %}}
-
 ```
 CLUSTER_SIZE=5
 ```
 
-{{% /expand%}}
-
-{{%expand "Click here to expand the WLS `model.10.yaml`." %}}
-
+Here is the WLS `model.10.yaml`:
 
 ```
-
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -622,12 +612,10 @@ appDeployments:
             Target: 'cluster-1'
 ```
 
-{{% /expand%}}
 
 {{%expand "Click here to expand the JRF `model.10.yaml`, and note the RCUDbInfo stanza and its references to a DOMAIN_UID-rcu-access secret." %}}
 
 ```
-
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -667,7 +655,6 @@ appDeployments:
 ```
 {{% /expand%}}
 
-{{%expand "And click here for some observations about `model.10.yaml` and `model.10.properties`." %}}
 
 The model files:
 
@@ -687,28 +674,27 @@ The model files:
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files, but in this sample we use just one of each. For a full discussion of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
-{{% /expand%}}
 
 #### Creating the image with WIT
 
-> **JRF Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
+> **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
 
 At this point, we have staged all of the files needed for image `model-in-image:WLS-v1`, they include:
 
-  - `/tmp/mii-sample/model-images/weblogic-deploy-tooling.zip`
+  - `/tmp/mii-sample/model-images/weblogic-deploy.zip`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
 
-If you don't see the `weblogic-deploy-tooling.zip` file, then it means that you missed a step in the prerequisites.
+If you don't see the `weblogic-deploy.zip` file, then it means that you missed a step in the prerequisites.
 
 Now let's use the Image Tool to create an image named `model-in-image:WLS-v1` that's layered on a base WebLogic image. We've already set up this tool during the prerequisite steps at the beginning of this sample.
 
 Run the following commands to create the model image and verify that it worked:
 
   ```
-  cd /tmp/mii-sample/model-images
-  ./imagetool/bin/imagetool.sh update \
+  $ cd /tmp/mii-sample/model-images
+  $ ./imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
     --wdtModel      ./model-in-image__WLS-v1/model.10.yaml \
@@ -734,11 +720,11 @@ When the command succeeds, it should end with output like:
   [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
   ```
 
-Also, if you call the `docker images` command, then you should see a Docker image named `model-in-image:WLS-v1`.
+Also, if you run the `docker images` command, then you should see a Docker image named `model-in-image:WLS-v1`.
 
 #### Deploy resources - Introduction
 
-Let's deploy our new image to namespace `sample-domain1-ns`. In this series of steps, we will:
+In this section we will deploy our new image to namespace `sample-domain1-ns`, including the following steps:
 
   - Create a secret containing your WebLogic administrator user name and password.
   - Create a secret containing your Model in Image runtime encryption password:
@@ -751,54 +737,47 @@ Let's deploy our new image to namespace `sample-domain1-ns`. In this series of s
 
 #### Secrets
 
-First, let's deploy the secrets needed by both `WLS` and `JRF` type model domains. In this case, we have two secrets.
+First, create the secrets needed by both `WLS` and `JRF` type model domains. In this case, we have two secrets.
 
 Run the following `kubectl` commands to deploy the required secrets:
 
   ```
-  echo "@@ Info: Setting up secret 'sample-domain1-weblogic-credentials'."
-
-  kubectl -n sample-domain1-ns delete secret \
+  $ kubectl -n sample-domain1-ns delete secret \
     sample-domain1-weblogic-credentials \
     --ignore-not-found
-  kubectl -n sample-domain1-ns create secret generic \
+  $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
      --from-literal=username=weblogic --from-literal=password=welcome1
-  kubectl -n sample-domain1-ns label  secret \
+  $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-weblogic-credentials \
     weblogic.domainUID=sample-domain1
 
-
-  echo "@@ Info: Setting up secret 'sample-domain1-runtime-encryption-secret'."
-
-  kubectl -n sample-domain1-ns delete secret \
+  $ kubectl -n sample-domain1-ns delete secret \
     sample-domain1-runtime-encryption-secret \
     --ignore-not-found
-  kubectl -n sample-domain1-ns create secret generic \
+  $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-runtime-encryption-secret \
      --from-literal=password=my_runtime_password
-  kubectl -n sample-domain1-ns label  secret \
+  $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-runtime-encryption-secret \
     weblogic.domainUID=sample-domain1
   ```
 
-  You might be curious about the secrets you just deployed. Some things of note:
+  Some important details about these secrets:
 
-  {{%expand "Click here to expand." %}}
-
-  - About the WebLogic credentials secret:
+  - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
     - It must be referenced by the `spec.weblogicCredentialsSecret` field in your domain resource.
     - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your model YAML file.
 
-  - About the Model WDT runtime secret:
+  - The Model WDT runtime secret:
     - This is a special secret required by Model in Image.
     - It must contain a `password` field.
     - It must be referenced using the `spec.model.runtimeEncryptionSecret` attribute in its domain resource.
     - It must remain the same for as long as the domain is deployed to Kubernetes, but can be changed between deployments.
     - It is used to encrypt data as it's internally passed using log files from the domain's introspector job and on to its WebLogic Server pods.
 
-  - About deleting and recreating the secrets:
+  - Deleting and recreating the secrets:
     - We delete a secret before creating it, otherwise the create command will fail if the secret already exists.
     - This allows us to change the secret when using the `kubectl create secret` verb.
 
@@ -806,40 +785,33 @@ Run the following `kubectl` commands to deploy the required secrets:
     - To make it obvious which secrets belong to which domains.
     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-  {{% /expand%}}
 
   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
-
-  If you're domain type is `JRF`, run the following commands to deploy its additional required secrets:
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
   ```
-  echo "@@ Info: Setting up secret 'sample-domain1-rcu-access'."
-
-  kubectl -n sample-domain1-ns delete secret \
+  $ kubectl -n sample-domain1-ns delete secret \
     sample-domain1-rcu-access \
     --ignore-not-found
-  kubectl -n sample-domain1-ns create secret generic \
+  $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-rcu-access \
-     --from-literal=rcu_prefix=FMW1 --from-literal=rcu_schema_password=Oradoc_db1 --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-  kubectl -n sample-domain1-ns label  secret \
+     --from-literal=rcu_prefix=FMW1 \
+     --from-literal=rcu_schema_password=Oradoc_db1 \
+     --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+  $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-rcu-access \
     weblogic.domainUID=sample-domain1
 
-
-  echo "@@ Info: Setting up secret 'sample-domain1-opss-wallet-password-secret'."
-
-  kubectl -n sample-domain1-ns delete secret \
+  $ kubectl -n sample-domain1-ns delete secret \
     sample-domain1-opss-wallet-password-secret \
     --ignore-not-found
-  kubectl -n sample-domain1-ns create secret generic \
+  $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-opss-wallet-password-secret \
      --from-literal=walletPassword=welcome1
-  kubectl -n sample-domain1-ns label  secret \
+  $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-opss-wallet-password-secret \
     weblogic.domainUID=sample-domain1
-
   ```
 
   {{% /expand%}}
@@ -847,9 +819,9 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 #### Domain resource
 
-Now let's create a domain resource; a domain resource is the key resource that tells the operator how to deploy a WebLogic domain.
+Now let's create a domain resource. A domain resource is the key resource that tells the operator how to deploy a WebLogic domain.
 
-First, copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or plan to use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
+Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
   {{%expand "Click here to expand the WLS domain resource YAML." %}}
   ```
@@ -1107,15 +1079,14 @@ spec:
   ```
   {{% /expand%}}
 
-  Now, let's deploy the domain resource.
 
-  Run the following command:
+  Run the following command to create the domain custom resource:
 
   ```
-  kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+  $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
   ```
 
-  > Note: If you are choosing not to use the predefined domain resource yaml file and instead created your own domain resource file earlier, then substitute your custom file name in the above command. You might recall that we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+  > Note: If you are choosing not to use the predefined domain resource YAML file and instead created your own domain resource file earlier, then substitute your custom file name in the above command. You might recall that we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
   If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector job run and your WebLogic Server pods start. The output should look something like this:
 
@@ -1143,7 +1114,7 @@ spec:
   ```
   {{% /expand%}}
 
-Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`; this is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
+Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
   {{%expand "Click here to expand the `wl-pod-wait.sh` usage." %}}
   ```
@@ -1265,18 +1236,18 @@ If you see an error, then consult [Debugging]({{< relref "/userguide/managing-do
 
 #### Invoke the web application
 
-Now that all the initial use case resources have been deployed, let's invoke the sample web application through the Traefik load balancer port. Note that the web application will report if it finds any data sources, but we don't expect it to find any because the model doesn't contain any at this point.
+Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik Ingress Controller's NodePort. Note: the web application will display a list of any data sources it finds, but we don't expect it to find any because the model doesn't contain any at this point.
 
 Send a web application request to the load balancer:
 
    ```
-   curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
-Or, if Traefik is unavailable and your Administration Server pod is running, you can try `kubectl exec`:
+Or, if Traefik is unavailable and your Administration Server pod is running, you can use `kubectl exec`:
 
    ```
-   kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
+   $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
@@ -1307,7 +1278,7 @@ You should see output like the following:
 
   **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
 
-  Got it? Please leave your domain up and running if you want to try the next use case.
+ Leave your domain running if you want to continue to the next use case.
 
 ### Update1 use case
 
