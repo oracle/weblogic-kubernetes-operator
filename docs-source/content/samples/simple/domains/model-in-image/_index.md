@@ -459,8 +459,7 @@ In this use case, we set up an initial WebLogic domain. This involves:
 After the domain resource is deployed, the WebLogic operator will start an 'introspector job' that converts your models into a WebLogic configuration, and then the operator will pass this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
-Perform the steps in [Prerequisites for all domain types](#prerequisites-for-all-domain-types) before performing the steps in this use case.
-
+Perform the steps in [Prerequisites for all domain types](#prerequisites-for-all-domain-types) before performing the steps in this use case.  
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
