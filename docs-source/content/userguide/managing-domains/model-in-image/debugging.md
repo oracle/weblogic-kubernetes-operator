@@ -56,7 +56,7 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspect-domain-job-v2l7k
   ```
 
-  A common reason for the introspector job to fail is because of a typo in a model file. Here's some sample log output from an introspector job that shows such a failure:
+  A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
 
   ```
   ...
