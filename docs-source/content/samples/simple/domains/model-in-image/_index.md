@@ -16,7 +16,7 @@ This feature is supported only in 3.0.0-RC1.
      - [Use cases](#use-cases)
      - [Sample directory structure](#sample-directory-structure)
    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
-   - [Additional Prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
+   - [Additional prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
    - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model ConfigMap
    - [Cleanup](#cleanup)
