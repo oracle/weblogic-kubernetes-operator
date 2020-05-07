@@ -212,8 +212,8 @@ public class ItMultipleClusters extends BaseTest {
       };
       verifyServersStatus(domain, pods); */
 
-      String cluster2PodName1 = DOMAINUID + "-new-managed-server1";
-      String cluster2PodName2 = DOMAINUID + "-new-managed-server2";
+      String cluster2PodName1 = domainuid + "-new-managed-server1";
+      String cluster2PodName2 = domainuid + "-new-managed-server2";
 
       TestUtils.checkPodReady(cluster2PodName1, domainNS1);
       TestUtils.checkPodReady(cluster2PodName2, domainNS1);
@@ -222,9 +222,9 @@ public class ItMultipleClusters extends BaseTest {
       TestUtils.checkServiceCreated(cluster2PodName2, domainNS1);
 
       TestUtils.resolveServiceName(cluster2PodName1,
-          DOMAINUID + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+          domainuid + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
       TestUtils.resolveServiceName(cluster2PodName2,
-          DOMAINUID + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+          domainuid + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
 
       testBasicUseCases(domain, false);
       domain.testWlsLivenessProbe();
