@@ -6,6 +6,10 @@ pre = "<b> </b>"
 description = "Debugging a deployed Model in Image domain."
 +++
 
+{{% notice info %}}
+This feature is supported only in 3.0.0-RC1.
+{{% /notice %}}
+
 #### Contents
 
  - [Introduction](#introduction)
@@ -56,7 +60,7 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspect-domain-job-v2l7k
   ```
 
-  A common reason for the introspector job to fail is because of a typo in a model file. Here's some sample log output from an introspector job that shows such a failure:
+  A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
 
   ```
   ...
@@ -67,7 +71,7 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
 
 #### Check the WebLogic Server pods
 
-If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` config map for your domain, and the operator will then run the domain's WebLogic pods.
+If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` ConfigMap for your domain, and the operator will then run the domain's WebLogic pods.
 
 If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
 
