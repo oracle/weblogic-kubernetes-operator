@@ -131,9 +131,9 @@ Location | Description |
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
-{{% notice info %}}
-Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
-{{% /notice %}}
+    {{% notice info %}}
+    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
+    {{% /notice %}}
 
 1. _Make sure there are no conflicting WebLogic related domains, Ingresses, secrets, or config maps that are already deployed to namespace `sample-domain1-ns`._
 
