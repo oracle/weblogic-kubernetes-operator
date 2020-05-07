@@ -228,20 +228,17 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Override
   public String getDomainRestartVersion() {
-    // treat null, unset, and "" as the same restartVersion ""
-    return Optional.ofNullable(domainSpec.getRestartVersion()).orElse("");
+    return domainSpec.getRestartVersion();
   }
 
   @Override
   public String getClusterRestartVersion() {
-    // treat null, unset, and "" as the same restartVersion ""
-    return Optional.ofNullable(cluster != null ? cluster.getRestartVersion() : null).orElse("");
+    return cluster != null ? cluster.getRestartVersion() : null;
   }
 
   @Override
   public String getServerRestartVersion() {
-    // treat null, unset, and "" as the same restartVersion ""
-    return Optional.ofNullable(server.getRestartVersion()).orElse("");
+    return server.getRestartVersion();
   }
 
   @Override
