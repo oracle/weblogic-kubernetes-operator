@@ -237,6 +237,10 @@ public class SchemaGenerator {
     return type.equals(DateTime.class);
   }
 
+  private boolean isMapType(Class<?> type) {
+    return Map.class.isAssignableFrom(type);
+  }
+
   private boolean isNumeric(Class<?> type) {
     return Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type);
   }
@@ -404,6 +408,13 @@ public class SchemaGenerator {
     if (isDateTime(type)) {
       result.put("type", "string");
       result.put("format", "date-time");
+    } else if (isMapType(type)) {
+      // reached here if the type is a Map
+      final Map<String, Object> properties = new HashMap<>();
+      Optional.ofNullable(getDescription(type)).ifPresent(s -> result.put("description", s));
+      result.put("type", "object");
+      properties.put("type", "string");
+      result.put("additionalProperties", properties);
     } else {
       final Map<String, Object> properties = new HashMap<>();
       List<String> requiredFields = new ArrayList<>();
