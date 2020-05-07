@@ -22,7 +22,7 @@ If you want to make a WebLogic domain home configuration change to a running Mod
 
   - Changing secrets or environment variables that are referenced by macros in your model files.
 
-  - Specifying a new or updated WDT configmap that contains model files and use your domain resource `configuration.model.configMap` field to reference the map.
+  - Specifying a new or updated WDT ConfigMap that contains model files and use your domain resource `configuration.model.configMap` field to reference the map.
 
   - Supplying a new image with new or changed model files.
 
@@ -32,7 +32,7 @@ After the changes are in place, you can tell the operator to load the changes an
 
  - Check for [Supported and unsupported updates](#supported-and-unsupported-updates).
 
- - If you specify multiple model files in your image or WDT configmap, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
+ - If you specify multiple model files in your image or WDT ConfigMap, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
  - You can use the WDT Discover Domain Tool to help generate your model file updates. See [Using the WDT Discover Domain Tool](#using-the-wdt-discover-domain-tool).
 
@@ -52,7 +52,7 @@ Similar to Domain in Image, if you make a direct runtime WebLogic configuration 
 
 _How do Model in Image updates work during runtime?_
 
-After you make a change to your domain resource `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a configmap named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Manager Server in the domain.
+After you make a change to your domain resource `restartVersion` or `image` attribute, the operator will rerun the domain's introspector job. This job will reload all of your secrets and environment variables, merge all of your model files, and generate a new domain home. If the job succeeds, then the operator will make the updated domain home available to pods using a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`. Finally, the operator will subsequently roll (restart) each running WebLogic Server pod in the domain so that it can load the new configuration. A domain roll begins by restarting the domain's Administration Server and then proceeds to restart each Manager Server in the domain.
 
 _Can we use custom configuration overrides to do the updates instead?_
 
@@ -258,9 +258,9 @@ Here are the steps.
      - To make it obvious which secret belongs to which domains.
      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
 
-1. Deploy the data source YAML in a configmap.
+1. Deploy the data source YAML in a ConfigMap.
 
-   This step can be done before or after deploying the secret. The configmap can have any name but the same name must be referenced by the domain resource `spec.configuration.model.configMap`, and the configmap must be deployed to the same namespace as the domain resource.  (We will update the domain resource in the next step.)
+   This step can be done before or after deploying the secret. The ConfigMap can have any name but the same name must be referenced by the domain resource `spec.configuration.model.configMap`, and the ConfigMap must be deployed to the same namespace as the domain resource.  (We will update the domain resource in the next step.)
 
    Run the following commands:
 
@@ -270,18 +270,18 @@ Here are the steps.
    kubectl -n sample-domain1-ns label  configmap sample-domain1-wdt-config-map weblogic.domainUID=sample-domain1
    ```
 
-   - Note that if you already have a WDT configmap deployed for your running domain, then you should ensure that any updated configmap that you supply includes any needed files that were in the original WDT configmap. You can do this by adding additional `--from-file` parameters to the `kubectl create configmap` command line.
-     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the configmap, or it can reference a directory, in which case it populates the configmap with all of the files in the designated directory.
+   - Note that if you already have a WDT ConfigMap deployed for your running domain, then you should ensure that any updated ConfigMap that you supply includes any needed files that were in the original WDT ConfigMap. You can do this by adding additional `--from-file` parameters to the `kubectl create configmap` command line.
+     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
 
-   - About deleting and recreating the configmap:
-     - We delete a configmap before creating it, otherwise the create command will fail if the configmap already exists.
-     - This allows us to change the configmap when using the `kubectl create configmap` verb.
+   - About deleting and recreating the ConfigMap:
+     - We delete a ConfigMap before creating it, otherwise the create command will fail if the ConfigMap already exists.
+     - This allows us to change the ConfigMap when using the `kubectl create configmap` verb.
 
-   - We name and label the configmap using their associated domain UID for two reasons:
-     - To make it obvious which configmap belong to which domains.
+   - We name and label the ConfigMap using their associated domain UID for two reasons:
+     - To make it obvious which ConfigMap belong to which domains.
      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
 
-1. Update your domain resource file to refer to the configmap and its secret, and apply it.
+1. Update your domain resource file to refer to the ConfigMap and its secret, and apply it.
 
    - Add the secret to its `spec.configuration.secrets` stanza:
 
@@ -314,7 +314,7 @@ Here are the steps.
 
 1. Restart ('roll') the domain.
 
-   Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to roll the domain.
+   Now that the data source is deployed in a ConfigMap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, let's tell the operator to roll the domain.
 
    When a running model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
 

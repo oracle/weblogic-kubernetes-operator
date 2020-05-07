@@ -19,7 +19,7 @@ This feature is only supported in 3.0.0-RC1.
    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
    - [Prerequisites for JRF domains](#prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
-   - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model configmap
+   - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model ConfigMap
    - [Accessing the WebLogic Server Administration Console](#accessing-the-weblogic-server-administration-console)
    - [Cleanup](#cleanup)
 
@@ -61,17 +61,17 @@ This sample demonstrates two Model in Image use cases:
      - `spec.image: model-in-image:WLS-v1`
      - References to the secrets
 
-- [Update1](#update1-use-case): Dynamically adding a data source using a model configmap
+- [Update1](#update1-use-case): Dynamically adding a data source using a model ConfigMap
 
    - Image `model-in-image:WLS-v1`:
      - Same image as Initial use case
    - Kubernetes secrets:
      - Same as Initial use case  plus secrets for data source credentials and URL
-   - Kubernetes configmap with:
+   - Kubernetes ConfigMap with:
      - A WDT model for a data source targeted to the cluster
    - A domain resource with:
      - Same as Initial use case plus:
-        - `spec.model.configMap` referencing the configmap
+        - `spec.model.configMap` referencing the ConfigMap
         - References to data source secrets
 
 #### Sample directory structure
@@ -83,7 +83,7 @@ Location | Description |
 `domain-resources` | JRF and WLS domain resources |
 `archives` | Source code location for WebLogic Deploy Tooling application ZIP archives |
 `model-images` | Staging for each model image's WDT YAML, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images|
-`model-configmaps` | Staging files for a model configmap that configures a data source |
+`model-configmaps` | Staging files for a model ConfigMap that configures a data source |
 `ingresses` | Load balancer Ingresses |
 `utils/wl-pod-wait.sh` | Utility for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state |
 `utils/patch-restart-version.sh` | Utility for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll') |
@@ -517,7 +517,7 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 The goal of the initial use case 'image creation' is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that we will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
-Overall, a Model in Image image must contain a WebLogic installation and also a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image may optionally also contain your WDT model YAML and properties files in the same `/u01/wdt/models` directory; we demonstrate this in this sample. If you do not specify WDT model YAML in your `/u01/wdt/models` directory, then the model YAML must be supplied dynamically using a Kubernetes configmap that is referenced by your domain resource `spec.model.configMap` attribute. We will provide an example of using a model configmap later in this sample.
+Overall, a Model in Image image must contain a WebLogic installation and also a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image may optionally also contain your WDT model YAML and properties files in the same `/u01/wdt/models` directory; we demonstrate this in this sample. If you do not specify WDT model YAML in your `/u01/wdt/models` directory, then the model YAML must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your domain resource `spec.model.configMap` attribute. We will provide an example of using a model ConfigMap later in this sample.
 
 Let's walk through the steps for creating the image `model-in-image:WLS-v1`:
 
@@ -1361,7 +1361,7 @@ You should see output like the following:
 This use case demonstrates dynamically adding a data source to your running domain. It demonstrates several advantages of WDT and the Image model:
 
 - The syntax used for updating a model is exactly the same syntax you use for creating the original model.
-- A domain's model can be updated dynamically by supplying a model update in a file in a Kubernetes configmap.
+- A domain's model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap.
 - Model updates can be as simple as changing the value of a single attribute, or as ambitious as adding a JMS Server.
 
 For a detailed discussion of model updates, see [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user guide.
@@ -1420,7 +1420,7 @@ Let's go through the steps:
 
    ```
 
-   You can cut and paste the above model snippet to a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where we deploy the model configmap, or alternatively, you can simply use the same data source that's already there for you in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
+   You can cut and paste the above model snippet to a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where we deploy the model ConfigMap, or alternatively, you can simply use the same data source that's already there for you in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
 
 1. _Deploy the data source secret._
 
@@ -1466,21 +1466,21 @@ Let's go through the steps:
    ```
 
    - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier).
-     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the configmap, or it can reference a directory, in which case it populates the configmap with all of the files in the designated directory.
+     - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
 
-   {{%expand "Click here for details about configmap creation, naming, and labeling." %}}
+   {{%expand "Click here for details about ConfigMap creation, naming, and labeling." %}}
 
-   - About deleting and recreating the configmap:
-     - We delete a configmap before creating it, otherwise the create command will fail if the configmap already exists.
-     - This allows us to change the configmap when using the `kubectl create configmap` verb.
+   - About deleting and recreating the ConfigMap:
+     - We delete a ConfigMap before creating it, otherwise the create command will fail if the ConfigMap already exists.
+     - This allows us to change the ConfigMap when using the `kubectl create configmap` verb.
 
-   - We name and label configmap using their associated domain UID for two reasons:
-     - To make it obvious which configmap belong to which domains.
+   - We name and label ConfigMap using their associated domain UID for two reasons:
+     - To make it obvious which ConfigMap belong to which domains.
      - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
    {{% /expand%}}
 
-1. _Update your domain resource file to refer to the configmap and its secret, and apply it._
+1. _Update your domain resource file to refer to the ConfigMap and its secret, and apply it._
 
       Do one the following:
 
@@ -1523,7 +1523,7 @@ Let's go through the steps:
 
 1. _Restart ('roll') the domain._
 
-   Now that the data source is deployed in a configmap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the configmap and secret, let's tell the operator to roll the domain.
+   Now that the data source is deployed in a ConfigMap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, let's tell the operator to roll the domain.
 
    When a model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
    One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. There are multiple ways to make this modification, here are three:

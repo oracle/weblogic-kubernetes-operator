@@ -15,7 +15,7 @@ When you deploy a JRF domain for the first time, the domain will add itself to i
 
 If it is important to reuse or share the same database and data between deployments of your domain, then it is also important locate and preserve its OPSS wallet password and wallet file. An OPSS wallet password and wallet file allows a JRF deployment to access a FMW infrastructure database that has already been initialized and used before.
 
-When a domain is first deployed, the operator will copy its OPSS wallet file from the domain home and store it in the domain's introspector domain configmap. For a domain that has been created using Model in Image, here is how to export this wallet file for reuse:
+When a domain is first deployed, the operator will copy its OPSS wallet file from the domain home and store it in the domain's introspector domain ConfigMap. For a domain that has been created using Model in Image, here is how to export this wallet file for reuse:
 
     ```
     kubectl -n MY_DOMAIN_NAMESPACE \
