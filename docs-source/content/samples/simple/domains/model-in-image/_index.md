@@ -43,7 +43,7 @@ The `JRF` domain path through the sample includes additional steps required for 
 
 This sample demonstrates two Model in Image use cases:
 
-- [Initial](#initial-use-case): An initial WebLogic domain
+- [Initial](#initial-use-case): An initial WebLogic domain with the following characteristics:
 
    - Image `model-in-image:WLS-v1` with:
      - A WebLogic installation
@@ -61,7 +61,7 @@ This sample demonstrates two Model in Image use cases:
      - `spec.image: model-in-image:WLS-v1`
      - References to the secrets
 
-- [Update1](#update1-use-case): Dynamically adding a data source using a model ConfigMap
+- [Update1](#update1-use-case): Demonstrates udpating the initial domain by dynamically adding a data source using a model ConfigMap
 
    - Image `model-in-image:WLS-v1`:
      - Same image as Initial use case
