@@ -15,13 +15,12 @@ This feature is only supported in 3.0.0-RC1.
      - [Model in Image domain types (WLS, JRF, and Restricted JRF)](#model-in-image-domain-types-wls-jrf-and-restricted-jrf)
      - [Use cases](#use-cases)
      - [Sample directory structure](#sample-directory-structure)
-   - [References](#references)
    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
    - [Prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
    - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model ConfigMap
-   - [Accessing the WebLogic Server Administration Console](#accessing-the-weblogic-server-administration-console)
    - [Cleanup](#cleanup)
+   - [References](#references)
 
 
 ### Introduction
@@ -285,11 +284,10 @@ Location | Description |
 
 #### JRF Prerequisites Contents
 
- - [Introduction to JRF setups](#introduction-to-JRF-setups)
- - [Set up and initialize an RCU database](#set-up-and-initialize-an-rcu-database)
+ - [Introduction to JRF setups](#introduction-to-jrf-setups)
+ - [Set up and initialize an infrastructure database](#set-up-and-initialize-an-infrastructure-database)
  - [Increase introspection job timeout](#increase-introspection-job-timeout)
- - [Be aware of RCU model attributes, domain resource attributes, and secrets](#be-aware-of-rcu-model-attributes-domain-resource-attributes-and-secrets)
- - [Reusing or sharing RCU tables](#reusing-or-sharing-rcu-tables)
+ - [Important considerations for RCU model attributes, domain resource attributes, and secrets](#important-considerations-for-rcu-model-attributes-domain-resource-attributes-and-secrets)
 
 ##### Introduction to JRF setups
 
@@ -298,7 +296,7 @@ Location | Description |
 A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. All of these steps must occur before you create your domain.
 
 
-##### Set up and initialize an RCU database
+##### Set up and initialize an infrastructure database
 
 A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables. The following example shows how to set up a database and use the RCU tool to create the infrastructure schema for a JRF domain. The database is set up with the following attributes:
 
