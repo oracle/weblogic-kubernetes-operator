@@ -107,7 +107,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
    * Node Manager related configuration
    * Changing any existing MBean name
 
-   **Specifically, do not apply runtime updates for:**
+   Specifically, do not apply runtime updates for:
 
    * Adding or removing:
      * Servers
@@ -121,9 +121,9 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
      * Node Manager access credentials
 
    Note that it is permitted to override network access point `public` or `external` addresses and ports. External access to JMX (MBean) or online WLST requires that the network access point internal port and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
-   
+
 {{% notice warning %}}
-We strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster due to security considerations.
+Due to security considerations, we strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster.
 {{% /notice %}}
 
 #### Changing a domain resource `restartVersion`
@@ -188,9 +188,9 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
   $ diff new.yaml old.yaml
   ```
 
-> **Note: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands.**
+> **Note**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands.
 
 #### Example of adding a data source
 
-Please refer to [Update1 use case]({{% relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" %}})
-in the Model in Image sample for details of how to add a data source.
+For details on how to add a data source, see the [Update1 use case]({{% relref "/samples/simple/domains/model-in-image/_index.md#update1-use-case" %}})
+in the Model in Image sample.

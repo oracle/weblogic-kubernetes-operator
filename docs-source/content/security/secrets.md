@@ -131,7 +131,7 @@ The private key is kept in a Kubernetes `Secret` with the name `weblogic-operato
 These Kubernetes objects are managed by the operator's Helm chart and are part of the
 namespace where the operator is installed.
 
-For example, to see all the operator's config maps and secrets when installed into
+For example, to see all the operator's ConfigMaps and secrets when installed into
 the Kubernetes namespace `weblogic-operator-ns`, use:
 ```bash
 $ kubectl -n weblogic-operator-ns get cm,secret
