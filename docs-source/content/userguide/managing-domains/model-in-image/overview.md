@@ -6,6 +6,10 @@ pre = "<b> </b>"
 description = "Introduction to Model in Image, description of its runtime behavior, and references."
 +++
 
+{{% notice info %}}
+This feature is only supported in 3.0.0-RC1.
+{{% /notice %}}
+
 #### Content
 
  - [Introduction](#introduction)
@@ -27,7 +31,8 @@ It enables:
  - Supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
  - Updating WDT model files at runtime. For example, you can add a data source to a running domain. Note that all such updates currently cause the domain to 'roll' in order to take effect.
- - Deploying standard WLS domains, Restricted JRF domains, or JRF domains.
+
+This feature is supported for standard WLS domains, Restricted JRF domains, or JRF domains.
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file.  The WDT model format is described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
