@@ -3,24 +3,12 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script uses the WebLogic Image Tool to build a Docker image with model in image
-#  artifacts. By default, it uses the base image obtained earlier with build_image_base.sh,
-#  and it gets model files from the WORKDIR/models directory that was setup by the build_model.sh script.
-#
-#  The model image is named MODEL_IMAGE_NAME:MODEL_IMAGE_TAG. 
+#  artifacts. 
 #
 #  Assumptions:
 #
-#    This script should be called by build.sh.
-#    The WebLogic Image Tool is downloaded to WORKDIR/weblogic-image-tool.zip (see ./build_download.sh).
-#    The WebLogic Deploy Tool is downloaded to WORKDIR/weblogic-deploy-tooling.zip (see ./build_download.sh).
-#    Model files have been staged in the "WORKDIR/models" directory (see ./build_model.sh) or
-#    MODEL_DIR has been explicitly set to point to a different location.
-#
-#  Optional environment variables:
-#
 #    WORKDIR
-#      Working directory for the sample with at least 10g of space.
-#      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
+#      Working directory. Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 #    MODEL_DIR:
 #      Location of the model .zip, .properties, and .yaml files

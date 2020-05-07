@@ -9,7 +9,7 @@
 # Optional environment variables:
 #
 #    WORKDIR 
-#      working directory for the sample with at least 10g of space
+#      working directory with at least 10g of space
 #      defaults to /tmp/$USER/model-in-image-sample-work-dir
 #
 #    http_proxy https_proxy
