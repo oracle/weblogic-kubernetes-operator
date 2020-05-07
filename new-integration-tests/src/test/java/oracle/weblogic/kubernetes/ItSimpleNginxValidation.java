@@ -182,8 +182,6 @@ class ItSimpleNginxValidation implements LoggedTest {
   @MustNotRunInParallel
   public void testCreateMiiDomainWithMultiClusters() {
 
-    logger.info("DEBUG: in testCreateMiiDomainWithMultiClusters");
-
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
 
@@ -361,7 +359,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
       // check the ingress is created
       assertThat(assertDoesNotThrow(() -> getIngressList(domainNamespace)))
-          .as(String.format("found the ingress %s in namespace %s", ingressName, domainNamespace))
+          .as(String.format("Test the ingress %s is created in namespace %s", ingressName, domainNamespace))
           .withFailMessage(String.format("can not find ingress %s in namespace %s", ingressName, domainNamespace))
           .contains(ingressName);
 
@@ -372,7 +370,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
   @Test
   @Order(3)
-  @DisplayName("Verify the application can be accessed through the ingress controller for each cluster")
+  @DisplayName("Verify the application can be accessed through the ingress controller for each cluster in the domain")
   public void testSampleAppThroughIngressController() {
 
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
@@ -384,8 +382,7 @@ class ItSimpleNginxValidation implements LoggedTest {
       }
 
       // check that NGINX can access the sample apps from all managed servers in the cluster of the domain
-      curlCmd = String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-          domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+      curlCmd = getCurlCmd(clusterName);
       assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
           .as("verify NGINX can access the sample app from all managed servers in the domain")
           .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
@@ -401,12 +398,12 @@ class ItSimpleNginxValidation implements LoggedTest {
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
       String clusterName = CLUSTER_NAME_PREFIX + i;
 
-      // set the expected server name list which should return by the app response
+      // set the expected server name list which should return by the app response before scale
       expectedServerNamesInAppResponse.clear();
       for (int j = 1; j <= replicaCount; j++) {
         expectedServerNamesInAppResponse.add(clusterName + managedServerNameBase + j);
       }
-      logger.info("expected server name list which should be in the sample app response: {0}",
+      logger.info("expected server name list which should be in the sample app response: {0} before scale",
           expectedServerNamesInAppResponse);
 
       // get a random integer between [0 - 5]
@@ -687,20 +684,18 @@ class ItSimpleNginxValidation implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podDoesNotExist(podName, null, domainNamespace),
-            String.format(
-                "Pod %s still exists in namespace %s", podName, domainNamespace)));
-
+            String.format("Pod %s still exists in namespace %s", podName, domainNamespace)));
   }
 
-  /** Scale a cluster with clusterName to numberOfServers in the domain with domainUid in the specified
+  /** Scale the cluster to numberOfServers of the domainin the specified
    *  domain namespace. Verify the pods are created or deleted depending on the numberOfServers. Also verify
    *  NGINX can access the sample apps to all the servers after the scale operation.
    *
-   * @param domainUid the domain with domainUid to scale
-   * @param domainNamespace the domain name space the domain resides
-   * @param clusterName the cluster in the domain to scale
+   * @param domainUid the domain with domainUid which will be scaled
+   * @param domainNamespace the domain namespace the domain resides
+   * @param clusterName the cluster in the domain to be scaled
    * @param numberOfServers the number of servers to be scaled to
-   * @param expectedServerNamesInAppResponse the expected server name list in the sample app curl response
+   * @param expectedServerNamesInAppResponse the expected server name list in the sample app response before scale
    */
   private void scaleAndVerifyDomain(String domainUid,
                                     String domainNamespace,
@@ -711,12 +706,13 @@ class ItSimpleNginxValidation implements LoggedTest {
     String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-managed-server";
 
     assertThat(assertDoesNotThrow(() -> scaleDomain(domainUid, domainNamespace, clusterName, numberOfServers)))
-        .as(String.format("Verify scale domain with %s in namespace %s", domainUid, domainNamespace))
-        .withFailMessage(String.format("can not scale domain %s in namespace %s", domainUid, domainNamespace))
+        .as(String.format("Verify scale the cluster %s of domain %s in namespace %s",
+            clusterName, domainUid, domainNamespace))
+        .withFailMessage(String.format("can not scale cluster %s of domain %s in namespace %s",
+            clusterName, domainUid, domainNamespace))
         .isTrue();
 
-    curlCmd = String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    curlCmd = getCurlCmd(clusterName);
 
     if (replicaCount <= numberOfServers) {
 
@@ -776,5 +772,18 @@ class ItSimpleNginxValidation implements LoggedTest {
           .withFailMessage("NGINX can not access the sample app from the remaining managed server")
           .isTrue();
     }
+  }
+
+  /**
+   * Get the curl command to ping the sample app from the ingress controller.
+   *
+   * @param clusterName cluster name which is the backend of the ingress
+   * @return curl command string
+   */
+  private String getCurlCmd(String clusterName) {
+    String curlCmd =
+        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    return curlCmd;
   }
 }

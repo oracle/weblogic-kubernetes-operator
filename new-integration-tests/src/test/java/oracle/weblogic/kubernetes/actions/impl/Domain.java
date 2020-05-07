@@ -86,10 +86,10 @@ public class Domain {
   /**
    * Scale the cluster of the domain in the specified namespace.
    *
-   * @param domainUid domainUid of the domain to scale
+   * @param domainUid domainUid of the domain to be scaled
    * @param namespace namespace in which the domain resides
-   * @param clusterName cluster name of the WebLogic domain cluster to scale
-   * @param numOfServers number of servers to scale to
+   * @param clusterName cluster name of the WebLogic domain cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
    * @return true if success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -109,7 +109,7 @@ public class Domain {
       }
     }
 
-    // construct the patch string for scaling the domain
+    // construct the patch string for scaling the cluster in the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
         .append("\"path\": \"/spec/clusters/")

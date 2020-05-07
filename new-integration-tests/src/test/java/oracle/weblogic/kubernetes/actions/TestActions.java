@@ -70,9 +70,9 @@ public class TestActions {
   /**
    * Scale the cluster of the domain in the specified namespace .
    *
-   * @param domainUid domainUid of the domain
-   * @param clusterName cluster in the domain to scale
-   * @param numOfServers number of servers to scale to.
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName cluster in the domain to be scaled
+   * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -209,9 +209,10 @@ public class TestActions {
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
    *
+   * @param ingressName the name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which to create the ingress
    * @param domainUid WebLogic domainUid which is backend to the ingress
-   * @param clusterName the name of the WebLogic domain cluster
+   * @param clusterName the name of the WebLogic domain cluster in the domain
    * @param managedServerPort the port number of the WebLogic domain managed servers
    * @param ingressHostname the host name used by the ingress for the host name based routing
    * @return true on success, false otherwise
