@@ -237,7 +237,6 @@ public class TestActions {
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean uninstallNginx(HelmParams params) {
     return Nginx.uninstall(params);
