@@ -44,37 +44,35 @@ The `JRF` domain path through the sample includes additional steps required for 
 This sample demonstrates two Model in Image use cases:
 
 - [Initial](#initial-use-case): An initial WebLogic domain
-{{%expand "Use case details" %}}
-- Image `model-in-image:WLS-v1` with:
-  - A WebLogic installation
-  - A WebLogic Deploy Tooling (WDT) installation
-  - A WDT archive with version `v1` of an exploded Java EE web application
-  - A WDT model with:
-    - A WebLogic Administration Server
-    - A WebLogic cluster
-    - A reference to the web application
-- Kubernetes secrets:
-  - WebLogic credentials
-  - Required WDT runtime password
-- A domain resource with:
-  - `spec.domainHomeSourceType: FromModel`
-  - `spec.image: model-in-image:WLS-v1`
-  - References to the secrets
-{{% /expand%}}
+
+   - Image `model-in-image:WLS-v1` with:
+     - A WebLogic installation
+     - A WebLogic Deploy Tooling (WDT) installation
+     - A WDT archive with version `v1` of an exploded Java EE web application
+     - A WDT model with:
+       - A WebLogic Administration Server
+       - A WebLogic cluster
+       - A reference to the web application
+   - Kubernetes secrets:
+     - WebLogic credentials
+     - Required WDT runtime password
+   - A domain resource with:
+     - `spec.domainHomeSourceType: FromModel`
+     - `spec.image: model-in-image:WLS-v1`
+     - References to the secrets
 
 - [Update1](#update1-use-case): Dynamically adding a data source using a model configmap
-{{%expand "Use case details" %}}
-- Image `model-in-image:WLS-v1`:
-  - Same image as Initial use case
-- Kubernetes secrets:
-  - Same as Initial use case  plus secrets for data source credentials and URL
-- Kubernetes configmap with:
-  - A WDT model for a data source targeted to the cluster
-- A domain resource with:
-  - Same as Initial use case plus:
-     - `spec.model.configMap` referencing the configmap
-     - References to data source secrets
-{{% /expand%}}
+
+   - Image `model-in-image:WLS-v1`:
+     - Same image as Initial use case
+   - Kubernetes secrets:
+     - Same as Initial use case  plus secrets for data source credentials and URL
+   - Kubernetes configmap with:
+     - A WDT model for a data source targeted to the cluster
+   - A domain resource with:
+     - Same as Initial use case plus:
+        - `spec.model.configMap` referencing the configmap
+        - References to data source secrets
 
 #### Sample directory structure
 
