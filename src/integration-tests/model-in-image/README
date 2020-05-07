@@ -1,0 +1,122 @@
+Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+SUMMARY:
+
+  This is a stand alone test for running the mii-sample in
+  'kubernetes/samples/scripts/create-weblogic-domain/model-in-image'.
+
+IMPORTANT NOTES:
+
+  (1) This test isn't currently integrated with the test
+      suite framework. Instructions for doing so are below.
+
+  (2) This test assumes Kubernetes is running locally 
+      on a single machine. (It builds/uses local images
+      without pushing them.)
+
+----------------------------------------------------
+To run stand alone (not as part of a test framework)
+----------------------------------------------------
+
+  1) To customize the location of output, etc, 
+     see the customizable env vars in step 1 of the 
+     test framework section below.
+
+  2) If running JRF:
+
+     export DB_NAMESPACE=
+
+     This defaults to 'default'.
+
+  3) Run the test.
+
+     For WLS: ./run-test.sh -clean [-noupdate]
+     For JRF: ./run-test.sh -clean [-noupdate] -jrf -db
+
+     WARNINGS AND NOTES:
+
+       - The '-clean' option:
+
+         - Calls 'cleanup.sh' before doing anything else, 
+           which deletes almost everything in your k8s cluster.
+
+         - Deletes the current WORKDIR before proceeding.
+
+         - Implicitly cause the test to build/deploy the operator,
+           and to deploy traefik on node port 303035.
+
+       - The '-db' option will cause the test to deploy Oracle DB.
+
+       - Pass '-noupdate' to skip the multi-minute 'update' portion of the test.
+
+  4) Optionally rerun the test with different env vars, but _without_ '-clean'.
+
+     This will re-use the Traefik & Operator that were deployed in step 3.
+
+     This will re-use the old WORKDIR if you don't change WORKDIR,
+     and can be used to demonstrate deploying additional domains
+     and/or changing the model image.
+
+     This will re-use images instead of rebuilding them
+     if the MODEL_IMAGE_NAME:MODEL_IMAGE_TAG matches.
+
+     WARNING:
+
+       - Do not change DOMAIN_NAMESPACE to be different
+         than what you used for step 3. The test only sets
+         up Traefik/Operator to monitor the one DOMAIN_NAMESPACE.
+
+--------------------------------------
+To integrate it with a test framework:
+--------------------------------------
+
+  1) Optionally customize the following:
+
+     # Working directory:
+     export WORKDIR=/tmp/$USER/model-in-image-sample-work-dir
+
+     # Sample image name, but not the 'tag' part:
+     export MODEL_IMAGE_NAME=model-in-image
+
+     # (Do NOT customize MODEL_IMAGE_TAG - the test itself does that.)
+
+     # Namespace
+     export DOMAIN_NAMESPACE=sample-domain1-ns
+
+     # If running JRF and/or the db, add:
+     export DB_NAMESPACE=default
+
+     Defaults are as shown.
+
+     See the sample wrapper's 'custom-env.sh' file and this
+     test's 'test-env.sh' for additional customizable env vars,
+     but be aware that some of the custom-env.sh vars
+     are overridden by the test and should not be set
+     (includes MODEL_DIR, DOMAIN_UID, MODEL_IMAGE_TAG, 
+      INCLUDE_MODEL_CONFIGMAP, WDT_DOMAIN_TYPE, etc.). So 
+     if you want to change an env var, search for it in the test
+     scripts first...
+
+  2) Optionally remove the contents of the old WORKDIR,
+     and any old images to prevent re-using a WORKDIR
+     or images from an old test run.
+
+     Optionally also call cleanup.sh
+
+  3) If running JRF, Make sure Oracle DB is running in DB_NAMESPACE
+     and can be reached by the URL/credentials specified
+     in the sample's secrets.
+
+  4) Make sure the operator is running and monitoring DOMAIN_NAMESPACE.
+
+  5) Make sure traefik is running with node port 30305, and
+     monitoring DOMAIN_NAMESPACE.
+
+  6) For WLS: 
+       ./run-test.sh [-noupdate]
+
+     For JRF:
+       ./run-test.sh -jrf [-noupdate]
+
+     To skip the multi-minute 'update' portion of the test, pass '-noupdate'.
