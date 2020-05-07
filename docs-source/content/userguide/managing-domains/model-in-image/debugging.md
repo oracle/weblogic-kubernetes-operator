@@ -10,17 +10,16 @@ description = "Debugging a deployed Model in Image domain."
 This feature is supported only in 3.0.0-RC1.
 {{% /notice %}}
 
+Here are some suggestions for debugging problems with Model in Image after your domain resource is deployed.
+
 #### Contents
 
- - [Introduction](#introduction)
  - [Check the domain resource status](#check-the-domain-resource-status)
  - [Check the introspector job](#check-the-introspector-job)
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
  - [Check an operator log](#check-an-operator-log)
 
-#### Introduction
 
-Here are some suggestions for debugging problems with Model in Image after your domain resource is deployed.
 
 #### Check the domain resource status
 

@@ -32,11 +32,11 @@ It enables:
  - Supplying Kubernetes secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
  - Updating WDT model files at runtime. For example, you can add a data source to a running domain. Note that all such updates currently cause the domain to 'roll' in order to take effect.
 
-This feature is supported for standard WLS domains, Restricted JRF domains, or JRF domains.
+This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file.  The WDT model format is described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
-For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#7-prerequisites-for-jrf-domain-types" >}}).
+For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain, when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#prerequisites-for-jrf-domain-types" >}}).
 
 
 #### Runtime behavior overview

@@ -16,7 +16,7 @@ This feature is supported only in 3.0.0-RC1.
      - [Use cases](#use-cases)
      - [Sample directory structure](#sample-directory-structure)
    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
-   - [Prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
+   - [Additional prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
    - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model ConfigMap
    - [Cleanup](#cleanup)
@@ -28,7 +28,7 @@ This feature is supported only in 3.0.0-RC1.
 
 This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
-WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md).
+WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md).
 
 For more information on Model in Image, see the [Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
@@ -60,7 +60,7 @@ This sample demonstrates two Model in Image use cases:
      - `spec.image: model-in-image:WLS-v1`
      - References to the secrets
 
-- [Update1](#update1-use-case): Demonstrates udpating the initial domain by dynamically adding a data source using a model ConfigMap
+- [Update1](#update1-use-case): Demonstrates udpating the initial domain by dynamically adding a data source using a model ConfigMap:
 
    - Image `model-in-image:WLS-v1`:
      - Same image as Initial use case
@@ -79,14 +79,14 @@ The sample contains the following files and directories:
 
 Location | Description |
 ------------- | ----------- |
-`domain-resources` | JRF and WLS domain resources |
-`archives` | Source code location for WebLogic Deploy Tooling application ZIP archives |
-`model-images` | Staging for each model image's WDT YAML, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images|
-`model-configmaps` | Staging files for a model ConfigMap that configures a data source |
-`ingresses` | Ingress resources |
-`utils/wl-pod-wait.sh` | Utility for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state |
-`utils/patch-restart-version.sh` | Utility for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll') |
-`utils/opss-wallet.sh` | Utility for exporting or importing a JRF domain OPSS wallet file |
+`domain-resources` | JRF and WLS domain resources. |
+`archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
+`model-images` | Staging for each model image's WDT YAML, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
+`model-configmaps` | Staging files for a model ConfigMap that configures a data source. |
+`ingresses` | Ingress resources. |
+`utils/wl-pod-wait.sh` | Utility for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state. |
+`utils/patch-restart-version.sh` | Utility for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
+`utils/opss-wallet.sh` | Utility for exporting or importing a JRF domain OPSS wallet file. |
 
 ### Prerequisites for all domain types
 
@@ -119,14 +119,12 @@ Location | Description |
    $ mkdir /tmp/mii-sample
    $ cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
-   
-   > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
+   > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
    {{< rawhtml >}}
    <a name="resume"></a>
    {{< /rawhtml >}}
-   
-1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik Ingress Controller is managing the same namespace and listening on port 30305.
+1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik Ingress controller is managing the same namespace and listening on port 30305.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
@@ -249,7 +247,7 @@ Location | Description |
 
 1. Download the latest WebLogic Deploying Tooling and WebLogic Image Tool installer ZIP files to your `/tmp/mii-sample/model-images` directory.
 
-   Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory. 
+   Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory.
 
    For example, visit the GitHub [WebLogic Deploy Tooling Releses](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.0` and `1.8.4` respectively, call:
 
@@ -262,7 +260,7 @@ Location | Description |
 
 1. Set up the WebLogic Image Tool.
 
-   To set up the WebLogic Image Tool, run the following commands:
+   Run the following commands:
 
    ```
    $ cd /tmp/mii-sample/model-images
@@ -373,11 +371,11 @@ For example:
 We do not recommend that most users share OPSS tables.  Extreme caution is required when sharing OPSS tables between domains.
 {{% /notice %}}
 
-When you successfully deploy your JRF domain resource for the first time, the introspector job will initialize the OPSS tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
+When you successfully deploy your JRF domain resource for the first time, the introspector job will initialize the OPSS tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes ConfigMap.
 
 There are scenarios when the domain needs to be recreated between updates, such as when WebLogic credentials are changed, security roles defined in the WDT model have been changed, or you want to share the same infrastructure tables with different domains.  In these scenarios, the operator needs the `walletPasswordSecret` as well as the OPSS wallet file, together with the exact information in `domainInfo -> RCUDbInfo` so that the domain can be recreated and access the same set of tables.  Without the wallet file and wallet password, you will not be able to recreate a domain accessing the same set of  tables, therefore we strongly recommend that you back up the wallet file.
 
-To recover a domain's OPSS tables between domain restarts or to share an OPSS schema between different domains, it is necessary to extract this wallet file from the domain's automatically deployed introspector config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
+To recover a domain's OPSS tables between domain restarts or to share an OPSS schema between different domains, it is necessary to extract this wallet file from the domain's automatically deployed introspector ConfigMap and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
 
 To save the wallet file, assuming that your namespace is `sample-domain1-ns` and your domain UID is `sample-domain1`:
 
@@ -768,7 +766,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   - Deleting and recreating the secrets:
     - We delete a secret before creating it, otherwise the create command will fail if the secret already exists.
-    - This allows us to change the secret when using the `kubectl create secret` verb.
+    - This allows us to change the secret when using the `kubectl create secret` command.
 
   - We name and label secrets using their associated domain UID for two reasons:
     - To make it obvious which secrets belong to which domains.
@@ -819,46 +817,46 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       labels:
         weblogic.resourceVersion: domain-v2
         weblogic.domainUID: sample-domain1
-    
+
     spec:
       # Set to 'FromModel' to indicate 'Model in Image'.
       domainHomeSourceType: FromModel
-    
+
       # The WebLogic Domain Home, this must be a location within
       # the image for 'Model in Image' domains.
       domainHome: /u01/domains/sample-domain1
-    
+
       # The WebLogic Server Docker image that the Operator uses to start the domain
       image: "model-in-image:WLS-v1"
-    
+
       # Defaults to "Always" if image tag (version) is ':latest'
       imagePullPolicy: "IfNotPresent"
-    
+
       # Identify which Secret contains the credentials for pulling an image
       #imagePullSecrets:
       #- name: regsecret
-    
+
       # Identify which Secret contains the WebLogic Admin credentials,
       # the secret must contain 'username' and 'password' fields.
       webLogicCredentialsSecret:
         name: sample-domain1-weblogic-credentials
-    
+
       # Whether to include the WebLogic server stdout in the pod's stdout, default is true
       includeServerOutInPodLog: true
-    
+
       # Whether to enable overriding your log file location, see also 'logHome'
       #logHomeEnabled: false
-    
+
       # The location for domain log, server logs, server out, and Node Manager log files
       # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
       #logHome: /shared/logs/sample-domain1
-    
+
       # Set which WebLogic servers the Operator will start
       # - "NEVER" will not start any server in the domain
       # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
       # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
       serverStartPolicy: "IF_NEEDED"
-    
+
       # Settings for all server pods in the domain including the introspector job pod
       serverPod:
         # Optional new or overridden environment variables for the domain's pods
@@ -871,7 +869,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
           value: "-Dweblogic.StdoutDebugEnabled=false"
         - name: USER_MEM_ARGS
           value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
-    
+
         # Optional volumes and mounts for the domain's pods. See also 'logHome'.
         #volumes:
         #- name: weblogic-domain-storage-volume
@@ -880,7 +878,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         #volumeMounts:
         #- mountPath: /shared
         #  name: weblogic-domain-storage-volume
-    
+
       # The desired behavior for starting the domain's administration server.
       adminServer:
         # The serverStartState legal values are "RUNNING" or "ADMIN"
@@ -892,34 +890,34 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         #  channels:
         #  - channelName: default
         #    nodePort: 30701
-    
+
       # The number of managed servers to start for unlisted clusters
       replicas: 1
-    
+
       # The desired behavior for starting a specific cluster's member servers
       clusters:
       - clusterName: cluster-1
         serverStartState: "RUNNING"
         replicas: 2
-    
+
       # Change the `restartVersion` to force the introspector job to rerun
       # and apply any new model configuration, to also force a subsequent
       # roll of your domain's WebLogic pods.
       restartVersion: '1'
-    
+
       configuration:
-    
+
         # Settings for domainHomeSourceType 'FromModel'
         model:
           # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
           domainType: "WLS"
-    
+
           # Optional configmap for additional models and variable files
           #configMap: sample-domain1-wdt-config-map
-    
+
           # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
           runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
-    
+
         # Secrets that are referenced by model yaml macros
         # (the model yaml in the optional configMap or in the image)
         #secrets:
@@ -1219,7 +1217,7 @@ If you see an error, then consult [Debugging]({{< relref "/userguide/managing-do
 
 #### Invoke the web application
 
-Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik Ingress Controller's NodePort. Note: the web application will display a list of any data sources it finds, but we don't expect it to find any because the model doesn't contain any at this point.
+Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik Ingress controller's NodePort. Note: The web application will display a list of any data sources it finds, but we don't expect it to find any because the model doesn't contain any at this point.
 
 Send a web application request to the load balancer:
 
@@ -1261,7 +1259,7 @@ You should see output like the following:
 
   **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
 
- Leave your domain running if you want to continue to the next use case.
+ If you want to continue to the next use case, then leave your domain running.
 
 ### Update1 use case
 
@@ -1277,9 +1275,9 @@ For a detailed discussion of model updates, see [Runtime Updates]({{< relref "/u
 The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update before attempting a dynamic update in production.
 {{% /notice %}}
 
-Let's go through the steps:
+Here are the steps:
 
-1. Ensure you have a running domain.
+1. Ensure that you have a running domain.
 
     Make sure you have deployed the domain from the [Initial use case](#initial-use-case).
 
@@ -1339,7 +1337,7 @@ Let's go through the steps:
      weblogic.domainUID=sample-domain1
    ```
 
- We name and label secrets using their associated domain UID for two reasons:
+    We name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
 
@@ -1356,7 +1354,7 @@ Let's go through the steps:
      weblogic.domainUID=sample-domain1
    ```
 
-   - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier).
+     - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier).
      - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
 
    We name and label ConfigMap using their associated domain UID for two reasons:
@@ -1673,14 +1671,14 @@ Let's go through the steps:
 
 1. After your domain is running, you can call the sample web application to determine if the data source was deployed.
 
-   Send a web application request to the Ingress Controller:
+   Send a web application request to the Ingress controller:
 
    ```  
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```  
 
-   Or, if Traefik is unavailable and your Administration Server pod is running, you can try `kubectl exec`:
+   Or, if Traefik is unavailable and your Administration Server pod is running, you can run `kubectl exec`:
 
    ```  
    $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
@@ -1719,12 +1717,12 @@ Let's go through the steps:
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-This completes the sample scenario.
+This completes the sample scenarios.
 
 
 ### Cleanup
 
-If you wish to remove the resources you have created in this sample:
+To remove the resources you have created in these samples:
 
 1. Delete the domain resources.
    ```
@@ -1738,7 +1736,7 @@ If you wish to remove the resources you have created in this sample:
 
    > **Note**: When you delete a domain, the operator should detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
 
-2. If you set up the Traefik Ingress Controller:
+2. If you set up the Traefik Ingress controller:
 
    ```
    $ helm delete --purge traefik-operator
