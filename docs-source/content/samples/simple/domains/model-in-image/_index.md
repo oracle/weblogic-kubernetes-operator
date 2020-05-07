@@ -104,9 +104,9 @@ Location | Description |
    For example:
 
    ```
-   mkdir /tmp/operator-source
-   cd /tmp/operator-source
-   git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ mkdir /tmp/operator-source
+   $ cd /tmp/operator-source
+   $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
@@ -117,8 +117,8 @@ Location | Description |
 
 
    ```
-   mkdir /tmp/mii-sample
-   cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
+   $ mkdir /tmp/mii-sample
+   $ cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
    
    > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
@@ -220,12 +220,12 @@ Location | Description |
    - Option 2: Run `kubectl apply -f` on each of the Ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
 
    ```
-   cd /tmp/mii-sample/ingresses
-   kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
-   kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
-   kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
-   kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
-   kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
+   $ cd /tmp/mii-sample/ingresses
+   $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
+   $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
+   $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
+   $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
+   $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
    ```
 
    > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the Ingress, you will need to supply a host name header that matches the host names in the Ingress.
@@ -250,15 +250,15 @@ Location | Description |
 
 1. _Download the latest WebLogic Deploying Tooling and WebLogic Image Tool installer ZIP files to your `/tmp/mii-sample/model-images` directory._
 
-   Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory. Make sure that the files are named `weblogic-deploy-tooling.zip` and `weblogic-image-tool.zip`.
+   Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory. 
 
    For example, visit the GitHub [WebLogic Deploy Tooling Releses](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.0` and `1.8.4` respectively, call:
 
    ```
-   curl -m 30 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.0/weblogic-deploy.zip \
-     -o /tmp/mii-sample/model-images/weblogic-deploy-tooling.zip
-   curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.4/imagetool.zip \
-     -o /tmp/mii-sample/model-images/weblogic-image-tool.zip
+   $ curl -m 30 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.0/weblogic-deploy.zip \
+     -o /tmp/mii-sample/model-images/weblogic-deploy.zip
+   $ curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.4/imagetool.zip \
+     -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 
 1. _Set up the WebLogic Image Tool._
@@ -266,30 +266,22 @@ Location | Description |
    To set up the WebLogic Image Tool, run the following commands:
 
    ```
-   cd /tmp/mii-sample/model-images
+   $ cd /tmp/mii-sample/model-images
 
-   unzip weblogic-image-tool.zip
+   $ unzip imagetool.zip
 
-   # it's OK if this delete fails
-   ./imagetool/bin/imagetool.sh cache deleteEntry \
-     --key wdt_latest
-
-   ./imagetool/bin/imagetool.sh cache addInstaller \
+   $ ./imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
      --version latest \
-     --path /tmp/mii-sample/model-images/weblogic-deploy-tooling.zip
+     --path /tmp/mii-sample/model-images/weblogic-deploy.zip
    ```
 
-   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP installer. We will use WIT later in the sample for creating model images. If you want, take a moment to peruse the tool help: `/tmp/mii-sample/model-images/imagetool/bin/imagetool.sh -h`.
+   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP installer. We will use WIT later in the sample for creating model images.
 
 
-1. _If you are using a `JRF` domain type, then it requires an RCU infrastructure database. See [Prerequisites for JRF Domains](#prerequisites-for-jrf-domains)._
+### Additional prerequisites for JRF domains
 
-### Prerequisites for JRF domains
-
-> __NOTE__: Skip this section if you're using a `WLS` domain type.
-
-{{%expand "Click here to see JRF prerequisites" %}}
+> __NOTE__: If you're using a `WLS` domain type, skip this section and continue [here]("#nojrf").
 
 #### JRF Prerequisites Contents
 
@@ -436,7 +428,9 @@ Alternatively, use the sample's wallet utility:
 
 See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}) for instructions.
 
-{{% /expand%}}
+{{% rawhtml %}}
+<a name="nojrf"></a>
+{{% rawhtml %}}
 
 ### Initial use case
 
