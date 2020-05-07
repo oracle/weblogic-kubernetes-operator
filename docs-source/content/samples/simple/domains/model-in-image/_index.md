@@ -135,29 +135,9 @@ Location | Description |
 Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
 {{% /notice %}}
 
-1. _Make sure there are no conflicting WebLogic related domains, Ingresses, secrets, or config maps that are already deployed to namespace `sample-domain1-ns`._
-
-   {{%expand "Click here for details." %}}
-
-   If any of the following commands reveal WebLogic related resources, then the simplest way to avoid conflicts is to delete them using the corresponding `kubectl delete TYPE NAME` verb:
-
-   ```
-   kubectl get domains    -n sample-domain1-ns
-   kubectl get pods       -n sample-domain1-ns
-   kubectl get configmaps -n sample-domain1-ns
-   kubectl get secrets    -n sample-domain1-ns
-   kubectl get ingresses  -n sample-domain1-ns
-   ```
-
-   For example, if the `get domains` command reveals domain `mydomain`, then call `kubectl delete domain mydomain -n sample-domain1-ns` to shut it down.
-
-   > **WARNING:** If you delete an existing domain, then you must wait for its pods to shut down. To monitor the sample domain namespace as pods shut down, use `kubectl get pods -n sample-domain1-ns -w` (`ctrl-c` to exit).
-   {{% /expand%}}
-
-
 1. _Set up Ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains._
 
-    - Option 1 of 2: To deploy the Ingresses, one option is to use your favorite editor to cut and paste the following YAML to a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
+    - Option 1: To create the Ingresses, use the following YAML to create a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
 
        ```
        apiVersion: extensions/v1beta1
@@ -237,9 +217,8 @@ Make sure you stop when you complete the "Prepare for a domain" step and then re
                  servicePort: 8001
        ```
 
-   - Option 2 of 2: Another option for deploying this sample's Ingresses is to run `kubectl apply -f` on each of the Ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
+   - Option 2: Run `kubectl apply -f` on each of the Ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
 
-      {{%expand "Click here for details." %}}
    ```
    cd /tmp/mii-sample/ingresses
    kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
@@ -248,21 +227,12 @@ Make sure you stop when you complete the "Prepare for a domain" step and then re
    kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
    kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
    ```
-      {{% /expand%}}
 
-   > **NOTE**: If you're interested in the details of the `curl` commands we use to access each cluster through its Ingress, see the comments embedded within the `/tmp/mii-sample/ingresses` YAML files.
-
-   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters. 
+   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the Ingress, you will need to supply a host name header that matches the host names in the Ingress.
 
    For more on information Ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
 
-1. _Set up access to a base WebLogic 12.2.1.4 image for this sample that will be used for creating the sample's model images._
-
-   Do one of the following:
-
-   - Option 1 (recommended), set up access to an existing WebLogic image in the [Oracle Container Registry](http://container-registry.oracle.com):
-
-     {{%expand "Click here for details." %}}
+1. _Obtain the WebLogic 12.2.1.4 image that is required to create the sample's model images._
 
    a. Use a browser to access [Oracle Container Registry](http://container-registry.oracle.com).
 
@@ -274,13 +244,9 @@ Make sure you stop when you complete the "Prepare for a domain" step and then re
 
    e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the above licensed images as specified in the tool's command line using the `--fromImage` parameter. For `JRF`, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, and for `WLS`, the sample specifies `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
-   {{% /expand%}}
-
-   - Option 2 (advanced users only), create your own WebLogic base image:
-
-     {{%expand "Click here for details." %}}
-   This alternative is recommended only for advanced users that are already familiar with the WebLogic Image Tool. You can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
-     {{% /expand%}}
+     {{% notice info %}}
+   If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
+     {{% /notice %}}
 
 1. _Download the latest WebLogic Deploying Tooling and WebLogic Image Tool installer ZIP files to your `/tmp/mii-sample/model-images` directory._
 
