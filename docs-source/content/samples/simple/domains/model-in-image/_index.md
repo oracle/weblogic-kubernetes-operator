@@ -91,15 +91,15 @@ Location | Description |
 
 ### Prerequisites for all domain types
 
-1. _Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`._
+1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 
    - The first time you try this sample, we recommend that you choose `WLS` even if you're familiar with `JRF`.
    - This is because `WLS` is simpler and will more easily familiarize you with Model in Image concepts.
    - We recommend choosing `JRF` only if you are already familiar with `JRF`, you have already tried the `WLS` path through this sample, and you have a definite use case where you need to use `JRF`.
 
-1. _The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation._
+1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 
-1. _Get the operator source and put it in `/tmp/operator-source`._
+1. Get the operator source and put it in `/tmp/operator-source`.
 
    For example:
 
@@ -113,7 +113,7 @@ Location | Description |
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
-1. _Copy the sample to a new directory; for example, use directory `/tmp/mii-sample`._
+1. Copy the sample to a new directory; for example, use directory `/tmp/mii-sample`.
 
 
    ```
@@ -127,15 +127,15 @@ Location | Description |
    <a name="resume"></a>
    {{< /rawhtml >}}
    
-1. _Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik Ingress Controller is managing the same namespace and listening on port 30305._
+1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik Ingress Controller is managing the same namespace and listening on port 30305.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
-    {{% notice info %}}
-    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
-    {{% /notice %}}
+   {{% notice info %}}
+   Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
+   {{% /notice %}}
 
-1. _Set up Ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains._
+1. Set up Ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains.
 
     - Option 1: To create the Ingresses, use the following YAML to create a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
 
@@ -232,7 +232,7 @@ Location | Description |
 
    For more on information Ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
 
-1. _Obtain the WebLogic 12.2.1.4 image that is required to create the sample's model images._
+1. Obtain the WebLogic 12.2.1.4 image that is required to create the sample's model images.
 
    a. Use a browser to access [Oracle Container Registry](http://container-registry.oracle.com).
 
@@ -248,7 +248,7 @@ Location | Description |
    If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
      {{% /notice %}}
 
-1. _Download the latest WebLogic Deploying Tooling and WebLogic Image Tool installer ZIP files to your `/tmp/mii-sample/model-images` directory._
+1. Download the latest WebLogic Deploying Tooling and WebLogic Image Tool installer ZIP files to your `/tmp/mii-sample/model-images` directory.
 
    Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory. 
 
@@ -261,7 +261,7 @@ Location | Description |
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 
-1. _Set up the WebLogic Image Tool._
+1. Set up the WebLogic Image Tool.
 
    To set up the WebLogic Image Tool, run the following commands:
 
@@ -741,9 +741,6 @@ First, create the secrets needed by both `WLS` and `JRF` type model domains. In 
 Run the following `kubectl` commands to deploy the required secrets:
 
   ```
-  $ kubectl -n sample-domain1-ns delete secret \
-    sample-domain1-weblogic-credentials \
-    --ignore-not-found
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
      --from-literal=username=weblogic --from-literal=password=welcome1
@@ -751,9 +748,6 @@ Run the following `kubectl` commands to deploy the required secrets:
     sample-domain1-weblogic-credentials \
     weblogic.domainUID=sample-domain1
 
-  $ kubectl -n sample-domain1-ns delete secret \
-    sample-domain1-runtime-encryption-secret \
-    --ignore-not-found
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-runtime-encryption-secret \
      --from-literal=password=my_runtime_password
@@ -790,9 +784,6 @@ Run the following `kubectl` commands to deploy the required secrets:
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
   ```
-  $ kubectl -n sample-domain1-ns delete secret \
-    sample-domain1-rcu-access \
-    --ignore-not-found
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-rcu-access \
      --from-literal=rcu_prefix=FMW1 \
@@ -802,9 +793,6 @@ Run the following `kubectl` commands to deploy the required secrets:
     sample-domain1-rcu-access \
     weblogic.domainUID=sample-domain1
 
-  $ kubectl -n sample-domain1-ns delete secret \
-    sample-domain1-opss-wallet-password-secret \
-    --ignore-not-found
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-opss-wallet-password-secret \
      --from-literal=walletPassword=welcome1
@@ -824,122 +812,122 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
   {{%expand "Click here to expand the WLS domain resource YAML." %}}
   ```
-#
-# This is an example of how to define a Domain resource.
-#
-apiVersion: "weblogic.oracle/v7"
-kind: Domain
-metadata:
-  name: sample-domain1
-  namespace: sample-domain1-ns
-  labels:
-    weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: sample-domain1
-
-spec:
-  # Set to 'FromModel' to indicate 'Model in Image'.
-  domainHomeSourceType: FromModel
-
-  # The WebLogic Domain Home, this must be a location within
-  # the image for 'Model in Image' domains.
-  domainHome: /u01/domains/sample-domain1
-
-  # The WebLogic Server Docker image that the Operator uses to start the domain
-  image: "model-in-image:WLS-v1"
-
-  # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: "IfNotPresent"
-
-  # Identify which Secret contains the credentials for pulling an image
-  #imagePullSecrets:
-  #- name: regsecret
-
-  # Identify which Secret contains the WebLogic Admin credentials,
-  # the secret must contain 'username' and 'password' fields.
-  webLogicCredentialsSecret:
-    name: sample-domain1-weblogic-credentials
-
-  # Whether to include the WebLogic server stdout in the pod's stdout, default is true
-  includeServerOutInPodLog: true
-
-  # Whether to enable overriding your log file location, see also 'logHome'
-  #logHomeEnabled: false
-
-  # The location for domain log, server logs, server out, and Node Manager log files
-  # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
-  #logHome: /shared/logs/sample-domain1
-
-  # Set which WebLogic servers the Operator will start
-  # - "NEVER" will not start any server in the domain
-  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-  # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-  serverStartPolicy: "IF_NEEDED"
-
-  # Settings for all server pods in the domain including the introspector job pod
-  serverPod:
-    # Optional new or overridden environment variables for the domain's pods
-    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
-    #   to set the Weblogic domain name
-    env:
-    - name: CUSTOM_DOMAIN_NAME
-      value: "domain1"
-    - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false"
-    - name: USER_MEM_ARGS
-      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
-
-    # Optional volumes and mounts for the domain's pods. See also 'logHome'.
-    #volumes:
-    #- name: weblogic-domain-storage-volume
-    #  persistentVolumeClaim:
-    #    claimName: sample-domain1-weblogic-sample-pvc
-    #volumeMounts:
-    #- mountPath: /shared
-    #  name: weblogic-domain-storage-volume
-
-  # The desired behavior for starting the domain's administration server.
-  adminServer:
-    # The serverStartState legal values are "RUNNING" or "ADMIN"
-    # "RUNNING" means the listed server will be started up to "RUNNING" mode
-    # "ADMIN" means the listed server will be start up to "ADMIN" mode
-    serverStartState: "RUNNING"
-    # Setup a Kubernetes node port for the administration server default channel
-    #adminService:
-    #  channels:
-    #  - channelName: default
-    #    nodePort: 30701
-
-  # The number of managed servers to start for unlisted clusters
-  replicas: 1
-
-  # The desired behavior for starting a specific cluster's member servers
-  clusters:
-  - clusterName: cluster-1
-    serverStartState: "RUNNING"
-    replicas: 2
-
-  # Change the `restartVersion` to force the introspector job to rerun
-  # and apply any new model configuration, to also force a subsequent
-  # roll of your domain's WebLogic pods.
-  restartVersion: '1'
-
-  configuration:
-
-    # Settings for domainHomeSourceType 'FromModel'
-    model:
-      # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "WLS"
-
-      # Optional configmap for additional models and variable files
-      #configMap: sample-domain1-wdt-config-map
-
-      # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
-      runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
-
-    # Secrets that are referenced by model yaml macros
-    # (the model yaml in the optional configMap or in the image)
-    #secrets:
-    #- sample-domain1-datasource-secret
+    #
+    # This is an example of how to define a Domain resource.
+    #
+    apiVersion: "weblogic.oracle/v7"
+    kind: Domain
+    metadata:
+      name: sample-domain1
+      namespace: sample-domain1-ns
+      labels:
+        weblogic.resourceVersion: domain-v2
+        weblogic.domainUID: sample-domain1
+    
+    spec:
+      # Set to 'FromModel' to indicate 'Model in Image'.
+      domainHomeSourceType: FromModel
+    
+      # The WebLogic Domain Home, this must be a location within
+      # the image for 'Model in Image' domains.
+      domainHome: /u01/domains/sample-domain1
+    
+      # The WebLogic Server Docker image that the Operator uses to start the domain
+      image: "model-in-image:WLS-v1"
+    
+      # Defaults to "Always" if image tag (version) is ':latest'
+      imagePullPolicy: "IfNotPresent"
+    
+      # Identify which Secret contains the credentials for pulling an image
+      #imagePullSecrets:
+      #- name: regsecret
+    
+      # Identify which Secret contains the WebLogic Admin credentials,
+      # the secret must contain 'username' and 'password' fields.
+      webLogicCredentialsSecret:
+        name: sample-domain1-weblogic-credentials
+    
+      # Whether to include the WebLogic server stdout in the pod's stdout, default is true
+      includeServerOutInPodLog: true
+    
+      # Whether to enable overriding your log file location, see also 'logHome'
+      #logHomeEnabled: false
+    
+      # The location for domain log, server logs, server out, and Node Manager log files
+      # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
+      #logHome: /shared/logs/sample-domain1
+    
+      # Set which WebLogic servers the Operator will start
+      # - "NEVER" will not start any server in the domain
+      # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+      # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+      serverStartPolicy: "IF_NEEDED"
+    
+      # Settings for all server pods in the domain including the introspector job pod
+      serverPod:
+        # Optional new or overridden environment variables for the domain's pods
+        # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
+        #   to set the Weblogic domain name
+        env:
+        - name: CUSTOM_DOMAIN_NAME
+          value: "domain1"
+        - name: JAVA_OPTIONS
+          value: "-Dweblogic.StdoutDebugEnabled=false"
+        - name: USER_MEM_ARGS
+          value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+    
+        # Optional volumes and mounts for the domain's pods. See also 'logHome'.
+        #volumes:
+        #- name: weblogic-domain-storage-volume
+        #  persistentVolumeClaim:
+        #    claimName: sample-domain1-weblogic-sample-pvc
+        #volumeMounts:
+        #- mountPath: /shared
+        #  name: weblogic-domain-storage-volume
+    
+      # The desired behavior for starting the domain's administration server.
+      adminServer:
+        # The serverStartState legal values are "RUNNING" or "ADMIN"
+        # "RUNNING" means the listed server will be started up to "RUNNING" mode
+        # "ADMIN" means the listed server will be start up to "ADMIN" mode
+        serverStartState: "RUNNING"
+        # Setup a Kubernetes node port for the administration server default channel
+        #adminService:
+        #  channels:
+        #  - channelName: default
+        #    nodePort: 30701
+    
+      # The number of managed servers to start for unlisted clusters
+      replicas: 1
+    
+      # The desired behavior for starting a specific cluster's member servers
+      clusters:
+      - clusterName: cluster-1
+        serverStartState: "RUNNING"
+        replicas: 2
+    
+      # Change the `restartVersion` to force the introspector job to rerun
+      # and apply any new model configuration, to also force a subsequent
+      # roll of your domain's WebLogic pods.
+      restartVersion: '1'
+    
+      configuration:
+    
+        # Settings for domainHomeSourceType 'FromModel'
+        model:
+          # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
+          domainType: "WLS"
+    
+          # Optional configmap for additional models and variable files
+          #configMap: sample-domain1-wdt-config-map
+    
+          # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
+          runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+    
+        # Secrets that are referenced by model yaml macros
+        # (the model yaml in the optional configMap or in the image)
+        #secrets:
+        #- sample-domain1-datasource-secret
   ```
   {{% /expand%}}
 
@@ -1433,21 +1421,21 @@ Let's go through the steps:
    - Option 2: Dynamically change your domain using `kubectl patch`.
      - To get the current `restartVersion` call:
        ```
-       kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
+       $ kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
        ```
      - Choose a new restart version that's different from the current restart version.
        - The field is a string; typically, you use a number in this field and increment it with each restart.
 
      - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
        ```
-       kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
+       $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
        ```
    - Option 3: Use the sample helper script.
      - Call `/tmp/mii-sample/utils/patch-restart-version.sh -n sample-domain1-ns -d sample-domain1`.
      - This will perform the same `kubectl get` and `kubectl patch` commands as Option 2.
 
 
-1. Wait for the roll.
+1. Wait for the roll to complete.
 
     Now that you've started a domain roll, you'll need to wait for it to complete if you want to verify that the data source was deployed.
 
