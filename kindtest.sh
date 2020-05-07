@@ -36,13 +36,15 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
   echo "  -o Output directory (optional) "
   echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
+  echo "  -t Test filter (optional) "
+  echo "      (default: **/It*) "
   echo "  -h Help"
   exit $1
 }
@@ -54,14 +56,17 @@ if [[ -z "${WORKSPACE}" ]]; then
 else
   outdir="${WORKSPACE}/logdir/${BUILD_TAG}"
 fi
+test_filter="**/It*"
 
-while getopts ":h:n:o:v:" opt; do
+while getopts ":h:n:o:t:v:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
     n) kind_name="${OPTARG}"
     ;;
     o) outdir="${OPTARG}"
+    ;;
+    t) test_filter="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -179,4 +184,4 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-time mvn -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+time mvn -Dit.test="${test_filter}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
