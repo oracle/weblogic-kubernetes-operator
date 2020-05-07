@@ -26,7 +26,7 @@ This document describes basic Model in Image model file syntax, naming, and macr
 
 #### Sample model file
 
-Here's an example of a model `.yaml` file that defines a WebLogic Server Administration Server and dynamic cluster.
+Here's an example of a model YAML file that defines a WebLogic Server Administration Server and dynamic cluster.
 
 ```
 domainInfo:
@@ -54,14 +54,13 @@ topology:
       ListenPort: 8001
 ```
 
-Some notes about the sample model file:
- - It includes a WebLogic credentials stanza that is required by Model in Image.
- - It derives its domain name from the pre-defined environment variable `DOMAIN_UID`, but note that this is not required.
- - For a description of model file macro references to secrets and environment variables, see [Model file macros](#model-file-macros).
+This sample model file:
+ - Includes a WebLogic credentials stanza that is required by Model in Image.
+ - Derives its domain name from the predefined environment variable `DOMAIN_UID`, but note that this is not required.
+
+For a description of model file macro references to secrets and environment variables, see [Model file macros](#model-file-macros).
 
 #### Important notes about Model in Image model files
-
-- Understand when to use model macros.
 
   - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See [Using secrets in model files](#using-secrets-in-model-files).
 
@@ -88,7 +87,7 @@ Refer to this section if you need to control the order in which your model files
 
 During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT ConfigMap described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-configmap" >}}).
 
-The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` specifies the desired order, and secondly determined alphabetically as a tie-breaker. Additional details:
+The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are characters that specify the desired order when sorted numerically and then alphabetically if necessary. Additional details:
 
  * Embedding a `.##.` in a filename is optional and can appear anywhere in the file name before the `properties` or `yaml` extension.
    * The precedence of file names that include more than one `.##.` is undefined. 
