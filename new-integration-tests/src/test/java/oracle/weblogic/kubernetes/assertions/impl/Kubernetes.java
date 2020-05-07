@@ -147,7 +147,7 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a Operator pod running in a given namespace.
+   * Checks if an operator pod is running in a given namespace.
    * The method assumes the operator name to starts with weblogic-operator-
    * and decorated with label weblogic.operatorName:namespace
    * @param namespace in which to check for the pod existence
@@ -175,6 +175,32 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a NGINX pod is running in the specified namespace.
+   * The method assumes that the NGINX pod name contains "nginx-ingress-controller".
+   *
+   * @param namespace in which to check if the NGINX pod is running
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isNginxPodRunning(String namespace) throws ApiException {
+
+    return isPodRunning(namespace, null, "nginx-ingress-controller");
+  }
+
+  /**
+   * Check whether the NGINX pod is ready in the specified namespace.
+   * The method assumes that the NGINX pod name starts with "nginx-ingress-controller".
+   *
+   * @param namespace in which to check if the NGINX pod is ready
+   * @return true if the pod is in the ready state, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isNginxPodReady(String namespace) throws ApiException {
+
+    return isPodReady(namespace, null, "nginx-ingress-controller");
+  }
+
+  /**
    * Returns the V1Pod object given the following parameters.
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
@@ -197,7 +223,7 @@ public class Kubernetes {
             Boolean.FALSE // Watch for changes to the described resources.
         );
     for (V1Pod item : v1PodList.getItems()) {
-      if (item.getMetadata().getName().startsWith(podName.trim())) {
+      if (item.getMetadata().getName().contains(podName.trim())) {
         logger.info("Pod Name: " + item.getMetadata().getName());
         logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
         logger.info("Pod UID: " + item.getMetadata().getUid());

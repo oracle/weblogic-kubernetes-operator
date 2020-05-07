@@ -246,10 +246,11 @@ public class ManagedServersUpStep extends Step {
     private boolean lessThanMinConfiguredClusterSize(WlsClusterConfig clusterConfig) {
       if (clusterConfig != null) {
         String clusterName = clusterConfig.getClusterName();
-        int configMinClusterSize
-                = clusterConfig.getMinDynamicClusterSize();
-        return clusterConfig.hasDynamicServers()
-                && domain.getReplicaCount(clusterName) < configMinClusterSize;
+        if (clusterConfig.hasDynamicServers()
+            && !domain.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
+          int configMinClusterSize = clusterConfig.getMinDynamicClusterSize();
+          return domain.getReplicaCount(clusterName) < configMinClusterSize;
+        }
       }
       return false;
     }
