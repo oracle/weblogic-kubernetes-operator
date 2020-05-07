@@ -37,7 +37,7 @@ For more information on Model in Image, see the [Model in Image user guide]({{< 
 
 There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, and a `RestrictedJRF` domain. This sample demonstrates the `WLS` and `JRF` types.
 
-The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an `OPSS` wallet password, and exporting/importing an `OPSS` wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products, such as Oracle Communications products.
+The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products, such as Oracle Communications products.
 
 #### Use cases
 
@@ -332,7 +332,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
 
      This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
-     **WARNING:** The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1) : All the data is gone when the database is restarted.
+     **WARNING:** The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
 
 2. Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with the schema prefix `FMW1`.
@@ -1282,17 +1282,13 @@ You should see output like the following:
 
 ### Update1 use case
 
-This use case demonstrates dynamically adding a data source to your running domain. It demonstrates several advantages of WDT and the Image model:
+This use case demonstrates dynamically adding a data source to your running domain. It demonstrates several features of WDT and Model in Image:
 
 - The syntax used for updating a model is exactly the same syntax you use for creating the original model.
 - A domain's model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap.
-- Model updates can be as simple as changing the value of a single attribute, or as ambitious as adding a JMS Server.
+- Model updates can be as simple as changing the value of a single attribute, or more complex, such as adding a JMS Server.
 
 For a detailed discussion of model updates, see [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user guide.
-
-{{% notice note %}}
-Perform the steps in [Prerequisites for all domain types](#prerequisites-for-all-domain-types) before performing the steps in this use case.
-{{% /notice %}}
 
 {{% notice warning %}}
 The operator does not support all possible dynamic model updates. For model update limitations, consult [Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) in the Model in Image user docs, and carefully test any model update before attempting a dynamic update in production.
@@ -1300,17 +1296,17 @@ The operator does not support all possible dynamic model updates. For model upda
 
 Let's go through the steps:
 
-1. _Ensure you have a running domain._
+1. Ensure you have a running domain.
 
     Make sure you have deployed the domain from the [Initial use case](#initial-use-case).
 
-1. _Obtain a data source model YAML._
+1. Create a data source model YAML file.
 
-    Find or create a WDT model snippet for a data source, make sure that its target is set to `cluster-1`, and that its initial capacity is set to `0`.
+    Create a WDT model snippet for a data source (or use the example provided).  Make sure that its target is set to `cluster-1`, and that its initial capacity is set to `0`.
 
    The reason for the latter is to prevent the data source from causing a WebLogic Server startup failure if it can't find the database, which would be likely to happen because we haven't deployed one (unless you're using the `JRF` path through the sample).
 
-   Here's a handy data source model configuration that meets these criteria:
+   Here's an example data source model configuration that meets these criteria:
 
 
    ```
@@ -1344,71 +1340,49 @@ Let's go through the steps:
 
    ```
 
-   You can cut and paste the above model snippet to a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where we deploy the model ConfigMap, or alternatively, you can simply use the same data source that's already there for you in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
+   Place the above model snippet in a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where we deploy the model ConfigMap, or alternatively, use the same data source that's provided in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
 
-1. _Deploy the data source secret._
+1. Create the data source secret.
 
-    The data source references a new secret that needs to be deployed.
-
-   Run the following commands:
+   The data source references a new secret that needs to be created. Run the following commands to create the secret:
 
    ```
-   kubectl -n sample-domain1-ns delete secret \
+   $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain1-datasource-secret \
-     --ignore-not-found
-   kubectl -n sample-domain1-ns create secret generic \
-     sample-domain1-datasource-secret \
-      --from-literal=password=Oradoc_db1 --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-   kubectl -n sample-domain1-ns label  secret \
+      --from-literal=password=Oradoc_db1 \
+      --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+   $ kubectl -n sample-domain1-ns label  secret \
      sample-domain1-datasource-secret \
      weblogic.domainUID=sample-domain1
    ```
 
-   {{%expand "Click here for details about secret creation, naming, and labeling." %}}
-
-   - About deleting and recreating the secret:
-     - We delete a secret before creating, otherwise the create command will fail if the secret already exists.
-     - This allows us to change the secret when using the `kubectl create secret` verb.
-
-   - We name and label secrets using their associated domain UID for two reasons:
+ We name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
      - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all the resources associated with a domain.
 
-   {{% /expand%}}
 
-1. _Deploy the data source YAML._
-
-    We're ready to deploy the data source!
+1. Create a ConfigMap with the WDT model that contains the data source definition.
 
    Run the following commands:
 
 
    ```
-   kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map --ignore-not-found
-   kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map --from-file=/tmp/mii-sample/model-configmaps/datasource
-   kubectl -n sample-domain1-ns label  configmap sample-domain1-wdt-config-map weblogic.domainUID=sample-domain1
+   $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
+     --from-file=/tmp/mii-sample/model-configmaps/datasource
+   $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
+     weblogic.domainUID=sample-domain1
    ```
 
    - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier).
      - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
 
-   {{%expand "Click here for details about ConfigMap creation, naming, and labeling." %}}
-
-   - About deleting and recreating the ConfigMap:
-     - We delete a ConfigMap before creating it, otherwise the create command will fail if the ConfigMap already exists.
-     - This allows us to change the ConfigMap when using the `kubectl create configmap` verb.
-
-   - We name and label ConfigMap using their associated domain UID for two reasons:
+   We name and label ConfigMap using their associated domain UID for two reasons:
      - To make it obvious which ConfigMap belong to which domains.
      - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-   {{% /expand%}}
+1. Update your domain resource to refer to the ConfigMap and secret.
 
-1. _Update your domain resource file to refer to the ConfigMap and its secret, and apply it._
-
-      Do one the following:
-
-    - Option 1: Update your current domain resource file from the Initial use case.
+    - Option 1: Update your current domain resource file from the "Initial" use case.
       - Add the secret to its `spec.configuration.secrets` stanza:
 
           ```
@@ -1435,29 +1409,29 @@ Let's go through the steps:
       - Apply your changed domain resource:
 
           ```
-          kubectl apply -f your-domain-resource.yaml
+          $ kubectl apply -f your-domain-resource.yaml
           ```
 
-    - Option 2: Or, use the similarly updated domain resource file that is supplied with the sample:
+    - Option 2: Use the updated domain resource file that is supplied with the sample:
 
         ```
-        kubectl apply -f /tmp/miisample/domain-resources/mii-update1-d1-WLS-v1-ds.yaml
+        $ kubectl apply -f /tmp/miisample/domain-resources/mii-update1-d1-WLS-v1-ds.yaml
         ```
 
 
-1. _Restart ('roll') the domain._
+1. Restart ('roll') the domain.
 
-   Now that the data source is deployed in a ConfigMap and its secret is also deployed, and now that we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, let's tell the operator to roll the domain.
+   Now that the data source is deployed in a ConfigMap and its secret is also deployed, and we have applied an updated domain resource with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, let's tell the operator to roll the domain.
 
    When a model domain restarts, it will rerun its introspector job in order to regenerate its configuration, and it will also pass the configuration changes found by the introspector to each restarted server.
-   One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. There are multiple ways to make this modification, here are three:
+   One way to cause a running domain to restart is to change the domain's `spec.restartVersion`. To do this:
 
-   - Option 1: Live edit your domain.
+   - Option 1: Edit your domain custom resource.
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
      - Edit the value of the `spec.restartVersion` field and save.
        - The field is a string; typically, you use a number in this field and increment it with each restart.
 
-   - Option 2: Or, dynamically change your domain using `kubectl patch`.
+   - Option 2: Dynamically change your domain using `kubectl patch`.
      - To get the current `restartVersion` call:
        ```
        kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
@@ -1469,18 +1443,18 @@ Let's go through the steps:
        ```
        kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
        ```
-   - Option 3: Or, use the sample helper script.
+   - Option 3: Use the sample helper script.
      - Call `/tmp/mii-sample/utils/patch-restart-version.sh -n sample-domain1-ns -d sample-domain1`.
      - This will perform the same `kubectl get` and `kubectl patch` commands as Option 2.
 
 
-1. _Wait for the roll._
+1. Wait for the roll.
 
     Now that you've started a domain roll, you'll need to wait for it to complete if you want to verify that the data source was deployed.
 
    - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
 
-   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`; this is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
+   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
      {{%expand "Click here to expand the `wl-pod-wait.sh` usage." %}}
    ```
@@ -1714,19 +1688,19 @@ Let's go through the steps:
   ```
      {{% /expand%}}
 
-1. After your domain is up and running, you can call the sample web application to determine if the data source was deployed.
+1. After your domain is running, you can call the sample web application to determine if the data source was deployed.
 
-   Send a web application request to the load balancer:
+   Send a web application request to the Ingress Controller:
 
    ```  
-   curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```  
 
    Or, if Traefik is unavailable and your Administration Server pod is running, you can try `kubectl exec`:
 
    ```  
-   kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
+   $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```  
 
@@ -1760,32 +1734,19 @@ Let's go through the steps:
    ```
    {{% /expand%}}
 
-That's it!
-
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-### Accessing the WebLogic Server Administration Console
-
-{{% notice warning %}} This sample externally exposes the WebLogic Server Administration Console using a plain text HTTP port. This is _not_ secure and should not be done in production deployments.
-{{% /notice %}}
-
-In the prerequisites, you deployed an Ingress that will route the path `/console` to the administration service port `7001` at pod `sample-domain1-admin-server` in the `sample-domain1-ns` namespace.
-
-To access the Console from the browser:
-
- - If the domain and your browser are running on the same machine, you can access the Console with the URL `http://localhost:30305/console`.
-
- - If the domain is on a remote machine from your browser, you can access the Console with the URL `http://your-domain-host-address:30305/console`.
-
-The login credentials are `weblogic/welcome1`.
+This completes the sample scenario.
 
 
 ### Cleanup
 
+If you wish to remove the resources you have created in this sample:
+
 1. Delete the domain resources.
    ```
-   /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
-   /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
+   $ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+   $ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
    ```
 
    This deletes the domain and any related resources that are labeled with the domain UID `sample-domain1` and `sample-domain2`.
@@ -1794,45 +1755,37 @@ The login credentials are `weblogic/welcome1`.
 
    > **Note**: When you delete a domain, the operator should detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
 
-2. If you set up the Traefik load balancer:
+2. If you set up the Traefik Ingress Controller:
 
    ```
-   helm delete --purge traefik-operator
-   kubectl delete namespace traefik
+   $ helm delete --purge traefik-operator
+   $ kubectl delete namespace traefik
    ```
 
-3. If you set up a database for `JRF`...
-   {{%expand "...then click here." %}}
+3. If you set up a database for `JRF`:
    ```
-   /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
+   $ /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
-   {{% /expand%}}
 
 4. Delete the operator and its namespace:
    ```
-   helm delete --purge sample-weblogic-operator
-   kubectl delete namespace sample-weblogic-operator-ns
+   $ helm delete --purge sample-weblogic-operator
+   $ kubectl delete namespace sample-weblogic-operator-ns
    ```
 
 6. Delete the domain's namespace:
    ```
-   kubectl delete namespace sample-domain1-ns
+   $ kubectl delete namespace sample-domain1-ns
    ```
 
 7. Delete the images you may have created in this sample:
    ```
-   docker image rm model-in-image:WLS-v1
-   docker image rm model-in-image:WLS-v2
-   docker image rm model-in-image:WLS-v3
+   $ docker image rm model-in-image:WLS-v1
+   $ docker image rm model-in-image:WLS-v2
+   $ docker image rm model-in-image:JRF-v1
+   $ docker image rm model-in-image:JRF-v2
    ```
 
-   {{%expand "Click here if you created JRF images." %}}
-   ```
-   docker image rm model-in-image:JRF-v1
-   docker image rm model-in-image:JRF-v2
-   docker image rm model-in-image:JRF-v3
-   ```
-   {{% /expand%}}
 
 ### References
 
