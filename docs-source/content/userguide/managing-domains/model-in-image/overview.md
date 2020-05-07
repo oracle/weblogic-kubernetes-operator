@@ -7,7 +7,7 @@ description = "Introduction to Model in Image, description of its runtime behavi
 +++
 
 {{% notice info %}}
-This feature is only supported in 3.0.0-RC1.
+This feature is supported only in 3.0.0-RC1.
 {{% /notice %}}
 
 #### Content
@@ -36,7 +36,7 @@ This feature is supported for standard WLS domains, Restricted JRF domains, or J
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file.  The WDT model format is described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
-For JRF domains, Model in Image provides additional support for initializing the RCU database for a domain when a domain is started for first time, supplying an RCU password, and obtaining an RCU wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#7-prerequisites-for-jrf-domain-types" >}}) and [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
+For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#7-prerequisites-for-jrf-domain-types" >}}) and [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}).
 
 
 #### Runtime behavior overview
@@ -58,20 +58,17 @@ Model updates can be applied at runtime by changing the image, secrets, or WDT m
 
 #### Continuous integration and delivery (CI/CD)
 
-##### General CI/CD considerations
-
 To understand how Model in Image works with CI/CD, see [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
-##### Always use external state
+#### Always use external state
 
-Regardless of the domain home source type, you should always keep
-state outside the Docker image. This means that you should
-use JDBC stores for leasing tables, JMS and transaction stores,
+Regardless of the domain home source type, we recommend that you always keep
+state outside the Docker image. This includes JDBC stores for leasing tables, JMS and transaction stores,
 EJB timers, JMS queues, and so on. This ensures that data will not be lost when
 a container is destroyed.
 
 We recommend that state be kept in a database to take advantage of built-in
-database server HA, and the fact that disaster recovery of sites across all
+database server high availability features, and the fact that disaster recovery of sites across all
 but the shortest distances, almost always requires using a single database
 server to consolidate and replicate data (DataGuard).
 
