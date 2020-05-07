@@ -281,7 +281,7 @@ Location | Description |
 
 ### Additional prerequisites for JRF domains
 
-> __NOTE__: If you're using a `WLS` domain type, skip this section and continue [here]("#nojrf").
+> __NOTE__: If you're using a `WLS` domain type, skip this section and continue [here](#initial-use-case).
 
 #### JRF Prerequisites Contents
 
@@ -427,10 +427,6 @@ Alternatively, use the sample's wallet utility:
 > **Note**: The sample JRF domain resource files included in `/tmp/mii-sample/domain-resources` already have the above YAML stanza.
 
 See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}) for instructions.
-
-{{% rawhtml %}}
-<a name="nojrf"></a>
-{{% rawhtml %}}
 
 ### Initial use case
 
