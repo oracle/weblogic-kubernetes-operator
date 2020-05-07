@@ -1440,6 +1440,7 @@ public class TestUtils {
         }
       } else {
         LoggerHelper.getLocal().log(Level.INFO, "Application deployed successfully, stdout = " + result.stdout());
+        break;
       }
     }
 
