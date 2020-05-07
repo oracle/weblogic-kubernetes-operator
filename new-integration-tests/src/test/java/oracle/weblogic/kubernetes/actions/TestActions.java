@@ -213,12 +213,13 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterName the name of the WebLogic domain cluster
    * @param managedServerPort the port number of the WebLogic domain managed servers
+   * @param ingressHostname the host name used by the ingress for the host name based routing
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createIngress(String domainNamespace, String domainUid, String clusterName,
-                                      int managedServerPort) throws ApiException {
-    return Nginx.createIngress(domainNamespace, domainUid, clusterName, managedServerPort);
+  public static boolean createIngress(String ingressName, String domainNamespace, String domainUid, String clusterName,
+                                      int managedServerPort, String ingressHostname) {
+    return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterName,
+                               managedServerPort, ingressHostname);
   }
 
   /**
