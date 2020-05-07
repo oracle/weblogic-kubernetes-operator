@@ -451,8 +451,7 @@ function createMII_Image() {
 
   tracen "Info: Downloading WDT and WIT"
   printdots_start
-  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_download.sh \
-   > ${test_home}/miibuild_download.out 2>&1
+  ${SCRIPTPATH}/util_download_mii_tools.sh > ${test_home}/miibuild_download.out 2>&1
   local rc=$?
   printdots_end
   if [ $rc -ne 0 ] ; then
@@ -464,8 +463,7 @@ function createMII_Image() {
   tracen "Info: Launching WIT to build the image"
   printdots_start
 
-  ${SOURCEPATH}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/build_image_model.sh \
-   > ${test_home}/miibuild_image.out  2>&1
+  ${SCRIPTPATH}/util_build_mii_image.sh > ${test_home}/miibuild_image.out  2>&1
   local rc=$?
   printdots_end
 
