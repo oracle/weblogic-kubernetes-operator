@@ -55,7 +55,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -116,7 +115,7 @@ class ItSimpleValidation implements LoggedTest {
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
             .hostPath(new V1HostPathVolumeSource()
-                .path(TestConstants.PV_ROOT + "/" + domainUid + "-persistentVolume")))
+                .path(TestConstants.PV_ROOT))) // Removing  `+ "/" + domainUid + "-persistentVolume"` for now
         .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .withNamespace(domainNamespace1)
