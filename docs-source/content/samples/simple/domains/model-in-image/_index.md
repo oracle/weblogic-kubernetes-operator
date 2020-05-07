@@ -17,7 +17,7 @@ This feature is only supported in 3.0.0-RC1.
      - [Sample directory structure](#sample-directory-structure)
    - [References](#references)
    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
-   - [Prerequisites for JRF domains](#prerequisites-for-jrf-domains)
+   - [Prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
    - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model ConfigMap
    - [Accessing the WebLogic Server Administration Console](#accessing-the-weblogic-server-administration-console)
@@ -293,18 +293,14 @@ Location | Description |
 
 ##### Introduction to JRF setups
 
-> __NOTE__: This section is required only for demonstrating a `JRF` domain type. If your domain type is `WLS`, skip this section and proceed to the [Initial use case](#initial-use-case).
+> __NOTE__: The requirements in this section are in addition to [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
-> __NOTE__: This section is _in addition to_ [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
-
-A JRF domain requires: an infrastructure database called an RCU database, initializing this database, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain.
-
-Furthermore, if you want to have a restarted JRF domain access updates to the infrastructure database that the domain made at an earlier time, the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
+A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. All of these steps must occur before you create your domain.
 
 
 ##### Set up and initialize an RCU database
 
-A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables. The following example shows how to set up a sample RCU database and use the RCU tool to create the infrastructure schema for a JRF domain. The RCU database is set up with the following attributes:
+A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables. The following example shows how to set up a database and use the RCU tool to create the infrastructure schema for a JRF domain. The database is set up with the following attributes:
 
 | Attribute | Value |
 | --------- | ----- |
@@ -317,7 +313,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
 | database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 
 
-1. Ensure that you have access to the database image, and then deploy it:
+1. Ensure that you have access to the database image, and then create a deployment using it:
 
    - Use a browser to log in to `https://container-registry.oracle.com`, select `database->enterprise` and accept the license agreement.
 
@@ -328,11 +324,11 @@ A JRF domain requires an infrastructure database and also requires initializing 
    - Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
 
      ```
-     cd /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service
-     start-db-service.sh
+     $ cd /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service
+     $ start-db-service.sh
      ```
 
-     This script will deploy a database in the `default` namespace with the URL, `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password, `Oradoc_db1`.
+     This script will deploy a database in the `default` namespace with the connect string `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password `Oradoc_db1`.
 
      This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
@@ -344,47 +340,51 @@ A JRF domain requires an infrastructure database and also requires initializing 
    Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
    ```
-   cd /tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema
-   ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
+   $ cd /tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema
+   $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
    __NOTE__:  If you need to drop the repository, use this command:
 
    ```
-   drop-rcu-schema.sh -s FMW1
+   $ drop-rcu-schema.sh -s FMW1
    ```
 
 
 ##### Increase introspection job timeout
 
-Because JRF domain home creation takes a considerable amount of time the first time it is created, and because Model in Image creates your domain home for you using the introspection job, you should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your domain resource to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the domain resource files that are provided in `/tmp/mii-sample/domain-resources` already set this value for you.
+The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your domain resource to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the domain resource files that are provided in `/tmp/mii-sample/domain-resources` already set this value.
 
 ##### Be aware of RCU model attributes, domain resource attributes, and secrets
 
-To allow Model in Image to access the RCU database and OPSS wallet, it's necessary to set up an RCU access secret for the RCU URL, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your domain resource before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
+To allow Model in Image to access the database and OPSS wallet, you must create an RCU access secret containing the database connect string, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your domain resource before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
 
-The sample already includes examples of JRF models and domain resources in the `/tmp/mii-sample/model-images` and `/tmp/mii-sample/domain-resources` directories, and instructions later on will describe setting up the RCU and OPSS secrets.
+The sample includes examples of JRF models and domain resources in the `/tmp/mii-sample/model-images` and `/tmp/mii-sample/domain-resources` directories, and instructions in the following sections will describe setting up the RCU and OPSS secrets.
 
 When you follow the instructions later in this sample, avoid instructions that are `WLS` only, and substitute `JRF` for `WLS` in the corresponding model image tags and domain resource file names.
 
-For reference:
+For example:
 
   - JRF domain resources in this sample have an `opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`.
 
   - JRF image models in this sample have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
-##### Reusing or sharing RCU tables
+##### Important considerations for reusing or sharing OPSS tables
 
-Note that when you successfully deploy your JRF domain resource for the first time, the introspector job will initialize the RCU tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
+{{% notice warning %}}
+We do not recommend that most users share OPSS tables.  Extreme caution is required when sharing OPSS tables between domains.
+{{% /notice %}}
 
-There are scenarios when the domain needs to be re-created between updates, such as when WebLogic credentials are changed, security roles defined in the WDT model have been changed, or you want to share the same RCU tables with different domains.  In these scenarios, the operator needs the `walletPasswordSecret` as well as the OPSS wallet file, together with the exact information in `domainInfo -> RCUDbInfo` so that the domain can be re-created and access the same set of RCU tables.  Without the wallet file and wallet password, you will not be able to re-create a domain accessing the same set of RCU tables, therefore we strongly recommend that you back up the wallet file.
+When you successfully deploy your JRF domain resource for the first time, the introspector job will initialize the OPSS tables for the domain using the `domainInfo -> RCUDbInfo` stanza in the WDT model plus the `configuration.opss.walletPasswordSecret` specified in the domain resource. The job will also create a new domain home. Finally, the operator will also capture an OPSS wallet file from the new domain's local directory and place this file in a new Kubernetes config map.
 
-To recover a domain's RCU tables between domain restarts or to share an RCU schema between different domains, it is necessary to extract this wallet file from the domain's automatically deployed introspector config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
+There are scenarios when the domain needs to be recreated between updates, such as when WebLogic credentials are changed, security roles defined in the WDT model have been changed, or you want to share the same infrastructure tables with different domains.  In these scenarios, the operator needs the `walletPasswordSecret` as well as the OPSS wallet file, together with the exact information in `domainInfo -> RCUDbInfo` so that the domain can be recreated and access the same set of tables.  Without the wallet file and wallet password, you will not be able to recreate a domain accessing the same set of  tables, therefore we strongly recommend that you back up the wallet file.
+
+To recover a domain's OPSS tables between domain restarts or to share an OPSS schema between different domains, it is necessary to extract this wallet file from the domain's automatically deployed introspector config map and save the OPSS wallet password secret that was used for the original domain. The wallet password and wallet file are needed again when you recreate the domain or share the database with other domains.
 
 To save the wallet file, assuming that your namespace is `sample-domain1-ns` and your domain UID is `sample-domain1`:
 
 ```
-  kubectl -n sample-domain1-ns \
+  $ kubectl -n sample-domain1-ns \
     get configmap sample-domain1-weblogic-domain-introspect-cm \
     -o jsonpath='{.data.ewallet\.p12}' \
     > ./ewallet.p12
@@ -393,24 +393,26 @@ To save the wallet file, assuming that your namespace is `sample-domain1-ns` and
 Alternatively, you can save the file using the sample's wallet utility:
 
 ```
-  /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
+  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 ```
 
 __Important! Back up your wallet file to a safe location that can be retrieved later.__
 
-To reuse the wallet file in subsequent redeployments or to share the domain's RCU tables between different domains:
+To reuse the wallet file in subsequent redeployments or to share the domain's OPSS tables between different domains:
 
 1. Load the saved wallet file into a secret with a key named `walletFile` (again, assuming that your domain UID is `sample-domain1` and your namespace is `sample-domain1-ns`):
 
 ```
-  kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret --from-file=walletFile=./ewallet.p12
-  kubectl -n sample-domain1-ns label  secret         sample-domain1-opss-walletfile-secret weblogic.domainUID=`sample-domain1`
+  $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret \
+     --from-file=walletFile=./ewallet.p12
+  $ kubectl -n sample-domain1-ns label secret sample-domain1-opss-walletfile-secret \
+     weblogic.domainUID=`sample-domain1`
 ```
 
 Alternatively, use the sample's wallet utility:
 ```
-  /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
+  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 ```
 
