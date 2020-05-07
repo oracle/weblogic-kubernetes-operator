@@ -426,8 +426,6 @@ Alternatively, use the sample's wallet utility:
 ```
 > **Note**: The sample JRF domain resource files included in `/tmp/mii-sample/domain-resources` already have the above YAML stanza.
 
-See [Reusing an RCU database]({{< relref "/userguide/managing-domains/model-in-image/reusing-rcu.md" >}}) for instructions.
-
 ### Initial use case
 
 #### Contents
