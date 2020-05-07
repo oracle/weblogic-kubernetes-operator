@@ -76,7 +76,7 @@ This sample demonstrates two Model in Image use cases:
 
 #### Sample directory structure
 
-Take a moment to familiarize yourself with the sample's directory structure. Don't worry if you don't understand the meaning of all of the terms; the sample will describe them as it steps you through each use case.
+The sample contains the following files and directories:
 
 Location | Description |
 ------------- | ----------- |
@@ -84,29 +84,20 @@ Location | Description |
 `archives` | Source code location for WebLogic Deploy Tooling application ZIP archives |
 `model-images` | Staging for each model image's WDT YAML, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images|
 `model-configmaps` | Staging files for a model ConfigMap that configures a data source |
-`ingresses` | Load balancer Ingresses |
+`ingresses` | Ingress resources |
 `utils/wl-pod-wait.sh` | Utility for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state |
 `utils/patch-restart-version.sh` | Utility for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll') |
 `utils/opss-wallet.sh` | Utility for exporting or importing a JRF domain OPSS wallet file |
 
-### References
-
-For references to the relevant user documentation, see:
- - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
- - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
- - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
-
 ### Prerequisites for all domain types
 
-1. _Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`. Most users should choose `WLS`._
+1. _Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`._
 
-   {{%expand "Click here for details." %}}
    - The first time you try this sample, we recommend that you choose `WLS` even if you're familiar with `JRF`.
    - This is because `WLS` is simpler and will more easily familiarize you with Model in Image concepts.
-   - We recommend choosing `JRF` only if: you are already familiar with `JRF`, you have already tried the `WLS` path through this sample, and you have a definite use case where you need to use `JRF`.
-   {{% /expand%}}
+   - We recommend choosing `JRF` only if you are already familiar with `JRF`, you have already tried the `WLS` path through this sample, and you have a definite use case where you need to use `JRF`.
 
-1. _The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 installation. (The `JAVA_HOME` will be used by the WebLogic Image Tool.)_
+1. _The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation._
 
 1. _Get the operator source and put it in `/tmp/operator-source`._
 
@@ -122,23 +113,23 @@ For references to the relevant user documentation, see:
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
-1. _Copy the sample to an empty working directory; for example, use directory `/tmp/mii-sample`._
+1. _Copy the sample to a new directory; for example, use directory `/tmp/mii-sample`._
 
 
    ```
    mkdir /tmp/mii-sample
    cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
-
-   > **Note**: If the working directory already exists, then you should delete or rename the old directory prior to copying over the sample files. It is important to start with a directory that contains only this sample's original source files.
-
+   
    > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
-1. _Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik load balancer is managing the same namespace and listening on port 30305._
+1. _Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik Ingress Controller is managing the same namespace and listening on port 30305._
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
-   > **Note**: Skip the Quick Start steps for obtaining a WebLogic image because you will be creating your own Docker image.
+{{% notice info %}}
+Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
+{{% /notice %}}
 
 1. _Make sure there are no conflicting WebLogic related domains, Ingresses, secrets, or config maps that are already deployed to namespace `sample-domain1-ns`._
 
@@ -1909,3 +1900,10 @@ The login credentials are `weblogic/welcome1`.
    docker image rm model-in-image:JRF-v3
    ```
    {{% /expand%}}
+
+### References
+
+For references to the relevant user documentation, see:
+ - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
+ - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
+ - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
