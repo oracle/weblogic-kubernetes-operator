@@ -6,7 +6,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 ---
 
 {{% notice info %}}
-This feature is only supported in 3.0.0-RC1.
+This feature is supported only in 3.0.0-RC1.
 {{% /notice %}}
 
 ### Contents
