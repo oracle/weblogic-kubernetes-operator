@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4">
+  <description>JSP 2.0 Expression Language Example</description>
+  <display-name>JSP 2.0 Expression Language Example</display-name>
+  <module>
+    <web>
+      <web-uri>myapp_war</web-uri>
+      <context-root>myapp_war</context-root>
+    </web>
+  </module>
+</application>
