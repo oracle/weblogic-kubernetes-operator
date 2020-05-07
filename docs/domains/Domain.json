@@ -510,8 +510,10 @@
       ]
     },
     "Map": {
-      "type": "object",
-      "properties": {}
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
     },
     "Model": {
       "type": "object",
