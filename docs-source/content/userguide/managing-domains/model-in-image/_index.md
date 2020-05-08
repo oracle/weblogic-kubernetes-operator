@@ -1,7 +1,7 @@
 +++
-title = "Access the domain"
-date = 2019-02-23T17:39:00-05:00
-weight = 7
+title = "Model in Image"
+date = 2020-03-11T16:45:16-05:00
+weight = 5
 pre = "<b> </b>"
 +++
 

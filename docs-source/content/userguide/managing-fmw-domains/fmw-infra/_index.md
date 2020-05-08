@@ -32,8 +32,8 @@ listed here, FMW Infrastructure domains work in the same way as WebLogic Server 
 The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
-FMW Infrastructure domains are supported using both the "domain on a persistent volume"
-and the "domain in a Docker image" [models]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+FMW Infrastructure domains are supported using both Domain in PV
+and Domain in Image [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 If you plan to experiment with upper stack products (which are not officially supported
 by the operator yet), we strongly recommend using the domain on a persistent
 volume approach.
@@ -46,7 +46,7 @@ following limitations currently exist for FMW Infrastructure domains:
 * The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
   currently supports WebLogic Server logs only.  Other logs will not be sent to
   Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
-  like Logstash or fluentd to get logs.
+  like Logstash or Fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
   been added yet.
@@ -61,6 +61,7 @@ following limitations currently exist for FMW Infrastructure domains:
 
 The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
 The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+The FMW Infrastructure 12.2.1.4.0 images do not require patches.
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
@@ -78,13 +79,13 @@ $ docker login container-registry.oracle.com
 Then, you can pull the image with this command:
 
 ```
-$ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+$ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 ```
 If desired, you can:
 
-* Check the WLS version with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
+* Check the WLS version with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
 
-* Check the WLS patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
+* Check the WLS patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
 
 Additional information about using this image is available in the
 [Oracle Container Registry](https://container-registry.oracle.com).
@@ -95,7 +96,7 @@ Additional information about using this image is available in the
 You can also create a Docker image containing the FMW Infrastructure binaries.
 We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure)
  in the Oracle GitHub account that demonstrates how to create a Docker image
-to run the FMW Infrastructure. Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.3/README.md)
+to run the FMW Infrastructure. Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.4/README.md)
 file associated with this sample for important prerequisite steps,
 such as building or pulling the Server JRE Docker image and downloading the Fusion Middleware
 Infrastructure installer binary.
@@ -105,10 +106,10 @@ or e-delivery, you create your image by running the provided script:
 
 ```bash
 cd docker-images/OracleFMWInfrastructure/dockerfiles
-./buildDockerImage.sh -v 12.2.1.3 -s
+./buildDockerImage.sh -v 12.2.1.4 -s
 ```
 
-The image produced will be named `oracle/fmw-infrastructure:12.2.1.3`.
+The image produced will be named `oracle/fmw-infrastructure:12.2.1.4`.
 
 You must also install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}})
 to use this image with the operator.  We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
@@ -124,11 +125,7 @@ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 
 This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
 
-All samples and instructions reference the pre-built and already patched image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`. When building your own image, you will need to rename `oracle/fmw-infrastructure:12213-update-k8s` to `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`.
-
-```
-$ docker tag oracle/fmw-infrastructure:12213-update-k8s container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3
-```
+All samples and instructions reference the pre-built image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4`. Because these samples build an image based on WebLogic Server 12.2.1.3 and use the tag, `oracle/fmw-infrastructure:12213-update-k8s`, be sure to update your sample inputs to use this `image` value.
 
 These samples allow you to create a Docker image containing the FMW Infrastructure
 binaries and the necessary patch.  You can use this image to run the Repository Creation Utility
@@ -149,9 +146,9 @@ same existing requirements apply.
 For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.
 
 {{% notice warning %}}
-The Oracle Database Docker images are only supported for non-production use. 
+The Oracle Database Docker images are only supported for non-production use.
 For more details, see My Oracle Support note:
-Oracle Support for Database Running on Docker (Doc ID 2216342.1) 
+Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
 
 ##### Running the database inside Kubernetes
@@ -313,12 +310,12 @@ image that you built earlier as a "service" pod to run RCU.  To do this, start u
 pod using that image as follows:
 
 ```bash
-kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3 -- sleep infinity
+kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4 -- sleep infinity
 
 ```
 
 This will create a Kubernetes deployment called `rcu` containing a pod running a container
-created from the `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3` image which will just run
+created from the `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4` image which will just run
 `sleep infinity`, which essentially creates a pod that we can "exec" into and use to run whatever
 commands we need to run.
 
@@ -434,7 +431,7 @@ the operator will initiate a rolling restart of the domain.
 
 If you wish to apply a non-ZDP compliant patch to the FMW Infrastructure binary image,
 you must shut down the entire domain before applying the patch. Please see the documentation on
-[domain life cycle operations]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}})
+[domain lifecycle operations]({{< relref "/userguide/managing-domains/domain-lifecycle/_index.md" >}})
 for more information.
 
 An example of a non-ZDP compliant patch is one that includes a schema change

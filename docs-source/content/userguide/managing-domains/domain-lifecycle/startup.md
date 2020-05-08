@@ -77,7 +77,7 @@ If more servers are configured as `ALWAYS` than the cluster's `replicas` count, 
 For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server
 so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
 property, which is available at domain, cluster, and server levels.  When `serverStartState` is set to `ADMIN`, then servers will
-progress only to the administrative state.  You could then use the WebLogic console, REST API, or a WLST script to make any necessary
+progress only to the administrative state.  Then you could use the WebLogic Server Administration Console, REST API, or a WLST script to make any necessary
 updates before advancing the server to the running state.
 
 Changes to the `serverStartState` property do not affect already started servers.
@@ -239,7 +239,8 @@ The operator will restart servers when any of the follow properties on the domai
 
 * `containerSecurityContext`
 * `domainHome`
-* `domainHomeInImage`
+* `domainHomeInImage` (in releases before 3.0.0-rc1)
+* `domainHomeSourceType` (introduced in 3.0.0-rc1)
 * `env`
 * `image`
 * `imagePullPolicy`
@@ -280,6 +281,12 @@ The primary server creates a primary session state on the server to which the cl
 Specifying a `maxUnavailable` property value of `1` protects against inadvertent session state loss which could occur if both the primary and secondary
 servers are shut down at the same time during the rolling restart process.
 
+{{% notice note %}}
+If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-configuration" >}}) and [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this chapter.
+{{% /notice %}}
+
+### Common restarting scenarios
+
 #### Using `restartVersion` to force the operator to restart servers
 
 The `restartVersion` property lets you force the operator to restart servers.
@@ -297,7 +304,6 @@ The `restartVersion` property can be specified at the domain, cluster, and serve
 The servers will also be restarted if `restartVersion` is removed from the domain resource (for example, if you had previously specified a value to cause a restart, then you remove that value after the previous restart has completed).
 {{% /notice %}}
 
-### Common restarting scenarios
 
 #### Restart all the servers in the domain
 
@@ -360,7 +366,7 @@ Set `restartVersion` at the `managedServer` level to a new value.
 ```
 #### Full domain restarts
 
-To do a full domain restart, first shut down all of the domain's servers (Administration and Managed Servers), taking the domain out of service,
+To do a full domain restart, first shut down all of the domain's servers (Administration Server and Managed Servers), taking the domain out of service,
 then restart them.  Unlike rolling restarts, the operator cannot detect and initiate a full domain restart; you must always manually initiate it.
 
 To manually initiate a full domain restart:
