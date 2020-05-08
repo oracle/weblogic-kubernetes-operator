@@ -185,7 +185,7 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if an Operator pod running in a given namespace.
+   * Checks if an operator pod is running in a given namespace.
    * The method assumes the operator name to starts with weblogic-operator-
    * and decorated with label weblogic.operatorName:namespace
    * @param namespace in which to check for the pod existence
