@@ -98,12 +98,17 @@ sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}
 
 ### Modifying domain configurations
 
-You can modify the WebLogic domain configuration for both Domain in PV and Domain in Image before deploying a domain resource:
+You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a domain resource:
 
-* When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
-* For either case, you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).   
+When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
 
-Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and also support parameterizing overrides so that you can inject values into them from Kubernetes secrets.   For example, you can inject database user names, passwords, and URLs that are stored in a secret.
+For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
+
+Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
+parameterizing overrides so that you can inject values into them from Kubernetes secrets. For example, you can inject database user names, passwords,
+and URLs that are stored in a secret.
+
+For Model in Image you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 ### About the domain resource
 
