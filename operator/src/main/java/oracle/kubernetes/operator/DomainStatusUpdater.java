@@ -426,10 +426,7 @@ public class DomainStatusUpdater {
       }
 
       private String getRunningState(String serverName) {
-        if (serverState != null) {
-          return serverState.getOrDefault(serverName, SHUTDOWN_STATE);
-        }
-        return SHUTDOWN_STATE;
+        return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
       }
 
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
