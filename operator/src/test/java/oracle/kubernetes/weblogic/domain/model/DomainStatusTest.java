@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -14,6 +15,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
@@ -259,23 +261,84 @@ public class DomainStatusTest {
     domainStatus.addServer(cluster1Server1).addServer(cluster2Server1)
         .addServer(cluster1Server2).addServer(standAloneServerA).addServer(adminServer);
 
-    assertThat(domainStatus.servers,
+    assertThat(domainStatus.getServers(),
         contains(adminServer, standAloneServerA, cluster1Server1, cluster1Server2, cluster2Server1));
   }
 
   @Test
   public void verifyThat_setServers_serverSortedInExpectedOrdering() {
-    ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
-    ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
-    ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
-    ServerStatus adminServer = new ServerStatus().withServerName("admin-server").withIsAdminServer(true);
-    ServerStatus standAloneServerA = new ServerStatus().withServerName("a");
+    ServerStatus cluster1Server1 = createStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
+    ServerStatus cluster1Server2 = createStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
+    ServerStatus cluster2Server1 = createStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
+    ServerStatus adminServer = createStatus().withServerName("admin-server").withIsAdminServer(true);
+    ServerStatus standAloneServerA = createStatus().withServerName("a");
 
     domainStatus.setServers(Arrays.asList(cluster1Server1,
         cluster2Server1, cluster1Server2, standAloneServerA, adminServer));
 
-    assertThat(domainStatus.servers,
+    assertThat(domainStatus.getServers(),
         contains(adminServer, standAloneServerA, cluster1Server1, cluster1Server2, cluster2Server1));
+  }
+
+  private ServerStatus createStatus() {
+    return new ServerStatus().withState("a");
+  }
+
+  @Test
+  public void whenMatchingServersExist_setServersUpdatesState() {
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1"));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1"));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("3").withState("state1"));
+    
+    domainStatus.setServers(Arrays.asList(
+          new ServerStatus().withClusterName("1").withServerName("1").withState("state1"),
+          new ServerStatus().withClusterName("1").withServerName("2").withState("state1"),
+          new ServerStatus().withServerName("admin").withIsAdminServer(true).withState("state2")
+    ));
+
+    assertThat(getServer("1", "1").getState(), equalTo("state1"));
+    assertThat(getServer("1", "2").getState(), equalTo("state1"));
+    assertThat(getServer(null, "admin").getState(), equalTo("state2"));
+  }
+
+  @Test
+  public void whenSetServerIncludesServerWithoutStateAndNoExistingState_defaultToSHUTDOWN() {
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1"));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1"));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("3").withState("state1"));
+
+    domainStatus.setServers(Arrays.asList(
+          new ServerStatus().withClusterName("1").withServerName("1").withState("state1"),
+          new ServerStatus().withClusterName("1").withServerName("2").withState("state1"),
+          new ServerStatus().withClusterName("1").withServerName("3").withState("state2"),
+          new ServerStatus().withClusterName("2").withServerName("1")
+    ));
+
+    assertThat(getServer("2", "1").getState(), equalTo(SHUTDOWN_STATE));
+  }
+
+  @Test
+  public void whenSetServerIncludesServerWithoutStateAndHasExistingState_preserveIt() {
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1"));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1"));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("3").withState("state1"));
+
+    domainStatus.setServers(Arrays.asList(
+          new ServerStatus().withClusterName("1").withServerName("1").withState("state1"),
+          new ServerStatus().withClusterName("1").withServerName("2").withState("state1"),
+          new ServerStatus().withClusterName("1").withServerName("3")
+    ));
+
+    assertThat(getServer("1", "3").getState(), equalTo("state1"));
+  }
+
+  private ServerStatus getServer(String clusterName, String serverName) {
+    return domainStatus.getServers()
+          .stream()
+          .filter(s -> Objects.equals(clusterName, s.getClusterName()))
+          .filter(s -> Objects.equals(serverName, s.getServerName()))
+          .findFirst()
+          .orElse(null);
   }
 
   @Test
@@ -303,7 +366,7 @@ public class DomainStatusTest {
 
     domainStatus.addCluster(cluster10).addCluster(cluster1).addCluster(cluster2);
 
-    assertThat(domainStatus.clusters, contains(cluster1, cluster2, cluster10));
+    assertThat(domainStatus.getClusters(), contains(cluster1, cluster2, cluster10));
   }
 
   @Test
@@ -314,9 +377,7 @@ public class DomainStatusTest {
 
     domainStatus.setClusters(Arrays.asList(cluster10, cluster1, cluster2));
 
-    List<ClusterStatus> clusterStatuses = domainStatus.clusters;
-
-    assertThat(clusterStatuses, contains(cluster1, cluster2, cluster10));
+    assertThat(domainStatus.getClusters(), contains(cluster1, cluster2, cluster10));
   }
 
   @Test

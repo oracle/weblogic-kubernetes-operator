@@ -1,0 +1,56 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'prod'
+
+topology:
+    Name: domain1
+    AdminServerName: "admin-server"
+    Cluster:
+        "cluster-1":
+            DynamicServers:
+                ServerTemplate:  "cluster-1-template"
+                ServerNamePrefix: "managed-server"
+                DynamicClusterSize: 5
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+    Server:
+        "admin-server":
+            ListenPort: 7001
+    ServerTemplate:
+        "cluster-1-template":
+            Cluster: "cluster-1"
+            ListenPort : '@@PROP:MANSVR_PORT@@'
+resources:
+    JDBCSystemResource:
+        MyDataSource:
+            Target: "cluster-1"
+            JdbcResource:
+                JDBCDataSourceParams:
+                    JNDIName: jdbc/generic1
+                JDBCDriverParams:
+                    DriverName: com.mysql.jdbc.Driver
+                    URL: '@@FILE:/weblogic-operator/config-overrides-secrets/SECRET_NAME/dburl@@'
+                    PasswordEncrypted: '@@FILE:/weblogic-operator/config-overrides-secrets/SECRET_NAME/password@@'
+                    Properties:
+                        user:
+                            Value: '@@FILE:/weblogic-operator/config-overrides-secrets/SECRET_NAME/username@@'
+                        oracle.net.CONNECT_TIMEOUT:
+                            Value: '5200'
+                DatasourceType: GENERIC
+                JDBCConnectionPoolParams:
+                    StatementCacheSize: 10
+                    InitialCapacity: 2
+                    MinCapacity: 2
+                    TestTableName: SQL ISVALID
+                    StatementCacheType: LRU
+                    MaxCapacity: 5
+appDeployments:
+    Application:
+        mydsear:
+            SourcePath: wlsdeploy/applications/ds_app.ear
+            ModuleType: ear
+            Target: 'cluster-1'
