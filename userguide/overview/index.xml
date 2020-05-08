@@ -19,7 +19,7 @@
       <guid>/weblogic-kubernetes-operator/userguide/overview/prepare/</guid>
       <description>Set up your Kubernetes cluster If you need help setting up a Kubernetes environment, check our cheat sheet.
 After creating Kubernetes clusters, you can optionally:
- Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to the WebLogic Kubernetes Operator Load Balancer Samples for information about the current capabilities and setup instructions for each of the supported load balancers.</description>
+ Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. For information about the current capabilities and setup instructions for each of the supported load balancers, see the WebLogic Operator Load Balancer Samples.</description>
     </item>
     
     <item>
@@ -37,7 +37,7 @@ After creating Kubernetes clusters, you can optionally:
       <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/overview/database/</guid>
-      <description>Run the Oracle database in Kubernetes If you wish to run the Oracle database inside your Kubernetes cluster, in order to place your state store, leasing tables, and such, in that database, then you can use this sample to install the database.
+      <description>Run the Oracle database in Kubernetes If you want to run the Oracle database inside your Kubernetes cluster, in order to place your state store, leasing tables, and such, in that database, then you can use this sample to install the database.
 The Oracle Database Docker images are only supported for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.</description>
     </item>
     

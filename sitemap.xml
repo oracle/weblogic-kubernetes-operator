@@ -123,11 +123,6 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/</loc>
-    <lastmod>2019-04-18T07:32:31-05:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/weblogic-kubernetes-operator/userguide/managing-fmw-domains/soa-suite/</loc>
     <lastmod>2019-04-18T06:46:23-05:00</lastmod>
   </url>
@@ -155,6 +150,11 @@
   <url>
     <loc>/weblogic-kubernetes-operator/userguide/introduction/demo/</loc>
     <lastmod>2019-02-23T20:51:59-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url>
   
   <url>
@@ -200,11 +200,6 @@
   <url>
     <loc>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/</loc>
     <lastmod>2019-10-01T14:32:31-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/</loc>
-    <lastmod>2019-04-18T07:32:31-05:00</lastmod>
   </url>
   
   <url>
@@ -303,7 +298,7 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/</loc>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url>
   
@@ -348,8 +343,18 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/</loc>
+    <lastmod>2020-03-11T16:45:16-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup/</loc>
     <lastmod>2019-12-05T06:46:23-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/</loc>
+    <lastmod>2019-04-18T07:32:31-05:00</lastmod>
   </url>
   
   <url>
@@ -398,6 +403,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/</loc>
+    <lastmod>2019-04-18T07:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/userguide/cicd/tools/</loc>
     <lastmod>2019-04-11T13:50:15-04:00</lastmod>
   </url>
@@ -415,11 +425,6 @@
   <url>
     <loc>/weblogic-kubernetes-operator/security/</loc>
     <lastmod>2019-02-23T17:34:48-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/</loc>
-    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url>
   
   <url>
@@ -445,6 +450,11 @@
   <url>
     <loc>/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/</loc>
     <lastmod>2019-02-23T17:39:00-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url>
   
   <url>
@@ -483,8 +493,18 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/overview/</loc>
+    <lastmod>2020-03-11T16:45:16-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/faq/cannot-pull-image/</loc>
     <lastmod>2019-03-23T08:08:19-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/</loc>
+    <lastmod>2020-03-11T16:45:16-05:00</lastmod>
   </url>
   
   <url>
@@ -498,6 +518,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/</loc>
+    <lastmod>2020-03-11T16:45:16-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/faq/fan/</loc>
     <lastmod>2019-10-11T17:20:00-05:00</lastmod>
   </url>
@@ -508,8 +533,18 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/</loc>
+    <lastmod>2020-03-11T16:45:16-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/faq/oci-lb/</loc>
     <lastmod>2019-09-25T12:41:38-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/</loc>
+    <lastmod>2020-03-11T16:45:16-05:00</lastmod>
   </url>
   
   <url>

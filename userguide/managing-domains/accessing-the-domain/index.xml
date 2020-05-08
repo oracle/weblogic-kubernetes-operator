@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Accessing the domain on WebLogic Kubernetes Operator</title>
+    <title>Access the domain on WebLogic Kubernetes Operator</title>
     <link>/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/</link>
-    <description>Recent content in Accessing the domain on WebLogic Kubernetes Operator</description>
+    <description>Recent content in Access the domain on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 23 Feb 2019 17:39:00 -0500</lastBuildDate>
@@ -12,7 +12,7 @@
     
     
     <item>
-      <title>Using WLST</title>
+      <title>Use WLST</title>
       <link>/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/</link>
       <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
       

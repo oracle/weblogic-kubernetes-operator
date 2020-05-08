@@ -17,8 +17,8 @@
       <pubDate>Wed, 06 Mar 2019 21:14:18 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/certificates/</guid>
-      <description>Updating operator external certificate If the operator needs to update the external certificate and key currently being used or was installed without an external REST API SSL/TLS identity, the helm upgrade command is used to re-start the operator with the new or updated kubernetes tls secret that contains the desired certificate(s).
-The operator requires a re-start in order to begin using the new or udpated external certificate. The Helm --recreate-pods flag is used to cause the existing kubernetes pod to be terminated and a new pod to be started with the updated configuration.</description>
+      <description>Updating operator external certificates If the operator needs to update the external certificate and key currently being used or was installed without an external REST API SSL/TLS identity, the helm upgrade command is used to restart the operator with the new or updated Kubernetes tls secret that contains the desired certificates.
+The operator requires a restart in order to begin using the new or updated external certificate. The Helm --recreate-pods flag is used to cause the existing Kubernetes pod to be terminated and a new pod to be started with the updated configuration.</description>
     </item>
     
     <item>
@@ -27,8 +27,8 @@ The operator requires a re-start in order to begin using the new or udpated exte
       <pubDate>Sat, 23 Feb 2019 17:36:29 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/encryption/</guid>
-      <description>Contents  WebLogic Kubernetes Operator introspector encryption Encryption of Kubernetes secrets Additional reading  WebLogic Kubernetes Operator introspector encryption The WebLogic Kubernetes Operator has an introspection job that handles WebLogic domain encryption. The introspection also addresses use of Kubernetes secrets for use with configuration overrides. For additional information on the configuration handling, see the configuration overrides documentation.
-The introspection also creates a boot.properties file that is made available to the pods in the WebLogic domain.</description>
+      <description>Contents  Introspector encryption Encryption of Kubernetes secrets Additional reading  Introspector encryption The operator has an introspection job that handles WebLogic domain encryption. The introspection job also addresses the use of Kubernetes secrets with configuration overrides. For additional information on the configuration handling, see Configuration overrides.
+The introspection job also creates a boot.properties file that is made available to the pods in the WebLogic domain. The credential used for the WebLogic domain is kept in a Kubernetes Secret which follows the naming pattern &amp;lt;domainUID&amp;gt;-weblogic-credentials, where &amp;lt;domainUID&amp;gt; is the unique identifier of the domain, for example, mydomain-weblogic-credentials.</description>
     </item>
     
     <item>
@@ -37,7 +37,7 @@ The introspection also creates a boot.properties file that is made available to 
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/service-accounts/</guid>
-      <description>WebLogic Kubernetes Operator service account When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed. For more information about the Helm chart, see the operator Helm configuration values.
+      <description>WebLogic Server Kubernetes Operator service accounts When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed. For more information about the Helm chart, see the Operator Helm configuration values.
 The operator will use this ServiceAccount when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.</description>
     </item>
     
@@ -47,7 +47,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/rbac/</guid>
-      <description>Contents  Overview Operator RBAC definitions  Role and role binding naming convention Cluster role and cluster role binding naming convention   Role bindings Cluster role bindings  Overview The operator assumes that certain Kubernetes roles are created in the Kubernetes cluster. The operator Helm chart creates the required cluster roles, cluster role bindings, roles and role bindings for the ServiceAccount that is used by the operator. The operator will also attempt to verify that the RBAC settings are correct when the operator starts running.</description>
+      <description>Contents  Overview Operator RBAC definitions  Role and role binding naming convention Cluster role and cluster role binding naming convention   Role bindings Cluster role bindings  Overview The operator assumes that certain Kubernetes roles are created in the Kubernetes cluster. The operator Helm chart creates the required cluster roles, cluster role bindings, roles, and role bindings for the ServiceAccount that is used by the operator. The operator will also attempt to verify that the RBAC settings are correct when the operator starts running.</description>
     </item>
     
     <item>
@@ -56,7 +56,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Sat, 23 Feb 2019 17:36:33 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/secrets/</guid>
-      <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic Kubernetes Operator image pull secret WebLogic Kubernetes Operator configuration override secrets WebLogic Kubernetes Operator external REST interface secret WebLogic Kubernetes Operator internal REST interface secret  WebLogic domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
+      <description>Contents  Domain credentials secret Domain image pull secret Operator image pull secret Operator configuration override secrets Operator external REST interface secret Operator internal REST interface secret  Domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
     </item>
     
     <item>

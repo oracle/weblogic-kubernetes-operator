@@ -17,7 +17,7 @@
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/introduction/</guid>
-      <description>Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
+      <description>Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Server Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
 All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly.</description>
     </item>
     
@@ -38,7 +38,7 @@ You should clone this repository to your local machine so that you have access t
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/get-images/</guid>
-      <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store and accept the license agreement for the WebLogic Server image.
+      <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store, and accept the license agreement for the WebLogic Server image.
   Log in to the Docker store from your Docker client:
 $ docker login   Pull the operator image:
 $ docker pull oracle/weblogic-kubernetes-operator:2.5.0   Pull the Traefik load balancer image:</description>
@@ -50,10 +50,8 @@ $ docker pull oracle/weblogic-kubernetes-operator:2.5.0   Pull the Traefik load 
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/install/</guid>
-      <description>Grant the Helm service account the cluster-admin role. $ cat &amp;lt;&amp;lt;EOF | kubectl apply -f - apiVersion: rbac.authorization.k8s.io/v1 kind: ClusterRoleBinding metadata: name: helm-user-cluster-admin-role roleRef: apiGroup: rbac.authorization.k8s.io kind: ClusterRole name: cluster-admin subjects: - kind: ServiceAccount name: default namespace: kube-system EOF Use Helm to install the operator and Traefik load balancer. First, set up Helm.
-For Helm version 2.x:
-$ helm init For Helm version 3.x:
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ Create a Traefik (Ingress-based) load balancer.</description>
+      <description>Grant the Helm service account the cluster-admin role. $ cat &amp;lt;&amp;lt;EOF | kubectl apply -f - apiVersion: rbac.authorization.k8s.io/v1 kind: ClusterRoleBinding metadata: name: helm-user-cluster-admin-role roleRef: apiGroup: rbac.authorization.k8s.io kind: ClusterRole name: cluster-admin subjects: - kind: ServiceAccount name: default namespace: kube-system EOF Use Helm to install the operator and Traefik load balancer. First, set up Helm:
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ Create a Traefik (Ingress-based) load balancer. Create a namespace for the load balancer.</description>
     </item>
     
     <item>
@@ -85,11 +83,9 @@ $ helm upgrade traefik-operator stable/traefik \  --namespace traefik \  --reuse
       
       <guid>/weblogic-kubernetes-operator/quickstart/cleanup/</guid>
       <description>Remove the domain.   Remove the domain&amp;rsquo;s Ingress by using helm:
-For Helm 2.x:
-$ helm delete --purge sample-domain1-ingress For Helm 3.x:
 $ helm uninstall sample-domain1-ingress -n sample-domain1-ns   Remove the domain resources by using the sample delete-weblogic-domain-resources script:
 $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1   Use kubectl to confirm that the server pods and domain resource are gone:
-$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.</description>
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.   Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:</description>
     </item>
     
   </channel>

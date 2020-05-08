@@ -18,7 +18,7 @@
       
       <guid>/weblogic-kubernetes-operator/security/domain-security/image-protection/</guid>
       <description>WebLogic domain in Docker image protection Oracle strongly recommends storing the Docker images that contain a WebLogic domain home as private in the Docker registry. In addition to any local registry, public Docker registries include Docker Hub and the Oracle Cloud Infrastructure Registry (OCIR).
- The WebLogic domain home that is part of a Docker image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, data source password).</description>
+ The WebLogic domain home that is part of a Docker image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
     </item>
     
     <item>
@@ -27,8 +27,8 @@
       <pubDate>Fri, 08 Mar 2019 19:07:36 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</guid>
-      <description>WebLogic T3 channels Oracle recommends not to expose any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary. If exposing any of these channels, limit access using controls like security lists or set up a Bastion to provide access.
- When accessing T3/RMI based channels, the preferred approach is to kubectl exec into the Kubernetes pod and then run wlst or set up Bastion access and then run wlst from the Bastion host to connect to the Kubernetes cluster.</description>
+      <description>WebLogic T3 channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary. If exposing any of these channels, limit access using controls like security lists or set up a Bastion to provide access.
+ When accessing T3 or RMI based channels, the preferred approach is to kubectl exec into the Kubernetes pod and then run wlst, or set up Bastion access and then run wlst from the Bastion host to connect to the Kubernetes cluster.</description>
     </item>
     
   </channel>

@@ -72,7 +72,7 @@ Because we want to balance separating destabilizing work into feature branches a
       
       <guid>/weblogic-kubernetes-operator/developerguide/code-structure/</guid>
       <description>This project has the following directory structure:
- docs: Generated Javadoc and Swagger integration-tests: Integration test suite json-schema: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation model: Domain resource Java model operator: Operator runtime site: This documentation src/scripts: Scripts operator injects into WebLogic server instance Pods swagger: Swagger files for the Kubernetes API server and domain resource  Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
+ docs: Generated Javadoc and Swagger integration-tests: Integration test suite json-schema: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation model: Domain resource Java model operator: Operator runtime site: This documentation src/scripts: Scripts operator injects into WebLogic Server instance Pods swagger: Swagger files for the Kubernetes API server and domain resource  Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
     </item>
     
     <item>
