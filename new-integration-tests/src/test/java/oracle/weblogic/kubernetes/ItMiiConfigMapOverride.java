@@ -137,8 +137,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   /**
    * Install operator.
+   *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -188,7 +189,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
-                  REPO_SECRET_NAME, opNamespace));
+        REPO_SECRET_NAME, opNamespace));
 
     // map with secret
     Map<String, Object> secretNameMap = new HashMap<String, Object>();
@@ -269,21 +270,21 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-            "welcome1", domainNamespace),
-            String.format("createSecret failed for %s", adminSecretName));
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, "weblogic",
+        "welcome1", domainNamespace),
+        String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-            "weblogicenc", domainNamespace),
-             String.format("createSecret failed for %s", encryptionSecretName));
+        "weblogicenc", domainNamespace),
+        String.format("createSecret failed for %s", encryptionSecretName));
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -309,9 +310,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
 
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainUid, domainNamespace, adminSecretName, 
-              REPO_SECRET_NAME, encryptionSecretName, 
-              replicaCount);
+    createDomainResource(domainUid, domainNamespace, adminSecretName,
+        REPO_SECRET_NAME, encryptionSecretName,
+        replicaCount);
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
@@ -361,9 +362,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
-    String adminPodCreationTime = 
-         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
-        String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
+    String adminPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
     assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
 
@@ -418,9 +419,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
-    String newAdminPodCreationTime = 
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
-        String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
+    String newAdminPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
     assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
     if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {
@@ -522,11 +523,11 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   private void createRepoSecret(String domNamespace) throws ApiException {
     V1Secret repoSecret = new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(REPO_SECRET_NAME)
-                    .namespace(domNamespace))
-            .type("kubernetes.io/dockerconfigjson")
-            .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+        .metadata(new V1ObjectMeta()
+            .name(REPO_SECRET_NAME)
+            .namespace(domNamespace))
+        .type("kubernetes.io/dockerconfigjson")
+        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = false;
     try {
@@ -545,73 +546,73 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     }
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s",
-            REPO_SECRET_NAME, domNamespace));
+        REPO_SECRET_NAME, domNamespace));
   }
 
   private void createDomainSecret(String secretName, String username, String password, String domNamespace)
-          throws ApiException {
+      throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
     secretMap.put("password", password);
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(domNamespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
 
   }
 
-  private void createDomainResource(String domainUid, String domNamespace, 
-          String adminSecretName, String repoSecretName, 
-          String encryptionSecretName, int replicaCount) {
+  private void createDomainResource(String domainUid, String domNamespace,
+                                    String adminSecretName, String repoSecretName,
+                                    String encryptionSecretName, int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
-            .apiVersion(API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domNamespace))
-            .spec(new DomainSpec()
-                    .domainUid(domainUid)
-                    .domainHomeSourceType("FromModel")
-                    .image(miiImage)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
-                    .includeServerOutInPodLog(true)
-                    .serverStartPolicy("IF_NEEDED")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(0))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
-                    .configuration(new Configuration()
-                            .model(new Model()
-                                    .domainType("WLS")
-                                    .runtimeEncryptionSecret(encryptionSecretName))));
+        .apiVersion(API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))));
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domNamespace);
+        domainUid, domNamespace);
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domNamespace));
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", domainUid, domNamespace));
+        + "for %s in namespace %s", domainUid, domNamespace));
   }
 
   private void checkPodCreated(String podName, String domainUid, String domNamespace) {
