@@ -18,11 +18,13 @@ public interface TestConstants {
       "oracle/weblogic-kubernetes-operator";
   public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
       "../buildDockerImage.sh";
-  public static final String REPO_NAME = "phx.ocir.io/weblogick8s/";
   public static final String REPO_DUMMY_VALUE = "dummy";
   public static final String REPO_SECRET_NAME = "ocir-secret";
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
       .orElse(REPO_DUMMY_VALUE);
+  public static final String REPO_DEFAULT = "phx.ocir.io/weblogick8s/";
+  public static final String REPO_NAME = Optional.ofNullable(System.getenv("KIND_REPO"))
+      .orElse(!REPO_REGISTRY.equals(REPO_DUMMY_VALUE) ? REPO_DEFAULT : "");
   public static final String REPO_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_PASSWORD = Optional.ofNullable(System.getenv("REPO_PASSWORD"))
@@ -39,7 +41,7 @@ public interface TestConstants {
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
-      System.getProperty("java.io.tmpdir")) + "/ittestspvroot";
+      System.getProperty("java.io.tmpdir") + "/ittestspvroot");
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
