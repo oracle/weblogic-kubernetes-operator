@@ -9,31 +9,41 @@ function cleanup {
 function create_image_pull_secret_wl {
 
   set +x 
+
+  if [ "$LOCAL_RUN" = "true" ]; then
+    if [ ! -z "$(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)" ]; then
+      return 0
+    fi
+    docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+    if [ $? -eq 0 ]; then
+      return 0
+    fi
+  fi
+
   if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
-		echo "Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the WebLogic image."
-	  exit 1
-	fi
+    echo "Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the WebLogic image."
+    exit 1
+  fi
   
   if [ -n "$OCR_USERNAME" ] && [ -n "$OCR_PASSWORD" ]; then  
-	  echo "Creating Docker Secret"
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=${OCR_SERVER}/ \
-	    --docker-username=$OCR_USERNAME \
-	    --docker-password=$OCR_PASSWORD \
-	    --docker-email=$OCR_USERNAME@oracle.com \
-            --dry-run -o yaml | kubectl apply -f -
+    echo "Creating Docker Secret"
+    kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+      --docker-server=${OCR_SERVER}/ \
+      --docker-username=$OCR_USERNAME \
+      --docker-password=$OCR_PASSWORD \
+      --docker-email=$OCR_USERNAME@oracle.com \
+      --dry-run -o yaml | kubectl apply -f -
 	  
-	  echo "Checking Secret"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-	    exit 1
-	  fi
+    echo "Checking Secret"
+    SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+    if [ "$SECRET" != "1" ]; then
+      echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+      exit 1
+    fi
 	  
-	  # below docker pull is needed to for domain home in image tests the base image should be in local repo
-	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
-	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
-	  
+    # below docker pull is needed to for domain home in image tests the base image should be in local repo
+    docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
+    docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
 }
