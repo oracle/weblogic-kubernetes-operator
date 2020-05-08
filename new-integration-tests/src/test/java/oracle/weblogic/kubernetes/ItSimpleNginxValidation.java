@@ -400,8 +400,8 @@ class ItSimpleNginxValidation implements LoggedTest {
       int numberOfServers = 2 * i - 1;
 
       // scale cluster-1 to 1 server and cluster-2 to 3 servers
-      logger.info("scaling cluster-1 of domain {0} in namespace {1} to {2} servers",
-          domainUid, domainNamespace, numberOfServers);
+      logger.info("scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
+          clusterName, domainUid, domainNamespace, numberOfServers);
       scaleAndVerifyDomain(domainUid, domainNamespace, clusterName, replicaCount, numberOfServers);
 
       // then scale cluster-1 and cluster-2 to 0 server
@@ -691,22 +691,22 @@ class ItSimpleNginxValidation implements LoggedTest {
             String.format("Pod %s still exists in namespace %s", podName, domainNamespace)));
   }
 
-  /** Scale the cluster to numberOfServers of the domainin the specified domain namespace.
+  /** Scale the WebLogic cluster of the domain to numberOfServers in the specified domain namespace.
    *  Verify the pods are created or deleted depending on the numberOfServers. Also verify
    *  NGINX can access the sample apps to all the servers after the scale operation.
    *
    * @param domainUid the domain with domainUid which will be scaled
    * @param domainNamespace the domain namespace the domain resides
-   * @param clusterName the cluster in the domain to be scaled
-   * @param replicasBeforeScale the replicas of the cluster before the scale
+   * @param clusterName the WebLogic cluster name in the domain to be scaled
+   * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
    * @param numberOfServers the number of servers to be scaled to
-   * @return the replicas of the cluster after the scale
+   * @return the replicas of the WebLogic cluster after the scale
    */
   private int scaleAndVerifyDomain(String domainUid,
-                                    String domainNamespace,
-                                    String clusterName,
-                                    int replicasBeforeScale,
-                                    int numberOfServers) {
+                                   String domainNamespace,
+                                   String clusterName,
+                                   int replicasBeforeScale,
+                                   int numberOfServers) {
 
     String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-managed-server";
 
@@ -793,7 +793,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   /**
    * Get the curl command to ping the sample app from the ingress controller.
    *
-   * @param clusterName cluster name which is the backend of the ingress
+   * @param clusterName WebLogic cluster name which is the backend of the ingress
    * @return curl command string
    */
   private String generateCurlCmd(String clusterName) {
@@ -806,8 +806,8 @@ class ItSimpleNginxValidation implements LoggedTest {
   /**
    * Construct an expected server name list which should be returned in the sample app response.
    *
-   * @param clusterName the cluster name which is the backend of the ingress
-   * @param replicasBeforeScale the replicas of cluster before scale
+   * @param clusterName the WebLogic cluster name which is the backend of the ingress
+   * @param replicasBeforeScale the replicas of WebLogic cluster before scale
    * @return list of server names which should be in the sample app response
    */
   private List<String> generateExpectedServerNamesInAppResponse(String clusterName, int replicasBeforeScale) {
