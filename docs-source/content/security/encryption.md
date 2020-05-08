@@ -6,27 +6,25 @@ description: "WebLogic domain encryption and the operator"
 ---
 #### Contents
 
-* [WebLogic Kubernetes Operator introspector encryption](#weblogic-kubernetes-operator-introspector-encryption")
-* [Encryption of Kubernetes secrets](#encryption-of-kubernetes-secrets")
+* [Introspector encryption](#introspector-encryption)
+* [Encryption of Kubernetes secrets](#encryption-of-kubernetes-secrets)
 * [Additional reading](#additional-reading)
 
-#### WebLogic Kubernetes Operator introspector encryption
+#### Introspector encryption
 
-The WebLogic Kubernetes Operator has an introspection job that handles WebLogic domain encryption.
-The introspection also addresses use of Kubernetes secrets for use with configuration overrides.
-For additional information on the configuration handling, see the
-[configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md">}})
-documentation.
+The operator has an introspection job that handles WebLogic domain encryption.
+The introspection job also addresses the use of Kubernetes secrets with configuration overrides.
+For additional information on the configuration handling, see
+[Configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md">}}).
 
-The introspection also creates a `boot.properties` file that is made available
+The introspection job also creates a `boot.properties` file that is made available
 to the pods in the WebLogic domain. The credential used for the
 WebLogic domain is kept in a Kubernetes `Secret` which follows the naming pattern
 `<domainUID>-weblogic-credentials`, where `<domainUID>` is
 the unique identifier of the domain, for example, `mydomain-weblogic-credentials`.
 
 {{% notice info %}}
-For more information about the WebLogic credentials secret, see [Secrets]({{<relref "/security/secrets.md#reference">}})
-under **Security**.
+For more information about the WebLogic credentials secret, see [Secrets]({{<relref "/security/secrets.md">}}).
 {{% /notice %}}
 
 #### Encryption of Kubernetes secrets

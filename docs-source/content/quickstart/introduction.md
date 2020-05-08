@@ -5,7 +5,7 @@ draft: false
 weight: 1
 ---
 
-Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production.
+Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Server Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production.
 These instructions assume that you are already familiar with Kubernetes.  If you need more detailed instructions, please
 refer to the [User guide]({{< relref "/userguide/_index.md" >}}).
 
@@ -16,8 +16,6 @@ You may need to adjust the instructions in this guide to suit your particular fl
 {{% /notice %}}
 
 **Important note for users of operator releases before 2.0**
-{{% expand "Click here to expand" %}}
-
 
 {{% notice warning %}}
 If you have an older version of the operator installed on your cluster, for example, a 1.x version or one of the 2.0 release
@@ -30,5 +28,3 @@ Error from server (BadRequest): error when creating "/scratch/output/uidomain/we
 the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1
 ```
 {{% /notice %}}
-
-{{% /expand %}}

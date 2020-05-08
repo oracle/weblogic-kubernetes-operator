@@ -1,7 +1,7 @@
 ---
 title: "Delete domain resources"
 date: 2019-02-23T17:32:31-05:00
-weight: 6
+weight: 7
 description: "Delete the domain resources created while executing the samples."
 ---
 
@@ -25,7 +25,7 @@ To limit the amount of time spent on attempting to delete domain resources, use 
 The option must be followed by an integer that represents the total number of seconds
 that will be spent attempting to delete resources. The default number of seconds is 120.
 
-The optional option `-t` shows what the script will delete without executing the deletion.
+The optional `-t` option shows what the script will delete without executing the deletion.
 
 To see the help associated with the script:
 ```

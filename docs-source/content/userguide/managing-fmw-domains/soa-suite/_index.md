@@ -41,7 +41,7 @@ This document provides details about the special considerations for deploying an
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.
 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
-[model]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
+[domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
 
 #### Prerequisites for SOA Suite domains
 
@@ -60,7 +60,7 @@ In this release, SOA Suite domains are supported using the “domain on a persis
 Compared to running a WebLogic Server domain in Kubernetes using the operator, the
 following limitations currently exist for SOA Suite domains:
 
-* The "domain in image" model is not supported.
+* The Domain in Image domain home source type is not supported.
 * Only configured clusters are supported.  Dynamic clusters are not supported for
   SOA Suite domains.  Note that you can still use all of the scaling features,
   you just need to define the maximum size of your cluster at domain creation time.
@@ -68,7 +68,7 @@ following limitations currently exist for SOA Suite domains:
 * The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
   currently supports WebLogic Server logs only.  Other logs will not be sent to
   Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
-  like Logstash or fluentd to get logs.
+  like Logstash or Fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
   been added yet.
@@ -110,8 +110,8 @@ For the Fusion Middleware Infrastructure image, you must install the [required p
 
 
   ```bash
-    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109
-    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200109  oracle/fmw-infrastructure:12.2.1.3
+    $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316
+    $ docker tag container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3-200316  oracle/fmw-infrastructure:12.2.1.3
   ```
 
 {{% notice warning %}}
@@ -348,7 +348,7 @@ to create your domain.  To continue, follow the instructions in the [SOA Domain 
 #### Configuring a load balancer for SOA Suite domains
 
 An Ingress based load balancer can be configured to access the Oracle SOA and Oracle Service Bus domain application URLs.
-Refer to the [setup Ingress](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/ingress/) document for details.
+Refer to the [Ingress](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/ingress/) document for details.
 
 As part of the `ingress-per-domain` setup for Oracle SOA and Oracle Service Bus domains, the `values.yaml` file (under the `ingress-per-domain` directory) needs to be updated with the appropriate values from your environment. A sample `values.yaml` file (for the Traefik load balancer) is shown below:
 
@@ -416,27 +416,28 @@ Now you can access the Oracle SOA Suite domain URLs, as listed below, based on t
 
 * Oracle SOA:
 
-  http://\<hostname\>:\<port\>/weblogic/ready  
-  http://\<hostname\>:\<port\>/console  
-  http://\<hostname\>:\<port\>/em  
-  http://\<hostname\>:\<port\>/soa-infra  
-  http://\<hostname\>:\<port\>/soa/composer  
-  http://\<hostname\>:\<port\>/integration/worklistapp
+  `http://\<hostname\>:\<port\>/weblogic/ready`  
+  `http://\<hostname\>:\<port\>/console`  
+  `http://\<hostname\>:\<port\>/em`  
+  `http://\<hostname\>:\<port\>/soa-infra`  
+  `http://\<hostname\>:\<port\>/soa/composer`  
+  `http://\<hostname\>:\<port\>/integration/worklistapp`
+
 
 * Oracle Enterprise Scheduler Service (ESS):
 
-  http://\<hostname\>:\<port\>/ess  
-  http://\<hostname\>:\<port\>/EssHealthCheck
+  `http://\<hostname\>:\<port\>/ess`  
+  `http://\<hostname\>:\<port\>/EssHealthCheck`
 
 * Oracle Service Bus (OSB):
 
-  http://\<hostname\>:\<port\>/servicebus  
-  http://\<hostname\>:\<port\>/lwpfconsole  
+  `http://\<hostname\>:\<port\>/servicebus`  
+  `http://\<hostname\>:\<port\>/lwpfconsole`  
 
 #### Monitoring a SOA domain
 
 After the SOA domain is set up, you can:
 
-* Monitor the SOA instance using Prometheus and Grafana. See [Monitoring a domain](https://github.com/oracle/weblogic-monitoring-exporter).
+* Monitor the SOA instance using Prometheus and Grafana. See [Monitor a SOA domain]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-monitoring-exporter-setup/_index.md" >}}).
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
-See [Publish logs to Elasticsearch](https://github.com/oracle/weblogic-logging-exporter).
+See [Publish logs to Elasticsearch]({{< relref "/samples/simple/elastic-stack/soa-domain/weblogic-logging-exporter-setup/_index.md" >}}).
