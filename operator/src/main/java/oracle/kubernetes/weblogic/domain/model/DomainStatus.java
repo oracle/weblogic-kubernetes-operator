@@ -322,8 +322,8 @@ public class DomainStatus {
   private ServerStatus getMatchingServer(ServerStatus server) {
     return getServers()
           .stream()
-          .filter(s -> s.getClusterName().equals(server.getClusterName()))
-          .filter(s -> s.getServerName().equals(server.getServerName()))
+          .filter(s -> Objects.equals(s.getClusterName(), server.getClusterName()))
+          .filter(s -> Objects.equals(s.getServerName(), server.getServerName()))
           .findFirst()
           .orElse(null);
   }
