@@ -11,7 +11,6 @@ description: "Helm is used to create and deploy necessary operator resources and
 Helm is a framework that helps you manage Kubernetes applications, and Helm charts help you define and install Helm applications into a Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
 
 **Important note for users of operator releases before 2.0**
-{{% expand "Click here to expand" %}}
 
 {{% notice warning %}}
 If you have an older version of the operator installed on your cluster, for example, a 1.x version or one of the 2.0 release
@@ -23,8 +22,6 @@ Error from server (BadRequest): error when creating "/scratch/output/uidomain/we
 the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1
 ```
 {{% /notice %}}      
-
-{{% /expand %}}
 
 #### Install Helm and Tiller
 
@@ -71,10 +68,10 @@ $ helm inspect values kubernetes/charts/weblogic-operator
 ```
 
 The available configuration values are explained by category in
-[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values">}}).
+[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values">}}).
 
 Helm commands are explained in more detail in
-[Useful Helm operations]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#useful-helm-operations">}}).
+[Useful Helm operations]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#useful-helm-operations">}}).
 
 #### Optional: Configure the operator's external REST HTTPS interface
 
@@ -83,27 +80,27 @@ The operator can expose an external REST HTTPS interface which can be accessed f
 To enable the external REST interface, configure these values in a custom configuration file, or on the Helm command line:
 
 * Set `externalRestEnabled` to `true`.
-* Set `externalRestIdentitySecret` to the name of the kubernetes `tls secret` that contains the certificate(s) and private key.
+* Set `externalRestIdentitySecret` to the name of the Kubernetes `tls secret` that contains the certificates and private key.
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
-For more detailed information, see the [REST interface configuration]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#rest-interface-configuration">}}) values.
+For more detailed information, see the [REST interface configuration]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#rest-interface-configuration">}}) values.
 
 ##### Sample SSL certificate and private key for the REST interface
 
-For testing purposes, the WebLogic Kubernetes Operator project provides a sample script
+For testing purposes, the WebLogic Server Kubernetes Operator project provides a sample script
 that generates a self-signed certificate and private key for the operator external REST interface.
-The generated certificate and key is stored in a Kubernetes `tls secret` and the sample
+The generated certificate and key are stored in a Kubernetes `tls secret` and the sample
 script outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.
 
 {{% notice warning %}}
 The sample script should ***not*** be used in a production environment because
-typically a self-signed certificate for external communucation is not considered safe.
-A certficate signed by a commercial certificate authority is more widely accepted and
-should contain valid host names, expiration dates and key constraints.
+typically a self-signed certificate for external communication is not considered safe.
+A certificate signed by a commercial certificate authority is more widely accepted and
+should contain valid host names, expiration dates, and key constraints.
 {{% /notice %}}
 
 For more detailed information about the sample script and how to run it, see
-the [REST APIs]({{<relref "/samples/simple/rest/_index.md#sample-to-create-certificate-and-key">}}) in the ***Samples*** section.
+the [REST APIs]({{<relref "/samples/simple/rest/_index.md#sample-to-create-certificate-and-key">}}).
 
 #### Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration
 
@@ -119,4 +116,4 @@ As part of the Elastic Stack integration, Logstash configuration occurs for each
 * Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.2`).
 * Set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
 
-For more detailed information, see the [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values">}}).
+For more detailed information, see the [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values">}}).
