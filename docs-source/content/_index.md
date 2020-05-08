@@ -38,12 +38,14 @@ release in the same cluster with at least one 2.x release of the operator to all
 
 The feature changes in 3.0.0-rc1 are:
 
-* Introduction of a new "Model In Image" feature which allows you to have a domain
+* Introduction of a new ["Model In Image"]({{% relref "/userguide/managing-domains/model-in-image" %}}) feature which allows you to have a domain
   created at pod startup time from a WebLogic Deploy Tool model and archive.
   This supports user-requested use cases like creating multiple domains from
   the same model and automated updating of the domain based on model changes.
   The operator automates management of the domain encryption keys to ensure
   that they are not changed during domain updates.
+  A [sample]({{% relref "/samples/simple/domains/model-in-image" %}}) is also provided that
+  demonstrates the key use cases for this feature.
 * Support for running the operator on Kubernetes 1.16.
 * Deprecation and removal of support for running the operator on Kubernetes 1.13
   and earlier versions.

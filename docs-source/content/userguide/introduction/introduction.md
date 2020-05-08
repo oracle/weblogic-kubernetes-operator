@@ -16,6 +16,8 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
+For the current production release 2.5.0: 
+
 * Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+ (check with `kubectl version`). Not supported on Kubernetes 1.16 or later; see note below.
   See note below for OpenShift.
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
@@ -30,10 +32,16 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
   not need the `cluster-admin` role at runtime.
 * We do not currently support running WebLogic in non-Linux containers.
 
+For the current preview release 3.0.0-rc1, the above is modified as follows:
+
+* Kubernetes 1.13.5+ support is deprecated and removed.
+* Kubernetes 1.16.0+ support is added.
+
 ### Important note about Kubernetes 1.16.0+
 
 Kubernetes 1.16 introduced changes to some Kubernetes APIs that are used by the operator.
-At this time, the operator will not work on Kubernetes 1.16.0+.
+At this time, the current production release of the operator will not work on Kubernetes 1.16.0+.
+(Note though that the current preview release 3.0.0-rc1 does support Kubernetes 1.16.0+).
 When we have made the necessary code changes, we will update this page to confirm support of 1.16.
 
 ### Cloud providers
