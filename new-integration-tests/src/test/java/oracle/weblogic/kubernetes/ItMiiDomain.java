@@ -567,6 +567,7 @@ class ItMiiDomain implements LoggedTest {
     List<Integer> appAvailability = new ArrayList<Integer>();
     
     if (enableAppAvailbilityCheck.equalsIgnoreCase("true")) {
+      logger.info("Start a thread to keep track of the application's availability");
       // start a new thread to collect the availability data of the application while the
       // main thread performs patching operation, and checking of the results.
       accountingThread =
@@ -614,7 +615,7 @@ class ItMiiDomain implements LoggedTest {
 
       // patch the domain resource with the new image and verify that the domain resource is patched, 
       // and all server pods are patched as well.
-      logger.info("Patch domain resource with the new image, and verify the results");
+      logger.info("Patch domain resource with image {0}, and verify the results", miiImagePatchAppV2);
       patchAndVerify(
           domainUid,
           domainNamespace,
@@ -670,7 +671,7 @@ class ItMiiDomain implements LoggedTest {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
-    logger.info("Check V2 application is still running after the previous test");
+    logger.info("Check that V2 application is still running after the previous test");
     for (int i = 1; i <= replicaCount; i++) {
       quickCheckAppRunning(
           domainNamespace,
@@ -702,7 +703,7 @@ class ItMiiDomain implements LoggedTest {
    
     // patch the domain resource with the new image and verify that the domain resource is patched, 
     // and all server pods are patched as well.
-    logger.info("Patch the domain with the new image, and verify the result"); 
+    logger.info("Patch the domain with image {0}, and verify the results", miiImageAddSecondApp); 
     patchAndVerify(
         domainUid,
         domainNamespace,
@@ -851,7 +852,7 @@ class ItMiiDomain implements LoggedTest {
     String appName1 = appDirList1.get(0);
     String appName2 = appDirList2.get(0);
     
-    logger.info("Build an application archive using what is in {0}", appDirList1);
+    logger.info("Build the first application archive using what is in {0}", appDirList1);
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -860,7 +861,7 @@ class ItMiiDomain implements LoggedTest {
         String.format("Failed to create application archive for %s",
             appName1));
     
-    logger.info("Build an application archive usingt what is in {0}", appDirList2);
+    logger.info("Build the second application archive usingt what is in {0}", appDirList2);
     assertTrue(
         buildAppArchive(
             defaultAppParams()
@@ -928,8 +929,8 @@ class ItMiiDomain implements LoggedTest {
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
     // build an image using WebLogic Image Tool
-    logger.info("Create image {0} using model directory {1}",
-        image, MODEL_DIR);
+    logger.info("Create image {0} using model list {1} and archive list {2}",
+        image, modelList, archiveList);
     boolean result = createMiiImage(
         defaultWitParams()
             .modelImageName(imageName)
@@ -940,7 +941,7 @@ class ItMiiDomain implements LoggedTest {
             .env(env)
             .redirect(true));
 
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
+    assertTrue(result, String.format("Failed to create image %s using WebLogic Image Tool", image));
 
     /* Check image exists using docker images | grep image tag.
      * Tag name is unique as it contains date and timestamp.
@@ -1196,7 +1197,7 @@ class ItMiiDomain implements LoggedTest {
       String expectedStr
   ) {
    
-    // check if the application is not running inside of a server pod
+    // check that the application is NOT running inside of a server pod
     withQuickRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Checking if application {0} is not running on pod {1} in namespace {2} "

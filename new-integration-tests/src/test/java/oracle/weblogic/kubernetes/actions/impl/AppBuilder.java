@@ -57,7 +57,7 @@ public class AppBuilder {
     try {
       cleanupDirectory(ARCHIVE_SRC_DIR);
       checkDirectory(ARCHIVE_SRC_DIR);
-      for (String item: params.srcDirList()) {
+      for (String item : params.srcDirList()) {
         copyFolder(
             APP_DIR + "/" + item, 
             ARCHIVE_SRC_DIR);
