@@ -3,15 +3,14 @@
 
 topology:
     Cluster:
-        "DynamicCluster":
-            DynamicServers:
-                ServerTemplate:  "DynamicCluster-template"
-                ServerNamePrefix: "dynamic-server"
-                DynamicClusterSize: 4
-                MinDynamicClusterSize: 2
-                MaxDynamicClusterSize: 4
-                CalculatedListenPorts: false
-    ServerTemplate:
-        "DynamicCluster-template":
-            Cluster: "DynamicCluster"
-            ListenPort : 8001
+        'ConfigCluster':
+    Server:
+        'config-server1':
+            Cluster: 'ConfigCluster'
+            ListenPort: '8001'
+        'config-server2':
+            Cluster: 'ConfigCluster'
+            ListenPort: '8001'
+        'config-server3':
+            Cluster: 'ConfigCluster'
+            ListenPort: '8001'
