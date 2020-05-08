@@ -791,7 +791,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   }
 
   /**
-   * Get the curl command to ping the sample app from the ingress controller.
+   * Generate the curl command to ping the sample app from the ingress controller.
    *
    * @param clusterName WebLogic cluster name which is the backend of the ingress
    * @return curl command string
@@ -804,7 +804,7 @@ class ItSimpleNginxValidation implements LoggedTest {
   }
 
   /**
-   * Construct an expected server name list which should be returned in the sample app response.
+   * Generate an expected server name list which should be returned in the sample app response.
    *
    * @param clusterName the WebLogic cluster name which is the backend of the ingress
    * @param replicasBeforeScale the replicas of WebLogic cluster before scale

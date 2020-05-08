@@ -217,8 +217,8 @@ public class TestActions {
    * @param ingressHostname the host name used by the ingress for the host name based routing
    * @return true on success, false otherwise
    */
-  public static boolean createIngress(String ingressName, String domainNamespace, String domainUid, String clusterName,
-                                      int managedServerPort, String ingressHostname) {
+  public static boolean createIngress(String ingressName, String domainNamespace, String domainUid,
+                                      String clusterName, int managedServerPort, String ingressHostname) {
     return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterName,
                                managedServerPort, ingressHostname);
   }
