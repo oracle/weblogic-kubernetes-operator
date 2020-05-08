@@ -1,7 +1,7 @@
 ---
 title: "Domain home on a PV"
 date: 2019-02-23T17:32:31-05:00
-weight: 4
+weight: 2
 description: "Sample for creating a WebLogic domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
@@ -12,10 +12,10 @@ The sample scripts demonstrate the creation of a WebLogic domain home on an exis
 
 Before you begin, read this document, [Domain resource]({{< relref "/userguide/managing-domains/domain-resource/_index.md" >}}).
 
-The following prerequisites must be handled prior to running the create domain script:
+The following prerequisites must be met prior to running the create domain script:
 
-* Make sure the WebLogic Kubernetes Operator is running.
-* The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. Refer to [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) for details on how to obtain or create the image.
+* Make sure the WebLogic Server Kubernetes Operator is running.
+* The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-docker-images" >}}).
 * Create a Kubernetes namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes namespace as the domain.
@@ -31,14 +31,14 @@ the `ReadWriteMany` option.
 
 Many storage providers will create a file system on
 the persistent volume which is owned by the `root` user.  In those cases, you will need to update the
-file permissions and/or ownership so that the `oracle` user (`uid 1000`) that is used in the standard
+file permissions or ownership so that the `oracle` user (`uid 1000`) that is used in the standard
 WebLogic Server Docker images can write to the file system in the persistent volume.
 
 This sample will automatically set the owner of all files on the persistent
 volume to `uid 1000`.  If you want to change that behavior, please edit `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml` and edit or remove the
 `initContainer` section.
 
-In some variants of Kubernetes (for example OpenShift) you may also need to configure your pods
+In some variants of Kubernetes (for example OpenShift), you may also need to configure your pods
 to run with user 1000 to make sure that the WebLogic processes can access the file system on the
 persistent volume.
 
@@ -54,7 +54,7 @@ $ ./create-domain.sh \
 
 The script will perform the following steps:
 
-* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, its contents must be removed before using this script.
+* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, then its contents must be removed before using this script.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
 * Run and wait for the job to finish.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
@@ -98,12 +98,12 @@ The following parameters can be provided in the inputs file.
 
 | Parameter | Definition | Default |
 | --- | --- | --- |
-| `adminPort` | Port number for the Administration Server inside the Kubernetes cluster. | `7001` |
+| `adminPort` | Port number of the Administration Server inside the Kubernetes cluster. | `7001` |
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
-| `createDomainFilesDir` | Directory on the host machine to locate all the files to create a WebLogic domain, including the script that is specified in the `createDomainScriptName` property. By default, this directory is set to the relative path `wlst`, and the create script will use the built-in WLST offline scripts in the `wlst` directory to create the WebLogic domain. It can also be set to the relative path `wdt`, and then the built-in WDT scripts will be used instead. An absolute path is also supported to point to an arbitrary directory in the file system. The built-in scripts can be replaced by the user-provided scripts or model files as long as those files are in the specified directory. Files in this directory are put into a Kubernetes config map, which in turn is mounted to the `createDomainScriptsMountPath`, so that the Kubernetes pod can use the scripts and supporting files to create a domain home. | `wlst` |
+| `createDomainFilesDir` | Directory on the host machine to locate all the files to create a WebLogic domain, including the script that is specified in the `createDomainScriptName` property. By default, this directory is set to the relative path `wlst`, and the create script will use the built-in WLST offline scripts in the `wlst` directory to create the WebLogic domain. It can also be set to the relative path `wdt`, and then the built-in WDT scripts will be used instead. An absolute path is also supported to point to an arbitrary directory in the file system. The built-in scripts can be replaced by the user-provided scripts or model files as long as those files are in the specified directory. Files in this directory are put into a Kubernetes ConfigMap, which in turn is mounted to the `createDomainScriptsMountPath`, so that the Kubernetes pod can use the scripts and supporting files to create a domain home. | `wlst` |
 | `createDomainScriptsMountPath` | Mount path where the create domain scripts are located inside a pod. The `create-domain.sh` script creates a Kubernetes job to run the script (specified in the `createDomainScriptName` property) in a Kubernetes pod to create a domain home. Files in the `createDomainFilesDir` directory are mounted to this location in the pod, so that the Kubernetes pod can use the scripts and supporting files to create a domain home. | `/u01/weblogic` |
 | `createDomainScriptName` | Script that the create domain script uses to create a WebLogic domain. The `create-domain.sh` script creates a Kubernetes job to run this script to create a domain home. The script is located in the in-pod directory that is specified in the `createDomainScriptsMountPath` property. If you need to provide your own scripts to create the domain home, instead of using the built-it scripts, you must use this property to set the name of the script that you want the create domain job to run. | `create-domain-job.sh` |
 | `domainHome` | Home directory of the WebLogic domain. If not specified, the value is derived from the `domainUID` as `/shared/domains/<domainUID>`. | `/shared/domains/domain1` |
@@ -111,22 +111,23 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. Refer to [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) for details on how to obtain or create the image. | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
+| `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
+| `image` | WebLogic Docker image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Docker images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-docker-images" >}}). | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
-| `includeServerOutInPodLog` | Boolean indicating whether to include the server .out to the pod's stdout. | `true` |
-| `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
-| `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod location for domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
+| `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
+| `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `2` |
+| `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
+| `logHome` | The in-pod location for domain log, server logs, server out, Node Manager log, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
 | `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc` | `domain1-weblogic-sample-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
-| `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
-| `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
-| `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would normally be a load balancer address. <p/>For development environments only: In a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. | If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster |
-| `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's user name and password. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `domain1-weblogic-credentials` |
+| `serverStartPolicy` | Determines which WebLogic Servers will be started. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
+| `t3ChannelPort` | Port for the T3 channel of the network access point. | `30012` |
+| `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only, in a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. | If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster. |
+| `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server user name and password. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `domain1-weblogic-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | `docker-store-secret` |
 | `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
 
@@ -145,9 +146,8 @@ Note that the example results below use the `default` Kubernetes namespace. If y
 The content of the generated `domain.yaml`:
 
 ```
-# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
@@ -162,10 +162,10 @@ metadata:
 spec:
   # The WebLogic Domain Home
   domainHome: /shared/domains/domain1
-  # If the domain home is in the image
-  domainHomeInImage: false
+  # Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
+  domainHomeSourceType: PersistentVolume
   # The WebLogic Server Docker image that the operator uses to start the domain
-  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.3"
+  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
@@ -298,7 +298,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /shared/domains/domain1
   Domain Home In Image:           false
-  Image:                          container-registry.oracle.com/middleware/weblogic:12.2.1.3
+  Image:                          container-registry.oracle.com/middleware/weblogic:12.2.1.4
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /shared/logs/domain1
@@ -416,10 +416,11 @@ $ kubectl create -f delete-domain-job.yaml
 ```
 ### Troubleshooting
 
-* Message: `status on iteration 20 of 20
+**Message**: `status on iteration 20 of 20
 pod domain1-create-weblogic-sample-domain-job-4qwt2 status is Pending
 The create domain job is not showing status completed after waiting 300 seconds.`  
-The most likely cause is related to the value of `persistentVolumeClaimName`, defined in `domain-home-on-pv/create-domain-inputs.yaml`.  To determine if this is the problem:
+The most likely cause is related to the value of `persistentVolumeClaimName`, defined in `domain-home-on-pv/create-domain-inputs.yaml`.  
+To determine if this is the problem:
 
     * Execute `kubectl get all --all-namespaces` to find the name of the `create-weblogic-sample-domain-job`.
     * Execute  `kubectl describe pod <name-of-create-weblogic-sample-domain-job>` to see if there is an event that has text similar to `persistentvolumeclaim "domain1-weblogic-sample-pvc" not found`.
@@ -434,10 +435,10 @@ Look for lines similar to:
 ```
 weblogic-operator1   pod/weblogic-operator-
 ```
-   If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
+   If you do not find something similar in the output, the WebLogic Server Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
 
 
-* Message: `ERROR: Unable to create folder /shared/domains`  
+**Message**: `ERROR: Unable to create folder /shared/domains`  
 The most common cause is a poor choice of value for `weblogicDomainStoragePath` in the input file used when you executed:
 ```
 create-pv-pvc.sh
@@ -451,7 +452,7 @@ create-domain.sh
   * Must be the name of a directory.
   * The directory must be world writable.  
 
-     Optionally, follow these steps to tighten permissions on the named directory after you run the sample the first time:
+Optionally, follow these steps to tighten permissions on the named directory after you run the sample the first time:
 
   * Become the root user.
   * `ls -nd $value-of-weblogicDomainStoragePath`
@@ -460,5 +461,6 @@ create-domain.sh
   * `chmod 755 $value-of-weblogicDomainStoragePath`
   * Return to your normal user ID.
 
-* Message: `ERROR: The create domain job will not overwrite an existing domain. The domain folder /shared/domains/domain1 already exists`  
+
+**Message**: `ERROR: The create domain job will not overwrite an existing domain. The domain folder /shared/domains/domain1 already exists`  
 You will see this message if the directory `domains/domain1` exists in the directory named as the value of `weblogicDomainStoragePath` in `create-pv-pvc-inputs.yaml`. For example, if the value of  `weblogicDomainStoragePath` is `/tmp/wls-op-4-k8s`, you would need to remove (or move) `/tmp/wls-op-4-k8s/domains/domain1`.

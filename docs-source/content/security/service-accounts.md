@@ -2,28 +2,28 @@
 title: "Service accounts"
 date: 2019-02-23T17:36:12-05:00
 weight: 4
-description: "Kubernetes service accounts for the WebLogic Kubernetes Operator"
+description: "Kubernetes service accounts for the operator"
 ---
 
 
-#### WebLogic Kubernetes Operator service account
+#### WebLogic Server Kubernetes Operator service accounts
 
 When the operator is installed, the Helm chart property, `serviceAccount`, can
 be specified where the value contains the name of the Kubernetes `ServiceAccount`
 in the namespace in which the operator will be installed.
 For more information about the Helm chart, see the
-[operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm/_index.md#operator-helm-configuration-values">}}).
+[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm/_index.md#operator-helm-configuration-values">}}).
 
 The operator will use this `ServiceAccount` when calling the Kubernetes API server
 and the appropriate access controls will be created for this `ServiceAccount` by
 the operator's Helm chart.
 
 {{% notice info %}}
-For more information about access controls, see [RBAC]({{<relref "/security/rbac.md">}}) under **Security**.
+For more information about access controls, see [RBAC]({{<relref "/security/rbac.md">}}).
 {{% /notice %}}
 
 {{% notice note %}}
-If the operator's service account cannot have the privileges to access the cluster-level resources, such as `CustomResourceDefinitions`, `Namespaces` and `PersistentVolumes`, consider using a `dedicated` namespace for each operator and the domains that the operator manages. See the `dedicated` setting in [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#operator-helm-configuration-values" >}}).
+If the operator's service account cannot have the privileges to access the cluster-level resources, such as `CustomResourceDefinitions`, `Namespaces` and `PersistentVolumes`, consider using a `dedicated` namespace for each operator and the domains that the operator manages. See the `dedicated` setting in [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}).
 {{% /notice %}}
 
 In order to display the `ServiceAccount` used by the operator,

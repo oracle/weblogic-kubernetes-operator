@@ -5,37 +5,37 @@ draft: false
 weight: 21
 ---
 
-> One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log report errors like this:
+> One or more WebLogic Server instances in my domain will not start and the domain resource `status` or the pod log reports errors like this:
 >
-> ***Domain secret mismatch. The domain secret in 'DOMAIN_HOME/security/SerializedSystemIni.dat' where DOMAIN_HOME='$DOMAIN_HOME' does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.***
+> ***Domain secret mismatch. The domain secret in `DOMAIN_HOME/security/SerializedSystemIni.dat` where DOMAIN_HOME=`$DOMAIN_HOME` does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic Servers in the same domain share the same domain secret.***
 
 When you see these kinds of errors, it means that the WebLogic domain directory's security configuration files have changed in an incompatible way between when the operator scanned
 the domain directory, which occurs during the "introspection" phase, and when the server instance attempted to start.
 
 To understand the "incompatible domain security configuration" type of failure, it's important to review the contents of the
-[WebLogic domain directory](https://docs.oracle.com/middleware/12213/wls/DOMCF/config_files.htm#DOMCF133). Each WebLogic
-domain directory contains a "security" subdirectory that contains a file called "SerializedSystemIni.dat".  This file contains
+[WebLogic domain directory](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/domcf/config_files.html#GUID-C8312BFA-340F-4B97-A12D-229DC2ADB1B3). Each WebLogic
+domain directory contains a `security` subdirectory that contains a file called `SerializedSystemIni.dat`.  This file contains
 security data to bootstrap the WebLogic domain, including a domain-specific encryption key.
 
 During introspection, the operator generates a Kubernetes job that runs a pod in the domain's Kubernetes namespace and with the
 same Kubernetes service account that will be used later to run the Administration Server. This pod has access to the Kubernetes
 secret referenced by `weblogicCredentialsSecret` and encrypts these values with the domain-specific encryption key so that the
-secured value can be injected in to the "boot.properties" files when starting server instances.
+secured value can be injected in to the `boot.properties` files when starting server instances.
 
-When the domain directory is changed such that the domain-specific encryption key is different, the "boot.properties" entries
+When the domain directory is changed such that the domain-specific encryption key is different, the `boot.properties` entries
 generated during introspection will now be invalid.
 
-This can happen in a variety of ways, depending on the [model selected](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/):
+This can happen in a variety of ways, depending on the [domain home source type](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/).
 
-#### Domain in a Docker image
+#### Domain in Image
 
 ##### Rolling to an image containing new or unrelated domain directory
 
-The error occurs while rolling pods to have containers based on a new Docker image that contains an entirely new or unrelated domain directory.
+The error occurs while rolling pods have containers based on a new Docker image that contains an entirely new or unrelated domain directory.
 
 The problem is that WebLogic cannot support server instances being part of the same WebLogic domain if the server instances do
 not all share the same domain-specific encryption key. Additionally, operator introspection
-currently happens only when starting servers following a total shutdown. Therefore, the "boot.properites" files generated from
+currently happens only when starting servers following a total shutdown. Therefore, the `boot.properites` files generated from
 introspecting the image containing the original domain directory will be invalid when used with a container started with
 the updated Docker image containing the new or unrelated domain directory.
 
@@ -54,7 +54,7 @@ may have different images under the same tag in their individual, local Docker r
 The simplest solution is to set `imagePullPolicy` to `Always`; however, the better solution would be to design your development
 pipeline to generate new Docker image tags on every build and to never reuse an existing tag.
 
-#### Domain on a persistent volume
+#### Domain in PV
 
 ##### Completely replacing the domain directory
 
