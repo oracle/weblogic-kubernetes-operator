@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities | Change |
 | --- | --- | --- | --- |
-| May 8, 2020 | v3.0.0-rc1 | yes; not compatible with earlier releases. | Adds Model in Image feature. Support for Kubernetes 1.16. Deprecation of support for Kubernetes 1.13 and earlier. Deprecation of support for Helm 2.x. |
+| May 8, 2020 | v3.0.0-rc1 | yes; cannot coexist in the same cluster with earlier releases. | Adds Model in Image feature. Support for Kubernetes 1.16. Removal of support for Kubernetes 1.13 and earlier. Removal of support for Helm 2.x. |
 | February 26, 2020 | v2.5.0 | no | Support for Helm 3.x and OpenShift 4.3.  Operator can be installed in a namespace-dedicated mode where operator requires no cluster-level Kubernetes privileges. This version is not supported on Kubernetes 1.16+, check the [prerequisites]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 | November 15, 2019 | v2.4.0 | no | Includes fixes for a variety of issues related to FMW infrastructure domains and pod variable substitution.  Operator now uses WebLogic Deploy Tooling 1.6.0 and the latest version of the Kubernetes Java Client.
 | August 27, 2019 | v2.3.0 | no  | Added support for Coherence cluster rolling, pod templating and additional pod content, and experimental support for running under an Istio service mesh.
