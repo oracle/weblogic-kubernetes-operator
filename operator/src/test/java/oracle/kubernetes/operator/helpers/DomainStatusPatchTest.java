@@ -293,9 +293,8 @@ public class DomainStatusPatchTest {
     assertThat(builder.getPatches(),
           hasItemsInOrder(
              "ADD /status/servers/- {'clusterName':'cluster1','desiredState':'RUNNING',"
-                 + "'isAdminServer':'false','nodeName':'node1','serverName':'ms1','state':'RUNNING'}",
-             "ADD /status/servers/- {'clusterName':'cluster1','isAdminServer':'false',"
-                 + "'serverName':'ms2','state':'STARTING'}"
+                 + "'nodeName':'node1','serverName':'ms1','state':'RUNNING'}",
+             "ADD /status/servers/- {'clusterName':'cluster1','serverName':'ms2','state':'STARTING'}"
              ));
   }
 
@@ -328,9 +327,8 @@ public class DomainStatusPatchTest {
           hasItemsInOrder(
                 "ADD /status/servers/- {'clusterName':'cluster1',"
                       + "'health':{'activationTime':'" + activationTime + "','overallHealth':'AOK'},"
-                      + "'isAdminServer':'false','serverName':'ms1'}",
-                "ADD /status/servers/- {'clusterName':'cluster1',"
-                      + "'isAdminServer':'false','serverName':'ms2','state':'STARTING'}"
+                      + "'serverName':'ms1'}",
+                "ADD /status/servers/- {'clusterName':'cluster1','serverName':'ms2','state':'STARTING'}"
                 ));
   }
 
@@ -357,8 +355,7 @@ public class DomainStatusPatchTest {
           hasItemsInOrder(
                 "REPLACE /status/servers/1/health/overallHealth 'AOK'",
                 "REMOVE /status/servers/0",
-                "ADD /status/servers/- {'clusterName':'cluster1','isAdminServer':'false',"
-                      + "'serverName':'ms3','state':'STARTING'}"
+                "ADD /status/servers/- {'clusterName':'cluster1','serverName':'ms3','state':'STARTING'}"
                 ));
   }
 
@@ -397,7 +394,7 @@ public class DomainStatusPatchTest {
                       +         "{'health':'obsolete','subsystemName':'jmx'},"
                       +         "{'health':'uninitialized','subsystemName':'sockets'}"
                       +      "]},"
-                      + "'isAdminServer':'false','serverName':'ms3'}"
+                      + "'serverName':'ms3'}"
                 ));
   }
 

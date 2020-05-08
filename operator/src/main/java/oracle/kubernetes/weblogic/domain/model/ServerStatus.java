@@ -260,7 +260,6 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state)
         .append(desiredState)
         .append(clusterName)
-        .append(isAdminServer)
         .toHashCode();
   }
 
@@ -280,7 +279,6 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state, rhs.state)
         .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
-        .append(isAdminServer, rhs.isAdminServer)
         .isEquals();
   }
 
@@ -310,7 +308,6 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("state", ServerStatus::getState)
         .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
-        .withBooleanField("isAdminServer", ServerStatus::isAdminServer)
         .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
 
   static ObjectPatch<ServerStatus> getObjectPatch() {
