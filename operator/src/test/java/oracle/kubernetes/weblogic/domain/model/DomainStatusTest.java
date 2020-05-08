@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -292,12 +293,12 @@ public class DomainStatusTest {
     domainStatus.setServers(Arrays.asList(
           new ServerStatus().withClusterName("1").withServerName("1").withState("state1"),
           new ServerStatus().withClusterName("1").withServerName("2").withState("state1"),
-          new ServerStatus().withClusterName("1").withServerName("3").withState("state2")
+          new ServerStatus().withServerName("admin").withIsAdminServer(true).withState("state2")
     ));
 
     assertThat(getServer("1", "1").getState(), equalTo("state1"));
     assertThat(getServer("1", "2").getState(), equalTo("state1"));
-    assertThat(getServer("1", "3").getState(), equalTo("state2"));
+    assertThat(getServer(null, "admin").getState(), equalTo("state2"));
   }
 
   @Test
@@ -334,8 +335,8 @@ public class DomainStatusTest {
   private ServerStatus getServer(String clusterName, String serverName) {
     return domainStatus.getServers()
           .stream()
-          .filter(s -> s.getClusterName().equals(clusterName))
-          .filter(s -> s.getServerName().equals(serverName))
+          .filter(s -> Objects.equals(clusterName, s.getClusterName()))
+          .filter(s -> Objects.equals(serverName, s.getServerName()))
           .findFirst()
           .orElse(null);
   }
