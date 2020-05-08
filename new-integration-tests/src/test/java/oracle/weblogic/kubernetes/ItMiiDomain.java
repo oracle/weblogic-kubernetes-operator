@@ -651,7 +651,7 @@ class ItMiiDomain implements LoggedTest {
       }
     }
     
-    logger.info("The version 2 application has been deployed correctly on all server Pods");
+    logger.info("The version 2 application has been deployed correctly on all server pods");
   }
 
   @Test
