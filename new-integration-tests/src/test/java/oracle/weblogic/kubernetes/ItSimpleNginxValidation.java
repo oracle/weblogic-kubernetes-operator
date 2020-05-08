@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -134,7 +133,6 @@ class ItSimpleNginxValidation implements LoggedTest {
   private final String managedServerNameBase = "-managed-server";
   private final String domainUid = "domain1";
   private String curlCmd = null;
-  private List<String> expectedServerNamesInAppResponse = new ArrayList<>();
 
   /**
    * Install operator and NGINX.
@@ -376,13 +374,11 @@ class ItSimpleNginxValidation implements LoggedTest {
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
       String clusterName = CLUSTER_NAME_PREFIX + i;
 
-      expectedServerNamesInAppResponse.clear();
-      for (int j = 1; j <= replicaCount; j++) {
-        expectedServerNamesInAppResponse.add(clusterName + managedServerNameBase + j);
-      }
+      List<String> expectedServerNamesInAppResponse =
+          generateExpectedServerNamesInAppResponse(clusterName, replicaCount);
 
       // check that NGINX can access the sample apps from all managed servers in the cluster of the domain
-      curlCmd = getCurlCmd(clusterName);
+      curlCmd = generateCurlCmd(clusterName);
       assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
           .as("verify NGINX can access the sample app from all managed servers in the domain")
           .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
@@ -396,22 +392,19 @@ class ItSimpleNginxValidation implements LoggedTest {
   public void testScaleDomainWithMultiClusters() {
 
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+
       String clusterName = CLUSTER_NAME_PREFIX + i;
+      int numberOfServers = 2 * i - 1;
 
-      // set the expected server name list which should return by the app response before scale
-      expectedServerNamesInAppResponse.clear();
-      for (int j = 1; j <= replicaCount; j++) {
-        expectedServerNamesInAppResponse.add(clusterName + managedServerNameBase + j);
-      }
-      logger.info("expected server name list which should be in the sample app response: {0} before scale",
-          expectedServerNamesInAppResponse);
+      // scale cluster-1 to 1 server and cluster-2 to 3 servers
+      logger.info("scaling cluster-1 of domain {0} in namespace {1} to {2} servers",
+          domainUid, domainNamespace, numberOfServers);
+      scaleAndVerifyDomain(domainUid, domainNamespace, clusterName, replicaCount, numberOfServers);
 
-      // get a random integer between [0 - 5]
-      int numberOfServers = new Random().nextInt(6);
-      logger.info("scaling the cluster {0} of domain {1} in namespace {2} to {3} servers",
-          clusterName, domainUid, domainNamespace, numberOfServers);
-      scaleAndVerifyDomain(domainUid, domainNamespace, clusterName, numberOfServers, expectedServerNamesInAppResponse);
+      // then scale cluster-1 and cluster-2 to 0 server
+      scaleAndVerifyDomain(domainUid, domainNamespace, clusterName, numberOfServers, 0);
     }
+
   }
 
   /**
@@ -687,24 +680,26 @@ class ItSimpleNginxValidation implements LoggedTest {
             String.format("Pod %s still exists in namespace %s", podName, domainNamespace)));
   }
 
-  /** Scale the cluster to numberOfServers of the domainin the specified
-   *  domain namespace. Verify the pods are created or deleted depending on the numberOfServers. Also verify
+  /** Scale the cluster to numberOfServers of the domainin the specified domain namespace.
+   *  Verify the pods are created or deleted depending on the numberOfServers. Also verify
    *  NGINX can access the sample apps to all the servers after the scale operation.
    *
    * @param domainUid the domain with domainUid which will be scaled
    * @param domainNamespace the domain namespace the domain resides
    * @param clusterName the cluster in the domain to be scaled
+   * @param replicasBeforeScale the replicas of the cluster before the scale
    * @param numberOfServers the number of servers to be scaled to
-   * @param expectedServerNamesInAppResponse the expected server name list in the sample app response before scale
+   * @return the replicas of the cluster after the scale
    */
-  private void scaleAndVerifyDomain(String domainUid,
+  private int scaleAndVerifyDomain(String domainUid,
                                     String domainNamespace,
                                     String clusterName,
-                                    int numberOfServers,
-                                    List<String> expectedServerNamesInAppResponse) {
+                                    int replicasBeforeScale,
+                                    int numberOfServers) {
 
     String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-managed-server";
 
+    // scale the cluster in the domain
     assertThat(assertDoesNotThrow(() -> scaleDomain(domainUid, domainNamespace, clusterName, numberOfServers)))
         .as(String.format("Verify scale the cluster %s of domain %s in namespace %s",
             clusterName, domainUid, domainNamespace))
@@ -712,9 +707,16 @@ class ItSimpleNginxValidation implements LoggedTest {
             clusterName, domainUid, domainNamespace))
         .isTrue();
 
-    curlCmd = getCurlCmd(clusterName);
+    // generate a curl command to ping the sample app through the ingress controller
+    curlCmd = generateCurlCmd(clusterName);
 
-    if (replicaCount <= numberOfServers) {
+    // generate the expected server list which should be in the sample app response string
+    List<String> expectedServerNamesInAppResponse =
+        generateExpectedServerNamesInAppResponse(clusterName, replicasBeforeScale);
+    logger.info("expected server name list which should be in the sample app response: {0} before scale",
+        expectedServerNamesInAppResponse);
+
+    if (replicasBeforeScale <= numberOfServers) {
 
       // check that NGINX can access the sample apps from the original managed servers in the domain
       logger.info("Check that NGINX can access the sample app from the original managed servers in the domain "
@@ -725,7 +727,7 @@ class ItSimpleNginxValidation implements LoggedTest {
           .isTrue();
 
       // check new managed server pods are created and wait for them to be ready
-      for (int i = replicaCount + 1; i <= numberOfServers; i++) {
+      for (int i = replicasBeforeScale + 1; i <= numberOfServers; i++) {
         String manageServerPodName = manageServerPodNamePrefix + i;
 
         // check new managed server pods are created
@@ -745,19 +747,20 @@ class ItSimpleNginxValidation implements LoggedTest {
 
         // add the new managed server to the list
         expectedServerNamesInAppResponse.add(clusterName + "-managed-server" + i);
+
       }
 
       // check that NGINX can access the sample apps from new and original managed servers
       logger.info("Check that NGINX can access the sample app from the new and original managed servers "
           + "in the domain after the domain is scaled up.");
       assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
-          .as("NGINX can access the sample app from all managed servers in the domain")
+          .as("Check NGINX can access the sample app from all managed servers in the domain")
           .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
           .isTrue();
     } else {
       // scale down
       // wait and check the pods are removed
-      for (int i = replicaCount; i > numberOfServers; i--) {
+      for (int i = replicasBeforeScale; i > numberOfServers; i--) {
         logger.info("Check managed server pod {0} is removed in namespace {1}",
             manageServerPodNamePrefix + i, domainNamespace);
         checkPodDoesNotExist(manageServerPodNamePrefix + i);
@@ -768,10 +771,12 @@ class ItSimpleNginxValidation implements LoggedTest {
       logger.info("Check that NGINX can access the sample app from the remaining managed servers in the domain "
           + "after the domain is scaled down.");
       assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
-          .as("Verify NGINX can access the sample app from the remaining managed server in the domain")
+          .as("Check NGINX can access the sample app from the remaining managed server in the domain")
           .withFailMessage("NGINX can not access the sample app from the remaining managed server")
           .isTrue();
     }
+
+    return numberOfServers;
   }
 
   /**
@@ -780,10 +785,26 @@ class ItSimpleNginxValidation implements LoggedTest {
    * @param clusterName cluster name which is the backend of the ingress
    * @return curl command string
    */
-  private String getCurlCmd(String clusterName) {
+  private String generateCurlCmd(String clusterName) {
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     return curlCmd;
+  }
+
+  /**
+   * Construct an expected server name list which should be returned in the sample app response.
+   *
+   * @param clusterName the cluster name which is the backend of the ingress
+   * @param replicasBeforeScale the replicas of cluster before scale
+   * @return list of server names which should be in the sample app response
+   */
+  private List<String> generateExpectedServerNamesInAppResponse(String clusterName, int replicasBeforeScale) {
+    List<String> expectedServerNames = new ArrayList<>();
+    for (int i = 1; i <= replicasBeforeScale; i++) {
+      expectedServerNames.add(clusterName + managedServerNameBase + i);
+    }
+
+    return expectedServerNames;
   }
 }
