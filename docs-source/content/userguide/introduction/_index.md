@@ -30,4 +30,4 @@ This documentation uses several important terms which are intended to have a spe
 
 
 ### Additional reading
-Before using the operator, you might want to read the [design philosophy]({{< relref "/userguide/introduction/design.md" >}}) to develop an understanding of the operator's design, and the [architectural overview]({{< relref "/userguide/introduction/architecture.md" >}}) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator. Also, worth reading are the details of the [Kubernetes RBAC definitions]({{< relref "/security/rbac.md" >}}) required by the operator.
+Before using the operator, you might want to read the [design philosophy]({{< relref "/userguide/introduction/design.md" >}}) to develop an understanding of the operator's design, and the [architectural overview]({{< relref "/userguide/introduction/architecture.md" >}}) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator. Also worth reading are the details of the [Kubernetes RBAC definitions]({{< relref "/security/rbac.md" >}}) required by the operator.
