@@ -3,5 +3,5 @@
 
 name: weblogic-operator
 apiVersion: v1
-version: 3.0.0
+version: 3.0.0-rc1
 description: Helm chart for configuring the WebLogic operator.
