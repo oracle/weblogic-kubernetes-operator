@@ -310,6 +310,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("state", ServerStatus::getState)
         .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
+        .withBooleanField("isAdminServer", ServerStatus::isAdminServer)
         .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
 
   static ObjectPatch<ServerStatus> getObjectPatch() {

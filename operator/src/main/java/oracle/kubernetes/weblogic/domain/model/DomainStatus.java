@@ -456,7 +456,7 @@ public class DomainStatus {
     return new EqualsBuilder()
         .append(reason, rhs.reason)
         .append(startTime, rhs.startTime)
-        .append(Domain.sortOrNull(servers), Domain.sortOrNull(rhs.servers))
+        .append(servers, rhs.servers)
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)

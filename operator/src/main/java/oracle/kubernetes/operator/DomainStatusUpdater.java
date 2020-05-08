@@ -176,7 +176,7 @@ public class DomainStatusUpdater {
       DomainStatusUpdaterContext context = createContext(packet);
       DomainStatus newStatus = context.getNewStatus();
 
-      return context.isStatusChanged(newStatus)
+      return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
             : doNext(createDomainStatusReplaceStep(context, newStatus), packet);
     }
@@ -277,7 +277,7 @@ public class DomainStatusUpdater {
       return getDomain().getDomainUid();
     }
 
-    boolean isStatusChanged(DomainStatus newStatus) {
+    boolean isStatusUnchanged(DomainStatus newStatus) {
       return newStatus.equals(getStatus());
     }
 
