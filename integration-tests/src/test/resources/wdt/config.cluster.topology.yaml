@@ -12,6 +12,11 @@ topology:
     Server:
         '@@PROP:ADMIN_NAME@@':
             ListenPort: '@@PROP:ADMIN_PORT@@'
+            SSL:
+                Enabled: false
+                ListenPort: 7002
+                HostnameVerificationIgnored: true
+                JSSEEnabled: true
             NetworkAccessPoint:
                 T3Channel:
                     ListenPort: '@@PROP:T3_CHANNEL_PORT@@'
@@ -20,9 +25,24 @@ topology:
         'managed-server1':
             Cluster: '@@PROP:CLUSTER_NAME@@'
             ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
+            SSL:
+                Enabled: false
+                ListenPort: 7123
+                HostnameVerificationIgnored: true
+                JSSEEnabled: true
         'managed-server2':
             Cluster: '@@PROP:CLUSTER_NAME@@'
             ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
+            SSL:
+                Enabled: false
+                ListenPort: 7123
+                HostnameVerificationIgnored: true
+                JSSEEnabled: true
         'managed-server3':
             Cluster: '@@PROP:CLUSTER_NAME@@'
             ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
+            SSL:
+                Enabled: false
+                ListenPort: 7123
+                HostnameVerificationIgnored: true
+                JSSEEnabled: true
