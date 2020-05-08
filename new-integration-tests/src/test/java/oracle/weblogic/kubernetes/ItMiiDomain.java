@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -62,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -96,7 +94,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatch
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
-import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -161,14 +158,6 @@ class ItMiiDomain implements LoggedTest {
     withQuickRetryPolicy = with().pollDelay(0, SECONDS)
         .and().with().pollInterval(4, SECONDS)
         .atMost(10, SECONDS).await();
-
-    // clean up the download directory so that we always get the latest
-    // versions of the tools in every run of the test class.
-    try {
-      cleanupDirectory(DOWNLOAD_DIR);
-    } catch (IOException ioe) {    
-      logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, ioe);    
-    }
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");

@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.extensions;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,9 +15,11 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -39,6 +42,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
      */
     if (!started.getAndSet(true)) {
       try {
+        // clean up the download directory so that we always get the latest
+        // versions of the WDT and WIT tools in every run of the test suite.
+        try {
+          cleanupDirectory(DOWNLOAD_DIR);
+        } catch (IOException ioe) {
+          logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, ioe);
+        }
+                             
         // Only the first thread will enter this block.
 
         logger.info("Building docker Images before any integration test classes are run");
