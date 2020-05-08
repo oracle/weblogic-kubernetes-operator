@@ -20,6 +20,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.LATEST_IMAGE_SUFFIX;
@@ -28,7 +29,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public abstract class DomainTestBase {
   protected static final String CLUSTER_NAME = "cluster1";
@@ -316,6 +317,27 @@ public abstract class DomainTestBase {
     configureCluster("cluster1").withMaxUnavailable(5);
 
     assertThat(domain.getMaxUnavailable("cluster1"), equalTo(5));
+  }
+
+  @Test
+  public void afterAllowReplicasBelowMinDynamicClusterSizeSetForCluster_canReadIt() {
+    configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
+
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(false));
+  }
+
+  @Test
+  public void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
+    configureCluster("cluster1");
+
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"),
+        equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
+  }
+
+  @Test
+  public void whenNoClusterSpec_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster-with-no-spec"),
+        equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
   }
 
   @Test

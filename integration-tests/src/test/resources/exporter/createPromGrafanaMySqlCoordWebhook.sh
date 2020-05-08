@@ -14,12 +14,32 @@ cp $resourceExporterDir/create*.sh $scriptDir
 chmod 777 $scriptDir/*.sh
 echo "Installing Prometheus ..."
 sh $scriptDir/createProm.sh $monitoringExporterDir $resourceExporterDir $promVersionArgs $domainNS $domainNS1
-echo "Installing Grafana ..."
-sh $scriptDir/createGrafana.sh $monitoringExporterDir $resourceExporterDir $grafanaVersionArgs
+script_status=$?
+echo "status $script_status "
+if [ $script_status != 0 ]; then
+    echo "createProm.sh returned: $script_status"
+    exit $script_status
+fi
+
 echo "Installing mysql"
 sh $scriptDir/createMySql.sh $monitoringExporterDir $resourceExporterDir $domainNS1
+script_status=$?
+if [ $script_status != 0 ]; then
+    echo "createMySql.sh returned: $script_status"
+    exit $script_status
+fi
 echo "Installing webhook"
 sh $scriptDir/createWebhook.sh $monitoringExporterDir $resourceExporterDir
+script_status=$?
+if [ $script_status != 0 ]; then
+    echo "createWebhook.sh returned: $script_status"
+    exit $script_status
+fi
 echo "Installing coordinator"
 sh $scriptDir/createCoord.sh $monitoringExporterDir $resourceExporterDir $domainNS
+script_status=$?
+if [ $script_status != 0 ]; then
+    echo "createCoordinator.sh returned: $script_status"
+    exit $script_status
+fi
 echo "Completed [createPromGrafanaMySqlCoordWebhook.sh]"

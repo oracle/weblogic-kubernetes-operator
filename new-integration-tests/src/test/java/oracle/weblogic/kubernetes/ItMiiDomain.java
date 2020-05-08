@@ -142,6 +142,8 @@ class ItMiiDomain implements LoggedTest {
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
 
+  private static Map<String, Object> secretNameMap;
+
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -192,6 +194,7 @@ class ItMiiDomain implements LoggedTest {
     dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
+    logger.info("Creating repo secret {0}", REPO_SECRET_NAME);
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
             .name(REPO_SECRET_NAME)
@@ -205,7 +208,7 @@ class ItMiiDomain implements LoggedTest {
                   REPO_SECRET_NAME, opNamespace));
 
     // map with secret
-    Map<String, Object> secretNameMap = new HashMap<String, Object>();
+    secretNameMap = new HashMap<String, Object>();
     secretNameMap.put("name", REPO_SECRET_NAME);
     // helm install parameters
     opHelmParams = new HelmParams()
@@ -219,7 +222,7 @@ class ItMiiDomain implements LoggedTest {
             .helmParams(opHelmParams)
             .image(operatorImage)
             .imagePullSecrets(secretNameMap)
-            .domainNamespaces(Arrays.asList(domainNamespace))
+            .domainNamespaces(Arrays.asList(domainNamespace, domainNamespace1))
             .serviceAccount(serviceAccountName);
 
     // install Operator
@@ -369,6 +372,7 @@ class ItMiiDomain implements LoggedTest {
             new OperatorParams()
                     .helmParams(opHelmParams)
                     .image(operatorImage)
+                    .imagePullSecrets(secretNameMap)
                     .domainNamespaces(Arrays.asList(domainNamespace,domainNamespace1))
                     .serviceAccount(serviceAccountName);
 
@@ -379,6 +383,7 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Operator upgraded in namespace {0}", opNamespace);
 
     // Create the repo secret to pull the image
+    logger.info("Creating repo secret {0}", REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createRepoSecret(domainNamespace1),
               String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
@@ -397,6 +402,7 @@ class ItMiiDomain implements LoggedTest {
              String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR
+    logger.info("Creating custom domain resource");
     createDomainResource(domainUid1, domainNamespace1, adminSecretName, REPO_SECRET_NAME,
               encryptionSecretName, replicaCount);
 
@@ -917,6 +923,14 @@ class ItMiiDomain implements LoggedTest {
     Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
 
+    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+    // the next JDK 14 versions are released.
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      env.put("JAVA_HOME", witJavaHome);
+    }
+ 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model list {1} and archive list {2}",
         image, modelList, archiveList);

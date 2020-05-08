@@ -29,6 +29,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
+
 /** DomainSpec is a description of a domain. */
 @Description("DomainSpec is a description of a domain.")
 public class DomainSpec extends BaseConfiguration {
@@ -842,6 +844,11 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getMaxUnavailable() != null;
   }
 
+  private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
+    return cluster == null ? DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE :
+        cluster.isAllowReplicasBelowMinDynClusterSize();
+  }
+
   public AdminServer getAdminServer() {
     return adminServer;
   }
@@ -905,6 +912,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public List<String> getAdminServerChannelNames() {
       return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
+    }
+
+    @Override
+    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+      return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {

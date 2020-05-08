@@ -260,7 +260,6 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state)
         .append(desiredState)
         .append(clusterName)
-        .append(isAdminServer)
         .toHashCode();
   }
 
@@ -280,7 +279,6 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(state, rhs.state)
         .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
-        .append(isAdminServer, rhs.isAdminServer)
         .isEquals();
   }
 
