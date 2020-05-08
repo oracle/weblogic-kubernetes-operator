@@ -14,6 +14,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -181,6 +183,9 @@ public class DomainStatusUpdater {
 
     private Step createDomainStatusReplaceStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
       LOGGER.fine(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
+      if (LOGGER.isFinerEnabled()) {
+        LOGGER.finer("status change: " + createPatchString(context, newStatus));
+      }
       Domain oldDomain = context.getDomain();
       Domain newDomain = new Domain()
           .withKind(KubernetesConstants.DOMAIN)
@@ -194,6 +199,12 @@ public class DomainStatusUpdater {
             context.getNamespace(),
             newDomain,
             createResponseStep(context, getNext()));
+    }
+
+    private String createPatchString(DomainStatusUpdaterContext context, DomainStatus newStatus) {
+      JsonPatchBuilder builder = Json.createPatchBuilder();
+      newStatus.createPatchFrom(builder, context.getStatus());
+      return builder.build().toString();
     }
 
     private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context, Step next) {
@@ -415,10 +426,7 @@ public class DomainStatusUpdater {
       }
 
       private String getRunningState(String serverName) {
-        if (serverState != null) {
-          return serverState.getOrDefault(serverName, SHUTDOWN_STATE);
-        }
-        return SHUTDOWN_STATE;
+        return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
       }
 
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {

@@ -25,6 +25,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -51,7 +52,7 @@ public class DomainStatus {
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
   // sorted list of ServerStatus
-  List<ServerStatus> servers = new ArrayList<>();
+  private final List<ServerStatus> servers;
 
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
@@ -72,6 +73,7 @@ public class DomainStatus {
   private Integer replicas;
 
   public DomainStatus() {
+    servers = new ArrayList<>();
   }
 
   /**
@@ -293,19 +295,39 @@ public class DomainStatus {
    */
   public void setServers(List<ServerStatus> servers) {
     synchronized (this.servers) {
-      if (isServersEqualIgnoringOrder(servers, this.servers)) {
+      if (this.servers.equals(servers)) {
         return;
       }
-      List<ServerStatus> sortedServers = new ArrayList<>(servers);
-      sortedServers.sort(Comparator.naturalOrder());
 
-      this.servers = sortedServers;
+      List<ServerStatus> newServers = servers
+            .stream()
+            .map(ServerStatus::new)
+            .map(this::adjust)
+            .sorted(Comparator.naturalOrder())
+            .collect(Collectors.toList());
+
+      this.servers.clear();
+      this.servers.addAll(newServers);
     }
   }
 
-  private boolean isServersEqualIgnoringOrder(List<ServerStatus> servers1, List<ServerStatus> servers2) {
-    return new HashSet<>(servers1).equals(new HashSet<>(servers2));
+  private ServerStatus adjust(ServerStatus server) {
+    if (server.getState() == null) {
+      ServerStatus oldServer = getMatchingServer(server);
+      server.setState(oldServer == null ? SHUTDOWN_STATE : oldServer.getState());
+    }
+    return server;
   }
+
+  private ServerStatus getMatchingServer(ServerStatus server) {
+    return getServers()
+          .stream()
+          .filter(s -> Objects.equals(s.getClusterName(), server.getClusterName()))
+          .filter(s -> Objects.equals(s.getServerName(), server.getServerName()))
+          .findFirst()
+          .orElse(null);
+  }
+
 
   /**
    * Status of WebLogic servers in this domain.
@@ -314,7 +336,7 @@ public class DomainStatus {
    * @return this
    */
   public DomainStatus withServers(List<ServerStatus> servers) {
-    this.servers = servers;
+    setServers(servers);
     return this;
   }
 
