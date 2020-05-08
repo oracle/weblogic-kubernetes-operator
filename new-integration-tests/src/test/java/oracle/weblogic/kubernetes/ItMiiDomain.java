@@ -246,12 +246,15 @@ class ItMiiDomain implements LoggedTest {
     // create image with model files
     miiImage = createImageAndVerify();
 
-    // push the image to OCIR to make the test work in multi node cluster
+    // docker login, if necessary
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+    }
 
-      logger.info("docker push image {0} to OCIR", miiImage);
+    // push image, if necessary
+    if (!REPO_NAME.isEmpty()) {
+      logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
       assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
     }
 
@@ -545,7 +548,7 @@ class ItMiiDomain implements LoggedTest {
     Date date = new Date();
     final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
+    final String imageName = REPO_NAME + MII_IMAGE_NAME;
     final String image = imageName + ":" + imageTag;
 
     // build the model file list
@@ -563,6 +566,14 @@ class ItMiiDomain implements LoggedTest {
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+
+    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+    // the next JDK 14 versions are released.
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      env.put("JAVA_HOME", witJavaHome);
+    }
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
