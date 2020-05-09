@@ -75,12 +75,6 @@ function state_dump {
     done
   done
 
-  echo "Get events to events.NAMESPACE in ${DUMP_DIR}"
-  for namespace in $namespaces; do
-    local eventsfile=${DUMP_DIR}/events.${namespace}
-    $kubectlcmd get events -n $namespace --sort-by=.metadata.creationTimestamp -o yaml > $eventsfile
-  done
-
   mkdir -p $ARCHIVE_DIR || fail Could not archive, could not create target directory \'$ARCHIVE_DIR\'.
   
   # Get various k8s resource describes and redirect/copy to files 

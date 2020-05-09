@@ -143,15 +143,6 @@ public class ItMultipleClusters extends BaseTest {
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      /* String[] pods = {
-          DOMAINUID + "-" + domain.getAdminServerName(),
-          DOMAINUID + "-managed-server",
-          DOMAINUID + "-managed-server1",
-          DOMAINUID + "-managed-server2",
-          DOMAINUID + "-new-managed-server1",
-          DOMAINUID + "-new-managed-server2",
-      };
-      verifyServersStatus(domain, pods); */
       String cluster2PodName1 = DOMAINUID + "-new-managed-server1";
       String cluster2PodName2 = DOMAINUID + "-new-managed-server2";
 
@@ -202,15 +193,6 @@ public class ItMultipleClusters extends BaseTest {
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      /* String[] pods = {
-          domainuid + "-" + domain.getAdminServerName(),
-          domainuid + "-managed-server",
-          domainuid + "-managed-server1",
-          domainuid + "-managed-server2",
-          domainuid + "-new-managed-server1",
-          domainuid + "-new-managed-server2",
-      };
-      verifyServersStatus(domain, pods); */
 
       String cluster2PodName1 = domainuid + "-new-managed-server1";
       String cluster2PodName2 = domainuid + "-new-managed-server2";
@@ -265,14 +247,7 @@ public class ItMultipleClusters extends BaseTest {
               + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      /* String[] pods = {
-          domainUid + "-" + domain.getAdminServerName(),
-          domainUid + "-managed-server1",
-          domainUid + "-managed-server2",
-          domainUid + "-managed-server-21",
-          domainUid + "-managed-server-22",
-      };
-      verifyServersStatus(domain, pods); */
+
       String cluster2PodName1 = domainUid + "-managed-server-21";
       String cluster2PodName2 = domainUid + "-managed-server-22";
 

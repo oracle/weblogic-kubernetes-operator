@@ -1401,7 +1401,27 @@ public class TestUtils {
    * @throws Exception exception
    */
   public static void callShellScriptByExecToPod(
-      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName,
+      String[] args)
+      throws Exception {
+    callShellScriptByExecToPod(
+        podName, domainNS, scriptsLocInPod, shScriptName,args, 1);
+  }
+
+  /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName         pod name
+   * @param domainNS        namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName    script name
+   * @param args            script arguments
+   * @param retriesToCallScript number of retries to execute the script if it fails
+   * @throws Exception exception
+   */
+  public static void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName,
+      String[] args, int retriesToCallScript)
       throws Exception {
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
     cmdKubectlSh
@@ -1418,15 +1438,12 @@ public class TestUtils {
         .append(String.join(" ", args).toString())
         .append("'");
 
-    // LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
-    // TestUtils.execOrAbortProcess(cmdKubectlSh.toString(), true);
-    int numberOfRetries = 5;
-    for (int i = 1; i <= numberOfRetries; i++) {
+    for (int i = 1; i <= retriesToCallScript; i++) {
       LoggerHelper.getLocal().log(Level.INFO, "Iteration " + i
-          + "/" + numberOfRetries + ", Command to call kubectl sh file " + cmdKubectlSh);
+          + "/" + retriesToCallScript + ", Command to call kubectl sh file " + cmdKubectlSh);
       ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
       if (result.exitValue() != 0) {
-        if (i == numberOfRetries) {
+        if (i == retriesToCallScript) {
           new RuntimeException("FAILURE: Command "
               + cmdKubectlSh
               + " failed with stderr = "
@@ -1435,11 +1452,11 @@ public class TestUtils {
               + result.stdout());
         } else {
           LoggerHelper.getLocal().log(Level.INFO, "Command failed with stdout = "
-              + result.stdout() + " stderr = " + result.stderr() + ", retrying deploy");
+              + result.stdout() + " stderr = " + result.stderr() + ", retrying");
           Thread.sleep(10 * 1000);
         }
       } else {
-        LoggerHelper.getLocal().log(Level.INFO, "Application deployed successfully, stdout = " + result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO, "Script invoked successfully, stdout = " + result.stdout());
         break;
       }
     }
