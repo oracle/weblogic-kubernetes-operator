@@ -117,7 +117,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     logger.info("Cleanup images after all test suites are run");
   }
 
-
+  /**
+   * Create image with basic domain model yaml and sample app.
+   * @param imageName name of the image
+   * @param imageTag tag of the image
+   * @return true if image is created successfully
+   */
   private boolean createMiiBasicImage(String imageName, String imageTag) {
 
     final String image = imageName + ":" + imageTag;
