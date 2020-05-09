@@ -34,6 +34,8 @@ import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 public class TestUtils {
   private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
 
@@ -47,7 +49,42 @@ public class TestUtils {
   public static void checkPodReady(String podName, String domainNS) throws Exception {
     checkPodReady(podName, domainNS, BaseTest.getMaxIterationsPod());    
   }
-  
+
+  /**
+   * Retrieve info for provided helm chart
+   *
+   * @param chartName  HelmChart name
+   * @param chartNS namespace
+   * @throws RuntimeException if chart info can't be retrieved.
+   */
+  public static void checkHelmChart(String chartName, String chartNS) throws Exception {
+    String cmd = "helm history " + chartName + " --namespace " + chartNS;
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new Exception(
+          "FAILURE: Command "
+              + cmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " history "
+        + result.stdout()
+        + result.stderr()
+        );
+    cmd = "helm test " + chartName + " --namespace " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " info "
+        + result.stdout()
+        + result.stderr()
+    );
+  }
+
   /**
    * Checks if pod is ready.
    *
@@ -965,6 +1002,29 @@ public class TestUtils {
 
     ExecCommand.exec(opKeyDecodeCmd.toString()).stdout().trim();
     return keyFile.getAbsolutePath();
+  }
+
+  /**
+   * @param searchExp  Search expression (for example -l app=webhook).
+   * @param namespace  Namespace where pod is running
+   * @return name of pod matching search expression
+   * @throws Exception if pod is not found
+   */
+  public static String getPodName(String searchExp, String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append(
+        "kubectl get pod "
+            + searchExp
+            + " -n "
+            + namespace
+            + " -o jsonpath=\"{.items[0].metadata.name}\"");
+    LoggerHelper.getLocal().log(Level.INFO, " pod name cmd =" + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    LoggerHelper.getLocal().log(Level.INFO, " Result output" + result.stdout());
+    String podName = result.stdout().trim();
+    assertNotNull(podName, searchExp + "  was not created, can't find running pod ");
+    return podName;
   }
 
   /**

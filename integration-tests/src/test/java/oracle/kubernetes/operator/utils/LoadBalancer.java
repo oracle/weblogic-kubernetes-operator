@@ -150,10 +150,13 @@ public class LoadBalancer {
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
+      TestUtils.checkHelmChart("traefik-operator","traefik");
       reportHelmInstallFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+    String traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
+    TestUtils.checkPodReady(traefikPod, "traefik");
   }
 
   /**
@@ -220,10 +223,17 @@ public class LoadBalancer {
     LoggerHelper.getLocal().log(Level.INFO, "createTraefikIngress() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
+      TestUtils.checkHelmChart((String)lbMap.get("name"),(String)lbMap.get("namespace"));
       reportHelmInstallFailure(cmd.toString(), result);
     }
-    String outputStr = result.stdout().trim();
-    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Ingress is created  ");
+    cmd = new StringBuffer();
+    cmd.append("kubectl get ingress")
+        .append(" -n ")
+        .append((String)lbMap.get("namespace"))
+        .append(" -o jsonpath='{.items[].metadata.name}'");
+
+    TestUtils.checkAnyCmdInLoop(cmd.toString(),lbMap.get("domainUID") + "-traefik");
   }
 
   /**
@@ -235,7 +245,9 @@ public class LoadBalancer {
     String vversion = BaseTest.VOYAGER_VERSION;
     cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh create voyager " + vversion;
     LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmdLb);
-    executeHelmCommand(cmdLb);
+    executeHelmCommand(cmdLb, "voyager-operator", "voyager");
+    String voyagerPod = TestUtils.getPodName(" -l app=voyager ", "voyager");
+    TestUtils.checkPodReady(voyagerPod, "voyager");
   }
 
   private void createVoyagerIngressPerDomain() throws Exception {
@@ -272,7 +284,7 @@ public class LoadBalancer {
     int i = 0;
     // Wait max 300 seconds
     while (i < maxIterationsPod) {
-      returnStr = executeHelmCommand(cmd.toString());
+      returnStr = executeHelmCommand(cmd.toString(),"voyager-operator","voyager");
       if (null != returnStr && returnStr.contains("upgraded")) {
         LoggerHelper.getLocal().log(Level.INFO, "upgradeVoyagerNamespace() Result: " + returnStr);
         break;
@@ -291,8 +303,10 @@ public class LoadBalancer {
     }
 
     if (null == returnStr) {
-      executeHelmCommand(cmd.toString());
+      executeHelmCommand(cmd.toString(), "voyager-operator","voyager");
     }
+    String voyagerPod = TestUtils.getPodName(" -l app=voyager ", "voyager");
+    TestUtils.checkPodReady(voyagerPod, "voyager");
   }
 
   private void createVoyagerIngress() throws Exception {
@@ -322,7 +336,7 @@ public class LoadBalancer {
     // Wait max 300 seconds
     while (i < maxIterationsPod) {
       try {
-        returnStr = executeHelmCommand(cmd.toString());
+        returnStr = executeHelmCommand(cmd.toString(),(String)lbMap.get("name"),(String)lbMap.get("namespace"));
       } catch (RuntimeException rtex) {
         LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() caught Exception. Retry");
       }
@@ -345,14 +359,22 @@ public class LoadBalancer {
     }
 
     if (null == returnStr) {
-      executeHelmCommand(cmd.toString());
+      executeHelmCommand(cmd.toString(),(String)lbMap.get("name"),(String)lbMap.get("namespace"));
     }
+    cmd = new StringBuffer();
+    cmd.append("kubectl get ingress.voyager.appscode.com")
+        .append(" -n ")
+        .append((String)lbMap.get("namespace"))
+        .append(" -o jsonpath='{.items[].metadata.name}'");
+
+    TestUtils.checkAnyCmdInLoop(cmd.toString(),lbMap.get("domainUID") + "-voyager");
   }
 
-  private String executeHelmCommand(String cmd) throws Exception {
+  private String executeHelmCommand(String cmd, String chartName, String chartNS) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       LoggerHelper.getLocal().log(Level.INFO, "executeHelmCommand failed with " + cmd);
+      TestUtils.checkHelmChart(chartName, chartNS);
       reportHelmInstallFailure(cmd, result);
     }
     String outputStr = result.stdout().trim();
