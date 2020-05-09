@@ -45,4 +45,8 @@ public interface TestConstants {
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
+  public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
+  public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
+  public static final String DOMAIN_VERSION = "v7";
+  public static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 }

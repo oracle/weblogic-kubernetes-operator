@@ -6,29 +6,13 @@ package oracle.weblogic.kubernetes;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.gson.JsonObject;
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
-import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -46,55 +30,36 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getIngressList;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
-import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodCreated;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceCreated;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createMiiDomain;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,21 +76,12 @@ class ItSimpleNginxValidation implements LoggedTest {
   private static final String MII_IMAGE_NAME = "mii-image";
   private static final String APP_NAME = "sample-app";
 
-  // domain constants
-  private static final String DOMAIN_VERSION = "v7";
-  private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
-
-  private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static String dockerConfigJson = "";
   private static HelmParams nginxHelmParams = null;
-  private static String nginxNamespace = null;
   private static int nodeportshttp;
-  private static int nodeportshttps;
 
   private String domainUid = "domain1";
-  private final String managedServerNameBase = "managed-server";
   private final String clusterName = "cluster-1";
   private final int managedServerPort = 8001;
   private final int replicaCount = 2;
@@ -146,7 +102,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     // get a unique domain namespace
     logger.info("Get a unique namespace for WebLogic domain");
@@ -156,17 +112,17 @@ class ItSimpleNginxValidation implements LoggedTest {
     // get a unique NGINX namespace
     logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(2), "Namespace list is null");
-    nginxNamespace = namespaces.get(2);
+    String nginxNamespace = namespaces.get(2);
 
     // install and verify operator
-    installAndVerifyOperator();
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // get a free node port for NGINX
     nodeportshttp = getNextFreePort(30305, 30405);
-    nodeportshttps = getNextFreePort(30443, 30543);
+    int nodeportshttps = getNextFreePort(30443, 30543);
 
     // install and verify NGINX
-    installAndVerifyNginx();
+    installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
   }
 
   @Test
@@ -176,108 +132,23 @@ class ItSimpleNginxValidation implements LoggedTest {
   @MustNotRunInParallel
   public void testCreateMiiDomain() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-admin-server";
-    String managedServerPrefix = domainUid + "-" + managedServerNameBase;
+    final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     // create image with model files
     String miiImage = createImageAndVerify();
 
-    // docker login, if necessary
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-    }
+    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
+    List<Cluster> clusters = new ArrayList<>();
+    clusters.add(new Cluster()
+        .clusterName(clusterName)
+        .replicas(replicaCount)
+        .serverStartState("RUNNING"));
 
-    // push image, if necessary
-    if (!REPO_NAME.isEmpty()) {
-      logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
-      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
-    }
-
-    // Create the V1Secret configuration
-    V1Secret repoSecret = new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
-            .namespace(domainNamespace))
-        .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
-
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    Map<String, String> adminSecretMap = new HashMap<>();
-    adminSecretMap.put("username", "weblogic");
-    adminSecretMap.put("password", "welcome1");
-    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(adminSecretName)
-            .namespace(domainNamespace))
-        .stringData(adminSecretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    Map<String, String> encryptionSecretMap = new HashMap<>();
-    encryptionSecretMap.put("username", "weblogicenc");
-    encryptionSecretMap.put("password", "weblogicenc");
-    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(encryptionSecretName)
-            .namespace(domainNamespace))
-        .stringData(encryptionSecretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s", encryptionSecretName));
-
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(REPO_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))));
-
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-        domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace)),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace));
+    // create and verify the domain
+    createMiiDomain(miiImage, domainUid, domainNamespace, clusters, "WLS");
 
     // wait for the domain to exist
-    logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
+    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
@@ -291,36 +162,39 @@ class ItSimpleNginxValidation implements LoggedTest {
     // check admin server pod exist
     logger.info("Check for admin server pod {0} existence in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName);
-
-    // check managed server pods exists
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodCreated(managedServerPrefix + i);
-    }
+    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i);
-    }
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName);
+    checkServiceCreated(adminServerPodName, domainNamespace);
 
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i);
+    // check managed server pods exists for each cluster in the domain
+    for (int i = 0; i < clusters.size(); i++) {
+      // get the replicas for each cluster
+      int replicaCount = clusters.get(i).getReplicas();
+      String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+
+      for (int j = 1; j <= replicaCount; j++) {
+        // check for the managed server pod is created
+        logger.info("Check for managed server pod {0} existence in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkPodCreated(managedServerPrefix + j, domainUid, domainNamespace);
+
+        // wait for the managed server pod to be ready
+        logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkPodReady(managedServerPrefix + j, domainUid, domainNamespace);
+
+        // check the managed server service is created
+        logger.info("Check managed server service {0} is created in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkServiceCreated(managedServerPrefix + j, domainNamespace);
+      }
     }
   }
 
@@ -353,7 +227,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(managedServerNameBase + i);
+      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
     }
 
     // check that NGINX can access the sample apps from all managed servers in the domain
@@ -378,134 +252,6 @@ class ItSimpleNginxValidation implements LoggedTest {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
-  }
-
-  /**
-   * Install WebLogic operator and wait until the operator pod is ready.
-   */
-  private static void installAndVerifyOperator() {
-
-    // Create a service account for the unique opNamespace
-    logger.info("Creating service account");
-    String serviceAccountName = opNamespace + "-sa";
-    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(new V1ObjectMeta()
-                .namespace(opNamespace)
-                .name(serviceAccountName))));
-    logger.info("Created service account: {0}", serviceAccountName);
-
-    // get operator image name
-    String operatorImage = getOperatorImageName();
-    assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
-    logger.info("operator image name {0}", operatorImage);
-
-    // Create docker registry secret in the operator namespace to pull the image from repository
-    logger.info("Creating docker registry secret in namespace {0}", opNamespace);
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
-    dockerConfigJson = dockerConfigJsonObject.toString();
-
-    // Create the V1Secret configuration
-    V1Secret repoSecret = new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
-            .namespace(opNamespace))
-        .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
-
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
-        REPO_SECRET_NAME, opNamespace));
-
-    // map with secret
-    Map<String, Object> secretNameMap = new HashMap<>();
-    secretNameMap.put("name", REPO_SECRET_NAME);
-
-    // Helm install parameters
-    HelmParams opHelmParams = new HelmParams()
-        .releaseName(OPERATOR_RELEASE_NAME)
-        .namespace(opNamespace)
-        .chartDir(OPERATOR_CHART_DIR);
-
-    // operator chart values to override
-    OperatorParams opParams = new OperatorParams()
-        .helmParams(opHelmParams)
-        .image(operatorImage)
-        .imagePullSecrets(secretNameMap)
-        .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(serviceAccountName);
-
-    // install operator
-    logger.info("Installing operator in namespace {0}", opNamespace);
-    assertTrue(installOperator(opParams),
-        String.format("Failed to install operator in namespace %s", opNamespace));
-    logger.info("Operator installed in namespace {0}", opNamespace);
-
-    // list Helm releases matching operator release name in operator namespace
-    logger.info("Checking operator release {0} status in namespace {1}",
-        OPERATOR_RELEASE_NAME, opNamespace);
-    assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
-        String.format("Operator release %s is not in deployed status in namespace %s",
-            OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("Operator release {0} status is deployed in namespace {1}",
-        OPERATOR_RELEASE_NAME, opNamespace);
-
-    // check operator is running
-    logger.info("Check operator pod is running in namespace {0}", opNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                opNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(operatorIsReady(opNamespace));
-  }
-
-  /**
-   * Install NGINX and wait until the NGINX pod is ready.
-   */
-  private static void installAndVerifyNginx() {
-
-    // Helm install parameters
-    nginxHelmParams = new HelmParams()
-        .releaseName(NGINX_RELEASE_NAME)
-        .namespace(nginxNamespace)
-        .repoUrl(GOOGLE_REPO_URL)
-        .repoName(STABLE_REPO_NAME)
-        .chartName(NGINX_CHART_NAME);
-
-    // NGINX chart values to override
-    NginxParams nginxParams = new NginxParams()
-        .helmParams(nginxHelmParams)
-        .nodePortsHttp(nodeportshttp)
-        .nodePortsHttps(nodeportshttps);
-
-    // install NGINX
-    assertThat(installNginx(nginxParams))
-        .as("NGINX is installed successfully")
-        .withFailMessage("NGINX installation is failed")
-        .isTrue();
-
-    // verify that NGINX is installed
-    logger.info("Checking NGINX release {0} status in namespace {1}",
-        NGINX_RELEASE_NAME, nginxNamespace);
-    assertTrue(isHelmReleaseDeployed(NGINX_RELEASE_NAME, nginxNamespace),
-        String.format("NGINX release %s is not in deployed status in namespace %s",
-            NGINX_RELEASE_NAME, nginxNamespace));
-    logger.info("NGINX release {0} status is deployed in namespace {1}",
-        NGINX_RELEASE_NAME, nginxNamespace);
-
-    // wait until the NGINX pod is ready.
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for NGINX to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                nginxNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(isNginxReady(nginxNamespace));
   }
 
   /**
@@ -567,65 +313,4 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     return image;
   }
-
-  /**
-   * Check pod is created.
-   *
-   * @param podName pod name to check
-   */
-  private void checkPodCreated(String podName) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
-            String.format("podExists failed with ApiException for %s in namespace in %s",
-                podName, domainNamespace)));
-
-  }
-
-  /**
-   * Check pod is ready.
-   *
-   * @param podName pod name to check
-   */
-  private void checkPodReady(String podName) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-            String.format(
-                "pod %s is not ready in namespace %s", podName, domainNamespace)));
-
-  }
-
-  /**
-   * Check service is created.
-   *
-   * @param serviceName service name to check
-   */
-  private void checkServiceCreated(String serviceName) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
-            String.format(
-                "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
-
-  }
-
 }
