@@ -30,6 +30,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -45,6 +46,8 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
   private static final AtomicBoolean started = new AtomicBoolean(false);
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
+  private static String operatorImage;
+  private static String miiBasicImage;
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -63,13 +66,13 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
 
         // build operator image
-        String operatorImage = Operator.getImageName();
+        operatorImage = Operator.getImageName();
         logger.info("Operator image name {0}", operatorImage);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage));
 
         // build MII basic image
-        String miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+        miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
         assertTrue(createMiiBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG),
             String.format("Failed to create the image %s using WebLogic Image Tool",
                 miiBasicImage));
@@ -115,6 +118,17 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   @Override
   public void close() {
     logger.info("Cleanup images after all test suites are run");
+
+    // delete mii basic image
+    if (miiBasicImage != null) {
+      deleteImage(miiBasicImage);
+    }
+
+    // delete operator image
+    if (operatorImage != null) {
+      deleteImage(operatorImage);
+    }
+
   }
 
   /**

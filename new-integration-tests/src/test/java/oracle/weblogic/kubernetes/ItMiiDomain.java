@@ -59,7 +59,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -103,7 +102,6 @@ class ItMiiDomain implements LoggedTest {
 
   private String domainUid = "domain1";
   private String domainUid1 = "domain2";
-  private String miiImage = null;
 
   private static Map<String, Object> secretNameMap;
 
@@ -498,11 +496,6 @@ class ItMiiDomain implements LoggedTest {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace1),
             "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
-
-    // delete the domain image created for the test
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
 
   }
 
