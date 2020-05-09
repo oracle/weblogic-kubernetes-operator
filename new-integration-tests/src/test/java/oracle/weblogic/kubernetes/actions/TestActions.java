@@ -76,9 +76,9 @@ public class TestActions {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean scaleDomain(String domainUid, String namespace, String clusterName, int numOfServers)
+  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
       throws ApiException {
-    return Domain.scaleDomain(domainUid, namespace, clusterName, numOfServers);
+    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
   }
 
   /**
@@ -244,14 +244,14 @@ public class TestActions {
   }
 
   /**
-   * Get a list of ingress names in the specified namespace.
+   * Get a list of ingresses in the specified namespace.
    *
    * @param namespace in which to list all the ingresses
    * @return list of ingress names in the specified namespace
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static List<String> getIngressList(String namespace) throws ApiException {
-    return Nginx.getIngressList(namespace);
+  public static List<String> listIngresses(String namespace) throws ApiException {
+    return Nginx.listIngresses(namespace);
   }
 
   // -------------------------  namespaces -------------------------------

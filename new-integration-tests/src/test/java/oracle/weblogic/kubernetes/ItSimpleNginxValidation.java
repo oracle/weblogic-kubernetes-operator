@@ -75,11 +75,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.getIngressList;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -109,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItSimpleNginxValidation implements LoggedTest {
 
   // mii constants
-  private static final String WDT_MODEL_FILE = "model2-wls.yaml";
+  private static final String WDT_MODEL_FILE = "model4-nginx-validation-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
   private static final String APP_NAME = "sample-app";
 
@@ -184,7 +184,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     final String adminServerPodName = domainUid + "-admin-server";
 
     // create image with model files
-    logger.info("creating image with model file and verify");
+    logger.info("Creating image with model file and verify");
     String miiImage = createImageAndVerify();
 
     // docker login, if necessary
@@ -212,7 +212,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
+    logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     Map<String, String> adminSecretMap = new HashMap<>();
     adminSecretMap.put("username", "weblogic");
@@ -225,7 +225,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     assertTrue(secretCreated, String.format("create secret failed for %s", adminSecretName));
 
     // create encryption secret
-    logger.info("Create encryption secret");
+    logger.info("Creating encryption secret");
     String encryptionSecretName = "encryptionsecret";
     Map<String, String> encryptionSecretMap = new HashMap<>();
     encryptionSecretMap.put("username", "weblogicenc");
@@ -279,7 +279,7 @@ class ItSimpleNginxValidation implements LoggedTest {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
@@ -288,7 +288,7 @@ class ItSimpleNginxValidation implements LoggedTest {
             domainUid, domainNamespace));
 
     // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
+    logger.info("Checking for domain custom resource existence in namespace {0}", domainNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
@@ -299,18 +299,18 @@ class ItSimpleNginxValidation implements LoggedTest {
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
-    // check admin server pod exist
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
+    // check admin server pod was created
+    logger.info("Checking that admin server pod {0} was created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodCreated(adminServerPodName);
 
     // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName);
 
     // check admin service is created
-    logger.info("Check admin service {0} is created in namespace {1}",
+    logger.info("Checking that admin service {0} was created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceCreated(adminServerPodName);
 
@@ -320,18 +320,18 @@ class ItSimpleNginxValidation implements LoggedTest {
         String managedServerPodName =
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + managedServerNameBase + j;
 
-        // check managed server pod is created
-        logger.info("Check for managed server pod {0} is created in namespace {1}",
+        // check managed server pod was created
+        logger.info("Checking that managed server pod {0} was created in namespace {1}",
             managedServerPodName, domainNamespace);
         checkPodCreated(managedServerPodName);
 
         // check managed server pod is ready
-        logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+        logger.info("Checking that managed server pod {0} is ready in namespace {1}",
             managedServerPodName, domainNamespace);
         checkPodReady(managedServerPodName);
 
-        // check managed server service is created
-        logger.info("Check managed server service {0} is created in namespace {1}",
+        // check managed server service was created
+        logger.info("Checking that managed server service {0} was created in namespace {1}",
             managedServerPodName, domainNamespace);
         checkServiceCreated(managedServerPodName);
       }
@@ -353,18 +353,18 @@ class ItSimpleNginxValidation implements LoggedTest {
           ingressName, clusterName, domainUid, domainNamespace);
       assertThat(createIngress(ingressName, domainNamespace, domainUid, clusterName,
           MANAGED_SERVER_PORT, domainUid + "." + clusterName + ".test"))
-          .as("Test createIngress succeeds")
-          .withFailMessage(String.format("failed to create an ingress for cluster %s of domain %s in namespace %s",
-              clusterName, domainUid, domainNamespace))
+          .as("Test ingress creation succeeds", ingressName)
+          .withFailMessage("Ingress creation failed for cluster {0} of domain {1} in namespace {2}",
+              clusterName, domainUid, domainNamespace)
           .isTrue();
 
-      // check the ingress is created
-      assertThat(assertDoesNotThrow(() -> getIngressList(domainNamespace)))
-          .as(String.format("Test the ingress %s is created in namespace %s", ingressName, domainNamespace))
-          .withFailMessage(String.format("can not find ingress %s in namespace %s", ingressName, domainNamespace))
+      // check that the ingress was found in the domain namespace
+      assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
+          .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+          .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
           .contains(ingressName);
 
-      logger.info("ingress {0} for cluster {1} of domain {2} is created in namespace {3}",
+      logger.info("Ingress {0} for cluster {1} of domain {2} was found in namespace {3}",
           ingressName, clusterName, domainUid, domainNamespace);
     }
   }
@@ -372,18 +372,18 @@ class ItSimpleNginxValidation implements LoggedTest {
   @Test
   @Order(3)
   @DisplayName("Verify the application can be accessed through the ingress controller for each cluster in the domain")
-  public void testSampleAppThroughIngressController() {
+  public void testAppAccessThroughIngressController() {
 
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
       String clusterName = CLUSTER_NAME_PREFIX + i;
 
-      List<String> expectedServerNamesInAppResponse =
-          generateExpectedServerNamesInAppResponse(clusterName, replicaCount);
+      List<String> managedServerListBeforeScale =
+          listManagedServersBeforeScale(clusterName, replicaCount);
 
       // check that NGINX can access the sample apps from all managed servers in the cluster of the domain
       curlCmd = generateCurlCmd(clusterName);
-      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
-          .as("verify NGINX can access the sample app from all managed servers in the domain")
+      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerListBeforeScale, 50))
+          .as("Verify NGINX can access the sample app from all managed servers in the domain")
           .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
           .isTrue();
     }
@@ -391,8 +391,8 @@ class ItSimpleNginxValidation implements LoggedTest {
 
   @Test
   @Order(4)
-  @DisplayName("Verify scale domain with domainUid with multiple clusters in domainNamespace")
-  public void testScaleDomainWithMultiClusters() {
+  @DisplayName("Verify scale each cluster of the domain in domain namespace")
+  public void testScaleClusters() {
 
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
 
@@ -400,14 +400,13 @@ class ItSimpleNginxValidation implements LoggedTest {
       int numberOfServers = 2 * i - 1;
 
       // scale cluster-1 to 1 server and cluster-2 to 3 servers
-      logger.info("scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers);
-      scaleAndVerifyDomain(domainUid, domainNamespace, clusterName, replicaCount, numberOfServers);
+      scaleAndVerifyCluster(domainUid, domainNamespace, clusterName, replicaCount, numberOfServers);
 
       // then scale cluster-1 and cluster-2 to 0 server
-      scaleAndVerifyDomain(domainUid, domainNamespace, clusterName, numberOfServers, 0);
+      scaleAndVerifyCluster(domainUid, domainNamespace, clusterName, numberOfServers, 0);
     }
-
   }
 
   /**
@@ -442,7 +441,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     // get operator image name
     String operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
-    logger.info("operator image name {0}", operatorImage);
+    logger.info("Got operator image name {0}", operatorImage);
 
     // Create docker registry secret in the operator namespace to pull the image from repository
     logger.info("Creating docker registry secret in namespace {0}", opNamespace);
@@ -497,7 +496,7 @@ class ItSimpleNginxValidation implements LoggedTest {
         OPERATOR_RELEASE_NAME, opNamespace);
 
     // check operator is running
-    logger.info("Check operator pod is running in namespace {0}", opNamespace);
+    logger.info("Checking that operator pod is running in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for operator to be running in namespace {0} "
@@ -529,7 +528,7 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     // install NGINX
     assertThat(installNginx(nginxParams))
-        .as("NGINX is installed successfully")
+        .as("Test installing NGINX succeeds")
         .withFailMessage("NGINX installation is failed")
         .isTrue();
 
@@ -593,7 +592,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     }
 
     // build an image using WebLogic Image Tool
-    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
+    logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = createMiiImage(
         defaultWitParams()
             .modelImageName(imageName)
@@ -674,14 +673,14 @@ class ItSimpleNginxValidation implements LoggedTest {
   }
 
   /**
-   * Check pod does not exist.
+   * Check pod was deleted.
    *
    * @param podName pod name to check
    */
-  private void checkPodDoesNotExist(String podName) {
+  private void checkPodDeleted(String podName) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be removed in namespace {1} "
+            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 podName,
                 domainNamespace,
@@ -691,107 +690,103 @@ class ItSimpleNginxValidation implements LoggedTest {
             String.format("Pod %s still exists in namespace %s", podName, domainNamespace)));
   }
 
-  /** Scale the WebLogic cluster of the domain to numberOfServers in the specified domain namespace.
-   *  Verify the pods are created or deleted depending on the numberOfServers. Also verify
-   *  NGINX can access the sample apps to all the servers after the scale operation.
+  /** Scale the WebLogic cluster to specified number of servers.
+   *  And verify the sample app can be accessed through NGINX.
    *
    * @param domainUid the domain with domainUid which will be scaled
-   * @param domainNamespace the domain namespace the domain resides
+   * @param domainNamespace the domain namespace in which the domain exists
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
-   * @param numberOfServers the number of servers to be scaled to
-   * @return the replicas of the WebLogic cluster after the scale
+   * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
    */
-  private int scaleAndVerifyDomain(String domainUid,
+  private void scaleAndVerifyCluster(String domainUid,
                                    String domainNamespace,
                                    String clusterName,
                                    int replicasBeforeScale,
-                                   int numberOfServers) {
+                                   int replicasAfterScale) {
 
-    String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-managed-server";
+    String manageServerPodNamePrefix = domainUid + "-" + clusterName + managedServerNameBase;
 
     // scale the cluster in the domain
-    assertThat(assertDoesNotThrow(() -> scaleDomain(domainUid, domainNamespace, clusterName, numberOfServers)))
-        .as(String.format("Verify scale the cluster %s of domain %s in namespace %s",
-            clusterName, domainUid, domainNamespace))
-        .withFailMessage(String.format("can not scale cluster %s of domain %s in namespace %s",
-            clusterName, domainUid, domainNamespace))
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
+        clusterName, domainUid, domainNamespace, replicasAfterScale);
+    assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
+        .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
+            clusterName, domainUid, domainNamespace)
+        .withFailMessage("Scaling cluster failed")
         .isTrue();
 
     // generate a curl command to ping the sample app through the ingress controller
     curlCmd = generateCurlCmd(clusterName);
 
     // generate the expected server list which should be in the sample app response string
-    List<String> expectedServerNamesInAppResponse =
-        generateExpectedServerNamesInAppResponse(clusterName, replicasBeforeScale);
+    List<String> expectedServerNames =
+        listManagedServersBeforeScale(clusterName, replicasBeforeScale);
     logger.info("expected server name list which should be in the sample app response: {0} before scale",
-        expectedServerNamesInAppResponse);
+        expectedServerNames);
 
-    if (replicasBeforeScale <= numberOfServers) {
+    if (replicasBeforeScale <= replicasAfterScale) {
 
       // check that NGINX can access the sample apps from the original managed servers in the domain
-      logger.info("Check that NGINX can access the sample app from the original managed servers in the domain "
+      logger.info("Checking that NGINX can access the sample app from the original managed servers in the domain "
                   + "while the domain is scaling up.");
-      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
+      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
           .as("Verify NGINX can access the sample app from the original managed servers in the domain")
           .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
           .isTrue();
 
       // check new managed server pods are created and wait for them to be ready
-      for (int i = replicasBeforeScale + 1; i <= numberOfServers; i++) {
+      for (int i = replicasBeforeScale + 1; i <= replicasAfterScale; i++) {
         String manageServerPodName = manageServerPodNamePrefix + i;
 
-        // check new managed server pods are created
-        logger.info("Check for the new managed server pod {0} is created in namespace {1}",
+        // check new managed server pod was created
+        logger.info("Checking that the new managed server pod {0} was created in namespace {1}",
             manageServerPodName, domainNamespace);
         checkPodCreated(manageServerPodName);
 
-        // check new managed server pods are ready
-        logger.info("Wait for the new managed server pod {0} to be ready in namespace {1}",
+        // check new managed server pod is ready
+        logger.info("Checking that the new managed server pod {0} is ready in namespace {1}",
             manageServerPodName, domainNamespace);
         checkPodReady(manageServerPodName);
 
-        // check new managed server services are created
-        logger.info("Check for the new managed server service {0} is created in namespace {1}",
+        // check new managed server service was created
+        logger.info("Checking that the new managed server service {0} was created in namespace {1}",
             manageServerPodName, domainNamespace);
         checkServiceCreated(manageServerPodName);
 
         // add the new managed server to the list
-        expectedServerNamesInAppResponse.add(clusterName + "-managed-server" + i);
-
+        expectedServerNames.add(clusterName + managedServerNameBase + i);
       }
 
       // check that NGINX can access the sample apps from new and original managed servers
-      logger.info("Check that NGINX can access the sample app from the new and original managed servers "
-          + "in the domain after the domain is scaled up.");
-      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
-          .as("Check NGINX can access the sample app from all managed servers in the domain")
+      logger.info("Checking that NGINX can access the sample app from the new and original managed servers "
+          + "in the domain after the cluster is scaled up.");
+      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
+          .as("Verify NGINX can access the sample app from all managed servers in the domain")
           .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
           .isTrue();
     } else {
       // scale down
-      // wait and check the pods are removed
-      for (int i = replicasBeforeScale; i > numberOfServers; i--) {
-        logger.info("Check managed server pod {0} is removed in namespace {1}",
+      // wait and check the pods are deleted
+      for (int i = replicasBeforeScale; i > replicasAfterScale; i--) {
+        logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
             manageServerPodNamePrefix + i, domainNamespace);
-        checkPodDoesNotExist(manageServerPodNamePrefix + i);
-        expectedServerNamesInAppResponse.remove(clusterName + "-managed-server" + i);
+        checkPodDeleted(manageServerPodNamePrefix + i);
+        expectedServerNames.remove(clusterName + managedServerNameBase + i);
       }
 
-      // check that NGINX can access the remaining managed server in the domain
-      logger.info("Check that NGINX can access the sample app from the remaining managed servers in the domain "
-          + "after the domain is scaled down.");
-      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNamesInAppResponse, 50))
-          .as("Check NGINX can access the sample app from the remaining managed server in the domain")
+      // check that NGINX can access the app from the remaining managed servers in the domain
+      logger.info("Checking that NGINX can access the sample app from the remaining managed servers in the domain "
+          + "after the cluster is scaled down.");
+      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
+          .as("Verify NGINX can access the sample app from the remaining managed server in the domain")
           .withFailMessage("NGINX can not access the sample app from the remaining managed server")
           .isTrue();
     }
-
-    return numberOfServers;
   }
 
   /**
-   * Generate the curl command to ping the sample app from the ingress controller.
+   * Generate the curl command to access the sample app from the ingress controller.
    *
    * @param clusterName WebLogic cluster name which is the backend of the ingress
    * @return curl command string
@@ -804,18 +799,18 @@ class ItSimpleNginxValidation implements LoggedTest {
   }
 
   /**
-   * Generate an expected server name list which should be returned in the sample app response.
+   * Generate a server list which contains all managed servers in the cluster before scale.
    *
-   * @param clusterName the WebLogic cluster name which is the backend of the ingress
+   * @param clusterName the name of the WebLogic cluster
    * @param replicasBeforeScale the replicas of WebLogic cluster before scale
-   * @return list of server names which should be in the sample app response
+   * @return list of managed servers in the cluster before scale
    */
-  private List<String> generateExpectedServerNamesInAppResponse(String clusterName, int replicasBeforeScale) {
-    List<String> expectedServerNames = new ArrayList<>();
+  private List<String> listManagedServersBeforeScale(String clusterName, int replicasBeforeScale) {
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
-      expectedServerNames.add(clusterName + managedServerNameBase + i);
+      managedServerNames.add(clusterName + managedServerNameBase + i);
     }
 
-    return expectedServerNames;
+    return managedServerNames;
   }
 }

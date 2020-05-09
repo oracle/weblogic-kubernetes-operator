@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -87,18 +88,22 @@ public class Domain {
    * Scale the cluster of the domain in the specified namespace.
    *
    * @param domainUid domainUid of the domain to be scaled
-   * @param namespace namespace in which the domain resides
+   * @param namespace namespace in which the domain exists
    * @param clusterName name of the WebLogic cluster to be scaled in the domain
    * @param numOfServers number of servers to be scaled to
-   * @return true if success, false otherwise
+   * @return true if patch domain custom resource succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean scaleDomain(String domainUid, String namespace, String clusterName, int numOfServers)
+  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
       throws ApiException {
 
     // get the domain cluster list
     oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
-    List<Cluster> clusters = domain.getSpec().getClusters();
+
+    List<Cluster> clusters = new ArrayList<>();
+    if (domain.getSpec() != null) {
+      clusters = domain.getSpec().getClusters();
+    }
 
     // get the index of the cluster with clusterName in the cluster list
     int index = 0;
@@ -119,7 +124,8 @@ public class Domain {
         .append(numOfServers)
         .append("}]");
 
-    logger.info("Scale domain patch String: {0}", patchStr.toString());
+    logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
+        clusterName, domainUid, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
 

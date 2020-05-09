@@ -58,10 +58,11 @@ public class TestUtils {
             }
           });
         } catch (Exception e) {
-          logger.info("Got exception while running command: " + curlCmd);
+          logger.info("Got exception while running command: {0}", curlCmd);
+          logger.info(e.toString());
           if (result != null) {
-            logger.info("result.stdout: \n {0}", result.stdout());
-            logger.info("result.stderr: \n {0}", result.stderr());
+            logger.info("result.stdout: \n{0}", result.stdout());
+            logger.info("result.stderr: \n{0}", result.stderr());
           }
           return false;
         }

@@ -118,20 +118,20 @@ public class Nginx {
     try {
       Kubernetes.createIngress(domainNamespace, ingress);
     } catch (ApiException apex) {
-      logger.info("got ApiException while calling createIngress: {0}", apex.getResponseBody());
+      logger.severe("got ApiException while calling createIngress: {0}", apex.getResponseBody());
       return false;
     }
     return true;
   }
 
   /**
-   * Get a list of ingress names in the specified namespace.
+   * List all of the ingresses in the specified namespace.
    *
    * @param namespace the namespace to which the ingresses belong
    * @return a list of ingress names in the namespace
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static List<String> getIngressList(String namespace) throws ApiException {
+  public static List<String> listIngresses(String namespace) throws ApiException {
 
     List<String> ingressNames = new ArrayList<>();
     ExtensionsV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
