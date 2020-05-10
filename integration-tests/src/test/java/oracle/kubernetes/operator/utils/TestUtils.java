@@ -51,41 +51,6 @@ public class TestUtils {
   }
 
   /**
-   * Retrieve info for provided helm chart
-   *
-   * @param chartName  HelmChart name
-   * @param chartNS namespace
-   * @throws RuntimeException if chart info can't be retrieved.
-   */
-  public static void checkHelmChart(String chartName, String chartNS) throws Exception {
-    String cmd = "helm history " + chartName + " --namespace " + chartNS;
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new Exception(
-          "FAILURE: Command "
-              + cmd
-              + " failed with stderr = "
-              + result.stderr()
-              + " \n stdout = "
-              + result.stdout());
-    }
-    LoggerHelper.getLocal().log(Level.INFO, " Release "
-        + chartName
-        + " history "
-        + result.stdout()
-        + result.stderr()
-        );
-    cmd = "helm test " + chartName + " --namespace " + chartNS;
-    result = ExecCommand.exec(cmd);
-    LoggerHelper.getLocal().log(Level.INFO, " Release "
-        + chartName
-        + " info "
-        + result.stdout()
-        + result.stderr()
-    );
-  }
-
-  /**
    * Checks if pod is ready.
    *
    * @param podName  pod name
@@ -2154,5 +2119,40 @@ public class TestUtils {
               + " -o jsonpath='{.metadata.deletionTimestamp}'";
     ExecResult result = ExecCommand.exec(kcmd);
     return result.stdout().trim();
+  }
+
+  /**
+   * Retrieve info for provided helm chart.
+   *
+   * @param chartName  HelmChart name
+   * @param chartNS namespace
+   * @throws RuntimeException if chart info can't be retrieved.
+   */
+  public static void checkHelmChart(String chartName, String chartNS) throws Exception {
+    String cmd = "helm history " + chartName + " --namespace " + chartNS;
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new Exception(
+          "FAILURE: Command "
+              + cmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " history "
+        + result.stdout()
+        + result.stderr()
+    );
+    cmd = "helm test " + chartName + " --namespace " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " info "
+        + result.stdout()
+        + result.stderr()
+    );
   }
 }
