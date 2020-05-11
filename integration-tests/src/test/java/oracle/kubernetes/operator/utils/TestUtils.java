@@ -970,6 +970,8 @@ public class TestUtils {
   }
 
   /**
+   * Retreive pod's name based on search expression.
+   *
    * @param searchExp  Search expression (for example -l app=webhook).
    * @param namespace  Namespace where pod is running
    * @return name of pod matching search expression
