@@ -61,6 +61,7 @@ public class ReadHealthStep extends Step {
   public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
       OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final Integer HTTP_TIMEOUT_SECONDS = 60;
 
   private ReadHealthStep(Step next) {
     super(next);
@@ -262,7 +263,7 @@ public class ReadHealthStep extends Step {
                     HttpRequest request =
                         HttpRequest.newBuilder()
                             .uri(URI.create(url))
-                            .timeout(Duration.ofMinutes(1))
+                            .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS))
                             .header("Authorization", "Basic " + encodedCredentials)
                             .header("Accept", "application/json")
                             .header("Content-Type", "application/json")
