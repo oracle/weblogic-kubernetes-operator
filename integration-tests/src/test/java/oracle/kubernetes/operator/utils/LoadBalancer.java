@@ -131,7 +131,7 @@ public class LoadBalancer {
     createTraefikIngress();
   }
 
-  private void upgradeTraefikNamespace() throws Exception {
+  private synchronized void upgradeTraefikNamespace() throws Exception {
 
     String namespace = getKubernetesNamespaceToUpdate((String) lbMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
