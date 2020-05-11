@@ -89,15 +89,15 @@ For a description of model file macro references to secrets and environment vari
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
-During domain home creation, model and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT ConfigMap described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#3-optional-wdt-model-configmap" >}}).
+During domain home creation, model, and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}).
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
  * Embedding a `.##.` in a filename is optional and can appear anywhere in the file name before the `properties` or `yaml` extension.
-   * The precedence of file names that include more than one `.##.` is undefined. 
-   * The number can be any integer greater than or equal to zero. 
+   * The precedence of file names that include more than one `.##.` is undefined.
+   * The number can be any integer greater than or equal to zero.
  * File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`  
- * If two files share the same number, the loading order is determined alphabetically as a tie-breaker. 
+ * If two files share the same number, the loading order is determined alphabetically as a tie-breaker.
 
 If an image file and ConfigMap file both have the same name, then both files are loaded.
 

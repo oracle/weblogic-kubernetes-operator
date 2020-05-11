@@ -17,7 +17,6 @@ import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -87,113 +86,6 @@ public class MiiBaseTest extends BaseTest {
   }
 
   /**
-   * Modify the domain yaml to change domain-level restart version.
-   * @param domainNS the domain namespace
-   * @param domainUid the domain UID
-   * @param versionNo restartVersion number of domain
-   */
-  protected void createDomainImage(Map<String, Object> domainMap, String imageName,
-                                   String modelFile, String modelPropFile) {
-    String domainBaseImageName = (String) domainMap.get("domainHomeImageBase");
-    String domainUid = (String) domainMap.get("domainUID");
-    String domainName = (String) domainMap.get("domainName");
-    ExecResult result = null;
-
-    // Get the map of any additional environment vars, or null
-    Map<String, String> additionalEnvMap = (Map<String, String>) domainMap.get("additionalEnvMap");
-    String resultsDir = (String) domainMap.get("resultDir");
-    StringBuffer createDomainImageScriptCmd = new StringBuffer("export WDT_VERSION=");
-
-    createDomainImageScriptCmd.append(BaseTest.WDT_VERSION).append(" && ")
-      .append(getUserProjectsDir())
-      .append("/weblogic-domains/")
-      .append(domainName)
-      .append("/miiWorkDir/")
-      .append("imagetool/bin/imagetool.sh update")
-      .append(" --tag ")
-      .append(imageName)
-      .append(" --fromImage ")
-      .append(domainBaseImageName)
-      .append(" --wdtModel ")
-      .append(resultsDir)
-      .append("/samples/model-in-image/")
-      .append(modelFile)
-      .append(" --wdtVariables ")
-      .append(resultsDir)
-      .append("/samples/model-in-image/")
-      .append(modelPropFile)
-      .append(" --wdtArchive ")
-      .append(getUserProjectsDir())
-      .append("/weblogic-domains/")
-      .append(domainName)
-      .append("/miiWorkDir/models/archive.zip")
-      .append(" --wdtModelOnly ")
-      .append(" --wdtDomainType ")
-      .append(WdtDomainType.WLS.geWdtDomainType());
-
-    try {
-      // creating image
-      LoggerHelper.getLocal().log(Level.INFO, "Command to create domain image: "
-          + createDomainImageScriptCmd);
-      result = ExecCommand.exec(createDomainImageScriptCmd.toString(), true, additionalEnvMap);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
-      errorMsg
-          .append(createDomainImageScriptCmd)
-          .append(" failed, returned ")
-          .append(result.stdout())
-          .append("\n")
-          .append(result.stderr());
-
-      Assertions.fail(errorMsg.toString(), ex.getCause());
-    }
-  }
-
-  /**
-   * Modify the domain yaml to change image name.
-   * @param domainNS the domain namespace
-   * @param domainUid the domain UID
-   * @param imageName image name
-   */
-  protected void modifyDomainYamlWithImageName(
-      Domain domain, String domainNS, String imageName) {
-    ExecResult result = null;
-    String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
-    StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
-    patchDomainCmd
-        .append(domainNS)
-        .append(" patch domain ")
-        .append(domain.getDomainUid())
-        .append(" --type='json' ")
-        .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"'")
-        .append(imageName)
-        .append("'\" }]'");
-
-    try {
-      // patching the domain
-      LoggerHelper.getLocal().log(Level.INFO, "Command to patch domain: " + patchDomainCmd);
-      result = TestUtils.execOrAbortProcess(patchDomainCmd.toString());
-      LoggerHelper.getLocal().log(Level.INFO, "Domain patch result: " + result.stdout());
-
-      // verify the domain restarted
-      domain.verifyAdminServerRestarted();
-      domain.verifyManagedServersRestarted();
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      StringBuffer errorMsg = new StringBuffer("FAILURE: command: ");
-      errorMsg
-          .append(patchDomainCmd)
-          .append(" failed, returned ")
-          .append(result.stdout())
-          .append("\n")
-          .append(result.stderr());
-
-      Assertions.fail(errorMsg.toString(), ex.getCause());
-    }
-  }
-
-  /**
    * Modify the domain yaml to add reference to config map and change domain-level restart version.
    * @param cmName Config map name
    * @param domain the domain
@@ -234,19 +126,21 @@ public class MiiBaseTest extends BaseTest {
   }
 
   /**
-   * Modify the domain yaml to change domain-level restart version.
-   * @param domainNS the domain namespace
-   * @param domainUid the domain UID
-   * @param versionNo restartVersion number of domain
+   * Modify the domain yaml to change domain-level restart version and verify the domain restarted.
+   * @param domain the Domain where to change domain-level restart version
+   * @param domainNS the domain namespace name
    */
-  protected void modifyDomainYamlWithRestartVersion(Domain domain, String domainNS) {
+  protected void modifyDomainYamlWithRestartVersion(Domain domain) {
+    final String domainNS = domain.getDomainNs();
+    final String domainUid = domain.getDomainUid();
+    final String versionNo = getRestartVersion(domainNS, domainUid);
     ExecResult result = null;
-    String versionNo = getRestartVersion(domainNS, domain.getDomainUid());
+
     StringBuffer patchDomainCmd = new StringBuffer("kubectl -n ");
     patchDomainCmd
         .append(domainNS)
         .append(" patch domain ")
-        .append(domain.getDomainUid())
+        .append(domainUid)
         .append(" --type='json' ")
         .append(" -p='[{\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"'")
         .append(versionNo)

@@ -494,7 +494,6 @@ class ItMiiDomain implements LoggedTest {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace1),
             "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
-
   }
 
   private void createRepoSecret(String domNamespace) throws ApiException {

@@ -19,6 +19,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
@@ -86,18 +87,19 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
             String.format("Image %s doesn't exist", miiBasicImage));
 
-        // push the image to registry to make the test work in multi node cluster
         if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
           assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+        }
 
-          logger.info("docker push operator image {0} to registry", operatorImage);
+        // push the image
+        if (!REPO_NAME.isEmpty()) {
+          logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
           assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
 
           logger.info("docker push mii basic image {0} to registry", miiBasicImage);
           assertTrue(dockerPush(miiBasicImage), String.format("docker push failed for image %s", miiBasicImage));
         }
-        
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
         // other threads
@@ -156,6 +158,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+
+    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+    // the next JDK 14 versions are released.
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      env.put("JAVA_HOME", witJavaHome);
+    }
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);

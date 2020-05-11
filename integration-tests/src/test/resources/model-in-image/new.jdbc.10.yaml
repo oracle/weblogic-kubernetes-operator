@@ -1,0 +1,52 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
+    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
+    ServerStartMode: 'prod'
+
+topology:
+    Name: domain1
+    AdminServerName: "admin-server"
+    Cluster:
+        "cluster-1":
+            DynamicServers:
+                ServerTemplate:  "cluster-1-template"
+                ServerNamePrefix: "managed-server"
+                DynamicClusterSize: 5
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+    Server:
+        "admin-server":
+            ListenPort: 7001
+    ServerTemplate:
+        "cluster-1-template":
+            Cluster: "cluster-1"
+            ListenPort : '@@PROP:MANSVR_PORT@@'
+resources:
+    JDBCSystemResource:
+        MyDataSource:
+            Target: "cluster-1"
+            JdbcResource:
+                JDBCDataSourceParams:
+                    JNDIName: jdbc/generic1
+                JDBCDriverParams:
+                    DriverName: oracle.jdbc.OracleDriver
+                    URL: 'jdbc:oracle:thin:@//@@PROP:dbcs1.url@@'
+                    PasswordEncrypted: '@@PROP:dbcs1.password@@'
+                    Properties:
+                        user:
+                            Value: '@@PROP:dbcs1.user@@'
+                        oracle.net.CONNECT_TIMEOUT:
+                            Value: 5201
+                        oracle.jdbc.ReadTimeout:
+                            Value: '@@PROP:read.timeout@@'
+                JDBCConnectionPoolParams:
+                    MaxCapacity: 50
+appDeployments:
+    Application:
+        myear:
+            SourcePath: wlsdeploy/applications/sample_app.ear
+            ModuleType: ear
+            Target: 'cluster-1'
