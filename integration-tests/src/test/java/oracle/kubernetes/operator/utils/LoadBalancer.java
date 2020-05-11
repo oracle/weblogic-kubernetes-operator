@@ -155,7 +155,17 @@ public class LoadBalancer {
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+    int i = 0;
+    //wait untill pod restarted after upgrade and check the status
     String traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
+    while (i < maxIterationsPod) {
+      if (TestUtils.checkPodContains(cmd.toString(), "Terminating", traefikPod)) {
+        i++;
+      } else {
+        break;
+      }
+    }
+    traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
     TestUtils.checkPodReady(traefikPod, "traefik");
   }
 
