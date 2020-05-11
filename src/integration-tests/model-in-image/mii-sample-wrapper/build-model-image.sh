@@ -8,7 +8,7 @@
 #    This script builds a model image using the WebLogic Image Tool. The
 #    tool pulls a base image if there isn't already a local base image.
 #    This script, by default, builds the model image with model files from
-#    MODEL_DIR using tooling downloaded by './stage-tooling.sh.'.
+#    WORKDIR/MODEL_DIR using tooling downloaded by './stage-tooling.sh.'.
 #
 #  Optional Argument(s):
 #
@@ -26,10 +26,6 @@
 #
 #  Optional environment variables:
 #
-#    WORKDIR
-#      Working directory for the sample with at least 10GB of space.
-#      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
-#
 #    MODEL_DIR:
 #      Location relative to WORKDIR of the model .zip, .properties,
 #      and .yaml files that will be copied to the model image.  Default is:
@@ -40,23 +36,14 @@
 #      Default is "archives/archive-v1". This directory must contain a
 #      'wlsdeploy' directory.
 #
-#    MODEL_IMAGE_BUILD:
-#      Set to 'when-changed' or 'always' (default). 'when-changed' behavior is to
-#      exit without building if the docker image BASE_IMAGE_NAME:BASE_IMAGE_TAG
-#      is found in the local docker image cache.
-#
-#    WDT_DOMAIN_TYPE
-#      'WLS' (default), 'RestrictedJRF', or 'JRF'.
-#
-#    BASE_IMAGE_NAME, BASE_IMAGE_TAG:
-#      The base image name defaults to 
-#         'container-registry.oracle.com/middleware/weblogic'
-#      for the 'WLS' domain type, and otherwise defaults to 
-#         'container-registry.oracle.com/middleware/fmw-infrastructure'. 
-#      The tag defaults to '12.2.1.4'.
-#
 #    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG:
 #      Defaults to 'model-in-image' and 'WDT_DOMAIN_TYPE-v1'.
+#
+#    Others (see README)
+#      WORKDIR
+#      MODEL_IMAGE_BUILD
+#      WDT_DOMAIN_TYPE
+#      BASE_IMAGE_NAME, BASE_IMAGE_TAG
 #
 
 set -eu

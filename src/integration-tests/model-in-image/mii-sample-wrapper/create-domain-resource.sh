@@ -15,13 +15,10 @@
 #                               prefixed with 'dryrun:'.
 #
 # Optional environment variables:
-#   WORKDIR                   - Working directory for the sample with at least
-#                               10GB of space. Defaults to 
-#                               '/tmp/$USER/model-in-image-sample-work-dir'.
-#   DOMAIN_UID                - Defaults to 'sample-domain1'
-#   DOMAIN_NAMESPACE          - Defaults to 'sample-domain1-ns'
 #   DOMAIN_RESOURCE_FILENAME  - Location of domain resource file.
 #                               Defaults to WORKDIR/domain-resources/mii-DOMAIN_UID.yaml
+#   Others (see README):
+#     WORKDIR, DOMAIN_UID, DOMAIN_NAMESPACE
 #                            
 
 set -eu
@@ -49,8 +46,6 @@ done
 #
 
 if [ "$pre_delete" = "true" ]; then
-
-# TBD remember to include instructions for 'predelete' in the sample (for safety - an old domain's pods interfering is a common problem)
   echo "@@ Info: Deleting WebLogic domain '${DOMAIN_UID}' if it already exists and waiting for its pods to exit."
   if [ "$dry_run" = "false" ]; then
     kubectl -n ${DOMAIN_NAMESPACE} delete domain ${DOMAIN_UID} --ignore-not-found

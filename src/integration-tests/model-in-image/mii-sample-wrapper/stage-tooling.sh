@@ -12,24 +12,15 @@
 #            may still implicilty perform some web actions in order
 #            to locate the installer in github.com).
 #
-# Optional environment variables (see 'env-custom.sh' for more details):
-#
-#    WORKDIR 
-#      Working directory for the sample with at least 10GB of space
-#      defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
+# Optional environment variables (see README for details):
 #
 #    http_proxy https_proxy
 #      If running behind a proxy, then set as needed to allow curl access
 #      to github.com.
 #
+#    WORKDIR 
 #    DOWNLOAD_WDT DOWNLOAD_WIT
-#      Default to 'when-missing'. Set to 'always' to force download even
-#      if local installer zip already exists.
-#
 #    WDT_INSTALLER_URL WIT_INSTALLER_URL
-#      Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
-#      and 'https://github.com/oracle/weblogic-image-tool/releases/latest' respectively.
-#      To override an installer URL, see 'env-custom.sh' for an example.
 #
 
 set -eu

@@ -23,7 +23,7 @@
 # Optional param:
 #   '-dry' Stage the ingress yaml files, but don't call 'kubectl'.
 #
-# Optional environment variables (see 'env-custom.sh' for details):
+# Optional environment variables (see ./README for details):
 #    WORKDIR
 #    DOMAIN_NAMESPACE
 #    DOMAIN_UID

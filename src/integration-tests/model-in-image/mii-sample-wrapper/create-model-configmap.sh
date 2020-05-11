@@ -7,9 +7,6 @@
 # 'DOMAIN_UID-wdt-config-map' from files in 
 # 'WORKDIR/model-configmaps/datasource'.
 #
-# If the 'MODEL_CONFIGMAP_DIR' env var is customized, then this script
-# instead deploys the configmap from the given directory.
-#
 # Note that this config map is only loaded at runtime if:
 #  - its referenced secret(s) are deployed 
 #    (See 'INCLUDE_MODEL_CONFIGMAP' in 'create-secrets.sh'.)
@@ -30,13 +27,10 @@
 #
 # Optional environment variables:
 #
-#   WORKDIR                  - Working directory for the sample with at least
-#                              10GB of space. Defaults to 
-#                              '/tmp/$USER/model-in-image-sample-work-dir'.
-#   DOMAIN_UID                - defaults to 'sample-domain1'
-#   DOMAIN_NAMESPACE          - defaults to 'sample-domain1-ns'
 #   MODEL_CONFIGMAP_DIR       - defaults to 'model-configmaps/datasource' 
 #                                (relative to WORKDIR)
+#   Others (see README):
+#     WORKDIR, DOMAIN_UID, DOMAIN_NAMESPACE   
 #
 
 set -eu

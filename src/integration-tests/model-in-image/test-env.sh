@@ -5,7 +5,7 @@
 # This file defines env vars and env defaults specific to the test.
 #
 # For env vars related directly to the sample see
-# '$SCRIPTDIR/mii-sample-helpers/custom-env.sh'.
+# '$SCRIPTDIR/mii-sample-wrappers/README'.
 # (Especially DOMAIN_NAMESPACE, DOMAIN_NAME, and DOMAIN_UID.)
 #
 

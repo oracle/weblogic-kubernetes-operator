@@ -112,7 +112,6 @@ if [ ! -z "$phase" ]; then
 
   export WDT_DOMAIN_TYPE=$type
   export MODEL_IMAGE_TAG=$type-$image_version
-  model_image=$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG
   export MODEL_DIR=model-images/${MODEL_IMAGE_NAME}__${MODEL_IMAGE_TAG}
   export ARCHIVE_SOURCEDIR="archives/archive-$archive_version"
   export DOMAIN_UID=$domain
@@ -150,7 +149,7 @@ if [ ! -z "$phase" ]; then
 
   # TBD may differ from documentation - need to manually check
 
-  work_file=$WORKDIR/model-images/build--$model_image.sh
+  work_file=$WORKDIR/model-images/build--${MODEL_IMAGE_NAME}__${MODEL_IMAGE_TAG}.sh
   $SCRIPTDIR/build-model-image.sh -dry | grep dryrun | sed 's/dryrun://' > $work_file
   chmod +x $work_file
 
