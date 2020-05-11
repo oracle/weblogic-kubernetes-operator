@@ -20,8 +20,9 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
-import oracle.kubernetes.operator.http.HttpClient;
-import oracle.kubernetes.operator.http.HttpClientStub;
+import oracle.kubernetes.operator.http.Result;
+import oracle.kubernetes.operator.http.ResultStub;
+import oracle.kubernetes.operator.steps.ReadHealthStep.ProcessResponseFromHttpClientStep;
 import oracle.kubernetes.operator.steps.ReadHealthStep.ReadHealthWithHttpClientStep;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
@@ -79,14 +80,14 @@ public class ReadHealthStepTest {
           .withAdminServerName(ADMIN_NAME);
   V1Service service;
   Step next;
-  HttpClientStub httpClientStub;
+  String encodedCredentialsStub = "test";
+  ResultStub resultStub;
   ReadHealthWithHttpClientStep withHttpClientStep;
+  ProcessResponseFromHttpClientStep processResponseFromJavaHttpClientStep;
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
 
-  /**
-   * Setup test.
-   */
+  /** Setup test. */
   @Before
   public void setup() {
     consoleControl =
@@ -96,8 +97,9 @@ public class ReadHealthStepTest {
             .withLogLevel(Level.FINE);
     service = Stub.createStub(V1ServiceStub.class);
     next = new MockStep(null);
-    httpClientStub = Stub.createStub(HttpClientStub.class);
+    resultStub = Stub.createStub(ResultStub.class);
     withHttpClientStep = new ReadHealthWithHttpClientStep(service, null, next);
+    processResponseFromJavaHttpClientStep = new ProcessResponseFromHttpClientStep(null);
   }
 
   @After
@@ -110,9 +112,12 @@ public class ReadHealthStepTest {
     Packet packet =
         Stub.createStub(PacketStub.class)
             .withServerName(ADMIN_NAME)
-            .withGetKeyThrowsException(true);
+            .withGetKeyThrowsException(true)
+            .withEncodedCredentials(encodedCredentialsStub)
+            .withGetKeyReturnValue(resultStub);
 
     withHttpClientStep.apply(packet);
+    processResponseFromJavaHttpClientStep.apply(packet);
 
     assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED, ADMIN_NAME));
   }
@@ -120,7 +125,7 @@ public class ReadHealthStepTest {
   @Test
   public void withHttpClientStep_logIfMissingHttpClient() {
     Packet packet =
-        Stub.createStub(PacketStub.class).withServerName(ADMIN_NAME).withGetKeyReturnValue(null);
+        Stub.createStub(PacketStub.class).withServerName(ADMIN_NAME).withEncodedCredentials(null);
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
     withHttpClientStep.apply(packet);
@@ -136,12 +141,15 @@ public class ReadHealthStepTest {
     Packet packet =
         Stub.createStub(PacketStub.class)
             .withServerName(ADMIN_NAME)
-            .withGetKeyReturnValue(httpClientStub);
+            .withEncodedCredentials(encodedCredentialsStub)
+            .withGetKeyReturnValue(resultStub);
+
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
     withHttpClientStep.apply(packet);
+    processResponseFromJavaHttpClientStep.apply(packet);
 
     assertThat(
         ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
@@ -153,13 +161,16 @@ public class ReadHealthStepTest {
     Packet packet =
         Stub.createStub(PacketStub.class)
             .withServerName(CONFIGURED_MANAGED_SERVER1)
-            .withGetKeyReturnValue(httpClientStub);
+            .withEncodedCredentials(encodedCredentialsStub)
+            .withGetKeyReturnValue(resultStub);
+
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
     configureServiceWithClusterName(CONFIGURED_CLUSTER_NAME);
 
     withHttpClientStep.apply(packet);
+    processResponseFromJavaHttpClientStep.apply(packet);
 
     assertThat(
         ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
@@ -171,13 +182,16 @@ public class ReadHealthStepTest {
     Packet packet =
         Stub.createStub(PacketStub.class)
             .withServerName(DYNAMIC_MANAGED_SERVER1)
-            .withGetKeyReturnValue(httpClientStub);
+            .withEncodedCredentials(encodedCredentialsStub)
+            .withGetKeyReturnValue(resultStub);
+
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
     configureServiceWithClusterName(DYNAMIC_CLUSTER_NAME);
 
     withHttpClientStep.apply(packet);
+    processResponseFromJavaHttpClientStep.apply(packet);
 
     assertThat(
         ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
@@ -188,7 +202,7 @@ public class ReadHealthStepTest {
   public void withHttpClientStep_decrementRemainingServerHealthReadInMultipleClonedPackets() {
     Packet packet = new Packet();
     packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
-    packet.put(HttpClient.KEY, httpClientStub);
+    packet.put(ProcessingConstants.KEY, encodedCredentialsStub);
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(2));
@@ -201,10 +215,15 @@ public class ReadHealthStepTest {
     Packet packet1 = packet.clone();
     packet1.put(ProcessingConstants.SERVER_NAME, ADMIN_NAME);
     withHttpClientStep1.apply(packet1);
+    packet1.put(ProcessingConstants.RESULT, new Result("", 200, true));
+    processResponseFromJavaHttpClientStep.apply(packet1);
 
     Packet packet2 = packet.clone();
     packet2.put(ProcessingConstants.SERVER_NAME, MANAGED_SERVER1);
+    packet2.put(ProcessingConstants.KEY, encodedCredentialsStub);
     withHttpClientStep2.apply(packet2);
+    packet2.put(ProcessingConstants.RESULT, new Result("", 200, true));
+    processResponseFromJavaHttpClientStep.apply(packet2);
 
     assertThat(
         ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
@@ -213,11 +232,9 @@ public class ReadHealthStepTest {
 
   @Test
   public void withHttpClientStep_verifyOkServerHealthAddedToPacket() {
-    httpClientStub.withResponse(OK_RESPONSE);
-
-    Packet packet = createPacketForTest();
-
+    Packet packet = createPacketForTest(OK_RESPONSE, 200, true);
     withHttpClientStep.apply(packet);
+    processResponseFromJavaHttpClientStep.apply(packet);
 
     Map<String, ServerHealth> serverHealthMap =
         packet.getValue(ProcessingConstants.SERVER_HEALTH_MAP);
@@ -229,11 +246,10 @@ public class ReadHealthStepTest {
 
   @Test
   public void withHttpClientStep_verifyServerHealthForServerOverloadedAddedToPacket() {
-    httpClientStub.withStatus(500).withSuccessful(false);
-
-    Packet packet = createPacketForTest();
+    Packet packet = createPacketForTest("", 500, false);
 
     withHttpClientStep.apply(packet);
+    processResponseFromJavaHttpClientStep.apply(packet);
 
     Map<String, ServerHealth> serverHealthMap =
         packet.getValue(ProcessingConstants.SERVER_HEALTH_MAP);
@@ -246,11 +262,10 @@ public class ReadHealthStepTest {
 
   @Test
   public void withHttpClientStep_verifyServerHealthForOtherErrorAddedToPacket() {
-    httpClientStub.withStatus(404).withSuccessful(false);
-
-    Packet packet = createPacketForTest();
+    Packet packet = createPacketForTest("", 404, false);
 
     withHttpClientStep.apply(packet);
+    processResponseFromJavaHttpClientStep.apply(packet);
 
     Map<String, ServerHealth> serverHealthMap =
         packet.getValue(ProcessingConstants.SERVER_HEALTH_MAP);
@@ -261,10 +276,16 @@ public class ReadHealthStepTest {
   }
 
   Packet createPacketForTest() {
+    return createPacketForTest("", 200, true);
+  }
+
+  Packet createPacketForTest(String response, int status, boolean successful) {
+    Result result = new Result(response, status, successful);
     Packet packet =
         Stub.createStub(PacketStub.class)
             .withServerName(MANAGED_SERVER1)
-            .withGetKeyReturnValue(httpClientStub);
+            .withGetKeyReturnValue(result)
+            .withEncodedCredentials(encodedCredentialsStub);
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
@@ -282,16 +303,22 @@ public class ReadHealthStepTest {
   abstract static class PacketStub extends Packet {
 
     String serverName;
+    String encodedCredentials;
     boolean getKeyThrowsException;
-    HttpClient getKeyReturnValue;
+    Result getKeyReturnValue;
 
     PacketStub withGetKeyThrowsException(boolean getKeyThrowsException) {
       this.getKeyThrowsException = getKeyThrowsException;
       return this;
     }
 
-    PacketStub withGetKeyReturnValue(HttpClient getKeyReturnValue) {
+    PacketStub withGetKeyReturnValue(Result getKeyReturnValue) {
       this.getKeyReturnValue = getKeyReturnValue;
+      return this;
+    }
+
+    PacketStub withEncodedCredentials(String encodedCredentials) {
+      this.encodedCredentials = encodedCredentials;
       return this;
     }
 
@@ -302,11 +329,13 @@ public class ReadHealthStepTest {
 
     @Override
     public Object get(Object key) {
-      if (HttpClient.KEY.equals(key)) {
+      if (ProcessingConstants.RESULT.equals(key)) {
         if (getKeyThrowsException) {
           throw CLASSCAST_EXCEPTION; // to go to catch clause in WithHttpClientStep.apply() method
         }
         return getKeyReturnValue;
+      } else if (ProcessingConstants.KEY.equals(key)) {
+        return encodedCredentials;
       } else if (ProcessingConstants.SERVER_NAME.equals(key)) {
         return serverName;
       } else if (ProcessingConstants.DOMAIN_TOPOLOGY.equals(key)) {
