@@ -153,8 +153,9 @@ public class CommonUtils {
    * @param nginxNamespace the namespace in which the NGINX will be installed
    * @param nodeportshttp the http nodeport of NGINX
    * @param nodeportshttps the https nodeport of NGINX
+   * @return the NGINX Helm installation parameters
    */
-  public static void installAndVerifyNginx(String nginxNamespace,
+  public static HelmParams installAndVerifyNginx(String nginxNamespace,
                                            int nodeportshttp,
                                            int nodeportshttps) {
 
@@ -196,6 +197,8 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(isNginxReady(nginxNamespace));
+
+    return nginxHelmParams;
   }
 
   /**

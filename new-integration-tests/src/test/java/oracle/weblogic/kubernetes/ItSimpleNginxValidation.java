@@ -122,7 +122,7 @@ class ItSimpleNginxValidation implements LoggedTest {
     int nodeportshttps = getNextFreePort(30443, 30543);
 
     // install and verify NGINX
-    installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
   }
 
   @Test
