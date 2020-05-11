@@ -55,7 +55,7 @@ public interface TestConstants {
 
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-basicdomain-singlecluster-sampleapp-wls.yaml";
-  public static final String MII_BASIC_IMAGE_NAME = REPO_USERNAME.equals(REPO_DUMMY_VALUE)
+  public static final String MII_BASIC_IMAGE_NAME = REPO_NAME.isEmpty()
       ? "mii-basic-image" : REPO_NAME + "mii-basic-image";
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_APP_NAME = "sample-app";
