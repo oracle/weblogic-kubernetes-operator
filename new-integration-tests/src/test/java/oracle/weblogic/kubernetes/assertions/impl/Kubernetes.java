@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
 
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Kubernetes {
@@ -236,41 +237,6 @@ public class Kubernetes {
   public static boolean isNginxPodReady(String namespace) throws ApiException {
 
     return isPodReady(namespace, null, "nginx-ingress-controller");
-  }
-
-  /**
-   * Returns the V1Pod object given the following parameters.
-   * @param namespace in which to check for the pod existence
-   * @param labelSelector in the format "weblogic.domainUID in (%s)"
-   * @param podName name of the pod to return
-   * @return V1Pod object if found otherwise null
-   * @throws ApiException when there is error in querying the cluster
-   */
-  public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
-    V1PodList v1PodList =
-        coreV1Api.listNamespacedPod(
-            namespace, // namespace in which to look for the pods.
-            Boolean.FALSE.toString(), // // pretty print output.
-            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-            null, // continue to query when there is more results to return.
-            null, // selector to restrict the list of returned objects by their fields
-            labelSelector, // selector to restrict the list of returned objects by their labels.
-            null, // maximum number of responses to return for a list call.
-            null, // shows changes that occur after that particular version of a resource.
-            null, // Timeout for the list/watch call.
-            Boolean.FALSE // Watch for changes to the described resources.
-        );
-    for (V1Pod item : v1PodList.getItems()) {
-      if (item.getMetadata().getName().contains(podName.trim())) {
-        logger.fine(String.format("Pod Name: %s, Pod Namespace: %s, Pod UID: %s, Pod Status: %s",
-            item.getMetadata().getName(),
-            item.getMetadata().getNamespace(),
-            item.getMetadata().getUid(),
-            item.getStatus().getPhase()));
-        return item;
-      }
-    }
-    return null;
   }
 
   /**

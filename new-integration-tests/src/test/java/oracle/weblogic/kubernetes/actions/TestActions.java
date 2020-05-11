@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -598,8 +599,7 @@ public class TestActions {
   ) throws IOException, ApiException, InterruptedException {
     // get the pod given the namespace and name of the pod
     // no label selector is needed (thus null below)
-    final V1Pod pod = oracle.weblogic.kubernetes.assertions.impl.Kubernetes
-        .getPod(namespace, null, podName);
+    final V1Pod pod = Kubernetes.getPod(namespace, null, podName);
     if (pod == null) {
       throw new IllegalArgumentException(
           String.format("The pod %s does not exist in namespace %s!", podName, namespace));

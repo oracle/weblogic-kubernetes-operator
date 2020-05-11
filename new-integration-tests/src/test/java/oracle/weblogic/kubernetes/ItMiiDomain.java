@@ -691,7 +691,7 @@ class ItMiiDomain implements LoggedTest {
         String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
-        "model2-wls.yaml");
+        "model-singlecluster-two-sampleapp-wls.yaml");
     
     // push the image to a registry to make the test work in multi node cluster
     pushImageIfNeeded(miiImageAddSecondApp);
