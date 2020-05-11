@@ -694,7 +694,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   /** Scale the WebLogic cluster to specified number of servers.
    *  And verify the sample app can be accessed through NGINX.
    *
-   * @param domainUid the domain with domainUid which will be scaled
+   * @param domainUid the domain with domainUid in which the clusters exist
    * @param domainNamespace the domain namespace in which the domain exists
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
