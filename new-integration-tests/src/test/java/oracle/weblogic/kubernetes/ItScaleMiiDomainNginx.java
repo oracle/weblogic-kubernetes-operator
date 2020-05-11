@@ -101,15 +101,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verify the sample application can be accessed via the ingress controller.
+ * Verify the model in image domain with multiple clusters can be scaled up and down.
+ * Also verify the sample application can be accessed via NGINX.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the sample application can be accessed via the ingress controller")
+@DisplayName("Verify scaling multiple clusters domain and the sample application can be accessed via NGINX")
 @IntegrationTest
-class ItSimpleNginxValidation implements LoggedTest {
+class ItScaleMiiDomainNginx implements LoggedTest {
 
   // mii constants
-  private static final String WDT_MODEL_FILE = "model4-nginx-validation-wls.yaml";
+  private static final String WDT_MODEL_FILE = "model-multiclusterdomain-sampleapp-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
   private static final String APP_NAME = "sample-app";
 
@@ -727,6 +728,33 @@ class ItSimpleNginxValidation implements LoggedTest {
 
     if (replicasBeforeScale <= replicasAfterScale) {
 
+      // scale up
+      // check that the status of the original managed server remains the same
+      for (int i = 1; i <= replicasBeforeScale; i++) {
+        String manageServerPodName = manageServerPodNamePrefix + i;
+
+        // check that the original managed server pod still exists
+        logger.info("Checking that the managed server pod {0} still exists in namespace {1}",
+            manageServerPodName, domainNamespace);
+        assertDoesNotThrow(() -> podExists(manageServerPodName, domainUid, domainNamespace),
+            String.format("podExists failed with ApiException for %s in namespace in %s",
+                manageServerPodName, domainNamespace));
+
+        // check that the original managed server pod is in ready state
+        logger.info("Checking that the managed server pod {0} is in ready state in namespace {1}",
+            manageServerPodName, domainNamespace);
+        assertDoesNotThrow(() -> podReady(manageServerPodName, domainUid, domainNamespace),
+            String.format(
+                "pod %s is not ready in namespace %s", manageServerPodName, domainNamespace));
+
+        // check that the original managed server service still exists
+        logger.info("Checking that the managed server service {0} still exists in namespace {1}",
+            manageServerPodName, domainNamespace);
+        assertDoesNotThrow(() -> serviceExists(manageServerPodName, null, domainNamespace),
+            String.format(
+                "Service %s is not ready in namespace %s", manageServerPodName, domainNamespace));
+      }
+
       // check that NGINX can access the sample apps from the original managed servers in the domain
       logger.info("Checking that NGINX can access the sample app from the original managed servers in the domain "
                   + "while the domain is scaling up.");
@@ -735,7 +763,7 @@ class ItSimpleNginxValidation implements LoggedTest {
           .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
           .isTrue();
 
-      // check new managed server pods are created and wait for them to be ready
+      // check that new managed server pods were created and wait for them to be ready
       for (int i = replicasBeforeScale + 1; i <= replicasAfterScale; i++) {
         String manageServerPodName = manageServerPodNamePrefix + i;
 

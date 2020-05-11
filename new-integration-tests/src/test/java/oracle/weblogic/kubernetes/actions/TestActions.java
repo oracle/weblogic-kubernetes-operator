@@ -68,20 +68,6 @@ public class TestActions {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace .
-   *
-   * @param domainUid domainUid of the domain to be scaled
-   * @param clusterName cluster in the domain to be scaled
-   * @param numOfServers number of servers to be scaled to.
-   * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
-      throws ApiException {
-    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
-  }
-
-  /**
    * Uninstall the Operator release.
    *
    * @param params the parameters to Helm uninstall command, release name and namespace
@@ -191,6 +177,20 @@ public class TestActions {
   public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
       String patchFormat) {
     return Domain.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace .
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName cluster in the domain to be scaled
+   * @param numOfServers number of servers to be scaled to.
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
+      throws ApiException {
+    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
   }
 
   // ------------------------   Ingress Controller ----------------------
