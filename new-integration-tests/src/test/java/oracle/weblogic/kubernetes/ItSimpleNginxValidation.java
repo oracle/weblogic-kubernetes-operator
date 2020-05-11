@@ -107,7 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItSimpleNginxValidation implements LoggedTest {
 
   // mii constants
-  private static final String WDT_MODEL_FILE = "model1-wls.yaml";
+  private static final String WDT_MODEL_FILE = "model-basicdomain-singlecluster-sampleapp-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
   private static final String APP_NAME = "sample-app";
 

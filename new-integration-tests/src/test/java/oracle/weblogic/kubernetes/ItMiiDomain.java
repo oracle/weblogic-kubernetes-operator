@@ -45,6 +45,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
@@ -82,10 +84,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("Test to create model in image domain and start the domain")
 @IntegrationTest
 class ItMiiDomain implements LoggedTest {
-
-  // domain constants
-  private static final String DOMAIN_VERSION = "v7";
-  private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 
   private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
@@ -545,7 +543,7 @@ class ItMiiDomain implements LoggedTest {
                                     String repoSecretName, String encryptionSecretName, int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
-            .apiVersion(API_VERSION)
+            .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
                     .name(domainUid)
