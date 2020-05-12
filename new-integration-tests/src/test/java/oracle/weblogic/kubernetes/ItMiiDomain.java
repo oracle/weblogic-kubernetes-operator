@@ -753,8 +753,11 @@ class ItMiiDomain implements LoggedTest {
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login to registry {0}", REPO_REGISTRY);
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+    }
 
-      logger.info("docker push image {0} to registry {1}", image, REPO_REGISTRY);
+    // push image 
+    if (!REPO_NAME.isEmpty()) {
+      logger.info("docker push image {0} to registry", image);
       assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
     }
   }
@@ -768,7 +771,7 @@ class ItMiiDomain implements LoggedTest {
 
   private String createImageName(String baseImageName) {
     // Add repository name in image name for Jenkins runs
-    return REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? baseImageName : REPO_NAME + baseImageName;
+    return REPO_NAME.isEmpty() ? baseImageName : REPO_NAME + baseImageName;
   }
 
   private String updateImageWithAppV2Patch(
