@@ -23,8 +23,8 @@ The samples in this document assume an existing domain is being edited.  However
 For sample purposes, this document will assume a domain with the following attributes is being configured:
 
 * Domain name is `bobs-bookstore`
-* Kubernetes namespace is `bob`
-* Kubernetes secret is `bobs-bookstore-weblogic-credentials`
+* Kubernetes Namespace is `bob`
+* Kubernetes Secret is `bobs-bookstore-weblogic-credentials`
 
 The sample Elasticsearch configuration is:
 ```text

@@ -127,7 +127,7 @@ Property files (ending in `.properties`) use the same sorting algorithm, but the
 
 ##### Using secrets in model files
 
-You can use WDT model `@@SECRET` macros to reference the WebLogic administrator `username` and `password` keys that are stored in a Kubernetes secret and to optionally reference additional secrets. Here is the macro pattern for accessing these secrets:
+You can use WDT model `@@SECRET` macros to reference the WebLogic administrator `username` and `password` keys that are stored in a Kubernetes Secret and to optionally reference additional secrets. Here is the macro pattern for accessing these secrets:
 
 
   |Domain Resource Attribute|Corresponding WDT Model `@@SECRET` Macro|

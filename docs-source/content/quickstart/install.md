@@ -32,7 +32,7 @@ First, set up Helm:
 $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 ```
 
-#### Create a Traefik (Ingress-based) load balancer.
+#### Create a Traefik (ingress-based) load balancer.
 
 Create a namespace for the load balancer.
 
