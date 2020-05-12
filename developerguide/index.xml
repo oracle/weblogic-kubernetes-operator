@@ -81,7 +81,7 @@ Because we want to balance separating destabilizing work into feature branches a
       <pubDate>Sat, 23 Feb 2019 17:20:00 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/developerguide/asynchronous-call-model/</guid>
-      <description>Our expectation is that customers will task the operator with managing hundreds of WebLogic domains across dozens of Kubernetes namespaces. Therefore, we have designed the operator with an efficient user-level threads pattern. We&amp;rsquo;ve used that pattern to implement an asynchronous call model for Kubernetes API requests. This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.</description>
+      <description>Our expectation is that customers will task the operator with managing hundreds of WebLogic domains across dozens of Kubernetes Namespaces. Therefore, we have designed the operator with an efficient user-level threads pattern. We&amp;rsquo;ve used that pattern to implement an asynchronous call model for Kubernetes API requests. This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.</description>
     </item>
     
     <item>

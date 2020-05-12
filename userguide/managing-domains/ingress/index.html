@@ -12,18 +12,18 @@
     <title>Ingress :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318035" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318035"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296282"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318035"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318035"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318035"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2798,7 +2798,7 @@ Depending on the version of Kubernetes you are using, and your cloud provider, y
 For more information about Ingresses, see <a href="https://kubernetes.io/docs/concepts/services-networking/ingress/">the Ingress documentation</a>.</p>
 <h4 id="weblogic-clusters-as-backends-of-an-ingress">WebLogic clusters as backends of an Ingress</h4>
 <p>In an Ingress object, a list of backends are provided for each target that will be load balanced.  Each backend is typically
-<a href="https://kubernetes.io/docs/concepts/services-networking/service/">a Kubernetes service</a>, more specifically, a combination of a <code>serviceName</code> and a <code>servicePort</code>.</p>
+<a href="https://kubernetes.io/docs/concepts/services-networking/service/">a Kubernetes Service</a>, more specifically, a combination of a <code>serviceName</code> and a <code>servicePort</code>.</p>
 <p>When the operator creates a WebLogic domain, it also creates a service for each WebLogic cluster in the domain.
 The operator defines the service such that its selector will match all WebLogic Server pods within the WebLogic cluster
 which are in the &ldquo;ready&rdquo; state.</p>
@@ -2816,29 +2816,29 @@ For example, if the <code>domainUID</code> is <code>myDomain_1</code> and the cl
 <p>The service, <code>serviceName</code> and <code>servicePort</code>, of a WebLogic cluster will be used in the routing rules defined in the Ingress
 object and the load balancer will route traffic to the WebLogic Servers within the cluster based on the rules.</p>
 
-<div class="notices note" ><p>Most common Ingress controllers, for example Traefik, Voyager, and nginx,
+<div class="notices note" ><p>Most common ingress controllers, for example Traefik, Voyager, and nginx,
 understand that there are zero or more actual pods behind the service, and they actually
 build their backend list and route requests to those backends directly, not through the service.  This means that
 requests are properly balanced across the pods, according to the load balancing algorithm
-in use.  Most Ingress controllers also
+in use.  Most ingress controllers also
 subscribe to updates on the service and adjust their internal backend sets when
 additional pods become ready, or pods enter a non-ready state.</p>
 </div>
 
-<h4 id="steps-to-set-up-an-ingress-load-balancer">Steps to set up an Ingress load balancer</h4>
+<h4 id="steps-to-set-up-an-ingress-load-balancer">Steps to set up an ingress load balancer</h4>
 <ol>
 <li>
-<p>Install the Ingress controller.</p>
-<p>After the Ingress controller is running, it monitors Ingress resources in a given namespace and acts accordingly.</p>
+<p>Install the ingress controller.</p>
+<p>After the ingress controller is running, it monitors Ingress resources in a given namespace and acts accordingly.</p>
 </li>
 <li>
 <p>Create Ingress resources.</p>
-<p>Ingress resources contain routing rules to one or more backends. An Ingress controller is responsible to apply the rules to the underlying load balancer.
+<p>Ingress resources contain routing rules to one or more backends. An ingress controller is responsible to apply the rules to the underlying load balancer.
 There are two approaches to create the Ingress resource:</p>
 <ul>
 <li>
 <p>Use the Helm chart <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain">ingress-per-domain</a>.</p>
-<p>Each Ingress provider supports a number of annotations in Ingress resources. This Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations. Currently we support two Ingress providers: Traefik and Voyager.</p>
+<p>Each ingress provider supports a number of annotations in Ingress resources. This Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations. Currently we support two ingress providers: Traefik and Voyager.</p>
 </li>
 <li>
 <p>Create the Ingress resource manually from a YAML file.</p>
@@ -2848,17 +2848,17 @@ There are two approaches to create the Ingress resource:</p>
 </li>
 </ol>
 <h4 id="guide-and-samples-for-traefik-and-voyagerhaproxy">Guide and samples for Traefik and Voyager/HAProxy</h4>
-<p>Traefik and Voyager/HAProxy are both popular Ingress controllers.
+<p>Traefik and Voyager/HAProxy are both popular ingress controllers.
 Information about how to install and configure these to load balance WebLogic clusters is provided here:</p>
 <ul>
 <li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md">Traefik guide</a></li>
 <li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md">Voyager guide</a></li>
 </ul>
 
-<div class="notices note" ><p>Traefik is recommended for development and test environments only.  For production environments, we recommend Apache or Voyager Ingress controllers, or the load balancer provided by your cloud provider.</p>
+<div class="notices note" ><p>Traefik is recommended for development and test environments only.  For production environments, we recommend Apache or Voyager ingress controllers, or the load balancer provided by your cloud provider.</p>
 </div>
 
-<p>Samples are also provided for these two Ingress controllers, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination:</p>
+<p>Samples are also provided for these two ingress controllers, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination:</p>
 <ul>
 <li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/samples">Traefik samples</a></li>
 <li><a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/samples">Voyager samples</a></li>
@@ -4763,19 +4763,19 @@ Information about how to install and configure these to load balance WebLogic cl
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318036"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318036"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296282" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296282"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318036" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318036"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

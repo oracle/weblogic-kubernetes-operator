@@ -17,7 +17,7 @@
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each operator deployment manages a number of Kubernetes namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
+      <description>Each operator deployment manages a number of Kubernetes Namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic domain custom resources can be successfully deployed into it. Those Kubernetes resources are created either as part of the installation of the operator&amp;rsquo;s Helm chart, or created by the operator at runtime.
 This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running.</description>
     </item>
     
@@ -79,28 +79,28 @@ File permission handling on persistent volumes can differ between cloud provider
       <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/oci-lb/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an Ingress controller like Traefik or Voyager.
+      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik or Voyager.
 OKE Kubernetes worker nodes typically do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
     </item>
     
     <item>
-      <title>Providing access to a Persistent Volume Claim</title>
+      <title>Providing access to a PersistentVolumeClaim</title>
       <link>/weblogic-kubernetes-operator/faq/volumes/</link>
       <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/volumes/</guid>
-      <description>I need to provide an instance with access to a Persistent Volume Claim.
+      <description>I need to provide an instance with access to a PersistentVolumeClaim.
  Some applications need access to a file, either to read data or to provide additional logging beyond what is built into the operator. One common way of doing that within Kubernetes is to create a PersistentVolumeClaim (PVC) and map it to a file. The domain configuration can then be used to provide access to the claim across the domain, within a single cluster, or for a single server.</description>
     </item>
     
     <item>
-      <title>Providing access to a Config Map</title>
+      <title>Providing access to a ConfigMap</title>
       <link>/weblogic-kubernetes-operator/faq/configmaps/</link>
       <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/configmaps/</guid>
-      <description>I need to provide an instance with access to a Config Map.
- Configuration files can be supplied to Kubernetes pods and jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.</description>
+      <description>I need to provide an instance with access to a ConfigMap.
+ Configuration files can be supplied to Kubernetes Pods and Jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.</description>
     </item>
     
     <item>

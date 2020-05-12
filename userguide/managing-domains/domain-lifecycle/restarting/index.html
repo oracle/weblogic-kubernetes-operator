@@ -12,18 +12,18 @@
     <title>Restarting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318035" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296281"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318035"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296281"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318035"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318035"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318035"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2815,7 +2815,7 @@ if (!doNotTrack) {
 <h4 id="overview">Overview</h4>
 <p>There are many situations where changes to the Oracle WebLogic Server in Kubernetes environment require that all the servers in
 a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</p>
-<p>One of the operator&rsquo;s most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes pods. Sometimes, you need to make changes that make the pods obsolete, therefore the pods need to be deleted and recreated. Depending on the change, sometimes the pods can be gradually recreated, without taking the entire domain out of service
+<p>One of the operator&rsquo;s most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes Pods. Sometimes, you need to make changes that make the pods obsolete, therefore the pods need to be deleted and recreated. Depending on the change, sometimes the pods can be gradually recreated, without taking the entire domain out of service
 (for example, <code>rolling restarts</code>) and sometimes all the pods need to be deleted then recreated, taking the entire domain out of
 service for a while (for example, <code>full restarts</code>).</p>
 <p>The following types of server restarts are supported in Oracle WebLogic Server in Kubernetes:</p>
@@ -2911,8 +2911,8 @@ For example, a rolling restart is applicable when changing a WebLogic Server <co
 <li>Changing the contents to any of the secrets referenced by <code>configuration.secrets</code></li>
 </ul>
 <h4 id="changing-the-weblogic-server-credentials">Changing the WebLogic Server credentials</h4>
-<p>A change to the WebLogic Server credentials (the user name and password), contained in the Kubernetes secret for the domain, requires a
-<em>full domain restart</em>.  The Kubernetes secret can be updated directly or a new secret can be created and then referenced by the <code>webLogicCredentialsSecret</code>
+<p>A change to the WebLogic Server credentials (the user name and password), contained in the Kubernetes Secret for the domain, requires a
+<em>full domain restart</em>.  The Kubernetes Secret can be updated directly or a new secret can be created and then referenced by the <code>webLogicCredentialsSecret</code>
 property in the domain resource.</p>
 <h4 id="changing-properties-on-the-domain-resource-that-affect-server-pods">Changing properties on the domain resource that affect server pods</h4>
 <p>The operator will initiate a rolling restart of the domain when you modify any of the domain resource properties that affect the server pods configuration,
@@ -4933,19 +4933,19 @@ value to a large number, for example, 15 minutes.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296281"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296281"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296281"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296281"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296281"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296281"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318035"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296281"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296281"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296281"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318035"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296281" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296281"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318035" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318035"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

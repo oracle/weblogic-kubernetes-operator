@@ -28,7 +28,7 @@
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/</guid>
       <description>This document describes when to restart servers in the Oracle WebLogic Server in Kubernetes environment.
 Overview There are many situations where changes to the Oracle WebLogic Server in Kubernetes environment require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.
-One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes pods.</description>
+One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes Pods.</description>
     </item>
     
     <item>

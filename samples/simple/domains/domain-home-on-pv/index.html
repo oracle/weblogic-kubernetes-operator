@@ -12,18 +12,18 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318035" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296281"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318035"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296281"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318035"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318035"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318035"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2800,16 +2800,16 @@
 
 
 
-	<p>The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.</p>
+	<p>The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.</p>
 <h4 id="prerequisites">Prerequisites</h4>
 <p>Before you begin, read this document, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">Domain resource</a>.</p>
 <p>The following prerequisites must be met prior to running the create domain script:</p>
 <ul>
 <li>Make sure the WebLogic Server Kubernetes Operator is running.</li>
 <li>The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Docker image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. For details on how to obtain or create the image, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#creating-or-obtaining-weblogic-docker-images">WebLogic Docker images</a>.</li>
-<li>Create a Kubernetes namespace for the domain unless you intend to use the default namespace.</li>
-<li>In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/samples/simple/storage/">Create sample PV and PVC</a>. By default, the <code>create-domain.sh</code> script creates a domain with the <code>domainUID</code> set to <code>domain1</code> and expects the PVC <code>domain1-weblogic-sample-pvc</code> to be present. You can create <code>domain1-weblogic-sample-pvc</code> using <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh">create-pv-pvc.sh</a> with an inputs file that has the <code>domainUID</code> set to <code>domain1</code>.</li>
-<li>Create the Kubernetes secrets <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes namespace as the domain.</li>
+<li>Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.</li>
+<li>In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/samples/simple/storage/">Create sample PV and PVC</a>. By default, the <code>create-domain.sh</code> script creates a domain with the <code>domainUID</code> set to <code>domain1</code> and expects the PVC <code>domain1-weblogic-sample-pvc</code> to be present. You can create <code>domain1-weblogic-sample-pvc</code> using <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh">create-pv-pvc.sh</a> with an inputs file that has the <code>domainUID</code> set to <code>domain1</code>.</li>
+<li>Create the Kubernetes Secrets <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes Namespace as the domain.</li>
 </ul>
 
 <div class="notices note" ><p>Please note the following important considerations about using persistent storage.</p>
@@ -2837,7 +2837,7 @@ persistent volume.</p>
 </code></pre><p>The script will perform the following steps:</p>
 <ul>
 <li>Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is <code>/&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code>. If the directory already exists, then its contents must be removed before using this script.</li>
-<li>Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.</li>
+<li>Create a Kubernetes Job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.</li>
 <li>Run and wait for the job to finish.</li>
 <li>Create a Kubernetes domain YAML file, <code>domain.yaml</code>, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the <code>kubectl create -f</code> or <code>kubectl apply -f</code> command:</li>
 </ul>
@@ -2905,17 +2905,17 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
 </tr>
 <tr>
 <td><code>createDomainFilesDir</code></td>
-<td>Directory on the host machine to locate all the files to create a WebLogic domain, including the script that is specified in the <code>createDomainScriptName</code> property. By default, this directory is set to the relative path <code>wlst</code>, and the create script will use the built-in WLST offline scripts in the <code>wlst</code> directory to create the WebLogic domain. It can also be set to the relative path <code>wdt</code>, and then the built-in WDT scripts will be used instead. An absolute path is also supported to point to an arbitrary directory in the file system. The built-in scripts can be replaced by the user-provided scripts or model files as long as those files are in the specified directory. Files in this directory are put into a Kubernetes ConfigMap, which in turn is mounted to the <code>createDomainScriptsMountPath</code>, so that the Kubernetes pod can use the scripts and supporting files to create a domain home.</td>
+<td>Directory on the host machine to locate all the files to create a WebLogic domain, including the script that is specified in the <code>createDomainScriptName</code> property. By default, this directory is set to the relative path <code>wlst</code>, and the create script will use the built-in WLST offline scripts in the <code>wlst</code> directory to create the WebLogic domain. It can also be set to the relative path <code>wdt</code>, and then the built-in WDT scripts will be used instead. An absolute path is also supported to point to an arbitrary directory in the file system. The built-in scripts can be replaced by the user-provided scripts or model files as long as those files are in the specified directory. Files in this directory are put into a Kubernetes ConfigMap, which in turn is mounted to the <code>createDomainScriptsMountPath</code>, so that the Kubernetes Pod can use the scripts and supporting files to create a domain home.</td>
 <td><code>wlst</code></td>
 </tr>
 <tr>
 <td><code>createDomainScriptsMountPath</code></td>
-<td>Mount path where the create domain scripts are located inside a pod. The <code>create-domain.sh</code> script creates a Kubernetes job to run the script (specified in the <code>createDomainScriptName</code> property) in a Kubernetes pod to create a domain home. Files in the <code>createDomainFilesDir</code> directory are mounted to this location in the pod, so that the Kubernetes pod can use the scripts and supporting files to create a domain home.</td>
+<td>Mount path where the create domain scripts are located inside a pod. The <code>create-domain.sh</code> script creates a Kubernetes Job to run the script (specified in the <code>createDomainScriptName</code> property) in a Kubernetes Pod to create a domain home. Files in the <code>createDomainFilesDir</code> directory are mounted to this location in the pod, so that the Kubernetes Pod can use the scripts and supporting files to create a domain home.</td>
 <td><code>/u01/weblogic</code></td>
 </tr>
 <tr>
 <td><code>createDomainScriptName</code></td>
-<td>Script that the create domain script uses to create a WebLogic domain. The <code>create-domain.sh</code> script creates a Kubernetes job to run this script to create a domain home. The script is located in the in-pod directory that is specified in the <code>createDomainScriptsMountPath</code> property. If you need to provide your own scripts to create the domain home, instead of using the built-it scripts, you must use this property to set the name of the script that you want the create domain job to run.</td>
+<td>Script that the create domain script uses to create a WebLogic domain. The <code>create-domain.sh</code> script creates a Kubernetes Job to run this script to create a domain home. The script is located in the in-pod directory that is specified in the <code>createDomainScriptsMountPath</code> property. If you need to provide your own scripts to create the domain home, instead of using the built-it scripts, you must use this property to set the name of the script that you want the create domain job to run.</td>
 <td><code>create-domain-job.sh</code></td>
 </tr>
 <tr>
@@ -2930,7 +2930,7 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
 </tr>
 <tr>
 <td><code>domainUID</code></td>
-<td>Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name.</td>
+<td>Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name.</td>
 <td><code>domain1</code></td>
 </tr>
 <tr>
@@ -2960,7 +2960,7 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
 </tr>
 <tr>
 <td><code>imagePullSecretName</code></td>
-<td>Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified</td>
+<td>Name of the Kubernetes Secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified</td>
 <td></td>
 </tr>
 <tr>
@@ -2995,7 +2995,7 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
 </tr>
 <tr>
 <td><code>namespace</code></td>
-<td>Kubernetes namespace in which to create the domain.</td>
+<td>Kubernetes Namespace in which to create the domain.</td>
 <td><code>default</code></td>
 </tr>
 <tr>
@@ -3020,17 +3020,17 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
 </tr>
 <tr>
 <td><code>t3PublicAddress</code></td>
-<td>Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <!-- raw HTML omitted -->For development environments only, in a single server (all-in-one) Kubernetes deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes.</td>
+<td>Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <!-- raw HTML omitted -->For development environments only, in a single server (all-in-one) Kubernetes Deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes.</td>
 <td>If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster.</td>
 </tr>
 <tr>
 <td><code>weblogicCredentialsSecretName</code></td>
-<td>Name of the Kubernetes secret for the Administration Server user name and password. If not specified, the value is derived from the <code>domainUID</code> as <code>&lt;domainUID&gt;-weblogic-credentials</code>.</td>
+<td>Name of the Kubernetes Secret for the Administration Server user name and password. If not specified, the value is derived from the <code>domainUID</code> as <code>&lt;domainUID&gt;-weblogic-credentials</code>.</td>
 <td><code>domain1-weblogic-credentials</code></td>
 </tr>
 <tr>
 <td><code>weblogicImagePullSecretName</code></td>
-<td>Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image.</td>
+<td>Name of the Kubernetes Secret for the Docker Store, used to pull the WebLogic Server image.</td>
 <td><code>docker-store-secret</code></td>
 </tr>
 <tr>
@@ -3040,11 +3040,11 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
 </tr>
 </tbody>
 </table>
-<p>Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the <code>create-inputs.yaml</code> file. Those properties include the <code>adminServerName</code>, <code>clusterName</code>, and <code>managedServerNameBase</code>. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore <code>(&quot;_&quot;)</code> is converted to a hyphen <code>(&quot;-&quot;)</code>.</p>
+<p>Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the <code>create-inputs.yaml</code> file. Those properties include the <code>adminServerName</code>, <code>clusterName</code>, and <code>managedServerNameBase</code>. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore <code>(&quot;_&quot;)</code> is converted to a hyphen <code>(&quot;-&quot;)</code>.</p>
 <p>The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.</p>
 <h4 id="verify-the-results">Verify the results</h4>
 <p>The create script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.</p>
-<p>Note that the example results below use the <code>default</code> Kubernetes namespace. If you are using a different namespace, you need to replace <code>NAMESPACE</code> in the example <code>kubectl</code> commands with the actual Kubernetes namespace.</p>
+<p>Note that the example results below use the <code>default</code> Kubernetes Namespace. If you are using a different namespace, you need to replace <code>NAMESPACE</code> in the example <code>kubectl</code> commands with the actual Kubernetes Namespace.</p>
 <h5 id="generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</h5>
 <p>The content of the generated <code>domain.yaml</code>:</p>
 <pre><code># Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
@@ -5221,19 +5221,19 @@ You will see this message if the directory <code>domains/domain1</code> exists i
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318035"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318035"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296282" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296282"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318035" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318035"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

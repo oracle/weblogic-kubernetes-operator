@@ -12,18 +12,18 @@
     <title>Manage SOA domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318036" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318036" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318036"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296282"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318036"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318036"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318036"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2808,7 +2808,7 @@ it is supported for production use.</p>
 <li><a href="#creating-a-soa-suite-docker-image">Creating a SOA Suite Docker image</a></li>
 <li><a href="#configuring-access-to-your-database">Configuring access to your database</a></li>
 <li><a href="#running-the-repository-creation-utility-to-set-up-your-database-schemas">Running the Repository Creation Utility to set up your database schemas</a></li>
-<li><a href="#create-a-kubernetes-secret-with-the-rcu-credentials">Create a Kubernetes secret with the RCU credentials</a></li>
+<li><a href="#create-a-kubernetes-secret-with-the-rcu-credentials">Create a Kubernetes Secret with the RCU credentials</a></li>
 <li><a href="#creating-a-soa-domain">Creating a SOA domain</a></li>
 <li><a href="#configuring-a-load-balancer-for-soa-suite-domains">Configuring a load balancer for SOA Suite domains</a></li>
 <li><a href="#monitoring-a-soa-domain">Monitoring a SOA domain</a></li>
@@ -2825,7 +2825,7 @@ it is supported for production use.</p>
 <p>This document provides details about the special considerations for deploying and running SOA Suite domains with the operator.
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.</p>
 <p>In this release, SOA Suite domains are supported using the “domain on a persistent volume”
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">domain home source type</a> only, where the domain home is located in a persistent volume (PV).</p>
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">domain home source type</a> only, where the domain home is located in a PersistentVolume (PV).</p>
 <h4 id="prerequisites-for-soa-suite-domains">Prerequisites for SOA Suite domains</h4>
 <ul>
 <li>Kubernetes 1.13.5+, 1.14.3+ and 1.15.2+ (check with <code>kubectl version</code>).</li>
@@ -2943,18 +2943,18 @@ Oracle Support for Database Running on Docker (Doc ID 2216342.1).</p>
 <h5 id="running-the-database-inside-kubernetes">Running the database inside Kubernetes</h5>
 <p>Follow these instructions to perform a basic deployment of the Oracle
 database in Kubernetes. For more details about database setup and configuration, refer to this <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/#running-the-database-inside-kubernetes">page</a>.</p>
-<p>When running the Oracle database in Kubernetes, you have an option to attach persistent volumes (PV) so that the database storage will be persisted across database restarts. If you prefer not to persist the database storage, follow the instructions in this
-<a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#start-an-oracle-database-service-in-a-kubernetes-cluster">document</a> to set up a database in a container with no persistent volume (PV) attached.</p>
+<p>When running the Oracle database in Kubernetes, you have an option to attach PersistentVolumes (PV) so that the database storage will be persisted across database restarts. If you prefer not to persist the database storage, follow the instructions in this
+<a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#start-an-oracle-database-service-in-a-kubernetes-cluster">document</a> to set up a database in a container with no PersistentVolume (PV) attached.</p>
 <blockquote>
 <p><strong>NOTE</strong>: <code>start-db-service.sh</code> creates the database in the <code>default</code> namespace. If you
 want to create the database in a different namespace, you need to manually update
 the value for all the occurrences of the namespace field in the provided
 sample file <code>create-rcu-schema/common/oracle.db.yaml</code>.</p>
 </blockquote>
-<p>These instructions will set up the database in a container with the persistent volume (PV) attached.
+<p>These instructions will set up the database in a container with the PersistentVolume (PV) attached.
 If you chose not to use persistent storage, please go to the <a href="#running-the-repository-creation-utility-to-set-up-your-database-schemas">RCU creation step</a>.</p>
 <ul>
-<li>Create the persistent volume and persistent volume claim for the database
+<li>Create the PersistentVolume and PersistentVolumeClaim for the database
 using the <a href="/weblogic-kubernetes-operator/samples/simple/storage/">create-pv-pvc.sh</a> sample.
 Refer to the instructions provided in that sample.</li>
 </ul>
@@ -3013,8 +3013,8 @@ $ ./drop-rcu-schema.sh <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  -d oracle-db.soans.svc.cluster.local:1521/devpdb.k8s
 </code></pre></div><p>For SOA domains, the <code>drop-rcu-schema.sh</code> script supports the domain types <code>soa,osb,soaosb,soaess,soaessosb</code>.
 You must specify one of these using the <code>-t</code> flag.</p>
-<h4 id="create-a-kubernetes-secret-with-the-rcu-credentials">Create a Kubernetes secret with the RCU credentials</h4>
-<p>You also need to create a Kubernetes secret containing the credentials for the database schemas.
+<h4 id="create-a-kubernetes-secret-with-the-rcu-credentials">Create a Kubernetes Secret with the RCU credentials</h4>
+<p>You also need to create a Kubernetes Secret containing the credentials for the database schemas.
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.</p>
 <p>Use the provided sample script to create the secret as shown below:</p>
@@ -3062,7 +3062,7 @@ type: Opaque
 <p>Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  To continue, follow the instructions in the <a href="/weblogic-kubernetes-operator/samples/simple/domains/soa-domain/">SOA Domain sample</a>.</p>
 <h4 id="configuring-a-load-balancer-for-soa-suite-domains">Configuring a load balancer for SOA Suite domains</h4>
-<p>An Ingress based load balancer can be configured to access the Oracle SOA and Oracle Service Bus domain application URLs.
+<p>An ingress-based load balancer can be configured to access the Oracle SOA and Oracle Service Bus domain application URLs.
 Refer to the <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/ingress/">Ingress</a> document for details.</p>
 <p>As part of the <code>ingress-per-domain</code> setup for Oracle SOA and Oracle Service Bus domains, the <code>values.yaml</code> file (under the <code>ingress-per-domain</code> directory) needs to be updated with the appropriate values from your environment. A sample <code>values.yaml</code> file (for the Traefik load balancer) is shown below:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Default values for ingress-per-domain.</span>
@@ -3093,7 +3093,7 @@ voyager:
   webPort: <span style="color:#ae81ff">30305</span>
   <span style="color:#75715e"># stats port</span>
   statsPort: <span style="color:#ae81ff">30315</span>
-</code></pre></div><p>Below are the path-based, Ingress routing rules (<code>spec.rules</code> section) that need to be defined for Oracle SOA and Oracle Service Bus domains. You need to update the appropriate Ingress template YAML file based on the load balancer being used. For example, the template YAML file for the Traefik load balancer is located at <code>kubernetes/samples/charts/ingress-per-domain/templates/traefik-ingress.yaml</code>.</p>
+</code></pre></div><p>Below are the path-based, ingress routing rules (<code>spec.rules</code> section) that need to be defined for Oracle SOA and Oracle Service Bus domains. You need to update the appropriate Ingress template YAML file based on the load balancer being used. For example, the template YAML file for the Traefik load balancer is located at <code>kubernetes/samples/charts/ingress-per-domain/templates/traefik-ingress.yaml</code>.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">rules:
   - host: <span style="color:#e6db74">&#39;{{ .Values.traefik.hostname }}&#39;</span>
     http:
@@ -5047,19 +5047,19 @@ See <a href="/weblogic-kubernetes-operator/samples/simple/elastic-stack/soa-doma
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318036"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318036"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296282" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296282"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318036" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318036"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

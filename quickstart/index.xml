@@ -51,7 +51,7 @@ $ docker pull oracle/weblogic-kubernetes-operator:2.5.0  If you are here because
       
       <guid>/weblogic-kubernetes-operator/quickstart/install/</guid>
       <description>Grant the Helm service account the cluster-admin role. $ cat &amp;lt;&amp;lt;EOF | kubectl apply -f - apiVersion: rbac.authorization.k8s.io/v1 kind: ClusterRoleBinding metadata: name: helm-user-cluster-admin-role roleRef: apiGroup: rbac.authorization.k8s.io kind: ClusterRole name: cluster-admin subjects: - kind: ServiceAccount name: default namespace: kube-system EOF Use Helm to install the operator and Traefik load balancer. First, set up Helm:
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ Create a Traefik (Ingress-based) load balancer. Create a namespace for the load balancer.</description>
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ Create a Traefik (ingress-based) load balancer. Create a namespace for the load balancer.</description>
     </item>
     
     <item>
@@ -62,7 +62,7 @@ $ helm repo add stable https://kubernetes-charts.storage.googleapis.com/ Create 
       <guid>/weblogic-kubernetes-operator/quickstart/prepare/</guid>
       <description>Create a namespace that can host one or more domains:
 $ kubectl create namespace sample-domain1-ns   Use helm to configure the operator to manage domains in this namespace:
-$ helm upgrade sample-weblogic-operator kubernetes/charts/weblogic-operator \  --namespace sample-weblogic-operator-ns \  --reuse-values \  --set &amp;#34;domainNamespaces={sample-domain1-ns}&amp;#34; \  --wait   Configure Traefik to manage Ingresses created in this namespace:
+$ helm upgrade sample-weblogic-operator kubernetes/charts/weblogic-operator \  --namespace sample-weblogic-operator-ns \  --reuse-values \  --set &amp;#34;domainNamespaces={sample-domain1-ns}&amp;#34; \  --wait   Configure Traefik to manage ingresses created in this namespace:
 $ helm upgrade traefik-operator stable/traefik \  --namespace traefik \  --reuse-values \  --set &amp;#34;kubernetes.</description>
     </item>
     
@@ -73,7 +73,7 @@ $ helm upgrade traefik-operator stable/traefik \  --namespace traefik \  --reuse
       
       <guid>/weblogic-kubernetes-operator/quickstart/create-domain/</guid>
       <description>For use in the following steps:
- Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output.    Create a Kubernetes secret for the WebLogic administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:</description>
+ Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output.    Create a Kubernetes Secret for the WebLogic administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:</description>
     </item>
     
     <item>
@@ -82,10 +82,10 @@ $ helm upgrade traefik-operator stable/traefik \  --namespace traefik \  --reuse
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/cleanup/</guid>
-      <description>Remove the domain.   Remove the domain&amp;rsquo;s Ingress by using helm:
+      <description>Remove the domain.   Remove the domain&amp;rsquo;s ingress by using helm:
 $ helm uninstall sample-domain1-ingress -n sample-domain1-ns   Remove the domain resources by using the sample delete-weblogic-domain-resources script:
 $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1   Use kubectl to confirm that the server pods and domain resource are gone:
-$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.   Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:</description>
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.   Configure the Traefik load balancer to stop managing the ingresses in the domain namespace:</description>
     </item>
     
   </channel>

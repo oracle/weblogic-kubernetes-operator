@@ -12,18 +12,18 @@
     <title>Model in image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318035" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296281"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318035"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296281"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318035"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318035"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318035"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2853,7 +2853,7 @@
 </li>
 </ul>
 </li>
-<li>Kubernetes secrets:
+<li>Kubernetes Secrets:
 <ul>
 <li>WebLogic credentials</li>
 <li>Required WDT runtime password</li>
@@ -2876,7 +2876,7 @@
 <li>Same image as Initial use case</li>
 </ul>
 </li>
-<li>Kubernetes secrets:
+<li>Kubernetes Secrets:
 <ul>
 <li>Same as Initial use case  plus secrets for data source credentials and URL</li>
 </ul>
@@ -2981,7 +2981,7 @@ $ cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/m
 </blockquote>
 </li>
 <li>
-<p>Make sure an operator is set up to manage namespace <code>sample-domain1-ns</code>. Also, make sure a Traefik Ingress controller is managing the same namespace and listening on port 30305.</p>
+<p>Make sure an operator is set up to manage namespace <code>sample-domain1-ns</code>. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port 30305.</p>
 <p>For example, follow the same steps as the <a href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/">Quick Start</a>
 guide from the beginning through to the <a href="/weblogic-kubernetes-operator/quickstart/prepare/">Prepare for a domain</a> step.</p>
 
@@ -2990,10 +2990,10 @@ guide from the beginning through to the <a href="/weblogic-kubernetes-operator/q
 
 </li>
 <li>
-<p>Set up Ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample&rsquo;s WebLogic domains.</p>
+<p>Set up ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample&rsquo;s WebLogic domains.</p>
 <ul>
 <li>
-<p>Option 1: To create the Ingresses, use the following YAML to create a file called <code>/tmp/mii-sample/ingresses/myingresses.yaml</code> and then call <code>kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml</code>:</p>
+<p>Option 1: To create the ingresses, use the following YAML to create a file called <code>/tmp/mii-sample/ingresses/myingresses.yaml</code> and then call <code>kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml</code>:</p>
 <pre><code>apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -3071,7 +3071,7 @@ spec:
           servicePort: 8001
 </code></pre></li>
 <li>
-<p>Option 2: Run <code>kubectl apply -f</code> on each of the Ingress YAML files that are already included in the sample source <code>/tmp/mii-sample/ingresses</code> directory:</p>
+<p>Option 2: Run <code>kubectl apply -f</code> on each of the ingress YAML files that are already included in the sample source <code>/tmp/mii-sample/ingresses</code> directory:</p>
 </li>
 </ul>
 <pre><code>$ cd /tmp/mii-sample/ingresses
@@ -3081,9 +3081,9 @@ $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
 $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
 $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
 </code></pre><blockquote>
-<p><strong>NOTE</strong>: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using <code>curl</code> to access the WebLogic domain through the Ingress, you will need to supply a host name header that matches the host names in the Ingress.</p>
+<p><strong>NOTE</strong>: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using <code>curl</code> to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.</p>
 </blockquote>
-<p>For more on information Ingresses and load balancers, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/ingress/">Ingress</a>.</p>
+<p>For more on information ingresses and load balancers, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/ingress/">Ingress</a>.</p>
 </li>
 <li>
 <p>Obtain the WebLogic 12.2.1.4 image that is required to create the sample&rsquo;s model images.</p>
@@ -3673,7 +3673,7 @@ $ kubectl -n sample-domain1-ns label  secret \
   #
   # If you are using 3.0.0-rc1, then the version on the following line
   # should be `v7` not `v6`.
-  apiVersion: &quot;weblogic.oracle/v6&quot; 
+  apiVersion: &quot;weblogic.oracle/v6&quot;
   kind: Domain
   metadata:
     name: sample-domain1
@@ -4114,7 +4114,7 @@ NAME                              VERSION  IMAGE                    READY   PHAS
 </div>
 <p>If you see an error, then consult <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">Debugging</a> in the Model in Image user guide.</p>
 <h4 id="invoke-the-web-application">Invoke the web application</h4>
-<p>Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik Ingress controller&rsquo;s NodePort. Note: The web application will display a list of any data sources it finds, but we don&rsquo;t expect it to find any because the model doesn&rsquo;t contain any at this point.</p>
+<p>Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik ingress controller&rsquo;s NodePort. Note: The web application will display a list of any data sources it finds, but we don&rsquo;t expect it to find any because the model doesn&rsquo;t contain any at this point.</p>
 <p>Send a web application request to the load balancer:</p>
 <pre><code>$ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
    http://localhost:30305/myapp_war/index.jsp
@@ -4579,7 +4579,7 @@ One way to cause a running domain to restart is to change the domain&rsquo;s <co
 </li>
 <li>
 <p>After your domain is running, you can call the sample web application to determine if the data source was deployed.</p>
-<p>Send a web application request to the Ingress controller:</p>
+<p>Send a web application request to the ingress controller:</p>
 <pre><code>$ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
    http://localhost:30305/myapp_war/index.jsp
 </code></pre><p>Or, if Traefik is unavailable and your Administration Server pod is running, you can run <code>kubectl exec</code>:</p>
@@ -4641,7 +4641,7 @@ $ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-
 </blockquote>
 </li>
 <li>
-<p>If you set up the Traefik Ingress controller:</p>
+<p>If you set up the Traefik ingress controller:</p>
 <pre><code>$ helm delete --purge traefik-operator
 $ kubectl delete namespace traefik
 </code></pre></li>
@@ -6574,19 +6574,19 @@ $ docker image rm model-in-image:JRF-v2
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318035"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318035"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296282" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296282"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318035" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318035"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

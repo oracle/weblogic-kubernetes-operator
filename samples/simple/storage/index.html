@@ -12,18 +12,18 @@
     <title>Storage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318035" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318035"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296282"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318035"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318035"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318035"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2764,7 +2764,7 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#sample-persistent-volume-and-persistent-volume-claim">Sample persistent volume and persistent volume claim</a></li>
+        <li><a href="#sample-persistentvolume-and-persistentvolumeclaim">Sample PersistentVolume and PersistentVolumeClaim</a></li>
       </ul>
     </li>
   </ul>
@@ -2793,8 +2793,8 @@
 
 
 
-	<h3 id="sample-persistent-volume-and-persistent-volume-claim">Sample persistent volume and persistent volume claim</h3>
-<p>The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain resource as a persistent storage for the WebLogic domain home or log files.</p>
+	<h3 id="sample-persistentvolume-and-persistentvolumeclaim">Sample PersistentVolume and PersistentVolumeClaim</h3>
+<p>The sample scripts demonstrate the creation of a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC), which can then be used in a domain resource as a persistent storage for the WebLogic domain home or log files.</p>
 <p>A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.</p>
 <h4 id="prerequisites">Prerequisites</h4>
 <p>Before you begin, read this document, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Persistent storage</a>.</p>
@@ -2835,7 +2835,7 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
 </tr>
 <tr>
 <td><code>namespace</code></td>
-<td>Kubernetes namespace to create the PVC.</td>
+<td>Kubernetes Namespace to create the PVC.</td>
 <td><code>default</code></td>
 </tr>
 <tr>
@@ -2871,7 +2871,7 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
 </tbody>
 </table>
 <h4 id="shared-versus-dedicated-pvc">Shared versus dedicated PVC</h4>
-<p>By default, the <code>domainUID</code> is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes namespaces as the PV and PVC. If the PV/PVC is being shared across domains, then, as a best practice, you should specify a unique <code>baseName</code>.</p>
+<p>By default, the <code>domainUID</code> is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes Namespaces as the PV and PVC. If the PV/PVC is being shared across domains, then, as a best practice, you should specify a unique <code>baseName</code>.</p>
 <p>For the use cases where dedicated PV and PVC are desired for a particular domain, the <code>domainUID</code> needs to be set in the <code>create-pv-pvc-inputs.yaml</code> file. The presence of a non-empty <code>domainUID</code> in the inputs file will cause the generated PV and PVC to be associated with the specified <code>domainUID</code>. The association includes that the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the <code>domainUID</code>, and the PV and PVC objects are also labeled with the <code>domainUID</code>.</p>
 <h4 id="verify-the-results">Verify the results</h4>
 <p>The create script will verify that the PV and PVC were created, and will report a failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.</p>
@@ -2962,8 +2962,8 @@ spec:
     # server: %SAMPLE_STORAGE_NFS_SERVER%
     path: &quot;/scratch/k8s_dir&quot;
 </code></pre><h4 id="verify-the-pv-and-pvc-objects">Verify the PV and PVC objects</h4>
-<p>You can use this command to verify the persistent volume was created. Note that the <code>Status</code> field
-should have the value <code>Bound</code>, indicating the that persistent volume has been claimed:</p>
+<p>You can use this command to verify the PersistentVolume was created. Note that the <code>Status</code> field
+should have the value <code>Bound</code>, indicating the that PersistentVolume has been claimed:</p>
 <pre><code>$ kubectl describe pv weblogic-sample-pv
 Name:            weblogic-sample-pv
 Labels:          weblogic.resourceVersion=domain-v2
@@ -2981,7 +2981,7 @@ Source:
     HostPathType:  
 Events:            &lt;none&gt;
 
-</code></pre><p>You can use this command to verify the persistent volume claim was created:</p>
+</code></pre><p>You can use this command to verify the PersistentVolumeClaim was created:</p>
 <pre><code>$ kubectl describe pvc weblogic-sample-pvc
 Name:          weblogic-sample-pvc
 Namespace:     default
@@ -4893,19 +4893,19 @@ Events:        &lt;none&gt;
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318035"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318035"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296282" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296282"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318035" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318035"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

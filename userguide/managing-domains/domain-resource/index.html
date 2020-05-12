@@ -12,18 +12,18 @@
     <title>Domain resource :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296281" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318035" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296281"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318035"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296281"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318035"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318035"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318035"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2825,8 +2825,8 @@ for the <a href="#details-for-300-rc1">3.0.0-rc1 release candidate</a> below.</p
 <p>The following prerequisites must be fulfilled before proceeding with the creation of the resource:</p>
 <ul>
 <li>Make sure the WebLogic Kubernetes Operator is running.</li>
-<li>Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</li>
-<li>Create the Kubernetes secrets containing the <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes namespace as the domain resource.</li>
+<li>Create a Kubernetes Namespace for the domain resource unless the intention is to use the default namespace.</li>
+<li>Create the Kubernetes Secrets containing the <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes Namespace as the domain resource.</li>
 </ul>
 <h4 id="yaml-files">YAML files</h4>
 <p>Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample script, <code>create-domain.sh</code>, generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.</p>
@@ -2840,7 +2840,7 @@ for the <a href="#details-for-300-rc1">3.0.0-rc1 release candidate</a> below.</p
 </code></pre><h4 id="domain-resource-overview">Domain resource overview</h4>
 <p>The domain resource, like all <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/">Kubernetes objects</a>, is described by three sections: <code>metadata</code>, <code>spec</code>, and <code>status</code>.</p>
 <p>The <code>metadata</code> section names the domain resource and its namespace.  The name of the domain resource is the default value for the <code>domain UID</code> which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.</p>
-<p>The <code>spec</code> section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes pod or service generation, such as resource constraints, scheduling requirements, or volume mounts.</p>
+<p>The <code>spec</code> section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes Pod or Service generation, such as resource constraints, scheduling requirements, or volume mounts.</p>
 <p>The <code>status</code> section is updated by the operator and describes the actual running state of the domain, including WebLogic Server instance runtime states and current health.</p>
 <h4 id="domain-resource-spec-elements">Domain resource spec elements</h4>
 <p>The domain resource <code>spec</code> section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.</p>
@@ -2861,7 +2861,7 @@ for the <a href="#details-for-300-rc1">3.0.0-rc1 release candidate</a> below.</p
 </ul>
 <p>Elements related to security:</p>
 <ul>
-<li><code>webLogicCredentialsSecret</code>: The name of a pre-created Kubernetes secret, in the domain resource&rsquo;s namespace, that holds the user name and password needed to boot WebLogic Server under the <code>username</code> and <code>password</code> fields.</li>
+<li><code>webLogicCredentialsSecret</code>: The name of a pre-created Kubernetes Secret, in the domain resource&rsquo;s namespace, that holds the user name and password needed to boot WebLogic Server under the <code>username</code> and <code>password</code> fields.</li>
 </ul>
 <p>Elements related to domain <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">startup and shutdown</a>:</p>
 <ul>
@@ -2872,10 +2872,10 @@ for the <a href="#details-for-300-rc1">3.0.0-rc1 release candidate</a> below.</p
 </ul>
 <p>Elements related to overriding WebLogic domain configuration:</p>
 <ul>
-<li><code>configOverrides</code>: The name of the config map for optional WebLogic configuration overrides.</li>
+<li><code>configOverrides</code>: The name of the ConfigMap for optional WebLogic configuration overrides.</li>
 <li><code>configOverrideSecrets</code>: A list of names of the secrets for optional WebLogic configuration overrides.</li>
 </ul>
-<p>Elements related to Kubernetes pod and service generation:</p>
+<p>Elements related to Kubernetes Pod and Service generation:</p>
 <ul>
 <li><code>serverPod</code>: Configuration affecting server pods for WebLogic Server instances. Most entries specify standard Kubernetes content for pods that you may want the operator to include in pods generated for WebLogic Server instances, such as labels, annotations, volumes, or scheduling constraints, including anti-affinity.</li>
 <li><code>serverService</code>: Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.</li>
@@ -3014,8 +3014,8 @@ for the 3.0.0-rc1 release candidate below.</p>
 <p>The following prerequisites must be fulfilled before proceeding with the creation of the resource:</p>
 <ul>
 <li>Make sure the WebLogic Server Kubernetes Operator is running.</li>
-<li>Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</li>
-<li>Create the Kubernetes secrets containing the <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes namespace as the domain resource.</li>
+<li>Create a Kubernetes Namespace for the domain resource unless the intention is to use the default namespace.</li>
+<li>Create the Kubernetes Secrets containing the <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes Namespace as the domain resource.</li>
 </ul>
 <h4 id="yaml-files-1">YAML files</h4>
 <p>Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample scripts generate a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.</p>
@@ -3030,7 +3030,7 @@ for the 3.0.0-rc1 release candidate below.</p>
 </code></pre><h4 id="domain-resource-overview-1">Domain resource overview</h4>
 <p>The domain resource, like all <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/">Kubernetes objects</a>, is described by three sections: <code>metadata</code>, <code>spec</code>, and <code>status</code>.</p>
 <p>The <code>metadata</code> section names the domain resource and its namespace.  The name of the domain resource is the default value for the <code>domain UID</code> which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.</p>
-<p>The <code>spec</code> section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes pod or service generation, such as resource constraints, scheduling requirements, or volume mounts.</p>
+<p>The <code>spec</code> section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes Pod or Service generation, such as resource constraints, scheduling requirements, or volume mounts.</p>
 <p>The <code>status</code> section is updated by the operator and describes the actual running state of the domain, including WebLogic Server instance runtime states and current health.</p>
 <h4 id="domain-resource-spec-elements-1">Domain resource spec elements</h4>
 <p>The domain resource <code>spec</code> section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.</p>
@@ -3051,7 +3051,7 @@ for the 3.0.0-rc1 release candidate below.</p>
 </ul>
 <p>Elements related to security:</p>
 <ul>
-<li><code>webLogicCredentialsSecret</code>: The name of a pre-created Kubernetes secret, in the domain resource&rsquo;s namespace, that holds the user name and password needed to boot WebLogic Server under the <code>username</code> and <code>password</code> fields.</li>
+<li><code>webLogicCredentialsSecret</code>: The name of a pre-created Kubernetes Secret, in the domain resource&rsquo;s namespace, that holds the user name and password needed to boot WebLogic Server under the <code>username</code> and <code>password</code> fields.</li>
 <li>See also elements under <code>configuration</code> below.</li>
 </ul>
 <p>Elements related to domain <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/">startup and shutdown</a>:</p>
@@ -3088,7 +3088,7 @@ for the 3.0.0-rc1 release candidate below.</p>
 </ul>
 </li>
 </ul>
-<p>Elements related to Kubernetes pod and service generation:</p>
+<p>Elements related to Kubernetes Pod and Service generation:</p>
 <ul>
 <li><code>serverPod</code>: Configuration affecting server pods for WebLogic Server instances. Most entries specify standard Kubernetes content for pods that you may want the operator to include in pods generated for WebLogic Server instances, such as labels, annotations, volumes, or scheduling constraints, including anti-affinity.</li>
 <li><code>serverService</code>: Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.</li>
@@ -5112,19 +5112,19 @@ spec:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318035"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318035"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318035"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296282" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296282"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318035" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318035"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

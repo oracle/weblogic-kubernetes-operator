@@ -18,7 +18,7 @@
       
       <guid>/weblogic-kubernetes-operator/security/certificates/</guid>
       <description>Updating operator external certificates If the operator needs to update the external certificate and key currently being used or was installed without an external REST API SSL/TLS identity, the helm upgrade command is used to restart the operator with the new or updated Kubernetes tls secret that contains the desired certificates.
-The operator requires a restart in order to begin using the new or updated external certificate. The Helm --recreate-pods flag is used to cause the existing Kubernetes pod to be terminated and a new pod to be started with the updated configuration.</description>
+The operator requires a restart in order to begin using the new or updated external certificate. The Helm --recreate-pods flag is used to cause the existing Kubernetes Pod to be terminated and a new pod to be started with the updated configuration.</description>
     </item>
     
     <item>
@@ -27,7 +27,7 @@ The operator requires a restart in order to begin using the new or updated exter
       <pubDate>Sat, 23 Feb 2019 17:36:29 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/encryption/</guid>
-      <description>Contents  Introspector encryption Encryption of Kubernetes secrets Additional reading  Introspector encryption The operator has an introspection job that handles WebLogic domain encryption. The introspection job also addresses the use of Kubernetes secrets with configuration overrides. For additional information on the configuration handling, see Configuration overrides.
+      <description>Contents  Introspector encryption Encryption of Kubernetes Secrets Additional reading  Introspector encryption The operator has an introspection job that handles WebLogic domain encryption. The introspection job also addresses the use of Kubernetes Secrets with configuration overrides. For additional information on the configuration handling, see Configuration overrides.
 The introspection job also creates a boot.properties file that is made available to the pods in the WebLogic domain. The credential used for the WebLogic domain is kept in a Kubernetes Secret which follows the naming pattern &amp;lt;domainUID&amp;gt;-weblogic-credentials, where &amp;lt;domainUID&amp;gt; is the unique identifier of the domain, for example, mydomain-weblogic-credentials.</description>
     </item>
     
@@ -37,7 +37,7 @@ The introspection job also creates a boot.properties file that is made available
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/service-accounts/</guid>
-      <description>WebLogic Server Kubernetes Operator service accounts When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed. For more information about the Helm chart, see the Operator Helm configuration values.
+      <description>WebLogic Server Kubernetes Operator ServiceAccounts When the operator is installed, the Helm chart property, serviceAccount, can be specified where the value contains the name of the Kubernetes ServiceAccount in the namespace in which the operator will be installed. For more information about the Helm chart, see the Operator Helm configuration values.
 The operator will use this ServiceAccount when calling the Kubernetes API server and the appropriate access controls will be created for this ServiceAccount by the operator&amp;rsquo;s Helm chart.</description>
     </item>
     
@@ -47,7 +47,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Sat, 23 Feb 2019 17:15:36 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/rbac/</guid>
-      <description>Contents  Overview Operator RBAC definitions  Role and role binding naming convention Cluster role and cluster role binding naming convention   Role bindings Cluster role bindings  Overview The operator assumes that certain Kubernetes roles are created in the Kubernetes cluster. The operator Helm chart creates the required cluster roles, cluster role bindings, roles, and role bindings for the ServiceAccount that is used by the operator. The operator will also attempt to verify that the RBAC settings are correct when the operator starts running.</description>
+      <description>Contents  Overview Operator RBAC definitions  Role and RoleBinding naming conventions ClusterRole and ClusterRoleBinding naming conventions   RoleBindings ClusterRoleBindings  Overview The operator assumes that certain Kubernetes Roles are created in the Kubernetes cluster. The operator Helm chart creates the required ClusterRoles, ClusterRoleBindings, Roles, and RoleBindings for the ServiceAccount that is used by the operator. The operator will also attempt to verify that the RBAC settings are correct when the operator starts running.</description>
     </item>
     
     <item>

@@ -18,7 +18,7 @@
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/overview/</guid>
       <description>This feature is supported only in 3.0.0-rc1.
- Content  Introduction Runtime behavior overview Runtime updates overview Continuous integration and delivery (CI/CD) References  Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain types. See Choose a domain home source type for a comparison of operator domain types.
+ Content  Introduction Runtime behavior overview Runtime updates overview Continuous integration and delivery (CI/CD) References  Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain in PV domain types. See Choose a domain home source type for a comparison of operator domain types.
 Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource.</description>
     </item>
     

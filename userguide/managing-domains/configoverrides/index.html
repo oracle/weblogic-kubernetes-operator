@@ -12,18 +12,18 @@
     <title>Configuration overrides :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1589296282" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589296282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1589318035" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1589318035" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1589318035"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589296282"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1589318035"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1589318035"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589296282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1589318035"></script>
 
     
   </div>
@@ -2611,9 +2611,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a Persistent Volume Claim" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/volumes/">
-        Providing access to a Persistent Volume Claim
+        Providing access to a PersistentVolumeClaim
         
         </a>
     </li>
@@ -2630,9 +2630,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a Config Map" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/configmaps/">
-        Providing access to a Config Map
+        Providing access to a ConfigMap
         
         </a>
     </li>
@@ -2841,7 +2841,7 @@
 <li>Set your domain resource <code>configuration.overridesConfigMap</code> to the name of this configuration map.</li>
 <li>If templates leverage <code>secret macros</code>:
 <ul>
-<li>Create Kubernetes secrets that contain template macro values.</li>
+<li>Create Kubernetes Secrets that contain template macro values.</li>
 <li>Set your domain <code>configuration.secrets</code> to reference the aforementioned secrets.</li>
 </ul>
 </li>
@@ -3013,7 +3013,7 @@ domains (the <code>domainHomeSourceType</code> must be either <code>PersistentVo
 <p>Secret macros have the syntax <code>${secret:SECRETNAME.SECRETKEY}</code> and <code>${secret:SECRETNAME.SECRETKEY:encrypt}</code>.</p>
 </li>
 </ul>
-<p>The secret macro <code>SECRETNAME</code> field must reference the name of a Kubernetes secret, and the <code>SECRETKEY</code> field must reference a key within that secret. For example, if you have created a secret named <code>dbuser</code> with a key named <code>username</code> that contains the value <code>scott</code>, then the macro <code>${secret:dbuser.username}</code> will be replaced with the word <code>scott</code> before the template is copied into its WebLogic Server pod.</p>
+<p>The secret macro <code>SECRETNAME</code> field must reference the name of a Kubernetes Secret, and the <code>SECRETKEY</code> field must reference a key within that secret. For example, if you have created a secret named <code>dbuser</code> with a key named <code>username</code> that contains the value <code>scott</code>, then the macro <code>${secret:dbuser.username}</code> will be replaced with the word <code>scott</code> before the template is copied into its WebLogic Server pod.</p>
 <p><strong>SECURITY NOTE: Use the <code>:encrypt</code> suffix in a secret macro to encrypt its replacement value with the WebLogic WLST <code>encrypt</code> command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the <code>password-encrypted</code> field of a data source, and is also useful for ensuring that a custom override situational configuration file the operator places in the domain home does not expose passwords in plain-text.</strong></p>
 <h4 id="override-template-syntax-special-requirements">Override template syntax special requirements</h4>
 <p><strong>Check each item below for best practices and to ensure custom situational configuration takes effect:</strong></p>
@@ -3101,7 +3101,7 @@ domains (the <code>domainHomeSourceType</code> must be either <code>PersistentVo
 <p>Best practices for data source modules and their overrides:</p>
 <ul>
 <li>A data source module must already exist in your original configuration if you want to override it; it&rsquo;s not possible to add a new module by using overrides. If you need your overrides to set up a new module, then have your original configuration specify &lsquo;skeleton&rsquo; modules that can be overridden. See the next two bulleted items for the typical contents of a skeleton data source module.</li>
-<li>Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that&rsquo;s wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes deployment could cause your production applications to use your QA database.</li>
+<li>Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that&rsquo;s wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes Deployment could cause your production applications to use your QA database.</li>
 <li>Set your original (non-overridden) <code>JDBCConnectionPoolParams</code> <code>MinCapacity</code> and <code>InitialCapacity</code> to <code>0</code>, and set your original <code>DriverName</code> to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn&rsquo;t running, or you haven&rsquo;t specified your overrides yet.</li>
 </ul>
 <pre><code>&lt;?xml version='1.0' encoding='UTF-8'?&gt;
@@ -3136,13 +3136,13 @@ domains (the <code>domainHomeSourceType</code> must be either <code>PersistentVo
 </li>
 <li>Templates must not override the settings listed in <a href="#unsupported-overrides">Unsupported overrides</a>.</li>
 <li>Templates must be formatted and named as per <a href="#override-template-names-and-syntax">Override template names and syntax</a>.</li>
-<li>Templates can embed macros that reference environment variables or Kubernetes secrets.  See <a href="#override-template-macros">Override template macros</a>.</li>
+<li>Templates can embed macros that reference environment variables or Kubernetes Secrets.  See <a href="#override-template-macros">Override template macros</a>.</li>
 </ul>
 </li>
 <li>Create a Kubernetes configuration map from the directory of templates.
 <ul>
 <li>
-<p>The configuration map must be in the same Kubernetes namespace as the domain.</p>
+<p>The configuration map must be in the same Kubernetes Namespace as the domain.</p>
 </li>
 <li>
 <p>If the configuration map is going to be used by a single <code>DOMAIN_UID</code>, then we recommend adding the <code>weblogic.domainUID=&lt;mydomainuid&gt;</code> label to help track the resource.</p>
@@ -3154,13 +3154,13 @@ kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
 </code></pre></li>
 </ul>
 </li>
-<li>Create any Kubernetes secrets referenced by a template &lsquo;secret macro&rsquo;.
+<li>Create any Kubernetes Secrets referenced by a template &lsquo;secret macro&rsquo;.
 <ul>
 <li>
 <p>Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords by using <code>Opaque</code> type secrets in their <code>data</code> field, so that they can&rsquo;t be easily read at a casual glance. For more information, see <a href="https://kubernetes.io/docs/concepts/configuration/secret/">https://kubernetes.io/docs/concepts/configuration/secret/</a>.</p>
 </li>
 <li>
-<p>Secrets must be in the same Kubernetes namespace as the domain.</p>
+<p>Secrets must be in the same Kubernetes Namespace as the domain.</p>
 </li>
 <li>
 <p>If a secret is going to be used by a single <code>DOMAIN_UID</code>, then we recommend adding the <code>weblogic.domainUID=&lt;mydomainuid&gt;</code> label to help track the resource.</p>
@@ -5260,19 +5260,19 @@ $ wlst.sh
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1589318036"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1589296282"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589296282"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1589318036"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1589318036"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589296282" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589296282"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1589318036" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1589318036"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
