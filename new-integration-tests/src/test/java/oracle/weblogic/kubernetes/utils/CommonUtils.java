@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
@@ -204,7 +205,7 @@ public class CommonUtils {
   /**
    * Create a model in image domain in the specified namespace.
    *
-   * @param miiImage the image of the model-in-image domain
+   * @param miiImage the docker image of the model-in-image domain
    * @param domainUid the domain uid for the model-in-image domain
    * @param domainNamespace the namespace in which the domain will be created
    * @param clusters list of the oracle.weblogic.domain.Cluster objects used to create the domain
@@ -304,8 +305,8 @@ public class CommonUtils {
    * Check pod is created.
    *
    * @param podName pod name to check
-   * @param domainUid the domain which the pod belongs to
-   * @param domainNamespace the domain namespace in which the domain resides
+   * @param domainUid the domain in which the pod exists
+   * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodCreated(String podName, String domainUid, String domainNamespace) {
     withStandardRetryPolicy
@@ -326,8 +327,8 @@ public class CommonUtils {
    * Check pod is ready.
    *
    * @param podName pod name to check
-   * @param domainUid the domain which the pod belongs to
-   * @param domainNamespace the domain namespace in which the domain resides
+   * @param domainUid the domain in which the pod exists
+   * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
     withStandardRetryPolicy
@@ -339,8 +340,7 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-            String.format(
-                "pod %s is not ready in namespace %s", podName, domainNamespace)));
+            String.format("pod %s is not ready in namespace %s", podName, domainNamespace)));
 
   }
 
@@ -348,7 +348,7 @@ public class CommonUtils {
    * Check service is created.
    *
    * @param serviceName service name to check
-   * @param domainNamespace the domain namespace in which the domain resides
+   * @param domainNamespace the domain namespace in which the service exists
    */
   public static void checkServiceCreated(String serviceName, String domainNamespace) {
     withStandardRetryPolicy
@@ -360,8 +360,27 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
-            String.format(
-                "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
+            String.format("Service %s is not ready in namespace %s", serviceName, domainNamespace)));
+  }
+
+  /**
+   * Check pod was deleted.
+   *
+   * @param podName pod name to check
+   * @param domainUid the domain uid in which the pod exists
+   * @param domainNamespace the domain namespace in which the domain exists
+   */
+  public static void checkPodDeleted(String podName, String domainUid, String domainNamespace) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domainNamespace),
+            String.format("Pod %s still exists in namespace %s", podName, domainNamespace)));
   }
 
   /**
