@@ -14,7 +14,7 @@ controls like security lists or set up a Bastion to provide access.
 {{% /notice %}}
 
 When accessing T3 or RMI based channels, the preferred approach is to `kubectl exec` into
-the Kubernetes pod and then run `wlst`, or set up Bastion access and then run
+the Kubernetes Pod and then run `wlst`, or set up Bastion access and then run
 `wlst` from the Bastion host to connect to the Kubernetes cluster.
 
 Also, consider a private VPN if you need use cross-domain T3 access

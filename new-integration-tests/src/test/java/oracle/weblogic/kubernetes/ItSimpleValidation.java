@@ -68,11 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItSimpleValidation implements LoggedTest {
 
-  private static final String WDT_MODEL_FILE = "model1-wls.yaml";
-  private static final String IMAGE_NAME = "test-mii-image-2";
-  private static final String IMAGE_TAG = "v1";
-  private static final String APP_NAME = "sample-app";
-
   private String opNamespace = null;
   private String domainNamespace1 = null;
 
