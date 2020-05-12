@@ -2,7 +2,7 @@
 
 Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
-* Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.
+* Create WebLogic domains in a Kubernetes PersistentVolume. This PersistentVolume can reside in an NFS file system or other Kubernetes volume types.
 * Create a WebLogic domain in a Docker image.
 * Override certain aspects of the WebLogic domain configuration.
 * Define WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
@@ -34,7 +34,7 @@ This release candidate was published on May 8, 2020.  There may be additional re
 
 This release candidate introduces _non-backward compatible_ changes.  This release candidate cannot be run in the same
 cluster as another release of the operator.  You can upgrade from 2.5.0 to 3.0.0-rc1 without needing to restart or recreate
-any existing domains. However, please note that we do plan to support running the final 3.0.0
+any existing domains. However, please note that we _do_ plan to support running the final 3.0.0
 release in the same cluster with at least one 2.x release of the operator to allow for staged migration.
 
 The feature changes in 3.0.0-rc1 are:
@@ -45,7 +45,7 @@ The feature changes in 3.0.0-rc1 are:
   the same model and automated updating of the domain based on model changes.
   The operator automates management of the domain encryption keys to ensure
   that they are not changed during domain updates.
-  A [sample]({{% relref "/samples/simple/domains/model-in-image" %}}) is also provided that
+  We provide a [sample]({{% relref "/samples/simple/domains/model-in-image" %}}) that
   demonstrates the key use cases for this feature.
 * Support for running the operator on Kubernetes 1.16.
 * Deprecation and removal of support for running the operator on Kubernetes 1.13
@@ -53,7 +53,7 @@ The feature changes in 3.0.0-rc1 are:
 * Deprecation and removal of support for Helm 2.x.  Helm 2.x uses the "tiller" pod
   which needs to run with elevated privileges (`cluster-admin` or very close to that)
   and which could be a vector for a privilege escalation attack.  Helm 3.x removes
-  tiller and does not create the same exposure.
+  Tiller and does not create the same exposure.
 
 ***
 
