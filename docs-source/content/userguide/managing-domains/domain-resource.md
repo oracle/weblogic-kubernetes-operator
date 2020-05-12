@@ -21,8 +21,8 @@ Swagger documentation is available [here](https://oracle.github.io/weblogic-kube
 The following prerequisites must be fulfilled before proceeding with the creation of the resource:
 
 * Make sure the WebLogic Kubernetes Operator is running.
-* Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.
-* Create the Kubernetes secrets containing the `username` and `password` of the administrative account in the same Kubernetes namespace as the domain resource.
+* Create a Kubernetes Namespace for the domain resource unless the intention is to use the default namespace.
+* Create the Kubernetes Secrets containing the `username` and `password` of the administrative account in the same Kubernetes Namespace as the domain resource.
 
 #### YAML files
 
@@ -52,7 +52,7 @@ The domain resource, like all [Kubernetes objects](https://kubernetes.io/docs/co
 
 The `metadata` section names the domain resource and its namespace.  The name of the domain resource is the default value for the `domain UID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
 
-The `spec` section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes pod or service generation, such as resource constraints, scheduling requirements, or volume mounts.
+The `spec` section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes Pod or Service generation, such as resource constraints, scheduling requirements, or volume mounts.
 
 The `status` section is updated by the operator and describes the actual running state of the domain, including WebLogic Server instance runtime states and current health.
 
@@ -77,7 +77,7 @@ Elements related to logging:
 
 Elements related to security:
 
-* `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
+* `webLogicCredentialsSecret`: The name of a pre-created Kubernetes Secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
 
 Elements related to domain [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}):
 
@@ -88,10 +88,10 @@ Elements related to domain [startup and shutdown]({{< relref "/userguide/managin
 
 Elements related to overriding WebLogic domain configuration:
 
-* `configOverrides`: The name of the config map for optional WebLogic configuration overrides.
+* `configOverrides`: The name of the ConfigMap for optional WebLogic configuration overrides.
 * `configOverrideSecrets`: A list of names of the secrets for optional WebLogic configuration overrides.
 
-Elements related to Kubernetes pod and service generation:
+Elements related to Kubernetes Pod and Service generation:
 
 * `serverPod`: Configuration affecting server pods for WebLogic Server instances. Most entries specify standard Kubernetes content for pods that you may want the operator to include in pods generated for WebLogic Server instances, such as labels, annotations, volumes, or scheduling constraints, including anti-affinity.
 * `serverService`: Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.
@@ -122,7 +122,7 @@ The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS`
 
 Note: Defining `-Djava.security.egd=file:/dev/./urandom` in the `NODEMGR_MEM_ARGS` environment variable helps to speed up the Node Manager startup on systems with low entropy.
 
-This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file. 
+This example snippet illustrates how to add the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file.
 ```
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
@@ -148,7 +148,7 @@ spec:
     - name: NODEMGR_MEM_ARGS
       value: "-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom "
 ```
-      
+
 ### Pod generation
 
 The operator creates a pod for each running WebLogic Server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes sidecar and init containers, labels, annotations, volumes, volume mounts, scheduling constraints, including anti-affinity, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/), or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
@@ -249,8 +249,8 @@ Swagger documentation is available [here](https://oracle.github.io/weblogic-kube
 The following prerequisites must be fulfilled before proceeding with the creation of the resource:
 
 * Make sure the WebLogic Server Kubernetes Operator is running.
-* Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.
-* Create the Kubernetes secrets containing the `username` and `password` of the administrative account in the same Kubernetes namespace as the domain resource.
+* Create a Kubernetes Namespace for the domain resource unless the intention is to use the default namespace.
+* Create the Kubernetes Secrets containing the `username` and `password` of the administrative account in the same Kubernetes Namespace as the domain resource.
 
 #### YAML files
 
@@ -281,7 +281,7 @@ The domain resource, like all [Kubernetes objects](https://kubernetes.io/docs/co
 
 The `metadata` section names the domain resource and its namespace.  The name of the domain resource is the default value for the `domain UID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name.  The domain resource name is required to be unique in the namespace and the domain UID should be unique across the cluster.  The domain UID, domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
 
-The `spec` section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes pod or service generation, such as resource constraints, scheduling requirements, or volume mounts.
+The `spec` section describes the intended running state of the domain, including intended runtime state of server instances, number of cluster members started, and details about Kubernetes Pod or Service generation, such as resource constraints, scheduling requirements, or volume mounts.
 
 The `status` section is updated by the operator and describes the actual running state of the domain, including WebLogic Server instance runtime states and current health.
 
@@ -306,7 +306,7 @@ Elements related to logging:
 
 Elements related to security:
 
-* `webLogicCredentialsSecret`: The name of a pre-created Kubernetes secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
+* `webLogicCredentialsSecret`: The name of a pre-created Kubernetes Secret, in the domain resource's namespace, that holds the user name and password needed to boot WebLogic Server under the `username` and `password` fields.
 * See also elements under `configuration` below.
 
 Elements related to domain [startup and shutdown]({{< relref "/userguide/managing-domains/domain-lifecycle/startup.md" >}}):
@@ -336,7 +336,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
   * `walletPasswordSecret`: The expected secret field is `walletPassword`. Used to encrypt/decrypt the wallet that's used for accessing the domain's entries in its RCU database.
   * `walletFileSecret`: Optional. The expected secret field is `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database (specify a wallet file that was obtained from the domain home while the domain was booted for the first time).
 
-Elements related to Kubernetes pod and service generation:
+Elements related to Kubernetes Pod and Service generation:
 
 * `serverPod`: Configuration affecting server pods for WebLogic Server instances. Most entries specify standard Kubernetes content for pods that you may want the operator to include in pods generated for WebLogic Server instances, such as labels, annotations, volumes, or scheduling constraints, including anti-affinity.
 * `serverService`: Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.
@@ -475,5 +475,3 @@ spec:
 ```
 
 The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The job pod for the introspector is generated using the `serverPod` entries for the Administration Server.  Because the Administration Server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be "introspector".
-
-
