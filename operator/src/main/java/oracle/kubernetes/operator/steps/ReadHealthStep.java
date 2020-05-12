@@ -291,11 +291,12 @@ public class ReadHealthStep extends Step {
                               } else {
                                 packet.put(ProcessingConstants.RESULT, input);
                               }
+                              fiber.resume(packet);
                             });
                   } catch (Exception e) {
+                    fiber.resume(packet);
                     LOGGER.severe(MessageKeys.HTTP_METHOD_FAILED, "POST", e.getMessage());
                   }
-                  fiber.resume(packet);
                 });
           }
         }
