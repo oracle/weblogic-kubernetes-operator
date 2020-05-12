@@ -324,7 +324,7 @@ The Oracle Database Docker images are only supported for non-production use. For
       <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store, and accept the license agreement for the WebLogic Server image.
   Log in to the Docker store from your Docker client:
 $ docker login   Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.5.0   Pull the Traefik load balancer image:</description>
+$ docker pull oracle/weblogic-kubernetes-operator:2.5.0  If you are here because you are following the Model In Image sample, change the image to oracle/weblogic-kubernetes-operator:3.</description>
     </item>
     
     <item>
