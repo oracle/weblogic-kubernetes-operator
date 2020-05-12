@@ -49,7 +49,7 @@ spec:
   webLogicCredentialsSecret:
     name: "domain1-weblogic-credentials"
 ```
-To create the Kubernetes secret, `my-registry-pull-secret`, in
+To create the Kubernetes Secret, `my-registry-pull-secret`, in
 the namespace where the domain will be running, `domain1-ns`, the following
 command can be used:
 ```bash
@@ -61,7 +61,7 @@ $ kubectl create secret docker-registry my-registry-pull-secret \
   --docker-email=<email>
 ```
 
-For more information about creating Kubernetes secrets for accessing
+For more information about creating Kubernetes Secrets for accessing
 the registry, see the Kubernetes documentation about
 [pulling an image from a private registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
@@ -73,7 +73,7 @@ WebLogic domain with a set of image pull secrets thus avoiding the need to
 set `imagePullSecrets` for each `Domain` resource being created (because each resource
 instance represents a WebLogic domain that the operator is managing).
 
-The Kubernetes secret would be created in the same manner as shown above and then the
+The Kubernetes Secret would be created in the same manner as shown above and then the
 `ServiceAccount` would be updated to include this image pull secret:
 ```bash
 $ kubectl patch serviceaccount default -n domain1-ns \

@@ -96,7 +96,7 @@ and defaults to `8888` if not provided.
 ##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on pods.  When you enable Istio support, the
-domain on persistent volume sample scripts will make the following adjustments
+domain on a persistent volume sample scripts will make the following adjustments
 to your domain in order to satisy Istio's requirements:
 
 * On the Administration Server:
@@ -111,15 +111,15 @@ to your domain in order to satisy Istio's requirements:
 * In the server template that is used to create Managed Servers in clusters:
     * Create a channel called `istio-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting) and the public address
-      set to the Kubernetes service for the Managed Server.
+      set to the Kubernetes Service for the Managed Server.
     * Create a channel called `istio-t3` with listen address `127.0.0.1` and the port
       you specified as the admin port and the public address
-      set to the Kubernetes service for the Managed Server.
+      set to the Kubernetes Service for the Managed Server.
     * Create a channel called `istio-cluster` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the CLUSTER_BROADCAST protocol enabled,
-      and the public address set to the Kubernetes service for the Managed Server.
+      and the public address set to the Kubernetes Service for the Managed Server.
     * Create a channel called `istio-http` with listen address `127.0.0.1:31111` and the
-      public address set to the Kubernetes service for the Managed Server. Note that `31111`
+      public address set to the Kubernetes Service for the Managed Server. Note that `31111`
       is the Istio proxy (envoy) port.
 * The create domain job will be configured to disable injection of the Istio sidecar.
 
@@ -129,7 +129,7 @@ ensure that the Istio sidecar is not injected into the introspector job's pods.
 #### Exposing applications in Istio-enabled domains
 
 When a domain is running with the experimental Istio support, you should use the Istio
-gateway to provide external access to applications, instead of using an Ingress
+gateway to provide external access to applications, instead of using an ingress
 controller like Traefik.  Using the Istio gateway will enable you to view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
 the cluster, for example, the Istio gateway.
@@ -182,7 +182,7 @@ using HTTP on port 80, and a virtual service that will route all of
 those requests to the cluster service for `cluster-1` in `domain1` in
 the namespace `domain1`.
 
-For more information about providing Ingress using Istio, refer to the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
+For more information about providing ingress using Istio, refer to the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
 
 #### Traffic management
 

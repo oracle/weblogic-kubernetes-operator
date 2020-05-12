@@ -5,7 +5,7 @@ draft: false
 weight: 1
 ---
 
-Each operator deployment manages a number of Kubernetes namespaces. For more information, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
+Each operator deployment manages a number of Kubernetes Namespaces. For more information, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
 must be present in a namespace before any WebLogic domain custom resources can be successfully
 deployed into it.
 Those Kubernetes resources are created either as part of the installation
@@ -16,7 +16,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
 * [Check the namespaces that the operator manages](#check-the-namespaces-that-the-operator-manages)
 * [Add a namespace for the operator to manage](#add-a-kubernetes-namespace-to-the-operator)
 * [Delete a namespace from the operator's domain namespace list](#delete-a-kubernetes-namespace-from-the-operator)
-* [Delete and recreate a Kubernetes namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
+* [Delete and recreate a Kubernetes Namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
 
 For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#common-mistakes-and-solutions" >}}).
 
@@ -58,7 +58,7 @@ $ helm list --namespace <namespace>
 $ helm list --all-namespaces
 ```
 
-#### Add a Kubernetes namespace to the operator
+#### Add a Kubernetes Namespace to the operator
 If you want an operator deployment to manage a namespace, you need to add the namespace to the operator's `domainNamespaces` list. Note that the namespace has to already exist, for example, using the `kubectl create` command.
 
 Adding a namespace to the `domainNamespaces` list tells the operator deployment or runtime
@@ -98,7 +98,7 @@ NAME                 DATA      AGE
 weblogic-domain-cm   14        12m
 ```
 
-####  Delete a Kubernetes namespace from the operator
+####  Delete a Kubernetes Namespace from the operator
 When you no longer want a namespace to be managed by the operator, you need to remove it from
 the operator's `domainNamespaces` list, so that the corresponding Kubernetes resources that are
 associated with the namespace can be cleaned up.
@@ -118,7 +118,7 @@ $ helm upgrade \
 
 ```
 
-#### Recreate a previously deleted Kubernetes namespace
+#### Recreate a previously deleted Kubernetes Namespace
 
 If you need to delete a namespace (and the resources in it) and then recreate it,
 remember to remove the namespace from the operator's `domainNamespaces` list
