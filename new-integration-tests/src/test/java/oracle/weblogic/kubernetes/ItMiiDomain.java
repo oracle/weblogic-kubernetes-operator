@@ -51,8 +51,19 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
+import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
+import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V3;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.READ_STATE_COMMAND;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
@@ -108,22 +119,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @IntegrationTest
 class ItMiiDomain implements LoggedTest {
 
-  // mii constants
-  private static final String WDT_MODEL_FILE = "model1-wls.yaml";
-  private static final String MII_IMAGE_NAME = "mii-image";
-  private static final String APP_NAME = "sample-app";
-
-  // domain constants
-  private static final String DOMAIN_VERSION = "v7";
-  private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
-  
-  // application constants
-  private static final String APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
-  private static final String APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
-  private static final String APP_RESPONSE_V3 = "How are you doing! You have reached server managed-server";
-
-  private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
-
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
   private String serviceAccountName = null;
@@ -140,7 +135,6 @@ class ItMiiDomain implements LoggedTest {
   private String domainUid1 = "domain2";
   private String miiImagePatchAppV2 = null;
   private String miiImageAddSecondApp = null;
-  private String miiImage = null;
 
   private static Map<String, Object> secretNameMap;
 
@@ -259,16 +253,10 @@ class ItMiiDomain implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testCreateMiiDomain() {
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
+    // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
-
-    // create image with model files
-    miiImage = createInitialDomainImage();
-
-    // push the image to a registry to make the test work in multi node cluster
-    pushImageIfNeeded(miiImage);
 
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
@@ -350,7 +338,7 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i,
           "8001",
           "sample-war/index.jsp",
-          APP_RESPONSE_V1 + i);
+          MII_APP_RESPONSE_V1 + i);
     }
  
     logger.info("Domain {0} is fully started - servers are running and application is available",
@@ -363,7 +351,7 @@ class ItMiiDomain implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testCreateMiiSecondDomainDiffNSSameImage() {
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
+    // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid1 + "-admin-server";
     final String managedServerPrefix = domainUid1 + "-managed-server";
     final int replicaCount = 2;
@@ -461,7 +449,7 @@ class ItMiiDomain implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testCreateMiiDomainSameDomainUidDiffNS() {
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
+    // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
@@ -587,7 +575,7 @@ class ItMiiDomain implements LoggedTest {
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V1 + i);
+            MII_APP_RESPONSE_V1 + i);
       }
  
       logger.info("Check that the version 2 application is NOT running");
@@ -597,12 +585,12 @@ class ItMiiDomain implements LoggedTest {
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V2 + i);   
+            MII_APP_RESPONSE_V2 + i);   
       }
  
       logger.info("Create a new image with application V2");
       miiImagePatchAppV2 = updateImageWithAppV2Patch(
-          String.format("%s-%s", MII_IMAGE_NAME, "test-patch-app-v2"),
+          String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-patch-app-v2"),
           Arrays.asList(appDir1, appDir2));
 
       // push the image to a registry to make the test work in multi node cluster
@@ -626,7 +614,7 @@ class ItMiiDomain implements LoggedTest {
             managedServerPrefix + i,
             "8001",
             "sample-war/index.jsp",
-            APP_RESPONSE_V2 + i);
+            MII_APP_RESPONSE_V2 + i);
       } 
     } finally {
     
@@ -673,7 +661,7 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i,
           "8001",
           "sample-war/index.jsp",
-          APP_RESPONSE_V2 + i);
+          MII_APP_RESPONSE_V2 + i);
     }
 
     logger.info("Check that the new application is NOT already running");
@@ -683,15 +671,15 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i,
           "8001",
           "sample-war-3/index.jsp",
-          APP_RESPONSE_V3 + i);
+          MII_APP_RESPONSE_V3 + i);
     }
    
     logger.info("Create a new image that contains the additional application");
     miiImageAddSecondApp = updateImageWithSampleApp3(
-        String.format("%s-%s", MII_IMAGE_NAME, "test-add-second-app"),
+        String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-add-second-app"),
         Arrays.asList(appDir1, appDir2),
         Collections.singletonList(appDir3),
-        "model-singlecluster-two-sampleapp-wls.yaml");
+        MII_TWO_APP_WDT_MODEL_FILE);
     
     // push the image to a registry to make the test work in multi node cluster
     pushImageIfNeeded(miiImageAddSecondApp);
@@ -714,7 +702,7 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i,
           "8001",
           "sample-war-3/index.jsp",
-          APP_RESPONSE_V3 + i);
+          MII_APP_RESPONSE_V3 + i);
     }
  
     logger.info("Check and wait for the original application V2 to become ready");
@@ -724,7 +712,7 @@ class ItMiiDomain implements LoggedTest {
           managedServerPrefix + i,
           "8001",
           "sample-war/index.jsp",
-          APP_RESPONSE_V2 + i);
+          MII_APP_RESPONSE_V2 + i);
     }
 
     logger.info("Both of the applications are running correctly after patching");
@@ -752,9 +740,6 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
 
     // delete the domain images created in the test class
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
     if (miiImagePatchAppV2 != null) {
       deleteImage(miiImagePatchAppV2);
     }
@@ -786,34 +771,13 @@ class ItMiiDomain implements LoggedTest {
     return REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? baseImageName : REPO_NAME + baseImageName;
   }
 
-  private String createInitialDomainImage() {
-    logger.info("Build the model file list that contains {0}", WDT_MODEL_FILE);
-    final List<String> modelList = 
-        Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
-
-    logger.info("Build an application archive using what is in resources/apps/{0}", APP_NAME);
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDirList(Collections.singletonList(APP_NAME))), 
-        String.format("Failed to create application archive for %s", APP_NAME));
-
-    logger.info("Build the archive list that contains {0}", String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
-    List<String> archiveList = 
-        Collections.singletonList(String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
-
-    return createImageAndVerify(
-      createImageName(MII_IMAGE_NAME),
-      createUniqueImageTag(),
-      modelList,
-      archiveList);
-  }
-  
   private String updateImageWithAppV2Patch(
       String baseImageName,
       List<String> appDirList
   ) {
-    logger.info("Build the model file list that contains {0}", WDT_MODEL_FILE);
+    logger.info("Build the model file list that contains {0}", MII_BASIC_WDT_MODEL_FILE);
     List<String> modelList = 
-        Collections.singletonList(String.format("%s/%s", MODEL_DIR, WDT_MODEL_FILE));
+        Collections.singletonList(String.format("%s/%s", MODEL_DIR, MII_BASIC_WDT_MODEL_FILE));
    
     logger.info("Build an application archive using what is in {0}", appDirList);
     assertTrue(
@@ -821,12 +785,13 @@ class ItMiiDomain implements LoggedTest {
             defaultAppParams()
                 .srcDirList(appDirList)),
         String.format("Failed to create application archive for %s",
-            APP_NAME));
+            MII_BASIC_APP_NAME));
 
-    logger.info("Build the archive list that contains {0}", String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
+    logger.info("Build the archive list that contains {0}",
+        String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
     List<String> archiveList = 
         Collections.singletonList(
-            String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME));
+            String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
     
     return createImageAndVerify(
       createImageName(baseImageName),
@@ -1004,7 +969,7 @@ class ItMiiDomain implements LoggedTest {
                                     String repoSecretName, String encryptionSecretName, int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
-            .apiVersion(API_VERSION)
+            .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
                     .name(domainUid)
@@ -1012,7 +977,7 @@ class ItMiiDomain implements LoggedTest {
             .spec(new DomainSpec()
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
-                    .image(miiImage)
+                    .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
                     .webLogicCredentialsSecret(new V1SecretReference()
@@ -1286,7 +1251,7 @@ class ItMiiDomain implements LoggedTest {
                             managedServerPrefix + i, 
                             internalPort, 
                             appPath, 
-                            APP_RESPONSE_V2 + i);
+                            MII_APP_RESPONSE_V2 + i);
       }
 
       int count = 0;
