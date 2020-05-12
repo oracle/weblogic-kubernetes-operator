@@ -124,6 +124,7 @@ public class Kubernetes {
 
   /**
    * Checks if a pod exists in a given namespace and in Terminating state.
+   *
    * @param namespace in which to check for the pod
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
@@ -131,19 +132,21 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isPodTerminating(String namespace, String domainUid, String podName) throws ApiException {
-    boolean status = false;
+    boolean terminating = false;
     logger.info("Checking if the pod terminating in namespace");
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod != null) {
-      status = pod.getStatus().getPhase().equals(TERMINATING);
-    } else {
+    if (null == pod) {
       logger.info("Pod doesn't exist");
+      return false;
+    } else if (pod.getMetadata().getDeletionTimestamp() != null) {
+      terminating = true;
+      logger.info("pod is terminating");
     }
-    return status;
+    return terminating;
   }
 
   /**
@@ -306,9 +309,10 @@ public class Kubernetes {
    * This method can be used as diagnostic tool to get the details of pods.
    * @param namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
+   * @return V1PodList list of {@link V1Pod} from the namespace
    * @throws ApiException when there is error in querying the cluster
    */
-  public static void listPods(String namespace, String labelSelectors) throws ApiException {
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
     V1PodList v1PodList =
         coreV1Api.listNamespacedPod(
             namespace, // namespace in which to look for the pods.
@@ -322,8 +326,7 @@ public class Kubernetes {
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
-    List<V1Pod> items = v1PodList.getItems();
-    logger.info(Arrays.toString(items.toArray()));
+    return v1PodList;
   }
 
   /**

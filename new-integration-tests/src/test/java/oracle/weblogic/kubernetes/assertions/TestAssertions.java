@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes.assertions;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
@@ -13,6 +15,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Helm;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 
 /**
@@ -63,8 +66,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a WebLogic custom resource domain object exists in specified
-   * namespace.
+   * Check if a WebLogic custom resource domain object exists in specified namespace.
    *
    * @param domainUid ID of the domain
    * @param namespace in which the domain custom resource object exists
@@ -77,15 +79,14 @@ public class TestAssertions {
   /**
    * Check if a Kubernetes pod exists in any state in the given namespace.
    *
-   * @param podName   name of the pod to check for
+   * @param podName name of the pod to check for
    * @param domainUid UID of WebLogic domain in which the pod exists
    * @param namespace in which the pod exists
    * @return true if the pod exists in the namespace otherwise false
    */
-  public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) throws ApiException {
-    return () -> {
-      return Kubernetes.doesPodExist(namespace, domainUid, podName);
-    };
+  public static Callable<Boolean> podExists(String podName, String domainUid, String namespace)
+      throws ApiException {
+    return Pod.podExists(namespace, domainUid, podName);
   }
 
   /**
@@ -99,38 +100,49 @@ public class TestAssertions {
    */
   public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace)
       throws ApiException {
-    return () -> {
-      return !Kubernetes.doesPodExist(namespace, domainUid, podName);
-    };
+    return Pod.podDoesNotExist(namespace, domainUid, podName);
   }
 
   /**
    * Check if a Kubernetes pod is in running/ready state.
    *
-   * @param podName   name of the pod to check for
+   * @param podName name of the pod to check for
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
    * @throws ApiException when Kubernetes cluster query fails to get pod
    */
   public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
-    return () -> {
-      return Kubernetes.isPodReady(namespace, domainUid, podName);
-    };
+    return Pod.podReady(namespace, domainUid, podName);
   }
 
   /**
    * Check if a pod given by the podName is in Terminating state.
    *
-   * @param podName   name of the pod to check for Terminating status
+   * @param podName name of the pod to check for Terminating status
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is terminating otherwise false
    */
   public static Callable<Boolean> podTerminating(String podName, String domainUid, String namespace) {
-    return () -> {
-      return Kubernetes.isPodTerminating(namespace, domainUid, podName);
-    };
+    return Pod.podTerminating(namespace, domainUid, podName);
+  }
+
+
+  /**
+   * Check the pods in the given namespace are restarted in rolling fashion.
+   *
+   * @param domainUid UID of the WebLogic domain
+   * @param namespace in which to check for the pods status
+   * @return true if pods in the namespace restarted in a rolling fashion otherwise false
+   * @throws ApiException when Kubernetes cluster query fails
+   * @throws InterruptedException when pod status check threads are interrupted
+   * @throws ExecutionException when pod status checks times out
+   * @throws TimeoutException when waiting for the threads times out
+   */
+  public static boolean podsRollingRestarted(String domainUid, String namespace)
+      throws ApiException, InterruptedException, ExecutionException, TimeoutException {
+    return Pod.isARollingRestart(domainUid, namespace);
   }
 
   /**

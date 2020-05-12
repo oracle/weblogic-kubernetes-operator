@@ -40,6 +40,8 @@ public interface TestConstants {
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
+  public static final String RESULTS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
+      System.getProperty("java.io.tmpdir")) + "/ittestsresults";
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
       System.getProperty("java.io.tmpdir") + "/ittestspvroot");
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;

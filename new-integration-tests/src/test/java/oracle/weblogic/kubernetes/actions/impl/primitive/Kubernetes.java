@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
@@ -76,6 +77,7 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.with;
@@ -1446,6 +1448,43 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- jobs ---------------------------
 
+  /**
+   * Create a Kubernetes job.
+   * @param job V1Job data
+   * @return true if job creation is successful
+   * @throws ApiException when create job fails
+   */
+  public static boolean createJob(V1Job job) throws ApiException {
+    try {
+      String namespace = job.getMetadata().getNamespace();
+      String name = job.getMetadata().getName();
+      BatchV1Api apiInstance = new BatchV1Api(apiClient);
+      V1Job createdJob = apiInstance.createNamespacedJob(
+          namespace, // String | namespace in which to create job
+          job, // V1Job | body of the V1Job to create
+          PRETTY, // String | pretty print output.
+          null, // String | dry run or permanent change
+          null // String | field manager who is making the change
+      );
+
+      for (int i = 0; i < 10; i++) {
+        //DateTime startTime = createdJob.getStatus().getStartTime();
+        //logger.info("Job {0} started on {1}", name, startTime);
+        //createdJob.getStatus().getSucceeded();
+        logger.info(dump(createdJob));
+        logger.info("Waiting for 30 seconds");
+        try {
+          TimeUnit.SECONDS.sleep(30);
+        } catch (InterruptedException ex) {
+          logger.severe(ex.getMessage());
+        }
+      }
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+    return true;
+  }
 
   /**
    * Delete a job.

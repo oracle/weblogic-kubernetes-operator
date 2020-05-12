@@ -11,6 +11,7 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -24,6 +25,7 @@ import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.Job;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Nginx;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -282,6 +284,18 @@ public class TestActions {
    */
   public static boolean deleteNamespace(String namespace) {
     return Namespace.delete(namespace);
+  }
+
+  // ------------------------ Jobs ----------------------------------
+
+  /**
+   * Create a job.
+   * @param jobBody V1Job object containing job configuration data
+   * @return true if job is created and succeeds false otherwise
+   * @throws ApiException when job fails
+   */
+  public static boolean createJob(V1Job jobBody) throws ApiException {
+    return Job.createJob(jobBody);
   }
 
   // ------------------------ Docker image  -------------------------
