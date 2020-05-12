@@ -31,6 +31,7 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
+import oracle.weblogic.kubernetes.actions.impl.Pod;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
@@ -66,18 +67,6 @@ public class TestActions {
    */
   public static boolean upgradeOperator(OperatorParams params) {
     return Operator.upgrade(params);
-  }
-
-  /**
-   * Makes a REST call to the Operator to scale the domain.
-   *
-   * @param domainUid domainUid of the domain
-   * @param clusterName cluster in the domain to scale
-   * @param numOfServers number of servers to scale upto.
-   * @return true on success, false otherwise
-   */
-  public static boolean scaleDomain(String domainUid, String clusterName, int numOfServers) {
-    return Operator.scaleDomain(domainUid, clusterName, numOfServers);
   }
 
   /**
@@ -192,6 +181,20 @@ public class TestActions {
     return Domain.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 
+  /**
+   * Scale the cluster of the domain in the specified namespace .
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName cluster in the domain to be scaled
+   * @param numOfServers number of servers to be scaled to.
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
+      throws ApiException {
+    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
+  }
+
   // ------------------------   Ingress Controller ----------------------
 
   /**
@@ -208,16 +211,18 @@ public class TestActions {
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
    *
+   * @param ingressName the name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which to create the ingress
    * @param domainUid WebLogic domainUid which is backend to the ingress
-   * @param clusterName the name of the WebLogic domain cluster
+   * @param clusterName the name of the WebLogic domain cluster in the domain
    * @param managedServerPort the port number of the WebLogic domain managed servers
+   * @param ingressHostname the host name used by the ingress for the host name based routing
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createIngress(String domainNamespace, String domainUid, String clusterName,
-                                      int managedServerPort) throws ApiException {
-    return Nginx.createIngress(domainNamespace, domainUid, clusterName, managedServerPort);
+  public static boolean createIngress(String ingressName, String domainNamespace, String domainUid,
+                                      String clusterName, int managedServerPort, String ingressHostname) {
+    return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterName,
+                               managedServerPort, ingressHostname);
   }
 
   /**
@@ -238,6 +243,17 @@ public class TestActions {
    */
   public static boolean uninstallNginx(HelmParams params) {
     return Nginx.uninstall(params);
+  }
+
+  /**
+   * Get a list of ingresses in the specified namespace.
+   *
+   * @param namespace in which to list all the ingresses
+   * @return list of ingress names in the specified namespace
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static List<String> listIngresses(String namespace) throws ApiException {
+    return Nginx.listIngresses(namespace);
   }
 
   // -------------------------  namespaces -------------------------------
@@ -561,19 +577,6 @@ public class TestActions {
     return Docker.createDockerConfigJson(username, password, email, registry);
   }
 
-  // ------------------------ Ingress -------------------------------------
-
-  /**
-   * Get a list of ingress names in the specified namespace.
-   *
-   * @param namespace in which to list all the ingresses
-   * @return list of ingress names in the specified namespace
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static List<String> getIngressList(String namespace) throws ApiException {
-    return Nginx.getIngressList(namespace);
-  }
-
   // ----------------------- Execute a Command   ---------------------------
 
   /**
@@ -607,6 +610,24 @@ public class TestActions {
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 
+
+  // ----------------------   pod  ---------------------------------
+
+  /**
+   * Get the creationTimestamp for a given pod with following parameters.
+   *
+   * @param namespace namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod
+   * @return creationTimestamp from metadata section of the Pod
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+      throws ApiException {
+    return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
+  }
+
+
   // ------------------------ where does this go  -------------------------
 
   /**
@@ -624,4 +645,5 @@ public class TestActions {
                                           String username, String password, String target) {
     return true;
   }
+
 }

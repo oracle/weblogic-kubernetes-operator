@@ -37,6 +37,7 @@ public class TestUtils {
     logger.info("Calling webapp at most {0} times using command: {1}", maxIterations, curlCmd);
 
     // check the response contains managed server name
+    ExecResult result = null;
     for (int i = 0; i < maxIterations; i++) {
 
       if (managedServers.containsValue(false)) {
@@ -48,7 +49,7 @@ public class TestUtils {
         }
 
         try {
-          ExecResult result = ExecCommand.exec(curlCmd, true);
+          result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
           managedServers.keySet().forEach(key -> {
@@ -57,7 +58,12 @@ public class TestUtils {
             }
           });
         } catch (Exception e) {
-          logger.info("Got exception while running command: " + curlCmd);
+          logger.info("Got exception while running command: {0}", curlCmd);
+          logger.info(e.toString());
+          if (result != null) {
+            logger.info("result.stdout: \n{0}", result.stdout());
+            logger.info("result.stderr: \n{0}", result.stderr());
+          }
           return false;
         }
       } else {
