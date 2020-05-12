@@ -168,7 +168,7 @@ Set this to `https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}` when
 
 * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
-* `wls_domain_namespace` - Kubernetes namespace in which the WebLogic domain is defined, default=`default`
+* `wls_domain_namespace` - Kubernetes Namespace in which the WebLogic domain is defined, default=`default`
 
 * `operator_service_name` - WebLogic Server Kubernetes Operator Service name of the REST endpoint, default=`internal-weblogic-operator-service`
 
@@ -192,12 +192,12 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 
 
 
-##### Create cluster role bindings to allow a namespace user to query WLS Kubernetes cluster information
+##### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
 The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the domain resource.
-The following is an example YAML file for creating the appropriate Kubernetes cluster role bindings:
+The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
 
 {{% notice note %}}
-In the example cluster role binding definition below, the WebLogic domain is deployed to a namespace `weblogic-domain`.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.
+In the example ClusterRoleBinding definition below, the WebLogic domain is deployed to a namespace `weblogic-domain`.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.
 {{% /notice %}}
 
 ```
