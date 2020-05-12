@@ -18,7 +18,7 @@ Like a human operator, the operator is designed to be event-based.  It waits for
 
 The operator is designed with security in mind from the outset.  Some examples of the specific security practices we follow are:
 
-*	During the deployment of the operator, Kubernetes roles are defined and assigned to the operator.  These roles are designed to give the operator the minimum amount of privileges that it requires to perform its tasks.
+*	During the deployment of the operator, Kubernetes Roles are defined and assigned to the operator.  These roles are designed to give the operator the minimum amount of privileges that it requires to perform its tasks.
 *	The code base is regularly scanned with security auditing tools and any issues that are identified are promptly resolved.
 *	All HTTP communications – between the operator and an external client, between the operator and WebLogic Server Administration Servers, and so on – are configured to require SSL and TLS 1.2.
 *	Unused code is pruned from the code base regularly.
