@@ -98,7 +98,7 @@ Location | Description |
 
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 
-1. Get the operator source and put it in `/tmp/operator-source`.
+1. Get the operator source from the `release/3.0.0-rc1` branch and put it in `/tmp/operator-source`.
 
    For example:
 
@@ -106,6 +106,7 @@ Location | Description |
    $ mkdir /tmp/operator-source
    $ cd /tmp/operator-source
    $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ git checkout release/3.0.0-rc1
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
@@ -126,7 +127,8 @@ Location | Description |
    {{< /rawhtml >}}
 1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik Ingress controller is managing the same namespace and listening on port 30305.
 
-   For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
+   For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/)
+   guide from the beginning through to the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
    {{% notice info %}}
    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
