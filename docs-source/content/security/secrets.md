@@ -2,7 +2,7 @@
 title: "Secrets"
 date: 2019-02-23T17:36:33-05:00
 weight: 6
-description: "Kubernetes secrets for the operator"
+description: "Kubernetes Secrets for the operator"
 ---
 
 #### Contents
@@ -42,7 +42,7 @@ $ kubectl -n domain1-ns label secret domain1-weblogic-credentials \
 {{% notice tip %}}
 Oracle recommends that you not include unencrypted passwords on command lines.
 Passwords and other sensitive data can be prompted for or looked up by shell scripts or
-tooling. For more information about creating Kubernetes secrets, see the Kubernetes
+tooling. For more information about creating Kubernetes Secrets, see the Kubernetes
 [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/#creating-your-own-secrets)
 documentation.
 {{% /notice %}}
@@ -104,8 +104,8 @@ For more information, see
 #### Operator configuration override secrets
 
 The operator supports embedding macros within configuration override templates
-that reference Kubernetes secrets. These Kubernetes secrets can be created with any name in the
-namespace where the `Domain` will be running. The Kubernetes secret names are
+that reference Kubernetes Secrets. These Kubernetes Secrets can be created with any name in the
+namespace where the `Domain` will be running. The Kubernetes Secret names are
 specified using `configuration.secrets` in the WebLogic `Domain` resource.
 
 {{% notice info %}}
@@ -132,7 +132,7 @@ These Kubernetes objects are managed by the operator's Helm chart and are part o
 namespace where the operator is installed.
 
 For example, to see all the operator's ConfigMaps and secrets when installed into
-the Kubernetes namespace `weblogic-operator-ns`, use:
+the Kubernetes Namespace `weblogic-operator-ns`, use:
 ```bash
 $ kubectl -n weblogic-operator-ns get cm,secret
 ```

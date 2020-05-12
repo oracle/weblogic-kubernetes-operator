@@ -8,7 +8,7 @@ weight: 7
 
 #### Remove the domain.
 
-1.	Remove the domain's Ingress by using `helm`:
+1.	Remove the domain's ingress by using `helm`:
 
     ```bash
     $ helm uninstall sample-domain1-ingress -n sample-domain1-ns
@@ -28,7 +28,7 @@ weight: 7
     ```
 
 #### Remove the domain namespace.
-1.	Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:
+1.	Configure the Traefik load balancer to stop managing the ingresses in the domain namespace:
 
     ```bash
     $ helm upgrade traefik-operator stable/traefik \
@@ -72,7 +72,7 @@ weight: 7
 #### Remove the load balancer.
 
 1.	Remove the Traefik load balancer:
-    
+
     ```bash
     $ helm uninstall traefik-operator -n traefik
     ```

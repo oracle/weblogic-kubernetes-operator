@@ -13,7 +13,7 @@ the prerequisite for upper stack products like Oracle SOA Suite."
 * [Creating an FMW Infrastructure Docker image](#creating-an-fmw-infrastructure-docker-image)
 * [Configuring access to your database](#configuring-access-to-your-database)
 * [Running the Repository Creation Utility to set up your database schema](#running-the-repository-creation-utility-to-set-up-your-database-schema)
-* [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
+* [Create a Kubernetes Secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
 * [Creating an FMW Infrastructure domain](#creating-an-fmw-infrastructure-domain)
 * [Patching the FMW Infrastructure image](#patching-the-fmw-infrastructure-image)
 * [Additional considerations for Coherence](#additional-considerations-for-coherence)
@@ -258,7 +258,7 @@ the Kubernetes cluster and run RCU on another machine with access to the cluster
 
 If you wish to run the database outside Kubernetes, you need to create a way for containers
 running in pods in Kubernetes to see the database.  This can be done by defining a
-Kubernetes service with no selector and associating it with an endpoint definition, as shown
+Kubernetes Service with no selector and associating it with an endpoint definition, as shown
 in the example below:
 
 ```yaml
@@ -294,7 +294,7 @@ non-routed address.
 From a container in a pod running in Kubernetes, you can make a connection to that address
 and port `1521`.  Kubernetes will route the connection to the address provided in the
 endpoint definition, in this example, `129.123.1.4:1521`.  This IP address (or name) is
-resolved from the point of view of the Kubernetes node's IP stack, not the overlay network
+resolved from the point of view of the Kubernetes Node's IP stack, not the overlay network
 inside the Kubernetes cluster.  Note that this is a "real" routed IP address.
 
 When you create your data sources, you would use the internal address, for example,
@@ -314,7 +314,7 @@ kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/mid
 
 ```
 
-This will create a Kubernetes deployment called `rcu` containing a pod running a container
+This will create a Kubernetes Deployment called `rcu` containing a pod running a container
 created from the `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4` image which will just run
 `sleep infinity`, which essentially creates a pod that we can "exec" into and use to run whatever
 commands we need to run.
@@ -394,9 +394,9 @@ If you want to drop the schema, you can use a command like this:
 Again, you will need to set the right prefix and connection string, and you will be prompted
 to enter the `sys` user password.
 
-#### Create a Kubernetes secret with the RCU credentials
+#### Create a Kubernetes Secret with the RCU credentials
 
-You also need to create a Kubernetes secret containing the credentials for the database schemas.
+You also need to create a Kubernetes Secret containing the credentials for the database schemas.
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.
 
