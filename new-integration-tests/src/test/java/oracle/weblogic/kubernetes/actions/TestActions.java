@@ -31,6 +31,7 @@ import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
+import oracle.weblogic.kubernetes.actions.impl.Pod;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
@@ -596,6 +597,24 @@ public class TestActions {
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 
+
+  // ----------------------   pod  ---------------------------------
+
+  /**
+   * Get the creationTimestamp for a given pod with following parameters.
+   *
+   * @param namespace namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod
+   * @return creationTimestamp from metadata section of the Pod
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+      throws ApiException {
+    return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
+  }
+
+
   // ------------------------ where does this go  -------------------------
 
   /**
@@ -613,4 +632,5 @@ public class TestActions {
                                           String username, String password, String target) {
     return true;
   }
+
 }

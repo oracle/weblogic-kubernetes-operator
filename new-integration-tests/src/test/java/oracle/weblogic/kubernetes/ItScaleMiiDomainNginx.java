@@ -76,6 +76,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
@@ -89,6 +90,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChangedDuringScalingCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
@@ -403,10 +405,10 @@ class ItScaleMiiDomainNginx implements LoggedTest {
       // scale cluster-1 to 1 server and cluster-2 to 3 servers
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers);
-      scaleAndVerifyCluster(domainUid, domainNamespace, clusterName, replicaCount, numberOfServers);
+      scaleAndVerifyCluster(clusterName, replicaCount, numberOfServers);
 
       // then scale cluster-1 and cluster-2 to 0 server
-      scaleAndVerifyCluster(domainUid, domainNamespace, clusterName, numberOfServers, 0);
+      scaleAndVerifyCluster(clusterName, numberOfServers, 0);
     }
   }
 
@@ -694,19 +696,26 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   /** Scale the WebLogic cluster to specified number of servers.
    *  And verify the sample app can be accessed through NGINX.
    *
-   * @param domainUid the domain with domainUid in which the clusters exist
-   * @param domainNamespace the domain namespace in which the domain exists
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
    * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
    */
-  private void scaleAndVerifyCluster(String domainUid,
-                                   String domainNamespace,
-                                   String clusterName,
-                                   int replicasBeforeScale,
-                                   int replicasAfterScale) {
+  private void scaleAndVerifyCluster(String clusterName,
+                                     int replicasBeforeScale,
+                                     int replicasAfterScale) {
 
     String manageServerPodNamePrefix = domainUid + "-" + clusterName + managedServerNameBase;
+
+    // get the original managed server pod creation timestamp before scale
+    List<String> listOfPodCreationTimestamp = new ArrayList<>();
+    for (int i = 1; i <= replicasBeforeScale; i++) {
+      String managedServerPodName = manageServerPodNamePrefix + i;
+      String originalCreationTimestamp =
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod {0} in namespace {1}",
+                  managedServerPodName, domainNamespace));
+      listOfPodCreationTimestamp.add(originalCreationTimestamp);
+    }
 
     // scale the cluster in the domain
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
@@ -717,7 +726,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         .withFailMessage("Scaling cluster failed")
         .isTrue();
 
-    // generate a curl command to ping the sample app through the ingress controller
+    // generate a curl command to access the sample app through the ingress controller
     curlCmd = generateCurlCmd(clusterName);
 
     // generate the expected server list which should be in the sample app response string
@@ -729,30 +738,15 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     if (replicasBeforeScale <= replicasAfterScale) {
 
       // scale up
-      // check that the status of the original managed server remains the same
+      // check that the original managed server pod state is not changed during scaling the cluster
       for (int i = 1; i <= replicasBeforeScale; i++) {
         String manageServerPodName = manageServerPodNamePrefix + i;
 
-        // check that the original managed server pod still exists
-        logger.info("Checking that the managed server pod {0} still exists in namespace {1}",
+        // check the original managed server pod state is not changed
+        logger.info("Checking that the state of manged server pod {0} is not changed in namespace {1}",
             manageServerPodName, domainNamespace);
-        assertDoesNotThrow(() -> podExists(manageServerPodName, domainUid, domainNamespace),
-            String.format("podExists failed with ApiException for %s in namespace in %s",
-                manageServerPodName, domainNamespace));
-
-        // check that the original managed server pod is in ready state
-        logger.info("Checking that the managed server pod {0} is in ready state in namespace {1}",
-            manageServerPodName, domainNamespace);
-        assertDoesNotThrow(() -> podReady(manageServerPodName, domainUid, domainNamespace),
-            String.format(
-                "pod %s is not ready in namespace %s", manageServerPodName, domainNamespace));
-
-        // check that the original managed server service still exists
-        logger.info("Checking that the managed server service {0} still exists in namespace {1}",
-            manageServerPodName, domainNamespace);
-        assertDoesNotThrow(() -> serviceExists(manageServerPodName, null, domainNamespace),
-            String.format(
-                "Service %s is not ready in namespace %s", manageServerPodName, domainNamespace));
+        podStateNotChangedDuringScalingCluster(manageServerPodName, domainUid, domainNamespace,
+            listOfPodCreationTimestamp.get(i - 1));
       }
 
       // check that NGINX can access the sample apps from the original managed servers in the domain
@@ -820,10 +814,8 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    * @return curl command string
    */
   private String generateCurlCmd(String clusterName) {
-    String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
+    return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    return curlCmd;
   }
 
   /**
