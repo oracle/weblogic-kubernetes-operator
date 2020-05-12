@@ -293,9 +293,9 @@ public class ReadHealthStep extends Step {
                               }
                               fiber.resume(packet);
                             });
-                  } catch (Exception e) {
+                  } catch (Throwable t) {
                     fiber.resume(packet);
-                    LOGGER.severe(MessageKeys.HTTP_METHOD_FAILED, "POST", e.getMessage());
+                    LOGGER.severe(MessageKeys.HTTP_METHOD_FAILED, "POST", t);
                   }
                 });
           }
