@@ -93,6 +93,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -394,7 +395,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-    logger.info("Snooze for 2 minutes for Introspector to kick off");
+    logger.info("Snooze for 2 minutes for introspector to kick off");
     try {
       TimeUnit.MINUTES.sleep(2);
     } catch (java.lang.InterruptedException ie) {
@@ -419,16 +420,11 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
-    String newAdminPodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
-    logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
-    if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {
-      logger.info("NewAdminPodCreationTime {0} BeforeAdminPodCreationTime ${1}",
-          newAdminPodCreationTime, adminPodCreationTime);
-      fail("New pod creation time must be later than the original timestamp");
-    }
+    boolean isPodRestarted  =
+        assertDoesNotThrow(() -> isPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime),
+            String.format("Check if the admin pod is restarted"));
+    assertTrue(isPodRestarted, "Admin pod has not been restarted as expected");
+
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
     try {

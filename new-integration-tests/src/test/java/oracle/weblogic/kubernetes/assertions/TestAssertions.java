@@ -225,4 +225,23 @@ public class TestAssertions {
     return Helm.isReleaseDeployed(releaseName, namespace);
   }
 
+  /**
+   * Check if a pod is restarted based on podCreationTimestamp.
+   *
+   * @param podName the name of the pod to check for
+   * @param domainUid the label the pod is decorated with
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @throws ApiException when query fails
+   */
+  public static boolean isPodRestarted(
+      String podName,
+      String domainUid,
+      String namespace,
+      String timestamp
+  ) throws ApiException {
+    return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+  }
+
 }

@@ -20,6 +20,8 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
@@ -400,4 +402,42 @@ public class Kubernetes {
     return true;
   }
 
+  /**
+   * Check if a pod is restarted based on podCreationTimestamp.
+   *
+   * @param podName the name of the pod to check for
+   * @param domainUid the label the pod is decorated with
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @throws ApiException when query fails
+   */
+  public static boolean isPodRestarted(
+      String podName, String domainUid, 
+      String namespace, String timestamp) throws ApiException {
+    boolean podRestarted = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod == null) {
+      podRestarted = false;
+    } else {
+      DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
+      String newTimestamp = dtf.print(pod.getMetadata().getCreationTimestamp());
+      if (newTimestamp == null) {
+        logger.info("getCreationTimestamp() returns NULL");
+        return false;
+      }
+      logger.info("OldPodCreationTimestamp [{0}]", timestamp);
+      logger.info("NewPodCreationTimestamp returns [{0}]", newTimestamp);
+      if (Long.parseLong(newTimestamp) == Long.parseLong(timestamp)) {
+        podRestarted = false;
+      } else {
+        podRestarted = true;
+      }
+    }
+    return podRestarted;
+  }
 }

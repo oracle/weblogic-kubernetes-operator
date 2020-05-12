@@ -93,7 +93,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
@@ -252,7 +254,7 @@ class ItMiiAddCluster implements LoggedTest {
   @DisplayName("Add a dynamic cluster to model in image domain")
   @Slow
   @MustNotRunInParallel
-  public void testAddMiiConfigDynamicCluster() {
+  public void testAddMiiDynamicCluster() {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
@@ -396,7 +398,6 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
 
-
     patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
         .append(" \"path\": \"/spec/restartVersion\",")
@@ -410,7 +411,7 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
 
-    logger.info("Snooze for 2 minutes for Introspector to kick off");
+    logger.info("Snooze for 2 minutes for introspector to kick off");
     try {
       TimeUnit.MINUTES.sleep(2);
     } catch (java.lang.InterruptedException ie) {
@@ -443,16 +444,11 @@ class ItMiiAddCluster implements LoggedTest {
     checkPodReady(newServerPodName, domainUid, domainNamespace);
     checkServiceCreated(newServerPodName, domainNamespace);
 
-    String newAdminPodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
-    logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
-    if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {
-      logger.info("NewAdminPodCreationTime {0} BeforeAdminPodCreationTime ${1}",
-          newAdminPodCreationTime, adminPodCreationTime);
-      fail("New pod creation time must be later than the original timestamp");
-    }
+    boolean isPodRestarted  =
+        assertDoesNotThrow(() -> isPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime),
+            String.format("Check if the admin Pod is restarted"));
+    assertTrue(isPodRestarted, "Admin pod has not been restarted as expected");
+
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
     try {
@@ -481,6 +477,7 @@ class ItMiiAddCluster implements LoggedTest {
    * Create a ConfigMap with a sparse model file to add a configured cluster.
    * Patch the domain resource with the ConfigMap.
    * Update the restart version of the domain resource to 3
+   * Patch the domain resource with the spec/replicas set to 1
    * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart.
    * Verify servers from the newly added cluster are in running state.
    */
@@ -489,7 +486,7 @@ class ItMiiAddCluster implements LoggedTest {
   @DisplayName("Add a configured cluster to model in image domain")
   @Slow
   @MustNotRunInParallel
-  public void testAddMiiConfigConfiguredCluster() {
+  public void testAddMiiConfiguredCluster() {
     // This test use the running mii domain created by previous test
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -592,7 +589,7 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
 
-    logger.info("Snooze for 2 minutes for Introspector to kick off");
+    logger.info("Snooze for 2 minutes for introspector to kick off");
     try {
       TimeUnit.MINUTES.sleep(2);
     } catch (java.lang.InterruptedException ie) {
@@ -625,16 +622,199 @@ class ItMiiAddCluster implements LoggedTest {
     checkPodReady(newServerPodName, domainUid, domainNamespace);
     checkServiceCreated(newServerPodName, domainNamespace);
 
-    String newAdminPodCreationTime =
+    boolean isPodRestarted  =
+        assertDoesNotThrow(() -> isPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime),
+            String.format("Check if the admin pod is restarted"));
+    assertTrue(isPodRestarted, "Admin pod has not been restarted as expected");
+
+    oracle.weblogic.kubernetes.utils.ExecResult result = null;
+    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    try {
+      checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+      checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/tenant-monitoring/servers/config-server1")
+          .append(" --silent --show-error ")
+          .append(" -o /dev/null")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
+      logger.info("curl command {0}", new String(checkCluster));
+      result = exec(new String(checkCluster), true);
+    } catch (Exception ex) {
+      logger.info("Caught unexpected exception {0}", ex);
+      fail("Got unexpected exception" + ex);
+    }
+
+    logger.info("curl command returns {0}", result.toString());
+    assertEquals("200", result.stdout(), "Server configuration not found");
+    logger.info("Found the Server configuration ");
+  }
+
+  /**
+   * Start a WebLogic domain without any pre-defined ConfigMap.
+   * Create a ConfigMap with a sparse model file to add a configured cluster.
+   * Patch the domain resource with the ConfigMap.
+   * Update the restart version of the domain resource to 3
+   * Update the spec level replica count to zero(default) value
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart.
+   * Verify servers from the newly added cluster are not in running state.
+   */
+  @Test
+  @Order(3)
+  @DisplayName("Add a configured cluster to model in image domain")
+  @Slow
+  @MustNotRunInParallel
+  public void testAddMiiClusteriWithNoReplica() {
+    // This test use the running mii domain created by previous test
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+    final int replicaCount = 2;
+
+    // create image with model files
+    miiImage = createImageAndVerify();
+
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUid", domainUid);
+    String dsModelFile = MODEL_DIR + "/model.config.cluster.yaml";
+    Map<String, String> data = new HashMap<>();
+    // no uppercase for the configmap name
+    String configMapName = "noreplicaconfigmap";
+    String cmData = null;
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
+        String.format("readString operation failed for %s", dsModelFile));
+    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+    data.put("model.config.cluster.yaml", cmData);
+
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .labels(labels)
+        .name(configMapName)
+        .namespace(domainNamespace);
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(meta);
+
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("createConfigMap failed for %s", configMapName));
+    assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
+
+    // check admin server pod exists
+    logger.info("Check for admin server pod {0} existence in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server pods exist
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check for managed server pod {0} existence in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    logger.info("Check admin server status by calling read state command");
+    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in ns {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Check admin service {0} is created in ns {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceCreated(adminServerPodName, domainNamespace);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in ns {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceCreated(managedServerPrefix + i, domainNamespace);
+    }
+
+    String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(newAdminPodCreationTime, "adminPodCreationTime returns NULL");
-    logger.info("NewAdminPodCreationTime {0} ", newAdminPodCreationTime);
-    if (Long.parseLong(newAdminPodCreationTime) == Long.parseLong(adminPodCreationTime)) {
-      logger.info("NewAdminPodCreationTime {0} BeforeAdminPodCreationTime ${1}",
-          newAdminPodCreationTime, adminPodCreationTime);
-      fail("New pod creation time must be later than the original timestamp");
+    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
+    logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+    patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/replicas\",")
+        .append(" \"value\": 0")
+        .append(" }]");
+    logger.log(Level.INFO, "Replicas patch string: {0}", patchStr);
+
+    patch = new V1Patch(new String(patchStr));
+    boolean repilcaPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(restartVersion)  failed ");
+    assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
+
+    patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/restartVersion\",")
+        .append(" \"value\": \"4\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
+
+    patch = new V1Patch(new String(patchStr));
+    boolean rvPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(restartVersion)  failed ");
+    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+
+    logger.info("Snooze for 2 minutes for introspector to kick off");
+    try {
+      TimeUnit.MINUTES.sleep(2);
+    } catch (java.lang.InterruptedException ie) {
+      logger.info("Got InterruptedException during Thread.sleep");
+      fail("Got InterruptedException during Thread.sleep");
     }
+    // Verify a rolling restart is triggered in a sequential fashion 
+    // admin-server --> managed-server1 --> managed-server2 
+    logger.info("Check admin server pod {0} to be restarted in ns {1}",
+        adminServerPodName, domainNamespace);
+    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkServiceCreated(adminServerPodName, domainNamespace);
+    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
+
+    // check managed server pods restarted sequentially
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be restarted in ns {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkServiceCreated(managedServerPrefix + i, domainNamespace);
+    }
+
+    // The ServerNamePrefix for the new configured cluster is config-server
+    // Make sure the managed server from the new cluster is not running
+
+    String newServerPodName = domainUid + "-config-server1";
+    checkPodNotCreated(newServerPodName, domainUid, domainNamespace);
+
+    boolean isPodRestarted  =
+        assertDoesNotThrow(() -> isPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime),
+            String.format("Check if the admin pod is restarted"));
+    assertTrue(isPodRestarted, "Admin pod has not been restarted as expected");
+
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
     try {
@@ -657,6 +837,7 @@ class ItMiiAddCluster implements LoggedTest {
     logger.info("Found the Server configuration ");
 
   }
+
 
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
@@ -820,6 +1001,22 @@ class ItMiiAddCluster implements LoggedTest {
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainUid, domNamespace));
   }
+
+  private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be not created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
+            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
+                podName, domNamespace)));
+
+  }
+
 
   private void checkPodCreated(String podName, String domainUid, String domNamespace) {
     withStandardRetryPolicy
