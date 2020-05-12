@@ -41,7 +41,7 @@ You can use overrides to customize domains as they are moved from QA to producti
   * A file named `version.txt` that contains the exact string `2.0`.
 * Set your domain resource `configuration.overridesConfigMap` to the name of this configuration map.
 * If templates leverage `secret macros`:
-  * Create Kubernetes secrets that contain template macro values.
+  * Create Kubernetes Secrets that contain template macro values.
   * Set your domain `configuration.secrets` to reference the aforementioned secrets.
 * Stop all running WebLogic Server pods in your domain. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}).)
 * Start or restart your domain. (See [Starting and stopping servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#starting-and-stopping-servers" >}}) and [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}).)
@@ -63,7 +63,10 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 ---
 ### Prerequisites
 
-* Configuration overrides can only be used in combination with Domain in Image and Domain in PV domains (the `domainHomeSourceType` must be either `PersistentVolume` or `Image`). For Model in Image domains (`domainHomeSourceType` is `FromModel`), use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
+* Configuration overrides can be used in combination with Domain in Image and Domain in PV domains in releases before 3.0.0.
+  In release 3.0.0, configuration overrides can be used in combination with Domain in Image and Domain in PV
+  domains (the `domainHomeSourceType` must be either `PersistentVolume` or `Image`). For Model in Image domains (introduced in 3.0.0)
+  (`domainHomeSourceType` is `FromModel`), use [Model in Image Runtime Updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 
 * A WebLogic domain home must not contain any situational configuration XML file in its `optconfig` directory that was not placed there by the operator. Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
 
@@ -188,7 +191,7 @@ Two types of macros are supported, `environment variable macros` and `secret mac
 
 * Secret macros have the syntax `${secret:SECRETNAME.SECRETKEY}` and `${secret:SECRETNAME.SECRETKEY:encrypt}`.
 
-The secret macro `SECRETNAME` field must reference the name of a Kubernetes secret, and the `SECRETKEY` field must reference a key within that secret. For example, if you have created a secret named `dbuser` with a key named `username` that contains the value `scott`, then the macro `${secret:dbuser.username}` will be replaced with the word `scott` before the template is copied into its WebLogic Server pod.
+The secret macro `SECRETNAME` field must reference the name of a Kubernetes Secret, and the `SECRETKEY` field must reference a key within that secret. For example, if you have created a secret named `dbuser` with a key named `username` that contains the value `scott`, then the macro `${secret:dbuser.username}` will be replaced with the word `scott` before the template is copied into its WebLogic Server pod.
 
 **SECURITY NOTE: Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST `encrypt` command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom override situational configuration file the operator places in the domain home does not expose passwords in plain-text.**
 
@@ -257,7 +260,7 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 Best practices for data source modules and their overrides:
 
 * A data source module must already exist in your original configuration if you want to override it; it's not possible to add a new module by using overrides. If you need your overrides to set up a new module, then have your original configuration specify 'skeleton' modules that can be overridden. See the next two bulleted items for the typical contents of a skeleton data source module.
-* Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that's wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes deployment could cause your production applications to use your QA database.
+* Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that's wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes Deployment could cause your production applications to use your QA database.
 * Set your original (non-overridden) `JDBCConnectionPoolParams` `MinCapacity` and `InitialCapacity` to `0`, and set your original `DriverName` to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn't running, or you haven't specified your overrides yet.
 
 ```
@@ -291,9 +294,9 @@ Best practices for data source modules and their overrides:
       * Note: This version.txt file must stay `2.0` even when you are updating your templates from a previous deployment.
   * Templates must not override the settings listed in [Unsupported overrides](#unsupported-overrides).
   * Templates must be formatted and named as per [Override template names and syntax](#override-template-names-and-syntax).
-  * Templates can embed macros that reference environment variables or Kubernetes secrets.  See [Override template macros](#override-template-macros).
+  * Templates can embed macros that reference environment variables or Kubernetes Secrets.  See [Override template macros](#override-template-macros).
 * Create a Kubernetes configuration map from the directory of templates.
-  * The configuration map must be in the same Kubernetes namespace as the domain.
+  * The configuration map must be in the same Kubernetes Namespace as the domain.
   * If the configuration map is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example, assuming `./mydir` contains your `version.txt` and situation configuration template files:
 
@@ -301,9 +304,9 @@ Best practices for data source modules and their overrides:
     kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
     kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
     ```
-* Create any Kubernetes secrets referenced by a template 'secret macro'.
+* Create any Kubernetes Secrets referenced by a template 'secret macro'.
   * Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords by using `Opaque` type secrets in their `data` field, so that they can't be easily read at a casual glance. For more information, see https://kubernetes.io/docs/concepts/configuration/secret/.
-  * Secrets must be in the same Kubernetes namespace as the domain.
+  * Secrets must be in the same Kubernetes Namespace as the domain.
   * If a secret is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example:
 

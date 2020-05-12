@@ -147,7 +147,7 @@ image:  "Always"
 ```
 
 ##### `imagePullSecrets`
-Contains an optional list of Kubernetes secrets, in the operator's namespace, that are needed to access the registry containing the operator Docker image. You are responsible for creating the secret. If no secrets are required, then omit this property.
+Contains an optional list of Kubernetes Secrets, in the operator's namespace, that are needed to access the registry containing the operator Docker image. You are responsible for creating the secret. If no secrets are required, then omit this property.
 
 Example:
 ```
@@ -163,7 +163,7 @@ Specifies a list of WebLogic domain namespaces which the operator manages. The n
 
 This property is required.
 
-Example 1: In the configuration below, the operator will monitor the `default` Kubernetes namespace:
+Example 1: In the configuration below, the operator will monitor the `default` Kubernetes Namespace:
 ```
 domainNamespaces:
 - "default"
@@ -240,7 +240,7 @@ Determines whether the operator's REST interface will be exposed outside the Kub
 
 Defaults to `false`.
 
-If set to `true`, you must provide the `externalRestIdentitySecret` property that contains the name of the Kubernetes secret which contains the SSL certificate and private key for the operator's external REST interface.
+If set to `true`, you must provide the `externalRestIdentitySecret` property that contains the name of the Kubernetes Secret which contains the SSL certificate and private key for the operator's external REST interface.
 
 Example:
 ```
