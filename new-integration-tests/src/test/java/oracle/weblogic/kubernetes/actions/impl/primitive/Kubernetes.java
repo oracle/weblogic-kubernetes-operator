@@ -75,6 +75,8 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -430,6 +432,48 @@ public class Kubernetes implements LoggedTest {
     }
 
     return true;
+  }
+
+  /**
+   * Returns the V1Pod object given the following parameters.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to return
+   * @return V1Pod object if found otherwise null
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
+    V1PodList pods = listPods(namespace, labelSelector);
+    for (var pod : pods.getItems()) {
+      if (podName.equals(pod.getMetadata().getName())) {
+        return pod;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get the creationTimestamp for a given pod with following parameters.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName  name of the pod
+   * @return creationTimestamp from metadata section of the Pod
+   * @throws ApiException if Kubernetes client API call fail
+   */
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+      throws ApiException {
+    DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
+    // DateTimeFormatter dtf = DateTimeFormat.forPattern("YYYYMMDDHHmmss");
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      // return pod.getMetadata().getCreationTimestamp().toString();
+      return dtf.print(pod.getMetadata().getCreationTimestamp());
+    } else {
+      logger.info("getPodCreationTimestamp(): Pod doesn't exist");
+      return null;
+    }
   }
 
   /**

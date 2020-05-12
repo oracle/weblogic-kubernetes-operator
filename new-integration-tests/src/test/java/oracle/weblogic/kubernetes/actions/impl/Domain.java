@@ -3,10 +3,16 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Domain {
 
@@ -77,4 +83,53 @@ public class Domain {
       String patchFormat) {
     return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param namespace namespace in which the domain exists
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @return true if patch domain custom resource succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
+      throws ApiException {
+
+    // get the domain cluster list
+    oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, namespace);
+
+    List<Cluster> clusters = new ArrayList<>();
+    if (domain.getSpec() != null) {
+      clusters = domain.getSpec().getClusters();
+    }
+
+    // get the index of the cluster with clusterName in the cluster list
+    int index = 0;
+    for (int i = 0; i < clusters.size(); i++) {
+      if (clusters.get(i).getClusterName().equals(clusterName)) {
+        index = i;
+        break;
+      }
+    }
+
+    // construct the patch string for scaling the cluster in the domain
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec/clusters/")
+        .append(index)
+        .append("/replicas\", ")
+        .append("\"value\": ")
+        .append(numOfServers)
+        .append("}]");
+
+    logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
+        clusterName, domainUid, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
 }
