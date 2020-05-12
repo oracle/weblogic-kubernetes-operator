@@ -109,9 +109,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-// Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create model in image domain and start the domain")
+@DisplayName("Test to add a cluster to model in image domain")
 @IntegrationTest
 class ItMiiAddCluster implements LoggedTest {
 
@@ -660,7 +659,7 @@ class ItMiiAddCluster implements LoggedTest {
    */
   @Test
   @Order(3)
-  @DisplayName("Add a configured cluster to model in image domain")
+  @DisplayName("Add a cluster to model in image domain with default replica count")
   @Slow
   @MustNotRunInParallel
   public void testAddMiiClusteriWithNoReplica() {

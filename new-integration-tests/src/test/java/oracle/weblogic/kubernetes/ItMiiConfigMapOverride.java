@@ -108,9 +108,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-// Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to create model in image domain and start the domain")
+@DisplayName("Test to update a model in image domain with a configmap")
 @IntegrationTest
 class ItMiiConfigMapOverride implements LoggedTest {
 
