@@ -54,7 +54,7 @@ public interface TestConstants {
   public static final String NGINX_CHART_NAME = "nginx-ingress";
 
   // MII image constants
-  public static final String MII_BASIC_WDT_MODEL_FILE = "model-basicdomain-singlecluster-sampleapp-wls.yaml";
+  public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
   public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_APP_NAME = "sample-app";
@@ -63,3 +63,4 @@ public interface TestConstants {
   public static final String DOMAIN_VERSION = "v7";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 }
+
