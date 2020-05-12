@@ -343,7 +343,7 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- pods -----------------------------------------
   /**
-   * Returns the V1Pod object given the following parameters.
+   * Get the V1Pod object given the following parameters.
    *
    * @param namespace in which to check for the pod existence
    * @param labelSelector for example, in the format "weblogic.domainUID in (%s)"
