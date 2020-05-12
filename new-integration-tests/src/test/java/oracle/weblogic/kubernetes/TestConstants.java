@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
+import oracle.weblogic.kubernetes.utils.TestUtils;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
@@ -31,10 +33,13 @@ public interface TestConstants {
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
+
+  // jenkins constants
   public static final String BUILD_ID = Optional.ofNullable(System.getenv("BUILD_ID"))
       .orElse("");
   public static final String BRANCH_NAME_FROM_JENKINS = Optional.ofNullable(System.getenv("BRANCH"))
       .orElse("");
+
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
@@ -42,7 +47,20 @@ public interface TestConstants {
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
       System.getProperty("java.io.tmpdir") + "/ittestspvroot");
+
+  // NGINX constants
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
+
+  // MII image constants
+  public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
+  public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
+  public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
+  public static final String MII_BASIC_APP_NAME = "sample-app";
+
+  // domain constants
+  public static final String DOMAIN_VERSION = "v7";
+  public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 }
+
