@@ -16,9 +16,9 @@ import io.kubernetes.client.util.ClientBuilder;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesServiceExist;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
