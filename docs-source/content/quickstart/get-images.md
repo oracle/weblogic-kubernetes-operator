@@ -21,6 +21,11 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
     ```bash
     $ docker pull oracle/weblogic-kubernetes-operator:2.5.0
     ```
+    
+    {{% notice note %}} If you are here because you are following the Model In Image sample,
+    change the image to `oracle/weblogic-kubernetes-operator:3.0.0-rc1`
+    in the previous command.
+    {{% /notice %}}
 
 1. Pull the Traefik load balancer image:
 
