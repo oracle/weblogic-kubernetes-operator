@@ -147,6 +147,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
 
     // build an application archive using what is in resources/apps/APP_NAME
+    logger.info("Build an application archive using resources/apps/{0}", MII_BASIC_APP_NAME);
     assertTrue(buildAppArchive(defaultAppParams()
         .srcDir(MII_BASIC_APP_NAME)), String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
 
