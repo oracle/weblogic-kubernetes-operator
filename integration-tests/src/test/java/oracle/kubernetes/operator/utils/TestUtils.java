@@ -970,10 +970,10 @@ public class TestUtils {
   }
 
   /**
-   * Retreive pod's name based on search expression.
+   * Retrieve pod's name based on search expression.
    *
    * @param searchExp  Search expression (for example -l app=webhook).
-   * @param namespace  Namespace where pod is running
+   * @param namespace  namespace where pod is running
    * @return name of pod matching search expression
    * @throws Exception if pod is not found
    */
@@ -2126,9 +2126,9 @@ public class TestUtils {
   /**
    * Retrieve info for provided helm chart.
    *
-   * @param chartName  HelmChart name
-   * @param chartNS namespace
-   * @throws RuntimeException if chart info can't be retrieved.
+   * @param chartName  helm chart name
+   * @param chartNS helm chart namespace
+   * @throws Exception if chart info can't be retrieved.
    */
   public static void checkHelmChart(String chartName, String chartNS) throws Exception {
     String cmd = "helm history " + chartName + " --namespace " + chartNS;

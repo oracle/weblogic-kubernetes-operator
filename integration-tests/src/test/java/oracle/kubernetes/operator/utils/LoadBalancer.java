@@ -244,7 +244,8 @@ public class LoadBalancer {
     cmd.append("kubectl get ingress")
         .append(" -n ")
         .append((String)lbMap.get("namespace"))
-        .append(" -o jsonpath='{.items[].metadata.name}'");
+        .append(" | grep ")
+        .append(lbMap.get("domainUID"));
 
     TestUtils.checkAnyCmdInLoop(cmd.toString(),lbMap.get("domainUID") + "-traefik");
   }
@@ -378,7 +379,8 @@ public class LoadBalancer {
     cmd.append("kubectl get ingress.voyager.appscode.com")
         .append(" -n ")
         .append((String)lbMap.get("namespace"))
-        .append(" -o jsonpath='{.items[].metadata.name}'");
+        .append(" | grep ")
+        .append(lbMap.get("domainUID"));
 
     TestUtils.checkAnyCmdInLoop(cmd.toString(),lbMap.get("domainUID") + "-voyager");
   }
