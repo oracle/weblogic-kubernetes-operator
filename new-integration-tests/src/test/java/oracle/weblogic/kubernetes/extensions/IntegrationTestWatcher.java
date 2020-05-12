@@ -135,7 +135,8 @@ public class IntegrationTestWatcher implements
   public void beforeEach(ExtensionContext context) {
     String[] tempMethodName = context.getRequiredTestMethod().toString().split(" ");
     methodName = tempMethodName[tempMethodName.length - 1];
-    printHeader(String.format("Starting beforeEach for %s", methodName), "-");
+    methodName = context.getRequiredTestMethod().getName();
+    printHeader(String.format("Starting beforeEach for %s()", methodName), "-");
   }
 
   /**
@@ -147,7 +148,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void handleBeforeEachMethodExecutionException​(ExtensionContext context, Throwable throwable)
       throws Throwable {
-    printHeader(String.format("BeforeEach failed for %s", methodName), "!");
+    printHeader(String.format("BeforeEach failed for %s()", methodName), "!");
     collectLogs(context, "beforeEach");
     throw throwable;
   }
@@ -160,8 +161,8 @@ public class IntegrationTestWatcher implements
 
   @Override
   public void beforeTestExecution(ExtensionContext context) throws Exception {
-    printHeader(String.format("Ending beforeEach for %s", methodName), "-");
-    logger.info("About to execute [{0}] in {1}", context.getDisplayName(), methodName);
+    printHeader(String.format("Ending beforeEach for %s()", methodName), "-");
+    logger.info("About to execute [{0}] in {1}()", context.getDisplayName(), methodName);
     getStore(context).put(START_TIME, System.currentTimeMillis());
   }
 
@@ -175,8 +176,8 @@ public class IntegrationTestWatcher implements
     Method testMethod = context.getRequiredTestMethod();
     long startTime = getStore(context).remove(START_TIME, long.class);
     long duration = System.currentTimeMillis() - startTime;
-    logger.info("Finished executing [{0}] {1}", context.getDisplayName(), methodName);
-    logger.info("Method [{0}] took {1} ms.", testMethod.getName(), duration);
+    logger.info("Finished executing [{0}] {1}()", context.getDisplayName(), methodName);
+    logger.info("Method [{0}] took {1}() ms.", methodName, duration);
   }
 
   private ExtensionContext.Store getStore(ExtensionContext context) {
@@ -195,7 +196,7 @@ public class IntegrationTestWatcher implements
   public void interceptTestMethod​(Invocation<Void> invocation,
       ReflectiveInvocationContext<Method> invocationContext,
       ExtensionContext context) throws Throwable {
-    printHeader(String.format("Starting Test %s", methodName), "-");
+    printHeader(String.format("Starting Test %s()", methodName), "-");
     invocation.proceed();
   }
 
@@ -208,7 +209,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void handleTestExecutionException​(ExtensionContext context, Throwable throwable)
       throws Throwable {
-    printHeader(String.format("Test failed %s", methodName), "!");
+    printHeader(String.format("Test failed %s()", methodName), "!");
     collectLogs(context, "test");
     throw throwable;
   }
@@ -225,7 +226,7 @@ public class IntegrationTestWatcher implements
   public void interceptAfterEachMethod​(InvocationInterceptor.Invocation<Void> invocation,
       ReflectiveInvocationContext<Method> invocationContext,
       ExtensionContext context) throws Throwable {
-    printHeader(String.format("Starting afterEach for %s", methodName), "-");
+    printHeader(String.format("Starting afterEach for %s()", methodName), "-");
     invocation.proceed();
   }
 
@@ -235,7 +236,7 @@ public class IntegrationTestWatcher implements
    */
   @Override
   public void afterEach(ExtensionContext context) {
-    printHeader(String.format("Ending afterEach for %s", methodName), "-");
+    printHeader(String.format("Ending afterEach for %s()", methodName), "-");
   }
 
   /**
@@ -247,7 +248,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void handleAfterEachMethodExecutionException​(ExtensionContext context, Throwable throwable)
       throws Throwable {
-    printHeader(String.format("AfterEach failed for %s", methodName), "!");
+    printHeader(String.format("AfterEach failed for %s()", methodName), "!");
     collectLogs(context, "afterEach");
     throw throwable;
   }
@@ -258,7 +259,7 @@ public class IntegrationTestWatcher implements
    */
   @Override
   public void testSuccessful(ExtensionContext context) {
-    printHeader(String.format("Test PASSED %s", methodName), "+");
+    printHeader(String.format("Test PASSED %s()", methodName), "+");
   }
 
   /**
@@ -268,7 +269,7 @@ public class IntegrationTestWatcher implements
    */
   @Override
   public void testFailed(ExtensionContext context, Throwable cause) {
-    printHeader(String.format("Test FAILED %s", methodName), "!");
+    printHeader(String.format("Test FAILED %s()", methodName), "!");
   }
 
   /**

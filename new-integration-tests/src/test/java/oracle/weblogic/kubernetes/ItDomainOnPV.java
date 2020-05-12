@@ -441,7 +441,6 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
 
-    Files.createDirectories(wlstPropertiesFile);
     p.store(new FileOutputStream(wlstPropertiesFile.toFile()), "wlst properties file");
   }
 
