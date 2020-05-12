@@ -61,6 +61,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -396,7 +397,7 @@ public class ItDomainOnPV implements LoggedTest {
 
     logger.info("create a staging location for domain creation scripts");
     Path pvTemp = Paths.get(WORK_DIR, "ItDomainOnPV", "domainCreateTempPV");
-    Files.deleteIfExists(pvTemp);
+    FileUtils.deleteDirectory(pvTemp.toFile());
     Files.createDirectories(pvTemp);
 
     logger.info("copy the create domain wlst script to staging location");
@@ -626,7 +627,7 @@ public class ItDomainOnPV implements LoggedTest {
     Path pvHostPath = Files.createDirectories(Paths.get(
         TestConstants.PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume"));
     logger.info("Creating PV directory {0}", pvHostPath);
-    Files.deleteIfExists(pvHostPath);
+    FileUtils.deleteDirectory(pvHostPath.toFile());
     Files.createDirectories(pvHostPath);
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
