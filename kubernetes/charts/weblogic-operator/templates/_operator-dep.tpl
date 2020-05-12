@@ -58,7 +58,7 @@ spec:
         {{- end }}
         resources:
           requests:
-            cpu: {{ .cpuRequests | default "100m" }}
+            cpu: {{ .cpuRequests | default "250m" }}
             memory: {{ .memoryRequests | default "512Mi" }}
           limits:
             {{- if .cpuLimits}}
