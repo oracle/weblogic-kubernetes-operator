@@ -70,12 +70,16 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.with;
@@ -1468,6 +1472,19 @@ public class Kubernetes implements LoggedTest {
       name = createdJob.getMetadata().getName();
       logger.info("Submitted job {0}", name);
       logger.info("Use the job name to query the job status");
+      for (int i = 0; i < 12; i++) {
+        V1PodList listPods = listPods(namespace, null);
+        for (V1Pod pod : listPods.getItems()) {
+          if (pod.getMetadata().getName().equals(name)) {
+            logger.info(dump(pod.getStatus().getConditions()));
+          }
+        }
+        try {
+          TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException ex) {
+          Logger.getLogger(Kubernetes.class.getName()).log(Level.SEVERE, null, ex);
+        }
+      }
     } catch (ApiException apex) {
       logger.warning(apex.getResponseBody());
       throw apex;
