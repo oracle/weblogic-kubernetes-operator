@@ -229,8 +229,7 @@ public class ItDomainOnPV implements LoggedTest {
                         .channelName("default")
                         .nodePort(37001))
                     .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                    .nodePort(39001))))
+                        .channelName("T3Channel"))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(2)
