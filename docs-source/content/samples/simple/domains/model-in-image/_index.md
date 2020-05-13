@@ -2219,11 +2219,260 @@ We will not be using the `sample-domain2` domain again in this sample; if you wi
 
 ### Update3 use case
 
-This use case demonstrates ...
+The Update3 use case demonstrates deploying an updated image with an updated application to the running [Update1 use case](#update1-use-case) domain, and initiating a rolling restart of this domain.
 
+In the use case, we will create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with with the following updates:
+ - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
+ - An updated model YAML within the image that points to the new web application path.
+
+We will then apply an updated domain resource that references the new image while still referencing the original [Update1 use case](#update1-use-case) case secrets and model ConfigMap. Once the domain resource is applied, we expect the operator to:
+ - Rerun the introspector job and generate a new domain home based on the new model.
+ - Restart the domain's administration server pod so that it loads the new image and new domain home.
+ - Roll the domain's cluster servers one at a time so that they each load the new image, new domain home, and revised application.
+
+Finally, we will call the application to verify that its revision is active.
+
+Note that the old version of the application `v1` remains in the new image's archive but is unused. We leave it there to demonstrate that the old version can remain in case you want to revert to it. Once the new image is applied, you can revert by modifying your model's `configuration.model.configMap` to override the related application path in your image model.
+
+Here are the steps for this use case:
+
+1. Make sure you have deployed the domain from the [Update1 use case](#update1-use-case).
+
+2. Create an updated image 
+
+   Recall that a goal of the [Initial use case](#initial-use-case) was to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files included a web application in a WDT zip archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-v1` and, in addition to having a copy of the staged files in its `/u01/wdt/models` directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.
+
+   In this use case, we will follow similar steps to the [Initial use case](#initial-use-case) in order to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update1 use case](#update1-use-case) domain.
+
+   - Understanding our updated WDT archive
+
+     The updated archive for this use case is in directory `/tmp/mii-sample/archives/archive-v2`. We will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/mii-sample/archives/archive-v1` from the [Initial use case](#initial-use-case) with the the following differences:
+     - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
+     - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference with the original application: it changes the line `out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the mii-sample JSP web-app.");`.
+
+     For additional information about archives, see [Understanding our first archive](#understanding-our-first-archive) section in the [Initial use case](#initial-use-case) within this sample.
+
+   - Stage a ZIP file of the WDT archive
+
+     > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths below.
+
+     When we create our updated image, we will use the files in staging directory `/tmp/mii-sample/model-in-image__WLS-v2`. In preparation, we need it to contain a ZIP file of the new WDT application archive.
+
+     Run the following commands to create your application archive ZIP file and put it in the expected directory:
+
+     ```
+     # Delete existing archive.zip in case we have an old leftover version
+     $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip
+
+     # Move to the directory which contains the source files for our new archive
+     $ cd /tmp/mii-sample/archives/archive-v2
+
+     # Zip the archive to the location will later use when we run the WebLogic Image Tool
+     $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip wlsdeploy
+     ```
+
+   - Understanding our staged model files
+
+     The WDT model YAML file and properties for this use case have already been staged for you to directory `/tmp/mii-sample/model-in-image__WLS-v2`. 
+
+     The `model.10.yaml` file in this directory has an updated path `wlsdeploy/applications/myapp-v2` that references the updated web application in our archive, but is otherwise identical to the model staged for the original image. The final related YAML stanza looks like this:
+
+     ```
+     appDeployments:
+         Application:
+             myapp:
+                 SourcePath: 'wlsdeploy/applications/myapp-v2'
+                 ModuleType: ear
+                 Target: 'cluster-1'
+     ```
+
+     If you would like to review the entire original model before this change, see [Staging model files](#staging-model-files) in the [Initial use case](#initial-use-case) within this sample.
+
+   - Create a new image from our staged model files using WIT
+
+     > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
+
+     At this point, we have staged all of the files needed for image `model-in-image:WLS-v2`, they include:
+
+     - `/tmp/mii-sample/model-images/weblogic-deploy.zip`
+     - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/model.10.yaml`
+     - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/model.10.properties`
+     - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip`
+
+     If you don't see the `weblogic-deploy.zip` file, then it means that you missed a step in the prerequisites.
+
+     Now let's use the Image Tool to create an image named `model-in-image:WLS-v2` that's layered on a base WebLogic image. We've already set up this tool during the prerequisite steps at the beginning of this sample.
+
+     Run the following commands to create the model image and verify that it worked:
+
+     ```
+     $ cd /tmp/mii-sample/model-images
+     $ ./imagetool/bin/imagetool.sh update \
+       --tag model-in-image:WLS-v2 \
+       --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
+       --wdtModel      ./model-in-image__WLS-v2/model.10.yaml \
+       --wdtVariables  ./model-in-image__WLS-v2/model.10.properties \
+       --wdtArchive    ./model-in-image__WLS-v2/archive.zip \
+       --wdtModelOnly \
+       --wdtDomainType WLS
+     ```
+
+     If you don't see the `imagetool` directory, then it means that you missed a step in the prerequisites.
+
+     This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
+     - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+     - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
+       - Note that we cached WDT in WIT using the keyword `latest` when we set up the cache during the sample prerequisites steps.
+       - This lets WIT implicitly assume its the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+     - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
+
+     When the command succeeds, it should end with output like:
+
+     ```
+     [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v2
+     ```
+
+     Also, if you run the `docker images` command, then you should see a Docker image named `model-in-image:WLS-v2`.
+
+1. Set up and apply a domain resource that is similar to your "Update1" use case domain resource but with a different image:
+
+   > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths, files, and image names below.
+
+   - Option 1: Update a copy of your domain resource file from the "Update1" use case.
+
+     - You might recall that in the [Update1 use case](#update1-use-case) we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that comes supplied with the sample.
+
+       - We suggest copying this domain resource file and naming the copy `/tmp/mii-sample/mii-update3.yaml` before making any changes.
+
+       - Working on a copy is not strictly necessary, but it helps to keep track of your work for the different use cases in this sample and also provides you a backup of your previous work.
+
+     - Change the `/tmp/mii-sample/mii-update3.yaml` domain resource `image` field to reference `model-in-image:WLS-v2` instead of `model-in-image:WLS-v1`.
+
+        The final result should look something like this:
+
+        ```
+        ...
+        spec:
+          ...
+          image: "model-in-image:WLS-v2"
+        ```
+
+      - Apply your changed domain resource:
+
+          ```
+          $ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
+          ```
+
+    - Option 2: Use the updated domain resource file that is supplied with the sample:
+
+        ```
+        $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
+        ```
+
+
+1. Wait for the roll to complete.
+
+   Now that you've applied a domain resource with an updated image, the operator should automatically rerun the domain's introspector job in order to generate a new domain home, and then should restart ('roll') each of the domain's pods so that they use the new domain home and the new image. You'll need to wait for this roll to complete before we can verify that the new image and its associated new application have been deployed.
+
+   - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
+
+   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
+
+     {{%expand "Click here to expand the `wl-pod-wait.sh` usage." %}}
+   ```
+     $ ./wl-pod-wait.sh -?
+
+       Usage:
+
+         wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
+            [-p expected_pod_count] \
+            [-t timeout_secs] \
+            [-q]
+
+         Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+
+       Parameters:
+
+         -d <domain_uid> : Defaults to 'sample-domain1'.
+
+         -n <namespace>  : Defaults to 'sample-domain1-ns'.
+
+         pod_count > 0   : Wait until exactly 'pod_count' WebLogic server pods for
+                           a domain all (a) are ready, (b) have the same
+                           'domainRestartVersion' label value as the
+                           current domain resource's 'spec.restartVersion, and
+                           (c) have the same image as the current domain
+                           resource's image.
+
+         pod_count = 0   : Wait until there are no running WebLogic server pods
+                           for a domain. The default.
+
+         -t <timeout>    : Timeout in seconds. Defaults to '600'.
+
+         -q              : Quiet mode. Show only a count of wl pods that
+                           have reached the desired criteria.
+
+         -?              : This help.
+   ```
+     {{% /expand%}}
+
+     {{%expand "Click here to expand sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
+   ```
+   TBD
+   ```
+     {{% /expand%}}
+
+1. After your domain roll is complete, you can call the sample web application to determine if the updated application was deployed. 
+
+   When the application is invoked, it should contain an output string like `Hello World! This is version 'v2' of the mii-sample JSP web-app.`.
+
+   Send a web application request to the Ingress controller:
+
+   ```  
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
+      http://localhost:30305/myapp_war/index.jsp
+   ```  
+
+   Or, if Traefik is unavailable and your Administration Server pod is running, you can run `kubectl exec`:
+
+   ```  
+   $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
+     "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
+   ```  
+
+   You should see something like the following:
+
+   {{%expand "Click here to see the expected web application output." %}}
+
+   ```  
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
+      http://localhost:30305/myapp_war/index.jsp
+
+   <html><body><pre>
+   *****************************************************************
+
+   Hello World! This is version 'v2' of the mii-sample JSP web-app.
+
+   Welcome to WebLogic server 'managed-server1'!
+
+    domain UID  = 'sample-domain1'
+    domain name = 'domain1'
+
+   Found 1 local cluster runtime:
+     Cluster 'cluster-1'
+
+   Found 1 local data source:
+     Datasource 'mynewdatasource': State='Running'
+
+   *****************************************************************
+   </pre></body></html>
+
+   ```
+   {{% /expand%}}
+
+If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 This completes the sample scenarios.
-
 
 ### Cleanup
 
