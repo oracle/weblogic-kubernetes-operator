@@ -1470,16 +1470,11 @@ public class Kubernetes implements LoggedTest {
           null // String | field manager who is making the change
       );
       name = createdJob.getMetadata().getName();
-      logger.info("Submitted job {0}", name);
-      logger.info("Use the job name to query the job status");
-      for (int i = 0; i < 12; i++) {
-        V1PodList listPods = listPods(namespace, null);
-        logger.info(dump(listPods));
-        for (V1Pod pod : listPods.getItems()) {
-          if (pod.getMetadata().getName().equals(name)) {
-            logger.info(dump(pod.getStatus().getConditions()));
-          }
-        }
+      logger.info("Submitted job {0}, details below", name);
+      logger.info(dump(createdJob));
+      for (int i = 0; i < 6; i++) {
+        logger.info(dump(listPods(namespace, null)));
+        logger.info(dump(listJobs(namespace)));
         logger.info("Sleeping for 10 seconds");
         try {
           TimeUnit.SECONDS.sleep(10);

@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -135,6 +136,10 @@ public class Kubernetes {
 
     V1Pod pod = getPod(namespace, null, podName);
     if (pod != null) {
+      List<V1ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
+      for (V1ContainerStatus containerStatuse : containerStatuses) {
+        containerStatuse.getName();
+      }
       for (V1PodCondition condition : pod.getStatus().getConditions()) {
         if (condition.getType().equals("Ready")) {
           if (condition.getReason().equals("PodCompleted")) {
