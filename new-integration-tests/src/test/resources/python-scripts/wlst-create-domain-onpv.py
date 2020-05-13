@@ -21,7 +21,7 @@ def create_domain():
 
   print('Configuring the Administration Server')
   cd('/Servers/AdminServer')
-  set('ListenPort', int(admin_port))
+  set('ListenPort', int(admin_server_port))
   set('Name', admin_server_name)
 
   print('Configuring network access point')
