@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import oracle.weblogic.domain.Cluster;
@@ -271,12 +272,11 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     // create an ingress in domain namespace
     String ingressName = domainUid + "-nginx";
     assertThat(assertDoesNotThrow(() ->
-        createIngress(ingressName, domainNamespace, domainUid, clusterName, managedServerPort,
-            domainUid + ".test")))
-            .as("Test ingress {0} creation succeeds", ingressName)
-            .withFailMessage("Ingress creation failed for cluster {0} of domain {1} in namespace {2}",
-                clusterName, domainUid, domainNamespace)
-            .isTrue();
+        createIngress(ingressName, domainNamespace, domainUid, managedServerPort, Arrays.asList(clusterName))))
+        .as("Test ingress {0} creation succeeds", ingressName)
+        .withFailMessage("Ingress creation failed for cluster {0} of domain {1} in namespace {2}",
+            clusterName, domainUid, domainNamespace)
+        .isTrue();
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
@@ -300,7 +300,7 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
         String.format("curl --silent --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-            domainUid + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+            domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Verify NGINX can access the sample app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")

@@ -351,7 +351,7 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
-            String.format("podExists failed with ApiException for pod %s in namespace in %s",
+            String.format("podExists failed with ApiException for pod %s in namespace %s",
                 podName, domainNamespace)));
   }
 
@@ -372,7 +372,7 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-            String.format("podReady failed with ApiException for pod %s in namespace in %s",
+            String.format("podReady failed with ApiException for pod %s in namespace %s",
                podName, domainNamespace)));
   }
 
@@ -392,7 +392,7 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
-            String.format("serviceExists failed with ApiException for service %s in namespace in %s",
+            String.format("serviceExists failed with ApiException for service %s in namespace %s",
                 serviceName, domainNamespace)));
   }
 
@@ -413,7 +413,7 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domainNamespace),
-            String.format("podDoesNotExist failed with ApiException for pod %s in namespace in %s",
+            String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
                 podName, domainNamespace)));
   }
 
@@ -426,13 +426,15 @@ public class CommonUtils {
   public static void checkServiceDeleted(String serviceName, String domainNamespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+            condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 serviceName,
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(serviceDoesNotExist(serviceName, null, domainNamespace));
+        .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, domainNamespace),
+            String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
+                serviceName, domainNamespace)));
   }
 
   /**

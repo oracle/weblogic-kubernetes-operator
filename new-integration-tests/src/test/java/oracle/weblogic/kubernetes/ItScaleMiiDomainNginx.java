@@ -10,20 +10,18 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
@@ -57,23 +55,23 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   // mii constants
   private static final String WDT_MODEL_FILE = "model-multiclusterdomain-sampleapp-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
-  private static final String APP_NAME = "sample-app";
 
   // domain constants
+  private static final String domainUid = "domain1";
   private static final int NUMBER_OF_CLUSTERS = 2;
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
+  private static final int replicaCount = 2;
 
   private static String domainNamespace = null;
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
 
-  private final int replicaCount = 2;
-  private final String domainUid = "domain1";
   private String curlCmd = null;
 
   /**
-   * Install operator and NGINX.
+   * Install operator and NGINX. Create model in image domain with multiple clusters.
+   * Create ingress for the domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -105,21 +103,78 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+
+    // create model in image domain with multiple clusters
+    createMiiDomainWithMultiClusters();
+
+    // create ingress using host based routing
+    createIngressForMultiClustersDomain();
   }
 
   @Test
-  @Order(1)
-  @DisplayName("Create model in image domain with multiple clusters")
-  @Slow
-  @MustNotRunInParallel
-  public void testCreateMiiDomainWithMultiClusters() {
+  @DisplayName("Verify the application can be accessed through NGINX for each cluster in the domain")
+  public void testAppAccessThroughIngressController() {
+
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+      String clusterName = CLUSTER_NAME_PREFIX + i;
+
+      List<String> managedServerListBeforeScale =
+          listManagedServersBeforeScale(clusterName, replicaCount);
+
+      // check that NGINX can access the sample apps from all managed servers in the cluster of the domain
+      curlCmd = generateCurlCmd(clusterName);
+      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerListBeforeScale, 50))
+          .as("Verify NGINX can access the sample app from all managed servers in the domain")
+          .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
+          .isTrue();
+    }
+  }
+
+  @Test
+  @DisplayName("Verify scale each cluster of the domain in domain namespace")
+  public void testScaleClusters() {
+
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+
+      String clusterName = CLUSTER_NAME_PREFIX + i;
+      int numberOfServers = 2 * i - 1;
+
+      // scale cluster-1 to 1 server and cluster-2 to 3 servers
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers);
+      scaleAndVerifyCluster(clusterName, replicaCount, numberOfServers);
+
+      // then scale cluster-1 and cluster-2 to 0 server
+      scaleAndVerifyCluster(clusterName, numberOfServers, 0);
+    }
+  }
+
+  /**
+   * TODO: remove this after Sankar's PR is merged
+   * The cleanup framework does not uninstall NGINX release. Do it here for now.
+   */
+  @AfterAll
+  public void tearDownAll() {
+    // uninstall NGINX release
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
+  }
+
+  /**
+   * Create model in image domain with multiple clusters.
+   */
+  private static void createMiiDomainWithMultiClusters() {
 
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     // create image with model files
     logger.info("Creating image with model file and verify");
-    String miiImage = createImageAndVerify(MII_IMAGE_NAME, WDT_MODEL_FILE, APP_NAME);
+    String miiImage = createImageAndVerify(MII_IMAGE_NAME, WDT_MODEL_FILE, MII_BASIC_APP_NAME);
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
@@ -174,90 +229,36 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     }
   }
 
-  @Test
-  @Order(2)
-  @DisplayName("Create an ingress for each cluster of the WebLogic domain in the specified domain namespace")
-  public void testCreateIngress() {
-
-    // create an ingress for each cluster of the domain in the domain namespace
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-      String ingressName = domainUid + "-" + clusterName + "-nginx";
-
-      logger.info("Creating ingress {0} for cluster {1} of domain {2} in namespace {3}",
-          ingressName, clusterName, domainUid, domainNamespace);
-      assertThat(createIngress(ingressName, domainNamespace, domainUid, clusterName,
-          MANAGED_SERVER_PORT, domainUid + "." + clusterName + ".test"))
-          .as("Test ingress {0} creation succeeds", ingressName)
-          .withFailMessage("Ingress creation failed for cluster {0} of domain {1} in namespace {2}",
-              clusterName, domainUid, domainNamespace)
-          .isTrue();
-
-      // check that the ingress was found in the domain namespace
-      assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-          .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-          .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
-          .contains(ingressName);
-
-      logger.info("Ingress {0} for cluster {1} of domain {2} was found in namespace {3}",
-          ingressName, clusterName, domainUid, domainNamespace);
-    }
-  }
-
-  @Test
-  @Order(3)
-  @DisplayName("Verify the application can be accessed through the ingress controller for each cluster in the domain")
-  public void testAppAccessThroughIngressController() {
-
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-
-      List<String> managedServerListBeforeScale =
-          listManagedServersBeforeScale(clusterName, replicaCount);
-
-      // check that NGINX can access the sample apps from all managed servers in the cluster of the domain
-      curlCmd = generateCurlCmd(clusterName);
-      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerListBeforeScale, 50))
-          .as("Verify NGINX can access the sample app from all managed servers in the domain")
-          .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
-          .isTrue();
-    }
-  }
-
-  @Test
-  @Order(4)
-  @DisplayName("Verify scale each cluster of the domain in domain namespace")
-  public void testScaleClusters() {
-
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-      int numberOfServers = 2 * i - 1;
-
-      // scale cluster-1 to 1 server and cluster-2 to 3 servers
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers);
-      scaleAndVerifyCluster(clusterName, replicaCount, numberOfServers);
-
-      // then scale cluster-1 and cluster-2 to 0 server
-      scaleAndVerifyCluster(clusterName, numberOfServers, 0);
-    }
-  }
-
   /**
-   * TODO: remove this after Sankar's PR is merged
-   * The cleanup framework does not uninstall NGINX release. Do it here for now.
+   * Create an ingress for the domain with multiple clusters in the specified namespace.
    */
-  @AfterAll
-  public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
+  private static void createIngressForMultiClustersDomain() {
+
+    // create an ingress for the domain in the domain namespace
+    String ingressName = domainUid + "-nginx";
+
+    List<String> clusterNames = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      clusterNames.add(CLUSTER_NAME_PREFIX + i);
     }
+
+    logger.info("Creating ingress {0} for domain {1} in namespace {2}",
+        ingressName, domainUid, domainNamespace);
+    assertThat(createIngress(ingressName, domainNamespace, domainUid, MANAGED_SERVER_PORT, clusterNames))
+        .as("Test ingress {0} creation succeeds", ingressName)
+        .withFailMessage("Ingress creation failed for domain {0} in namespace {1}",
+             domainUid, domainNamespace)
+        .isTrue();
+
+    // check that the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
+        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+        .contains(ingressName);
+
+    logger.info("Ingress {0} for domain {1} was found in namespace {2}",
+        ingressName, domainUid, domainNamespace);
+
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
