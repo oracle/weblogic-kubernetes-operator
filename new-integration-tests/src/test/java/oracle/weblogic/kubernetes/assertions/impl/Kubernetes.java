@@ -131,24 +131,21 @@ public class Kubernetes {
    * @throws ApiException when querying pod condition fails
    */
   public static boolean podCompleted(String namespace, String podName) throws ApiException {
-    boolean status = false;
+    boolean completionStatus = false;
 
     V1Pod pod = getPod(namespace, null, podName);
     if (pod != null) {
-
-      // get the podCondition with the 'Ready' type field
-      V1PodCondition v1PodCompletedCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "PodCompleted".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
-
-      if (v1PodCompletedCondition != null) {
-        status = v1PodCompletedCondition.getStatus().equalsIgnoreCase("true");
+      for (V1PodCondition condition : pod.getStatus().getConditions()) {
+        if (condition.getType().equals("Ready")) {
+          if (condition.getReason().equals("PodCompleted")) {
+            completionStatus = true;
+          }
+        }
       }
     } else {
       logger.info("Pod doesn't exist");
     }
-    return status;
+    return completionStatus;
   }
 
   /**
