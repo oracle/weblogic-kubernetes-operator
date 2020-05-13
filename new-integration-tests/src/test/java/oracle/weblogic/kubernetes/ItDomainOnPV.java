@@ -134,7 +134,8 @@ public class ItDomainOnPV implements LoggedTest {
   String wlSecretName;
   String domainScriptConfigMapName;
 
-  final String adminServerPodName = domainUid + "-admin-server";
+  final String adminServerName = "admin-server";
+  final String adminServerPodName = domainUid + "-" + adminServerName;
   String managedServerPrefix = domainUid + "-" + managedServerNameBase;
 
   /**
@@ -317,7 +318,7 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("domain_path", "/shared/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
-    p.setProperty("admin_server_name", adminServerPodName);
+    p.setProperty("admin_server_name", adminServerName);
     p.setProperty("admin_server_name_svc", "pv-domain-adminserver");
     p.setProperty("server_port", "8001");
     p.setProperty("admin_port", "30802");
