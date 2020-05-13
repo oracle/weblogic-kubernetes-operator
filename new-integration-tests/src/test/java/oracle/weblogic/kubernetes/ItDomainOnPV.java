@@ -482,6 +482,7 @@ public class ItDomainOnPV implements LoggedTest {
                         .name("fix-pvc-owner")
                         .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
                         .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
