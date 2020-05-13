@@ -2156,6 +2156,14 @@ public class TestUtils {
         + result.stdout()
         + result.stderr()
     );
+    cmd = "helm get values " + chartName + " --namespace " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " values : "
+        + result.stdout()
+        + result.stderr()
+    );
     cmd = "kubectl get pods " + " -n " + chartNS;
     result = ExecCommand.exec(cmd);
     LoggerHelper.getLocal().log(Level.INFO, " Pod for HelmChart Release "
