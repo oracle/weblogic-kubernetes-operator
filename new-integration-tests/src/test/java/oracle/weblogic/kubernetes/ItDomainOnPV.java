@@ -93,8 +93,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -364,6 +364,9 @@ public class ItDomainOnPV implements LoggedTest {
                 .name("create-domain-onpv-job")
                 .namespace(domainNamespace))
         .spec(new V1JobSpec()
+            .backoffLimit(1)
+            .completions(1)
+            .parallelism(1)
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
@@ -413,7 +416,7 @@ public class ItDomainOnPV implements LoggedTest {
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
                             .name("docker-store"))))));
-    String jobPodName = assertDoesNotThrow(() -> TestActions
+    String jobName = assertDoesNotThrow(() -> TestActions
         .createJob(jobBody), "Creating domain job failed");
 
     // check domain creation job is completed
@@ -425,7 +428,7 @@ public class ItDomainOnPV implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(podCompleted(jobPodName, domainNamespace));
+        .until(jobCompleted(jobName, null, domainNamespace));
 
   }
 

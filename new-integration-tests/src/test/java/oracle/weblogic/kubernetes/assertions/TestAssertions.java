@@ -12,6 +12,7 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
+import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
@@ -246,6 +247,17 @@ public class TestAssertions {
    */
   public static boolean isHelmReleaseDeployed(String releaseName, String namespace) {
     return Helm.isReleaseDeployed(releaseName, namespace);
+  }
+
+  /**
+   * Check if a job completed running.
+   *
+   * @param namespace name of the namespace in which the job running
+   * @param jobName name of the job to check for its completion status
+   * @return true if completed false otherwise
+   */
+  public static Callable<Boolean> jobCompleted(String jobName, String labelSelectors, String namespace) {
+    return Job.jobCompleted(namespace, labelSelectors, jobName);
   }
 
 }
