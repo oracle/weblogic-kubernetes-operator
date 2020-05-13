@@ -29,6 +29,12 @@ The current experimental support for Istio has these limitations:
 
 #### Using the operator with experimental Istio support
 
+{{% notice note %}}
+These instructions assume that you are using a Kubernetes cluster with
+Istio installed and configured already.  The operator will not install
+Istio for you.
+{{% /notice %}}
+
 You can deploy the operator into a namespace which has Istio automatic sidecar
 injection enabled.  Before installing the operator, create the namespace you
 wish to run the operator in, and label it for automatic injection.
