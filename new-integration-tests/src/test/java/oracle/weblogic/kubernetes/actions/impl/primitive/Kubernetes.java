@@ -1447,41 +1447,27 @@ public class Kubernetes implements LoggedTest {
   // --------------------------- jobs ---------------------------
 
   /**
-   * Create a Kubernetes job.
+   * Create a job.
    *
-   * @param job V1Job data
+   * @param jobBody V1Job object containing job configuration data
    * @return String job name if job creation is successful
    * @throws ApiException when create job fails
    */
-  public static String createJob(V1Job job) throws ApiException {
+  public static String createNamespacedJob(V1Job jobBody) throws ApiException {
     String name = null;
-    String namespace = job.getMetadata().getNamespace();
+    String namespace = jobBody.getMetadata().getNamespace();
     try {
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
       V1Job createdJob = apiInstance.createNamespacedJob(
           namespace, // String | namespace in which to create job
-          job, // V1Job | body of the V1Job to create
+          jobBody, // V1Job | body of the V1Job containing job data
           PRETTY, // String | pretty print output.
           null, // String | dry run or permanent change
           null // String | field manager who is making the change
       );
       name = createdJob.getMetadata().getName();
-      /*
-      logger.info("Submitted job {0}, details below", name);
-      logger.info(dump(createdJob));
-      for (int i = 0; i < 6; i++) {
-        logger.info(dump(listPods(namespace, null)));
-        logger.info(dump(listJobs(namespace)));
-        logger.info("Sleeping for 10 seconds");
-        try {
-          TimeUnit.SECONDS.sleep(10);
-        } catch (InterruptedException ex) {
-          Logger.getLogger(Kubernetes.class.getName()).log(Level.SEVERE, null, ex);
-        }
-      }
-      */
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      logger.severe(apex.getResponseBody());
       throw apex;
     }
     return name;

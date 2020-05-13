@@ -111,9 +111,8 @@ public class TestAssertions {
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
-   * @throws ApiException when Kubernetes cluster query fails to get pod
    */
-  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
+  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) {
     return Pod.podReady(namespace, domainUid, podName);
   }
 
@@ -164,13 +163,9 @@ public class TestAssertions {
    * @param label       a Map of key value pairs the service is decorated with
    * @param namespace   in which the service is running
    * @return true if the service exists otherwise false
-   * @throws ApiException when query fails
    */
-  public static Callable<Boolean> serviceExists(
-      String serviceName,
-      Map<String, String> label,
-      String namespace
-  ) throws ApiException {
+  public static Callable<Boolean> serviceExists(String serviceName,
+      Map<String, String> label,String namespace) {
     return () -> {
       return Kubernetes.doesServiceExist(serviceName, label, namespace);
     };

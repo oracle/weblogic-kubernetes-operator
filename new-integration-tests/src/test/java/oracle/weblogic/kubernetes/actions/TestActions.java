@@ -290,12 +290,13 @@ public class TestActions {
 
   /**
    * Create a job.
+   *
    * @param jobBody V1Job object containing job configuration data
-   * @return true if job is created and succeeds false otherwise
-   * @throws ApiException when job fails
+   * @return String job name if job creation is successful
+   * @throws ApiException when create job fails
    */
-  public static String createJob(V1Job jobBody) throws ApiException {
-    return Job.createJob(jobBody);
+  public static String createNamespacedJob(V1Job jobBody) throws ApiException {
+    return Job.createNamespacedJob(jobBody);
   }
 
   // ------------------------ Docker image  -------------------------

@@ -105,10 +105,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Verify the sample application can be accessed via the ingress controller.
+ * Tests to create domain on persistent volumes using WLST and WDT.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the sample application can be accessed via the ingress controller")
+@DisplayName("Verify the domain can be created on persistent volumes")
 @IntegrationTest
 public class ItDomainOnPV implements LoggedTest {
 
@@ -118,25 +118,28 @@ public class ItDomainOnPV implements LoggedTest {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
+
   private static String dockerConfigJson = "";
-  private static HelmParams nginxHelmParams = null;
 
   private final String domainUid = "domain-onpv";
   private final String managedServerNameBase = "managed-server";
   private final String clusterName = "pv-domain-cluster";
-  private final int managedServerPort = 8001;
   private final int replicaCount = 2;
 
   String pvName = domainUid + "-pv"; // name of the persistent volume
   String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
   String wlSecretName;
-  String domainScriptConfigMapName;
+
 
   final String adminServerName = "admin-server";
   final String adminServerPodName = domainUid + "-" + adminServerName;
   String managedServerPrefix = domainUid + "-" + managedServerNameBase;
+
+  private static ConditionFactory withStandardRetryPolicy
+      = with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
 
   /**
    * Install operator.
@@ -146,9 +149,7 @@ public class ItDomainOnPV implements LoggedTest {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
+
 
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
@@ -170,8 +171,6 @@ public class ItDomainOnPV implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testDomainOnPvUsingWlst() throws IOException {
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    ;
 
     // login to docker-registry and create pull secrets
     createDockerSecret();
@@ -180,12 +179,13 @@ public class ItDomainOnPV implements LoggedTest {
     createWebLogicCredentialsSecret();
 
     // create persistent volume and persistent volume claims
-    createDomainPVandPVC();
+    createPVandPVC();
 
     // create the domain on persistent volume
     createDomainOnPV();
 
-    // create the domain CR
+    // create the domain custom resource
+    logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(API_VERSION)
         .kind("Domain")
@@ -280,6 +280,13 @@ public class ItDomainOnPV implements LoggedTest {
     }
   }
 
+  /**
+   * Copies the WLST domain script to a temp location.
+   * Creates a domain properties in the temp location.
+   * Creates a configmap containing domain scripts and proerty file.
+   * Runs the create domain to create domain on persistent volume.
+   * @throws IOException when reading/writing domain sctip file fails
+   */
   private void createDomainOnPV() throws IOException {
 
     logger.info("create a staging location for domain creation scripts");
@@ -303,12 +310,14 @@ public class ItDomainOnPV implements LoggedTest {
     domainScriptFiles.add(domainPropertiesFile);
 
     logger.info("Create a config map to hold domain creation scripts");
-    domainScriptConfigMapName = assertDoesNotThrow(
+    String domainScriptConfigMapName = "create-domain-scripts-cm";
+    assertDoesNotThrow(
         () -> createConfigMapForDomainCreation("domain-onpv-create-configmap", domainScriptFiles),
         "Creating configmap for domain creation failed");
 
     logger.info("run a Kubernetes job to create the domain.");
-    runCreateDomainJob();
+    runCreateDomainJob(pvName, pvcName, domainScriptConfigMapName, domainNamespace);
+
   }
 
   private void createDomainProperties(Path wlstPropertiesFile) throws FileNotFoundException, IOException {
@@ -333,7 +342,14 @@ public class ItDomainOnPV implements LoggedTest {
     p.store(new FileOutputStream(wlstPropertiesFile.toFile()), "wlst properties file");
   }
 
-  private String createConfigMapForDomainCreation(String configMapName, List<Path> files)
+  /**
+   * Create configmap containing domain scripts.
+   * @param configMapName name of the configmap to create
+   * @param files files to add in configmap
+   * @throws IOException when reading the file fails
+   * @throws ApiException when create configmap fails
+   */
+  private void createConfigMapForDomainCreation(String configMapName, List<Path> files)
       throws IOException, ApiException {
 
     // add wlst domain creation python script and properties files
@@ -352,27 +368,24 @@ public class ItDomainOnPV implements LoggedTest {
     boolean cmCreated = assertDoesNotThrow(() -> TestActions.createConfigMap(configMap),
         String.format("Failed to create configmap %s with files %s", configMapName, files));
     assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
-
-    return configMapName;
   }
 
-  private void runCreateDomainJob() {
-    // create a job with WebLogic container to create domain
-    // using WLST on persistent volume
+  /**
+   * Create job to create a domain on a persistent volume.
+   */
+  private void runCreateDomainJob(String pvName, String pvcName, String domainScriptCM, String namespace) {
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name("create-domain-onpv-job")
-                .namespace(domainNamespace))
+                .name("create-domain-onpv-job") // name of the create domain job
+                .namespace(namespace))
         .spec(new V1JobSpec()
-            .backoffLimit(0)
-            .completions(1)
-            .parallelism(1)
+            .backoffLimit(0) // try only once
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
                     .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner")
+                        .name("fix-pvc-owner")  // change the ownership of the pv to opc:opc
                         .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
@@ -413,25 +426,29 @@ public class ItDomainOnPV implements LoggedTest {
                             .name("create-weblogic-domain-job-cm-volume")
                             .configMap(
                                 new V1ConfigMapVolumeSource()
-                                    .name(domainScriptConfigMapName))))
+                                    .name(domainScriptCM))))  //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
                             .name("docker-store"))))));
     String jobName = assertDoesNotThrow(() -> TestActions
-        .createJob(jobBody), "Creating domain job failed");
+        .createNamespacedJob(jobBody), "Domain creation job failed");
 
-    logger.info("Check domain creation job {0} completed in namespace {1}", jobName, domainNamespace);
+    logger.info("Checking if the domain creation job {0} completed in namespace {1}",
+        jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
                 + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
-                domainNamespace,
+                namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(jobCompleted(jobName, null, domainNamespace));
+        .until(jobCompleted(jobName, null, namespace));
   }
 
+  /**
+   * Create secret for docker credentials.
+   */
   private void createDockerSecret() {
     // docker login, if necessary
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
@@ -452,8 +469,11 @@ public class ItDomainOnPV implements LoggedTest {
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
   }
 
+  /**
+   * Create secret for WebLogic credentials.
+   */
   private void createWebLogicCredentialsSecret() {
-    logger.info("Create secret for admin credentials");
+    logger.info("Creating secret for WebLogic credentials");
     wlSecretName = "weblogic-credentials";
     Map<String, String> adminSecretMap = new HashMap<>();
     adminSecretMap.put("username", "system");
@@ -466,7 +486,11 @@ public class ItDomainOnPV implements LoggedTest {
     assertTrue(secretCreated, String.format("create secret failed for %s", wlSecretName));
   }
 
-  private void createDomainPVandPVC() throws IOException {
+  /**
+   * Create a persistent volume and persistent volume claim.
+   * @throws IOException
+   */
+  private void createPVandPVC() throws IOException {
     logger.info("creating persistent volume and persistent volume claim");
 
     Path pvHostPath = Files.createDirectories(Paths.get(
@@ -483,7 +507,7 @@ public class ItDomainOnPV implements LoggedTest {
             .persistentVolumeReclaimPolicy("Recycle")
             .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString()))) // the host path to use for pv
+                .path(pvHostPath.toString())))
         .metadata(new V1ObjectMetaBuilder()
             .withName(pvName)
             .withNamespace(domainNamespace)
@@ -525,8 +549,7 @@ public class ItDomainOnPV implements LoggedTest {
    */
   private static void installAndVerifyOperator() {
 
-    // Create a service account for the unique opNamespace
-    logger.info("Creating service account");
+    logger.info("Creating service account for operator");
     String serviceAccountName = opNamespace + "-sa";
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
         .metadata(new V1ObjectMeta()
@@ -534,18 +557,16 @@ public class ItDomainOnPV implements LoggedTest {
             .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
-    // get operator image name
     String operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
 
-    // Create docker registry secret in the operator namespace to pull the image from repository
     logger.info("Creating docker registry secret in namespace {0}", opNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
         REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
     dockerConfigJson = dockerConfigJsonObject.toString();
 
-    // Create the V1Secret configuration
+    logger.info("Creating the V1Secret configuration");
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
             .name(REPO_SECRET_NAME)
@@ -555,7 +576,8 @@ public class ItDomainOnPV implements LoggedTest {
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
+    assertTrue(secretCreated, String.format(
+        "createSecret failed while creating secret %s in namespace %s",
         REPO_SECRET_NAME, opNamespace));
 
     // map with secret
@@ -617,10 +639,7 @@ public class ItDomainOnPV implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-            String.format(
-                "pod %s is not ready in namespace %s", podName, domainNamespace)));
-
+        .until(podReady(podName, domainUid, domainNamespace));
   }
 
   /**
@@ -637,10 +656,7 @@ public class ItDomainOnPV implements LoggedTest {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
-            String.format(
-                "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
-
+        .until(serviceExists(serviceName, null, domainNamespace));
   }
 
 

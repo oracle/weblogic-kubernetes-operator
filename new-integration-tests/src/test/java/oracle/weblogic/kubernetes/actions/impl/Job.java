@@ -9,8 +9,15 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Job {
 
-  public static String createJob(V1Job jodBody) throws ApiException {
-    return Kubernetes.createJob(jodBody);
+  /**
+   * Create a job.
+   *
+   * @param jobBody V1Job object containing job configuration data
+   * @return String job name if job creation is successful
+   * @throws ApiException when create job fails
+   */
+  public static String createNamespacedJob(V1Job jobBody) throws ApiException {
+    return Kubernetes.createNamespacedJob(jobBody);
   }
 
 }
