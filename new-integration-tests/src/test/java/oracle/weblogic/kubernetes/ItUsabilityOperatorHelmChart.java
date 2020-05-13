@@ -30,6 +30,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
@@ -74,9 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItUsabilityOperatorHelmChart implements LoggedTest {
 
   // mii constants
-  private static final String WDT_MODEL_FILE = "model1-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
-  private static final String APP_NAME = "sample-app";
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -345,14 +345,14 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     final String image = imageName + ":" + imageTag;
 
     // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
 
-    // build an application archive using what is in resources/apps/APP_NAME
+    // build an application archive using what is in resources/apps/MII_BASIC_APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
-        .srcDir(APP_NAME)), String.format("Failed to create app archive for %s", APP_NAME));
+        .srcDir(MII_BASIC_APP_NAME)), String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
 
     // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
+    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME);
     final List<String> archiveList = Collections.singletonList(zipFile);
 
     // Set additional environment variables for WIT

@@ -52,7 +52,7 @@ This sample demonstrates two Model in Image use cases:
        - A WebLogic Administration Server
        - A WebLogic cluster
        - A reference to the web application
-   - Kubernetes secrets:
+   - Kubernetes Secrets:
      - WebLogic credentials
      - Required WDT runtime password
    - A domain resource with:
@@ -64,7 +64,7 @@ This sample demonstrates two Model in Image use cases:
 
    - Image `model-in-image:WLS-v1`:
      - Same image as Initial use case
-   - Kubernetes secrets:
+   - Kubernetes Secrets:
      - Same as Initial use case  plus secrets for data source credentials and URL
    - Kubernetes ConfigMap with:
      - A WDT model for a data source targeted to the cluster
@@ -124,7 +124,7 @@ Location | Description |
    {{< rawhtml >}}
    <a name="resume"></a>
    {{< /rawhtml >}}
-1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik Ingress controller is managing the same namespace and listening on port 30305.
+1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port 30305.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
@@ -132,9 +132,9 @@ Location | Description |
    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
    {{% /notice %}}
 
-1. Set up Ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains.
+1. Set up ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains.
 
-    - Option 1: To create the Ingresses, use the following YAML to create a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
+    - Option 1: To create the ingresses, use the following YAML to create a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
 
        ```
        apiVersion: extensions/v1beta1
@@ -214,7 +214,7 @@ Location | Description |
                  servicePort: 8001
        ```
 
-   - Option 2: Run `kubectl apply -f` on each of the Ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
+   - Option 2: Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
 
    ```
    $ cd /tmp/mii-sample/ingresses
@@ -225,9 +225,9 @@ Location | Description |
    $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
    ```
 
-   > **NOTE**: We give each cluster Ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the Ingress, you will need to supply a host name header that matches the host names in the Ingress.
+   > **NOTE**: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.
 
-   For more on information Ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
+   For more on information ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
 
 1. Obtain the WebLogic 12.2.1.4 image that is required to create the sample's model images.
 
@@ -1217,7 +1217,7 @@ If you see an error, then consult [Debugging]({{< relref "/userguide/managing-do
 
 #### Invoke the web application
 
-Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik Ingress controller's NodePort. Note: The web application will display a list of any data sources it finds, but we don't expect it to find any because the model doesn't contain any at this point.
+Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik ingress controller's NodePort. Note: The web application will display a list of any data sources it finds, but we don't expect it to find any because the model doesn't contain any at this point.
 
 Send a web application request to the load balancer:
 
@@ -1671,7 +1671,7 @@ Here are the steps:
 
 1. After your domain is running, you can call the sample web application to determine if the data source was deployed.
 
-   Send a web application request to the Ingress controller:
+   Send a web application request to the ingress controller:
 
    ```  
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
@@ -1736,7 +1736,7 @@ To remove the resources you have created in these samples:
 
    > **Note**: When you delete a domain, the operator should detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
 
-2. If you set up the Traefik Ingress controller:
+2. If you set up the Traefik ingress controller:
 
    ```
    $ helm delete --purge traefik-operator
