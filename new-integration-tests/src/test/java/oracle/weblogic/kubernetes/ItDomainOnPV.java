@@ -481,7 +481,7 @@ public class ItDomainOnPV implements LoggedTest {
                     .initContainers(Arrays.asList(new V1Container()
                         .name("fix-pvc-owner")
                         .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
-                        .addCommandItem("sh")
+                        .addCommandItem("/bin/sh")
                         .addArgsItem("chown -R 1000:1000 /shared")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
@@ -507,6 +507,7 @@ public class ItDomainOnPV implements LoggedTest {
                         .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
                         .addArgsItem("/u01/weblogic/create-domain.py")
                         .addArgsItem("-skipWLSModuleScanning")
+                        .addArgsItem("-loadProperties")
                         .addArgsItem("/u01/weblogic/domain.properties")))
                     .volumes(Arrays.asList(
                         new V1Volume()
@@ -636,6 +637,7 @@ public class ItDomainOnPV implements LoggedTest {
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
+            .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString()))) // the host path to use for pv
         .metadata(new V1ObjectMetaBuilder()
