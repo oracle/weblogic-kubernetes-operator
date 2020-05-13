@@ -128,6 +128,17 @@ public class TestAssertions {
     return Pod.podTerminating(namespace, domainUid, podName);
   }
 
+  /**
+   * Check if a pod completed running.
+   *
+   * @param namespace name of the namespace in which the pod exists
+   * @param podName name of the pod to check for its completion status
+   * @return true if completed false otherwise
+   */
+  public static Callable<Boolean> podCompleted(String podName, String namespace) {
+    return Pod.podCompleted(namespace, podName);
+  }
+
 
   /**
    * Check the pods in the given namespace are restarted in rolling fashion.

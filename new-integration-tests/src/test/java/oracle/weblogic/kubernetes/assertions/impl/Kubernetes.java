@@ -123,6 +123,35 @@ public class Kubernetes {
   }
 
   /**
+   * Check if a pod completed running.
+   *
+   * @param namespace name of the namespace in which the pod exists
+   * @param podName name of the pod to check for its completion status
+   * @return true if completed false otherwise
+   * @throws ApiException when querying pod condition fails
+   */
+  public static boolean podCompleted(String namespace, String podName) throws ApiException {
+    boolean status = false;
+
+    V1Pod pod = getPod(namespace, null, podName);
+    if (pod != null) {
+
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodCompletedCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "PodCompleted".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodCompletedCondition != null) {
+        status = v1PodCompletedCondition.getStatus().equalsIgnoreCase("true");
+      }
+    } else {
+      logger.info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
    * Checks if a pod exists in a given namespace and in Terminating state.
    *
    * @param namespace in which to check for the pod
@@ -379,5 +408,7 @@ public class Kubernetes {
   public static boolean adminServerReady(String domainUid, String namespace) {
     return true;
   }
+
+
 
 }

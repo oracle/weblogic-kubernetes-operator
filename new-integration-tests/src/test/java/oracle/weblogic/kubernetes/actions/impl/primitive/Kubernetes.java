@@ -1448,14 +1448,15 @@ public class Kubernetes implements LoggedTest {
 
   /**
    * Create a Kubernetes job.
+   *
    * @param job V1Job data
-   * @return true if job creation is successful
+   * @return String job name if job creation is successful
    * @throws ApiException when create job fails
    */
-  public static boolean createJob(V1Job job) throws ApiException {
+  public static String createJob(V1Job job) throws ApiException {
+    String name = null;
+    String namespace = job.getMetadata().getNamespace();
     try {
-      String namespace = job.getMetadata().getNamespace();
-      String name = job.getMetadata().getName();
       BatchV1Api apiInstance = new BatchV1Api(apiClient);
       V1Job createdJob = apiInstance.createNamespacedJob(
           namespace, // String | namespace in which to create job
@@ -1464,12 +1465,14 @@ public class Kubernetes implements LoggedTest {
           null, // String | dry run or permanent change
           null // String | field manager who is making the change
       );
+      name = createdJob.getMetadata().getName();
       logger.info("Submitted job {0}", name);
+      logger.info("Use the job name to query the job status");
     } catch (ApiException apex) {
       logger.warning(apex.getResponseBody());
       throw apex;
     }
-    return true;
+    return name;
   }
 
   /**

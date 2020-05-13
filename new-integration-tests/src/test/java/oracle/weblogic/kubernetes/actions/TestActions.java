@@ -294,7 +294,7 @@ public class TestActions {
    * @return true if job is created and succeeds false otherwise
    * @throws ApiException when job fails
    */
-  public static boolean createJob(V1Job jobBody) throws ApiException {
+  public static String createJob(V1Job jobBody) throws ApiException {
     return Job.createJob(jobBody);
   }
 

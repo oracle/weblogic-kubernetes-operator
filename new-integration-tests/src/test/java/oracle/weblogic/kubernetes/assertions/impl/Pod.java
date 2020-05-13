@@ -199,4 +199,17 @@ public class Pod {
     };
   }
 
+  /**
+   * Check if a pod completed running.
+   *
+   * @param namespace name of the namespace in which the pod exists
+   * @param podName name of the pod to check for its completion status
+   * @return true if completed false otherwise
+   */
+  public static Callable<Boolean> podCompleted(String namespace, String podName) {
+    return () -> {
+      return Kubernetes.podCompleted(namespace, podName);
+    };
+  }
+
 }

@@ -9,7 +9,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Job {
 
-  public static boolean createJob(V1Job jodBody) throws ApiException {
+  public static String createJob(V1Job jodBody) throws ApiException {
     return Kubernetes.createJob(jodBody);
   }
 

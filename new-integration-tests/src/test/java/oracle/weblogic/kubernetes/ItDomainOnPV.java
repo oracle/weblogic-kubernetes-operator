@@ -41,7 +41,6 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -95,6 +94,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -191,8 +191,8 @@ public class ItDomainOnPV implements LoggedTest {
             .namespace(domainNamespace))
         .spec(new DomainSpec() //spec
             .domainUid(domainUid)
-            .domainHomeSourceType("PersistentVolume")
             .domainHome("/shared/domains/" + domainUid)
+            .domainHomeSourceType("PersistentVolume")
             .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
             .imagePullPolicy("IfNotPresent")
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -211,7 +211,14 @@ public class ItDomainOnPV implements LoggedTest {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
             .adminServer(new AdminServer() //admin server
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -269,6 +276,246 @@ public class ItDomainOnPV implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i);
     }
   }
+
+  private void createDomainOnPV() throws IOException {
+
+    logger.info("create a staging location for domain creation scripts");
+    Path pvTemp = Paths.get(WORK_DIR, "ItDomainOnPV", "domainCreateTempPV");
+    FileUtils.deleteDirectory(pvTemp.toFile());
+    Files.createDirectories(pvTemp);
+
+    logger.info("copy the create domain wlst script to staging location");
+    Path wlstScriptOriginal = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+    Path wlstScript = Paths.get(pvTemp.toString(), "create-domain.py");
+    Files.copy(wlstScriptOriginal, wlstScript, StandardCopyOption.REPLACE_EXISTING);
+
+    logger.info("create WebLogic domain properties file");
+    Path domainPropertiesFile = Paths.get(pvTemp.toString(), "domain.properties");
+    assertDoesNotThrow(
+        () -> createDomainProperties(domainPropertiesFile), "Creating domain properties file failed");
+
+    logger.info("add files to a config map for domain creation job");
+    List<Path> domainScriptFiles = new ArrayList<>();
+    domainScriptFiles.add(wlstScript);
+    domainScriptFiles.add(domainPropertiesFile);
+
+    logger.info("Create a config map to hold domain creation scripts");
+    domainScriptConfigMapName = assertDoesNotThrow(
+        () -> createConfigMapForDomainCreation("domain-onpv-create-configmap", domainScriptFiles),
+        "Creating configmap for domain creation failed");
+
+    logger.info("run a Kubernetes job to create the domain.");
+    runCreateDomainJob();
+  }
+
+  private void createDomainProperties(Path wlstPropertiesFile) throws FileNotFoundException, IOException {
+    // create a list of properties for the WebLogic domain configuration
+    Properties p = new Properties();
+
+    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_name", domainUid);
+    p.setProperty("cluster_name", clusterName);
+    p.setProperty("admin_server_name", "pv-domain-adminserver");
+    p.setProperty("admin_server_name_svc", "pv-domain-adminserver");
+    p.setProperty("server_port", "8001");
+    p.setProperty("admin_port", "30802");
+    p.setProperty("admin_username", "system");
+    p.setProperty("admin_password", "gumby1234");
+    p.setProperty("t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("t3_channel_port", "7001");
+    p.setProperty("number_of_ms", "4");
+    p.setProperty("managed_server_name_base", "pv-domain-ms-");
+    p.setProperty("managed_server_name_base_svc", "");
+    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("production_mode_enabled", "true");
+
+    p.store(new FileOutputStream(wlstPropertiesFile.toFile()), "wlst properties file");
+  }
+
+  private String createConfigMapForDomainCreation(String configMapName, List<Path> files)
+      throws IOException, ApiException {
+
+    // add wlst domain creation python script and properties files
+    // to create domain to the configmap
+    Map<String, String> data = new HashMap<>();
+    for (Path file : files) {
+      data.put(file.getFileName().toString(), Files.readString(file));
+    }
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .name(configMapName)
+        .namespace(domainNamespace);
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(meta);
+
+    boolean cmCreated = assertDoesNotThrow(() -> TestActions.createConfigMap(configMap),
+        String.format("Failed to create configmap %s with files %s", configMapName, files));
+    assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
+
+    return configMapName;
+  }
+
+  private void runCreateDomainJob() {
+    // create a job with WebLogic container to create domain
+    // using WLST on persistent volume
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job")
+                .namespace(domainNamespace))
+        .spec(new V1JobSpec()
+            .template(new V1PodTemplateSpec()
+                .spec(new V1PodSpec()
+                    .restartPolicy("Never")
+                    .initContainers(Arrays.asList(new V1Container()
+                        .name("fix-pvc-owner")
+                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+                        .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
+                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name(pvName)
+                                .mountPath("/shared")))
+                        .securityContext(new V1SecurityContext()
+                            .runAsGroup(0L)
+                            .runAsUser(0L))))
+                    .containers(Arrays.asList(new V1Container()
+                        .name("create-weblogic-domain-onpv-container")
+                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+                        .imagePullPolicy("IfNotPresent")
+                        .ports(Arrays.asList(new V1ContainerPort()
+                            .containerPort(7001)))
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
+                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                            new V1VolumeMount()
+                                .name(pvName) // location to write domain
+                                .mountPath("/shared"))) // mounted under /shared inside pod
+                        .addCommandItem("/bin/sh") //call wlst.sh script with py and properties file
+                        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
+                        .addArgsItem("/u01/weblogic/create-domain.py")
+                        .addArgsItem("-skipWLSModuleScanning")
+                        .addArgsItem("-loadProperties")
+                        .addArgsItem("/u01/weblogic/domain.properties")))
+                    .volumes(Arrays.asList(
+                        new V1Volume()
+                            .name(pvName)
+                            .persistentVolumeClaim(
+                                new V1PersistentVolumeClaimVolumeSource()
+                                    .claimName(pvcName)),
+                        new V1Volume()
+                            .name("create-weblogic-domain-job-cm-volume")
+                            .configMap(
+                                new V1ConfigMapVolumeSource()
+                                    .name(domainScriptConfigMapName))))
+                    .imagePullSecrets(Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name("docker-store"))))));
+    String jobPodName = assertDoesNotThrow(() -> TestActions
+        .createJob(jobBody), "Creating domain job failed");
+
+    // check domain creation job is completed
+    logger.info("Check domain creation pod completed successfully {0}", domainNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for job pod to be completed in namespace {0} "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(podCompleted(jobPodName, domainNamespace));
+
+  }
+
+  private void createDockerSecret() {
+    // docker login, if necessary
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login");
+      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+    }
+
+    // Create the V1Secret configuration
+    V1Secret repoSecret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(REPO_SECRET_NAME)
+            .namespace(domainNamespace))
+        .type("kubernetes.io/dockerconfigjson")
+        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
+  }
+
+  private void createWebLogicCredentialsSecret() {
+    logger.info("Create secret for admin credentials");
+    wlSecretName = "weblogic-credentials";
+    Map<String, String> adminSecretMap = new HashMap<>();
+    adminSecretMap.put("username", "weblogic");
+    adminSecretMap.put("password", "welcome1");
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(wlSecretName)
+            .namespace(domainNamespace))
+        .stringData(adminSecretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", wlSecretName));
+  }
+
+  private void createDomainPVandPVC() throws IOException {
+    logger.info("creating persistent volume and persistent volume claim");
+
+    Path pvHostPath = Files.createDirectories(Paths.get(
+        TestConstants.PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume"));
+    logger.info("Creating PV directory {0}", pvHostPath);
+    FileUtils.deleteDirectory(pvHostPath.toFile());
+    Files.createDirectories(pvHostPath);
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("5Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .accessModes(Arrays.asList("ReadWriteMany"))
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString()))) // the host path to use for pv
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvName)
+            .withNamespace(domainNamespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+    boolean success = assertDoesNotThrow(
+        () -> TestActions.createPersistentVolume(v1pv),
+        "Persistent volume creation failed, "
+        + "look at the above console log messages for failure reason in ApiException responsebody"
+    );
+    assertTrue(success, "PersistentVolume creation failed");
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeName(pvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvcName)
+            .withNamespace(domainNamespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+
+    success = assertDoesNotThrow(
+        () -> TestActions.createPersistentVolumeClaim(v1pvc),
+        "Persistent volume claim creation failed, "
+        + "look at the above console log messages for failure reason in ApiException responsebody"
+    );
+    assertTrue(success, "PersistentVolumeClaim creation failed");
+  }
+
 
   /**
    * Install WebLogic operator and wait until the operator pod is ready.
@@ -393,288 +640,5 @@ public class ItDomainOnPV implements LoggedTest {
 
   }
 
-  private void createDomainOnPV() throws IOException {
-
-    logger.info("create a staging location for domain creation scripts");
-    Path pvTemp = Paths.get(WORK_DIR, "ItDomainOnPV", "domainCreateTempPV");
-    FileUtils.deleteDirectory(pvTemp.toFile());
-    Files.createDirectories(pvTemp);
-
-    logger.info("copy the create domain wlst script to staging location");
-    Path wlstScriptOriginal = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
-    Path wlstScript = Paths.get(pvTemp.toString(), "create-domain.py");
-    Files.copy(wlstScriptOriginal, wlstScript, StandardCopyOption.REPLACE_EXISTING);
-
-    logger.info("create WebLogic domain properties file");
-    Path domainPropertiesFile = Paths.get(pvTemp.toString(), "domain.properties");
-    assertDoesNotThrow(
-        () -> createDomainProperties(domainPropertiesFile), "Creating domain properties file failed");
-
-    logger.info("add files to a config map for domain creation job");
-    List<Path> domainScriptFiles = new ArrayList<>();
-    domainScriptFiles.add(wlstScript);
-    domainScriptFiles.add(domainPropertiesFile);
-
-    domainScriptConfigMapName = assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation("domain-onpv-create-configmap", domainScriptFiles),
-        "Creating configmap for domain creation failed");
-
-    logger.info("run a Kubernetes job to create the domain.");
-    runCreateDomainJob();
-  }
-
-  private void createDomainProperties(Path wlstPropertiesFile) throws FileNotFoundException, IOException {
-    Properties p = new Properties();
-
-    p.setProperty("domain_path", "/shared/domains");
-    p.setProperty("domain_name", domainUid);
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("admin_server_name", "pv-domain-adminserver");
-    p.setProperty("admin_server_name_svc", "pv-domain-adminserver");
-    p.setProperty("server_port", "8001");
-    p.setProperty("admin_port", "30802");
-    p.setProperty("admin_username", "system");
-    p.setProperty("admin_password", "gumby1234");
-    p.setProperty("t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("t3_channel_port", "7001");
-    p.setProperty("number_of_ms", "4");
-    p.setProperty("managed_server_name_base", "pv-domain-ms-");
-    p.setProperty("managed_server_name_base_svc", "");
-    p.setProperty("domain_logs", "/shared/logs");
-    p.setProperty("production_mode_enabled", "true");
-
-    p.store(new FileOutputStream(wlstPropertiesFile.toFile()), "wlst properties file");
-  }
-
-  private String createConfigMapForDomainCreation(String configMapName, List<Path> files)
-      throws IOException, ApiException {
-
-    // add wlst domain creation python script and properties files
-    // to create domain to the configmap
-    Map<String, String> data = new HashMap<>();
-    for (Path file : files) {
-      data.put(file.getFileName().toString(), Files.readString(file));
-    }
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .name(configMapName)
-        .namespace(domainNamespace);
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(meta);
-
-    boolean cmCreated = assertDoesNotThrow(() -> TestActions.createConfigMap(configMap),
-        String.format("Failed to create configmap %s with files %s", configMapName, files));
-    assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
-
-    return configMapName;
-  }
-
-  private void runCreateDomainJob() {
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("create-domain-onpv-job")
-                .namespace(domainNamespace))
-        .spec(new V1JobSpec()
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner")
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
-                    .containers(Arrays.asList(new V1Container()
-                        .name("create-weblogic-domain-onpv-container")
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
-                        .imagePullPolicy("IfNotPresent")
-                        .ports(Arrays.asList(new V1ContainerPort()
-                            .containerPort(7001)))
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
-                            new V1VolumeMount()
-                                .name(pvName) // location to write domain
-                                .mountPath("/shared"))) // mounted under /shared inside pod
-                        .addCommandItem("/bin/sh") //call wlst.sh script with py and properties file
-                        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
-                        .addArgsItem("/u01/weblogic/create-domain.py")
-                        .addArgsItem("-skipWLSModuleScanning")
-                        .addArgsItem("-loadProperties")
-                        .addArgsItem("/u01/weblogic/domain.properties")))
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName)),
-                        new V1Volume()
-                            .name("create-weblogic-domain-job-cm-volume")
-                            .configMap(
-                                new V1ConfigMapVolumeSource()
-                                    .name(domainScriptConfigMapName))))
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name("docker-store"))))));
-    assertDoesNotThrow(() -> TestActions.createJob(jobBody), "Creating domain job failed");
-  }
-
-  private void runCreateDomainJobOld(String domainPVName, String domainPVCName, String domainScriptPVName) {
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("create domain")
-                .namespace("create-domain-job-ns"))
-        .spec(new V1JobSpec()
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner")
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
-                        .addCommandItem("sh")
-                        .addArgsItem("chown -R 1000:1000 /shared")
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name("weblogic-sample-domain-storage-volume")
-                                // mount the persistent volume to /shared inside the pod
-                                .mountPath("/shared")))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
-                    .containers(Arrays.asList(new V1Container()
-                        .name("create-weblogic-sample-domain-job")
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
-                        .imagePullPolicy("IfNotPresent")
-                        .ports(Arrays.asList(new V1ContainerPort()
-                            .containerPort(7001)))
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .mountPath("/u01/weblogic")
-                                .name("create-weblogic-sample-domain-job-cm-volume"),
-                            new V1VolumeMount()
-                                .mountPath("/shared")
-                                .name("weblogic-sample-domain-storage-volume"),
-                            new V1VolumeMount()
-                                .mountPath("/weblogic-operator/secrets")
-                                .name("weblogic-credentials-volume")))
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("/u01/weblogic/create-domain-job.sh")))
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name("create-weblogic-sample-domain-job-cm-volume")
-                            .configMap(
-                                new V1ConfigMapVolumeSource()
-                                    .name("itoperator-domain-2-create-weblogic-sample-domain-job-cm")),
-                        new V1Volume()
-                            .name("weblogic-sample-domain-storage-volume")
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName("itoperator-domain-2-weblogic-sample-pvc")),
-                        new V1Volume()
-                            .name("weblogic-credentials-volume")
-                            .secret(new V1SecretVolumeSource()
-                                .secretName("itoperator-domain-2-weblogic-credentials"))))
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name("docker-store"))))));
-    assertDoesNotThrow(() -> TestActions.createJob(jobBody), "Creating domain failed");
-  }
-
-  private void createDockerSecret() {
-    // docker login, if necessary
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-    }
-
-    // Create the V1Secret configuration
-    V1Secret repoSecret = new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
-            .namespace(domainNamespace))
-        .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
-
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
-  }
-
-  private void createWebLogicCredentialsSecret() {
-    logger.info("Create secret for admin credentials");
-    wlSecretName = "weblogic-credentials";
-    Map<String, String> adminSecretMap = new HashMap<>();
-    adminSecretMap.put("username", "weblogic");
-    adminSecretMap.put("password", "welcome1");
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(wlSecretName)
-            .namespace(domainNamespace))
-        .stringData(adminSecretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s", wlSecretName));
-  }
-
-  private void createDomainPVandPVC() throws IOException {
-    logger.info("creating persistent volume and persistent volume claim");
-
-    Path pvHostPath = Files.createDirectories(Paths.get(
-        TestConstants.PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume"));
-    logger.info("Creating PV directory {0}", pvHostPath);
-    FileUtils.deleteDirectory(pvHostPath.toFile());
-    Files.createDirectories(pvHostPath);
-    V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(new V1PersistentVolumeSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUid + "-weblogic-domain-storage-class")
-            .volumeMode("Filesystem")
-            .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
-            .accessModes(Arrays.asList("ReadWriteMany"))
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString()))) // the host path to use for pv
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(pvName)
-            .withNamespace(domainNamespace)
-            .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUid", domainUid));
-    boolean success = assertDoesNotThrow(
-        () -> TestActions.createPersistentVolume(v1pv),
-        "Persistent volume creation failed, "
-        + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
-    assertTrue(success, "PersistentVolume creation failed");
-
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(new V1PersistentVolumeClaimSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName(domainUid + "-weblogic-domain-storage-class")
-            .volumeName(pvName)
-            .resources(new V1ResourceRequirements()
-                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(pvcName)
-            .withNamespace(domainNamespace)
-            .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
-            .putLabelsItem("weblogic.domainUid", domainUid));
-
-    success = assertDoesNotThrow(
-        () -> TestActions.createPersistentVolumeClaim(v1pvc),
-        "Persistent volume claim creation failed, "
-        + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
-    assertTrue(success, "PersistentVolumeClaim creation failed");
-  }
 
 }
