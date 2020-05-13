@@ -15,7 +15,7 @@ the desired certificates.
 
 The operator _requires_ a restart in order to begin using the new or updated external
 certificate. The Helm `--recreate-pods` flag is used to cause the existing
-Kubernetes pod to be terminated and a new pod to be started with the updated configuration.
+Kubernetes Pod to be terminated and a new pod to be started with the updated configuration.
 
 For example, if the operator was installed with the Helm release name `weblogic-operator`
 in the namespace `weblogic-operator-ns` and the Kubernetes `tls secret` is named

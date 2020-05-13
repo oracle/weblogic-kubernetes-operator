@@ -9,7 +9,7 @@ If you are running your Kubernetes cluster on Oracle Container Engine
 for Kubernetes (commonly known as OKE), you can have OCI automatically
 provision load balancers for you by creating a `Service` of type
 `LoadBalancer` instead of (or in addition to) installing an
-Ingress controller like Traefik or Voyager.
+ingress controller like Traefik or Voyager.
 
 OKE Kubernetes worker nodes typically do not have public IP addresses.
 This means that the `NodePort` services created by the operator are
@@ -20,8 +20,8 @@ to services running in OKE.
 
 {{% notice note %}}
 It is also possible, if desirable, to have an OCI load balancer route
-traffic to an Ingress controller running inside the Kubernetes cluster
-and have that Ingress controller in turn route traffic to services in the
+traffic to an ingress controller running inside the Kubernetes cluster
+and have that ingress controller in turn route traffic to services in the
 cluster.
 {{% /notice %}}
 
