@@ -229,7 +229,8 @@ public class ItDomainOnPV implements LoggedTest {
                         .channelName("default")
                         .nodePort(37001))
                     .addChannelsItem(new Channel()
-                        .channelName("T3Channel"))))
+                        .channelName("T3Channel")
+                        .nodePort(30901))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(2)
@@ -323,7 +324,7 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("admin_username", "system");
     p.setProperty("admin_password", "gumby1234");
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", "39001");
+    p.setProperty("admin_t3_channel_port", "30901");
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", managedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
