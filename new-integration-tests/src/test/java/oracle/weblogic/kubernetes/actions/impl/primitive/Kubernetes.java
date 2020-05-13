@@ -16,9 +16,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
@@ -79,7 +76,6 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 
-import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.with;
@@ -1470,6 +1466,7 @@ public class Kubernetes implements LoggedTest {
           null // String | field manager who is making the change
       );
       name = createdJob.getMetadata().getName();
+      /*
       logger.info("Submitted job {0}, details below", name);
       logger.info(dump(createdJob));
       for (int i = 0; i < 6; i++) {
@@ -1482,6 +1479,7 @@ public class Kubernetes implements LoggedTest {
           Logger.getLogger(Kubernetes.class.getName()).log(Level.SEVERE, null, ex);
         }
       }
+      */
     } catch (ApiException apex) {
       logger.warning(apex.getResponseBody());
       throw apex;

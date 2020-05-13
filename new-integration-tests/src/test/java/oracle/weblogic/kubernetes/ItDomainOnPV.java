@@ -134,6 +134,9 @@ public class ItDomainOnPV implements LoggedTest {
   String wlSecretName;
   String domainScriptConfigMapName;
 
+  final String adminServerPodName = domainUid + "-admin-server";
+  String managedServerPrefix = domainUid + "-" + managedServerNameBase;
+
   /**
    * Install operator.
    *
@@ -167,8 +170,7 @@ public class ItDomainOnPV implements LoggedTest {
   @MustNotRunInParallel
   public void testDomainOnPvUsingWlst() throws IOException {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-admin-server";
-    String managedServerPrefix = domainUid + "-" + managedServerNameBase;
+    ;
 
     // login to docker-registry and create pull secrets
     createDockerSecret();
@@ -315,7 +317,7 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("domain_path", "/shared/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
-    p.setProperty("admin_server_name", "pv-domain-adminserver");
+    p.setProperty("admin_server_name", adminServerPodName);
     p.setProperty("admin_server_name_svc", "pv-domain-adminserver");
     p.setProperty("server_port", "8001");
     p.setProperty("admin_port", "30802");
