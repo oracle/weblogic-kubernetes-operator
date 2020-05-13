@@ -452,7 +452,7 @@ public class ItDomainOnPV implements LoggedTest {
     // to create domain to the configmap
     Map<String, byte[]> data = new HashMap<>();
     for (Path file : files) {
-      data.put(file.toString(), Files.readAllBytes(file));
+      data.put(file.getFileName().toString(), Files.readAllBytes(file));
     }
     V1ObjectMeta meta = new V1ObjectMeta()
         .name(configMapName)
