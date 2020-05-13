@@ -479,12 +479,12 @@ public class Kubernetes {
             v1JobCondition -> "Complete".equals(v1JobCondition.getType()))
             .findAny()
             .orElse(null);
-        logger.info(dump(job.getStatus()));
+        logger.info("\n" + dump(job.getStatus()));
         if (jobCondition != null) {
           completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
         }
       } else {
-        logger.info(dump(job.getStatus()));
+        logger.info("\n" + dump(job.getStatus()));
       }
     } else {
       logger.warning("Job doesn't exist");

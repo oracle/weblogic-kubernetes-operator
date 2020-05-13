@@ -227,10 +227,11 @@ public class ItDomainOnPV implements LoggedTest {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0)))
+                        .nodePort(30445)))
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
-                        .channelName("T3Channel"))))
+                        .channelName("T3Channel")
+                    .nodePort(30555))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(2)
@@ -257,7 +258,7 @@ public class ItDomainOnPV implements LoggedTest {
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
     // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+    logger.info("Waiting for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName);
 
@@ -432,7 +433,6 @@ public class ItDomainOnPV implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(jobCompleted(jobName, null, domainNamespace));
-
   }
 
   private void createDockerSecret() {
