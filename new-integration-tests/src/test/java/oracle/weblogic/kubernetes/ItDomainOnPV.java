@@ -366,7 +366,7 @@ public class ItDomainOnPV implements LoggedTest {
                 .name("create-domain-onpv-job")
                 .namespace(domainNamespace))
         .spec(new V1JobSpec()
-            .backoffLimit(1)
+            .backoffLimit(0)
             .completions(1)
             .parallelism(1)
             .template(new V1PodTemplateSpec()
