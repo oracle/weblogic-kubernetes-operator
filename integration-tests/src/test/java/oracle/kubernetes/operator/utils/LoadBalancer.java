@@ -138,7 +138,7 @@ public class LoadBalancer {
     LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
     String traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
     final String m1 = TestUtils.getCreationTimeStamp("traefik",traefikPod);
-    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod before upgrade:" + m1 );
+    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod before upgrade:" + m1);
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" traefik-operator")
        .append(" stable/traefik ")
@@ -175,7 +175,7 @@ public class LoadBalancer {
     }
     traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
     String m2 = TestUtils.getCreationTimeStamp("traefik",traefikPod);
-    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod after upgrade:" + m2 );
+    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod after upgrade:" + m2);
     Assertions.assertNotEquals(m2, m1, "creation pod time did not change, pod was not upgraded");
     TestUtils.checkPodReadyAndRunning(traefikPod, "traefik");
   }
@@ -285,7 +285,7 @@ public class LoadBalancer {
     String vversion = BaseTest.VOYAGER_VERSION;
     String voyagerPod = TestUtils.getPodName(" -l app=voyager ", "voyager");
     final String m1 = TestUtils.getCreationTimeStamp("voyager", voyagerPod);
-    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod before upgrade:" + m1 );
+    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod before upgrade:" + m1);
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" voyager-operator")
         .append(" appscode/voyager ")
@@ -346,7 +346,7 @@ public class LoadBalancer {
     }
     voyagerPod = TestUtils.getPodName(" -l app=voyager ", "voyager");
     String m2 = TestUtils.getCreationTimeStamp("voyager", voyagerPod);
-    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod after upgrade:" + m2 );
+    LoggerHelper.getLocal().log(Level.INFO, "Creation Time Stamp for LoadBalancer pod after upgrade:" + m2);
     Assertions.assertNotEquals(m2, m1, "creation pod time did not change, pod was not upgraded");
     TestUtils.checkPodReadyAndRunning(voyagerPod, "voyager");
   }
