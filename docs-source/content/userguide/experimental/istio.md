@@ -31,7 +31,7 @@ The current experimental support for Istio has these limitations:
 
 {{% notice note %}}
 These instructions assume that you are using a Kubernetes cluster with
-Istio installed and configured already.  The operator will not install
+[Istio](https://istio.io) installed and configured already.  The operator will not install
 Istio for you.
 {{% /notice %}}
 
