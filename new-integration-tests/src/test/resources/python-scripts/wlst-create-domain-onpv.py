@@ -7,7 +7,7 @@ script_name = 'wlst-create-domain-onpv.py'
 
 def usage():
   print 'Call script as: '
-  print 'wlst.sh ' + scriptName + ' -skipWLSModuleScanning -loadProperties domain.properties'
+  print 'wlst.sh ' + script_name + ' -skipWLSModuleScanning -loadProperties domain.properties'
   
 def create_domain():
   # Open default domain template

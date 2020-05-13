@@ -436,6 +436,7 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("admin_username", "system");
     p.setProperty("admin_password", "gumby1234");
     p.setProperty("t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("t3_channel_port", "7001");
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", "pv-domain-ms-");
     p.setProperty("managed_server_name_base_svc", "");
