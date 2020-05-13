@@ -53,12 +53,12 @@ def create_domain():
   cmo.setListenPort(int(managed_server_port))
   cmo.setCluster(cl)
 
-  template_channel_name = cluster_name + "-NAP"
+  template_channel_name = "cluster-nap"
   print('Creating server template NAP: %s' % cluster_name + "-NAP")
   create(template_channel_name, 'NetworkAccessPoint')
   cd('NetworkAccessPoints/%s' % template_channel_name)
-  set('PublicPort', int(managed_server_port))
-  set('ListenPort', int(managed_server_port))
+  set('PublicPort', int(managed_server_port) + 10)
+  set('ListenPort', int(managed_server_port) + 10)
   print('Done creating server template NAP: %s' % cluster_name + "-NAP")
   print('Done setting attributes for server template: %s' % template_name);
 
