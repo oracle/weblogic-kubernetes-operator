@@ -453,8 +453,8 @@ public class ItDomainOnPV implements LoggedTest {
     logger.info("Create secret for admin credentials");
     wlSecretName = "weblogic-credentials";
     Map<String, String> adminSecretMap = new HashMap<>();
-    adminSecretMap.put("username", "weblogic");
-    adminSecretMap.put("password", "welcome1");
+    adminSecretMap.put("username", "system");
+    adminSecretMap.put("password", "gumby1234");
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
         .metadata(new V1ObjectMeta()
             .name(wlSecretName)

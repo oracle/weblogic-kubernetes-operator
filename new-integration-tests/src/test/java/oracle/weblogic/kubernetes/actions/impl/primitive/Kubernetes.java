@@ -1474,11 +1474,13 @@ public class Kubernetes implements LoggedTest {
       logger.info("Use the job name to query the job status");
       for (int i = 0; i < 12; i++) {
         V1PodList listPods = listPods(namespace, null);
+        logger.info(dump(listPods));
         for (V1Pod pod : listPods.getItems()) {
           if (pod.getMetadata().getName().equals(name)) {
             logger.info(dump(pod.getStatus().getConditions()));
           }
         }
+        logger.info("Sleeping for 10 seconds");
         try {
           TimeUnit.SECONDS.sleep(10);
         } catch (InterruptedException ex) {
