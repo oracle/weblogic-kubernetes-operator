@@ -426,7 +426,7 @@ public class ItDomainOnPV implements LoggedTest {
   private void createDomainProperties(Path wlstPropertiesFile) throws FileNotFoundException, IOException {
     Properties p = new Properties();
 
-    p.setProperty("domain_path", "/shared/domains/" + domainUid);
+    p.setProperty("domain_path", "/shared/domains");
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", "pv-domain-adminserver");
