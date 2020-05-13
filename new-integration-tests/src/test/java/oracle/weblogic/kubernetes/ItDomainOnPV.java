@@ -231,7 +231,7 @@ public class ItDomainOnPV implements LoggedTest {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel"))))
             .addClustersItem(new Cluster() //cluster
-                .clusterName("pv-domain-cluster")
+                .clusterName(clusterName)
                 .replicas(2)
                 .serverStartState("RUNNING")));
 
@@ -421,12 +421,12 @@ public class ItDomainOnPV implements LoggedTest {
     String jobName = assertDoesNotThrow(() -> TestActions
         .createJob(jobBody), "Creating domain job failed");
 
-    // check domain creation job is completed
-    logger.info("Check domain creation pod completed successfully {0}", domainNamespace);
+    logger.info("Check domain creation job {0} completed in namespace {1}", jobName, domainNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job pod to be completed in namespace {0} "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
+            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+                + "(elapsed time {2} ms, remaining time {3} ms)",
+                jobName,
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))

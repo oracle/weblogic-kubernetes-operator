@@ -473,14 +473,18 @@ public class Kubernetes {
     boolean completionStatus = false;
 
     V1Job job = getJob(namespace, labelSelectors, jobName);
-    if (job != null && job.getStatus().getConditions() != null) {
-      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Complete".equals(v1JobCondition.getType()))
-          .findAny()
-          .orElse(null);
-      logger.info(dump(job.getStatus()));
-      if (jobCondition != null) {
-        completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
+    if (job != null && job.getStatus() != null) {
+      if (job.getStatus().getConditions() != null) {
+        V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+            v1JobCondition -> "Complete".equals(v1JobCondition.getType()))
+            .findAny()
+            .orElse(null);
+        logger.info(dump(job.getStatus()));
+        if (jobCondition != null) {
+          completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
+        }
+      } else {
+        logger.info(dump(job.getStatus()));
       }
     } else {
       logger.warning("Job doesn't exist");
