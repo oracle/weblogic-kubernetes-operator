@@ -807,7 +807,8 @@ public class Domain {
       LoggerHelper.getLocal().log(Level.INFO, "Curl cmd with response code " + curlCmdResCode);
       LoggerHelper.getLocal().log(Level.INFO, "Curl cmd " + curlCmd);
       //check helm status
-      TestUtils.checkHelmChart(getLoadBalancerName()+"-operator", getLoadBalancerName().toLowerCase());
+      String lbName = getLoadBalancerName().toLowerCase();
+      TestUtils.checkHelmChart(lbName + "-operator", lbName);
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
 
