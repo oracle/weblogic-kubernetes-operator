@@ -43,6 +43,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -109,14 +110,67 @@ class ItMiiAddCluster implements LoggedTest {
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String dockerConfigJson = "";
 
-  private String domainUid = "miiaddcluster";
+  private static int replicaCount = 2;
+  private static String domainUid = "miiaddcluster";
+
   private StringBuffer checkCluster = null;
   private V1Patch patch = null;
 
   private static Map<String, Object> secretNameMap;
 
+  private final String adminServerPodName = domainUid + "-admin-server";
+  private final String managedServerPrefix = domainUid + "-managed-server";
+
+  /**
+   * Verify all server pods are running.
+   * Verify all k8s services for all servers are created.
+   */
+  @BeforeEach
+  public void beforeEach() {
+
+    // check admin server pod exists
+    logger.info("Check for admin server pod {0} existence in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server pods exist
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check for managed server pod {0} existence in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    logger.info("Check admin server status by calling read state command");
+    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceCreated(adminServerPodName, domainNamespace);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceCreated(managedServerPrefix + i, domainNamespace);
+    }
+
+  }
+
   /**
    * Install Operator.
+   * Create domain resource defintion.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    JUnit engine parameter resolution mechanism
    */
@@ -214,26 +268,6 @@ class ItMiiAddCluster implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(operatorIsReady(opNamespace));
-  }
-
-  /**
-   * Start a WebLogic domain without any pre-defined ConfigMap.
-   * Create a ConfigMap with a sparse model file to add a dynamic cluster.
-   * Patch the domain resource with the ConfigMap.
-   * Patch the domain resource with the spec/replicas set to 1
-   * Update the restart version of the domain resource to 2
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart.
-   * Verify servers from the newly added cluster are in running state.
-   */
-  @Test
-  @Order(1)
-  @DisplayName("Add a dynamic cluster to model in image domain")
-  @Slow
-  @MustNotRunInParallel
-  public void testAddMiiDynamicCluster() {
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = 2;
 
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
@@ -252,6 +286,41 @@ class ItMiiAddCluster implements LoggedTest {
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
             "weblogicenc", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
+    // create the domain CR with no configmap
+    createDomainResource(domainUid, domainNamespace, adminSecretName,
+        REPO_SECRET_NAME, encryptionSecretName,
+        replicaCount);
+
+    // wait for the domain to exist
+    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUid,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+  }
+
+  /**
+   * Create a configmap with a sparse model file to add a dynamic cluster.
+   * Patch the domain resource with the configmap.
+   * Patch the domain resource with the spec/replicas set to 1
+   * Update the restart version of the domain resource to 2
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart.
+   * Verify servers from new cluster are in running state.
+   */
+  @Test
+  @Order(1)
+  @DisplayName("Add a dynamic cluster to model in image domain")
+  @Slow
+  @MustNotRunInParallel
+  public void testAddMiiDynamicCluster() {
+
+    // This test uses the WebLogic domain created beforeEach method
+    // beforeEach method make sure the server pods are running
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -276,61 +345,6 @@ class ItMiiAddCluster implements LoggedTest {
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
-    // create the domain CR with no configmap
-    createDomainResource(domainUid, domainNamespace, adminSecretName,
-        REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount);
-
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
-
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    logger.info("Check admin server status by calling read state command");
-    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i, domainNamespace);
-    }
-
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
@@ -385,6 +399,7 @@ class ItMiiAddCluster implements LoggedTest {
     }
     // Verify a rolling restart is triggered in a sequential fashion 
     // admin-server --> managed-server1 --> managed-server2 
+    // ToDo need a better Assertion to verify rolling restart
     logger.info("Check admin server pod {0} to be restarted in ns {1}",
         adminServerPodName, domainNamespace);
     checkPodCreated(adminServerPodName, domainUid, domainNamespace);
@@ -415,15 +430,15 @@ class ItMiiAddCluster implements LoggedTest {
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
-    try {
-      checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/dynamic-server1")
           .append(" --silent --show-error ")
           .append(" -o /dev/null")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkCluster));
+    logger.info("curl command {0}", new String(checkCluster));
+    try {
       result = exec(new String(checkCluster), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
@@ -437,13 +452,12 @@ class ItMiiAddCluster implements LoggedTest {
   }
 
   /**
-   * Start a WebLogic domain without any pre-defined configmap.
    * Create a configmap with a sparse model file to add a configured cluster.
-   * Patch the domain resource with the ConfigMap.
+   * Patch the domain resource with the configmap.
    * Update the restart version of the domain resource to 3
    * Patch the domain resource with the spec/replicas set to 1
    * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart.
-   * Verify servers from the newly added cluster are in running state.
+   * Verify servers from new cluster are in running state.
    */
   @Test
   @Order(2)
@@ -451,11 +465,9 @@ class ItMiiAddCluster implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testAddMiiConfiguredCluster() {
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = 2;
  
-    // This test uses the WebLogic domain created by previous test
+    // This test uses the WebLogic domain created beforeEach method
+    // beforeEach method make sure the server pods are running
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -480,44 +492,6 @@ class ItMiiAddCluster implements LoggedTest {
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    logger.info("Check admin server status by calling read state command");
-    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i, domainNamespace);
-    }
-
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
@@ -572,6 +546,7 @@ class ItMiiAddCluster implements LoggedTest {
     }
     // Verify a rolling restart is triggered in a sequential fashion 
     // admin-server --> managed-server1 --> managed-server2 
+    // ToDo need a better Assertion to verify rolling restart
     logger.info("Check admin server pod {0} to be restarted in ns {1}",
         adminServerPodName, domainNamespace);
     checkPodCreated(adminServerPodName, domainUid, domainNamespace);
@@ -603,15 +578,15 @@ class ItMiiAddCluster implements LoggedTest {
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
-    try {
-      checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/config-server1")
           .append(" --silent --show-error ")
           .append(" -o /dev/null")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkCluster));
+    logger.info("curl command {0}", new String(checkCluster));
+    try {
       result = exec(new String(checkCluster), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
@@ -625,12 +600,11 @@ class ItMiiAddCluster implements LoggedTest {
   }
 
   /**
-   * Create a configmap with a sparse model file to add a cluster.
-   * Patch the domain resource with the configmap.
+   * Patch the domain resource with the configmap to add a cluster.
    * Update the restart version of the domain resource to 4
    * Update the spec level replica count to zero(default) value
    * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart.
-   * Verify servers from the newly added cluster are not in running state.
+   * Verify servers from new cluster are not in running state.
    */
   @Test
   @Order(3)
@@ -638,11 +612,9 @@ class ItMiiAddCluster implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testAddMiiClusteriWithNoReplica() {
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = 2;
- 
-    // This test uses the WebLogic domain created by previous test
+
+    // This test uses the WebLogic domain created beforeEach method
+    // beforeEach method make sure the server pods are running
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -667,44 +639,6 @@ class ItMiiAddCluster implements LoggedTest {
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    logger.info("Check admin server status by calling read state command");
-    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i, domainNamespace);
-    }
-
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
@@ -759,6 +693,7 @@ class ItMiiAddCluster implements LoggedTest {
     }
     // Verify a rolling restart is triggered in a sequential fashion 
     // admin-server --> managed-server1 --> managed-server2 
+    // ToDo need a better Assertion to verify rolling restart
     logger.info("Check admin server pod {0} to be restarted in ns {1}",
         adminServerPodName, domainNamespace);
     checkPodCreated(adminServerPodName, domainUid, domainNamespace);
@@ -788,15 +723,15 @@ class ItMiiAddCluster implements LoggedTest {
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
-    try {
-      checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/config-server1")
           .append(" --silent --show-error ")
           .append(" -o /dev/null")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkCluster));
+    logger.info("curl command {0}", new String(checkCluster));
+    try {
       result = exec(new String(checkCluster), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
@@ -820,7 +755,7 @@ class ItMiiAddCluster implements LoggedTest {
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
   }
 
-  private void createRepoSecret(String domNamespace) throws ApiException {
+  private static void createRepoSecret(String domNamespace) throws ApiException {
     V1Secret repoSecret = new V1Secret()
             .metadata(new V1ObjectMeta()
                     .name(REPO_SECRET_NAME)
@@ -848,7 +783,7 @@ class ItMiiAddCluster implements LoggedTest {
             REPO_SECRET_NAME, domNamespace));
   }
 
-  private void createDomainSecret(String secretName, String username, String password, String domNamespace)
+  private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
           throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
@@ -862,7 +797,7 @@ class ItMiiAddCluster implements LoggedTest {
 
   }
 
-  private void createDomainResource(
+  private static void  createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, 
       int replicaCount) {

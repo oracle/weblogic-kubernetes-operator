@@ -370,6 +370,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     }
     // Verify a rolling restart is triggered in a sequential fashion 
     // admin-server --> managed-server1 --> managed-server2 
+    // ToDo need a better Assertion to verify rolling restart
     logger.info("Check admin server pod {0} to be restarted in ns {1}",
         adminServerPodName, domainNamespace);
     checkPodCreated(adminServerPodName, domainUid, domainNamespace);
@@ -393,15 +394,15 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
-    try {
-      checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/wls/latest/datasources/id/TestDataSource/")
           .append(" --silent --show-error ")
           .append(" -o /dev/null")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkJdbc));
+    logger.info("curl command {0}", new String(checkJdbc));
+    try {
       result = exec(new String(checkJdbc), true);
     } catch (Exception ex) {
       logger.info("Caught unexpected exception {0}", ex);
