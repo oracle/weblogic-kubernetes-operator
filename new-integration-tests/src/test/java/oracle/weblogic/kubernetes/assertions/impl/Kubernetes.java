@@ -474,17 +474,22 @@ public class Kubernetes {
 
     V1Job job = getJob(namespace, labelSelectors, jobName);
     if (job != null && job.getStatus() != null) {
+      logger.info("\n" + dump(job.getStatus()));
       if (job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-            v1JobCondition -> "Complete".equals(v1JobCondition.getType()))
+            v1JobCondition
+              -> "Complete".equalsIgnoreCase(v1JobCondition.getType())
+                  || "Failed".equalsIgnoreCase(v1JobCondition.getType()))
             .findAny()
             .orElse(null);
-        logger.info("\n" + dump(job.getStatus()));
         if (jobCondition != null) {
           completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
+          if (jobCondition.getType().equalsIgnoreCase("failed")) {
+            logger.severe("Job {0} failed", jobName);
+          } else if (jobCondition.getType().equalsIgnoreCase("complete")) {
+            logger.severe("Job {0} completed successfully ", jobName);
+          }
         }
-      } else {
-        logger.info("\n" + dump(job.getStatus()));
       }
     } else {
       logger.warning("Job doesn't exist");
