@@ -3,7 +3,11 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,15 +48,24 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
@@ -63,6 +76,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -80,7 +94,7 @@ public class CommonUtils {
           .atMost(5, MINUTES).await();
 
   /**
-   * Install WebLogic operator and wait until the operator pod is ready.
+   * Install WebLogic operator and wait up to 5 minutes until the operator pod is ready.
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
@@ -155,7 +169,7 @@ public class CommonUtils {
   }
 
   /**
-   * Install NGINX and wait until the NGINX pod is ready.
+   * Install NGINX and wait up to 5 minutes until the NGINX pod is ready.
    *
    * @param nginxNamespace the namespace in which the NGINX will be installed
    * @param nodeportshttp the http nodeport of NGINX
@@ -209,7 +223,8 @@ public class CommonUtils {
   }
 
   /**
-   * Create a model in image domain in the specified namespace.
+   * Create a model in image domain in the specified namespace and wait up to 5 minutes until the domain exists
+   * in the namespace.
    *
    * @param miiImage the docker image of the model-in-image domain
    * @param domainUid the domain uid for the model-in-image domain
@@ -335,7 +350,9 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(podExists(podName, domainUid, domainNamespace));
+        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
+            String.format("podExists failed with ApiException for pod %s in namespace in %s",
+                podName, domainNamespace)));
   }
 
   /**
@@ -354,7 +371,9 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(podReady(podName, domainUid, domainNamespace));
+        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+            String.format("podReady failed with ApiException for pod %s in namespace in %s",
+               podName, domainNamespace)));
   }
 
   /**
@@ -372,7 +391,9 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(serviceExists(serviceName, null, domainNamespace));
+        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
+            String.format("serviceExists failed with ApiException for service %s in namespace in %s",
+                serviceName, domainNamespace)));
   }
 
   /**
@@ -391,7 +412,9 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(podDoesNotExist(podName, domainUid, domainNamespace));
+        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domainNamespace),
+            String.format("podDoesNotExist failed with ApiException for pod %s in namespace in %s",
+                podName, domainNamespace)));
   }
 
   /**
@@ -410,6 +433,71 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(serviceDoesNotExist(serviceName, null, domainNamespace));
+  }
+
+  /**
+   * Create a Docker image for model in image domain.
+   *
+   * @param imageNameBase the base image name used in local or to construct the image name in repository
+   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param appName the sample application name used to build sample app ear file in WDT model file
+   * @return image name with tag
+   */
+  public static  String createImageAndVerify(String imageNameBase,
+                                             String wdtModelFile,
+                                             String appName) {
+
+    // create unique image name with date
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    // Add repository name in image name for Jenkins runs
+    final String imageName = REPO_NAME + imageNameBase;
+    final String image = imageName + ":" + imageTag;
+
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+
+    // build an application archive using what is in resources/apps/APP_NAME
+    assertTrue(buildAppArchive(defaultAppParams()
+        .srcDir(appName)), String.format("Failed to create app archive for %s", appName));
+
+    // build the archive list
+    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+    final List<String> archiveList = Collections.singletonList(zipFile);
+
+    // Set additional environment variables for WIT
+    checkDirectory(WIT_BUILD_DIR);
+    Map<String, String> env = new HashMap<>();
+    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+
+    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+    // the next JDK 14 versions are released.
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      env.put("JAVA_HOME", witJavaHome);
+    }
+
+    // build an image using WebLogic Image Tool
+    logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
+    boolean result = createMiiImage(
+        defaultWitParams()
+            .modelImageName(imageName)
+            .modelImageTag(imageTag)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtVersion(WDT_VERSION)
+            .env(env)
+            .redirect(true));
+
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
+
+    // Check image exists using docker images | grep image tag.
+    assertTrue(doesImageExist(imageTag),
+        String.format("Image %s does not exist", image));
+
+    return image;
   }
 
   /**

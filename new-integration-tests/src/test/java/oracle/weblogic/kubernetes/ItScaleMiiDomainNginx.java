@@ -3,14 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -30,37 +24,26 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodCreated;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceCreated;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.createMiiDomain;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verify the model in image domain with multiple clusters can be scaled up and down.
@@ -136,7 +119,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
     // create image with model files
     logger.info("Creating image with model file and verify");
-    String miiImage = createImageAndVerify();
+    String miiImage = createImageAndVerify(MII_IMAGE_NAME, WDT_MODEL_FILE, APP_NAME);
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
@@ -275,66 +258,6 @@ class ItScaleMiiDomainNginx implements LoggedTest {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
-  }
-
-  /**
-   * Create a Docker image for model in image domain.
-   *
-   * @return image name with tag
-   */
-  private String createImageAndVerify() {
-
-    // create unique image name with date
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-    // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + MII_IMAGE_NAME;
-    final String image = imageName + ":" + imageTag;
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
-
-    // build an application archive using what is in resources/apps/APP_NAME
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDir(APP_NAME)), String.format("Failed to create app archive for %s", APP_NAME));
-
-    // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    final List<String> archiveList = Collections.singletonList(zipFile);
-
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-
-    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-    // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
-    }
-
-    // build an image using WebLogic Image Tool
-    logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createMiiImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
-
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
-
-    // Check image exists using docker images | grep image tag.
-    assertTrue(doesImageExist(imageTag),
-        String.format("Image %s does not exist", image));
-
-    return image;
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
