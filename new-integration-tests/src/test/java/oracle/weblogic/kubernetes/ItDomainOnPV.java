@@ -450,15 +450,15 @@ public class ItDomainOnPV implements LoggedTest {
 
     // add wlst domain creation python script and properties files
     // to create domain to the configmap
-    Map<String, byte[]> data = new HashMap<>();
+    Map<String, String> data = new HashMap<>();
     for (Path file : files) {
-      data.put(file.getFileName().toString(), Files.readAllBytes(file));
+      data.put(file.getFileName().toString(), Files.readString(file));
     }
     V1ObjectMeta meta = new V1ObjectMeta()
         .name(configMapName)
         .namespace(domainNamespace);
     V1ConfigMap configMap = new V1ConfigMap()
-        .binaryData(data)
+        .data(data)
         .metadata(meta);
 
     boolean cmCreated = assertDoesNotThrow(() -> TestActions.createConfigMap(configMap),
