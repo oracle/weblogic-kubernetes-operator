@@ -30,6 +30,7 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
@@ -52,12 +53,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,9 +84,10 @@ public class CommonUtils {
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
    */
-  public static void installAndVerifyOperator(String opNamespace,
-                                              String... domainNamespace) {
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String... domainNamespace) {
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
@@ -146,6 +150,8 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(operatorIsReady(opNamespace));
+
+    return opHelmParams;
   }
 
   /**
@@ -176,7 +182,7 @@ public class CommonUtils {
 
     // install NGINX
     assertThat(installNginx(nginxParams))
-        .as("NGINX is installed successfully")
+        .as("Test NGINX installation succeeds")
         .withFailMessage("NGINX installation is failed")
         .isTrue();
 
@@ -234,7 +240,7 @@ public class CommonUtils {
     createDockerRegistrySecret(domainNamespace);
 
     // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
+    logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     Map<String, String> adminSecretMap = new HashMap<>();
     adminSecretMap.put("username", "weblogic");
@@ -247,7 +253,7 @@ public class CommonUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", adminSecretName));
 
     // create encryption secret
-    logger.info("Create encryption secret");
+    logger.info("Creating encryption secret");
     String encryptionSecretName = "encryptionsecret";
     Map<String, String> encryptionSecretMap = new HashMap<>();
     encryptionSecretMap.put("username", "weblogicenc");
@@ -292,13 +298,25 @@ public class CommonUtils {
                     .domainType(domainType)
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));
+
+    // wait for the domain to exist
+    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUid,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
   }
 
   /**
@@ -317,10 +335,7 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
-            String.format("podExists failed with ApiException for %s in namespace in %s",
-                podName, domainNamespace)));
-
+        .until(podExists(podName, domainUid, domainNamespace));
   }
 
   /**
@@ -339,9 +354,7 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-            String.format("pod %s is not ready in namespace %s", podName, domainNamespace)));
-
+        .until(podReady(podName, domainUid, domainNamespace));
   }
 
   /**
@@ -359,8 +372,7 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
-            String.format("Service %s is not ready in namespace %s", serviceName, domainNamespace)));
+        .until(serviceExists(serviceName, null, domainNamespace));
   }
 
   /**
@@ -379,8 +391,25 @@ public class CommonUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domainNamespace),
-            String.format("Pod %s still exists in namespace %s", podName, domainNamespace)));
+        .until(podDoesNotExist(podName, domainUid, domainNamespace));
+  }
+
+  /**
+   * Check service was deleted.
+   *
+   * @param serviceName service name to check
+   * @param domainNamespace the namespace in which to check whether the service was deleted
+   */
+  public static void checkServiceDeleted(String serviceName, String domainNamespace) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                serviceName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(serviceDoesNotExist(serviceName, null, domainNamespace));
   }
 
   /**

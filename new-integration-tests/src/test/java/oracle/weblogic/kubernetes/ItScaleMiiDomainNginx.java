@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -45,7 +46,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChangedDuringScalingCluster;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodCreated;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
@@ -149,7 +150,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
-    createMiiDomain(miiImage, domainUid, domainNamespace, clusterList, "WLS");
+    createMiiDomain(miiImage, domainUid, domainNamespace, clusterList, WLS_DOMAIN_TYPE);
 
     // check admin server pod was created
     logger.info("Checking that admin server pod {0} was created in namespace {1}",
@@ -161,7 +162,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check admin service is created
+    // check admin service was created
     logger.info("Checking that admin service {0} was created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceCreated(adminServerPodName, domainNamespace);
@@ -205,7 +206,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
           ingressName, clusterName, domainUid, domainNamespace);
       assertThat(createIngress(ingressName, domainNamespace, domainUid, clusterName,
           MANAGED_SERVER_PORT, domainUid + "." + clusterName + ".test"))
-          .as("Test ingress creation succeeds", ingressName)
+          .as("Test ingress {0} creation succeeds", ingressName)
           .withFailMessage("Ingress creation failed for cluster {0} of domain {1} in namespace {2}",
               clusterName, domainUid, domainNamespace)
           .isTrue();
@@ -277,7 +278,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   }
 
   /**
-   * Create a Docker image for model in image.
+   * Create a Docker image for model in image domain.
    *
    * @return image name with tag
    */
@@ -388,8 +389,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         // check the original managed server pod state is not changed
         logger.info("Checking that the state of manged server pod {0} is not changed in namespace {1}",
             manageServerPodName, domainNamespace);
-        podStateNotChangedDuringScalingCluster(manageServerPodName, domainUid, domainNamespace,
-            listOfPodCreationTimestamp.get(i - 1));
+        podStateNotChanged(manageServerPodName, domainUid, domainNamespace, listOfPodCreationTimestamp.get(i - 1));
       }
 
       // check that NGINX can access the sample apps from the original managed servers in the domain
