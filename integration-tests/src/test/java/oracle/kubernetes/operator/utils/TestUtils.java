@@ -2156,5 +2156,13 @@ public class TestUtils {
         + result.stdout()
         + result.stderr()
     );
+    cmd = "kubectl get pods " + " -n " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Pod for HelmChart Release "
+        + chartName
+        + " info "
+        + result.stdout()
+        + result.stderr()
+    );
   }
 }
