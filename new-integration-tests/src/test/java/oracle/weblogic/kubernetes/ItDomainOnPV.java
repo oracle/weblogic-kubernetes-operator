@@ -320,16 +320,14 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("admin_server_name_svc", "pv-domain-adminserver");
-    p.setProperty("server_port", "8001");
-    p.setProperty("admin_port", "30802");
+    p.setProperty("managed_server_port", "8001");
+    p.setProperty("admin_server_port", "30802");
     p.setProperty("admin_username", "system");
     p.setProperty("admin_password", "gumby1234");
-    p.setProperty("t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("t3_channel_port", "7001");
+    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("admin_t3_channel_port", "7001");
     p.setProperty("number_of_ms", "4");
-    p.setProperty("managed_server_name_base", "pv-domain-ms-");
-    p.setProperty("managed_server_name_base_svc", "");
+    p.setProperty("managed_server_name_base", managedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
 

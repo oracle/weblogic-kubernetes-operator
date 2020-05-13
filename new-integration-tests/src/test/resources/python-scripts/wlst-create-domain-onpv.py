@@ -27,9 +27,9 @@ def create_domain():
   print('Configuring network access point')
   create('T3Channel', 'NetworkAccessPoint')
   cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
-  set('PublicPort', int(t3_channel_port))
-  set('PublicAddress', t3_public_address)
-  set('ListenPort', int(t3_channel_port))
+  set('PublicPort', int(admin_t3_channel_port))
+  set('PublicAddress', admin_t3_public_address)
+  set('ListenPort', int(admin_t3_channel_port))
 
   print('Set the admin user username and password')  
   cd('/Security/%s/User/weblogic' % domain_name)
@@ -50,15 +50,15 @@ def create_domain():
   print('Done creating server template: %s' % template_name)
   cd('/ServerTemplates/%s' % template_name)
   print('Set managed server port in template')
-  cmo.setListenPort(int(server_port))
+  cmo.setListenPort(int(managed_server_port))
   cmo.setCluster(cl)
 
   template_channel_name = cluster_name + "-NAP"
   print('Creating server template NAP: %s' % cluster_name + "-NAP")
   create(template_channel_name, 'NetworkAccessPoint')
   cd('NetworkAccessPoints/%s' % template_channel_name)
-  set('PublicPort', int(server_port) + 10)
-  set('ListenPort', int(server_port) + 10)
+  set('PublicPort', int(managed_server_port))
+  set('ListenPort', int(managed_server_port))
   print('Done creating server template NAP: %s' % cluster_name + "-NAP")
   print('Done setting attributes for server template: %s' % template_name);
 
