@@ -464,7 +464,7 @@ public class Kubernetes implements LoggedTest {
    * @return creationTimestamp from metadata section of the Pod
    * @throws ApiException if Kubernetes client API call fail
    */
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) 
+  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
     // DateTimeFormatter dtf = DateTimeFormat.forPattern("YYYYMMDDHHmmss");

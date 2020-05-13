@@ -244,4 +244,20 @@ public class TestAssertions {
     return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
   }
 
+  /*
+   * Verify the original managed server pod state is not changed during scaling the cluster.
+   * 
+   * @param podName the name of managed server pod to check
+   * @param domainUid the domain uid of the domain in which the managed server pod exists
+   * @param domainNamespace the domain namespace in which the domain exists
+   * @param podCreationTimestampBeforeScale the managed server pod creation time stamp before the scale
+   * @return true if the managed server pod state is not change during scaling the cluster, false otherwise
+   */
+  public static boolean podStateNotChangedDuringScalingCluster(String podName,
+                                                               String domainUid,
+                                                               String domainNamespace,
+                                                               String podCreationTimestampBeforeScale) {
+    return Domain.podStateNotChangedDuringScalingCluster(podName, domainUid, domainNamespace,
+        podCreationTimestampBeforeScale);
+  }
 }

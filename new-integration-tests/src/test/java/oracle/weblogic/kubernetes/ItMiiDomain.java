@@ -3,11 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,43 +45,32 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -99,15 +84,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("Test to create model in image domain and start the domain")
 @IntegrationTest
 class ItMiiDomain implements LoggedTest {
-
-  // mii constants
-  private static final String WDT_MODEL_FILE = "model1-wls.yaml";
-  private static final String MII_IMAGE_NAME = "mii-image";
-  private static final String APP_NAME = "sample-app";
-
-  // domain constants
-  private static final String DOMAIN_VERSION = "v7";
-  private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 
   private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
@@ -124,7 +100,6 @@ class ItMiiDomain implements LoggedTest {
 
   private String domainUid = "domain1";
   private String domainUid1 = "domain2";
-  private String miiImage = null;
 
   private static Map<String, Object> secretNameMap;
 
@@ -242,21 +217,6 @@ class ItMiiDomain implements LoggedTest {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
-
-    // create image with model files
-    miiImage = createImageAndVerify();
-
-    // docker login, if necessary
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-    }
-
-    // push image, if necessary
-    if (!REPO_NAME.isEmpty()) {
-      logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
-      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
-    }
 
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
@@ -534,71 +494,6 @@ class ItMiiDomain implements LoggedTest {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace1),
             "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
-
-    // delete the domain image created for the test
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
-
-  }
-
-  private String createImageAndVerify() {
-    // create unique image name with date
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-    // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + MII_IMAGE_NAME;
-    final String image = imageName + ":" + imageTag;
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
-
-    // build an application archive using what is in resources/apps/APP_NAME
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDir(APP_NAME)), String.format("Failed to create app archive for %s", APP_NAME));
-
-    // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    final List<String> archiveList = Collections.singletonList(zipFile);
-
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-
-    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
-    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
-    // the next JDK 14 versions are released.
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      env.put("JAVA_HOME", witJavaHome);
-    }
-
-    // build an image using WebLogic Image Tool
-    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createMiiImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
-
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
-
-    /* Check image exists using docker images | grep image tag.
-     * Tag name is unique as it contains date and timestamp.
-     * This is a workaround for the issue on Jenkins machine
-     * as docker images imagename:imagetag is not working and
-     * the test fails even though the image exists.
-     */
-    assertTrue(doesImageExist(imageTag),
-        String.format("Image %s doesn't exist", image));
-
-    return image;
   }
 
   private void createRepoSecret(String domNamespace) throws ApiException {
@@ -647,7 +542,7 @@ class ItMiiDomain implements LoggedTest {
                                     String repoSecretName, String encryptionSecretName, int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
-            .apiVersion(API_VERSION)
+            .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
                     .name(domainUid)
@@ -655,7 +550,7 @@ class ItMiiDomain implements LoggedTest {
             .spec(new DomainSpec()
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
-                    .image(miiImage)
+                    .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
                     .webLogicCredentialsSecret(new V1SecretReference()

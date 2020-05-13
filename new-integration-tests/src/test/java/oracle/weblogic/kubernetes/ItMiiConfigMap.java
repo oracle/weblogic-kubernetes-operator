@@ -5,11 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,40 +48,29 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
@@ -93,7 +78,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,12 +91,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @IntegrationTest
 class ItMiiConfigMap implements LoggedTest {
 
-  // mii constants
-  private static final String WDT_MODEL_FILE = "model1-wls.yaml";
-  private static final String MII_IMAGE_NAME = "mii-image";
-  private static final String APP_NAME = "sample-app";
-
-  // domain constants
   private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   private static HelmParams opHelmParams = null;
@@ -124,15 +102,15 @@ class ItMiiConfigMap implements LoggedTest {
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String dockerConfigJson = "";
 
-  private String domainUid = "domain1";
-  private String miiImage = null;
+  private String domainUid = "miiconfigmap";
   private StringBuffer checkJdbc = null;
 
+  private static Map<String, Object> secretNameMap;
+
   /**
-   * Install operator.
-   *
+   * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -142,11 +120,11 @@ class ItMiiConfigMap implements LoggedTest {
         .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
-    logger.info("Assigning unique namespace for operator");
+    logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Assigning unique namespace for Domain");
+    logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -160,7 +138,7 @@ class ItMiiConfigMap implements LoggedTest {
                 .name(serviceAccountName))));
     logger.info("Created service account: {0}", serviceAccountName);
 
-    // get operator image name
+    // get Operator image name
     operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "Operator image name can not be empty");
     logger.info("Operator image name {0}", operatorImage);
@@ -172,6 +150,7 @@ class ItMiiConfigMap implements LoggedTest {
     dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
+    logger.info("Creating repo secret {0}", REPO_SECRET_NAME);
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
             .name(REPO_SECRET_NAME)
@@ -182,12 +161,11 @@ class ItMiiConfigMap implements LoggedTest {
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace",
-        REPO_SECRET_NAME, opNamespace));
+                  REPO_SECRET_NAME, opNamespace));
 
     // map with secret
-    Map<String, Object> secretNameMap = new HashMap<String, Object>();
+    secretNameMap = new HashMap<String, Object>();
     secretNameMap.put("name", REPO_SECRET_NAME);
-
     // helm install parameters
     opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -203,14 +181,14 @@ class ItMiiConfigMap implements LoggedTest {
             .domainNamespaces(Arrays.asList(domainNamespace))
             .serviceAccount(serviceAccountName);
 
-    // install operator
-    logger.info("Installing operator in namespace {0}", opNamespace);
+    // install Operator
+    logger.info("Installing Operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
         String.format("Operator install failed in namespace %s", opNamespace));
     logger.info("Operator installed in namespace {0}", opNamespace);
 
-    // list helm releases matching operator release name in operator namespace
-    logger.info("Checking operator release {0} status in namespace {1}",
+    // list helm releases matching Operator release name in operator namespace
+    logger.info("Checking Operator release {0} status in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
     assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
         String.format("Operator release %s is not in deployed status in namespace %s",
@@ -219,7 +197,7 @@ class ItMiiConfigMap implements LoggedTest {
         OPERATOR_RELEASE_NAME, opNamespace);
 
     // check operator is running
-    logger.info("Check operator pod is running in namespace {0}", opNamespace);
+    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for operator to be running in namespace {0} "
@@ -232,9 +210,9 @@ class ItMiiConfigMap implements LoggedTest {
   }
 
   /**
-   * Deploy a WebLogic domain with a defined ConfigMap in configuration/model section of the domain resource.
-   * The ConfigMap has a sparse WDT model file that defines a JDBC DataSource targeted to the cluster.
-   * Verify the DataSource configuration using the RestAPI call using adminserver's public NodePort
+   * Deploy a WebLogic domain with a defined configmap in configuration/model section of the domain resource.
+   * The configmap has a sparse WDT model file that defines a DataSource targeted to the cluster.
+   * Verify the DataSource configuration using the rest API call using adminserver's public nodeport
    */
   @Test
   @Order(1)
@@ -246,35 +224,23 @@ class ItMiiConfigMap implements LoggedTest {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
-    // create image with model files
-    miiImage = createImageAndVerify();
-
-    // push the image to registry to make the test work in multi node cluster
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-
-      logger.info("docker push image {0} to registry", miiImage);
-      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
-    }
-
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createRepoSecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+            String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, "weblogic",
-        "welcome1", domainNamespace),
-        String.format("createSecret failed for %s", adminSecretName));
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
+            "welcome1", domainNamespace),
+            String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-        "weblogicenc", domainNamespace),
-        String.format("createSecret failed for %s", encryptionSecretName));
+            "weblogicenc", domainNamespace),
+             String.format("createSecret failed for %s", encryptionSecretName));
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -298,11 +264,12 @@ class ItMiiConfigMap implements LoggedTest {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-
+     
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, configMapName);
+
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
@@ -314,6 +281,7 @@ class ItMiiConfigMap implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+
 
     // check admin server pod exists
     logger.info("Check for admin server pod {0} existence in namespace {1}",
@@ -337,18 +305,18 @@ class ItMiiConfigMap implements LoggedTest {
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in ns {1}",
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    logger.info("Check admin service {0} is created in ns {1}",
+    logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceCreated(adminServerPodName, domainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in ns {1}",
+      logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
@@ -373,85 +341,26 @@ class ItMiiConfigMap implements LoggedTest {
     logger.info("curl command returns {0}", result.toString());
     assertEquals("200", result.stdout(), "DataSource configuration not found");
     logger.info("Found the DataSource configuration ");
-
   }
 
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
   @AfterAll
   void tearDown() {
-
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
-
-    // delete the domain image created for the test
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
-
-  }
-
-  private String createImageAndVerify() {
-    // create unique image name with date
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
-    // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_USERNAME.equals(REPO_DUMMY_VALUE) ? MII_IMAGE_NAME : REPO_NAME + MII_IMAGE_NAME;
-    final String image = imageName + ":" + imageTag;
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE);
-
-    // build an application archive using what is in resources/apps/APP_NAME
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDir(APP_NAME)), String.format("Failed to create app archive for %s", APP_NAME));
-
-    // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
-    final List<String> archiveList = Collections.singletonList(zipFile);
-
-    // Set additional environment variables for WIT
-    checkDirectory(WIT_BUILD_DIR);
-    Map<String, String> env = new HashMap<>();
-    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
-
-    // build an image using WebLogic Image Tool
-    logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createMiiImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
-
-    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
-
-    /* Check image exists using docker images | grep image tag.
-     * Tag name is unique as it contains date and timestamp.
-     * This is a workaround for the issue on Jenkins machine
-     * as docker images imagename:imagetag is not working and
-     * the test fails even though the image exists.
-     */
-    assertTrue(doesImageExist(imageTag),
-        String.format("Image %s doesn't exist", image));
-
-    return image;
   }
 
   private void createRepoSecret(String domNamespace) throws ApiException {
     V1Secret repoSecret = new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
-            .namespace(domNamespace))
-        .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+            .metadata(new V1ObjectMeta()
+                    .name(REPO_SECRET_NAME)
+                    .namespace(domNamespace))
+            .type("kubernetes.io/dockerconfigjson")
+            .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = false;
     try {
@@ -470,74 +379,76 @@ class ItMiiConfigMap implements LoggedTest {
 
     }
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s",
-        REPO_SECRET_NAME, domNamespace));
+            REPO_SECRET_NAME, domNamespace));
   }
 
   private void createDomainSecret(String secretName, String username, String password, String domNamespace)
-      throws ApiException {
+          throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
     secretMap.put("password", password);
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(secretName)
-            .namespace(domNamespace))
-        .stringData(secretMap)), "Create secret failed with ApiException");
+            .metadata(new V1ObjectMeta()
+                    .name(secretName)
+                    .namespace(domNamespace))
+            .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
 
   }
 
-  private void createDomainResource(String domainUid, String domNamespace,
-                                    String adminSecretName, String repoSecretName,
-                                    String encryptionSecretName, int replicaCount, String configmapName) {
+  private void createDomainResource(
+      String domainUid, String domNamespace, String adminSecretName,
+      String repoSecretName, String encryptionSecretName, 
+      int replicaCount, String configmapName) {
     // create the domain CR
     Domain domain = new Domain()
-        .apiVersion(API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .configMap(configmapName)
-                    .runtimeEncryptionSecret(encryptionSecretName))));
+            .apiVersion(DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new V1ObjectMeta()
+                    .name(domainUid)
+                    .namespace(domNamespace))
+            .spec(new DomainSpec()
+                    .domainUid(domainUid)
+                    .domainHomeSourceType("FromModel")
+                    .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+                    .addImagePullSecretsItem(new V1LocalObjectReference()
+                            .name(repoSecretName))
+                    .webLogicCredentialsSecret(new V1SecretReference()
+                            .name(adminSecretName)
+                            .namespace(domNamespace))
+                    .includeServerOutInPodLog(true)
+                    .serverStartPolicy("IF_NEEDED")
+                    .serverPod(new ServerPod()
+                            .addEnvItem(new V1EnvVar()
+                                    .name("JAVA_OPTIONS")
+                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                            .addEnvItem(new V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .adminServer(new AdminServer()
+                            .serverStartState("RUNNING")
+                            .adminService(new AdminService()
+                                    .addChannelsItem(new Channel()
+                                            .channelName("default")
+                                            .nodePort(0))))
+                    .addClustersItem(new Cluster()
+                            .clusterName("cluster-1")
+                            .replicas(replicaCount)
+                            .serverStartState("RUNNING"))
+                    .configuration(new Configuration()
+                            .model(new Model()
+                                    .domainType("WLS")
+                                    .configMap(configmapName)
+                                    .runtimeEncryptionSecret(encryptionSecretName))
+                        .introspectorJobActiveDeadlineSeconds(300L)));
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-        domainUid, domNamespace);
+            domainUid, domNamespace);
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domNamespace));
+            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+                    domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-        + "for %s in namespace %s", domainUid, domNamespace));
+                    + "for %s in namespace %s", domainUid, domNamespace));
   }
 
   private void checkPodCreated(String podName, String domainUid, String domNamespace) {

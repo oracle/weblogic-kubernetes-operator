@@ -5,6 +5,9 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -37,6 +40,7 @@ public class TestUtils {
     logger.info("Calling webapp at most {0} times using command: {1}", maxIterations, curlCmd);
 
     // check the response contains managed server name
+    ExecResult result = null;
     for (int i = 0; i < maxIterations; i++) {
 
       if (managedServers.containsValue(false)) {
@@ -48,7 +52,7 @@ public class TestUtils {
         }
 
         try {
-          ExecResult result = ExecCommand.exec(curlCmd, true);
+          result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
           managedServers.keySet().forEach(key -> {
@@ -57,7 +61,12 @@ public class TestUtils {
             }
           });
         } catch (Exception e) {
-          logger.info("Got exception while running command: " + curlCmd);
+          logger.info("Got exception while running command: {0}", curlCmd);
+          logger.info(e.toString());
+          if (result != null) {
+            logger.info("result.stdout: \n{0}", result.stdout());
+            logger.info("result.stderr: \n{0}", result.stderr());
+          }
           return false;
         }
       } else {
@@ -95,6 +104,16 @@ public class TestUtils {
     }
     logger.info("Can not find free port between {0} and {1}", from, to);
     return port;
+  }
+
+  /**
+   * Get current date and timestamp in format yyyy-MM-dd-currentimemillis.
+   * @return string with date and timestamp
+   */
+  public static String getDateAndTimeStamp() {
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    return dateFormat.format(date) + "-" + System.currentTimeMillis();
   }
 
   /**
