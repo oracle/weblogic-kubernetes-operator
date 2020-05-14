@@ -229,7 +229,7 @@ public class TestUtils {
   }
 
   /**
-   * Resole a servive name inside a pod.
+   * Resolve a servive name inside a pod.
    * @param serviceName service name to resolve
    * @param podName name of the pod
    * @param namespace namespace of the pod
