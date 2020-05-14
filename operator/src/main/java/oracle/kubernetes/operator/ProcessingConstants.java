@@ -34,8 +34,7 @@ public interface ProcessingConstants {
   public static final String DOMAIN_INTROSPECT_VERSION = "weblogic.domainIntrospectVersion";
   public static final String DOMAIN_INPUTS_HASH = "weblogic.domainInputsHash";
   public static final String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
-  
+
   public static final String KEY = "encodedCredentials";
   public static final String RESULT = "httpResult";
-  public static final int HTTP_OK = 200;  
 }

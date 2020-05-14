@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.steps;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -102,48 +103,17 @@ public class ReadHealthStep extends Step {
     V1Service service = info.getServerService(serverName);
     V1Pod pod = info.getServerPod(serverName);
     if (service != null) {
-      Step getClient =
-          getEncodedCredentialsForServer(
-              namespace,
+      Step getSecretReadHealthAndProcessResponse =
+          SecretHelper.getSecretData(
+              SecretType.WebLogicCredentials,
               secretName,
-              new ReadHealthWithHttpClientStep(
-                  service, pod, new ProcessResponseFromHttpClientStep(getNext())));
-      return doNext(getClient, packet);
+              namespace,
+              new WithSecretDataStep(
+                  new ReadHealthWithHttpClientStep(
+                      service, pod, new ProcessResponseFromHttpClientStep(getNext()))));
+      return doNext(getSecretReadHealthAndProcessResponse, packet);
     }
     return doNext(packet);
-  }
-
-  /**
-   * Asynchronous {@link Step} for getting encoded credentials for a server instance.
-   *
-   * @param namespace Namespace
-   * @param adminSecretName Admin secret name
-   * @param next Next processing step
-   * @return step to create client
-   */
-  public static Step getEncodedCredentialsForServer(
-      String namespace, String adminSecretName, Step next) {
-    return new EncodedCredentialsForServerStep(
-        namespace, adminSecretName, new WithSecretDataStep(next));
-  }
-
-  private static class EncodedCredentialsForServerStep extends Step {
-    private final String namespace;
-    private final String adminSecretName;
-
-    EncodedCredentialsForServerStep(String namespace, String adminSecretName, Step next) {
-      super(next);
-      this.namespace = namespace;
-      this.adminSecretName = adminSecretName;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Step readSecret =
-          SecretHelper.getSecretData(
-              SecretType.WebLogicCredentials, adminSecretName, namespace, getNext());
-      return doNext(readSecret, packet);
-    }
   }
 
   private static class WithSecretDataStep extends Step {
@@ -274,28 +244,35 @@ public class ReadHealthStep extends Step {
                             .build();
                     httpClient
                         .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                        .thenApply(
-                            response ->
-                                new Result(
-                                    response.body(),
-                                    response.statusCode(),
-                                    response.statusCode() == ProcessingConstants.HTTP_OK))
                         .whenComplete(
-                            (input, exception) -> {
-                              if (exception != null) {
-                                LOGGER.severe(
-                                    MessageKeys.HTTP_METHOD_FAILED,
+                            (HttpResponse<String> response, Throwable t) -> {
+                              boolean successful = false;
+                              if (response != null) {
+                                if (response.statusCode() == HttpURLConnection.HTTP_OK) {
+                                  successful = true;
+                                } else {
+                                  LOGGER.fine(
+                                      MessageKeys.HTTP_METHOD_FAILED,
+                                      "POST",
+                                      url,
+                                      response.statusCode());
+                                }
+                                Result result =
+                                    new Result(response.body(), response.statusCode(), successful);
+                                packet.put(ProcessingConstants.RESULT, result);
+                              }
+                              if (t != null) {
+                                LOGGER.fine(
+                                    MessageKeys.HTTP_METHOD_FAILED_WITH_EXCEPTION,
                                     "POST",
                                     url,
-                                    input.getResponse());
-                              } else {
-                                packet.put(ProcessingConstants.RESULT, input);
+                                    t.getCause());
                               }
                               fiber.resume(packet);
                             });
                   } catch (Throwable t) {
                     fiber.resume(packet);
-                    LOGGER.severe(MessageKeys.HTTP_METHOD_FAILED, "POST", t);
+                    LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, "POST", t);
                   }
                 });
           }
@@ -313,8 +290,8 @@ public class ReadHealthStep extends Step {
     }
 
     /**
-     * Returns the URL to access the Service; using the Service clusterIP and port. If the service
-     * is headless, then the pod's IP is returned, if available.
+     * Returns the WL server's URL for sending HTTP requests; using the server service clusterIP and
+     * port. If the service is headless, then the pod's IP is returned, if available.
      *
      * @param service The name of the Service that you want the URL for.
      * @param pod The pod for headless services
