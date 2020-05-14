@@ -66,17 +66,20 @@ public class Nginx {
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
    *
+   * @param ingressName name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param clusterName the name of the WebLogic domain cluster
    * @param managedServerPort the port number of the WebLogic domain managed servers
+   * @param ingressHostname the hostname used by the ingress for the host name based routing
    * @return true on success, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createIngress(String domainNamespace,
+  public static boolean createIngress(String ingressName,
+                                      String domainNamespace,
                                       String domainUid,
                                       String clusterName,
-                                      int managedServerPort) throws ApiException {
+                                      int managedServerPort,
+                                      String ingressHostname) {
 
     // set the annotation for kubernetes.io/ingress.class to "nginx"
     HashMap<String, String> annotation = new HashMap<>();
@@ -94,10 +97,9 @@ public class Nginx {
 
     // set the ingress rule
     ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
-        .host(domainUid + ".test")
+        .host(ingressHostname)
         .http(new ExtensionsV1beta1HTTPIngressRuleValue()
-              .paths(httpIngressPaths)
-        );
+              .paths(httpIngressPaths));
     ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
     ingressRules.add(ingressRule);
 
@@ -106,7 +108,7 @@ public class Nginx {
         .apiVersion(INGRESS_API_VERSION)
         .kind(INGRESS_KIND)
         .metadata(new V1ObjectMeta()
-                  .name(domainUid + "-nginx")
+                  .name(ingressName)
                   .namespace(domainNamespace)
                   .annotations(annotation))
         .spec(new ExtensionsV1beta1IngressSpec()
@@ -116,20 +118,20 @@ public class Nginx {
     try {
       Kubernetes.createIngress(domainNamespace, ingress);
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
-      throw apex;
+      logger.severe("got ApiException while calling createIngress: {0}", apex.getResponseBody());
+      return false;
     }
     return true;
   }
 
   /**
-   * Get a list of ingress names in the specified namespace.
+   * List all of the ingresses in the specified namespace.
    *
    * @param namespace the namespace to which the ingresses belong
    * @return a list of ingress names in the namespace
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static List<String> getIngressList(String namespace) throws ApiException {
+  public static List<String> listIngresses(String namespace) throws ApiException {
 
     List<String> ingressNames = new ArrayList<>();
     ExtensionsV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);

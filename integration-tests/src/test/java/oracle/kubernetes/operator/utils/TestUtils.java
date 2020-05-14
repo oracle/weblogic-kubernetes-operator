@@ -228,6 +228,51 @@ public class TestUtils {
     }
   }
 
+  /**
+   * Resolve a servive name inside a pod.
+   * @param serviceName service name to resolve
+   * @param podName name of the pod
+   * @param namespace namespace of the pod
+   * @throws Exception if a service name can not be resolved
+   */
+  public static void resolveServiceName(
+      String serviceName, String podName, String namespace, int numberOfRetries)
+      throws Exception {
+
+    String appLocationInPod = BaseTest.getAppLocationInPod();
+    String scriptLocationInPod = appLocationInPod + "/resolveServiceName.py";
+
+    // copy py script to check if managed service name can be resolved in admin pod
+    TestUtils.kubectlexec(podName, namespace," -- mkdir -p " + appLocationInPod);
+
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/resolveServiceName.py",
+        scriptLocationInPod,
+        podName,
+        namespace);
+
+    TestUtils.kubectlexec(podName, namespace, " chmod +x " + scriptLocationInPod);
+    int i = 0;
+    while (i < numberOfRetries) {
+      ExecResult result = TestUtils.kubectlexecNoCheck(podName, namespace,
+          " python " + scriptLocationInPod + " " + serviceName);
+      if (result.exitValue() != 0 && !result.stdout().contains(serviceName)) {
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Could not resolve the service name " + serviceName + " in pod " + podName + " namespace " + namespace);
+        LoggerHelper.getLocal().log(Level.INFO, "Command stdout = " + result.stdout() + " stderr = " + result.stderr());
+        if (i == (numberOfRetries - 1)) {
+          throw new RuntimeException(
+              "FAILURE: Could not resolve service name " + serviceName
+                  + " in pod " + podName + " namespace " + namespace);
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Service name " + serviceName + " resolved");
+        break;
+      }
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
+  }
 
   /**
    * Creates input file.
@@ -1356,7 +1401,27 @@ public class TestUtils {
    * @throws Exception exception
    */
   public static void callShellScriptByExecToPod(
-      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName,
+      String[] args)
+      throws Exception {
+    callShellScriptByExecToPod(
+        podName, domainNS, scriptsLocInPod, shScriptName,args, 1);
+  }
+
+  /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName         pod name
+   * @param domainNS        namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName    script name
+   * @param args            script arguments
+   * @param retriesToCallScript number of retries to execute the script if it fails
+   * @throws Exception exception
+   */
+  public static void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName,
+      String[] args, int retriesToCallScript)
       throws Exception {
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
     cmdKubectlSh
@@ -1373,8 +1438,29 @@ public class TestUtils {
         .append(String.join(" ", args).toString())
         .append("'");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.execOrAbortProcess(cmdKubectlSh.toString());
+    for (int i = 1; i <= retriesToCallScript; i++) {
+      LoggerHelper.getLocal().log(Level.INFO, "Iteration " + i
+          + "/" + retriesToCallScript + ", Command to call kubectl sh file " + cmdKubectlSh);
+      ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+      if (result.exitValue() != 0) {
+        if (i == retriesToCallScript) {
+          new RuntimeException("FAILURE: Command "
+              + cmdKubectlSh
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
+        } else {
+          LoggerHelper.getLocal().log(Level.INFO, "Command failed with stdout = "
+              + result.stdout() + " stderr = " + result.stderr() + ", retrying");
+          Thread.sleep(10 * 1000);
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Script invoked successfully, stdout = " + result.stdout());
+        break;
+      }
+    }
+
   }
 
   /**
