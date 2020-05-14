@@ -327,15 +327,16 @@ public class Kubernetes {
   }
 
   /**
-   * A utility method to list all pods in given namespace and a label
-   * This method can be used as diagnostic tool to get the details of pods.
+   * Get a list of pods from given namespace and  label.
+   *
    * @param namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
+   * @return V1PodList list of {@link V1Pod} from the namespace
    * @throws ApiException when there is error in querying the cluster
    */
-  public static void listPods(String namespace, String labelSelectors) throws ApiException {
-    V1PodList v1PodList =
-        coreV1Api.listNamespacedPod(
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+    V1PodList v1PodList
+        = coreV1Api.listNamespacedPod(
             namespace, // namespace in which to look for the pods.
             Boolean.FALSE.toString(), // pretty print output.
             Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -347,8 +348,7 @@ public class Kubernetes {
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
-    List<V1Pod> items = v1PodList.getItems();
-    logger.info(Arrays.toString(items.toArray()));
+    return v1PodList;
   }
 
   /**
@@ -413,7 +413,7 @@ public class Kubernetes {
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
-      String podName, String domainUid, 
+      String podName, String domainUid,
       String namespace, String timestamp) throws ApiException {
     boolean podRestarted = false;
     String labelSelector = null;

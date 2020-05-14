@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes.assertions;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
@@ -13,6 +15,8 @@ import oracle.weblogic.kubernetes.assertions.impl.Helm;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.Pod;
+import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 
 /**
@@ -82,10 +86,8 @@ public class TestAssertions {
    * @param namespace in which the pod exists
    * @return true if the pod exists in the namespace otherwise false
    */
-  public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) throws ApiException {
-    return () -> {
-      return Kubernetes.doesPodExist(namespace, domainUid, podName);
-    };
+  public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) {
+    return Pod.podExists(namespace, domainUid, podName);
   }
 
   /**
@@ -95,13 +97,9 @@ public class TestAssertions {
    * @param domainUid Uid of WebLogic domain
    * @param namespace namespace in which to check for the pod
    * @return true if the pod does not exist in the namespace otherwise false
-   * @throws ApiException when cluster query fails
    */
-  public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace)
-      throws ApiException {
-    return () -> {
-      return !Kubernetes.doesPodExist(namespace, domainUid, podName);
-    };
+  public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace) {
+    return Pod.podDoesNotExist(namespace, domainUid, podName);
   }
 
   /**
@@ -111,12 +109,9 @@ public class TestAssertions {
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
-   * @throws ApiException when Kubernetes cluster query fails to get pod
    */
-  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
-    return () -> {
-      return Kubernetes.isPodReady(namespace, domainUid, podName);
-    };
+  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) {
+    return Pod.podReady(namespace, domainUid, podName);
   }
 
   /**
@@ -128,10 +123,25 @@ public class TestAssertions {
    * @return true if the pod is terminating otherwise false
    */
   public static Callable<Boolean> podTerminating(String podName, String domainUid, String namespace) {
-    return () -> {
-      return Kubernetes.isPodTerminating(namespace, domainUid, podName);
-    };
+    return Pod.podTerminating(podName, domainUid, namespace);
   }
+
+  /**
+   * Check the pods in the given namespace are restarted in rolling fashion.
+   *
+   * @param domainUid UID of the WebLogic domain
+   * @param namespace in which to check for the pods status
+   * @return true if pods in the namespace restarted in a rolling fashion otherwise false
+   * @throws ApiException when Kubernetes cluster query fails
+   * @throws InterruptedException when pod status check threads are interrupted
+   * @throws ExecutionException when pod status checks times out
+   * @throws TimeoutException when waiting for the threads times out
+   */
+  public static boolean podsRollingRestarted(String domainUid, String namespace)
+      throws ApiException, InterruptedException, ExecutionException, TimeoutException {
+    return Pod.isARollingRestart(domainUid, namespace);
+  }
+
 
   /**
    * Check is a service exists in given namespace.
@@ -140,59 +150,12 @@ public class TestAssertions {
    * @param label       a Map of key value pairs the service is decorated with
    * @param namespace   in which the service is running
    * @return true if the service exists otherwise false
-   * @throws ApiException when query fails
    */
   public static Callable<Boolean> serviceExists(
       String serviceName,
       Map<String, String> label,
-      String namespace
-  ) throws ApiException {
-    return () -> {
-      return Kubernetes.doesServiceExist(serviceName, label, namespace);
-    };
-  }
-
-  /**
-   * Check if a loadbalancer pod is ready.
-   *
-   * @param domainUid id of the WebLogic domain custom resource domain
-   * @return true, if the load balancer is ready
-   */
-  public static boolean loadbalancerReady(String domainUid) {
-    return Kubernetes.loadBalancerReady(domainUid);
-  }
-
-  /**
-   * Check if the admin server pod is ready.
-   *
-   * @param domainUid id of the domain in which admin server pod is running
-   * @param namespace in which the pod exists
-   * @return true if the admin server is ready otherwise false
-   */
-  public static boolean adminServerReady(String domainUid, String namespace) {
-    return Kubernetes.adminServerReady(domainUid, namespace);
-  }
-
-  /**
-   * Check if a adminserver T3 channel is accessible.
-   *
-   * @param domainUid id of the domain in which admin server pod is running
-   * @param namespace in which the WebLogic server pod exists
-   * @return true if the admin T3 channel is accessible otherwise false
-   */
-  public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
-    return Domain.adminT3ChannelAccessible(domainUid, namespace);
-  }
-
-  /**
-   * Check if a admin server pod admin node port is accessible.
-   *
-   * @param domainUid domainUID id of the domain in which admin server pod is running
-   * @param namespace in which the WebLogic server pod exists
-   * @return true if the admin node port is accessible otherwise false
-   */
-  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
-    return Domain.adminNodePortAccessible(domainUid, namespace);
+      String namespace) {
+    return Service.serviceExists(serviceName, label, namespace);
   }
 
   /**
@@ -248,7 +211,7 @@ public class TestAssertions {
 
   /*
    * Verify the original managed server pod state is not changed during scaling the cluster.
-   * 
+   *
    * @param podName the name of managed server pod to check
    * @param domainUid the domain uid of the domain in which the managed server pod exists
    * @param domainNamespace the domain namespace in which the domain exists
