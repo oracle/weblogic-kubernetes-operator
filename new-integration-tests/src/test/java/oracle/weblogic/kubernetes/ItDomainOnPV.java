@@ -166,7 +166,7 @@ public class ItDomainOnPV implements LoggedTest {
   public void testDomainOnPvUsingWlst() throws IOException {
 
     // login to docker-registry and create pull secrets
-    createDockerSecret();
+    createRepoSecret();
 
     // create WebLogic credentials secret
     createWebLogicCredentialsSecret();
@@ -443,7 +443,7 @@ public class ItDomainOnPV implements LoggedTest {
                                     .name(domainScriptCM))))  //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name("docker-store"))))));
+                            .name(REPO_SECRET_NAME))))));
     String jobName = assertDoesNotThrow(() -> TestActions
         .createNamespacedJob(jobBody), "Domain creation job failed");
 
@@ -463,12 +463,17 @@ public class ItDomainOnPV implements LoggedTest {
   /**
    * Create secret for docker credentials.
    */
-  private void createDockerSecret() {
+  private void createRepoSecret() {
     // docker login, if necessary
     if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
       assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
     }
+
+    logger.info("Creating repository registry secret in namespace {0}", domainNamespace);
+    JsonObject dockerConfigJsonObject = createDockerConfigJson(
+        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+    dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
