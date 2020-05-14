@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Verify the model in image domain with multiple clusters can be scaled up and down.
- * Also verify the sample application can be accessed via NGINX ingress controller.
+ * Also verify the sample application can be accessed via NGINX.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify scaling multiple clusters domain and the sample application can be accessed via NGINX")
