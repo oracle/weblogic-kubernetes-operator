@@ -69,8 +69,6 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -95,6 +93,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
