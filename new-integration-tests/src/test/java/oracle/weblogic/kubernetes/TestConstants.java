@@ -38,6 +38,16 @@ public interface TestConstants {
   public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
 
+  // OCR registry
+  public static final String OCR_SECRET_NAME = "ocr-secret";
+  public static final String OCR_REGISTRY = "container-registry.oracle.com";
+  public static final String OCR_USERNAME = Optional.ofNullable(System.getenv("OCR_USERNAME"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCR_PASSWORD = Optional.ofNullable(System.getenv("OCR_PASSWORD"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
+      .orElse(REPO_DUMMY_VALUE);
+
   // jenkins constants
   public static final String BUILD_ID = Optional.ofNullable(System.getenv("BUILD_ID"))
       .orElse("");

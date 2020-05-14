@@ -73,9 +73,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
@@ -165,8 +169,8 @@ public class ItDomainOnPV implements LoggedTest {
   @DisplayName("Create domain in PV using WLST script")
   public void testDomainOnPvUsingWlst() throws IOException {
 
-    // login to docker-registry and create pull secrets
-    createRepoSecret();
+    // create pull secrets for WebLogic image
+    createOCRRepoSecret();
 
     // create WebLogic credentials secret
     createWebLogicCredentialsSecret();
@@ -192,7 +196,7 @@ public class ItDomainOnPV implements LoggedTest {
             .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
             .imagePullPolicy("IfNotPresent")
             .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(REPO_SECRET_NAME))
+                .name(OCR_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -443,7 +447,7 @@ public class ItDomainOnPV implements LoggedTest {
                                     .name(domainScriptCM))))  //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(REPO_SECRET_NAME))))));
+                            .name(OCR_SECRET_NAME))))));
     String jobName = assertDoesNotThrow(() -> TestActions
         .createNamespacedJob(jobBody), "Domain creation job failed");
 
@@ -463,29 +467,29 @@ public class ItDomainOnPV implements LoggedTest {
   /**
    * Create secret for docker credentials.
    */
-  private void createRepoSecret() {
+  private void createOCRRepoSecret() {
+
     // docker login, if necessary
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-    }
+    logger.info("docker login to OCR registry");
+    assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "login to OCR failed");
+
 
     logger.info("Creating repository registry secret in namespace {0}", domainNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+        OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY);
     dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
+            .name(OCR_SECRET_NAME)
             .namespace(domainNamespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", OCR_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", OCR_SECRET_NAME));
   }
 
   /**
