@@ -101,7 +101,13 @@ You can modify the WebLogic domain configuration for both Domain in PV and Domai
 * When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
 * For either case, you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).   
 
-Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and also support parameterizing overrides so that you can inject values into them from Kubernetes secrets.   For example, you can inject database user names, passwords, and URLs that are stored in a secret.
+For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
+
+Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
+parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
+and URLs that are stored in a secret.
+
+For Model in Image you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 ### About the domain resource
 

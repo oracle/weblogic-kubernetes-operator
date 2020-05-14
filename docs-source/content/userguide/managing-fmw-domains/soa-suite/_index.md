@@ -21,7 +21,7 @@ it is supported for production use.
 * [Creating a SOA Suite Docker image](#creating-a-soa-suite-docker-image)
 * [Configuring access to your database](#configuring-access-to-your-database)
 * [Running the Repository Creation Utility to set up your database schemas](#running-the-repository-creation-utility-to-set-up-your-database-schemas)
-* [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
+* [Create a Kubernetes Secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
 * [Creating a SOA domain](#creating-a-soa-domain)
 * [Configuring a load balancer for SOA Suite domains](#configuring-a-load-balancer-for-soa-suite-domains)
 * [Monitoring a SOA domain](#monitoring-a-soa-domain)
@@ -41,7 +41,7 @@ This document provides details about the special considerations for deploying an
 Other than those considerations listed here, SOA Suite domains work in the same way as FMW Infrastructure domains and WebLogic Server domains.
 
 In this release, SOA Suite domains are supported using the “domain on a persistent volume”
-[domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a persistent volume (PV).
+[domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) only, where the domain home is located in a PersistentVolume (PV).
 
 #### Prerequisites for SOA Suite domains
 
@@ -193,18 +193,18 @@ Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 Follow these instructions to perform a basic deployment of the Oracle
 database in Kubernetes. For more details about database setup and configuration, refer to this [page]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#running-the-database-inside-kubernetes" >}}).
 
-When running the Oracle database in Kubernetes, you have an option to attach persistent volumes (PV) so that the database storage will be persisted across database restarts. If you prefer not to persist the database storage, follow the instructions in this
-[document](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#start-an-oracle-database-service-in-a-kubernetes-cluster) to set up a database in a container with no persistent volume (PV) attached.
+When running the Oracle database in Kubernetes, you have an option to attach PersistentVolumes (PV) so that the database storage will be persisted across database restarts. If you prefer not to persist the database storage, follow the instructions in this
+[document](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-schema#start-an-oracle-database-service-in-a-kubernetes-cluster) to set up a database in a container with no PersistentVolume (PV) attached.
 
 >**NOTE**: `start-db-service.sh` creates the database in the `default` namespace. If you
 >want to create the database in a different namespace, you need to manually update
 >the value for all the occurrences of the namespace field in the provided
 >sample file `create-rcu-schema/common/oracle.db.yaml`.
 
-These instructions will set up the database in a container with the persistent volume (PV) attached.
+These instructions will set up the database in a container with the PersistentVolume (PV) attached.
 If you chose not to use persistent storage, please go to the [RCU creation step](#running-the-repository-creation-utility-to-set-up-your-database-schemas).
 
-* Create the persistent volume and persistent volume claim for the database
+* Create the PersistentVolume and PersistentVolumeClaim for the database
 using the [create-pv-pvc.sh]({{< relref "/samples/simple/storage/_index.md" >}}) sample.
 Refer to the instructions provided in that sample.
 
@@ -285,9 +285,9 @@ $ ./drop-rcu-schema.sh \
 For SOA domains, the `drop-rcu-schema.sh` script supports the domain types `soa,osb,soaosb,soaess,soaessosb`.
 You must specify one of these using the `-t` flag.
 
-#### Create a Kubernetes secret with the RCU credentials
+#### Create a Kubernetes Secret with the RCU credentials
 
-You also need to create a Kubernetes secret containing the credentials for the database schemas.
+You also need to create a Kubernetes Secret containing the credentials for the database schemas.
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.
 
@@ -347,7 +347,7 @@ to create your domain.  To continue, follow the instructions in the [SOA Domain 
 
 #### Configuring a load balancer for SOA Suite domains
 
-An Ingress based load balancer can be configured to access the Oracle SOA and Oracle Service Bus domain application URLs.
+An ingress-based load balancer can be configured to access the Oracle SOA and Oracle Service Bus domain application URLs.
 Refer to the [Ingress](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/ingress/) document for details.
 
 As part of the `ingress-per-domain` setup for Oracle SOA and Oracle Service Bus domains, the `values.yaml` file (under the `ingress-per-domain` directory) needs to be updated with the appropriate values from your environment. A sample `values.yaml` file (for the Traefik load balancer) is shown below:
@@ -383,7 +383,7 @@ voyager:
   statsPort: 30315
 ```
 
-Below are the path-based, Ingress routing rules (`spec.rules` section) that need to be defined for Oracle SOA and Oracle Service Bus domains. You need to update the appropriate Ingress template YAML file based on the load balancer being used. For example, the template YAML file for the Traefik load balancer is located at `kubernetes/samples/charts/ingress-per-domain/templates/traefik-ingress.yaml`.
+Below are the path-based, ingress routing rules (`spec.rules` section) that need to be defined for Oracle SOA and Oracle Service Bus domains. You need to update the appropriate Ingress template YAML file based on the load balancer being used. For example, the template YAML file for the Traefik load balancer is located at `kubernetes/samples/charts/ingress-per-domain/templates/traefik-ingress.yaml`.
 
 ```bash
 rules:

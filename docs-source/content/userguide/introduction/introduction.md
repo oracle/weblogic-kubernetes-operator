@@ -16,6 +16,8 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
+For the current production release 2.5.0:
+
 * Kubernetes 1.13.5+, 1.14.8+, and 1.15.7+ (check with `kubectl version`). Not supported on Kubernetes 1.16 or later; see note below.
   See note below for OpenShift.
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`) *or* OpenShift SDN on OpenShift 4.3 systems.
@@ -61,7 +63,7 @@ AKS support and limitations:
 * Both Domain in Image and Domain in PV domain home source types are supported.  
 * For Domain in PV, we support Azure Files volumes accessed through
   a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
-* Azure Load Balancers are supported when provisioned using a Kubernetes service of `type=LoadBalancer`.
+* Azure Load Balancers are supported when provisioned using a Kubernetes Service of `type=LoadBalancer`.
 * Oracle databases running in Oracle Cloud Infrastructure are supported for Fusion Middleware
   Infrastructure MDS data stores only when accessed through an OCI FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.
