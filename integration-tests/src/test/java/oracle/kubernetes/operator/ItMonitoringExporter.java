@@ -287,7 +287,7 @@ public class ItMonitoringExporter extends BaseTest {
         "" + domainMap.get("namespace"),
         " -- mkdir -p " + appLocationInPod);
     domain.deployWebAppViaWlst(
-        "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
+        "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true, 5);
   }
 
   /**
