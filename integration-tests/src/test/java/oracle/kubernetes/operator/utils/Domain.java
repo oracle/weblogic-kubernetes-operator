@@ -829,7 +829,7 @@ public class Domain {
       cmd.append("kubectl get ")
           .append(ingress)
           .append(" -n ")
-          .append( getDomainUid())
+          .append(getDomainUid())
           .append(" | grep ")
           .append(getDomainUid());
       TestUtils.checkAnyCmdInLoop(cmd.toString(),getDomainUid() + "-" + lbName);
