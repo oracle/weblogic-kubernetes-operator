@@ -163,7 +163,8 @@ public class CommonUtils {
                 opNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(operatorIsReady(opNamespace));
+        .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+            "operatorIsReady failed with ApiException"));
 
     return opHelmParams;
   }
@@ -177,8 +178,8 @@ public class CommonUtils {
    * @return the NGINX Helm installation parameters
    */
   public static HelmParams installAndVerifyNginx(String nginxNamespace,
-                                           int nodeportshttp,
-                                           int nodeportshttps) {
+                                                 int nodeportshttp,
+                                                 int nodeportshttps) {
 
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
@@ -217,20 +218,19 @@ public class CommonUtils {
                 nginxNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(isNginxReady(nginxNamespace));
+        .until(assertDoesNotThrow(() -> isNginxReady(nginxNamespace), "isNginxReady failed with ApiException"));
 
     return nginxHelmParams;
   }
 
   /**
-   * Create a model in image domain in the specified namespace and wait up to 5 minutes until the domain exists
-   * in the namespace.
+   * Create a model in image domain in the specified namespace and wait up to 5 minutes until the domain exists.
    *
-   * @param miiImage the docker image of the model-in-image domain
-   * @param domainUid the domain uid for the model-in-image domain
-   * @param domainNamespace the namespace in which the domain will be created
+   * @param miiImage docker image of the model-in-image domain
+   * @param domainUid domain uid of the model-in-image domain
+   * @param domainNamespace namespace in which the domain will be created
    * @param clusters list of the oracle.weblogic.domain.Cluster objects used to create the domain
-   * @param domainType the domain type for model-in-image domain, accepted value: WLS, JRF and RestrictedJRF
+   * @param domainType domain type of the model-in-image domain, accepted value: WLS, JRF and RestrictedJRF
    */
   public static void createMiiDomain(String miiImage,
                                      String domainUid,

@@ -274,8 +274,8 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     assertThat(assertDoesNotThrow(() ->
         createIngress(ingressName, domainNamespace, domainUid, managedServerPort, Arrays.asList(clusterName))))
         .as("Test ingress {0} creation succeeds", ingressName)
-        .withFailMessage("Ingress creation failed for cluster {0} of domain {1} in namespace {2}",
-            clusterName, domainUid, domainNamespace)
+        .withFailMessage("Ingress creation failed for domain {0} in namespace {1}",
+            domainUid, domainNamespace)
         .isTrue();
 
     // check the ingress was found in the domain namespace
@@ -299,7 +299,7 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
-        String.format("curl --silent --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
+        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
             domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Verify NGINX can access the sample app from all managed servers in the domain")

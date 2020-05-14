@@ -230,7 +230,6 @@ public class TestAssertions {
                                            String domainUid,
                                            String domainNamespace,
                                            String podOriginalCreationTimestamp) {
-    return Domain.podStateNotChanged(podName, domainUid, domainNamespace,
-        podOriginalCreationTimestamp);
+    return Domain.podStateNotChanged(podName, domainUid, domainNamespace, podOriginalCreationTimestamp);
   }
 }
