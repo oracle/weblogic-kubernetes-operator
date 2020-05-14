@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlButton;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -652,6 +656,25 @@ public class ItDomainOnPV implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(serviceExists(serviceName, null, domainNamespace));
+  }
+
+
+  private void loginTest() throws Exception {
+    String consoleUrl = new StringBuffer()
+        .append("http://")
+        .append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(TestActions.getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"))
+        .append("/console/login/LoginForm.jsp").toString();
+
+    final WebClient webClient = new WebClient();
+    final HtmlPage loginPage = webClient.getPage(consoleUrl);
+    HtmlForm form = loginPage.getFormByName("loginData");
+    form.getInputByName("j_username").type("system");
+    form.getInputByName("j_password").type("gumby1234");
+    HtmlButton loginButton = (HtmlButton) form.getByXPath("//input[@value='Login']").get(0);
+    HtmlPage home = (HtmlPage) loginButton.click();
+    assertTrue(home.asText().contains("Persistent Stores"), "Console login failed");
   }
 
 }

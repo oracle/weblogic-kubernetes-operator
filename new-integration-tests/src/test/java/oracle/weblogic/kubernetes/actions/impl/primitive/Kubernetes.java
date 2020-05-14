@@ -69,6 +69,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
@@ -1471,6 +1472,46 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Get namespaced service object.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service object to get
+   * @return V1Service object if found, otherwise null
+   */
+  public static V1Service getNamespacedService(String namespace, String serviceName) {
+    V1ServiceList listServices = listServices(namespace);
+    if (!listServices.getItems().isEmpty()) {
+      for (var service : listServices.getItems()) {
+        if (service.getMetadata().getName().equalsIgnoreCase(serviceName)) {
+          return service;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get node port of a namespaced service given the channel name.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the nodeport
+   * @return node port if service and channel is found, otherwise -1
+   */
+  public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
+    V1Service service = getNamespacedService(namespace, serviceName);
+    if (service != null) {
+      V1ServicePort port = service.getSpec().getPorts().stream().filter(
+          v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
+          .findAny().orElse(null);
+      if (port != null) {
+        return port.getNodePort();
+      }
+    }
+    return -1;
+  }
+
+  /**
    * List services in a given namespace.
    *
    * @param namespace name of the namespace
@@ -1516,7 +1557,7 @@ public class Kubernetes implements LoggedTest {
     }
     return name;
   }
-  
+
   /**
    * Delete a job.
    *

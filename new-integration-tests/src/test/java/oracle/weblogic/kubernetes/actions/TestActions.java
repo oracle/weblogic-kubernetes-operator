@@ -448,6 +448,18 @@ public class TestActions {
     return Service.delete(name, namespace);
   }
 
+  /**
+   * Get node port of a namespaced service given the channel name.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the nodeport
+   * @return node port if service and channel is found, otherwise -1
+   */
+  public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
+    return Service.getServiceNodePort(namespace, serviceName, channelName);
+  }
+
   // ------------------------ service account  --------------------------
 
   /**
