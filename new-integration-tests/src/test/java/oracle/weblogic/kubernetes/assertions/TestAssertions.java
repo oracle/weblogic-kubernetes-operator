@@ -226,6 +226,27 @@ public class TestAssertions {
   }
 
   /**
+   * Check if a pod is restarted based on podCreationTimestamp.
+   *
+   * @param podName the name of the pod to check for
+   * @param domainUid the label the pod is decorated with
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @throws ApiException when query fails
+   */
+  public static Callable<Boolean> isPodRestarted(
+      String podName,
+      String domainUid,
+      String namespace,
+      String timestamp
+  ) throws ApiException {
+    return () -> {
+      return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+    };
+  }
+
+  /*
    * Verify the original managed server pod state is not changed during scaling the cluster.
    * 
    * @param podName the name of managed server pod to check

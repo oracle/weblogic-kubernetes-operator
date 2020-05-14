@@ -15,20 +15,20 @@ public class ConfigMap {
    * @param configMap V1ConfigMap object containing config map configuration data
    * @return true on success
    * @throws ApiException if Kubernetes client API call fails
-   */
+  */
   public static boolean create(V1ConfigMap configMap) throws ApiException {
     return Kubernetes.createConfigMap(configMap);
   }
 
   /**
-   /**
    * Delete Kubernetes Config Map.
    *
    * @param name name of the Config Map
    * @param namespace name of namespace
    * @return true if successful, false otherwise
-   */
+  */
   public static boolean delete(String name, String namespace) {
     return Kubernetes.deleteConfigMap(name, namespace);
   }
+
 }
