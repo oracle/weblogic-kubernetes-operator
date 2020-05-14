@@ -14,8 +14,7 @@
 #   WORKDIR:           /tmp/$USER/model-in-image-sample-work-dir
 #   TRAEFIK_NAME:      traefik-operator
 #   TRAEFIK_NAMESPACE: ${TRAEFIK_NAME}-ns
-#   DOMAIN_UID:        sample-domain1
-#   DOMAIN_NAMESPACE:  ${DOMAIN_UID}-ns
+#   DOMAIN_NAMESPACE:  sample-domain1-ns
 # 
 # This script also tracks an release checksum in the
 # WORKDIR/test-out directory so it can skip itself
@@ -33,8 +32,7 @@ WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator}
 TRAEFIK_NAMESPACE=${TRAEFIK_NAMESPACE:-${TRAEFIK_NAME}-ns}
 
-DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
 mkdir -p $WORKDIR/test-out
 

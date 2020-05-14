@@ -17,9 +17,9 @@
 #  Assumptions:
 #
 #    - The WebLogic Image Tool zip is:
-#         'WORKDIR/model-images/weblogic-image-tool.zip' 
+#         'WORKDIR/model-images/imagetool.zip' 
 #      the WebLogic Deploy Tool zip is:
-#         'WORKDIR/model-images/weblogic-deploy-tooling.zip'
+#         'WORKDIR/model-images/weblogic-deploy.zip'
 #      (see './stage-tooling.sh').
 #
 #    - Model files have been staged in the MODEL_DIR directory.
@@ -82,7 +82,7 @@ dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
 dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
 dryrun:
 dryrun:cd $WORKDIR/model-images
-dryrun:unzip -o weblogic-image-tool.zip
+dryrun:unzip -o imagetool.zip
 dryrun:
 dryrun:mkdir -p $WORKDIR/model-images/imagetool/cache
 dryrun:export WLSIMG_CACHEDIR=$WORKDIR/model-images/imagetool/cache
@@ -96,7 +96,7 @@ dryrun:
 dryrun:$IMGTOOL cache addInstaller \\
 dryrun:  --type wdt \\
 dryrun:  --version latest \\
-dryrun:  --path ${WORKDIR}/model-images/weblogic-deploy-tooling.zip
+dryrun:  --path ${WORKDIR}/model-images/weblogic-deploy.zip
 dryrun:
 dryrun:MODEL_YAML_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
 dryrun:MODEL_ARCHIVE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"

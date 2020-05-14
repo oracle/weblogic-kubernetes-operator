@@ -74,5 +74,5 @@ download_zip() {
   fi
 }
 
-download_zip weblogic-deploy-tooling.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
-download_zip weblogic-image-tool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT
+download_zip weblogic-deploy.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
+download_zip imagetool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT

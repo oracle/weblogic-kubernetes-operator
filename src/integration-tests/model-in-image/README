@@ -32,8 +32,7 @@ To run stand alone (not as part of a test framework)
 
   3) Run the test.
 
-     For WLS: ./run-test.sh -clean [-noupdate]
-     For JRF: ./run-test.sh -clean [-noupdate] -jrf -db
+     ./run-test.sh -clean [-jrf -db] -initial -update1 -update2 -update3
 
      WARNINGS AND NOTES:
 
@@ -49,7 +48,9 @@ To run stand alone (not as part of a test framework)
 
        - The '-db' option will cause the test to deploy Oracle DB.
 
-       - Pass '-noupdate' to skip the multi-minute 'update' portion of the test.
+       - "initial" "update1" "update2" and "update3" correspond
+         to the use cases in the MII sample. Note that "update3"
+         depends on "update1" running first...
 
   4) Optionally rerun the test with different env vars, but _without_ '-clean'.
 
@@ -90,8 +91,8 @@ To integrate it with a test framework:
 
      Defaults are as shown.
 
-     See this test's 'test-env.sh' for additional customizable env vars,
-     but be aware that some of the 'wrapper' env vars are overridden
+     See the ./test-env and wrapper README for additional customizable
+     env vars, but be aware that some of the 'wrapper' env vars are overridden
      by the test and should not be set
      (includes MODEL_DIR, DOMAIN_UID, MODEL_IMAGE_TAG, 
       INCLUDE_MODEL_CONFIGMAP, WDT_DOMAIN_TYPE, etc.). 
@@ -110,11 +111,3 @@ To integrate it with a test framework:
 
   5) Make sure traefik is running with node port 30305, and
      monitoring DOMAIN_NAMESPACE.
-
-  6) For WLS: 
-       ./run-test.sh [-noupdate]
-
-     For JRF:
-       ./run-test.sh -jrf [-noupdate]
-
-     To skip the multi-minute 'update' portion of the test, pass '-noupdate'.

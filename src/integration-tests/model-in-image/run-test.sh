@@ -18,11 +18,6 @@ source $TESTDIR/util-dots.sh
 source $TESTDIR/util-misc.sh
 source $TESTDIR/test-env.sh
 
-export DOMAIN_UID="sample-domain1"
-export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
-
-m_image="${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-v1}"
-
 trace "Running end to end MII sample test."
 
 DRY_RUN=false
@@ -30,8 +25,10 @@ DO_CLEAN=false
 DO_DB=false
 DO_OPER=false
 DO_TRAEFIK=false
-DO_MAIN=true
-DO_UPDATE=true
+DO_INITIAL=false
+DO_UPDATE1=false
+DO_UPDATE2=false
+DO_UPDATE3=false
 WDT_DOMAIN_TYPE=WLS
 
 function usage() {
@@ -63,9 +60,13 @@ function usage() {
                 'DOMAIN_NAMESPACE' which defaults 
                 to 'sample-domain1-ns'.
 
-    -nomain   : Skip main test.
+    -initial  : Run initial use case.
 
-    -noupdate : Skip testing a runtime model update.
+    -update1  : Run update1 use case (add data source via configmap).
+
+    -update2  : Run update2 use case (deploy second domain).
+
+    -update3  : Run update3 use case (update first domain's app with new image).
 
     -?        : This help.
 
@@ -87,8 +88,10 @@ while [ ! -z "${1:-}" ]; do
     -oper)      DO_OPER="true" ;;
     -traefik)   DO_TRAEFIK="true" ;;
     -jrf)       WDT_DOMAIN_TYPE="JRF"; ;;
-    -nomain)    DO_MAIN="false" ;;
-    -noupdate)  DO_UPDATE="false" ;;
+    -initial)   DO_INITIAL="true" ;;
+    -update1)   DO_UPDATE1="true" ;;
+    -update2)   DO_UPDATE2="true" ;;
+    -update3)   DO_UPDATE3="true" ;;
     -?)         usage; exit 0; ;;
     *)          trace "Error: Unrecognized parameter '${1}', pass '-?' for usage."; exit 1; ;;
   esac
@@ -121,17 +124,20 @@ if [ "$DO_CLEAN" = "true" ]; then
   doCommand -c mkdir -p \$WORKDIR
   doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR
 
-  # TBD update to delete all images with name 'MODEL_IMAGE_NAME:*'
-
-  # delete model image, if any, and dangling images
-  if [ ! "$DRY_RUN" = "true" ]; then
-    if [ ! -z "$(docker images -q $m_image)" ]; then
-      trace "Info: Forcing model image rebuild by removing old docker image '$m_image'!"
-      docker image rm $m_image
+  # delete model images, if any, and dangling images
+  for m_image in \
+    "${MODEL_IMAGE_NAME:-model-in-image}:${WDT_DOMAIN_TYPE}-v1" \
+    "${MODEL_IMAGE_NAME:-model-in-image}:${WDT_DOMAIN_TYPE}-v2" 
+  do
+    if [ ! "$DRY_RUN" = "true" ]; then
+      if [ ! -z "$(docker images -q $m_image)" ]; then
+        trace "Info: Forcing model image rebuild by removing old docker image '$m_image'!"
+        docker image rm $m_image
+      fi
+    else
+      echo "dryrun: [ ! -z "$(docker images -q $m_image)" ] && docker image rm $m_image"
     fi
-  else
-    echo "dryrun: [ ! -z "$(docker images -q $m_image)" ] && docker image rm $m_image"
-  fi
+  done
 fi
 
 # 
@@ -147,7 +153,6 @@ doCommand -c DBSAMPLEDIR=$DBSAMPLEDIR
 doCommand -c source \$TESTDIR/test-env.sh
 doCommand -c export WORKDIR=$WORKDIR
 doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
-doCommand -c export DOMAIN_UID=$DOMAIN_UID
 doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 
 #
@@ -185,10 +190,12 @@ fi
 # Deploy initial domain, wait for its pods to be ready, and test its cluster app
 #
 
-wait_parms="-d $DOMAIN_UID -n $DOMAIN_NAMESPACE"
 
-if [ "$DO_MAIN" = "true" ]; then
+if [ "$DO_INITIAL" = "true" ]; then
+  wait_parms="-d $DOMAIN_UID1 -n $DOMAIN_NAMESPACE"
 
+  doCommand  -c export DOMAIN_UID=$DOMAIN_UID1
+  doCommand  -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-initial.yaml"
   doCommand  -c "export INCLUDE_CONFIGMAP=false"
   doCommand  "\$MIIWRAPPERDIR/stage-tooling.sh"
   doCommand  "\$MIIWRAPPERDIR/build-model-image.sh"
@@ -197,7 +204,6 @@ if [ "$DO_MAIN" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
 
-  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
   doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
 
   # Cheat to speedup a subsequent roll/shutdown.
@@ -226,7 +232,8 @@ fi
 # the test app to verify that the datasource deployed.
 #
 
-if [ "$DO_UPDATE" = "true" ]; then
+if [ "$DO_UPDATE1" = "true" ]; then
+  wait_parms="-d $DOMAIN_UID1 -n $DOMAIN_NAMESPACE"
 
   # JRF specific testing
   # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
@@ -234,6 +241,8 @@ if [ "$DO_UPDATE" = "true" ]; then
   #   set env var to tell creat-domain-resource to uncomment wallet secret
   # fi
 
+  doCommand  -c export DOMAIN_UID=$DOMAIN_UID1
+  doCommand  -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update1.yaml"
   doCommand  -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
@@ -241,7 +250,6 @@ if [ "$DO_UPDATE" = "true" ]; then
   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
   doCommand  "\$WORKDIR/utils/patch-restart-version.sh $wait_parms"
 
-  #doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
   doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
 
   # Cheat to speedup a subsequent roll/shutdown.
@@ -252,8 +260,71 @@ if [ "$DO_UPDATE" = "true" ]; then
 
 fi
 
-# TBD add automated phase for testing update to v2 of the image
+#
+# Deploy a second domain to the same ns similar to the
+# update1 ns, wait for it to start, and use the test
+# app to verify its up. Also verify that the original
+# domain is responding to its calls.
+#
 
-# TBD add automated phase for testing adding a second domain
+if [ "$DO_UPDATE2" = "true" ]; then
+  wait_parms="-d $DOMAIN_UID2 -n $DOMAIN_NAMESPACE"
+
+  # JRF specific testing?
+
+  doCommand -c export DOMAIN_UID=$DOMAIN_UID2
+  doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update2.yaml"
+  doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
+  doCommand -c export CUSTOM_DOMAIN_NAME=domain2
+  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-model-configmap.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
+
+  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+
+  # Cheat to speedup a subsequent roll/shutdown.
+  [ ! "$DRY_RUN" = "true" ] && diefast
+
+  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "name....domain2"
+  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "name....domain2"
+
+  doCommand -c export DOMAIN_UID=$DOMAIN_UID1
+
+  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "name....domain1"
+  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "name....domain1"
+fi
+
+#
+# Deploy an updated application to the first domain
+# using an updated image, wait for it to roll, and 
+# test the app to verify the update took effect.
+#
+
+if [ "$DO_UPDATE3" = "true" ]; then
+  wait_parms="-d $DOMAIN_UID1 -n $DOMAIN_NAMESPACE"
+
+  # JRF specific testing?
+
+  doCommand -c export DOMAIN_UID=$DOMAIN_UID1
+  doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update3.yaml"
+  doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
+  doCommand -c export CUSTOM_DOMAIN_NAME=domain1
+  doCommand -c export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2
+  doCommand -c export ARCHIVE_SOURCEDIR=archives/archive-v2
+
+  doCommand  "\$MIIWRAPPERDIR/build-model-image.sh"
+  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
+
+  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+
+  # Cheat to speedup a subsequent roll/shutdown.
+  [ ! "$DRY_RUN" = "true" ] && diefast
+
+  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "v2"
+  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "v2"
+fi
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."

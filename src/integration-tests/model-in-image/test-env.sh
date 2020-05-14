@@ -38,3 +38,7 @@ export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 #  Defaults are 'traefik-operator' and '${TRAEFIK_NAME}-ns'
 # export TRAEFIK_NAME=
 # export TRAEFIK_NAMESPACE=
+
+export DOMAIN_UID1="${DOMAIN_UID1:-sample-domain1}"
+export DOMAIN_UID2="${DOMAIN_UID2:-sample-domain2}"
+export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
