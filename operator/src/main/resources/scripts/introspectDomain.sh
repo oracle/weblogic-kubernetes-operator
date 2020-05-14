@@ -119,11 +119,15 @@ if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
     trace "Beginning Model In Image"
     command -v gzip
     if [ $? -ne 0 ] ; then
-      trace SEVERE "gzip is missing - image must have gzip installed " && exit 1
+      trace SEVERE "DomainSourceType is FromModel, gzip is missing in the image. Please use an image with gzip installed" && exit 1
     fi
     command -v tar
     if [ $? -ne 0 ] ; then
-      trace SEVERE "tar is missing - image must have tar installed " && exit 1
+      trace SEVERE "DomainSourceType is FromModel, tar is missing in the image. Please use an image with tar installed" && exit 1
+    fi
+    command -v unzip
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "DomainSourceType is FromModel, unzip is missing in the image. Please use an image with unzip installed" && exit 1
     fi
     mkdir -p ${DOMAIN_HOME}
     if [ $? -ne 0 ] ; then
