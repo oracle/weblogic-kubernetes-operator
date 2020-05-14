@@ -272,12 +272,15 @@ Location | Description |
 
    Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory.
 
-   For example, visit the GitHub [WebLogic Deploy Tooling Releses](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.0` and `1.8.4` respectively, call:
+   For example, visit the GitHub [WebLogic Deploy Tooling Releses](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.1` and `1.8.5` respectively, call:
 
    ```
-   $ curl -m 30 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.0/weblogic-deploy.zip \
+   $ cd /tmp/mii-sample/model-images
+
+   $ curl -m 30 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.1/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
-   $ curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.4/imagetool.zip \
+
+   $ curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.5/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 
@@ -1763,7 +1766,7 @@ Note that this use case shows Model in Image's unique ability to quickly deploy 
 - A Domain in Image domain home source type does not support overriding the domain name, but different domain names are necessary when two domains need to interoperate. In this use case, we take advantage of model macros to ensure that its two different domains have a different domain name: 
 
   - First, we define the domain name in the model YAML using the `@@ENV:CUSTOM_DOMAIN_NAME@@` environment variable macro.
-  - Second, we set the value of the `CUSTOM_DOMAIN_NAME` environment variable to different values using the `env` stanza in each domain's domain resource.
+  - Second, we set the value of the `CUSTOM_DOMAIN_NAME` environment variable differently using the `env` stanza in each domain's domain resource.
 
 - Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [why layering matters]({{< relref "/userguide/cicd/why-layering-matters.md" >}}) in CI/CD Considerations). This necessarily means that two Domain in Image domains that share the same image have the ability to decrypt each other's encrypted passwords. A Model in Image's domain encryption key, on the other hand, is not embedded in the image and is instead dynamically and uniquely created each time the domain is started. 
 
@@ -2219,13 +2222,17 @@ We will not be using the `sample-domain2` domain again in this sample; if you wi
 
 ### Update3 use case
 
-The Update3 use case demonstrates deploying an updated image with an updated application to the running [Update1 use case](#update1-use-case) domain, and initiating a rolling restart of this domain.
+The Update3 use case demonstrates deploying an an updated WebLogic application to the running [Update1 use case](#update1-use-case) domain using an updated Docker image.
 
-In the use case, we will create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with with the following updates:
- - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
- - An updated model YAML within the image that points to the new web application path.
+In the use case, we will:
 
-We will then apply an updated domain resource that references the new image while still referencing the original [Update1 use case](#update1-use-case) case secrets and model ConfigMap. Once the domain resource is applied, we expect the operator to:
+ - Create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with with the following updates:
+   - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
+   - An updated model YAML within the image that points to the new web application path.
+ - Apply an updated domain resource that references the new image while still referencing the original [Update1 use case](#update1-use-case) case secrets and model ConfigMap. 
+
+Once the updated domain resource is applied, we expect the operator to:
+
  - Rerun the introspector job and generate a new domain home based on the new model.
  - Restart the domain's administration server pod so that it loads the new image and new domain home.
  - Roll the domain's cluster servers one at a time so that they each load the new image, new domain home, and revised application.
@@ -2238,21 +2245,21 @@ Here are the steps for this use case:
 
 1. Make sure you have deployed the domain from the [Update1 use case](#update1-use-case).
 
-2. Create an updated image 
+2. Create an updated image. 
 
    Recall that a goal of the [Initial use case](#initial-use-case) was to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files included a web application in a WDT zip archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-v1` and, in addition to having a copy of the staged files in its `/u01/wdt/models` directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.
 
    In this use case, we will follow similar steps to the [Initial use case](#initial-use-case) in order to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update1 use case](#update1-use-case) domain.
 
-   - Understanding our updated WDT archive
+   - Understanding our updated WDT archive.
 
      The updated archive for this use case is in directory `/tmp/mii-sample/archives/archive-v2`. We will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/mii-sample/archives/archive-v1` from the [Initial use case](#initial-use-case) with the the following differences:
      - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
      - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference with the original application: it changes the line `out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the mii-sample JSP web-app.");`.
 
-     For additional information about archives, see [Understanding our first archive](#understanding-our-first-archive) section in the [Initial use case](#initial-use-case) within this sample.
+     For additional information about archives, see the [Understanding our first archive](#understanding-our-first-archive) section in the [Initial use case](#initial-use-case) within this sample.
 
-   - Stage a ZIP file of the WDT archive
+   - Stage a ZIP file of the WDT archive.
 
      > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths below.
 
@@ -2271,7 +2278,7 @@ Here are the steps for this use case:
      $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip wlsdeploy
      ```
 
-   - Understanding our staged model files
+   - Understanding our staged model files.
 
      The WDT model YAML file and properties for this use case have already been staged for you to directory `/tmp/mii-sample/model-in-image__WLS-v2`. 
 
@@ -2288,7 +2295,7 @@ Here are the steps for this use case:
 
      If you would like to review the entire original model before this change, see [Staging model files](#staging-model-files) in the [Initial use case](#initial-use-case) within this sample.
 
-   - Create a new image from our staged model files using WIT
+   - Create a new image from our staged model files using WIT.
 
      > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
 
@@ -2418,7 +2425,160 @@ Here are the steps for this use case:
 
      {{%expand "Click here to expand sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```
-   TBD
+   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
+   
+   @@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   ready='true'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   image='model-in-image:WLS-v2'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   domainRestartVersion='1'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   namespace='sample-domain1-ns'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   domainUID='sample-domain1'
+   
+   @@ [2020-05-14T17:28:47][seconds=1] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:28:47][seconds=1] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                                          VERSION  IMAGE                    READY   PHASE      
+   --------------------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'                 '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-introspect-domain-job-g5kzn'  ''       ''                       ''      'Running'  
+   'sample-domain1-managed-server1'              '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'              '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:29:39][seconds=53] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:39][seconds=53] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:29:50][seconds=64] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:50][seconds=64] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:29:58][seconds=72] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:58][seconds=72] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:29:59][seconds=73] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:59][seconds=73] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'false'  'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:30:30][seconds=104] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:30:30][seconds=104] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:31:13][seconds=147] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:13][seconds=147] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'false'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:31:15][seconds=149] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:15][seconds=149] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:31:41][seconds=175] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:41][seconds=175] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:31:42][seconds=176] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:42][seconds=176] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:32:21][seconds=215] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:21][seconds=215] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:32:31][seconds=225] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:31][seconds=225] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'false'  'Running'  
+   
+   @@ [2020-05-14T17:32:40][seconds=234] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:40][seconds=234] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:32:51][seconds=245] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:51][seconds=245] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
+   
+   @@ [2020-05-14T17:32:52][seconds=246] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:52][seconds=246] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Running'  
+   
+   @@ [2020-05-14T17:33:25][seconds=279] Info: '3' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:33:25][seconds=279] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   
+   
+   @@ [2020-05-14T17:33:25][seconds=279] Info: Success!
+
    ```
      {{% /expand%}}
 
