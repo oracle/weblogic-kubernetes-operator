@@ -443,7 +443,7 @@ public class Kubernetes {
       throws ApiException {
     List<V1Job> jobs = listJobs(namespace, labelSelectors).getItems();
     for (V1Job job : jobs) {
-      if (job.getMetadata().getName().equals(jobName)) {
+      if (job != null && job.getMetadata().getName().equals(jobName)) {
         return job;
       }
     }
@@ -507,7 +507,7 @@ public class Kubernetes {
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
-      String podName, String domainUid, 
+      String podName, String domainUid,
       String namespace, String timestamp) throws ApiException {
     boolean podRestarted = false;
     String labelSelector = null;

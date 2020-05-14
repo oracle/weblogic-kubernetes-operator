@@ -56,7 +56,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -70,6 +69,8 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -80,6 +81,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
@@ -89,12 +91,15 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -228,7 +233,7 @@ public class ItDomainOnPV implements LoggedTest {
                         .nodePort(0))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
-                .replicas(2)
+                .replicas(replicaCount)
                 .serverStartState("RUNNING")));
 
     logger.info("Creating domain custom resource {0} in namespace {1}",
@@ -277,7 +282,7 @@ public class ItDomainOnPV implements LoggedTest {
     logger.info("Validating WebLogic admin server access by login to console");
     logger.info("Getting node port");
     int serviceNodePort = assertDoesNotThrow(()
-        -> TestActions.getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
         "Accessing admin server node port failed");
     String consoleUrl = new StringBuffer()
         .append("http://")
@@ -346,8 +351,8 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("admin_server_name", adminServerName);
     p.setProperty("managed_server_port", "8001");
     p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", "system");
-    p.setProperty("admin_password", "gumby1234");
+    p.setProperty("admin_username", adminUser);
+    p.setProperty("admin_password", adminPassword);
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
     p.setProperty("admin_t3_channel_port", "32001");
     p.setProperty("number_of_ms", "4");
@@ -381,7 +386,7 @@ public class ItDomainOnPV implements LoggedTest {
         .data(data)
         .metadata(meta);
 
-    boolean cmCreated = assertDoesNotThrow(() -> TestActions.createConfigMap(configMap),
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Failed to create configmap %s with files %s", configMapName, files));
     assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
   }
@@ -446,8 +451,8 @@ public class ItDomainOnPV implements LoggedTest {
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))))));
-    String jobName = assertDoesNotThrow(() -> TestActions
-        .createNamespacedJob(jobBody), "Domain creation job failed");
+    String jobName = assertDoesNotThrow(() ->
+        createNamespacedJob(jobBody), "Domain creation job failed");
 
     logger.info("Checking if the domain creation job {0} completed in namespace {1}",
         jobName, namespace);
@@ -470,7 +475,6 @@ public class ItDomainOnPV implements LoggedTest {
     // docker login, if necessary
     logger.info("docker login to OCR registry");
     assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "login to OCR failed");
-
 
     logger.info("Creating repository registry secret in namespace {0}", domainNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
@@ -515,7 +519,7 @@ public class ItDomainOnPV implements LoggedTest {
     logger.info("creating persistent volume and persistent volume claim");
 
     Path pvHostPath = Files.createDirectories(Paths.get(
-        TestConstants.PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume"));
+        PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume"));
     logger.info("Creating PV directory {0}", pvHostPath);
     FileUtils.deleteDirectory(pvHostPath.toFile());
     Files.createDirectories(pvHostPath);
@@ -536,7 +540,7 @@ public class ItDomainOnPV implements LoggedTest {
             .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
     boolean success = assertDoesNotThrow(
-        () -> TestActions.createPersistentVolume(v1pv),
+        () -> createPersistentVolume(v1pv),
         "Persistent volume creation failed, "
         + "look at the above console log messages for failure reason in ApiException responsebody"
     );
@@ -557,7 +561,7 @@ public class ItDomainOnPV implements LoggedTest {
             .putLabelsItem("weblogic.domainUid", domainUid));
 
     success = assertDoesNotThrow(
-        () -> TestActions.createPersistentVolumeClaim(v1pvc),
+        () -> createPersistentVolumeClaim(v1pvc),
         "Persistent volume claim creation failed, "
         + "look at the above console log messages for failure reason in ApiException responsebody"
     );

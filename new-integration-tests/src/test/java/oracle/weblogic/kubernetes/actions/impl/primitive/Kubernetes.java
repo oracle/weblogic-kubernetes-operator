@@ -1546,7 +1546,9 @@ public class Kubernetes implements LoggedTest {
           null, // String | dry run or permanent change
           null // String | field manager who is making the change
       );
-      name = createdJob.getMetadata().getName();
+      if (createdJob != null) {
+        name = createdJob.getMetadata().getName();
+      }
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
       throw apex;
