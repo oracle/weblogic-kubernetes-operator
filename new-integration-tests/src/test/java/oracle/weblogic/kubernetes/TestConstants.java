@@ -12,6 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
 
+  // domain constants
+  public static final String DOMAIN_VERSION = "v7";
+  public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
   public static final String OPERATOR_CHART_DIR =
@@ -47,6 +51,7 @@ public interface TestConstants {
       System.getProperty("java.io.tmpdir")) + "/ittestsresults";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
+
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
       System.getProperty("java.io.tmpdir") + "/ittestspvroot");
 
@@ -61,8 +66,4 @@ public interface TestConstants {
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_APP_NAME = "sample-app";
 
-  // domain constants
-  public static final String DOMAIN_VERSION = "v7";
-  public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
 }
-

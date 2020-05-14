@@ -363,11 +363,10 @@ public class Kubernetes implements LoggedTest {
    * @param name name of the Pod
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
-   * @return log as a String
+   * @return log as a String or NULL when there is an error
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodLog(String name, String namespace, String container)
-      throws ApiException {
+  public static String getPodLog(String name, String namespace, String container) throws ApiException {
     String log = null;
     try {
       log = coreV1Api.readNamespacedPodLog(
@@ -386,7 +385,6 @@ public class Kubernetes implements LoggedTest {
       logger.severe(apex.getResponseBody());
       throw apex;
     }
-
     return log;
   }
 
@@ -482,7 +480,7 @@ public class Kubernetes implements LoggedTest {
    *
    * @param namespace Namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
-   * @return V1PodList list of pods
+   * @return V1PodList list of pods or NULL when there is an error
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
@@ -1528,8 +1526,6 @@ public class Kubernetes implements LoggedTest {
       return null;
     }
   }
-
-  // --------------------------- jobs ---------------------------
 
   /**
    * Create a job.

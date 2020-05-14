@@ -3,16 +3,18 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+
 
 public class Service {
 
   /**
    * Create a Kubernetes Service.
    *
-   * @param service V1Service object containing Kubernetes secret configuration data
+   * @param service V1Service object containing Kubernetes service configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -32,6 +34,17 @@ public class Service {
   }
 
   /**
+   * Get namespaced service object.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service object to get
+   * @return V1Service object if found, otherwise null
+   */
+  public static V1Service getNamespacedService(String namespace, String serviceName) {
+    return Kubernetes.getNamespacedService(namespace, serviceName);
+  }
+
+  /**
    * Get node port of a namespaced service given the channel name.
    *
    * @param namespace name of the namespace in which to get the service
@@ -43,3 +56,4 @@ public class Service {
     return Kubernetes.getServiceNodePort(namespace, serviceName, channelName);
   }
 }
+

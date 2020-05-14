@@ -242,18 +242,24 @@ public class ItManagedCoherence extends BaseTest {
     // The above command only tests that the pod from the 1st cluster is Running (1/1)
     // So, checking the MS pod of the other cluster individually here.
     // When(If) we change the utils to handle 2 clusters, this can be removed.
-    TestUtils.checkPodReady(domainUid + "-new-managed-server1", domainNS1);
-    TestUtils.checkPodReady(domainUid + "-new-managed-server2", domainNS1);
+    String cluster2PodName1 = domainUid + "-new-managed-server1";
+    String cluster2PodName2 = domainUid + "-new-managed-server2";
+    int retriesToResolveServiceName = 15;
 
-    String[] pods = {
-      domainUid + "-" + domain.getAdminServerName(),
-      domainUid + "-managed-server",
-      domainUid + "-managed-server1",
-      domainUid + "-managed-server2",
-      domainUid + "-new-managed-server1",
-      domainUid + "-new-managed-server2",
-    };
-    
+    //Check managed servers are ready
+    TestUtils.checkPodReady(cluster2PodName1, domainNS1);
+    TestUtils.checkPodReady(cluster2PodName2, domainNS1);
+
+    //check services are created
+    TestUtils.checkServiceCreated(cluster2PodName1, domainNS1);
+    TestUtils.checkServiceCreated(cluster2PodName2, domainNS1);
+
+    //resolve managed server service names from admin pod
+    TestUtils.resolveServiceName(cluster2PodName1,
+            domainUid + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+    TestUtils.resolveServiceName(cluster2PodName2,
+        domainUid + "-" + domain.getAdminServerName(), domainNS1, retriesToResolveServiceName);
+
     LoggerHelper.getLocal().log(Level.INFO, " Printing the pods in the doamin");
     ExecResult result  = ExecCommand.exec("kubectl get pods -n " + domain.getDomainNs() + " -o wide");
     LoggerHelper.getLocal().log(Level.INFO, "stdout = " + result.stdout()
