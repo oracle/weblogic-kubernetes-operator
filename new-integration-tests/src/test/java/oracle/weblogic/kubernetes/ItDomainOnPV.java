@@ -119,8 +119,6 @@ public class ItDomainOnPV implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
 
-  private static String dockerConfigJson = "";
-
   private final String domainUid = "domain-onpv";
   private final String clusterName = "pv-domain-cluster";
   private final String adminServerName = "admin-server";
@@ -477,7 +475,7 @@ public class ItDomainOnPV implements LoggedTest {
     logger.info("Creating repository registry secret in namespace {0}", domainNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
         OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY);
-    dockerConfigJson = dockerConfigJsonObject.toString();
+    String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
@@ -587,7 +585,7 @@ public class ItDomainOnPV implements LoggedTest {
     logger.info("Creating docker registry secret in namespace {0}", opNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
         REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
-    dockerConfigJson = dockerConfigJsonObject.toString();
+    String dockerConfigJson = dockerConfigJsonObject.toString();
 
     logger.info("Creating the V1Secret configuration");
     V1Secret repoSecret = new V1Secret()
