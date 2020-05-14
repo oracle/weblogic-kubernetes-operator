@@ -51,7 +51,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
  * logging. Using FINER would cause more detailed logging, which includes what steps are executed in
  * what order and how they behaved.
  */
-public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
+public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, AsyncFiber {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
@@ -120,6 +120,17 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   }
 
   /**
+   * Use this fiber's executor to schedule an operation for some time in the future.
+   * @param timeout the interval before the check should run, in units
+   * @param unit the unit of time that defines the interval
+   * @param runnable the operation to run
+   */
+  @Override
+  public void scheduleOnce(long timeout, TimeUnit unit, Runnable runnable) {
+    this.owner.getExecutor().schedule(runnable, timeout, unit);
+  }
+
+  /**
    * Starts the execution of this fiber asynchronously. This method works like {@link
    * Thread#start()}.
    *
@@ -156,6 +167,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    *
    * @param resumePacket packet used in the resumed processing
    */
+  @Override
   public void resume(Packet resumePacket) {
     resume(resumePacket, null);
   }
@@ -211,6 +223,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    * @param t Throwable
    * @param packet Packet
    */
+  @Override
   public void terminate(Throwable t, Packet packet) {
     if (t == null) {
       throw new IllegalArgumentException();
@@ -239,6 +252,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    *
    * @return Child fiber
    */
+  @Override
   public Fiber createChildFiber() {
     Fiber child = owner.createChildFiber(this);
 
@@ -389,7 +403,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return null;
   }
 
-  private boolean suspend(Holder<Boolean> isRequireUnlock, Consumer<Fiber> onExit) {
+  private boolean suspend(Holder<Boolean> isRequireUnlock, Consumer<AsyncFiber> onExit) {
     if (LOGGER.isFinerEnabled()) {
       LOGGER.finer("{0} suspending", getName());
     }

@@ -139,6 +139,22 @@ public class FiberTestSupport {
   }
 
   /**
+   * Returns true if the specified action indicates that the fiber should be suspended.
+   * @param nextAction the action to check
+   * @return an indicator of the state of the nextAction instance
+   */
+  public static boolean isSuspendRequested(NextAction nextAction) {
+    return nextAction.kind == NextAction.Kind.SUSPEND;
+  }
+
+  /**
+   * Passes the specified fiber to the onExit function, if any.
+   */
+  public static void doOnExit(NextAction nextAction, AsyncFiber fiber) {
+    Optional.ofNullable(nextAction.onExit).orElse(f -> {}).accept(fiber);
+  }
+
+  /**
    * Starts a unit-test fiber with the specified step.
    *
    * @param step the first step to run

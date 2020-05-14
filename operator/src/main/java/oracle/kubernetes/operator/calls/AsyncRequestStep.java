@@ -22,11 +22,14 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
+import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
 
 /**
@@ -123,6 +126,90 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     timeoutSeconds *= 2;
   }
 
+  class AsyncRequestStepProcessing {
+
+    final Packet packet;
+    final RetryStrategy retryStrategy;
+    final String cont;
+    final AtomicBoolean didResume = new AtomicBoolean(false);
+    final ApiClient client;
+
+    public AsyncRequestStepProcessing(Packet packet, RetryStrategy retry, String cont) {
+      this.packet = packet;
+      retryStrategy = Optional.ofNullable(retry)
+            .orElse(new DefaultRetryStrategy(maxRetryCount, AsyncRequestStep.this, AsyncRequestStep.this));
+      this.cont = Optional.ofNullable(cont).orElse("");
+      client = helper.take();
+    }
+
+    // Create a call to Kubernetes that we can cancel if it doesn't succeed in time.
+    private CancellableCall createCall(AsyncFiber fiber) throws ApiException {
+      return factory.generate(requestParams, client, cont, new ApiCallbackImpl(this, fiber));
+    }
+
+    // The Kubernetes request succeeded. Recycle the client, add the response to the packet, and proceed.
+    void onSuccess(AsyncFiber fiber, T result, int statusCode, Map<String, List<String>> responseHeaders) {
+      if (firstTimeResumed()) {
+        if (LOGGER.isFinerEnabled()) {
+          logSuccess(result, statusCode, responseHeaders);
+        }
+
+        helper.recycle(client);
+        addResponseComponent(Component.createFor(
+            createSuccess(requestParams, result, statusCode).withResponseHeaders(responseHeaders)));
+        fiber.resume(packet);
+      }
+    }
+
+    // We received a failure from Kubernetes. Recycle the client,
+    // add the failure into the packet and prepare to try again.
+    void onFailure(AsyncFiber fiber, ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+      if (firstTimeResumed()) {
+        if (statusCode != CallBuilder.NOT_FOUND && LOGGER.isFineEnabled()) {
+          logFailure(ae, statusCode, responseHeaders);
+        }
+
+        helper.recycle(client);
+        addResponseComponent(Component.createFor(
+              RetryStrategy.class, retryStrategy,
+              createFailure(requestParams, ae, statusCode).withResponseHeaders(responseHeaders)));
+        fiber.resume(packet);
+      }
+    }
+
+    // If this is the first event after the fiber resumes, it indicates that we did not receive
+    // a callback within the timeout. So cancel the call and prepare to try again.
+    private void handleTimeout(AsyncFiber fiber, CancellableCall cc) {
+      if (firstTimeResumed()) {
+        try {
+          cc.cancel();
+        } finally {
+          if (LOGGER.isFinerEnabled()) {
+            logTimeout();
+          }
+          addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
+          fiber.resume(packet);
+        }
+      }
+    }
+
+    // A throwable occurred while attempting to set up the call. So prepare to try again.
+    private void resumeAfterThrowable(AsyncFiber fiber) {
+      if (firstTimeResumed()) {
+        addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
+        fiber.resume(packet);
+      }
+    }
+
+    private void addResponseComponent(Component component) {
+      packet.getComponents().put(RESPONSE_COMPONENT_NAME, component);
+    }
+
+    private boolean firstTimeResumed() {
+      return didResume.compareAndSet(false, true);
+    }
+  }
+
   @Override
   public NextAction apply(Packet packet) {
     // clear out earlier results
@@ -139,178 +226,111 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
       retry = oldResponse.getSpi(RetryStrategy.class);
     }
-    String c = (cont != null) ? cont : "";
-    if (retry == null) {
-      retry = new DefaultRetryStrategy(maxRetryCount, this, this);
-    }
-    RetryStrategy r = retry;
 
     if (LOGGER.isFinerEnabled()) {
-      LOGGER.finer(
-          MessageKeys.ASYNC_REQUEST,
-          identityHash(),
-          requestParams.call,
-          requestParams.namespace,
-          requestParams.name,
-          requestParams.body != null ? LoggingFactory.getJson().serialize(requestParams.body) : "",
-          fieldSelector,
-          labelSelector,
-          resourceVersion);
+      logAsyncRequest();
     }
 
-    AtomicBoolean didResume = new AtomicBoolean(false);
-    ApiClient client = helper.take();
+    AsyncRequestStepProcessing processing = new AsyncRequestStepProcessing(packet, retry, cont);
+
     return doSuspend(
         (fiber) -> {
-          ApiCallback<T> callback =
-              new BaseApiCallback<>() {
-                @Override
-                public void onFailure(
-                    ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-                  if (didResume.compareAndSet(false, true)) {
-                    if (statusCode != CallBuilder.NOT_FOUND) {
-                      if (LOGGER.isFineEnabled()) {
-                        LOGGER.fine(
-                            MessageKeys.ASYNC_FAILURE,
-                            identityHash(),
-                            ae.getMessage(),
-                            statusCode,
-                            responseHeaders,
-                            requestParams.call,
-                            requestParams.namespace,
-                            requestParams.name,
-                            requestParams.body != null
-                                ? LoggingFactory.getJson().serialize(requestParams.body)
-                                : "",
-                            fieldSelector,
-                            labelSelector,
-                            resourceVersion,
-                            ae.getResponseBody());
-                      }
-                    }
-
-                    helper.recycle(client);
-                    packet
-                        .getComponents()
-                        .put(
-                            RESPONSE_COMPONENT_NAME,
-                            Component.createFor(
-                                RetryStrategy.class,
-                                r,
-                                CallResponse.createFailure(requestParams, ae, statusCode)
-                                    .withResponseHeaders(responseHeaders)));
-                    fiber.resume(packet);
-                  }
-                }
-
-                @Override
-                public void onSuccess(
-                    T result, int statusCode, Map<String, List<String>> responseHeaders) {
-                  if (didResume.compareAndSet(false, true)) {
-                    if (LOGGER.isFinerEnabled()) {
-                      LOGGER.finer(
-                          ASYNC_SUCCESS,
-                          identityHash(),
-                          requestParams.call,
-                          result,
-                          statusCode,
-                          responseHeaders);
-                    }
-
-                    helper.recycle(client);
-                    packet
-                        .getComponents()
-                        .put(
-                            RESPONSE_COMPONENT_NAME,
-                            Component.createFor(
-                                CallResponse.createSuccess(requestParams, result, statusCode)
-                                    .withResponseHeaders(responseHeaders)));
-                    fiber.resume(packet);
-                  }
-                }
-              };
-
           try {
-            CancellableCall cc = factory.generate(requestParams, client, c, callback);
-
-            // timeout handling
-            fiber
-                .owner
-                .getExecutor()
-                .schedule(
-                    () -> {
-                      if (didResume.compareAndSet(false, true)) {
-                        try {
-                          cc.cancel();
-                        } finally {
-                          if (LOGGER.isFinerEnabled()) {
-                            LOGGER.finer(
-                                MessageKeys.ASYNC_TIMEOUT,
-                                identityHash(),
-                                requestParams.call,
-                                requestParams.namespace,
-                                requestParams.name,
-                                requestParams.body != null
-                                    ? LoggingFactory.getJson().serialize(requestParams.body)
-                                    : "",
-                                fieldSelector,
-                                labelSelector,
-                                resourceVersion);
-                          }
-                          packet
-                              .getComponents()
-                              .put(
-                                  RESPONSE_COMPONENT_NAME,
-                                  Component.createFor(RetryStrategy.class, r));
-                          fiber.resume(packet);
-                        }
-                      }
-                    },
-                    timeoutSeconds,
-                    TimeUnit.SECONDS);
+            CancellableCall cc = processing.createCall(fiber);
+            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(fiber, cc));
+          } catch (ApiException t) {
+            logAsyncFailure(t, t.getResponseBody());
+            processing.resumeAfterThrowable(fiber);
           } catch (Throwable t) {
-            String responseBody =
-                (t instanceof ApiException) ? ((ApiException) t).getResponseBody() : "";
-            LOGGER.warning(
-                MessageKeys.ASYNC_FAILURE,
-                t.getMessage(),
-                0,
-                null,
-                requestParams,
-                requestParams.namespace,
-                requestParams.name,
-                requestParams.body != null
-                    ? LoggingFactory.getJson().serialize(requestParams.body)
-                    : "",
-                fieldSelector,
-                labelSelector,
-                resourceVersion,
-                responseBody);
-            if (didResume.compareAndSet(false, true)) {
-              packet
-                  .getComponents()
-                  .put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, r));
-              fiber.resume(packet);
-            }
+            logAsyncFailure(t, "");
+            processing.resumeAfterThrowable(fiber);
           }
         });
+  }
+
+  // Schedule the timeout check to happen on the fiber at some number of seconds in the future.
+  private void scheduleTimeoutCheck(AsyncFiber fiber, int timeoutSeconds, Runnable timeoutCheck) {
+    fiber.scheduleOnce(timeoutSeconds, TimeUnit.SECONDS, timeoutCheck);
+  }
+
+  private void logAsyncRequest() {
+    LOGGER.finer(
+        MessageKeys.ASYNC_REQUEST,
+        identityHash(),
+        requestParams.call,
+        requestParams.namespace,
+        requestParams.name,
+        requestParams.body != null ? LoggingFactory.getJson().serialize(requestParams.body) : "",
+        fieldSelector,
+        labelSelector,
+        resourceVersion);
+  }
+
+  private void logAsyncFailure(Throwable t, String responseBody) {
+    LOGGER.warning(
+        MessageKeys.ASYNC_FAILURE,
+        t.getMessage(),
+        0,
+        null,
+        requestParams,
+        requestParams.namespace,
+        requestParams.name,
+        requestParams.body != null
+            ? LoggingFactory.getJson().serialize(requestParams.body)
+            : "",
+        fieldSelector,
+        labelSelector,
+        resourceVersion,
+        responseBody);
+  }
+
+  private void logTimeout() {
+    LOGGER.finer(
+        MessageKeys.ASYNC_TIMEOUT,
+        identityHash(),
+        requestParams.call,
+        requestParams.namespace,
+        requestParams.name,
+        requestParams.body != null
+            ? LoggingFactory.getJson().serialize(requestParams.body)
+            : "",
+        fieldSelector,
+        labelSelector,
+        resourceVersion);
+  }
+
+  private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
+    LOGGER.finer(
+        ASYNC_SUCCESS,
+        identityHash(),
+        requestParams.call,
+        result,
+        statusCode,
+        responseHeaders);
+  }
+
+  private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+    LOGGER.fine(
+        MessageKeys.ASYNC_FAILURE,
+        identityHash(),
+        ae.getMessage(),
+        statusCode,
+        responseHeaders,
+        requestParams.call,
+        requestParams.namespace,
+        requestParams.name,
+        requestParams.body != null
+            ? LoggingFactory.getJson().serialize(requestParams.body)
+            : "",
+        fieldSelector,
+        labelSelector,
+        resourceVersion,
+        ae.getResponseBody());
   }
 
   // creates a unique ID that allows matching requests to responses
   private String identityHash() {
     return Integer.toHexString(System.identityHashCode(this));
-  }
-
-  private abstract static class BaseApiCallback<T> implements ApiCallback<T> {
-    @Override
-    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-      // no-op
-    }
-
-    @Override
-    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-      // no-op
-    }
   }
 
   private final class DefaultRetryStrategy implements RetryStrategy {
@@ -371,6 +391,39 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     @Override
     public void reset() {
       retryCount = 0;
+    }
+  }
+
+  private class ApiCallbackImpl implements ApiCallback<T> {
+
+    private final AsyncRequestStepProcessing processing;
+    private final AsyncFiber fiber;
+
+    public ApiCallbackImpl(AsyncRequestStepProcessing processing, AsyncFiber fiber) {
+      this.processing = processing;
+      this.fiber = fiber;
+    }
+
+    @Override
+    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+      // no-op
+    }
+
+    @Override
+    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+      // no-op
+    }
+
+    @Override
+    public void onFailure(
+          ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+      processing.onFailure(fiber, ae, statusCode, responseHeaders);
+    }
+
+    @Override
+    public void onSuccess(
+        T result, int statusCode, Map<String, List<String>> responseHeaders) {
+      processing.onSuccess(fiber, result, statusCode, responseHeaders);
     }
   }
 }

@@ -232,7 +232,7 @@ public abstract class Step {
    * @param onExit Called after fiber is suspended
    * @return Next action
    */
-  protected NextAction doSuspend(Consumer<Fiber> onExit) {
+  protected NextAction doSuspend(Consumer<AsyncFiber> onExit) {
     NextAction na = new NextAction();
     na.suspend(next, onExit);
     return na;
@@ -247,7 +247,7 @@ public abstract class Step {
    * @param onExit Called after fiber is suspended
    * @return Next action
    */
-  protected NextAction doSuspend(Step step, Consumer<Fiber> onExit) {
+  protected NextAction doSuspend(Step step, Consumer<AsyncFiber> onExit) {
     NextAction na = new NextAction();
     na.suspend(step, onExit);
     return na;
@@ -353,12 +353,12 @@ public abstract class Step {
   }
 
   private abstract static class JoinCompletionCallback implements CompletionCallback {
-    protected final Fiber fiber;
+    protected final AsyncFiber fiber;
     protected final Packet packet;
     protected final AtomicInteger count;
     protected final List<Throwable> throwables = new ArrayList<Throwable>();
 
-    JoinCompletionCallback(Fiber fiber, Packet packet, int initialCount) {
+    JoinCompletionCallback(AsyncFiber fiber, Packet packet, int initialCount) {
       this.fiber = fiber;
       this.packet = packet;
       this.count = new AtomicInteger(initialCount);

@@ -10,7 +10,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.work.Fiber;
+import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -133,7 +133,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
   // Registers a callback for updates to the specified resource and
   // verifies that we haven't already missed the update.
-  private void resumeWhenReady(Packet packet, Fiber fiber) {
+  private void resumeWhenReady(Packet packet, AsyncFiber fiber) {
     Callback callback = new Callback(fiber, packet);
     addCallback(getName(), callback);
     checkUpdatedResource(packet, fiber, callback);
@@ -142,7 +142,7 @@ abstract class WaitForReadyStep<T> extends Step {
   // It is possible that the watch event was received between the time the step was created, and the time the callback
   // was registered. Just in case, we will check the latest resource value in Kubernetes and process the resource
   // if it is now ready
-  private void checkUpdatedResource(Packet packet, Fiber fiber, Callback callback) {
+  private void checkUpdatedResource(Packet packet, AsyncFiber fiber, Callback callback) {
     fiber
         .createChildFiber()
         .start(
@@ -172,11 +172,11 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   private class Callback implements Consumer<T> {
-    private final Fiber fiber;
+    private final AsyncFiber fiber;
     private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
 
-    Callback(Fiber fiber, Packet packet) {
+    Callback(AsyncFiber fiber, Packet packet) {
       this.fiber = fiber;
       this.packet = packet;
     }
@@ -205,7 +205,7 @@ abstract class WaitForReadyStep<T> extends Step {
     }
   }
 
-  private void handleResourceReady(Fiber fiber, Packet packet, T resource) {
+  private void handleResourceReady(AsyncFiber fiber, Packet packet, T resource) {
     updatePacket(packet, resource);
     if (shouldTerminateFiber(resource)) {
       fiber.terminate(createTerminationException(resource), packet);
