@@ -81,10 +81,10 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -133,6 +133,7 @@ public class ItDomainOnPV implements LoggedTest {
   private final String adminUser = "system";
   private final String adminPassword = "gumby1234";
 
+  // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
@@ -145,8 +146,6 @@ public class ItDomainOnPV implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
-    // create standard, reusable retry/backoff policy
-
 
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
@@ -299,7 +298,7 @@ public class ItDomainOnPV implements LoggedTest {
   private void createDomainOnPV() throws IOException {
 
     logger.info("create a staging location for domain creation scripts");
-    Path pvTemp = Paths.get(WORK_DIR, "ItDomainOnPV", "domainCreateTempPV");
+    Path pvTemp = Paths.get(RESULTS_ROOT, "ItDomainOnPV", "domainCreateTempPV");
     FileUtils.deleteDirectory(pvTemp.toFile());
     Files.createDirectories(pvTemp);
 

@@ -13,7 +13,7 @@ public class Job {
    * @param namespace name of the namespace in which to check the pod status
    * @param labelSelectors labels with which the job is decorated
    * @param jobName name of the job
-   * @return true if the complete otherwise false
+   * @return true if complete otherwise false
    */
   public static Callable<Boolean> jobCompleted(String namespace, String labelSelectors, String jobName) {
     return () -> {
