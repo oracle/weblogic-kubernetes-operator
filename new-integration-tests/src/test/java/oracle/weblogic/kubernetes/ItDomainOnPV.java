@@ -57,17 +57,12 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -105,10 +100,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests to create domain on persistent volumes using WLST and WDT.
+ * Tests to create domain on persistent volume using WLST and WDT.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the domain can be created on persistent volumes")
+@DisplayName("Verify the domain can be created on persistent volume")
 @IntegrationTest
 public class ItDomainOnPV implements LoggedTest {
 
@@ -122,21 +116,20 @@ public class ItDomainOnPV implements LoggedTest {
   private static String dockerConfigJson = "";
 
   private final String domainUid = "domain-onpv";
-  private final String managedServerNameBase = "managed-server";
   private final String clusterName = "pv-domain-cluster";
+  private final String adminServerName = "admin-server";
+  private final String adminServerPodName = domainUid + "-" + adminServerName;
+  private final String managedServerNameBase = "managed-server";
+  String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+
   private final int replicaCount = 2;
 
-  String pvName = domainUid + "-pv"; // name of the persistent volume
-  String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  private final String pvName = domainUid + "-pv"; // name of the persistent volume
+  private final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
-  String wlSecretName;
+  private String wlSecretName;
 
-
-  final String adminServerName = "admin-server";
-  final String adminServerPodName = domainUid + "-" + adminServerName;
-  String managedServerPrefix = domainUid + "-" + managedServerNameBase;
-
-  private static ConditionFactory withStandardRetryPolicy
+  private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
@@ -166,10 +159,7 @@ public class ItDomainOnPV implements LoggedTest {
   }
 
   @Test
-  @Order(1)
   @DisplayName("Create domain in PV using WLST script")
-  @Slow
-  @MustNotRunInParallel
   public void testDomainOnPvUsingWlst() throws IOException {
 
     // login to docker-registry and create pull secrets
@@ -184,7 +174,7 @@ public class ItDomainOnPV implements LoggedTest {
     // create the domain on persistent volume
     createDomainOnPV();
 
-    // create the domain custom resource
+    // create the domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(API_VERSION)
@@ -236,7 +226,7 @@ public class ItDomainOnPV implements LoggedTest {
                 .replicas(2)
                 .serverStartState("RUNNING")));
 
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+    logger.info("Creating domain custom resource {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed for %s in namespace %s",
@@ -244,8 +234,8 @@ public class ItDomainOnPV implements LoggedTest {
         String.format("Create domain custom resource failed for %s in namespace %s",
             domainUid, domainNamespace));
 
-    // wait for the domain to exist
-    logger.info("Check for domain custom resouce in namespace {0}", domainNamespace);
+    // wait for the domain object to get created
+    logger.info("Checking for domain custom resouce object in namespace {0}", domainNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
@@ -264,8 +254,8 @@ public class ItDomainOnPV implements LoggedTest {
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i);
     }
 
     logger.info("Check admin service {0} is created in namespace {1}",
@@ -275,17 +265,18 @@ public class ItDomainOnPV implements LoggedTest {
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkServiceCreated(managedServerPodNamePrefix + i);
     }
   }
 
   /**
+   * Creates a WebLogic domain on a persistent volume by doing the following.
    * Copies the WLST domain script to a temp location.
    * Creates a domain properties in the temp location.
-   * Creates a configmap containing domain scripts and proerty file.
-   * Runs the create domain to create domain on persistent volume.
-   * @throws IOException when reading/writing domain sctip file fails
+   * Creates a configmap containing domain scripts and property files.
+   * Runs a job to create domain on persistent volume.
+   * @throws IOException when reading/writing domain scripts fails
    */
   private void createDomainOnPV() throws IOException {
 
@@ -294,10 +285,10 @@ public class ItDomainOnPV implements LoggedTest {
     FileUtils.deleteDirectory(pvTemp.toFile());
     Files.createDirectories(pvTemp);
 
-    logger.info("copy the create domain wlst script to staging location");
-    Path wlstScriptOriginal = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
-    Path wlstScript = Paths.get(pvTemp.toString(), "create-domain.py");
-    Files.copy(wlstScriptOriginal, wlstScript, StandardCopyOption.REPLACE_EXISTING);
+    logger.info("copy the create domain WLST script to staging location");
+    Path srcWlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+    Path targetWlstScript = Paths.get(pvTemp.toString(), "create-domain.py");
+    Files.copy(srcWlstScript, targetWlstScript, StandardCopyOption.REPLACE_EXISTING);
 
     logger.info("create WebLogic domain properties file");
     Path domainPropertiesFile = Paths.get(pvTemp.toString(), "domain.properties");
@@ -306,20 +297,26 @@ public class ItDomainOnPV implements LoggedTest {
 
     logger.info("add files to a config map for domain creation job");
     List<Path> domainScriptFiles = new ArrayList<>();
-    domainScriptFiles.add(wlstScript);
+    domainScriptFiles.add(targetWlstScript);
     domainScriptFiles.add(domainPropertiesFile);
 
     logger.info("Create a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation("domain-onpv-create-configmap", domainScriptFiles),
+        () -> createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles),
         "Creating configmap for domain creation failed");
 
-    logger.info("run a Kubernetes job to create the domain.");
+    logger.info("Running a Kubernetes job to create the domain");
     runCreateDomainJob(pvName, pvcName, domainScriptConfigMapName, domainNamespace);
 
   }
 
+  /**
+   * Create a properties file for WebLogic domain configuration.
+   * @param wlstPropertiesFile path of the properties file
+   * @throws FileNotFoundException when properties file path not found
+   * @throws IOException when writing properties fails
+   */
   private void createDomainProperties(Path wlstPropertiesFile) throws FileNotFoundException, IOException {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
@@ -333,7 +330,7 @@ public class ItDomainOnPV implements LoggedTest {
     p.setProperty("admin_username", "system");
     p.setProperty("admin_password", "gumby1234");
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", "30901");
+    p.setProperty("admin_t3_channel_port", "32001");
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", managedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
