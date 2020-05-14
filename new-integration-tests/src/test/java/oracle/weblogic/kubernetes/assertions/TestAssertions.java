@@ -235,13 +235,15 @@ public class TestAssertions {
    * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
    * @throws ApiException when query fails
    */
-  public static boolean isPodRestarted(
+  public static Callable<Boolean> isPodRestarted(
       String podName,
       String domainUid,
       String namespace,
       String timestamp
   ) throws ApiException {
-    return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+    return () -> {
+      return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+    };
   }
 
   /*

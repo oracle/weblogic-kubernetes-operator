@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import com.google.gson.JsonObject;
@@ -333,7 +332,19 @@ class ItMiiConfigMapOverride implements LoggedTest {
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
     assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
-    logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
+    logger.info("Got adminPodCreationTime {0} ", adminPodCreationTime);
+
+    String managed1PodCreationTime = 
+         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPrefix + 1),
+         String.format("Can not find PodCreationTime for pod %s", managedServerPrefix + 1));
+    assertNotNull(managed1PodCreationTime, "ManagedPodCreationTime returns NULL");
+    logger.info("Got managed1PodCreationTime {0} ", managed1PodCreationTime);
+
+    String managed2PodCreationTime = 
+         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPrefix + 2),
+         String.format("Can not find PodCreationTime for pod %s", managedServerPrefix + 2));
+    assertNotNull(managed2PodCreationTime, "ManagedPodCreationTime returns NULL");
+    logger.info("Got managed2PodCreationTime {0} ", managed2PodCreationTime);
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -361,36 +372,23 @@ class ItMiiConfigMapOverride implements LoggedTest {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-    logger.info("Snooze for 2 minutes for introspector to kick off");
-    try {
-      TimeUnit.MINUTES.sleep(2);
-    } catch (java.lang.InterruptedException ie) {
-      logger.info("Got InterruptedException during Thread.sleep");
-      fail("Got InterruptedException during Thread.sleep");
-    }
-    // Verify a rolling restart is triggered in a sequential fashion 
-    // admin-server --> managed-server1 --> managed-server2 
-    // ToDo need a better Assertion to verify rolling restart
-    logger.info("Check admin server pod {0} to be restarted in ns {1}",
-        adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
-    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
 
-    // check managed server pods restarted sequentially
+    // Check if the admin server pod has been restarted 
+    // by comparing the PodCreationTime before and after rolling restart
+    checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime);
+
+    // Check if the managed server pods have been restarted 
+    // by comparing the PodCreationTime before and after rolling restart
+    checkPodRestarted(managedServerPrefix + 1, domainUid, domainNamespace, managed1PodCreationTime);
+    checkPodRestarted(managedServerPrefix + 2, domainUid, domainNamespace, managed2PodCreationTime);
+    // check managed server services created
+    // Even if pods are created, need for the service to created 
+    // before checking the DataSource configuration
     for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be restarted in ns {1}",
+      logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
-
-    boolean isPodRestarted  =
-        assertDoesNotThrow(() -> isPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime),
-            String.format("Check if the admin pod is restarted"));
-    assertTrue(isPodRestarted, "Admin pod has not been restarted as expected");
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
@@ -584,6 +582,20 @@ class ItMiiConfigMapOverride implements LoggedTest {
     } else {
       fail("Did not find pod " + podName + " in namespace " + namespace);
     }
+  }
+
+  private void checkPodRestarted(String podName, String domainUid, String domNamespace, String timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, timestamp),
+            String.format("podExists failed with ApiException for %s in namespace in %s",
+                podName, domNamespace)));
   }
 
 }
