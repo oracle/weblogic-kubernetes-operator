@@ -72,9 +72,9 @@ public class Nginx {
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param managedServerPort the port number of the WebLogic domain managed servers
    * @param clusterNames list of the WebLogic domain cluster names in the domain
-   * @return true on success, false otherwise
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
-  public static boolean createIngress(String ingressName,
+  public static List<String> createIngress(String ingressName,
                                       String domainNamespace,
                                       String domainUid,
                                       int managedServerPort,
@@ -84,6 +84,7 @@ public class Nginx {
     HashMap<String, String> annotation = new HashMap<>();
     annotation.put("kubernetes.io/ingress.class", INGRESS_NGINX_CLASS);
 
+    List<String> ingressHostList = new ArrayList<>();
     ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
     for (String clusterName : clusterNames) {
       // set the http ingress paths
@@ -97,12 +98,14 @@ public class Nginx {
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
+      String ingressHost = domainUid + "." + clusterName + ".test";
       ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
-          .host(domainUid + "." + clusterName + ".test")
+          .host(ingressHost)
           .http(new ExtensionsV1beta1HTTPIngressRuleValue()
               .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
+      ingressHostList.add(ingressHost);
     }
 
     // set the ingress
@@ -121,9 +124,9 @@ public class Nginx {
       Kubernetes.createIngress(domainNamespace, ingress);
     } catch (ApiException apex) {
       logger.severe("got ApiException while calling createIngress: {0}", apex.getResponseBody());
-      return false;
+      return null;
     }
-    return true;
+    return ingressHostList;
   }
 
   /**

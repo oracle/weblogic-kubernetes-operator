@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
@@ -65,6 +66,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -81,6 +83,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -332,6 +335,40 @@ public class CommonUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param managedServerPort port number of WebLogic domain managed servers
+   * @param clusterNames list of the WebLogic domain cluster names in the domain
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomain(String domainUid,
+                                                    String domainNamespace,
+                                                    int managedServerPort,
+                                                    List<String> clusterNames) {
+
+    // create an ingress in domain namespace
+    String ingressName = domainUid + "-nginx";
+    List<String> ingressHostList =
+        createIngress(ingressName, domainNamespace, domainUid, managedServerPort, clusterNames);
+
+    assertNotNull(ingressHostList,
+        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
+        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+        .contains(ingressName);
+
+    logger.info("ingress {0} for domain {1} was created in namespace {2}",
+        ingressName, domainUid, domainNamespace);
+
+    return ingressHostList;
   }
 
   /**

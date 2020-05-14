@@ -18,7 +18,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -29,9 +28,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -40,6 +37,7 @@ import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceCreated;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceDeleted;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createIngressForDomain;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.createMiiDomain;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyOperator;
@@ -70,6 +68,9 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
   private final int replicaCount = 2;
   private final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+
+  // ingress host list
+  private List<String> ingressHostList;
 
   /**
    * Get namespaces for operator, domain1 and NGINX.
@@ -107,16 +108,15 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
 
   /**
    * Create operator and verify it is deployed successfully.
-   * Create domain1 and verify all server pods in domain1 were created and ready.
-   * Verify NGINX can access the sample app from all managed servers in domain1
+   * Create a custom domain resource and verify all server pods in the domain were created and ready.
+   * Verify NGINX can access the sample app from all managed servers in the domain.
    * Delete operator.
-   * Verify the states of all server pods in domain1 were not changed.
-   * Verify NGINX can access the sample app from all managed servers in domain1.
-   * Test fails if the state of any pod in domain1 was changed or NGINX can not access the sample app from
+   * Verify the states of all server pods in the domain were not changed.
+   * Verify NGINX can access the sample app from all managed servers in the domain after the operator was deleted.
+   * Test fails if the state of any pod in the domain was changed or NGINX can not access the sample app from
    * all managed servers in the absence of operator.
    */
   @Test
-  @Order(1)
   @DisplayName("Create operator and domain, then delete operator and verify the domain is still running")
   @Slow
   @MustNotRunInParallel
@@ -148,8 +148,9 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     }
 
     // create ingress for the domain
-    logger.info("Creating an ingress for the domain");
-    createIngressForDomain();
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+    ingressHostList =
+        createIngressForDomain(domainUid, domainNamespace, managedServerPort, Arrays.asList(clusterName));
 
     // verify the sample apps for the domain
     logger.info("Checking that the sample app can be accessed from all managed servers through NGINX");
@@ -265,29 +266,6 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
   }
 
   /**
-   * Create an ingress for the domain.
-   */
-  private void createIngressForDomain() {
-
-    // create an ingress in domain namespace
-    String ingressName = domainUid + "-nginx";
-    assertThat(assertDoesNotThrow(() ->
-        createIngress(ingressName, domainNamespace, domainUid, managedServerPort, Arrays.asList(clusterName))))
-        .as("Test ingress {0} creation succeeds", ingressName)
-        .withFailMessage("Ingress creation failed for domain {0} in namespace {1}",
-            domainUid, domainNamespace)
-        .isTrue();
-
-    // check the ingress was found in the domain namespace
-    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
-        .contains(ingressName);
-
-    logger.info("ingress {0} was created in namespace {1}", ingressName, domainNamespace);
-  }
-
-  /**
    * Verify the sample app can be accessed from all managed servers in the domain through NGINX.
    */
   private void verifySampleAppAccessThroughNginx() {
@@ -300,7 +278,7 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-            domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+            ingressHostList.get(0), K8S_NODEPORT_HOST, nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Verify NGINX can access the sample app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")

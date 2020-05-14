@@ -23,9 +23,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -34,6 +32,7 @@ import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceCreated;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createIngressForDomain;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.createMiiDomain;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyOperator;
@@ -66,6 +65,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static String domainNamespace = null;
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
+  private static List<String> ingressHostList = null;
 
   private String curlCmd = null;
 
@@ -108,7 +108,12 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     createMiiDomainWithMultiClusters();
 
     // create ingress using host based routing
-    createIngressForMultiClustersDomain();
+    List<String> clusterNames = new ArrayList<>();
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+      clusterNames.add(CLUSTER_NAME_PREFIX + i);
+    }
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+    ingressHostList = createIngressForDomain(domainUid, domainNamespace, MANAGED_SERVER_PORT, clusterNames);
   }
 
   @Test
@@ -227,38 +232,6 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         checkServiceCreated(managedServerPodName, domainNamespace);
       }
     }
-  }
-
-  /**
-   * Create an ingress for the domain with multiple clusters in the specified namespace.
-   */
-  private static void createIngressForMultiClustersDomain() {
-
-    // create an ingress for the domain in the domain namespace
-    String ingressName = domainUid + "-nginx";
-
-    List<String> clusterNames = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      clusterNames.add(CLUSTER_NAME_PREFIX + i);
-    }
-
-    logger.info("Creating ingress {0} for domain {1} in namespace {2}",
-        ingressName, domainUid, domainNamespace);
-    assertThat(createIngress(ingressName, domainNamespace, domainUid, MANAGED_SERVER_PORT, clusterNames))
-        .as("Test ingress {0} creation succeeds", ingressName)
-        .withFailMessage("Ingress creation failed for domain {0} in namespace {1}",
-             domainUid, domainNamespace)
-        .isTrue();
-
-    // check that the ingress was found in the domain namespace
-    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
-        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
-        .contains(ingressName);
-
-    logger.info("Ingress {0} for domain {1} was found in namespace {2}",
-        ingressName, domainUid, domainNamespace);
-
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
@@ -381,8 +354,16 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    * @return curl command string
    */
   private String generateCurlCmd(String clusterName) {
+    int index = 0;
+    for (int i = 0; i < ingressHostList.size(); i++) {
+      if (ingressHostList.get(i).contains(clusterName)) {
+        index = i;
+        break;
+      }
+    }
+
     return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        ingressHostList.get(index), K8S_NODEPORT_HOST, nodeportshttp);
   }
 
   /**
