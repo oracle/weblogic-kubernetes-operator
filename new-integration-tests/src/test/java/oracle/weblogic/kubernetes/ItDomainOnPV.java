@@ -485,7 +485,7 @@ public class ItDomainOnPV implements LoggedTest {
 
   /**
    * Create a persistent volume and persistent volume claim.
-   * @throws IOException
+   * @throws IOException when creating pv path fails
    */
   private void createPVandPVC() throws IOException {
     logger.info("creating persistent volume and persistent volume claim");
