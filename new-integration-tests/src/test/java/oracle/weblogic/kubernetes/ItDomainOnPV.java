@@ -444,7 +444,7 @@ public class ItDomainOnPV implements LoggedTest {
                                     .name(domainScriptCM))))  //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name("docker-store"))))));
+                            .name(REPO_SECRET_NAME))))));
     String jobName = assertDoesNotThrow(() -> TestActions
         .createNamespacedJob(jobBody), "Domain creation job failed");
 
