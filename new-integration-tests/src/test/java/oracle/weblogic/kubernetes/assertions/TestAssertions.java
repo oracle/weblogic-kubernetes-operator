@@ -87,7 +87,7 @@ public class TestAssertions {
    * @return true if the pod exists in the namespace otherwise false
    */
   public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) {
-    return Pod.podExists(namespace, domainUid, podName);
+    return Pod.podExists(podName, domainUid, namespace);
   }
 
   /**
@@ -99,7 +99,7 @@ public class TestAssertions {
    * @return true if the pod does not exist in the namespace otherwise false
    */
   public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace) {
-    return Pod.podDoesNotExist(namespace, domainUid, podName);
+    return Pod.podDoesNotExist(podName, domainUid, namespace);
   }
 
   /**
@@ -123,7 +123,7 @@ public class TestAssertions {
    * @return true if the pod is terminating otherwise false
    */
   public static Callable<Boolean> podTerminating(String podName, String domainUid, String namespace) {
-    return Pod.podTerminating(podName, domainUid, namespace);
+    return Pod.podTerminating(namespace, domainUid, podName);
   }
 
   /**
