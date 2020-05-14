@@ -242,9 +242,10 @@ public class Domain {
    */
   public void verifyServicesCreated(boolean precreateService, int maxIterations) throws Exception {
     // check admin service
+    String adminServiceName = domainUid + "-" + adminServerName;
     LoggerHelper.getLocal().log(Level.INFO,
-        "Checking if admin service(" + domainUid + "-" + adminServerName + ") is created");
-    TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS, maxIterations);
+        "Checking if admin service(" + adminServiceName + ") is created");
+    TestUtils.checkServiceCreated(adminServiceName, domainNS, maxIterations);
 
     if (exposeAdminT3Channel) {
       LoggerHelper.getLocal().log(Level.INFO,
@@ -253,9 +254,9 @@ public class Domain {
               + "-"
               + adminServerName
               + "-external) is created");
-      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS, maxIterations);
+      TestUtils.checkServiceCreated(adminServiceName + "-external", domainNS, maxIterations);
     }
-
+    int retriesToResolveServiceName = 15;
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server services
       for (int i = 1;
@@ -269,6 +270,9 @@ public class Domain {
                 + i
                 + ") is created");
         TestUtils.checkServiceCreated(domainUid + "-" + managedServerNameBase + i, domainNS, maxIterations);
+        // using adminServiceName for adminPodName as they both are same
+        TestUtils.resolveServiceName(domainUid + "-" + managedServerNameBase + i,
+            adminServiceName, domainNS, retriesToResolveServiceName);
       }
     }
   }
@@ -670,6 +674,7 @@ public class Domain {
    * @param webappLocation webappLocation
    * @param username       username
    * @param password       password
+   * @param retriesForDeployment number of retries to deploy the application if it fails
    * @throws Exception if deployment failed
    */
   public void deployWebAppViaWlst(
@@ -677,9 +682,10 @@ public class Domain {
       String webappLocation,
       String appLocationInPod,
       String username,
-      String password)
+      String password,
+      int retriesForDeployment)
       throws Exception {
-    deployWebAppViaWlst(webappName, webappLocation, appLocationInPod, username, password, false);
+    deployWebAppViaWlst(webappName, webappLocation, appLocationInPod, username, password, false, retriesForDeployment);
   }
 
   /**
@@ -691,6 +697,7 @@ public class Domain {
    * @param username             username
    * @param password             password
    * @param useAdminPortToDeploy useAdminPortToDeploy
+   * @param retriesForDeployment number of retries to deploy the application if it fails
    * @throws Exception If deployment failed
    */
   public void deployWebAppViaWlst(
@@ -699,7 +706,8 @@ public class Domain {
       String appLocationInPod,
       String username,
       String password,
-      boolean useAdminPortToDeploy)
+      boolean useAdminPortToDeploy,
+      int retriesForDeployment)
       throws Exception {
     String adminPod = domainUid + "-" + adminServerName;
 
@@ -736,7 +744,7 @@ public class Domain {
     };
 
     TestUtils.callShellScriptByExecToPod(
-        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
+        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args, retriesForDeployment);
   }
 
   /**
