@@ -10,6 +10,7 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
+import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
@@ -111,9 +112,8 @@ public class TestAssertions {
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
-   * @throws ApiException when Kubernetes cluster query fails to get pod
    */
-  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
+  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) {
     return () -> {
       return Kubernetes.isPodReady(namespace, domainUid, podName);
     };
@@ -140,13 +140,11 @@ public class TestAssertions {
    * @param label       a Map of key value pairs the service is decorated with
    * @param namespace   in which the service is running
    * @return true if the service exists otherwise false
-   * @throws ApiException when query fails
    */
   public static Callable<Boolean> serviceExists(
       String serviceName,
       Map<String, String> label,
-      String namespace
-  ) throws ApiException {
+      String namespace) {
     return () -> {
       return Kubernetes.doesServiceExist(serviceName, label, namespace);
     };
@@ -227,7 +225,7 @@ public class TestAssertions {
 
   /**
    * Verify the original managed server pod state is not changed during scaling the cluster.
-   * 
+   *
    * @param podName the name of managed server pod to check
    * @param domainUid the domain uid of the domain in which the managed server pod exists
    * @param domainNamespace the domain namespace in which the domain exists
@@ -241,4 +239,16 @@ public class TestAssertions {
     return Domain.podStateNotChangedDuringScalingCluster(podName, domainUid, domainNamespace,
         podCreationTimestampBeforeScale);
   }
+
+  /**
+   * Check if a job completed running.
+   *
+   * @param namespace name of the namespace in which the job running
+   * @param jobName name of the job to check for its completion status
+   * @return true if completed false otherwise
+   */
+  public static Callable<Boolean> jobCompleted(String jobName, String labelSelectors, String namespace) {
+    return Job.jobCompleted(namespace, labelSelectors, jobName);
+  }
+
 }

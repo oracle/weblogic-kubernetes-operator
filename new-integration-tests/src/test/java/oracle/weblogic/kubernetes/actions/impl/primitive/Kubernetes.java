@@ -1490,7 +1490,33 @@ public class Kubernetes implements LoggedTest {
 
   // --------------------------- jobs ---------------------------
 
-
+  /**
+   * Create a job.
+   *
+   * @param jobBody V1Job object containing job configuration data
+   * @return String job name if job creation is successful
+   * @throws ApiException when create job fails
+   */
+  public static String createNamespacedJob(V1Job jobBody) throws ApiException {
+    String name = null;
+    String namespace = jobBody.getMetadata().getNamespace();
+    try {
+      BatchV1Api apiInstance = new BatchV1Api(apiClient);
+      V1Job createdJob = apiInstance.createNamespacedJob(
+          namespace, // String | namespace in which to create job
+          jobBody, // V1Job | body of the V1Job containing job data
+          PRETTY, // String | pretty print output.
+          null, // String | dry run or permanent change
+          null // String | field manager who is making the change
+      );
+      name = createdJob.getMetadata().getName();
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+    return name;
+  }
+  
   /**
    * Delete a job.
    *

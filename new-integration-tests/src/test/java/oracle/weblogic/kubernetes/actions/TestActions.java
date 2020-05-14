@@ -11,6 +11,7 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -24,6 +25,7 @@ import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.Job;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Nginx;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -595,6 +597,19 @@ public class TestActions {
       String... command)
       throws IOException, ApiException, InterruptedException {
     return Exec.exec(pod, containerName, redirectToStdout, command);
+  }
+
+  // ------------------------ Jobs ----------------------------------
+
+  /**
+   * Create a job.
+   *
+   * @param jobBody V1Job object containing job configuration data
+   * @return String job name if job creation is successful
+   * @throws ApiException when create job fails
+   */
+  public static String createNamespacedJob(V1Job jobBody) throws ApiException {
+    return Job.createNamespacedJob(jobBody);
   }
 
 
