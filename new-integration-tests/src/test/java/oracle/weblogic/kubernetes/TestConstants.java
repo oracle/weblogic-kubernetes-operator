@@ -12,6 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
 
+  // domain constants
+  public static final String DOMAIN_VERSION = "v7";
+  public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+  public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
+  public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
+  public static final String WLS_DOMAIN_TYPE = "WLS";
+
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
   public static final String OPERATOR_CHART_DIR =
@@ -46,6 +53,7 @@ public interface TestConstants {
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
+
   public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
       System.getProperty("java.io.tmpdir") + "/ittestspvroot");
 
@@ -59,13 +67,4 @@ public interface TestConstants {
   public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_APP_NAME = "sample-app";
-
-  // domain constants
-  public static final String DOMAIN_VERSION = "v7";
-  public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
-  public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
-  public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
-  public static final String WLS_DOMAIN_TYPE = "WLS";
-
 }
-

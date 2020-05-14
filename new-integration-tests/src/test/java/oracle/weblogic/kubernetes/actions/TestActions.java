@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
@@ -82,6 +83,7 @@ public class TestActions {
   /**
    * Image Name for the Operator. Uses branch name for image tag in local runs
    * and branch name, build id for image tag in Jenkins runs.
+   *
    * @return image name
    */
   public static String getOperatorImageName() {
@@ -90,6 +92,7 @@ public class TestActions {
 
   /**
    * Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+   *
    * @param image image name and tag in 'name:tag' format
    * @return true on success
    */
@@ -128,7 +131,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-      String namespace) throws ApiException {
+                                                                      String namespace) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace);
   }
 
@@ -172,11 +175,11 @@ public class TestActions {
    * @param namespace name of namespace
    * @param patch patch data in format matching the specified media type
    * @param patchFormat one of the following types used to identify patch document:
-   *     "application/json-patch+json", "application/merge-patch+json",
+   *                    "application/json-patch+json", "application/merge-patch+json",
    * @return true if successful, false otherwise
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
-      String patchFormat) {
+                                                  String patchFormat) {
     return Domain.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 
@@ -411,7 +414,6 @@ public class TestActions {
   }
 
   /**
-   /**
    * Delete Kubernetes Config Map.
    *
    * @param name name of the Config Map
@@ -444,6 +446,36 @@ public class TestActions {
    */
   public static boolean deleteService(String name, String namespace) {
     return Service.delete(name, namespace);
+  }
+
+  /**
+   * Returns the V1Service object given the following parameters.
+   *
+   * @param serviceName name of the Service to return
+   * @param label a Map of key value pairs the service is decorated with
+   * @param namespace namespace in which to check for the service existence
+   * @return V1Service object if found otherwise null
+   */
+  public static V1Service getService(
+      String serviceName,
+      Map<String, String> label,
+      String namespace) {
+    return Service.getService(serviceName, label, namespace);
+  }
+
+  /**
+   * Returns NodePort of a admin service.
+   *
+   * @param serviceName name of admin service
+   * @param label the key value pair with which the service is decorated with
+   * @param namespace namespace in which to check for the service
+   * @return AdminNodePort of the Kubernetes service if exits else -1
+   */
+  public static int getAdminServiceNodePort(
+      String serviceName,
+      Map<String, String> label,
+      String namespace) {
+    return Service.getAdminServiceNodePortString(serviceName, label, namespace);
   }
 
   // ------------------------ service account  --------------------------
@@ -537,6 +569,7 @@ public class TestActions {
 
   /**
    * Log in to a Docker registry.
+   *
    * @param registryName name of Docker registry
    * @param username username for the Docker registry
    * @param password password for the Docker registry
@@ -548,6 +581,7 @@ public class TestActions {
 
   /**
    * Push an image to a registry.
+   *
    * @param image fully qualified docker image, image name:image tag
    * @return true if successfull
    */
@@ -557,6 +591,7 @@ public class TestActions {
 
   /**
    * Delete docker image.
+   *
    * @param image image name:image tag
    * @return true if delete image is successful
    */
@@ -566,10 +601,11 @@ public class TestActions {
 
   /**
    * Create Docker registry configuration in json object.
-   * @param username username for the Docker registry
-   * @param password password for the Docker registry
-   * @param email email for the Docker registry
-   * @param registry Docker registry name
+   *
+   * @param username username for the docker registry
+   * @param password password for the docker registry
+   * @param email email for the docker registry
+   * @param registry docker registry name
    * @return json object for the Docker registry configuration
    */
   public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
@@ -581,9 +617,9 @@ public class TestActions {
   /**
    * Execute a command in a container.
    *
-   * @param pod The pod where the command is to be run
+   * @param pod  The pod where the command is to be run
    * @param containerName The container in the Pod where the command is to be run. If no
-   *     container name is provided than the first container in the Pod is used.
+   *                         container name is provided than the first container in the Pod is used.
    * @param redirectToStdout copy process output to stdout
    * @param command The command to run
    * @return result of command execution
@@ -592,11 +628,10 @@ public class TestActions {
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
-      String... command)
+                                       String... command)
       throws IOException, ApiException, InterruptedException {
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
-
 
   // ----------------------   pod  ---------------------------------
 
@@ -614,6 +649,30 @@ public class TestActions {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
 
+  /**
+   * Get the Pod object with following parameters.
+   *
+   * @param namespace namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod
+   * @return V1Pod pod object
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
+    return Pod.getPod(namespace, labelSelector, podName);
+  }
+
+  /**
+   * Get a pod's log.
+   *
+   * @param podName name of the pod
+   * @param namespace name of the namespace
+   * @return log as a String
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodLog(String podName, String namespace) throws ApiException {
+    return Pod.getPodLog(podName, namespace);
+  }
 
   // ------------------------ where does this go  -------------------------
 

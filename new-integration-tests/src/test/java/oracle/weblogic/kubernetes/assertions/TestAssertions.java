@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.assertions;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
@@ -219,6 +220,27 @@ public class TestAssertions {
   }
 
   /**
+   * Check if a pod is restarted based on podCreationTimestamp.
+   *
+   * @param podName the name of the pod to check for
+   * @param domainUid the label the pod is decorated with
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @throws ApiException when query fails
+   */
+  public static Callable<Boolean> isPodRestarted(
+      String podName,
+      String domainUid,
+      String namespace,
+      String timestamp
+  ) throws ApiException {
+    return () -> {
+      return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+    };
+  }
+
+  /*
    * Verify the pod state is not changed.
    * @param podName the name of the pod to check
    * @param domainUid the domain in which the pod exists
