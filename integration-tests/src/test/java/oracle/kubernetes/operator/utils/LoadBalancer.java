@@ -159,7 +159,7 @@ public class LoadBalancer {
     String helmCmd = "helm status traefik-operator --namespace traefik";
     TestUtils.checkAnyCmdInLoop(helmCmd, "deployed");
     int i = 0;
-    //wait until pod is restarted after upgrade and check the status
+    //wait in case if pod is restarted after upgrade and check the status
     cmd = new StringBuffer();
     cmd.append("kubectl get pod -n traefik");
     while (i < maxIterationsPod) {
@@ -325,7 +325,7 @@ public class LoadBalancer {
     String helmCmd = "helm status voyager-operator --namespace voyager";
     TestUtils.checkAnyCmdInLoop(helmCmd, "deployed");
     i = 0;
-    //wait until pod is restarted after upgrade and check the status
+    //wait in case if pod is restarted after upgrade and check the status
     cmd = new StringBuffer();
     cmd.append("kubectl get pod -n voyager");
     while (i < maxIterationsPod) {

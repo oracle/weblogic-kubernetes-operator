@@ -817,6 +817,22 @@ public class Domain {
       //check helm status
       String lbName = getLoadBalancerName().toLowerCase();
       TestUtils.checkHelmChart(lbName + "-operator", lbName);
+      String lbPod = TestUtils.getPodName(" -l app=" + lbName, lbName);
+      TestUtils.checkPodReadyAndRunning(lbPod,lbName);
+      TestUtils.writePodLog(resultsDir + "/state-dump-logs/", lbPod, lbName);
+      LoggerHelper.getLocal().log(Level.INFO, "Checking if Ingress is Running  ");
+      String ingress = "ingress";
+      if (lbName.equals("voyager")) {
+        ingress = "ingress.voyager.appscode.com";
+      }
+      StringBuffer cmd = new StringBuffer();
+      cmd.append("kubectl get ")
+          .append(ingress)
+          .append(" -n ")
+          .append( getDomainUid())
+          .append(" | grep ")
+          .append(getDomainUid());
+      TestUtils.checkAnyCmdInLoop(cmd.toString(),getDomainUid() + "-" + lbName);
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
 

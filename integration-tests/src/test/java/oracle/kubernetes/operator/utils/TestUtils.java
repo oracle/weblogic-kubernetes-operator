@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -2258,5 +2260,32 @@ public class TestUtils {
         + result.stdout()
         + result.stderr()
     );
+  }
+
+  /**
+   * writes pod describe and logs to a file.
+   * @param logLocation - location where the logs to be written
+   * @param podName - name of the pod
+   * @param podNS - namespace of the pod
+   */
+  public static void writePodLog(String logLocation, String podName, String podNS) throws Exception {
+    //create dir
+    TestUtils.execOrAbortProcess("mkdir -p " + logLocation);
+
+    //write operator pod describe
+    String cmd = "kubectl describe pod " + podName + " -n "
+        + podNS + " >> " + logLocation
+        + "/pod-describe." + podNS + "." + podName;
+    ExecCommand.exec(cmd);
+    Calendar cal = Calendar.getInstance();
+
+    SimpleDateFormat timeOnly = new SimpleDateFormat("HH.mm.ss");
+    String timestamp = timeOnly.format(cal.getTime()).toString();
+
+    //write operator pod logs
+    cmd = "kubectl logs pod/" + podName + " -n "
+        + podNS + " >> " + logLocation
+        + "/pod-log." + podNS + "." + podName + "." + timestamp;
+    ExecCommand.exec(cmd);
   }
 }
