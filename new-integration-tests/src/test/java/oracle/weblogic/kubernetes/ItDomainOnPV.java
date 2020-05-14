@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlButton;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.gson.JsonObject;
@@ -130,6 +130,8 @@ public class ItDomainOnPV implements LoggedTest {
   private final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
   private String wlSecretName;
+  private final String adminUser = "system";
+  private final String adminPassword = "gumby1234";
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
@@ -270,6 +272,20 @@ public class ItDomainOnPV implements LoggedTest {
           managedServerPodNamePrefix + i, domainNamespace);
       checkServiceCreated(managedServerPodNamePrefix + i);
     }
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    logger.info("Getting node port");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> TestActions.getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
+        "Accessing admin server node port failed");
+    String consoleUrl = new StringBuffer()
+        .append("http://")
+        .append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(serviceNodePort)
+        .append("/console/login/LoginForm.jsp").toString();
+
+    assertDoesNotThrow(() -> loginTest(consoleUrl, adminUser, adminPassword), "Console login failed");
   }
 
   /**
@@ -475,8 +491,8 @@ public class ItDomainOnPV implements LoggedTest {
     logger.info("Creating secret for WebLogic credentials");
     wlSecretName = "weblogic-credentials";
     Map<String, String> adminSecretMap = new HashMap<>();
-    adminSecretMap.put("username", "system");
-    adminSecretMap.put("password", "gumby1234");
+    adminSecretMap.put("username", adminUser);
+    adminSecretMap.put("password", adminPassword);
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
         .metadata(new V1ObjectMeta()
             .name(wlSecretName)
@@ -659,22 +675,26 @@ public class ItDomainOnPV implements LoggedTest {
   }
 
 
-  private void loginTest() throws Exception {
-    String consoleUrl = new StringBuffer()
-        .append("http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(TestActions.getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"))
-        .append("/console/login/LoginForm.jsp").toString();
-
+  /**
+   * Login to the WebLogic console and validate its the Home page.
+   *
+   * @param consoleUrl url for the WebLogic console
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @throws IOException when connection to console url fails
+   */
+  public static void loginTest(String consoleUrl, String username, String password) throws IOException {
+    logger.info("Accessing WebLogic console with url {0}", consoleUrl);
     final WebClient webClient = new WebClient();
     final HtmlPage loginPage = webClient.getPage(consoleUrl);
     HtmlForm form = loginPage.getFormByName("loginData");
-    form.getInputByName("j_username").type("system");
-    form.getInputByName("j_password").type("gumby1234");
-    HtmlButton loginButton = (HtmlButton) form.getByXPath("//input[@value='Login']").get(0);
-    HtmlPage home = (HtmlPage) loginButton.click();
+    form.getInputByName("j_username").type(username);
+    form.getInputByName("j_password").type(password);
+    HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
+    logger.info("Clicking login button");
+    HtmlPage home = submit.click();
     assertTrue(home.asText().contains("Persistent Stores"), "Console login failed");
+    logger.info("Console login passed");
   }
 
 }
