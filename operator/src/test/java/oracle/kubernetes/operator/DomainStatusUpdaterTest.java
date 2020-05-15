@@ -23,6 +23,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -42,12 +43,14 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.SERVERS_READY_REASO
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -66,6 +69,7 @@ public class DomainStatusUpdaterTest {
   private final String message = generator.getUniqueString();
   private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
+  private String validationWarning = generator.getUniqueString();
 
   /**
    * Setup test environment.
@@ -113,11 +117,9 @@ public class DomainStatusUpdaterTest {
     setClusterAndNodeName(getPod("server1"), "clusterA", "node1");
     setClusterAndNodeName(getPod("server2"), "clusterB", "node2");
 
-    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
-    configSupport.addWlsServer("server1");
     configSupport.addWlsCluster("clusterA", "server1");
-    configSupport.addWlsServer("server2");
     configSupport.addWlsCluster("clusterB", "server2");
+    generateStartupInfos("server1", "server2");
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
@@ -127,6 +129,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterA")
                 .withNodeName("node1")
                 .withServerName("server1")
@@ -136,7 +139,43 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterB")
+                .withNodeName("node2")
+                .withServerName("server2")
+                .withHealth(overallHealth("health2"))));
+  }
+
+  @Test
+  public void statusStep_copiesServerStatesFromMaps_standalone() {
+    testSupport.addToPacket(
+        SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE, "server2", SHUTDOWN_STATE));
+    testSupport.addToPacket(
+        SERVER_HEALTH_MAP,
+        ImmutableMap.of("server1", overallHealth("health1"), "server2", overallHealth("health2")));
+    setNodeName(getPod("server1"), "node1");
+    setNodeName(getPod("server2"), "node2");
+
+    generateStartupInfos("server1", "server2");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(
+        getServerStatus(getRecordedDomain(), "server1"),
+        equalTo(
+            new ServerStatus()
+                .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
+                .withNodeName("node1")
+                .withServerName("server1")
+                .withHealth(overallHealth("health1"))));
+    assertThat(
+        getServerStatus(getRecordedDomain(), "server2"),
+        equalTo(
+            new ServerStatus()
+                .withState(SHUTDOWN_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withNodeName("node2")
                 .withServerName("server2")
                 .withHealth(overallHealth("health2"))));
@@ -161,19 +200,25 @@ public class DomainStatusUpdaterTest {
     pod.setSpec(new V1PodSpec().nodeName(nodeName));
   }
 
+  private void setNodeName(V1Pod pod,String nodeName) {
+    pod.setSpec(new V1PodSpec().nodeName(nodeName));
+  }
+
   private V1Pod getPod(String serverName) {
     return info.getServerPod(serverName);
   }
 
   @Test
   public void statusStep_usesServerFromWlsConfig() {
+    configureServer("server4").withDesiredState(ADMIN_STATE);
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server3", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP,
         ImmutableMap.of("server3", overallHealth("health3"), "server4", overallHealth("health4")));
-    configSupport.addWlsServer("server3");
-    configSupport.addWlsServer("server4");
+    defineServerPod("server3");
+    defineServerPod("server4");
     configSupport.addWlsCluster("clusterC", "server3", "server4");
+    generateStartupInfos("server3", "server4");
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
@@ -183,6 +228,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterC")
                 .withServerName("server3")
                 .withHealth(overallHealth("health3"))));
@@ -191,6 +237,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(SHUTDOWN_STATE)
+                .withDesiredState(ADMIN_STATE)
                 .withClusterName("clusterC")
                 .withServerName("server4")
                 .withHealth(overallHealth("health4"))));
@@ -201,9 +248,8 @@ public class DomainStatusUpdaterTest {
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server2", STANDBY_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server2", overallHealth("health2")));
-    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
-    configSupport.addWlsServer("server2");
     configSupport.addWlsCluster("wlsCluster", "server2");
+    generateStartupInfos("server2");
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     setClusterAndNodeName(getPod("server2"), "clusterB", "node2");
 
@@ -214,6 +260,7 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(STANDBY_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("wlsCluster")
                 .withNodeName("node2")
                 .withServerName("server2")
@@ -227,9 +274,8 @@ public class DomainStatusUpdaterTest {
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
     setClusterAndNodeName(getPod("server1"), "clusterA", "node1");
 
-    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
-    configSupport.addWlsServer("server1");
     configSupport.addWlsCluster("clusterA", "server1");
+    generateStartupInfos("server1");
     domain.setStatus(null);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
@@ -240,10 +286,143 @@ public class DomainStatusUpdaterTest {
         equalTo(
             new ServerStatus()
                 .withState(RUNNING_STATE)
+                .withDesiredState(RUNNING_STATE)
                 .withClusterName("clusterA")
                 .withNodeName("node1")
                 .withServerName("server1")
                 .withHealth(overallHealth("health1"))));
+  }
+
+  @Test
+  public void statusStep_shutdownDesiredState_ifServerHasNoStartupInfos() {
+    testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
+    testSupport.addToPacket(
+        SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
+    setClusterAndNodeName(getPod("server1"), "clusterA", "node1");
+
+    configSupport.addWlsCluster("clusterA", "server1");
+    configSupport.addWlsServer("server1");
+    domain.setStatus(null);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(
+        getServerStatus(getRecordedDomain(), "server1"),
+        equalTo(
+            new ServerStatus()
+                .withState(RUNNING_STATE)
+                .withDesiredState(SHUTDOWN_STATE)
+                .withClusterName("clusterA")
+                .withNodeName("node1")
+                .withServerName("server1")
+                .withHealth(overallHealth("health1"))));
+  }
+
+  @Test
+  public void statusStep_shutdownDesiredState_ifStandAloneServerHasNoStartupInfos() {
+    testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
+    testSupport.addToPacket(
+        SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
+    setNodeName(getPod("server1"),"node1");
+
+    configSupport.addWlsServer("server1");
+    domain.setStatus(null);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(
+        getServerStatus(getRecordedDomain(), "server1"),
+        equalTo(
+            new ServerStatus()
+                .withState(RUNNING_STATE)
+                .withDesiredState(SHUTDOWN_STATE)
+                .withNodeName("node1")
+                .withServerName("server1")
+                .withHealth(overallHealth("health1"))));
+  }
+
+  @Test
+  public void statusStep_shutdownDesiredState_ifServerIsServiceOnly() {
+    testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
+    testSupport.addToPacket(
+        SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
+    setClusterAndNodeName(getPod("server1"), "clusterA", "node1");
+
+    configSupport.addWlsCluster("clusterA", "server1");
+    generateServiceOnlyStartupInfos("server1");
+
+    domain.setStatus(null);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(
+        getServerStatus(getRecordedDomain(), "server1"),
+        equalTo(
+            new ServerStatus()
+                .withState(RUNNING_STATE)
+                .withDesiredState(SHUTDOWN_STATE)
+                .withClusterName("clusterA")
+                .withNodeName("node1")
+                .withServerName("server1")
+                .withHealth(overallHealth("health1"))));
+  }
+
+  @Test
+  public void statusStep_shutdownDesiredState_ifStandAloneServerIsServiceOnly() {
+    testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
+    testSupport.addToPacket(
+        SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
+    setNodeName(getPod("server1"), "node1");
+
+    generateServiceOnlyStartupInfos("server1");
+
+    domain.setStatus(null);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(
+        getServerStatus(getRecordedDomain(), "server1"),
+        equalTo(
+            new ServerStatus()
+                .withState(RUNNING_STATE)
+                .withDesiredState(SHUTDOWN_STATE)
+                .withNodeName("node1")
+                .withServerName("server1")
+                .withHealth(overallHealth("health1"))));
+  }
+
+  @Test
+  public void statusStep_containsValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
+  }
+
+  @Test
+  public void progressingStep_containsValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, true, endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), containsString(validationWarning));
+  }
+
+  @Test
+  public void failedStepWithFailureMessage_doesNotContainValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(DomainStatusUpdater.createFailedStep(failure, endStep));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
 
   @Test
@@ -557,7 +736,19 @@ public class DomainStatusUpdaterTest {
     return configureDomain().configureServer(serverName);
   }
 
+  private ClusterConfigurator configureCluster(String clusterName) {
+    return configureDomain().configureCluster(clusterName);
+  }
+
+  private void generateServiceOnlyStartupInfos(String... serverNames) {
+    generateStartupInfos(true, serverNames);
+  }
+
   private void generateStartupInfos(String... serverNames) {
+    generateStartupInfos(false, serverNames);
+  }
+
+  private void generateStartupInfos(boolean serviceOnly, String... serverNames) {
     List<DomainPresenceInfo.ServerStartupInfo> startupInfos = new ArrayList<>();
     for (String serverName : serverNames) {
       configSupport.addWlsServer(serverName);
@@ -569,7 +760,8 @@ public class DomainStatusUpdaterTest {
           new DomainPresenceInfo.ServerStartupInfo(
               domainConfig.getServerConfig(serverName),
               clusterName,
-              domain.getServer(serverName, clusterName)));
+              domain.getServer(serverName, clusterName),
+              serviceOnly));
     }
     info.setServerStartupInfo(startupInfos);
   }

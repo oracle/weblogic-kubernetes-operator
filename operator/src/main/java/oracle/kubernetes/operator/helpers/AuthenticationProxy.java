@@ -42,14 +42,14 @@ public class AuthenticationProxy {
       if (allowed) {
         result = new CallBuilder().createTokenReview(prepareTokenReview(token));
       } else {
-        LOGGER.info(MessageKeys.CANNOT_CREATE_TOKEN_REVIEW);
+        LOGGER.warning(MessageKeys.CANNOT_CREATE_TOKEN_REVIEW);
       }
     } catch (ApiException e) {
       LOGGER.severe(MessageKeys.APIEXCEPTION_FROM_TOKEN_REVIEW, e);
       LOGGER.exiting(null);
       return null;
     }
-    LOGGER.info("Returned TokenReview", result);
+    LOGGER.fine("Returned TokenReview", result);
     V1TokenReviewStatus status = result != null ? result.getStatus() : null;
     LOGGER.exiting(status);
     return status;
