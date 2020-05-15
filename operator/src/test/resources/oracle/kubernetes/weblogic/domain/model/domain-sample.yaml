@@ -41,12 +41,11 @@ spec:
         memory: "128Mi"
         cpu: "500m"
 
-  configuration:
-    # configured wls configuration overrides configmap name
-    overridesConfigMap: overrides-config-map
+  # configured wls configuration overrides configmap name
+  configOverrides: overrides-config-map
 
-    # configured wls configuration overrides secret names
-    secrets: [overrides-secret-1, overrides-secret-2]
+  # configured wls configuration overrides secret names
+  configOverrideSecrets: [overrides-secret-1, overrides-secret-2]
   
   # Restart version 
   restartVersion: "1"
