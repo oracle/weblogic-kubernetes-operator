@@ -19,10 +19,8 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -173,46 +171,18 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Deprecated
   @Description(
-      "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the Docker image"
+      "True indicates that the domain home file system is contained in the Docker image"
           + " specified by the image field. False indicates that the domain home file system is located"
           + " on a persistent volume.")
   private Boolean domainHomeInImage;
-
-  @EnumClass(value = DomainSourceType.class)
-  @Description(
-      "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is contained in the Docker image"
-          + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
-          + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
-          + " and managed by the operator based on a WDT domain model."
-          + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
-          + " unspecified then domainHomeSourceType defaults to Image.")
-  private String domainHomeSourceType;
-
-  /**
-   * Tells the operator to start the introspect domain job.
-   *
-   * @since 3.0.0
-   */
-  @Description(
-      "If present, every time this value is updated, the operator will start introspect domain job")
-  private String introspectVersion;
-
-  @Description("Models and overrides affecting the WebLogic domain configuration.")
-  private Configuration configuration;
 
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
    * @since 2.0
    */
-  @Deprecated
-  @Description("Deprecated. Use configuration.overridesConfigMap instead."
-      + " Ignored if configuration.overridesConfigMap is specified."
-      + " The name of the config map for optional WebLogic configuration overrides.")
+  @Description("The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
@@ -220,9 +190,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Deprecated
-  @Description("Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified."
-      + " A list of names of the secrets for optional WebLogic configuration overrides.")
+  @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
   /**
@@ -546,45 +514,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public String getDomainHomeSourceType() {
-    return domainHomeSourceType;
-  }
-
-  public void setDomainHomeSourceType(String domainHomeSourceType) {
-    this.domainHomeSourceType = domainHomeSourceType;
-  }
-
-  public DomainSpec withDomainHomeSourceType(String domainHomeSourceType) {
-    this.domainHomeSourceType = domainHomeSourceType;
-    return this;
-  }
-
-  public String getIntrospectVersion() {
-    return introspectVersion;
-  }
-
-  public void setIntrospectVersionn(String introspectVersion) {
-    this.introspectVersion = introspectVersion;
-  }
-
-  public DomainSpec withIntrospectVersion(String introspectVersion) {
-    this.introspectVersion = introspectVersion;
-    return this;
-  }
-
-  public Configuration getConfiguration() {
-    return configuration;
-  }
-
-  public void setConfiguration(Configuration configuration) {
-    this.configuration = configuration;
-  }
-
-  public DomainSpec withConfiguration(Configuration configuration) {
-    this.configuration = configuration;
-    return this;
-  }
-
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
@@ -664,49 +593,6 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(8888);
   }
 
-  String getWdtDomainType() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getDomainType)
-        .orElse(ModelInImageDomainType.WLS.toString());
-  }
-
-  String getOpssWalletPasswordSecret() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getOpss)
-        .map(Opss::getWalletPasswordSecret)
-        .orElse(null);
-  }
-
-  /**
-   * Get OPSS wallet file secret.
-   * @return wallet file secret
-   */
-  public String getOpssWalletFileSecret() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getOpss)
-        .map(Opss::getWalletFileSecret)
-        .orElse(null);
-  }
-
-  String getRuntimeEncryptionSecret() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getRuntimeEncryptionSecret)
-        .orElse(null);
-  }
-
-  /**
-   * Get WDT config map.
-   * @return config map name
-   */
-  public String getWdtConfigMap() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getConfigMap)
-        .orElse(null);
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -715,9 +601,6 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainUID", domainUid)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
-            .append("domainHomeSourceType", domainHomeSourceType)
-            .append("introspectVersion", introspectVersion)
-            .append("configuration", configuration)
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
@@ -745,9 +628,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid)
             .append(domainHome)
             .append(domainHomeInImage)
-            .append(domainHomeSourceType)
-            .append(introspectVersion)
-            .append(configuration)
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
             .append(image)
@@ -783,9 +663,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
-            .append(domainHomeSourceType, rhs.domainHomeSourceType)
-            .append(introspectVersion, rhs.introspectVersion)
-            .append(configuration, rhs.configuration)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)

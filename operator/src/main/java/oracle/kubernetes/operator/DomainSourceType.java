@@ -5,6 +5,5 @@ package oracle.kubernetes.operator;
 
 public enum DomainSourceType {
   Image,
-  PersistentVolume,
-  FromModel
+  PersistentVolume
 }

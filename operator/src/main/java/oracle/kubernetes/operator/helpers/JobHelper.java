@@ -77,25 +77,13 @@ public class JobHelper {
     if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
 
       final String currentPodRestartVersion = info.getDomain().getRestartVersion();
-      final String currentPodIntrospectVersion = info.getDomain().getIntrospectVersion();
       final String configMapRestartVersion = (String) packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-      final String configMapIntrospectVersion = (String) packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
       final String configMapSpecHash = (String) packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
-      final String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
-          .getSpec().getImage()));
 
       LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
-      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
       LOGGER.finest("JobHelper.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
-      LOGGER.finest("JobHelper.isModelInImageUpdate configMapIntrospectVersion " + configMapIntrospectVersion);
 
       // If either one is set, check for differences and decide to run intropsect job
-
-      if (currentPodIntrospectVersion != null
-            && !currentPodIntrospectVersion.equals(configMapIntrospectVersion)) {
-        LOGGER.fine("JobHelper: currentPodIntrospect version different from configmap");
-        return true;
-      }
 
       if (currentPodRestartVersion != null
             && !currentPodRestartVersion.equals(configMapRestartVersion)) {
@@ -106,17 +94,6 @@ public class JobHelper {
       if (configMapRestartVersion != null
           && !configMapRestartVersion.equals(currentPodRestartVersion)) {
         LOGGER.fine("JobHelper: configMapRestartVersion version different from configmap");
-        return true;
-      }
-
-      if (configMapIntrospectVersion != null
-          && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
-        LOGGER.fine("JobHelper: configMapIntrospectVersion version different ");
-        return true;
-      }
-
-      if (!currentImageSpecHash.equals(configMapSpecHash)) {
-        LOGGER.fine("JobHelper: currentImageSpecHash version different from configmap");
         return true;
       }
 
@@ -295,10 +272,6 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
       addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType());
 
       String dataHome = getDataHome();
