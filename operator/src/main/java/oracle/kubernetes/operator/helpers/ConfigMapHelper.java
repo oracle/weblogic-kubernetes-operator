@@ -31,7 +31,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
@@ -142,18 +141,6 @@ public class ConfigMapHelper {
     int lastSlash = line.lastIndexOf('/');
     String fname = line.substring(lastSlash + 1, line.length());
     return fname;
-  }
-
-  /**
-   * getModelInImageSpecHash returns the hash for the fields that should be compared for changes.
-   *
-   * @param imageName image name
-   * @return int hash value of the fields
-   */
-  public static int getModelInImageSpecHash(String imageName) {
-    return new HashCodeBuilder(17, 37)
-        .append(imageName)
-        .toHashCode();
   }
 
   /**
@@ -391,7 +378,7 @@ public class ConfigMapHelper {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
         if (domainTopology == null || !domainTopology.getDomainValid()) {
-          // If introspector determines Domain is invalid then log erros and terminate the fiber
+          // If introspector determines Domain is invalid then log errors and terminate the fiber
           if (domainTopology != null) {
             logValidationErrors(domainTopology.getValidationErrors());
           }
@@ -401,26 +388,10 @@ public class ConfigMapHelper {
         ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
         packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
-        if (miiDomainZipHash != null) {
-          packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
-        }
-        if (miiModelSecretsHash != null) {
-          packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
-        }
         String domainRestartVersion = info.getDomain().getRestartVersion();
-        String domainIntrospectVersion = info.getDomain().getIntrospectVersion();
-        int modelInImageSpecHash =  ConfigMapHelper.getModelInImageSpecHash(info.getDomain().getSpec().getImage());
         if (domainRestartVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
           data.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
-        }
-        if (domainIntrospectVersion != null) {
-          packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
-          data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
-        }
-        if ("FromModel".equals(info.getDomain().getDomainHomeSourceType())) {
-          packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
-          data.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
         }
         LOGGER.fine(
             MessageKeys.WLS_CONFIGURATION_READ,
@@ -632,33 +603,16 @@ public class ConfigMapHelper {
         final String miiModelSecretsHash = data.get("secrets.md5");
         final String miiDomainZipHash = data.get("domainzip_hash");
         final String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-        final String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
         final String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
 
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
             + info.getDomain().getRestartVersion());
-        LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version  (from ino spec) "
-            + info.getDomain().getIntrospectVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
             + domainRestartVersion);
-        LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version from cm result "
-            + domainIntrospectVersion);
         LOGGER.finest("ReadSituConfigMapStep.onSuccess image spec hash from cm result "
             + modelInImageSpecHash);
 
         if (topologyYaml != null) {
-
-          if (miiDomainZipHash != null) {
-            packet.put(ProcessingConstants.DOMAIN_HASH, miiDomainZipHash);
-          }
-
-          if (miiModelSecretsHash != null) {
-            packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
-          }
-
-          if (domainIntrospectVersion != null) {
-            packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
-          }
 
           if (domainRestartVersion != null) {
             packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);

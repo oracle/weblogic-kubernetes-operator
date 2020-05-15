@@ -813,7 +813,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     #
     # If you are using 3.0.0-rc1, then the version on the following line
     # should be `v7` not `v6`.
-    apiVersion: "weblogic.oracle/v6"
+    apiVersion: "weblogic.oracle/v7"
     kind: Domain
     metadata:
       name: sample-domain1
@@ -823,7 +823,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         weblogic.domainUID: sample-domain1
 
     spec:
-      # Set to 'FromModel' to indicate 'Model in Image'.
+      # For 3.0.0-rc1, set to 'FromModel' to indicate 'Model in Image'.
       domainHomeSourceType: FromModel
 
       # The WebLogic Domain Home, this must be a location within

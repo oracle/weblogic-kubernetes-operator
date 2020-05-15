@@ -45,7 +45,6 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
-import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -93,8 +92,6 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
@@ -342,7 +339,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
-    configurator.withDomainHomeSourceType(DomainSourceType.Image.toString());
+    configurator.withDomainHomeInImage(true);
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
@@ -350,21 +347,6 @@ public abstract class PodHelperTestBase {
                 SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
-  }
-
-  @Test
-  public void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
-    configurator.withDomainHomeSourceType(DomainSourceType.FromModel.toString())
-        .withRuntimeEncryptionSecret("my-runtime-encryption-secret");
-    assertThat(
-        getCreatedPodSpecContainer().getVolumeMounts(),
-        containsInAnyOrder(
-            writableVolumeMount(
-                SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
-            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts"),
-            readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
-                RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
   }
 
   @Test
