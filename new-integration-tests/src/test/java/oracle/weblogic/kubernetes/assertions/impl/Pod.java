@@ -101,7 +101,7 @@ public class Pod {
                   namespace,
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> podReady(podName, domainUid, namespace),
+          .until(assertDoesNotThrow(() -> podReady(namespace, domainUid, podName),
               String.format(
                   "pod %s is not ready in namespace %s", podName, namespace)));
     }

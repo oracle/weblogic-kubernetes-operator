@@ -171,8 +171,6 @@ public class Kubernetes {
       terminating = true;
       logger.info("{0} : !!!Terminating!!!, DeletionTimeStamp : {1}",
           pod.getMetadata().getName(), pod.getMetadata().getDeletionTimestamp());
-    } else {
-      logger.info("{0} : NotTerminating", pod.getMetadata().getName());
     }
     return terminating;
   }
