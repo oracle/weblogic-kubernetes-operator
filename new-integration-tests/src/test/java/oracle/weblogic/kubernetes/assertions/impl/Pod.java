@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,27 +50,26 @@ public class Pod {
     // query cluster and get pods from the namespace
     String labelSelectors = "weblogic.serverName";
     V1PodList listPods = Kubernetes.listPods(namespace, labelSelectors);
-    int numOfPods = listPods.getItems().size();
+    ArrayList<String> podNames = new ArrayList<>();
 
     //return if no pods are found
-    if (numOfPods == 0) {
+    if (listPods.getItems().isEmpty()) {
       logger.severe("No pods found in namespace {0}", namespace);
       return false;
     } else {
       logger.info("WebLogic pods found in namespace {0}", namespace);
       for (V1Pod item : listPods.getItems()) {
         logger.info(item.getMetadata().getName());
+        podNames.add(item.getMetadata().getName());
       }
     }
 
     // check the pods termination status in a thread
-    ExecutorService executorService = Executors.newFixedThreadPool(numOfPods);
-    Future[] submits = new Future[numOfPods];
-    for (int i = 0; i < numOfPods; i++) {
-      V1Pod pod = listPods.getItems().get(i);
-      String podName = pod.getMetadata().getName();
+    ExecutorService executorService = Executors.newFixedThreadPool(podNames.size());
+    ArrayList<Future> threads = new ArrayList<>();
+    for (var podName : podNames) {
       // check for pod termination status and return true if pod is terminating
-      submits[i] = executorService.submit(() -> {
+      threads.add(executorService.submit(() -> {
         withStandardRetryPolicy
             .conditionEvaluationListener(
                 condition -> logger.info("Waiting for pod {0} in namespace {1} to terminate"
@@ -78,11 +78,11 @@ public class Pod {
                     namespace,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
-            .until(onlyGivenPodTerminating(pod.getMetadata().getName(), domainUid, namespace));
+            .until(onlyGivenPodTerminating(podName, domainUid, namespace));
         return true;
-      });
+      }));
       // wait for the callable to finish running and check if all pods were terminating
-      for (Future future : submits) {
+      for (Future future : threads) {
         if (!(Boolean) future.get(10, MINUTES)) {
           return false;
         }
@@ -90,9 +90,8 @@ public class Pod {
     }
     executorService.shutdownNow();
 
-    // check pods are ready
-    for (var pod : listPods.getItems()) {
-      String podName = pod.getMetadata().getName();
+    // wait for pods to become ready
+    for (var podName : podNames) {
       logger.info("Wait for pod {0} to be ready in namespace {1}", podName, namespace);
       withStandardRetryPolicy
           .conditionEvaluationListener(
@@ -124,13 +123,13 @@ public class Pod {
     return () -> {
       String labelSelectors = String.format("weblogic.serverName", domainUid);
       V1PodList listPods = Kubernetes.listPods(namespace, labelSelectors);
-      if (listPods.getItems().size() == 0) {
+      if (listPods.getItems().isEmpty()) {
         logger.severe("No pods found in namespace {0}", namespace);
         return false;
       }
       int terminatingPods = 0;
       boolean podTerminating = false;
-      for (V1Pod pod : listPods.getItems()) {
+      for (var pod : listPods.getItems()) {
         if (Kubernetes.isPodTerminating(namespace, domainUid, pod.getMetadata().getName())) {
           terminatingPods++;
           if (pod.getMetadata().getName().equals(podName)) {
