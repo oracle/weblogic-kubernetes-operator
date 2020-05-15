@@ -69,6 +69,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
@@ -94,6 +95,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -103,7 +107,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -168,8 +171,26 @@ public class ItDomainOnPV implements LoggedTest {
   @DisplayName("Create domain in PV using WLST script")
   public void testDomainOnPvUsingWlst() throws IOException {
 
-    // create pull secrets for WebLogic image
-    createOCRRepoSecret();
+    String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+    if (!KIND_REPO.isEmpty()) {
+      // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
+      // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
+      // The workaround will be to:
+      //   1. docker login
+      //   2. docker pull
+      //   3. docker tag with the KIND_REPO value
+      //   4. docker push this new image name
+      //   5. use this image name to create the domain resource
+      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+      assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
+
+      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
+      image = kindRepoImage;
+    } else {
+      // create pull secrets for WebLogic image
+      createOCRRepoSecret();
+    }
 
     // create WebLogic credentials secret
     createWebLogicCredentialsSecret();
@@ -192,7 +213,7 @@ public class ItDomainOnPV implements LoggedTest {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+            .image(image)
             .imagePullPolicy("Always")
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(OCR_SECRET_NAME))
