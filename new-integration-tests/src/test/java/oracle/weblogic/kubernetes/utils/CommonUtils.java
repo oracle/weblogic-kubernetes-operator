@@ -16,6 +16,7 @@ import com.google.gson.JsonObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -71,6 +72,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -307,7 +309,10 @@ public class CommonUtils {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .resources(new V1ResourceRequirements()
+                    .limits(new HashMap<>())
+                    .requests(new HashMap<>())))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
             .clusters(clusters)
@@ -472,6 +477,28 @@ public class CommonUtils {
         .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, domainNamespace),
             String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
                 serviceName, domainNamespace)));
+  }
+
+  /**
+   * Check the pod is restarted.
+   *
+   * @param podName name of pod to check
+   * @param domainUid the domain uid in which the pod exists
+   * @param domNamespace the domain namespace in which the domain exists
+   * @param timestamp the pod original creation timestamp
+   */
+  public static void checkPodRestarted(String podName, String domainUid, String domNamespace, String timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, timestamp),
+            String.format("isPodRestarted failed with ApiException for %s in namespace %s",
+                podName, domNamespace)));
   }
 
   /**
