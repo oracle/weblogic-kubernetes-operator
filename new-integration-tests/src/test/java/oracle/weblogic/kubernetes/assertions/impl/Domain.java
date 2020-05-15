@@ -95,7 +95,8 @@ public class Domain {
   }
 
   /**
-   * Login to the WebLogic console and validate its the Home page.
+   * Verify admin node port(default/t3channel) is accessible by login to WebLogic console
+   * using the node port and validate its the Home page.
    *
    * @param nodePort the node port that needs to be tested for access
    * @param userName WebLogic administration server user name
