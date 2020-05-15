@@ -157,8 +157,6 @@ public class Kubernetes {
   public static boolean isPodTerminating(String namespace, String domainUid, String podName)
       throws ApiException {
     boolean terminating = false;
-    logger.info("Checking if the pod {0} is terminating in namespace {1}",
-        podName, namespace);
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID=%s", domainUid);
