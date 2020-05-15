@@ -47,7 +47,7 @@ public class Pod {
         .atMost(7, MINUTES).await();
 
     // query cluster and get pods from the namespace
-    String labelSelectors = String.format("weblogic.domainUID=%s", domainUid);
+    String labelSelectors = "weblogic.serverName";
     V1PodList listPods = Kubernetes.listPods(namespace, labelSelectors);
     int numOfPods = listPods.getItems().size();
 

@@ -33,7 +33,6 @@ public class Kubernetes {
   private static CoreV1Api coreV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static final String RUNNING = "Running";
-  private static final String TERMINATING = "Terminating";
 
   static {
     try {
@@ -155,20 +154,25 @@ public class Kubernetes {
    * @return true if pod is in Terminating state otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodTerminating(String namespace, String domainUid, String podName) throws ApiException {
-    boolean status = false;
+  public static boolean isPodTerminating(String namespace, String domainUid, String podName)
+      throws ApiException {
+    boolean terminating = false;
     logger.info("Checking if the pod terminating in namespace");
     String labelSelector = null;
     if (domainUid != null) {
       labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod != null) {
-      status = pod.getStatus().getPhase().equals(TERMINATING);
+    if (null == pod) {
+      logger.info("pod doesn't exist");
+      return false;
+    } else if (pod.getMetadata().getDeletionTimestamp() != null) {
+      terminating = true;
+      logger.info("pod is terminating");
     } else {
-      logger.info("Pod doesn't exist");
+      logger.info("pod not in terminating state");
     }
-    return status;
+    return terminating;
   }
 
   /**

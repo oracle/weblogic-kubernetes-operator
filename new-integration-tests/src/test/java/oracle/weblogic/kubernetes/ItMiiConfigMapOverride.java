@@ -377,7 +377,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertTrue(assertDoesNotThrow(
         () -> (TestAssertions.podsRollingRestarted(domainUid, domainNamespace)),
          "Rolling restart didn't happen correctly"),
-        "More than one pof restarted at same time");
+        "More than one pod was restarted at same time");
 
     // Check if the admin server pod has been restarted
     // by comparing the PodCreationTime before and after rolling restart
