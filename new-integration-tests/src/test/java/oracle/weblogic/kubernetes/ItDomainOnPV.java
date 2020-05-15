@@ -98,6 +98,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccoun
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -185,6 +186,8 @@ public class ItDomainOnPV implements LoggedTest {
       assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
 
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      assertTrue(dockerTag(image, kindRepoImage),
+          String.format("docker tag failed for images %s, %s", image, kindRepoImage));
       assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
       image = kindRepoImage;
     } else {
@@ -199,7 +202,7 @@ public class ItDomainOnPV implements LoggedTest {
     createPVandPVC();
 
     // create the domain on persistent volume
-    createDomainOnPV();
+    createDomainOnPV(image);
 
     // create the domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -320,9 +323,10 @@ public class ItDomainOnPV implements LoggedTest {
    * Creates a domain properties in the temp location.
    * Creates a configmap containing domain scripts and property files.
    * Runs a job to create domain on persistent volume.
+   * @param image Image name to use with job
    * @throws IOException when reading/writing domain scripts fails
    */
-  private void createDomainOnPV() throws IOException {
+  private void createDomainOnPV(String image) throws IOException {
 
     logger.info("create a staging location for domain creation scripts");
     Path pvTemp = Paths.get(RESULTS_ROOT, "ItDomainOnPV", "domainCreateTempPV");
@@ -351,7 +355,7 @@ public class ItDomainOnPV implements LoggedTest {
         "Creating configmap for domain creation failed");
 
     logger.info("Running a Kubernetes job to create the domain");
-    runCreateDomainJob(pvName, pvcName, domainScriptConfigMapName, domainNamespace);
+    runCreateDomainJob(image, pvName, pvcName, domainScriptConfigMapName, domainNamespace);
 
   }
 
@@ -414,7 +418,8 @@ public class ItDomainOnPV implements LoggedTest {
   /**
    * Create job to create a domain on a persistent volume.
    */
-  private void runCreateDomainJob(String pvName, String pvcName, String domainScriptCM, String namespace) {
+  private void runCreateDomainJob(String image, String pvName,
+                                  String pvcName, String domainScriptCM, String namespace) {
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -427,7 +432,7 @@ public class ItDomainOnPV implements LoggedTest {
                     .restartPolicy("Never")
                     .initContainers(Arrays.asList(new V1Container()
                         .name("fix-pvc-owner")  // change the ownership of the pv to opc:opc
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+                        .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
@@ -440,7 +445,7 @@ public class ItDomainOnPV implements LoggedTest {
                             .runAsUser(0L))))
                     .containers(Arrays.asList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+                        .image(image)
                         .imagePullPolicy("Always")
                         .ports(Arrays.asList(new V1ContainerPort()
                             .containerPort(7001)))
