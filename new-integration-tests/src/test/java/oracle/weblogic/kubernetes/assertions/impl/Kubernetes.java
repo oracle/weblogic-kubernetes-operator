@@ -165,7 +165,8 @@ public class Kubernetes {
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (null == pod) {
-      throw new ApiException("pod does not exist");
+      logger.severe("pod does not exist");
+      return false;
     } else if (pod.getMetadata().getDeletionTimestamp() != null) {
       terminating = true;
       logger.info("pod is terminating");
@@ -253,9 +254,8 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
-        logger.info("Pod Name: " + item.getMetadata().getName());
-        logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
-        logger.info("Pod Status: " + item.getStatus().getPhase());
+        logger.info("Name: {0}, Namespace: {1}, Phase: {2}",
+            item.getMetadata().getName(), namespace, item.getStatus().getPhase());
         return item;
       }
     }

@@ -44,7 +44,7 @@ public class Pod {
       throws ApiException, InterruptedException, ExecutionException, TimeoutException {
 
     withStandardRetryPolicy = with().pollInterval(5, SECONDS)
-        .atMost(7, MINUTES).await();
+        .atMost(10, MINUTES).await();
 
     // query cluster and get pods from the namespace
     String labelSelectors = "weblogic.serverName";
@@ -83,7 +83,7 @@ public class Pod {
       });
       // wait for the callable to finish running and check if all pods were terminating
       for (Future future : submits) {
-        if (!(Boolean) future.get(8, MINUTES)) {
+        if (!(Boolean) future.get(10, MINUTES)) {
           return false;
         }
       }
