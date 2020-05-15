@@ -25,6 +25,7 @@ public class WlsDynamicServersConfig {
   String serverTemplateName;
   Integer dynamicClusterSize;
   Integer maxDynamicClusterSize;
+  Integer minDynamicClusterSize;
   String serverNamePrefix;
   boolean calculatedListenPorts;
 
@@ -40,6 +41,7 @@ public class WlsDynamicServersConfig {
    *
    * @param dynamicClusterSize current size of the dynamic cluster
    * @param maxDynamicClusterSize maximum size of the dynamic cluster
+   * @param minDynamicClusterSize minimum size of the dynamic cluster
    * @param serverNamePrefix prefix for names of servers in this dynamic cluster
    * @param calculatedListenPorts whether listen ports are fixed or calculated based on server index
    * @param machineNameMatchExpression the expression is used when determining machines to use for
@@ -51,6 +53,7 @@ public class WlsDynamicServersConfig {
   public WlsDynamicServersConfig(
       Integer dynamicClusterSize,
       Integer maxDynamicClusterSize,
+      Integer minDynamicClusterSize,
       String serverNamePrefix,
       boolean calculatedListenPorts,
       String machineNameMatchExpression,
@@ -58,6 +61,7 @@ public class WlsDynamicServersConfig {
       List<WlsServerConfig> serverConfigs) {
     this.dynamicClusterSize = dynamicClusterSize;
     this.maxDynamicClusterSize = maxDynamicClusterSize;
+    this.minDynamicClusterSize = minDynamicClusterSize;
     this.serverNamePrefix = serverNamePrefix;
     this.calculatedListenPorts = calculatedListenPorts;
     this.machineNameMatchExpression = machineNameMatchExpression;
@@ -85,6 +89,7 @@ public class WlsDynamicServersConfig {
       String domainName) {
     Integer dynamicClusterSize = null;
     Integer maxDynamicClusterSize = null;
+    Integer minDynamicClusterSize = null;
     String serverNamePrefix = null;
     boolean calculatedListenPorts = false;
     String machineNameMatchExpression = null;
@@ -93,6 +98,7 @@ public class WlsDynamicServersConfig {
     if (dynamicServerConfig != null) {
       dynamicClusterSize = (Integer) dynamicServerConfig.get("dynamicClusterSize");
       maxDynamicClusterSize = (Integer) dynamicServerConfig.get("maxDynamicClusterSize");
+      minDynamicClusterSize = (Integer) dynamicServerConfig.get("minDynamicClusterSize");
       serverNamePrefix = (String) dynamicServerConfig.get("serverNamePrefix");
       calculatedListenPorts = (boolean) dynamicServerConfig.get("calculatedListenPorts");
       machineNameMatchExpression = (String) dynamicServerConfig.get("machineNameMatchExpression");
@@ -117,6 +123,7 @@ public class WlsDynamicServersConfig {
     return new WlsDynamicServersConfig(
         dynamicClusterSize,
         maxDynamicClusterSize,
+        minDynamicClusterSize,
         serverNamePrefix,
         calculatedListenPorts,
         machineNameMatchExpression,
@@ -194,8 +201,8 @@ public class WlsDynamicServersConfig {
    *     configuration which will used in the payload to the REST call to WLS admin server
    */
   static String getSearchFields() {
-    return "'serverTemplate', 'dynamicClusterSize', 'maxDynamicClusterSize', 'serverNamePrefix', "
-        + "'calculatedListenPorts', 'dynamicServerNames', 'machineNameMatchExpression' ";
+    return "'serverTemplate', 'dynamicClusterSize', 'maxDynamicClusterSize', 'minDynamicClusterSize', "
+        + "'serverNamePrefix', 'calculatedListenPorts', 'dynamicServerNames', 'machineNameMatchExpression' ";
   }
 
   /**
@@ -225,6 +232,19 @@ public class WlsDynamicServersConfig {
   }
 
   /**
+   * Return minimum size of the dynamic cluster.
+   *
+   * @return minimum size of the dynamic cluster
+   */
+  public Integer getMinDynamicClusterSize() {
+    return minDynamicClusterSize;
+  }
+
+  public void setMinDynamicClusterSize(Integer minDynamicClusterSize) {
+    this.minDynamicClusterSize = minDynamicClusterSize;
+  }
+
+  /**
    * Return the expression used in matching machine names assigned to dynamic servers.
    *
    * @return the expression used in matching machine names assigned to dynamic servers
@@ -250,26 +270,6 @@ public class WlsDynamicServersConfig {
 
   public void setServerConfigs(List<WlsServerConfig> serverConfigs) {
     this.serverConfigs = serverConfigs;
-  }
-
-  /**
-   * Returns the configuration for the dynamic WLS server with the given name.
-   *
-   * @param serverName name of the WLS server
-   * @return The WlsServerConfig object containing configuration of the WLS server with the given
-   *     name. This methods return null if no WLS configuration is found for the given server name.
-   */
-  public synchronized WlsServerConfig getServerConfig(String serverName) {
-    WlsServerConfig result = null;
-    if (serverName != null && serverConfigs != null) {
-      for (WlsServerConfig serverConfig : serverConfigs) {
-        if (serverConfig.getName().equals(serverName)) {
-          result = serverConfig;
-          break;
-        }
-      }
-    }
-    return result;
   }
 
   /**
@@ -346,6 +346,7 @@ public class WlsDynamicServersConfig {
         .append("serverTemplateName", serverTemplateName)
         .append("dynamicClusterSize", dynamicClusterSize)
         .append("maxDynamicClusterSize", maxDynamicClusterSize)
+        .append("minDynamicClusterSize", minDynamicClusterSize)
         .append("serverNamePrefix", serverNamePrefix)
         .append("calculatedListenPorts", calculatedListenPorts)
         .append("serverTemplate", serverTemplate)
@@ -362,6 +363,7 @@ public class WlsDynamicServersConfig {
             .append(serverTemplateName)
             .append(dynamicClusterSize)
             .append(maxDynamicClusterSize)
+            .append(minDynamicClusterSize)
             .append(serverNamePrefix)
             .append(calculatedListenPorts)
             .append(serverTemplate)
@@ -386,6 +388,7 @@ public class WlsDynamicServersConfig {
             .append(serverTemplateName, rhs.serverTemplateName)
             .append(dynamicClusterSize, rhs.dynamicClusterSize)
             .append(maxDynamicClusterSize, rhs.maxDynamicClusterSize)
+            .append(minDynamicClusterSize, rhs.minDynamicClusterSize)
             .append(serverNamePrefix, rhs.serverNamePrefix)
             .append(calculatedListenPorts, rhs.calculatedListenPorts)
             .append(serverTemplate, rhs.serverTemplate)

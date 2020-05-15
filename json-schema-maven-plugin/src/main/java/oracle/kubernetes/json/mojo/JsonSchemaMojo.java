@@ -36,7 +36,6 @@ public class JsonSchemaMojo extends AbstractMojo {
   @Parameter private final List<ExternalSchema> externalSchemas = Collections.emptyList();
   @Parameter(required = true)
   private String rootClass;
-  @Parameter private boolean includeDeprecated;
   @Parameter private boolean generateMarkdown;
   @Parameter private boolean includeAdditionalProperties;
   @SuppressWarnings("FieldCanBeLocal")
@@ -49,7 +48,6 @@ public class JsonSchemaMojo extends AbstractMojo {
   @Override
   public void execute() throws MojoExecutionException {
     main.defineClasspath(toUrls(compileClasspathElements));
-    main.setIncludeDeprecated(includeDeprecated);
     main.setIncludeAdditionalProperties(includeAdditionalProperties);
     main.setSupportObjectReferences(supportObjectReferences);
     addExternalSchemas();

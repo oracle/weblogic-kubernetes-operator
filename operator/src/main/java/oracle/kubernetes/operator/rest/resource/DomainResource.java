@@ -32,7 +32,7 @@ public class DomainResource extends BaseResource {
   }
 
   /**
-   * Get a description of this Weblogic domain.
+   * Get a description of this WebLogic domain.
    *
    * @return a DomainModel describing this domain.
    */

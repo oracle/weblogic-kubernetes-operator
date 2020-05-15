@@ -18,19 +18,23 @@ DomainSpec is a description of a domain.
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Configuration for the Administration Server. |
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
-| `configOverrides` | string | The name of the config map for optional WebLogic configuration overrides. |
-| `configOverrideSecrets` | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
+| `configOverrides` | string | Deprecated. Use configuration.overridesConfigMap instead. Ignored if configuration.overridesConfigMap is specified. The name of the config map for optional WebLogic configuration overrides. |
+| `configOverrideSecrets` | array of string | Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified. A list of names of the secrets for optional WebLogic configuration overrides. |
+| `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
 | `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
-| `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true. |
-| `domainHomeInImage` | Boolean | True if this domain's home is defined in the Docker image for the domain. Defaults to true. |
+| `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image. Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel. |
+| `domainHomeInImage` | Boolean | Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified. True indicates that the domain home file system is contained in the Docker image specified by the image field. False indicates that the domain home file system is located on a persistent volume. |
+| `domainHomeSourceType` | string | Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is contained in the Docker image specified by the image field. PersistentVolume indicates that the domain home file system is located on a persistent volume.  FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. If this field is specified it overrides the value of domainHomeInImage. If both fields are unspecified then domainHomeSourceType defaults to Image. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
 | `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
-| `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
+| `httpAccessLogInLogHome` | Boolean | If true (the default), then server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain home configuration. |
+| `image` | string | The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
-| `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
-| `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
-| `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
+| `includeServerOutInPodLog` | Boolean | If true (the default), then the server .out file will be included in the pod's stdout. |
+| `introspectVersion` | string | If present, every time this value is updated, the operator will start introspect domain job |
+| `logHome` | string | The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if logHomeEnabled is false. |
+| `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise. |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
@@ -73,6 +77,7 @@ An element representing a cluster in the domain configuration.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `allowReplicasBelowMinDynClusterSize` | Boolean | If true (the default), then the number of replicas is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration. Otherwise, the operator will ensure that the number of replicas is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. |
 | `clusterName` | string | The name of this cluster. Required |
 | `clusterService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for the WebLogic cluster. |
 | `maxUnavailable` | number | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
@@ -82,6 +87,16 @@ An element representing a cluster in the domain configuration.
 | `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
+
+### Configuration
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value. |
+| `model` | [Model](#model) | Model in image model files and properties. |
+| `opss` | [Opss](#opss) | Configuration for OPSS security. |
+| `overridesConfigMap` | string | The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides. |
+| `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified it overrides the value of spec.configOverrideSecrets. |
 
 ### Experimental
 
@@ -146,8 +161,10 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name. Required. |
 | `maximumReplicas` | number | The maximum number of cluster members. Required. |
+| `minimumReplicas` | number | The minimum number of cluster members. |
 | `readyReplicas` | number | The number of ready cluster members. Required. |
 | `replicas` | number | The number of intended cluster members. Required. |
+| `replicasGoal` | number | The requested number of cluster members from the domain spec. Cluster members will be started by the operator if this value is larger than zero. |
 
 ### Domain Condition
 
@@ -165,6 +182,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | Name | Type | Description |
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name, if the server is part of a cluster. |
+| `desiredState` | string | Desired state of this WebLogic Server. Values are RUNNING, ADMIN, or SHUTDOWN. |
 | `health` | [Server Health](#server-health) | Current status and health of a specific WebLogic Server. |
 | `nodeName` | string | Name of node that is hosting the Pod containing this WebLogic Server. |
 | `serverName` | string | WebLogic Server name. Required. |
@@ -184,6 +202,21 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `annotations` | Map | The annotations to be attached to generated resources. |
 | `labels` | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
+
+### Model
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `configMap` | string | WDT config map name. |
+| `domainType` | string | WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
+| `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when domainHomeSourceType is set to FromModel. |
+
+### Opss
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `walletFileSecret` | string | Secret containing the OPSS key wallet file. |
+| `walletPasswordSecret` | string | Secret containing OPSS key passphrase. |
 
 ### Istio
 

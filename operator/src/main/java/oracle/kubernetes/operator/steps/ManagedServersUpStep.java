@@ -103,7 +103,7 @@ public class ManagedServersUpStep extends Step {
     Set<String> clusteredServers = new HashSet<>();
 
     for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
-      factory.logIfReplicasExceedsClusterServersMax(clusterConfig);
+      factory.logIfInvalidReplicaCount(clusterConfig);
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
         clusteredServers.add(serverConfig.getName());
@@ -226,6 +226,38 @@ public class ManagedServersUpStep extends Step {
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
       }
+    }
+
+    private void logIfReplicasLessThanClusterServersMin(WlsClusterConfig clusterConfig) {
+      if (lessThanMinConfiguredClusterSize(clusterConfig)) {
+        String clusterName = clusterConfig.getClusterName();
+        LOGGER.warning(
+                MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
+                domain.getReplicaCount(clusterName),
+                clusterConfig.getMinDynamicClusterSize(),
+                clusterName);
+
+        // Reset current replica count so we don't scale down less than minimum
+        // dynamic cluster size
+        domain.setReplicaCount(clusterName, clusterConfig.getMinDynamicClusterSize());
+      }
+    }
+
+    private boolean lessThanMinConfiguredClusterSize(WlsClusterConfig clusterConfig) {
+      if (clusterConfig != null) {
+        String clusterName = clusterConfig.getClusterName();
+        if (clusterConfig.hasDynamicServers()
+            && !domain.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
+          int configMinClusterSize = clusterConfig.getMinDynamicClusterSize();
+          return domain.getReplicaCount(clusterName) < configMinClusterSize;
+        }
+      }
+      return false;
+    }
+
+    private void logIfInvalidReplicaCount(WlsClusterConfig clusterConfig) {
+      logIfReplicasExceedsClusterServersMax(clusterConfig);
+      logIfReplicasLessThanClusterServersMin(clusterConfig);
     }
   }
 }

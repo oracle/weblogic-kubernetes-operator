@@ -39,6 +39,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +51,8 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -131,6 +134,24 @@ public class DomainProcessorTest {
     }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void verifyThat_serverStatusUpdated_byMakeRightDomainPresence() {
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    DomainStatus domainStatus = updatedDomain.getStatus();
+
+    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(RUNNING_STATE));
+    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(RUNNING_STATE));
+    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[2]), equalTo(SHUTDOWN_STATE));
+    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
+    assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
   }
 
   @Test
@@ -320,6 +341,20 @@ public class DomainProcessorTest {
 
   private String getStatusMessage(Domain updatedDomain) {
     return Optional.ofNullable(updatedDomain).map(Domain::getStatus).map(DomainStatus::getMessage).orElse(null);
+  }
+
+  private String getDesiredState(Domain domain, String serverName) {
+    return getServerStatus(domain, serverName).getDesiredState();
+  }
+
+  private ServerStatus getServerStatus(Domain domain, String serverName) {
+    for (ServerStatus status : domain.getStatus().getServers()) {
+      if (status.getServerName().equals(serverName)) {
+        return status;
+      }
+    }
+
+    return null;
   }
 
   private void defineDuplicateServerNames() {
