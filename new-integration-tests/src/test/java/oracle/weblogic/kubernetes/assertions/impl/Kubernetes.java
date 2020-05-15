@@ -147,11 +147,11 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod exists in a given namespace and in Terminating state.
+   * Check if a pod exists in a given namespace and is terminating.
    * @param namespace in which to check for the pod
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
-   * @return true if pod is in Terminating state otherwise false
+   * @return true if pod is terminating otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isPodTerminating(String namespace, String domainUid, String podName)

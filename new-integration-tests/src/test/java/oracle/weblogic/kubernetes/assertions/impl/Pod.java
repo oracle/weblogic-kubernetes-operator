@@ -24,18 +24,17 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Pod {
 
-  private static ConditionFactory withStandardRetryPolicy
-      = withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+  // reusable condition factory
+  private static ConditionFactory retry
+      = with().pollInterval(5, SECONDS).atMost(10, MINUTES).await();
 
   /**
-   * Check the pods in the given namespace are restarted in rolling fashion. Waits until all pods are restarted,
-   * for upto 7 minutes.
+   * Check the pods in the given namespace are restarted in a rolling fashion.
+   * Waits until all pods are restarted, for upto 10 minutes.
    *
    * @param domainUid UID of the WebLogic domain
-   * @param namespace in which to check for the pods restart sequence
-   * @return true if pods in the namespace restarted in a rolling fashion otherwise false
+   * @param namespace name of the namespace in which to check for the pods restart sequence
+   * @return true if pods in the namespace are restarted in a rolling fashion otherwise false
    * @throws ApiException when Kubernetes cluster query fails
    * @throws InterruptedException when pod status check threads are interrupted
    * @throws ExecutionException when pod status checks times out
@@ -43,9 +42,6 @@ public class Pod {
    */
   public static boolean isARollingRestart(String domainUid, String namespace)
       throws ApiException, InterruptedException, ExecutionException, TimeoutException {
-
-    withStandardRetryPolicy = with().pollInterval(5, SECONDS)
-        .atMost(10, MINUTES).await();
 
     // query cluster and get pods from the namespace
     String labelSelectors = "weblogic.serverName";
@@ -64,13 +60,13 @@ public class Pod {
       }
     }
 
-    // check the pods termination status in a thread
+    // check the pods termination status in concurrent thread
     ExecutorService executorService = Executors.newFixedThreadPool(podNames.size());
     ArrayList<Future<Boolean>> threads = new ArrayList<Future<Boolean>>();
     for (var podName : podNames) {
       // check for pod termination status and return true if pod is terminating
       threads.add(executorService.submit(() -> {
-        withStandardRetryPolicy
+        retry
             .conditionEvaluationListener(
                 condition -> logger.info("Waiting for pod {0} in namespace {1} to terminate"
                     + "(elapsed time {2}ms, remaining time {3}ms)",
@@ -93,7 +89,7 @@ public class Pod {
     // wait for pods to become ready
     for (var podName : podNames) {
       logger.info("Wait for pod {0} to be ready in namespace {1}", podName, namespace);
-      withStandardRetryPolicy
+      retry
           .conditionEvaluationListener(
               condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
                   + "(elapsed time {2}ms, remaining time {3}ms)",

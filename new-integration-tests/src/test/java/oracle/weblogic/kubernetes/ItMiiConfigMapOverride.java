@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -82,6 +81,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarte
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podsRollingRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
@@ -375,7 +375,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
 
     assertTrue(assertDoesNotThrow(
-        () -> (TestAssertions.podsRollingRestarted(domainUid, domainNamespace)),
+        () -> (podsRollingRestarted(domainUid, domainNamespace)),
          "Rolling restart didn't happen correctly"),
         "More than one pod was restarted at same time");
 

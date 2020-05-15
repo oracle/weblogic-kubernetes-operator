@@ -127,11 +127,11 @@ public class TestAssertions {
   }
 
   /**
-   * Check the pods in the given namespace are restarted in rolling fashion.
+   * Check the pods in the given namespace are restarted in a rolling fashion.
    *
    * @param domainUid UID of the WebLogic domain
-   * @param namespace in which to check for the pods status
-   * @return true if pods in the namespace restarted in a rolling fashion otherwise false
+   * @param namespace name of the namespace in which to check for the pods status
+   * @return true if pods in the namespace are restarted in a rolling fashion otherwise false
    * @throws ApiException when Kubernetes cluster query fails
    * @throws InterruptedException when pod status check threads are interrupted
    * @throws ExecutionException when pod status checks times out
