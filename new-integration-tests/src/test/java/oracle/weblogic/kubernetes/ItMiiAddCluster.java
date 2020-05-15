@@ -46,6 +46,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -312,6 +314,7 @@ class ItMiiAddCluster implements LoggedTest {
    * Verify servers from new cluster are in running state.
    */
   @Test
+  @Order(2)
   @DisplayName("Add a dynamic cluster to model in image domain")
   @Slow
   @MustNotRunInParallel
@@ -431,6 +434,7 @@ class ItMiiAddCluster implements LoggedTest {
    * Verify servers from new cluster are in running state.
    */
   @Test
+  @Order(3)
   @DisplayName("Add a configured cluster to model in image domain")
   @Slow
   @MustNotRunInParallel
@@ -546,11 +550,11 @@ class ItMiiAddCluster implements LoggedTest {
   /**
    * Patch the domain resource with the configmap to add a cluster.
    * Update the restart version of the domain resource to 4
-   * Update the spec level replica count to zero(default) value
    * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart.
-   * Verify servers from new cluster are not in running state.
+   * Verify servers from new cluster are not in running state, because the spec level replica count to zero(default)
    */
   @Test
+  @Order(1)
   @DisplayName("Add a cluster to model in image domain with default replica count")
   @Slow
   @MustNotRunInParallel
@@ -611,19 +615,6 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
     
-    patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/replicas\",")
-        .append(" \"value\": 0")
-        .append(" }]");
-    logger.log(Level.INFO, "Replicas patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean repilcaPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
-
     patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
         .append(" \"path\": \"/spec/restartVersion\",")

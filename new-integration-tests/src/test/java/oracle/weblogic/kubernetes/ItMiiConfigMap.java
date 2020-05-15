@@ -104,6 +104,8 @@ class ItMiiConfigMap implements LoggedTest {
 
   private String domainUid = "miiconfigmap";
   private StringBuffer checkJdbc = null;
+  private StringBuffer checkJms = null;
+  private StringBuffer checkWldf = null;
 
   private static Map<String, Object> secretNameMap;
 
@@ -211,8 +213,9 @@ class ItMiiConfigMap implements LoggedTest {
 
   /**
    * Deploy a WebLogic domain with a defined configmap in configuration/model section of the domain resource.
-   * The configmap has a sparse WDT model file that defines a DataSource targeted to the cluster.
-   * Verify the DataSource configuration using the rest API call using adminserver's public nodeport
+   * The configmap has multiple sparse WDT model files that define 
+   * a JDBCSystemResource, a JMSSystemResource, and a WLDFSystemResource.
+   * Verify all the SystemResource configurations using the rest API call using adminserver's public nodeport
    */
   @Test
   @Order(1)
@@ -242,16 +245,34 @@ class ItMiiConfigMap implements LoggedTest {
             "weblogicenc", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
 
+    String configMapName = "jdbc-jms-wldf-configmap";
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
-    String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
+
+    // Add jdbc model file
+    final String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
     Map<String, String> data = new HashMap<>();
-    String configMapName = "dsconfigmap";
     String cmData = null;
     cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
         String.format("readString operation failed for %s", dsModelFile));
     assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
     data.put("model.jdbc.yaml", cmData);
+
+    // Add jms model file
+    final String jmsModelFile = MODEL_DIR + "/model.jms.yaml";
+    cmData = null;
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(jmsModelFile)),
+        String.format("readString operation failed for %s", jmsModelFile));
+    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+    data.put("model.jms.yaml", cmData);
+
+    // Add wldf model file
+    final String wldfModelFile = MODEL_DIR + "/model.wldf.yaml";
+    cmData = null;
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(wldfModelFile)),
+        String.format("readString operation failed for %s", wldfModelFile));
+    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+    data.put("model.wldf.yaml", cmData);
 
     V1ObjectMeta meta = new V1ObjectMeta()
         .labels(labels)
@@ -326,7 +347,8 @@ class ItMiiConfigMap implements LoggedTest {
     try {
       checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
       checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/wls/latest/datasources/id/TestDataSource/")
+          .append("/management/weblogic/latest/domainConfig")
+          .append("/JDBCSystemResources/TestDataSource/")
           .append(" --silent --show-error ")
           .append(" -o /dev/null ")
           .append(" -w %{http_code});")
@@ -334,13 +356,50 @@ class ItMiiConfigMap implements LoggedTest {
       logger.info("curl command {0}", new String(checkJdbc));
       result = exec(new String(checkJdbc), true);
     } catch (Exception ex) {
-      logger.info("Caught unexpected exception {0}", ex);
-      fail("Got unexpected exception" + ex);
+      logger.info("CheckJdbc: caught unexpected exception {0}", ex);
+      fail("CheckJdbc:  got unexpected exception" + ex);
     }
-
-    logger.info("curl command returns {0}", result.toString());
+    logger.info("CheckJdbc: curl command returns {0}", result.toString());
     assertEquals("200", result.stdout(), "DataSource configuration not found");
-    logger.info("Found the DataSource configuration ");
+    logger.info("Found the DataSource configuration");
+
+    try {
+      checkJms = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+      checkJms.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainConfig")
+          .append("/JMSSystemResources/TestClusterJmsModule/")
+          .append(" --silent --show-error ")
+          .append(" -o /dev/null ")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
+      logger.info("curl command {0}", new String(checkJms));
+      result = exec(new String(checkJms), true);
+    } catch (Exception ex) {
+      logger.info("CheckJms: caught unexpected exception {0}", ex);
+      fail("CheckJms:  got unexpected exception" + ex);
+    }
+    logger.info("CheckJms: curl command returns {0}", result.toString());
+    assertEquals("200", result.stdout(), "JMSSystemResources configuration not found");
+    logger.info("Found the JMSSystemResources configuration");
+
+    try {
+      checkWldf = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+      checkWldf.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainConfig")
+          .append("/WLDFSystemResources/TestWldfModule/")
+          .append(" --silent --show-error ")
+          .append(" -o /dev/null ")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
+      logger.info("curl command {0}", new String(checkWldf));
+      result = exec(new String(checkWldf), true);
+    } catch (Exception ex) {
+      logger.info("CheckWldf: caught unexpected exception {0}", ex);
+      fail("CheckWldf:  got unexpected exception" + ex);
+    }
+    logger.info("CheckWldf: curl command returns {0}", result.toString());
+    assertEquals("200", result.stdout(), "WLDFSystemResources configuration not found");
+    logger.info("Found the WLDFSystemResources configuration");
   }
 
   // This method is needed in this test class, since the cleanup util
@@ -370,7 +429,6 @@ class ItMiiConfigMap implements LoggedTest {
       logger.info("Status code: " + e.getCode());
       logger.info("Reason: " + e.getResponseBody());
       logger.info("Response headers: " + e.getResponseHeaders());
-      //409 means that the secret already exists - it is not an error, so can proceed
       if (e.getCode() != 409) {
         throw e;
       } else {
