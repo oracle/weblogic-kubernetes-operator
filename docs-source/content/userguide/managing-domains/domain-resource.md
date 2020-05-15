@@ -413,7 +413,7 @@ This example domain YAML file specifies that pods for WebLogic Server instances 
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v6"
 kind: Domain
 metadata:
   name: domain1
@@ -423,7 +423,7 @@ metadata:
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
-  domainHomeSourceType: Image
+  domainHomeInImage: true
   image: "phx.ocir.io/weblogick8s/my-domain-home-in-image:12.2.1.4"
   imagePullPolicy: "IfNotPresent"
   imagePullSecrets:

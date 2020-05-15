@@ -24,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.operator.LabelConstants;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAININTROSPECTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
@@ -100,7 +99,6 @@ class PodCompatibility extends CollectiveCompatibility {
     public boolean isCompatible() {
       return isLabelSame(DOMAINRESTARTVERSION_LABEL)
           && isLabelSame(CLUSTERRESTARTVERSION_LABEL)
-          && isLabelSame(DOMAININTROSPECTVERSION_LABEL)
           && isLabelSame(SERVERRESTARTVERSION_LABEL);
     }
 
@@ -118,9 +116,6 @@ class PodCompatibility extends CollectiveCompatibility {
       }
       if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) {
         return "server restart label changed.";
-      }
-      if (!isLabelSame(DOMAININTROSPECTVERSION_LABEL)) {
-        return "domain introspect version label changed.";
       }
       return null;
     }
