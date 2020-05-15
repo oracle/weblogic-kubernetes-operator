@@ -16,4 +16,13 @@ public interface KubernetesResourceLookup {
    * @return true if such a secret exists
    */
   boolean isSecretExists(String name, String namespace);
+
+  /**
+   * Returns true if the Kubernetes cluster to which this domain is deployed has a config map with the specified
+   * name and namespace.
+   * @param name the name of the configmap
+   * @param namespace the containing namespace
+   * @return true if such a configmap exists
+   */
+  boolean isConfigMapExists(String name, String namespace);
 }

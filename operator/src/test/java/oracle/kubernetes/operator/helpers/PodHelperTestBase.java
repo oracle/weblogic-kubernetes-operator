@@ -45,10 +45,12 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -91,7 +93,9 @@ import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.RUNTIME_ENCRYPTION_SECRET_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_TIMEOUT;
@@ -195,7 +199,8 @@ public abstract class PodHelperTestBase {
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
-            .withLogLevel(Level.FINE));
+            .withLogLevel(Level.FINE)
+            .ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
@@ -336,14 +341,30 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreated_withNoPvc_containerHasExpectedVolumeMounts() {
+  public void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
+    configurator.withDomainHomeSourceType(DomainSourceType.Image.toString());
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             writableVolumeMount(
-                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
+                SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
+  }
+
+  @Test
+  public void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
+    configurator.withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+        .withRuntimeEncryptionSecret("my-runtime-encryption-secret");
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        containsInAnyOrder(
+            writableVolumeMount(
+                SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
+            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
+            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts"),
+            readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
+                RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
   }
 
   @Test
@@ -425,7 +446,8 @@ public abstract class PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound", "Test this failure"));
+    assertThat(getDomain(), hasStatus("FieldValueNotFound",
+        "testcall in namespace junit, for testName: Test this failure"));
   }
 
   @Test
@@ -446,7 +468,8 @@ public abstract class PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("Forbidden", getQuotaExceededMessage()));
+    assertThat(getDomain(), hasStatus("Forbidden",
+        "testcall in namespace junit, for testName: " + getQuotaExceededMessage()));
   }
 
   private ApiException createQuotaExceededException() {
@@ -884,15 +907,15 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenNoPod_retryOnFailure() {
+  public void whenNoPod_onFiveHundred() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 401);
+    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 500);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test

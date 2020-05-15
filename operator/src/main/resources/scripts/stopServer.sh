@@ -48,6 +48,14 @@ function check_for_shutdown() {
     return 0
   fi
 
+  if [ -e /tmp/diefast ]; then
+    trace "Found '/tmp/diefast' file; skipping clean shutdown" &>> ${STOP_OUT_FILE}
+    kill -9 `jps -v | grep " NodeManager " | awk '{ print $1 }'`
+    kill -9 `jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{ print $1 }'`
+    touch ${SHUTDOWN_MARKER_FILE}
+    return 0
+  fi
+
   trace "Server is currently in state $state" &>> ${STOP_OUT_FILE}
   return 1
 }

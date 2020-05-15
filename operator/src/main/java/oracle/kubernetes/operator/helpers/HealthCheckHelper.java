@@ -117,12 +117,12 @@ public final class HealthCheckHelper {
 
     // Validate namespace
     if (DEFAULT_NAMESPACE.equals(operatorNamespace)) {
-      LOGGER.info(MessageKeys.NAMESPACE_IS_DEFAULT);
+      LOGGER.fine(MessageKeys.NAMESPACE_IS_DEFAULT);
     }
 
     // Validate policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
-    LOGGER.info(MessageKeys.VERIFY_ACCESS_START, ns);
+    LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, ns);
 
     V1SelfSubjectRulesReview review = ap.review(ns);
     if (review != null) {
@@ -202,7 +202,7 @@ public final class HealthCheckHelper {
    * @return Major and minor version information
    */
   public static KubernetesVersion performK8sVersionCheck() {
-    LOGGER.info(MessageKeys.VERIFY_K8S_MIN_VERSION);
+    LOGGER.fine(MessageKeys.VERIFY_K8S_MIN_VERSION);
 
     try {
       return createAndValidateKubernetesVersion(new CallBuilder().readVersionCode());

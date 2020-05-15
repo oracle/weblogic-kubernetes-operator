@@ -9,12 +9,12 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>2.5.0</version>
+        <version>2.6.0</version>
     </parent>
 
     <artifactId>installation-tests</artifactId>
 
-    <description>Oracle Weblogic Server Kubernetes Operator</description>
+    <description>Oracle WebLogic Server Kubernetes Operator</description>
     <name>installation-tests</name>
 
     <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
@@ -92,6 +92,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>${junit-version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -99,12 +100,11 @@
             <artifactId>snakeyaml</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
+
+    <properties>
+        <junit-version>4.13</junit-version>
+    </properties>
 
     <profiles>
         <profile>

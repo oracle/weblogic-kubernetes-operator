@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -77,15 +77,13 @@
 #
 
 
-import base64
+import base64, md5
+import distutils.dir_util
+import inspect
+import os
+import re
 import sys
 import traceback
-import inspect
-import distutils.dir_util
-import os
-import shutil
-import re
-from datetime import datetime
 
 # Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
@@ -107,6 +105,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
+    self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
@@ -118,13 +117,31 @@ class OfflineWlstEnv(object):
     self.CUSTOM_PREFIX_WLDF = 'Sit-Cfg-WLDF--'
     self.CUSTOM_PREFIX_CFG  = 'Sit-Cfg-CFG--'
 
-    self.INTROSPECT_HOME        = '/tmp/introspect/' + self.DOMAIN_UID
-    self.TOPOLOGY_FILE          = self.INTROSPECT_HOME + '/topology.yaml'
-    self.CM_FILE                = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'introspector-situational-config.xml'
-    self.BOOT_FILE              = self.INTROSPECT_HOME + '/boot.properties'
-    self.USERCONFIG_FILE        = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
-    self.USERKEY_FILE           = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
-    self.DOMAIN_SECRET_MD5_FILE = '/tmp/DomainSecret.md5'
+    self.INTROSPECT_HOME          = '/tmp/introspect/' + self.DOMAIN_UID
+    self.TOPOLOGY_FILE            = self.INTROSPECT_HOME + '/topology.yaml'
+    self.CM_FILE                  = self.INTROSPECT_HOME + '/' + self.CUSTOM_PREFIX_CFG + 'introspector-situational-config.xml'
+    self.BOOT_FILE                = self.INTROSPECT_HOME + '/boot.properties'
+    self.USERCONFIG_FILE          = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
+    self.USERKEY_FILE             = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
+
+    # Model in image attributes
+
+    self.DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
+    self.DOMAIN_ZIP               = self.INTROSPECT_HOME + '/domainzip.secure'
+    self.PRIMORDIAL_DOMAIN_ZIP    = self.INTROSPECT_HOME + '/primordial_domainzip.secure'
+
+    self.INVENTORY_IMAGE_MD5      = self.INTROSPECT_HOME + '/inventory_image.md5'
+    self.INVENTORY_CM_MD5         = self.INTROSPECT_HOME + '/inventory_cm.md5'
+    self.INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
+    self.MERGED_MODEL_FILE        = self.INTROSPECT_HOME + '/merged_model.json'
+    self.EWALLET                  = self.INTROSPECT_HOME + '/ewallet.p12'
+    self.WLS_VERSION              = self.INTROSPECT_HOME + "/wls.version"
+    self.JDK_PATH                 = self.INTROSPECT_HOME + "/jdk.path"
+    self.SECRETS_MD5              = self.INTROSPECT_HOME + "/secrets.md5"
+    self.DOMAINZIP_HASH           = self.INTROSPECT_HOME + "/domainzip_hash"
+    self.WDT_CONFIGMAP_PATH      = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
+                                                    '/weblogic-operator/wdt-config-map')
+    self.DOMAIN_SOURCE_TYPE      = self.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -159,12 +176,43 @@ class OfflineWlstEnv(object):
       if os.path.isfile(the_file_path):
         os.unlink(the_file_path)
 
-    # load domain home into WLST
 
     trace("About to load domain from "+self.getDomainHome())
     readDomain(self.getDomainHome())
     self.domain = cmo
     self.DOMAIN_NAME = self.getDomain().getName()
+
+    # this should only be done for model in image case
+    if self.DOMAIN_SOURCE_TYPE == "FromModel":
+      self.handle_ModelInImageDomain()
+
+  def handle_ModelInImageDomain(self):
+    self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
+
+    try:
+      # find the em ear source path
+      cd('Application/em')
+      em_attrs = ls(returnMap='true', returnType='a')
+      self.empath = em_attrs['SourcePath']
+    except:
+      self.empath = None
+      pass
+
+    if self.WDT_DOMAIN_TYPE == 'JRF':
+      try:
+        # Only export if it is not there already (i.e. have not been copied from the secrets
+        if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
+          opss_passphrase = self.getEnv('OPSS_PASSPHRASE')
+          os.mkdir('/tmp/opsswallet')
+          exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
+                              keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
+      except:
+        trace("SEVERE","Error in exporting OPSS key ")
+        dumpStack()
+        sys.exit(1)
+
+  def getEmPath(self):
+    return self.empath
 
   def close(self):
     closeDomain()
@@ -183,6 +231,9 @@ class OfflineWlstEnv(object):
 
   def getDataHome(self):
     return self.DATA_HOME
+
+  def isAccessLogInLogHome(self):
+    return self.ACCESS_LOG_IN_LOG_HOME == 'true';
 
   def isFMWInfraDomain(self):
     return self.IS_FMW_INFRA_DOMAIN
@@ -228,7 +279,6 @@ class OfflineWlstEnv(object):
 
   def printFile(self, path):
     trace("Printing file " + path)
-    print 
     print ">>> ",path
     print self.readFile(path)
     print ">>> EOF"
@@ -255,6 +305,7 @@ class OfflineWlstEnv(object):
 
   def toDNS1123Legal(self, address):
     return address.lower().replace('_','-')
+
 
 class SecretManager(object):
 
@@ -344,9 +395,15 @@ class TopologyGenerator(Generator):
       ret = None
     return ret
 
+  # Work-around bugs in off-line WLST when accessing an SSL mbean
   def getSSLOrNone(self,server):
     try:
+      # this can throw if SSL mbean not there
       ret = server.getSSL()
+      # this can throw if SSL mbean is there but enabled is false 
+      ssl.getListenPort()
+      # this can throw if SSL mbean is there but enabled is false
+      ssl.isListenPortEnabled()
     except:
       trace("Ignoring getSSL() exception, this is expected.")
       ret = None
@@ -612,6 +669,7 @@ class TopologyGenerator(Generator):
     self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
     self.writeln("dynamicClusterSize: " + str(dynamicServer.getDynamicClusterSize()))
     self.writeln("maxDynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
+    self.writeln("minDynamicClusterSize: " + str(dynamicServer.getMinDynamicClusterSize()))
 
   def getClusteredServers(self, cluster):
     rtn = []
@@ -790,6 +848,120 @@ class UserConfigAndKeyGenerator(Generator):
     finally:
       nmDisconnect()
 
+class MII_DomainConfigGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.DOMAIN_ZIP)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addDomainConfig()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addDomainConfig(self):
+    em_ear_path = self.env.getEmPath()
+    empath = ''
+    if em_ear_path is not None and os.path.exists(em_ear_path):
+      empath = em_ear_path
+    # Note: only config type is needed fmwconfig, security is excluded because it's in the primordial and contain
+    # all the many policies files
+    packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
+              "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
+              "%s/config/security %s" % (
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
+              self.domain_home, self.domain_home, self.domain_home, self.domain_home, empath)
+    os.system(packcmd)
+    domain_data = self.env.readBinaryFile("/tmp/domain.tar.gz")
+    b64 = ""
+    for s in base64.encodestring(domain_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    domainzip_hash = md5.new(domain_data).hexdigest()
+    fh = open("/tmp/domainzip_hash", "w")
+    fh.write(domainzip_hash)
+    fh.close()
+    trace('done zipping up domain ')
+
+
+class MII_OpssWalletFileGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.EWALLET)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addWallet()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addWallet(self):
+    wallet_data = self.env.readBinaryFile("/tmp/opsswallet/ewallet.p12")
+    b64 = ""
+    for s in base64.encodestring(wallet_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    trace("done writing opss key")
+
+
+class MII_PrimordialDomainGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.PRIMORDIAL_DOMAIN_ZIP)
+    self.env = env
+    self.domain_home = self.env.getDomainHome()
+  def generate(self):
+    self.open()
+    try:
+      self.addPrimordialDomain()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addPrimordialDomain(self):
+    primordial_domain_data = self.env.readBinaryFile("/tmp/prim_domain.tar.gz")
+    b64 = ""
+    for s in base64.encodestring(primordial_domain_data).splitlines():
+      b64 = b64 + s
+    self.writeln(b64)
+    trace("done writing primordial domain")
+
+
+class MII_IntrospectCMFileGenerator(Generator):
+
+  def __init__(self, env, inventory, fromfile):
+    Generator.__init__(self, env, inventory)
+    self.env = env
+    self.fromfile = fromfile
+
+  def generate(self):
+    self.open()
+    try:
+      rc = self.addFile()
+      self.close()
+      if rc is not None:
+        self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addFile(self):
+    if os.path.exists(self.fromfile):
+      file_str = self.env.readFile(self.fromfile)
+      self.writeln(file_str)
+      return "hasfile"
+    else:
+      return None
+
+
 class SitConfigGenerator(Generator):
 
   def __init__(self, env):
@@ -854,6 +1026,7 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(name, server, false)
+    self.customizeAccessLog(name)
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
@@ -873,6 +1046,7 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(server_name_prefix + "${id}", template, false)
+    self.customizeAccessLog(server_name_prefix + "${id}")
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
@@ -978,6 +1152,26 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:directory" + fileaction + ">" + data_dir + "</d:directory>")
     self.undent()
     self.writeln("</d:default-file-store>")
+
+  def customizeAccessLog(self, name):
+    # do not customize if LOG_HOME is not set
+    logs_dir = self.env.getDomainLogHome()
+    if logs_dir is None or len(logs_dir) == 0:
+      return
+
+    # customize only if ACCESS_LOG_IN_LOG_HOME is 'true'
+    if self.env.isAccessLogInLogHome():
+      self.writeln("<d:web-server>")
+      self.indent()
+      self.writeln("<d:web-server-log>")
+      self.indent()
+      # combine-mode "replace" works regardless of whether web-server and web-server-log is present or not
+      self.writeln("<d:file-name f:combine-mode=\"replace\">"
+                   + logs_dir + "/" + name + "_access.log</d:file-name>")
+      self.undent()
+      self.writeln("</d:web-server-log>")
+      self.undent()
+      self.writeln("</d:web-server>")
 
 class CustomSitConfigIntrospector(SecretManager):
 
@@ -1199,7 +1393,6 @@ class CustomSitConfigIntrospector(SecretManager):
       gen.close()
       gen.addGeneratedFile()
 
-
 class DomainIntrospector(SecretManager):
 
   def __init__(self, env):
@@ -1213,6 +1406,34 @@ class DomainIntrospector(SecretManager):
       SitConfigGenerator(self.env).generate()
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
+      DOMAIN_SOURCE_TYPE      = self.env.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
+
+      if DOMAIN_SOURCE_TYPE == "FromModel":
+        trace("cfgmap write primordial_domain")
+        MII_PrimordialDomainGenerator(self.env).generate()
+        trace("cfgmap write domain zip")
+        MII_DomainConfigGenerator(self.env).generate()
+        trace("cfgmap write merged model")
+        MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
+                                      self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
+        trace("cfgmap write md5 image")
+        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
+        trace("cfgmap write md5 cm")
+        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
+        trace("cfgmap write wls version")
+        MII_IntrospectCMFileGenerator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
+        trace("cfgmap write jdk_path")
+        MII_IntrospectCMFileGenerator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
+        trace("cfgmap write md5 secrets")
+        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_MD5, '/tmp/secrets.md5').generate()
+        trace("cfgmap write model hash")
+        # Must be called after MII_PrimordialDomainGenerator
+        MII_IntrospectCMFileGenerator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
+
+        if self.env.WDT_DOMAIN_TYPE == 'JRF':
+          trace("cfgmap write JRF wallet")
+          MII_OpssWalletFileGenerator(self.env).generate()
+
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
 
@@ -1225,6 +1446,9 @@ class DomainIntrospector(SecretManager):
 
 def main(env):
   try:
+    #  Needs to build the domain first
+
+
     env.open()
     try:
       env.addGeneratedFile(env.DOMAIN_SECRET_MD5_FILE)

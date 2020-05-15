@@ -212,7 +212,7 @@ public class JobHelperTest {
         .getComponents()
         .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
     DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
-        new DomainIntrospectorJobStepContext(packet);
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
     return domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
   }
 
@@ -395,6 +395,19 @@ public class JobHelperTest {
         jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
         is(expectedActiveDeadlineSeconds));
     assertThat(jobSpec.getActiveDeadlineSeconds(), is(expectedActiveDeadlineSeconds));
+  }
+
+  @Test
+  public void verify_introspectorPodSpec_activeDeadlineSeconds_domain_overrides_values() {
+    configureDomain().withIntrospectorJobActiveDeadlineSeconds(600L);
+   
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
+        is(600L));
+    assertThat(
+        jobSpec.getActiveDeadlineSeconds(), is(600L));
   }
 
   @Test
@@ -672,6 +685,25 @@ public class JobHelperTest {
     assertThat(
         getPodSpec(jobSpec).getTolerations(),
         nullValue());
+  }
+
+  @Test
+  public void whenDomainHasHttpAccessLogInLogHomeConfigured_introspectorPodSpecStartupWithIt() {
+    configureDomain().withHttpAccessLogInLogHome(false);
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "false")
+    );
+  }
+
+  @Test
+  public void whenNotConfigured_introspectorPodSpec_hasTrueAccessLogInLogHomeEnvVar() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "true")
+    );
   }
 
   private DomainPresenceInfo createDomainPresenceInfo() {

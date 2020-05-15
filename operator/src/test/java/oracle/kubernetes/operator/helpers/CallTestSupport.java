@@ -36,11 +36,14 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  * specified name and namespace.
  *
  * <p>testSupport.createCannedResponse("readCRD") .withName(name) .returning(new
- * V1beta1CustomResourceDefinition());
+ * V1CustomResourceDefinition());
  *
  * <p>will return the specified custom resource definition.
  */
 class CallTestSupport {
+
+  private static RequestParams REQUEST_PARAMS
+      = new RequestParams("testcall", "junit", "testName", "body");
 
   private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
@@ -182,9 +185,9 @@ class CallTestSupport {
 
     CallResponse getCallResponse() {
       if (result == null) {
-        return CallResponse.createFailure(new ApiException(), status);
+        return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(), status);
       } else {
-        return CallResponse.createSuccess(result, HttpURLConnection.HTTP_OK);
+        return CallResponse.createSuccess(REQUEST_PARAMS, result, HttpURLConnection.HTTP_OK);
       }
     }
 

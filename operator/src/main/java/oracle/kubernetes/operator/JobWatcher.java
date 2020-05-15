@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +35,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final Map<String, JobWatcher> JOB_WATCHERS = new HashMap<>();
+  private static final Map<String, JobWatcher> JOB_WATCHERS = new ConcurrentHashMap<>();
   private static JobWatcherFactory factory;
 
   private final String namespace;
@@ -244,6 +243,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     private WaitForJobReadyStep(V1Job job, Step next) {
       super(job, next);
       jobCreationTime = getCreationTime(job);
+      V1ObjectMeta metadata = job.getMetadata();
+      LOGGER.info(MessageKeys.JOB_CREATION_TIMESTAMP_MESSAGE, metadata.getName(),
+          metadata.getCreationTimestamp());
     }
 
     // A job is considered ready once it has either successfully completed, or been marked as failed.
@@ -309,7 +311,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
     @Override
     void logWaiting(String name) {
-      LOGGER.info(MessageKeys.WAITING_FOR_JOB_READY, name);
+      LOGGER.fine(MessageKeys.WAITING_FOR_JOB_READY, name);
     }
   }
 
@@ -322,7 +324,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     }
 
     public String toString() {
-      return LOGGER.getFormattedMessage(
+      return LOGGER.formatMessage(
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
           job.getMetadata().getName(),
           job.getSpec().getActiveDeadlineSeconds(),
