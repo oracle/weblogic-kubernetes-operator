@@ -13,9 +13,12 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesServiceExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
@@ -64,9 +67,9 @@ public class Domain {
   /**
    * Checks if weblogic.oracle CRD domain object exists.
    *
-   * @param domainUid domain UID of the domain object
+   * @param domainUid     domain UID of the domain object
    * @param domainVersion version value for Kind Domain
-   * @param namespace in which the domain object exists
+   * @param namespace     in which the domain object exists
    * @return true if domain object exists otherwise false
    */
   public static Callable<Boolean> doesDomainExist(String domainUid, String domainVersion, String namespace) {
@@ -85,19 +88,56 @@ public class Domain {
     };
   }
 
-  public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
-    return true;
-  }
+  /**
+   * Get the default node port of admin service and access the REST endpoint using node port.
+   *
+   * @param nodePort admin default/t3channel node port
+   * @param username admin user name to access the REST url
+   * @param password admin password to access the REST url
+   * @return true if admin REST url is accessible using node port
+   */
+  public static boolean adminNodePortAccessible(int nodePort, String username, String password) {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("curl --silent --show-error --noproxy ")
+        .append(K8S_NODEPORT_HOST)
+        .append(" http://")
+        .append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(nodePort)
+        .append("/management/weblogic/latest/serverRuntime")
+        .append(" --user ")
+        .append(username)
+        .append(":")
+        .append(password)
+        .append(" --write-out %{http_code} -o /dev/null");
 
-  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
+    ExecResult result = null;
+    try {
+      result = ExecCommand.exec(cmd.toString(), true);
+    } catch (IOException | InterruptedException ie) {
+      logger.severe("The curl command {0} execution failed", cmd.toString(), ie);
+      return false;
+    }
+
+    if (result.exitValue() != 0) {
+      logger.severe("The curl command {0} failed with non-zero exit value: {1}, stdout {2}, stderr {3}",
+          cmd.toString(), result.exitValue(), result.stdout(), result.stderr());
+      return false;
+    } else if (result.exitValue() == 0 && !result.stdout().trim().equals("200")) {
+      logger.severe("The curl command {0} returned response code: {1}, stderr {2}",
+          cmd.toString(), result.stdout(), result.stderr());
+      return false;
+    }
+
     return true;
   }
 
   /**
    * Verify the original managed server pod state is not changed during scaling the cluster.
-   * @param podName the name of the managed server pod to check
-   * @param domainUid the domain uid of the domain in which the managed server pod exists
-   * @param domainNamespace the domain namespace in which the domain exists
+   *
+   * @param podName                         the name of the managed server pod to check
+   * @param domainUid                       the domain uid of the domain in which the managed server pod exists
+   * @param domainNamespace                 the domain namespace in which the domain exists
    * @param podCreationTimestampBeforeScale the managed server pod creation time stamp before the scale
    * @return true if the managed server pod state is not change during scaling the cluster, false otherwise
    */

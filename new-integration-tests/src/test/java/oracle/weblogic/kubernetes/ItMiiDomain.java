@@ -45,6 +45,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -62,9 +64,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
@@ -88,17 +92,16 @@ class ItMiiDomain implements LoggedTest {
   private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   private static HelmParams opHelmParams = null;
-  private static V1ServiceAccount serviceAccount = null;
   private String serviceAccountName = null;
   private static String opNamespace = null;
   private static String operatorImage = null;
   private static String domainNamespace = null;
   private static String domainNamespace1 = null;
-  private static String domainNamespace2 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String dockerConfigJson = "";
 
   private String domainUid = "domain1";
+  private String adminServerPodName = null;
   private String domainUid1 = "domain2";
 
   private static Map<String, Object> secretNameMap;
@@ -214,7 +217,7 @@ class ItMiiDomain implements LoggedTest {
   @MustNotRunInParallel
   public void testCreateMiiDomain() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-admin-server";
+    adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
@@ -225,8 +228,8 @@ class ItMiiDomain implements LoggedTest {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-            "welcome1", domainNamespace),
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, ADMIN_USERNAME,
+            ADMIN_PASSWORD, domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
@@ -291,9 +294,17 @@ class ItMiiDomain implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
+    int defaultNodePort = getAdminServiceNodePort(adminServerPodName + "-external",
+        "default", null, domainNamespace);
+    assertTrue(defaultNodePort != -1,
+        String.format("Could not get the default node port for service %s in namespace %s",
+            adminServerPodName + "-external", domainNamespace));
+    assertTrue(adminNodePortAccessible(defaultNodePort, ADMIN_USERNAME, ADMIN_PASSWORD),
+        "default node port of admin service is not accessible");
+
   }
 
-  @Test
+  //@Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
   @Slow
@@ -391,7 +402,7 @@ class ItMiiDomain implements LoggedTest {
     }
   }
 
-  @Test
+  //@Test
   @Order(3)
   @DisplayName("Create a domain with same domainUid as first domain but in a new namespace")
   @Slow
@@ -472,7 +483,6 @@ class ItMiiDomain implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace1);
     }
   }
-
 
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.

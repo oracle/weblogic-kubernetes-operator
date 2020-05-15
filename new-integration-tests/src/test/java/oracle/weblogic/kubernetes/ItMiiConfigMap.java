@@ -321,7 +321,8 @@ class ItMiiConfigMap implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external",
+        "default",null, domainNamespace);
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     try {
       checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");

@@ -391,7 +391,8 @@ class ItMiiConfigMapOverride implements LoggedTest {
     }
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external",
+        "default", null, domainNamespace);
     checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/wls/latest/datasources/id/TestDataSource/")

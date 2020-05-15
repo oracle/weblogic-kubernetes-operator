@@ -1540,16 +1540,18 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Returns NodePort of a admin server service.
+   * Returns NodePort of a admin server service channel.
    *
    * @param serviceName name of admin server service
+   * @param channelName name of the channel, values can be default/T3Channel
    * @param label key value pair with which the service is decorated with
    * @param namespace namespace in which to check for the service
-   * @return AdminNodePort of the Kubernetes service if exists else -1
+   * @return node port of the channel for Kubernetes service if exists else -1
    * @throws ApiException when there is error in querying the cluster
    */
   public static int getAdminServiceNodePort(
       String serviceName,
+      String channelName,
       Map<String, String> label,
       String namespace) throws ApiException {
 
@@ -1566,12 +1568,12 @@ public class Kubernetes implements LoggedTest {
     }
 
     for (int i = 0; i < portList.size(); i++) {
-      if (portList.get(i).getName().equals("default")) {
-        logger.info(portList.get(i).toString());
+      if (portList.get(i).getName().equals(channelName)) {
+        logger.info("NodePort for Channel:{0} is {1}", channelName, portList.get(i).toString());
         return portList.get(i).getNodePort().intValue();
       }
     }
-    // return -1 if there is no Port with name default
+    // return -1 if there is no Port for the channel
     return -1;
   }
 

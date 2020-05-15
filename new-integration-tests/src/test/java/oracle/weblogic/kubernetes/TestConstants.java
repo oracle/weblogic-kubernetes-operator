@@ -15,6 +15,8 @@ public interface TestConstants {
   // domain constants
   public static final String DOMAIN_VERSION = "v7";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+  public static final String ADMIN_USERNAME = "weblogic";
+  public static final String ADMIN_PASSWORD = "welcome1";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";

@@ -464,18 +464,20 @@ public class TestActions {
   }
 
   /**
-   * Returns NodePort of a admin service.
+   * Returns the channel NodePort of a admin service.
    *
    * @param serviceName name of admin service
+   * @param channelName name of the channel, value can be default,T3Channel
    * @param label the key value pair with which the service is decorated with
    * @param namespace namespace in which to check for the service
    * @return AdminNodePort of the Kubernetes service if exits else -1
    */
   public static int getAdminServiceNodePort(
       String serviceName,
+      String channelName,
       Map<String, String> label,
       String namespace) {
-    return Service.getAdminServiceNodePortString(serviceName, label, namespace);
+    return Service.getAdminServiceNodePortString(serviceName, channelName, label, namespace);
   }
 
   // ------------------------ service account  --------------------------

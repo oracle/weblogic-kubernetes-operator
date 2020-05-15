@@ -174,25 +174,15 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a adminserver T3 channel is accessible.
+   * Verify admin default/t3channel node port is accessible.
    *
-   * @param domainUid id of the domain in which admin server pod is running
-   * @param namespace in which the WebLogic server pod exists
-   * @return true if the admin T3 channel is accessible otherwise false
+   * @param nodePort admin default or t3 channel node port
+   * @param adminUser admin user name to access the REST url
+   * @param adminPassword admin password to access the REST url
+   * @return true if admin REST url is accessible using node port
    */
-  public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
-    return Domain.adminT3ChannelAccessible(domainUid, namespace);
-  }
-
-  /**
-   * Check if a admin server pod admin node port is accessible.
-   *
-   * @param domainUid domainUID id of the domain in which admin server pod is running
-   * @param namespace in which the WebLogic server pod exists
-   * @return true if the admin node port is accessible otherwise false
-   */
-  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
-    return Domain.adminNodePortAccessible(domainUid, namespace);
+  public static boolean adminNodePortAccessible(int nodePort, String adminUser, String adminPassword) {
+    return Domain.adminNodePortAccessible(nodePort, adminUser, adminPassword);
   }
 
   /**
