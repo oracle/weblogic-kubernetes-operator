@@ -169,9 +169,9 @@ public class Kubernetes {
       return false;
     } else if (pod.getMetadata().getDeletionTimestamp() != null) {
       terminating = true;
-      logger.info("pod is terminating");
+      logger.info("{0} : Terminating", pod.getMetadata().getName());
     } else {
-      logger.info("pod not in terminating state");
+      logger.info("{0} : NotTerminating", pod.getMetadata().getName());
     }
     return terminating;
   }

@@ -66,7 +66,7 @@ public class Pod {
 
     // check the pods termination status in a thread
     ExecutorService executorService = Executors.newFixedThreadPool(podNames.size());
-    ArrayList<Future> threads = new ArrayList<>();
+    ArrayList<Future<Boolean>> threads = new ArrayList<Future<Boolean>>();
     for (var podName : podNames) {
       // check for pod termination status and return true if pod is terminating
       threads.add(executorService.submit(() -> {
@@ -82,8 +82,8 @@ public class Pod {
         return true;
       }));
       // wait for the callable to finish running and check if all pods were terminating
-      for (Future future : threads) {
-        if (!(Boolean) future.get(10, MINUTES)) {
+      for (var future : threads) {
+        if (!future.get(10, MINUTES)) {
           return false;
         }
       }
