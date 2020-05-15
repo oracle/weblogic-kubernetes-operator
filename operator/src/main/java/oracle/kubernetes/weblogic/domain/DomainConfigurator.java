@@ -59,17 +59,6 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Specifies the domain home source type.
-   *
-   * @param domainHomeSourceType String indicating the type of the domain home source
-   * @return this object
-   */
-  public DomainConfigurator withDomainHomeSourceType(String domainHomeSourceType) {
-    getDomainSpec().setDomainHomeSourceType(domainHomeSourceType);
-    return this;
-  }
-
-  /**
    * Configure admin server.
    *
    * @return An AdminServerConfigurator object for configuring an admin server
@@ -348,17 +337,6 @@ public abstract class DomainConfigurator {
 
 
   /**
-   * Tells the operator to start the introspect domain job.
-   *
-   * @since 2.0
-   * @param introspectVersion If present, every time this value is updated the operator will start
-   *     the introspect domain job.
-   * @return this object
-   */
-  public abstract DomainConfigurator withIntrospectVersion(String introspectVersion);
-
-
-  /**
    * Defines a secret reference for the domain.
    * @param secretName the name of the secret
    * @param namespace the namespace containing the secret
@@ -429,52 +407,4 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withToleration(V1Toleration toleration);
-
-  /**
-   * Add the introspector job active deadline.
-   *
-   * @param deadline the deadline value to be set to this DomainConfigurator
-   * @return this object
-   */
-  public abstract DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline);
-
-  /**
-   * Add WDT model config map for the domain resource.
-   *
-   * @param configmap the configmap for WDT model
-   * @return this object
-   */
-  public abstract DomainConfigurator withModelConfigMap(String configmap);
-
-  /**
-   * Add model runtime encryption secret for the domain resource.
-   *
-   * @param secret the runtime encryption secret for WDT model
-   * @return this object
-   */
-  public abstract DomainConfigurator withRuntimeEncryptionSecret(String secret);
-
-  /**
-   * Add OPSS wallet password secret for the domain resource.
-   *
-   * @param secret the OPSS wallet password secret
-   * @return this object
-   */
-  public abstract DomainConfigurator withOpssWalletPasswordSecret(String secret);
-
-  /**
-   * Add OPSS wallet file secret for the domain resource.
-   *
-   * @param secret the OPSS wallet file secret
-   * @return this object
-   */
-  public abstract DomainConfigurator withOpssWalletFileSecret(String secret);
-
-  /**
-   * Add domain type for the domain resource.
-   *
-   * @param type the domain type
-   * @return this object
-   */
-  public abstract DomainConfigurator withDomainType(String type);
 }
