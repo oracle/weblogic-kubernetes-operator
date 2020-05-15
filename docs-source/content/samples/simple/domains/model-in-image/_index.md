@@ -1801,7 +1801,7 @@ Here are the steps for this use case:
        - To 'future proof' the new domain so that changes to the original domain or new domain's ConfigMap can be independent.
 
 
-1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap, and that will be referenced by the domain resource.
+1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the domain resource.
 
    Run the following commands:
    ```
