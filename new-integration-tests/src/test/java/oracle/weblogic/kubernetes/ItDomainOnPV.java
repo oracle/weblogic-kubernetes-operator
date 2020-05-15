@@ -181,7 +181,7 @@ public class ItDomainOnPV implements LoggedTest {
       //   3. docker tag with the KIND_REPO value
       //   4. docker push this new image name
       //   5. use this image name to create the domain resource
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+      assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
       assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
 
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
