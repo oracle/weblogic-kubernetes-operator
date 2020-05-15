@@ -63,7 +63,12 @@ public class ConfigMapHelperTest {
     "utils.sh",
     "wlst.sh",
     "tailLog.sh",
-    "monitorLog.sh"
+    "monitorLog.sh",
+    "model_diff.py",
+    "modelInImage.sh",
+    "wdt_create_filter.py",
+    "model_filters.json",
+    "encryption_util.py"
   };
   private static final String DOMAIN_NS = "namespace";
   private static final String OPERATOR_NS = "operator";
@@ -163,6 +168,7 @@ public class ConfigMapHelperTest {
           + "        serverNamePrefix: \"managed-server\"\n"
           + "        dynamicClusterSize: 4\n"
           + "        maxDynamicClusterSize: 8\n"
+          + "        minDynamicClusterSize: 2\n"
           + "  serverTemplates:\n"
           + "    - name: \"cluster-1-template\"\n"
           + "      listenPort: 8001\n"
@@ -475,6 +481,7 @@ public class ConfigMapHelperTest {
     assertEquals("managed-server", wlsDynamicServersConfig.getServerNamePrefix());
     assertEquals(4, wlsDynamicServersConfig.getDynamicClusterSize().intValue());
     assertEquals(8, wlsDynamicServersConfig.getMaxDynamicClusterSize().intValue());
+    assertEquals(2, wlsDynamicServersConfig.getMinDynamicClusterSize().intValue());
 
     List<WlsServerConfig> serverTemplates = wlsDomainConfig.getServerTemplates();
     assertEquals(1, serverTemplates.size());

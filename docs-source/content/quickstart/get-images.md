@@ -19,7 +19,7 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
 1. Pull the operator image:
 
     ```bash
-    $ docker pull oracle/weblogic-kubernetes-operator:2.5.0
+    $ docker pull oracle/weblogic-kubernetes-operator:2.6.0
     ```
     
     {{% notice note %}} If you are here because you are following the Model In Image sample,

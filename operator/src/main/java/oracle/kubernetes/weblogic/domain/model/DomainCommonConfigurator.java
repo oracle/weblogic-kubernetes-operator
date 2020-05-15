@@ -210,6 +210,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withIntrospectVersion(String introspectVersion) {
+    getDomainSpec().setIntrospectVersionn(introspectVersion);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withWebLogicCredentialsSecret(String secretName, String namespace) {
     getDomainSpec().setWebLogicCredentialsSecret(new V1SecretReference().name(secretName).namespace(namespace));
     return this;
@@ -282,6 +288,66 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public DomainConfigurator withToleration(V1Toleration toleration) {
     getDomainSpec().addToleration(toleration);
     return this;
+  }
+
+  @Override
+  public DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline) {
+    getOrCreateConfiguration().withIntrospectorJobActiveDeadlineSeconds(deadline);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withModelConfigMap(String configmap) {
+    getOrCreateModel().withConfigMap(configmap);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRuntimeEncryptionSecret(String secret) {
+    getOrCreateModel().withRuntimeEncryptionSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
+    getOrCreateOpss().withWalletPasswordSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withOpssWalletFileSecret(String secret) {
+    getOrCreateOpss().withWalletFileSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withDomainType(String type) {
+    getOrCreateModel().withDomainType(type);
+    return this;
+  }
+
+  private Configuration getOrCreateConfiguration() {
+    DomainSpec spec = getDomainSpec();
+    if (spec.getConfiguration() == null) {
+      spec.withConfiguration(new Configuration());
+    } 
+    return spec.getConfiguration();
+  }
+
+  private Model getOrCreateModel() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getModel() == null) {
+      configuration.withModel(new Model());
+    }
+    return configuration.getModel();   
+  }
+
+  private Opss getOrCreateOpss() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getOpss() == null) {
+      configuration.withOpss(new Opss());
+    }
+    return configuration.getOpss();   
   }
 
   @Override
@@ -638,6 +704,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withNodeName(String nodeName) {
       cluster.setNodeName(nodeName);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize) {
+      cluster.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
       return this;
     }
 

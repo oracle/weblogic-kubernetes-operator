@@ -12,8 +12,17 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
+traceTiming "POD '${SERVICE_NAME}' MAIN START"
+
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
+source ${SCRIPTPATH}/modelInImage.sh
+
+if [ $? -ne 0 ]; then
+      trace SEVERE "Error sourcing modelInImage.sh" && exit 1
+fi
+
+exportInstallHomes
 
 #
 # Define helper fn to copy a file only if src & tgt differ
@@ -41,17 +50,25 @@ function startWLS() {
   # Start NM
   #
 
+  traceTiming "POD '${SERVICE_NAME}' NM START"
+
   trace "Start node manager"
   # call script to start node manager in same shell
   # $SERVER_OUT_FILE, SERVER_PID_FILE, and SHUTDOWN_MARKER_FILE will be set in startNodeManager.sh
   . ${SCRIPTPATH}/startNodeManager.sh
   [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
 
+  traceTiming "POD '${SERVICE_NAME}' NM RUNNING"
+
   #
   # Verify that the domain secret hasn't changed
   #
 
+  traceTiming "POD '${SERVICE_NAME}' MD5 BEGIN"
+
   checkDomainSecretMD5 || exitOrLoop
+
+  traceTiming "POD '${SERVICE_NAME}' MD5 END"
 
   #
   # Start WL Server
@@ -59,8 +76,12 @@ function startWLS() {
 
   # TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
 
+  traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
+
   trace "Start WebLogic Server via the nodemanager"
   ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
+
+  traceTiming "POD '${SERVICE_NAME}' WLS STARTED"
 }
 
 function mockWLS() {
@@ -126,10 +147,102 @@ function copySitCfg() {
   fi
 }
 
+# prepare mii server
+
+function prepareMIIServer() {
+
+  trace "Model-in-Image: Creating domain home."
+
+  # primordial domain contain the basic structures, security and other fmwconfig templated info
+  # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
+  # Both are needed for the complete domain reconstruction
+
+  if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
+    trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
+    return 1
+  fi
+
+  if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
+    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
+    return 1
+  fi
+
+  trace "Model-in-Image: Restoring primordial domain"
+  cd / || return 1
+  base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz || return 1
+  tar -xzf /tmp/domain.tar.gz || return 1
+
+  trace "Model-in-Image: Restore domain secret"
+  # decrypt the SerializedSystemIni first
+  if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
+    MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+  else
+    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
+    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
+    return 1
+  fi
+  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+
+  # restore the config zip
+  #
+  trace "Model-in-Image: Restore domain config"
+  cd / || return 1
+  base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz || return 1
+  tar -xzf /tmp/domain.tar.gz || return 1
+  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
+
+  # restore the archive apps and libraries
+  #
+  trace "Model-in-Image: Restoring apps and libraries"
+
+  mkdir -p ${DOMAIN_HOME}/lib
+  if [ $? -ne 0 ] ; then
+    trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
+    return 1
+  fi
+
+  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
+    do
+        # expand the archive domain libraries to the domain lib
+        cd ${DOMAIN_HOME}/lib || return 1
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+
+        if [ $? -ne 0 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          return 1
+        fi
+
+        # expand the archive apps and shared lib to the wlsdeploy/* directories
+        # the config.xml is referencing them from that path
+
+        cd ${DOMAIN_HOME} || return 1
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
+
+        if [ $? -ne 0 ] ; then
+          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          return 1
+        fi
+    done
+  return 0
+}
+
 # trace env vars and dirs before export.*Home calls
 
 traceEnv before
 traceDirs before
+
+traceTiming "POD '${SERVICE_NAME}' MII UNZIP START"
+
+if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+  prepareMIIServer
+  if [ $? -ne 0 ] ; then
+    trace SEVERE  "Domain Source Type is FromModel, unable to start the server, check other error messages in the log"
+    exitOrLoop
+  fi
+
+fi
+
+traceTiming "POD '${SERVICE_NAME}' MII UNZIP COMPLETE"
 
 #
 # Configure startup mode
