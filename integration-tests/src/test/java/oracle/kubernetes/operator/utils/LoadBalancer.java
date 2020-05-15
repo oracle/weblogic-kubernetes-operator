@@ -237,8 +237,15 @@ public class LoadBalancer {
 
     LoggerHelper.getLocal().log(Level.INFO, "createTraefikIngress() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
+    TestUtils.checkHelmChartStatus((String)lbMap.get("name"),
+        (String)lbMap.get("namespace"),"deployed");
+    TestUtils.checkHelmChart((String)lbMap.get("name"),
+        (String)lbMap.get("namespace"));
     if (result.exitValue() != 0) {
-      TestUtils.checkHelmChart((String)lbMap.get("name"),(String)lbMap.get("namespace"));
+      TestUtils.checkHelmChart((String)lbMap.get("name")
+          + "-ingress-"
+          + (String)lbMap.get("domainUID"),
+          (String)lbMap.get("namespace"));
       reportHelmInstallFailure(cmd.toString(), result);
     }
     LoggerHelper.getLocal().log(Level.INFO, "Checking if Ingress is created  ");
@@ -392,6 +399,10 @@ public class LoadBalancer {
     if (null == returnStr) {
       executeHelmCommand(cmd.toString(),(String)lbMap.get("name"),(String)lbMap.get("namespace"));
     }
+
+    TestUtils.checkHelmChartStatus((String)lbMap.get("name"),
+        (String)lbMap.get("namespace"),"deployed");
+
     cmd = new StringBuffer();
     cmd.append("kubectl get ingress.voyager.appscode.com")
         .append(" -n ")

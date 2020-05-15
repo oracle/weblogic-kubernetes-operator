@@ -2212,6 +2212,20 @@ public class TestUtils {
   }
 
   /**
+   * Check the expected status for provided helm chart.
+   *
+   * @param chartName  helm chart name
+   * @param chartNS helm chart namespace
+   * @param expr expected status
+   * @throws Exception if expected status not found.
+   */
+  public static void checkHelmChartStatus(String chartName, String chartNS, String expr) throws Exception {
+    String cmd = "helm status " + chartName + " --namespace " + chartNS;
+    ExecResult result = ExecCommand.exec(cmd);
+    checkCmdInLoop(cmd, expr, chartName);
+  }
+
+  /**
    * Retrieve info for provided helm chart.
    *
    * @param chartName  helm chart name
@@ -2219,6 +2233,9 @@ public class TestUtils {
    * @throws Exception if chart info can't be retrieved.
    */
   public static void checkHelmChart(String chartName, String chartNS) throws Exception {
+
+    LoggerHelper.getLocal().log(Level.INFO, " Checking info for Release "
+            + chartName);
     String cmd = "helm history " + chartName + " --namespace " + chartNS;
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
@@ -2241,6 +2258,14 @@ public class TestUtils {
     LoggerHelper.getLocal().log(Level.INFO, " Release "
         + chartName
         + " info "
+        + result.stdout()
+        + result.stderr()
+    );
+    cmd = "helm status " + chartName + " --namespace " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " status "
         + result.stdout()
         + result.stderr()
     );
