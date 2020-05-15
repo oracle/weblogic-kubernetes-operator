@@ -58,12 +58,12 @@ public class Service {
   }
 
   /**
-   * Returns channel NodePort of admin service.
+   * Returns the channel NodePort of admin service.
    *
    * @param serviceName name of admin server service
    * @param channelName name of the channel
    * @param label key value pair with which the service is decorated with
-    * @param namespace the namespace in which to check for the service
+   * @param namespace the namespace in which to check for the service
    * @return AdminNodePort of the Kubernetes service if exits else -1
    */
   public static int getAdminServiceNodePortString(

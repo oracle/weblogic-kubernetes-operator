@@ -1540,7 +1540,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Returns NodePort of a admin server service channel.
+   * Returns the NodePort of a admin server service channel.
    *
    * @param serviceName name of admin server service
    * @param channelName name of the channel, values can be default/T3Channel
@@ -1569,7 +1569,7 @@ public class Kubernetes implements LoggedTest {
 
     for (int i = 0; i < portList.size(); i++) {
       if (portList.get(i).getName().equals(channelName)) {
-        logger.info("NodePort for Channel:{0} is {1}", channelName, portList.get(i).toString());
+        logger.info("NodePort for Channel:{0} is {1}", channelName, portList.get(i).getNodePort().intValue());
         return portList.get(i).getNodePort().intValue();
       }
     }

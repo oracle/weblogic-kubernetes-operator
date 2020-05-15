@@ -174,7 +174,7 @@ public class TestAssertions {
   }
 
   /**
-   * Verify admin default/t3channel node port is accessible.
+   * Verify admin node port(default/t3channel) is accessible.
    *
    * @param nodePort admin default or t3 channel node port
    * @param adminUser admin user name to access the REST url

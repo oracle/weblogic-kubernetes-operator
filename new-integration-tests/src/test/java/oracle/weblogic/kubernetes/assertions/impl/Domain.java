@@ -89,7 +89,8 @@ public class Domain {
   }
 
   /**
-   * Get the default node port of admin service and access the REST endpoint using node port.
+   * Verify admin node port(default/t3channel) is working by accessing REST endpoint using
+   * the node port.
    *
    * @param nodePort admin default/t3channel node port
    * @param username admin user name to access the REST url

@@ -304,7 +304,7 @@ class ItMiiDomain implements LoggedTest {
 
   }
 
-  //@Test
+  @Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
   @Slow
@@ -402,7 +402,7 @@ class ItMiiDomain implements LoggedTest {
     }
   }
 
-  //@Test
+  @Test
   @Order(3)
   @DisplayName("Create a domain with same domainUid as first domain but in a new namespace")
   @Slow
