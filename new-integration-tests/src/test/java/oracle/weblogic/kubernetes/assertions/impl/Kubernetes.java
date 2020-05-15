@@ -157,15 +157,15 @@ public class Kubernetes {
   public static boolean isPodTerminating(String namespace, String domainUid, String podName)
       throws ApiException {
     boolean terminating = false;
-    logger.info("Checking if the pod terminating in namespace");
+    logger.info("Checking if the pod {0} is terminating in namespace {1}",
+        podName, namespace);
     String labelSelector = null;
     if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+      labelSelector = String.format("weblogic.domainUID=%s", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (null == pod) {
-      logger.info("pod doesn't exist");
-      return false;
+      throw new ApiException("pod does not exist");
     } else if (pod.getMetadata().getDeletionTimestamp() != null) {
       terminating = true;
       logger.info("pod is terminating");
@@ -255,7 +255,6 @@ public class Kubernetes {
       if (item.getMetadata().getName().contains(podName.trim())) {
         logger.info("Pod Name: " + item.getMetadata().getName());
         logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
-        logger.info("Pod UID: " + item.getMetadata().getUid());
         logger.info("Pod Status: " + item.getStatus().getPhase());
         return item;
       }
