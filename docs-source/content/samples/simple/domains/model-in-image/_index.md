@@ -1385,7 +1385,7 @@ Here are the steps:
 
    We name and label ConfigMap using their associated domain UID for two reasons:
      - To make it obvious which ConfigMap belong to which domains.
-     - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
 1. Update your domain resource to refer to the ConfigMap and secret.
 
@@ -1795,9 +1795,9 @@ Here are the steps for this use case:
      - We are leaving the namespace `sample-domain1-ns` unchanged for the ConfigMap because we plan to deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
      - We name and label the ConfigMap using its associated domain UID for two reasons:
        - To make it obvious which ConfigMap belongs to which domain.
-       - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+       - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
      - We use a different ConfigMap for the new domain for two reasons:
-       - To make it easier to keep the life-cycle and/or CI/CD process for the two domains simple and independent. Any shared resources between the two domains must necessarily have their own life-cycle.
+       - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
        - To 'future proof' the new domain so that changes to the original domain or new domain's ConfigMap can be independent.
 
 
@@ -1835,9 +1835,9 @@ Here are the steps for this use case:
      - We are leaving the namespace `sample-domain1-ns` unchanged for each secret because we plan to deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
      - We name and label the secrets using their associated domain UID for two reasons:
        - To make it obvious which secret belongs to which domain.
-       - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+       - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
      - We use a different set of secrets for the new domain for two reasons:
-       - To make it easier to keep the life-cycle and/or CI/CD process for the two domains simple and independent. 
+       - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent. 
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
 
    If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
@@ -1937,7 +1937,7 @@ Here are the steps for this use case:
                 runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
           ```
 
-        To instead look like:
+        To this:
 
 
           ```
@@ -2231,15 +2231,15 @@ In the use case, we will:
    - An updated model YAML within the image that points to the new web application path.
  - Apply an updated domain resource that references the new image while still referencing the original [Update1 use case](#update1-use-case) case secrets and model ConfigMap. 
 
-Once the updated domain resource is applied, we expect the operator to:
+After the updated domain resource is applied, we expect the operator to:
 
  - Rerun the introspector job and generate a new domain home based on the new model.
- - Restart the domain's administration server pod so that it loads the new image and new domain home.
+ - Restart the domain's Administration Server pod so that it loads the new image and new domain home.
  - Roll the domain's cluster servers one at a time so that they each load the new image, new domain home, and revised application.
 
 Finally, we will call the application to verify that its revision is active.
 
-Note that the old version of the application `v1` remains in the new image's archive but is unused. We leave it there to demonstrate that the old version can remain in case you want to revert to it. Once the new image is applied, you can revert by modifying your model's `configuration.model.configMap` to override the related application path in your image model.
+Note that the old version of the application `v1` remains in the new image's archive but is unused. We leave it there to demonstrate that the old version can remain in case you want to revert to it. After the new image is applied, you can revert by modifying your model's `configuration.model.configMap` to override the related application path in your image model.
 
 Here are the steps for this use case:
 
@@ -2247,7 +2247,7 @@ Here are the steps for this use case:
 
 2. Create an updated image. 
 
-   Recall that a goal of the [Initial use case](#initial-use-case) was to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files included a web application in a WDT zip archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-v1` and, in addition to having a copy of the staged files in its `/u01/wdt/models` directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.
+   Recall that a goal of the [Initial use case](#initial-use-case) was to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-v1` and, in addition to having a copy of the staged files in its `/u01/wdt/models` directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.
 
    In this use case, we will follow similar steps to the [Initial use case](#initial-use-case) in order to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update1 use case](#update1-use-case) domain.
 
