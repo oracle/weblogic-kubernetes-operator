@@ -94,7 +94,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -194,7 +193,7 @@ public class ItDomainOnPV implements LoggedTest {
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
-            .imagePullPolicy("IfNotPresent")
+            .imagePullPolicy("Always")
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(OCR_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
@@ -421,7 +420,7 @@ public class ItDomainOnPV implements LoggedTest {
                     .containers(Arrays.asList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
-                        .imagePullPolicy("IfNotPresent")
+                        .imagePullPolicy("Always")
                         .ports(Arrays.asList(new V1ContainerPort()
                             .containerPort(7001)))
                         .volumeMounts(Arrays.asList(
@@ -473,8 +472,8 @@ public class ItDomainOnPV implements LoggedTest {
   private void createOCRRepoSecret() {
 
     // docker login, if necessary
-    logger.info("docker login to OCR registry");
-    assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "login to OCR failed");
+    //logger.info("docker login to OCR registry");
+    //assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "login to OCR failed");
 
     logger.info("Creating repository registry secret in namespace {0}", domainNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
