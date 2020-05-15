@@ -17,10 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -60,6 +56,7 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
@@ -291,7 +288,10 @@ public class ItDomainOnPV implements LoggedTest {
         .append(serviceNodePort)
         .append("/console/login/LoginForm.jsp").toString();
 
-    assertDoesNotThrow(() -> loginTest(consoleUrl, adminUser, adminPassword), "Console login failed");
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return TestAssertions.adminNodePortAccessible(serviceNodePort, adminUser, adminPassword);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
   }
 
   /**
@@ -682,29 +682,6 @@ public class ItDomainOnPV implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(serviceExists(serviceName, null, domainNamespace));
-  }
-
-
-  /**
-   * Login to the WebLogic console and validate its the Home page.
-   *
-   * @param consoleUrl url for the WebLogic console
-   * @param username WebLogic admin username
-   * @param password WebLogic admin password
-   * @throws IOException when connection to console url fails
-   */
-  public static void loginTest(String consoleUrl, String username, String password) throws IOException {
-    logger.info("Accessing WebLogic console with url {0}", consoleUrl);
-    final WebClient webClient = new WebClient();
-    final HtmlPage loginPage = webClient.getPage(consoleUrl);
-    HtmlForm form = loginPage.getFormByName("loginData");
-    form.getInputByName("j_username").type(username);
-    form.getInputByName("j_password").type(password);
-    HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
-    logger.info("Clicking login button");
-    HtmlPage home = submit.click();
-    assertTrue(home.asText().contains("Persistent Stores"), "Console login failed");
-    logger.info("Console login passed");
   }
 
 }

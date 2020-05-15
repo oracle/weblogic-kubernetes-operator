@@ -8,9 +8,9 @@ import java.util.concurrent.Callable;
 public class Job {
 
   /**
-   * Check a given is in ready status.
+   * Check a given job is completed.
    *
-   * @param namespace name of the namespace in which to check the pod status
+   * @param namespace name of the namespace in which to check for the job status
    * @param labelSelectors labels with which the job is decorated
    * @param jobName name of the job
    * @return true if complete otherwise false
