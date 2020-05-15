@@ -169,6 +169,18 @@ public class LoadBalancer {
       } else {
         break;
       }
+      //if still in Terminating state, force to delete the pod
+      if( i == (maxIterationsPod - 1)) {
+        LoggerHelper.getLocal().log(Level.INFO, "Traefik pod "
+            + traefikPod + "is still in Terminating state , call delete pod ");
+        cmd = new StringBuffer();
+        cmd.append("kubectl delete ")
+            .append(traefikPod)
+            .append(" --force --grace-period=0 --ignore-not-found ")
+            .append(" -n traefik ");
+        ExecCommand.exec(cmd.toString());
+        Thread.sleep(5000);
+      }
     }
     traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
     TestUtils.checkPodReadyAndRunning(traefikPod, "traefik");
