@@ -471,11 +471,7 @@ public class ItDomainOnPV implements LoggedTest {
    */
   private void createOCRRepoSecret() {
 
-    // docker login, if necessary
-    //logger.info("docker login to OCR registry");
-    //assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "login to OCR failed");
-
-    logger.info("Creating repository registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating image pull secret in namespace {0}", domainNamespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
         OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY);
     String dockerConfigJson = dockerConfigJsonObject.toString();
