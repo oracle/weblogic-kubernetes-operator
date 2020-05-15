@@ -79,7 +79,7 @@ This sample demonstrates four Model in Image use cases:
 
   - Image `model-in-image:WLS-v1`:
     - Same image as the Initial and Update1 use cases
-  - Kubernetes secrets and ConfigMap:
+  - Kubernetes Secrets and ConfigMap:
     - Similar to the Update1 use case, except names and labels are decorated with a new domain UID
   - A domain resource similar to Update1 use case, except:
     - Its `metadata.name` and `weblogic.domainUid` label become `sample-domain2` instead of `sample-domain1`
@@ -730,7 +730,7 @@ This command runs the WebLogic Image Tool in its Model in Image mode, and does t
   - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
   - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
     - Note that we cached WDT in WIT using the keyword `latest` when we set up the cache during the sample prerequisites steps.
-    - This lets WIT implicitly assume its the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+    - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
   - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
 
 When the command succeeds, it should end with output like:
@@ -1391,7 +1391,7 @@ Here are the steps:
 
     - Option 1: Update a copy of your domain resource file from the "Initial" use case. 
 
-      - You might recall that in the [Initial use case](#initial-use-case) we suggested creating a domain resource file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` file that comes supplied with the sample. 
+      - You might recall that in the [Initial use case](#initial-use-case) we suggested creating a domain resource file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` file that is supplied with the sample. 
         - We suggest copying the original domain resource and naming the copy `/tmp/mii-sample/mii-update1.yaml` before making any changes. 
 
         - Working on a copy is not strictly necessary, but it helps to keep track of your work for the different use cases in this sample and also provides you a backup of your previous work.
@@ -1768,10 +1768,10 @@ Note that this use case shows Model in Image's unique ability to quickly deploy 
   - First, we define the domain name in the model YAML using the `@@ENV:CUSTOM_DOMAIN_NAME@@` environment variable macro.
   - Second, we set the value of the `CUSTOM_DOMAIN_NAME` environment variable differently using the `env` stanza in each domain's domain resource.
 
-- Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [why layering matters]({{< relref "/userguide/cicd/why-layering-matters.md" >}}) in CI/CD Considerations). This necessarily means that two Domain in Image domains that share the same image have the ability to decrypt each other's encrypted passwords. A Model in Image's domain encryption key, on the other hand, is not embedded in the image and is instead dynamically and uniquely created each time the domain is started. 
+- Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [why layering matters]({{< relref "/userguide/cicd/why-layering-matters.md" >}}) in CI/CD Considerations). This necessarily means that two Domain in Image domains that share the same image have the ability to decrypt each other's encrypted passwords. A Model in Image's domain encryption key, on the other hand, is not embedded in the image and instead, is dynamically and uniquely created each time the domain is started. 
 
 {{% notice warning %}}
-Oracle requires interoperating WebLogic domains to have different domain names. This is necessary when two domains communicate, or when a WebLogic Server or WebLogic java client concurrently connects to multiple domains. 
+Oracle requires interoperating WebLogic domains to have different domain names. This is necessary when two domains communicate, or when a WebLogic Server or WebLogic Java client concurrently connects to multiple domains. 
 {{% /notice %}}
 
 Here are the steps for this use case:
@@ -1867,7 +1867,7 @@ Here are the steps for this use case:
 
     - Option 1: Update a copy of your domain resource file from the "Update1" use case.
 
-      - You might recall that in the [Update1 use case](#update1-use-case) we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that comes supplied with the sample.
+      - You might recall that in the [Update1 use case](#update1-use-case) we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
         - We suggest copying this domain resource file and naming the copy `/tmp/mii-sample/mii-update2.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps to keep track of your work for the different use cases in this sample and also provides you a backup of your previous work.
@@ -2175,7 +2175,7 @@ Here are the steps for this use case:
 
 1. After the `sample-domain2` domain is running, you can call its sample web application to verify that it's fully active.
 
-   Send a web application request to the Ingress controller for `sample-domain2`:
+   Send a web application request to the ingress controller for `sample-domain2`:
 
    ```  
    $ curl -s -S -m 10 -H 'host: sample-domain2-cluster-cluster-1.mii-sample.org' \
@@ -2255,7 +2255,7 @@ Here are the steps for this use case:
 
      The updated archive for this use case is in directory `/tmp/mii-sample/archives/archive-v2`. We will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/mii-sample/archives/archive-v1` from the [Initial use case](#initial-use-case) with the the following differences:
      - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
-     - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference with the original application: it changes the line `out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the mii-sample JSP web-app.");`.
+     - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference from the original application: it changes the line `out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the mii-sample JSP web-app.");`.
 
      For additional information about archives, see the [Understanding our first archive](#understanding-our-first-archive) section in the [Initial use case](#initial-use-case) within this sample.
 
@@ -2330,7 +2330,7 @@ Here are the steps for this use case:
      - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
      - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
        - Note that we cached WDT in WIT using the keyword `latest` when we set up the cache during the sample prerequisites steps.
-       - This lets WIT implicitly assume its the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+       - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
      - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
 
      When the command succeeds, it should end with output like:
@@ -2347,7 +2347,7 @@ Here are the steps for this use case:
 
    - Option 1: Update a copy of your domain resource file from the "Update1" use case.
 
-     - You might recall that in the [Update1 use case](#update1-use-case) we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that comes supplied with the sample.
+     - You might recall that in the [Update1 use case](#update1-use-case) we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
 
        - We suggest copying this domain resource file and naming the copy `/tmp/mii-sample/mii-update3.yaml` before making any changes.
 
@@ -2586,7 +2586,7 @@ Here are the steps for this use case:
 
    When the application is invoked, it should contain an output string like `Hello World! This is version 'v2' of the mii-sample JSP web-app.`.
 
-   Send a web application request to the Ingress controller:
+   Send a web application request to the ingress controller:
 
    ```  
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
