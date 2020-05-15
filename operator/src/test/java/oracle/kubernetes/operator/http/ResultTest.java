@@ -12,19 +12,19 @@ public class ResultTest {
 
   @Test
   public void verifyIsServerOverloadedReturnsTrue() {
-    Result result500 = new Result("response", 500, false);
+    Result result500 = new Result("response", 500);
     assertThat(result500.isServerOverloaded(), is(true));
 
-    Result result503 = new Result("response", 503, false);
+    Result result503 = new Result("response", 503);
     assertThat(result503.isServerOverloaded(), is(true));
   }
 
   @Test
   public void verifyIsOverloadedReturnsFalseForOtherResponseCode() {
-    Result result404 = new Result("response", 404, false);
+    Result result404 = new Result("response", 404);
     assertThat(result404.isServerOverloaded(), is(false));
 
-    Result result200 = new Result("response", 200, false);
+    Result result200 = new Result("response", 200);
     assertThat(result200.isServerOverloaded(), is(false));
   }
 }

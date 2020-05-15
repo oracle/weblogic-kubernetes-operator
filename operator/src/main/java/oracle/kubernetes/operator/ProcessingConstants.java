@@ -36,5 +36,4 @@ public interface ProcessingConstants {
   public static final String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
 
   public static final String KEY = "encodedCredentials";
-  public static final String RESULT = "httpResult";
 }

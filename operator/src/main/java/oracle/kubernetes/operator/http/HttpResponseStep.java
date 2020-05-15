@@ -42,7 +42,7 @@ public abstract class HttpResponseStep extends Step {
    * @param packet the packet to which the response should be added
    * @param response the response from the server
    */
-  static void addToPacket(Packet packet, HttpResponse<String> response) {
+  public static void addToPacket(Packet packet, HttpResponse<String> response) {
     packet.getComponents().put(RESPONSE, Component.createFor(HttpResponse.class, response));
   }
 

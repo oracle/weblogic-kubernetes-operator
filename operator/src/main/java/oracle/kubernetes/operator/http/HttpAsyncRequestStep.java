@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.http;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -10,6 +11,10 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import oracle.kubernetes.operator.helpers.HttpClientPool;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -24,6 +29,7 @@ public class HttpAsyncRequestStep extends Step {
     CompletableFuture<HttpResponse<String>> createFuture(HttpRequest request);
   }
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static FutureFactory DEFAULT_FACTORY = HttpAsyncRequestStep::createFuture;
 
   private static final long DEFAULT_TIMEOUT_SECONDS = 5;
@@ -65,7 +71,7 @@ public class HttpAsyncRequestStep extends Step {
    * @param timeoutSeconds the new timeout, in seconds
    * @return this step
    */
-  HttpAsyncRequestStep withTimeoutSeconds(long timeoutSeconds) {
+  public HttpAsyncRequestStep withTimeoutSeconds(long timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
     return this;
   }
@@ -86,7 +92,7 @@ public class HttpAsyncRequestStep extends Step {
 
     void process(AsyncFiber fiber) {
       future = factory.createFuture(request);
-      future.thenAccept(response -> resume(fiber, response));
+      future.whenComplete((response, throwable) -> resume(fiber, response, throwable));
       fiber.scheduleOnce(timeoutSeconds, TimeUnit.SECONDS, () -> checkTimeout(fiber));
     }
 
@@ -96,7 +102,10 @@ public class HttpAsyncRequestStep extends Step {
       }
     }
 
-    private void resume(AsyncFiber fiber, HttpResponse<String> response) {
+    private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
+      if (response.statusCode() != HttpURLConnection.HTTP_OK) {
+        LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, request.method(), request.uri(), response.statusCode());
+      }
       HttpResponseStep.addToPacket(packet, response);
       fiber.resume(packet);
     }
@@ -108,6 +117,6 @@ public class HttpAsyncRequestStep extends Step {
   }
 
   private static HttpClient takeClient() {
-    return HttpClient.newHttpClient();
+    return HttpClientPool.getInstance().take();
   }
 }

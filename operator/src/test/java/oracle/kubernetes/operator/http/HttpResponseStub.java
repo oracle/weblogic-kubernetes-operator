@@ -5,7 +5,7 @@ package oracle.kubernetes.operator.http;
 
 import java.net.http.HttpResponse;
 
-abstract class HttpResponseStub implements HttpResponse<String> {
+public abstract class HttpResponseStub implements HttpResponse<String> {
 
   private int statusCode;
   private String body;
@@ -14,7 +14,7 @@ abstract class HttpResponseStub implements HttpResponse<String> {
     this.statusCode = statusCode;
   }
 
-  HttpResponseStub(int statusCode, String body) {
+  public HttpResponseStub(int statusCode, String body) {
     this(statusCode);
     this.body = body;
   }

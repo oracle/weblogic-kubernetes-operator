@@ -10,18 +10,15 @@ public class Result {
 
   final String response;
   final int status;
-  final boolean successful;
 
   /**
    * Construct result.
    * @param response response
    * @param status status code
-   * @param successful if successful result
    */
-  public Result(String response, int status, boolean successful) {
+  public Result(String response, int status) {
     this.response = response;
     this.status = status;
-    this.successful = successful;
   }
 
   /**
@@ -43,17 +40,6 @@ public class Result {
   }
 
   /**
-   * True if the REST request returns a status code that indicates successful request, false
-   * otherwise.
-   *
-   * @return True if the REST request returns a status code that indicates successful request, false
-   *     otherwise
-   */
-  public boolean isSuccessful() {
-    return successful;
-  }
-
-  /**
    * True if the HTTP status code from the REST request indicates that the server may be overloaded.
    *
    * @return True if the HTTP status code from the REST request indicates that the server may be
@@ -71,8 +57,6 @@ public class Result {
         + '\''
         + ", status="
         + status
-        + ", successful="
-        + successful
         + '}';
   }
 }

@@ -4,23 +4,22 @@
 package oracle.kubernetes.operator.steps;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -30,10 +29,10 @@ import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.HttpClientPool;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.operator.http.Result;
+import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
+import oracle.kubernetes.operator.http.HttpResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
@@ -52,6 +51,7 @@ import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
 public class ReadHealthStep extends Step {
@@ -78,7 +78,7 @@ public class ReadHealthStep extends Step {
     return new ReadHealthStep(next);
   }
 
-  private static String getRetrieveHealthSearchUrl() {
+  private static String getRetrieveHealthSearchPath() {
     return "/management/weblogic/latest/serverRuntime/search";
   }
 
@@ -109,8 +109,7 @@ public class ReadHealthStep extends Step {
               secretName,
               namespace,
               new WithSecretDataStep(
-                  new ReadHealthWithHttpClientStep(
-                      service, pod, new ProcessResponseFromHttpClientStep(getNext()))));
+                  new ReadHealthWithHttpStep(service, pod, getNext())));
       return doNext(getSecretReadHealthAndProcessResponse, packet);
     }
     return doNext(packet);
@@ -169,19 +168,155 @@ public class ReadHealthStep extends Step {
     }
   }
 
+  static final class ReadHealthProcessing {
+    private Packet packet;
+    private V1Service service;
+    private V1Pod pod;
+
+    ReadHealthProcessing(Packet packet, V1Service service, V1Pod pod) {
+      this.packet = packet;
+      this.service = service;
+      this.pod = pod;
+    }
+
+    private String getRequestUrl() {
+      return getServiceUrl() + getRetrieveHealthSearchPath();
+    }
+
+    private HttpRequest createRequest(String url) {
+      return HttpRequest.newBuilder()
+          .uri(URI.create(url))
+          .header("Authorization", "Basic " + getEncodedCredentials())
+          .header("Accept", "application/json")
+          .header("Content-Type", "application/json")
+          .header("X-Requested-By", "WebLogic Operator")
+          .POST(HttpRequest.BodyPublishers.ofString(getRetrieveHealthSearchPayload()))
+          .build();
+    }
+
+    private String getServiceUrl() {
+      return Optional.ofNullable(getService()).map(V1Service::getSpec).map(this::getServiceUrl).orElse(null);
+    }
+
+    private String getServiceUrl(V1ServiceSpec spec) {
+      String url = getProtocol(spec) + getPortalIP(spec) + ":" + getPort(spec);
+      LOGGER.fine(MessageKeys.SERVICE_URL, url);
+      return url;
+    }
+
+    private String getProtocol(V1ServiceSpec spec) {
+      return getPort(spec).equals(getWlsServerConfig().getListenPort()) ? HTTP_PROTOCOL : HTTPS_PROTOCOL;
+    }
+
+    private Integer getPort(V1ServiceSpec spec) {
+      return Optional.ofNullable(getServicePort(spec)).map(V1ServicePort::getPort).orElse(-1);
+    }
+
+    private V1ServicePort getServicePort(V1ServiceSpec spec) {
+      return getAdminProtocolPort(spec).orElse(getFirstPort(spec));
+    }
+
+    private Optional<V1ServicePort> getAdminProtocolPort(V1ServiceSpec spec) {
+      return Optional.ofNullable(spec.getPorts())
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(this::isAdminProtocolPort)
+            .findFirst();
+    }
+
+    private boolean isAdminProtocolPort(V1ServicePort port) {
+      return Optional.ofNullable(getAdminProtocolChannelName()).map(n -> n.equals(port.getName())).orElse(false);
+    }
+
+    private V1ServicePort getFirstPort(V1ServiceSpec spec) {
+      return Optional.ofNullable(spec).map(V1ServiceSpec::getPorts).map(l -> l.get(0)).orElse(null);
+    }
+
+    private String getAdminProtocolChannelName() {
+      return getWlsServerConfig().getAdminProtocolChannelName();
+    }
+
+    private String getPortalIP(V1ServiceSpec spec) {
+      String portalIP = spec.getClusterIP();
+      if ("None".equalsIgnoreCase(spec.getClusterIP())) {
+        if (getPod() != null && getPod().getStatus().getPodIP() != null) {
+          portalIP = getPod().getStatus().getPodIP();
+        } else {
+          portalIP =
+              getService().getMetadata().getName()
+                  + "."
+                  + getService().getMetadata().getNamespace()
+                  + ".pod.cluster.local";
+        }
+      }
+      return portalIP;
+    }
+
+    private WlsServerConfig getWlsServerConfig() {
+      // standalone server that does not belong to any cluster
+      WlsServerConfig serverConfig = getWlsDomainConfig().getServerConfig(getServerName());
+
+      if (serverConfig == null) {
+        // dynamic or configured server in a cluster
+        String clusterName = getService().getMetadata().getLabels().get(CLUSTERNAME_LABEL);
+        WlsClusterConfig cluster = getWlsDomainConfig().getClusterConfig(clusterName);
+        serverConfig = findServerConfig(cluster);
+      }
+      return serverConfig;
+    }
+
+    private WlsServerConfig findServerConfig(WlsClusterConfig wlsClusterConfig) {
+      for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
+        if (Objects.equals(getServerName(), serverConfig.getName())) {
+          return serverConfig;
+        }
+      }
+      return null;
+    }
+
+    private String getServerName() {
+      return (String) getPacket().get(ProcessingConstants.SERVER_NAME);
+    }
+
+    private WlsDomainConfig getWlsDomainConfig() {
+      DomainPresenceInfo info = getPacket().getSpi(DomainPresenceInfo.class);
+      WlsDomainConfig domainConfig =
+          (WlsDomainConfig) getPacket().get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      if (domainConfig == null) {
+        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
+        domainConfig = scan.getWlsDomainConfig();
+      }
+      return domainConfig;
+    }
+
+    public Packet getPacket() {
+      return packet;
+    }
+
+    String getEncodedCredentials() {
+      return (String) packet.get(ProcessingConstants.KEY);
+    }
+
+    public V1Service getService() {
+      return service;
+    }
+
+    public V1Pod getPod() {
+      return pod;
+    }
+  }
+
   /**
-   * {@link Step} for asynchronous invocation of REST call to read health of server instance.
-   *
-   * @param service The name of the Service that you want the URL for.
-   * @param pod The pod for headless services
-   * @param next Next processing step
-   * @return step Step to process result response from the REST call
+   * Step to send a query to Kubernetes to obtain the health of a specified server.
+   * Packet values used:
+   *  SERVER_NAME                       the name of the server
+   *  DOMAIN_TOPOLOGY                   the topology of the domain
    */
-  static final class ReadHealthWithHttpClientStep extends Step {
+  static final class ReadHealthWithHttpStep extends Step {
     private final V1Service service;
     private final V1Pod pod;
 
-    ReadHealthWithHttpClientStep(V1Service service, V1Pod pod, Step next) {
+    ReadHealthWithHttpStep(V1Service service, V1Pod pod, Step next) {
       super(next);
       this.service = service;
       this.pod = pod;
@@ -189,230 +324,135 @@ public class ReadHealthStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      try {
-        HttpClientPool helper = HttpClientPool.getInstance();
-        String encodedCredentials = (String) packet.get(ProcessingConstants.KEY);
-        HttpClient httpClient = helper.take();
-
-        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        WlsDomainConfig domainConfig =
-            (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-        if (domainConfig == null) {
-          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-          domainConfig = scan.getWlsDomainConfig();
-        }
-        String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-        // standalone server that does not belong to any cluster
-        WlsServerConfig serverConfig = domainConfig.getServerConfig(serverName);
-
-        if (serverConfig == null) {
-          // dynamic or configured server in a cluster
-          String clusterName = service.getMetadata().getLabels().get(CLUSTERNAME_LABEL);
-          WlsClusterConfig cluster = domainConfig.getClusterConfig(clusterName);
-          serverConfig = findServerConfig(cluster, serverName);
-        }
-
-        if (encodedCredentials == null) {
-          LOGGER.info(
-              (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
-              MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT,
-              packet.get(ProcessingConstants.SERVER_NAME));
-        } else {
-
-          String serviceUrl =
-              getServiceUrl(
-                  service,
-                  pod,
-                  serverConfig.getAdminProtocolChannelName(),
-                  serverConfig.getListenPort());
-          if (serviceUrl != null) {
-            return doSuspend(
-                (fiber) -> {
-                  try {
-                    String url = serviceUrl + getRetrieveHealthSearchUrl();
-                    HttpRequest request =
-                        HttpRequest.newBuilder()
-                            .uri(URI.create(url))
-                            .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS))
-                            .header("Authorization", "Basic " + encodedCredentials)
-                            .header("Accept", "application/json")
-                            .header("Content-Type", "application/json")
-                            .header("X-Requested-By", "WebLogic Operator")
-                            .POST(
-                                HttpRequest.BodyPublishers.ofString(
-                                    getRetrieveHealthSearchPayload()))
-                            .build();
-                    httpClient
-                        .sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                        .whenComplete(
-                            (HttpResponse<String> response, Throwable t) -> {
-                              boolean successful = false;
-                              if (response != null) {
-                                if (response.statusCode() == HttpURLConnection.HTTP_OK) {
-                                  successful = true;
-                                } else {
-                                  LOGGER.fine(
-                                      MessageKeys.HTTP_METHOD_FAILED,
-                                      "POST",
-                                      url,
-                                      response.statusCode());
-                                }
-                                Result result =
-                                    new Result(response.body(), response.statusCode(), successful);
-                                packet.put(ProcessingConstants.RESULT, result);
-                              }
-                              if (t != null) {
-                                LOGGER.fine(
-                                    MessageKeys.HTTP_METHOD_FAILED_WITH_EXCEPTION,
-                                    "POST",
-                                    url,
-                                    t.getCause());
-                              }
-                              fiber.resume(packet);
-                            });
-                  } catch (Throwable t) {
-                    fiber.resume(packet);
-                    LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, "POST", t);
-                  }
-                });
-          }
-        }
-        return doNext(packet);
-      } catch (Throwable t) {
-        // do not retry for health check
-        LOGGER.info(
-            (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
-            MessageKeys.WLS_HEALTH_READ_FAILED,
-            packet.get(ProcessingConstants.SERVER_NAME),
-            t);
-        return doNext(packet);
-      }
+      ReadHealthProcessing processing = new ReadHealthProcessing(packet, service, pod);
+      HttpRequest request = processing.createRequest(processing.getRequestUrl());
+      return doNext(createRequestStep(request, new RecordHealthStep(getNext())), packet);
     }
 
-    /**
-     * Returns the WL server's URL for sending HTTP requests; using the server service clusterIP and
-     * port. If the service is headless, then the pod's IP is returned, if available.
-     *
-     * @param service The name of the Service that you want the URL for.
-     * @param pod The pod for headless services
-     * @param adminChannel administration channel name
-     * @param defaultPort default port, if enabled. Other ports will use SSL.
-     * @return The URL of the Service or null if the URL cannot be found.
-     */
-    public static String getServiceUrl(
-        V1Service service, V1Pod pod, String adminChannel, Integer defaultPort) {
-      if (service != null) {
-        V1ServiceSpec spec = service.getSpec();
-        if (spec != null) {
-          String portalIP = spec.getClusterIP();
-          if ("None".equalsIgnoreCase(spec.getClusterIP())) {
-            if (pod != null && pod.getStatus().getPodIP() != null) {
-              portalIP = pod.getStatus().getPodIP();
-            } else {
-              portalIP =
-                  service.getMetadata().getName()
-                      + "."
-                      + service.getMetadata().getNamespace()
-                      + ".pod.cluster.local";
-            }
-          }
-          Integer port = -1; // uninitialized
-          if (adminChannel != null) {
-            for (V1ServicePort sp : spec.getPorts()) {
-              if (adminChannel.equals(sp.getName())) {
-                port = sp.getPort();
-                break;
-              }
-            }
-            if (port == -1) {
-              return null;
-            }
-          } else {
-            port = spec.getPorts().iterator().next().getPort();
-          }
-          portalIP += ":" + port;
-          String serviceUrl =
-              (port.equals(defaultPort) ? HTTP_PROTOCOL : HTTPS_PROTOCOL) + portalIP;
-          LOGGER.fine(MessageKeys.SERVICE_URL, serviceUrl);
-          return serviceUrl;
-        }
-      }
-      return null;
+    private HttpAsyncRequestStep createRequestStep(HttpRequest request, RecordHealthStep responseStep) {
+      return HttpAsyncRequestStep.create(request, responseStep)
+            .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
     }
 
-    private WlsServerConfig findServerConfig(WlsClusterConfig wlsClusterConfig, String serverName) {
-      for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
-        if (Objects.equals(serverName, serverConfig.getName())) {
-          return serverConfig;
-        }
-      }
-      return null;
-    }
   }
 
   /**
    * {@link Step} for processing json result object containing the response from the REST call.
-   *
-   * @param next Next processing step
-   * @return step Next processing step
+   * Packet values used:
+   *  SERVER_NAME                       the name of the server
+   *  SERVER_STATE_MAP                  a map of server names to state
+   *  SERVER_HEALTH_MAP                 a map of server names to health
+   *  REMAINING_SERVERS_HEALTH_TO_READ  a counter of the servers whose health needs to be read
+   *  (spi) HttpResponse.class          the response from the server
    */
-  static final class ProcessResponseFromHttpClientStep extends Step {
+  static final class RecordHealthStep extends HttpResponseStep {
 
-    ProcessResponseFromHttpClientStep(Step next) {
+    RecordHealthStep(Step next) {
       super(next);
     }
 
     @Override
-    public NextAction apply(Packet packet) {
+    public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       try {
-        Result result = (Result) packet.get(ProcessingConstants.RESULT);
-        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-        Pair<String, ServerHealth> pair = createServerHealthFromResult(result);
+        new HealthResponseProcessing(packet, response).recordStateAndHealth();
+        decrementIntegerInPacketAtomically(packet, REMAINING_SERVERS_HEALTH_TO_READ);
 
-        String state = pair.getLeft();
-        if (state != null && !state.isEmpty()) {
-          ConcurrentMap<String, String> serverStateMap =
-              (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
-          info.updateLastKnownServerStatus(serverName, state);
-          serverStateMap.put(serverName, state);
-        }
-
-        @SuppressWarnings("unchecked")
-        ConcurrentMap<String, ServerHealth> serverHealthMap =
-            (ConcurrentMap<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
-
-        serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), pair.getRight());
-        AtomicInteger remainingServersHealthToRead =
-            packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
-        remainingServersHealthToRead.getAndDecrement();
         return doNext(packet);
       } catch (Throwable t) {
         // do not retry for health check
-        LOGGER.info(
-            (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
-            MessageKeys.WLS_HEALTH_READ_FAILED,
-            packet.get(ProcessingConstants.SERVER_NAME),
-            t);
+        logReadFailure(packet);
         return doNext(packet);
       }
     }
 
-    private Pair<String, ServerHealth> createServerHealthFromResult(Result restResult)
-        throws IOException {
-      if (restResult.isSuccessful()) {
-        return parseServerHealthJson(restResult.getResponse());
+    @Override
+    public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+      try {
+        new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
+      } catch (IOException e) {
+        logReadFailure(packet);
       }
-      return new Pair<>(
-          WebLogicConstants.UNKNOWN_STATE,
-          new ServerHealth()
-              .withOverallHealth(
-                  restResult.isServerOverloaded()
-                      ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
-                      : OVERALL_HEALTH_NOT_AVAILABLE));
+      return doNext(packet);
     }
 
-    private Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
+
+    static class HealthResponseProcessing {
+      private final String serverName;
+      private Packet packet;
+      private HttpResponse<String> response;
+      private String state;
+      private ServerHealth health;
+
+      public HealthResponseProcessing(Packet packet, HttpResponse<String> response) throws IOException {
+        this.packet = packet;
+        this.response = response;
+
+        serverName = getServerName();
+      }
+
+      private String getServerName() {
+        return (String) getPacket().get(ProcessingConstants.SERVER_NAME);
+      }
+
+      void recordFailedStateAndHealth() {
+        recordStateAndHealth(WebLogicConstants.UNKNOWN_STATE, new ServerHealth().withOverallHealth(getFailedHealth()));
+      }
+
+      private String getFailedHealth() {
+        return isServerOverloaded()
+              ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
+              : OVERALL_HEALTH_NOT_AVAILABLE;
+      }
+
+      void recordStateAndHealth() throws IOException {
+        Pair<String, ServerHealth> pair = RecordHealthStep.parseServerHealthJson(getResponse().body());
+        state = Strings.emptyToNull(pair.getLeft());
+        health = pair.getRight();
+        recordStateAndHealth(state, health);
+      }
+
+      private void recordStateAndHealth(String state, ServerHealth health) {
+        Optional.ofNullable(state).ifPresent(this::recordServerState);
+        getServerHealthMap().put(serverName, health);
+      }
+
+      private void recordServerState(String state) {
+        getDomainPresenceInfo().updateLastKnownServerStatus(serverName, state);
+        getServerStateMap().put(serverName, state);
+      }
+
+      @SuppressWarnings("unchecked")
+      private Map<String, ServerHealth> getServerHealthMap() {
+        return (Map<String, ServerHealth>) getPacket().get(ProcessingConstants.SERVER_HEALTH_MAP);
+      }
+
+      @SuppressWarnings("unchecked")
+      private Map<String, String> getServerStateMap() {
+        return (Map<String, String>) getPacket().get(SERVER_STATE_MAP);
+      }
+
+      private boolean isServerOverloaded() {
+        return isServerOverloaded(getResponse().statusCode());
+      }
+
+      private boolean isServerOverloaded(int statusCode) {
+        return statusCode == 500 || statusCode == 503;
+      }
+
+      private HttpResponse<String> getResponse() {
+        return response;
+      }
+
+      private DomainPresenceInfo getDomainPresenceInfo() {
+        return getPacket().getSpi(DomainPresenceInfo.class);
+      }
+
+      Packet getPacket() {
+        return packet;
+      }
+    }
+
+    private static Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
       if (jsonResult == null) {
         return null;
       }
@@ -470,5 +510,16 @@ public class ReadHealthStep extends Step {
 
       return new Pair<>(stateVal, health);
     }
+  }
+
+  private static void decrementIntegerInPacketAtomically(Packet packet, String key) {
+    packet.<AtomicInteger>getValue(key).getAndDecrement();
+  }
+
+  private static void logReadFailure(Packet packet) {
+    LOGGER.info(
+          (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
+          MessageKeys.WLS_HEALTH_READ_FAILED,
+          packet.get(ProcessingConstants.SERVER_NAME));
   }
 }

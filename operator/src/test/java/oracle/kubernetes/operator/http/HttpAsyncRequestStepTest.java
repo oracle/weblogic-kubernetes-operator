@@ -7,9 +7,12 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import com.meterware.pseudoserver.HttpUserAgentTest;
 import com.meterware.simplestub.Memento;
@@ -26,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
@@ -45,13 +50,16 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
   private HttpAsyncRequestStep requestStep;
   private CompletableFuture<HttpResponse<String>> responseFuture = new CompletableFuture<>();
   private HttpAsyncRequestStep.FutureFactory futureFactory = r -> responseFuture;
+  private Collection<LogRecord> logRecords = new ArrayList<>();
 
   /**
    * Checkstyle insists on a javadoc comment here. In a unit test *headdesk*.
    */
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger()
+          .collectLogMessages(logRecords, HTTP_METHOD_FAILED)
+          .withLogLevel(Level.FINE));
     mementos.add(StaticStubSupport.install(HttpAsyncRequestStep.class, "factory", futureFactory));
 
     requestStep = createStep();
@@ -100,6 +108,16 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
     responseFuture.complete(response);
     FiberTestSupport.doOnExit(nextAction, fiber);
   }
+
+  @Test
+  public void whenErrorResponseReceived_logMessage() {
+    final NextAction nextAction = requestStep.apply(packet);
+
+    receiveResponseBeforeTimeout(nextAction, createStub(HttpResponseStub.class, 500));
+
+    assertThat(logRecords, containsFine(HTTP_METHOD_FAILED));
+  }
+
 
   @Test
   public void whenResponseReceived_populatePacket() {

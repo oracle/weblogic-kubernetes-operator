@@ -10,11 +10,11 @@ public abstract class ResultStub extends Result {
   boolean successful = true;
 
   public ResultStub() {
-    super("{}", 200, true);
+    super("{}", 200);
   }
 
   public ResultStub(String response, int status, boolean successful) {
-    super(response, 200, true);
+    super(response, 200);
   }
 
   public ResultStub withResponse(String response) {
