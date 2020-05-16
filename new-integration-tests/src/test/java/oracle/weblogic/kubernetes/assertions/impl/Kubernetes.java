@@ -413,7 +413,7 @@ public class Kubernetes {
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
-      String podName, String domainUid, 
+      String podName, String domainUid,
       String namespace, String timestamp) throws ApiException {
     boolean podRestarted = false;
     String labelSelector = null;
