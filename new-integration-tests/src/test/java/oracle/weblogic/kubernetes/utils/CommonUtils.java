@@ -116,8 +116,8 @@ public class CommonUtils {
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
 
-    // Create docker registry secret in the operator namespace to pull the image from repository
-    logger.info("Creating docker registry secret in namespace {0}", opNamespace);
+    // Create Docker registry secret in the operator namespace to pull the image from repository
+    logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
     createDockerRegistrySecret(opNamespace);
 
     // map with secret
@@ -459,13 +459,13 @@ public class CommonUtils {
   }
 
   /**
-   * Create a docker registry secret in the specified namespace.
+   * Create a Docker registry secret in the specified namespace.
    *
    * @param namespace the namespace in which the secret will be created
    */
   public static void createDockerRegistrySecret(String namespace) {
 
-    // Create docker registry secret in the namespace to pull the image from repository
+    // Create Docker registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
         REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
     String dockerConfigJson = dockerConfigJsonObject.toString();
@@ -485,9 +485,9 @@ public class CommonUtils {
   }
 
   /**
-   * Docker login and push the image to docker registry.
+   * Docker login and push the image to Docker registry.
    *
-   * @param dockerImage the docker image to push to registry
+   * @param dockerImage the Docker image to push to registry
    */
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
     // docker login, if necessary
