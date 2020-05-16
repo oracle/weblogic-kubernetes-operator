@@ -468,13 +468,12 @@ public class Kubernetes implements LoggedTest {
   public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
-    // DateTimeFormatter dtf = DateTimeFormat.forPattern("YYYYMMDDHHmmss");
+
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod != null) {
-      // return pod.getMetadata().getCreationTimestamp().toString();
+    if (pod != null && pod.getMetadata() != null) {
       return dtf.print(pod.getMetadata().getCreationTimestamp());
     } else {
-      logger.info("getPodCreationTimestamp(): Pod doesn't exist");
+      logger.info("Pod doesn't exist or pod metadata is null");
       return null;
     }
   }
