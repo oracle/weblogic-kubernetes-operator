@@ -15,6 +15,9 @@ public interface TestConstants {
   // domain constants
   public static final String DOMAIN_VERSION = "v7";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+  public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
+  public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
+  public static final String WLS_DOMAIN_TYPE = "WLS";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -24,6 +27,7 @@ public interface TestConstants {
       "oracle/weblogic-kubernetes-operator";
   public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
       "../buildDockerImage.sh";
+  public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
   public static final String REPO_DUMMY_VALUE = "dummy";
   public static final String REPO_SECRET_NAME = "ocir-secret";
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
