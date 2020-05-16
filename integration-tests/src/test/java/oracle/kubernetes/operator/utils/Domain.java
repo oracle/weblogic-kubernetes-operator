@@ -1722,9 +1722,9 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      if(createLoadBalancer && ingressPerDomain ) {
+      if (createLoadBalancer && ingressPerDomain) {
         String lbName = getLoadBalancerName().toLowerCase();
-        if(ingressPerDomain) {
+        if (ingressPerDomain) {
           TestUtils.checkHelmChartStatus(lbName
                   + "-ingress-"
                   + getDomainUid(),
@@ -1742,7 +1742,7 @@ public class Domain {
                 + " of "
                 + maxIterations);
         if (i == (maxIterations - 1)) {
-          if(createLoadBalancer) {
+          if (createLoadBalancer) {
             checkLoadBalancer();
           }
           throw new RuntimeException(
