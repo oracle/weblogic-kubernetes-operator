@@ -512,9 +512,9 @@ public class CommonUtils {
    * @param password passowrd in the secret
    */
   public static void createSecretWithUsernamePassword(String secretName,
-                                                     String namespace,
-                                                     String username,
-                                                     String password) {
+                                                      String namespace,
+                                                      String username,
+                                                      String password) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
@@ -542,12 +542,12 @@ public class CommonUtils {
    *                            set expectedServerNames to null too
    */
   public static void scaleAndVerifyCluster(String clusterName,
-                                     String domainUid,
-                                     String domainNamespace,
-                                     int replicasBeforeScale,
-                                     int replicasAfterScale,
-                                     String curlCmd,
-                                     List<String> expectedServerNames) {
+                                           String domainUid,
+                                           String domainNamespace,
+                                           int replicasBeforeScale,
+                                           int replicasAfterScale,
+                                           String curlCmd,
+                                           List<String> expectedServerNames) {
 
     String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
 
