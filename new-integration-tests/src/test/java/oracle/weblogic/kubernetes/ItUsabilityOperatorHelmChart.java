@@ -7,7 +7,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -22,11 +32,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
@@ -37,8 +49,11 @@ import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceCreated;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createIngressForDomain;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createMiiDomain;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
@@ -150,7 +165,7 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
     ingressHostList =
-        createIngressForDomain(domainUid, domainNamespace, managedServerPort, Arrays.asList(clusterName));
+        createIngressForDomainAndVerify(domainUid, domainNamespace, managedServerPort, Arrays.asList(clusterName));
 
     // verify the sample apps for the domain
     logger.info("Checking that the sample app can be accessed from all managed servers through NGINX");
@@ -217,6 +232,23 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     // get the pre-built image created by IntegrationTestWatcher
     String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(miiImage);
+
+    // create docker registry secret to pull the image from registry
+    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    createDockerRegistrySecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+
+    // create encryption secret
+    logger.info("Creating encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
     // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
     List<Cluster> clusters = new ArrayList<>();
     clusters.add(new Cluster()
@@ -224,10 +256,43 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
         .replicas(replicaCount)
         .serverStartState("RUNNING"));
 
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING"))
+            .clusters(clusters)
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))));
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
-    createMiiDomain(miiImage, domainUid, domainNamespace, clusters, WLS_DOMAIN_TYPE);
+    createDomainAndVerify(domain, domainNamespace);
 
     // check that admin server pod was created in the domain
     logger.info("Checking that admin server pod {0} was created in namespace {1}",

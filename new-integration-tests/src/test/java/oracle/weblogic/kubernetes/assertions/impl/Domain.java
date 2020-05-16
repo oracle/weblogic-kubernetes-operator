@@ -13,13 +13,11 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesServiceExist;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -104,34 +102,31 @@ public class Domain {
                                            String domainNamespace,
                                            String podOriginalCreationTimestamp) {
 
-    // check that the pod still exists
-    logger.info("Checking that pod {0} still exists in namespace {1}", podName, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> doesPodExist(domainNamespace, domainUid, podName),
+    // if pod does not exist, return false
+    if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName),
         String.format("podExists failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace)),
-        String.format("pod %s does not exist in namespace %s", podName, domainNamespace));
+            podName, domainNamespace))) {
+      logger.info("pod {0} does not exist in namespace {1}", podName, domainNamespace);
+      return false;
+    }
 
-    // check that the pod is in ready state
+    // if the pod is not in ready state, return false
     logger.info("Checking that pod {0} is ready in namespace {1}", podName, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> isPodReady(domainNamespace, domainUid, podName),
-        String.format(
-            "isPodReady failed with ApiException for pod %s in namespace %s", podName, domainNamespace)),
-        String.format("pod %s is not ready in namespace %s", podName, domainNamespace));
+    if (!assertDoesNotThrow(() -> isPodReady(domainNamespace, domainUid, podName),
+        String.format("isPodReady failed with ApiException for pod %s in namespace %s", podName, domainNamespace))) {
+      logger.info("pod {0} is not ready in namespace {1}", podName, domainNamespace);
+      return false;
+    }
 
-    // check that the service still exists
-    logger.info("Checking that service {0} still exists in namespace {1}", podName, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> doesServiceExist(podName, null, domainNamespace),
-        String.format("doesServiceExist failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace)),
-        String.format("service %s does not exist in namespace %s", podName, domainNamespace));
-
-    // check the pod is not restarted
+    // if the pod was restarted, return false
     logger.info("Checking that pod {0} is not restarted in namespace {1}", podName, domainNamespace);
-    assertFalse(assertDoesNotThrow(() ->
+    if (assertDoesNotThrow(() ->
         isPodRestarted(podName, domainUid, domainNamespace, podOriginalCreationTimestamp),
         String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace)),
-        String.format("pod %s is restarted in namespace %s", podName, domainNamespace));
+            podName, domainNamespace))) {
+      logger.info("pod {0} is restarted in namespace {1}", podName, domainNamespace);
+      return false;
+    }
 
     return true;
   }

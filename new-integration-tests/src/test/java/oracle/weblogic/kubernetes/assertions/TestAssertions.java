@@ -240,7 +240,7 @@ public class TestAssertions {
     };
   }
 
-  /*
+  /**
    * Verify the pod state is not changed.
    * @param podName the name of the pod to check
    * @param domainUid the domain in which the pod exists
