@@ -20862,6 +20862,3 @@ spec:
   - name: v5
     served: true
     storage: false
-  - name: v6
-    served: true
-    storage: false
