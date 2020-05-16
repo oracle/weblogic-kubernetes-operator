@@ -1721,12 +1721,16 @@ public class Domain {
   }
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
-    String lbName = getLoadBalancerName().toLowerCase();
-    TestUtils.checkHelmChartStatus(lbName
-            + "-ingress-"
-            + getDomainUid(),
-            getDomainNs(),"deployed");
     for (int i = 0; i < maxIterations; i++) {
+      if(createLoadBalancer && ingressPerDomain ) {
+        String lbName = getLoadBalancerName().toLowerCase();
+        if(ingressPerDomain) {
+          TestUtils.checkHelmChartStatus(lbName
+                  + "-ingress-"
+                  + getDomainUid(),
+              getDomainNs(), "deployed");
+        }
+      }
       ExecResult result = ExecCommand.exec(curlCmd);
       String responseCode = result.stdout().trim();
       if (result.exitValue() != 0 || !responseCode.equals("200")) {
@@ -1738,7 +1742,9 @@ public class Domain {
                 + " of "
                 + maxIterations);
         if (i == (maxIterations - 1)) {
-          checkLoadBalancer();
+          if(createLoadBalancer) {
+            checkLoadBalancer();
+          }
           throw new RuntimeException(
               "FAILURE: callWebApp did not return 200 status code, got " + responseCode);
         }
