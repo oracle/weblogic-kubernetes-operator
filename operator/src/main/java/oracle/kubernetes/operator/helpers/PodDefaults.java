@@ -19,7 +19,6 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_V
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.WDT_CONFIG_MAP_VOLUME;
 
 class PodDefaults {
   static final String K8S_SERVICE_ACCOUNT_MOUNT_PATH =
@@ -62,14 +61,6 @@ class PodDefaults {
     return domainUid + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
   }
 
-  private static V1Volume createWdtConfigMapVolume(String domainUid) {
-    return createVolume(getWdtConfigMapVolumeName(domainUid), getConfigMapName(domainUid));
-  }
-
-  private static String getWdtConfigMapVolumeName(String domainUid) {
-    return WDT_CONFIG_MAP_VOLUME;
-  }
-
   static List<V1VolumeMount> getStandardVolumeMounts(String domainUid) {
     List<V1VolumeMount> mounts = new ArrayList<>();
     mounts.add(createScriptsVolumeMount());
@@ -88,10 +79,6 @@ class PodDefaults {
 
   private static V1VolumeMount createSitConfigVolumeMount(String domainUid) {
     return volumeMount(getSitConfigMapVolumeName(domainUid), "/weblogic-operator/introspector");
-  }
-
-  private static V1VolumeMount createWdtConfigVolumeMount(String domainUid) {
-    return volumeMount(getWdtConfigMapVolumeName(domainUid), "/weblogic-operator/introspector");
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
