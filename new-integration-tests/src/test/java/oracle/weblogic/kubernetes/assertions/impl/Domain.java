@@ -10,15 +10,16 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesServiceExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -122,44 +123,62 @@ public class Domain {
   }
 
   /**
-   * Verify the pod state is not changed.
-   * @param podName the name of the pod to check
-   * @param domainUid the domain in which the pod exists
+   * Verify the original managed server pod state is not changed during scaling the cluster.
+   * @param podName the name of the managed server pod to check
+   * @param domainUid the domain uid of the domain in which the managed server pod exists
    * @param domainNamespace the domain namespace in which the domain exists
-   * @param podOriginalCreationTimestamp the pod original creation timestamp
-   * @return true if the pod state is not changed, false otherwise
+   * @param podCreationTimestampBeforeScale the managed server pod creation time stamp before the scale
+   * @return true if the managed server pod state is not change during scaling the cluster, false otherwise
    */
-  public static boolean podStateNotChanged(String podName,
-                                           String domainUid,
-                                           String domainNamespace,
-                                           String podOriginalCreationTimestamp) {
+  public static boolean podStateNotChangedDuringScalingCluster(String podName,
+                                                               String domainUid,
+                                                               String domainNamespace,
+                                                               String podCreationTimestampBeforeScale) {
 
-    // if pod does not exist, return false
-    if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName),
+    // check that the original managed server pod still exists
+    logger.info("Checking that the managed server pod {0} still exists in namespace {1}",
+        podName, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> doesPodExist(domainNamespace, domainUid, podName),
         String.format("podExists failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace))) {
-      logger.info("pod {0} does not exist in namespace {1}", podName, domainNamespace);
+            podName, domainNamespace)),
+        String.format("pod %s does not exist in namespace %s", podName, domainNamespace));
+
+    // check that the original managed server pod is in ready state
+    logger.info("Checking that the managed server pod {0} is in ready state in namespace {1}",
+        podName, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> isPodReady(domainNamespace, domainUid, podName),
+        String.format(
+            "isPodReady failed with ApiException for pod %s in namespace %s", podName, domainNamespace)),
+        String.format("pod %s is not ready in namespace %s", podName, domainNamespace));
+
+    // check that the original managed server service still exists
+    logger.info("Checking that the managed server service {0} still exists in namespace {1}",
+        podName, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> doesServiceExist(podName, null, domainNamespace),
+        String.format("doesServiceExist failed with ApiException for pod %s in namespace %s",
+            podName, domainNamespace)),
+        String.format("service %s does not exist in namespace %s", podName, domainNamespace));
+
+    // check the pod timestamp of pod is the same as before
+    logger.info("Checking that the managed server pod creation timestamp is not changed");
+    String podCreationTimeStampDuringScale;
+    DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
+    V1Pod pod =
+        assertDoesNotThrow(() -> getPod(domainNamespace, "", podName),
+            String.format("getPod failed with ApiException for pod %s in namespace %s",
+                podName, domainNamespace));
+    if (pod != null && pod.getMetadata() != null) {
+      podCreationTimeStampDuringScale = dtf.print(pod.getMetadata().getCreationTimestamp());
+    } else {
+      logger.info("Pod doesn't exist or pod metadata is null");
       return false;
     }
 
-    // if the pod is not in ready state, return false
-    logger.info("Checking that pod {0} is ready in namespace {1}", podName, domainNamespace);
-    if (!assertDoesNotThrow(() -> isPodReady(domainNamespace, domainUid, podName),
-        String.format("isPodReady failed with ApiException for pod %s in namespace %s", podName, domainNamespace))) {
-      logger.info("pod {0} is not ready in namespace {1}", podName, domainNamespace);
+    if (Long.parseLong(podCreationTimestampBeforeScale) != Long.parseLong(podCreationTimeStampDuringScale)) {
+      logger.info("The creation timestamp of managed server pod {0} is changed from {1} to {2}",
+          podName, podCreationTimestampBeforeScale, podCreationTimeStampDuringScale);
       return false;
     }
-
-    // if the pod was restarted, return false
-    logger.info("Checking that pod {0} is not restarted in namespace {1}", podName, domainNamespace);
-    if (assertDoesNotThrow(() ->
-        isPodRestarted(podName, domainUid, domainNamespace, podOriginalCreationTimestamp),
-        String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
-            podName, domainNamespace))) {
-      logger.info("pod {0} is restarted in namespace {1}", podName, domainNamespace);
-      return false;
-    }
-
     return true;
   }
 

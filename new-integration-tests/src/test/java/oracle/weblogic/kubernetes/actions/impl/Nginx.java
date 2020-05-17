@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes.actions.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
@@ -66,66 +65,63 @@ public class Nginx {
 
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * The ingress host is set to 'domainUid.clusterName.test'.
    *
    * @param ingressName name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
-   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
-   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   * @param clusterName the name of the WebLogic domain cluster
+   * @param managedServerPort the port number of the WebLogic domain managed servers
+   * @param ingressHostname the hostname used by the ingress for the host name based routing
+   * @return true on success, false otherwise
    */
-  public static List<String> createIngress(String ingressName,
+  public static boolean createIngress(String ingressName,
                                       String domainNamespace,
                                       String domainUid,
-                                      Map<String, Integer> clusterNameMsPortMap) {
+                                      String clusterName,
+                                      int managedServerPort,
+                                      String ingressHostname) {
 
     // set the annotation for kubernetes.io/ingress.class to "nginx"
     HashMap<String, String> annotation = new HashMap<>();
     annotation.put("kubernetes.io/ingress.class", INGRESS_NGINX_CLASS);
 
-    List<String> ingressHostList = new ArrayList<>();
-    ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
-    clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
-      // set the http ingress paths
-      ExtensionsV1beta1HTTPIngressPath httpIngressPath = new ExtensionsV1beta1HTTPIngressPath()
-          .path(null)
-          .backend(new ExtensionsV1beta1IngressBackend()
-              .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
-              .servicePort(new IntOrString(managedServerPort))
-          );
-      ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
-      httpIngressPaths.add(httpIngressPath);
+    // set the http ingress paths
+    ExtensionsV1beta1HTTPIngressPath httpIngressPath = new ExtensionsV1beta1HTTPIngressPath()
+        .path(null)
+        .backend(new ExtensionsV1beta1IngressBackend()
+                .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+                .servicePort(new IntOrString(managedServerPort))
+        );
+    ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+    httpIngressPaths.add(httpIngressPath);
 
-      // set the ingress rule
-      String ingressHost = domainUid + "." + clusterName + ".test";
-      ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
-          .host(ingressHost)
-          .http(new ExtensionsV1beta1HTTPIngressRuleValue()
+    // set the ingress rule
+    ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
+        .host(ingressHostname)
+        .http(new ExtensionsV1beta1HTTPIngressRuleValue()
               .paths(httpIngressPaths));
-
-      ingressRules.add(ingressRule);
-      ingressHostList.add(ingressHost);
-    });
+    ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
+    ingressRules.add(ingressRule);
 
     // set the ingress
     ExtensionsV1beta1Ingress ingress = new ExtensionsV1beta1Ingress()
         .apiVersion(INGRESS_API_VERSION)
         .kind(INGRESS_KIND)
         .metadata(new V1ObjectMeta()
-            .name(ingressName)
-            .namespace(domainNamespace)
-            .annotations(annotation))
+                  .name(ingressName)
+                  .namespace(domainNamespace)
+                  .annotations(annotation))
         .spec(new ExtensionsV1beta1IngressSpec()
-            .rules(ingressRules));
+              .rules(ingressRules));
 
     // create the ingress
     try {
       Kubernetes.createIngress(domainNamespace, ingress);
     } catch (ApiException apex) {
       logger.severe("got ApiException while calling createIngress: {0}", apex.getResponseBody());
-      return null;
+      return false;
     }
-    return ingressHostList;
+    return true;
   }
 
   /**
