@@ -2449,7 +2449,7 @@ public class Domain {
     LoggerHelper.getLocal().log(Level.INFO, "Checking LoadBalancer  ");
 
     String lbName = getLoadBalancerName().toLowerCase();
-    TestUtils.checkHelmChart(lbName + "-operator", lbName);
+    TestUtils.printHelmChartInfo(lbName + "-operator", lbName);
     String lbPod = TestUtils.getPodName(" -l app=" + lbName, lbName);
     TestUtils.checkPodReadyAndRunning(lbPod,lbName);
     TestUtils.writePodLog(resultsDir + "/state-dump-logs/", lbPod, lbName);

@@ -2216,23 +2216,23 @@ public class TestUtils {
    *
    * @param chartName  helm chart name
    * @param chartNS helm chart namespace
-   * @param expr expected status
+   * @param status expected status
    * @throws Exception if expected status not found.
    */
-  public static void checkHelmChartStatus(String chartName, String chartNS, String expr) throws Exception {
+  public static void checkHelmChartStatus(String chartName, String chartNS, String status) throws Exception {
     String cmd = "helm status " + chartName + " --namespace " + chartNS;
     ExecResult result = ExecCommand.exec(cmd);
-    checkCmdInLoop(cmd, expr, chartName);
+    checkCmdInLoop(cmd, status, chartName);
   }
 
   /**
-   * Retrieve info for provided helm chart.
+   * Print the info for provided helm chart.
    *
    * @param chartName  helm chart name
    * @param chartNS helm chart namespace
    * @throws Exception if chart info can't be retrieved.
    */
-  public static void checkHelmChart(String chartName, String chartNS) throws Exception {
+  public static void printHelmChartInfo(String chartName, String chartNS) throws Exception {
 
     LoggerHelper.getLocal().log(Level.INFO, " Checking info for Release "
             + chartName);

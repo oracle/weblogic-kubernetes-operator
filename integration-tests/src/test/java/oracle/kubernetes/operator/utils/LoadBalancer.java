@@ -150,7 +150,7 @@ public class LoadBalancer {
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
-      TestUtils.checkHelmChart("traefik-operator","traefik");
+      TestUtils.printHelmChartInfo("traefik-operator","traefik");
       reportHelmInstallFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
@@ -251,10 +251,10 @@ public class LoadBalancer {
     ExecResult result = ExecCommand.exec(cmd.toString());
     TestUtils.checkHelmChartStatus((String)lbMap.get("name"),
         (String)lbMap.get("namespace"),"deployed");
-    TestUtils.checkHelmChart((String)lbMap.get("name"),
+    TestUtils.printHelmChartInfo((String)lbMap.get("name"),
         (String)lbMap.get("namespace"));
     if (result.exitValue() != 0) {
-      TestUtils.checkHelmChart((String)lbMap.get("name")
+      TestUtils.printHelmChartInfo((String)lbMap.get("name")
           + "-ingress-"
           + (String)lbMap.get("domainUID"),
           (String)lbMap.get("namespace"));
@@ -429,7 +429,7 @@ public class LoadBalancer {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       LoggerHelper.getLocal().log(Level.INFO, "executeHelmCommand failed with " + cmd);
-      TestUtils.checkHelmChart(chartName, chartNS);
+      TestUtils.printHelmChartInfo(chartName, chartNS);
       reportHelmInstallFailure(cmd, result);
     }
     String outputStr = result.stdout().trim();
