@@ -23,7 +23,7 @@ public class DbUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   /**
-   * Create oracle db pod in the k8s cluster.
+   * Create Oracle db pod in the k8s cluster.
    *
    * @param dbPropsFile - db properties file
    * @return OracleDB instance
@@ -248,14 +248,7 @@ public class DbUtils {
     
     createNamespace(namespace);
     createDockerRegistrySecret(namespace);
-    /*
-    //delete leftover pods caused by test being aborted
-    deleteRcuPod(scriptsDir);
-    deleteDbPod(scriptsDir);
-    
-    startOracleDB(scriptsDir, String.valueOf(dbPort), namespace);
-    createRcuSchema(scriptsDir,rcuSchemaPrefix, dbUrl, namespace);
-    */
+
     String cmd1 = "mkdir -p " + scriptsDir
         + "/scripts/create-rcu-schema/rcuoutput";
     TestUtils.execOrAbortProcess(cmd1);
@@ -288,8 +281,7 @@ public class DbUtils {
             + " dbUrl:" + dbUrl 
             + " dbPort: " + dbPort
             + " rcuSchemaPrefix: " + rcuSchemaPrefix);
-        //TODO
-        LoggerHelper.getLocal().log(Level.INFO,"DEBUG in DBUtils count: " + count); 
+        LoggerHelper.getLocal().log(Level.INFO,"DEBUG in DBUtils count: " + count);
       } catch (Exception ex) {
         createDBandRCUschema(scriptsDir, dbPort, dbUrl, rcuSchemaPrefix, namespace);
       }
