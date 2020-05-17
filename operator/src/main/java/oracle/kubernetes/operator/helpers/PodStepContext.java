@@ -74,14 +74,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final Step conflictStep;
   private V1Pod podModel;
   private String domainRestartVersion;
-  private String domainImageName;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-    domainImageName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 

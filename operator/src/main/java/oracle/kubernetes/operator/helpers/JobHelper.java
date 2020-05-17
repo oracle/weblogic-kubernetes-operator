@@ -66,39 +66,11 @@ public class JobHelper {
     LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(packet, info);
+    return topology == null || isBringingUpNewDomain(info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
     return runningServersCount(info) == 0 && creatingServers(info);
-  }
-
-  private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
-    if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
-
-      final String currentPodRestartVersion = info.getDomain().getRestartVersion();
-      final String configMapRestartVersion = (String) packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-      final String configMapSpecHash = (String) packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
-
-      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
-      LOGGER.finest("JobHelper.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
-
-      // If either one is set, check for differences and decide to run intropsect job
-
-      if (currentPodRestartVersion != null
-            && !currentPodRestartVersion.equals(configMapRestartVersion)) {
-        LOGGER.fine("JobHelper: currentPodRestartVersion version different from configmap");
-        return true;
-      }
-
-      if (configMapRestartVersion != null
-          && !configMapRestartVersion.equals(currentPodRestartVersion)) {
-        LOGGER.fine("JobHelper: configMapRestartVersion version different from configmap");
-        return true;
-      }
-
-    }
-    return false;
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {

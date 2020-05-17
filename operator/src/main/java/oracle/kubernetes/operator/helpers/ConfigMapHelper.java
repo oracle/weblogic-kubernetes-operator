@@ -93,16 +93,10 @@ public class ConfigMapHelper {
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
     Map<String, String> map = new HashMap<>();
-    String token = ">>>  updatedomainResult=";
 
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
-        if (line.contains(token)) {
-          int index = line.indexOf(token);
-          int beg = index + 1 + token.length();
-          map.put("UPDATEDOMAINRESULT", line.substring(beg - 1));
-        }
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           String filename = extractFilename(line);
           readFile(reader, filename, map, domainUid);
@@ -372,8 +366,6 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
       String topologyYaml = data.get("topology.yaml");
-      String miiModelSecretsHash = data.get("secrets.md5");
-      String miiDomainZipHash = data.get("domainzip_hash");
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
@@ -600,26 +592,17 @@ public class ConfigMapHelper {
       if (result != null) {
         Map<String, String> data = result.getData();
         final String topologyYaml = data.get("topology.yaml");
-        final String miiModelSecretsHash = data.get("secrets.md5");
-        final String miiDomainZipHash = data.get("domainzip_hash");
         final String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-        final String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
 
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
             + info.getDomain().getRestartVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
             + domainRestartVersion);
-        LOGGER.finest("ReadSituConfigMapStep.onSuccess image spec hash from cm result "
-            + modelInImageSpecHash);
 
         if (topologyYaml != null) {
 
           if (domainRestartVersion != null) {
             packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
-          }
-
-          if (modelInImageSpecHash != null) {
-            packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, modelInImageSpecHash);
           }
 
           ConfigMapHelper.DomainTopology domainTopology =
