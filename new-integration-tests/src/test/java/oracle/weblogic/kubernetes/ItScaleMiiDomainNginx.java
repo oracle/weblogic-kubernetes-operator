@@ -575,7 +575,8 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
-        .srcDir(APP_NAME)), String.format("Failed to create app archive for %s", APP_NAME));
+        .srcDirList(Collections.singletonList(APP_NAME))), 
+            String.format("Failed to create app archive for %s", APP_NAME));
 
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, APP_NAME);
