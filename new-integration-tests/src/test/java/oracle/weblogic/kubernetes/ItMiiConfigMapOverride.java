@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -566,21 +565,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
   }
 
   private void checkServerReadyStatusByExec(String podName, String namespace) {
-    final V1Pod pod = assertDoesNotThrow(() -> oracle.weblogic.kubernetes.assertions.impl.Kubernetes
-        .getPod(namespace, null, podName));
-
-    if (pod != null) {
-      ExecResult execResult = assertDoesNotThrow(
-          () -> execCommand(pod, null, true, READ_STATE_COMMAND));
-      if (execResult.exitValue() == 0) {
-        logger.info("execResult: " + execResult);
-        assertEquals("RUNNING", execResult.stdout(),
-            "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
-      } else {
-        fail("Ready command failed with exit status code: " + execResult.exitValue());
-      }
+    ExecResult execResult = assertDoesNotThrow(
+        () -> execCommand(namespace, podName, null, true, READ_STATE_COMMAND));
+    if (execResult.exitValue() == 0) {
+      logger.info("execResult: " + execResult);
+      assertEquals("RUNNING", execResult.stdout(),
+          "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
     } else {
-      fail("Did not find pod " + podName + " in namespace " + namespace);
+      fail("Ready command failed with exit status code: " + execResult.exitValue());
     }
   }
 
