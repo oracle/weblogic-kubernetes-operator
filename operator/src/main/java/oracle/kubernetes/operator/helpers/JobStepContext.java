@@ -243,11 +243,7 @@ public abstract class JobStepContext extends BasePodStepContext {
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
-                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
-            .addVolumesItem(
-                new V1Volume()
-                    .name("mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
-                    .configMap(getIntrospectMD5VolumeSource()));
+                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
@@ -274,12 +270,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   protected V1Container createContainer(TuningParameters tuningParameters) {
     V1Container container = super.createContainer(tuningParameters)
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
-        .addVolumeMountsItem(
-          volumeMount(
-              "mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
-              "/weblogic-operator/introspectormii")
-              .readOnly(false));
+        .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -330,15 +321,6 @@ public abstract class JobStepContext extends BasePodStepContext {
           .defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
-    V1ConfigMapVolumeSource result =
-        new V1ConfigMapVolumeSource()
-            .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
-            .defaultMode(ALL_READ_AND_EXECUTE);
-    result.setOptional(true);
-    return result;
-  }
-
   private V1SecretVolumeSource getOverrideSecretVolumeSource(String name) {
     return new V1SecretVolumeSource().secretName(name).defaultMode(420);
   }
@@ -374,13 +356,5 @@ public abstract class JobStepContext extends BasePodStepContext {
       }
       return doNext(packet);
     }
-  }
-
-  protected V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {
-    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
-  }
-
-  protected V1ConfigMapVolumeSource getOpssKeyWalletVolumeSource(String name) {
-    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 }
