@@ -13,10 +13,7 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesServiceExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
