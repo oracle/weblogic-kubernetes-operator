@@ -618,7 +618,7 @@ public class TestActions {
   /**
    * Execute a command in a container of a Kubernetes pod.
    *
-   * @param namespace The Kubernertes namespace that the pod is in
+   * @param namespace The Kubernetes namespace that the pod is in
    * @param podName The name of the Kubernetes pod where the command is expected to run
    * @param containerName The container in the Pod where the command is to be run. If no
    *                         container name is provided than the first container in the Pod is used.
