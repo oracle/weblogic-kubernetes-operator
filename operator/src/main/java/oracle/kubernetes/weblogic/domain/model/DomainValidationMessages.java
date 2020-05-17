@@ -91,23 +91,7 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.SECRET_NOT_FOUND, secretName, namespace, type);
   }
 
-  static String missingRequiredSecret(String secret) {
-    return getMessage(MessageKeys.SECRET_NOT_SPECIFIED, secret);
-  }
-
-  static String missingRequiredOpssSecret(String secret) {
-    return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
-  }
-
   static String illegalSecretNamespace(String namespace) {
     return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
-  }
-
-  static String illegalSitConfigForMii(String configOverrides) {
-    return getMessage(MessageKeys.ILLEGAL_SIT_CONFIG_MII, configOverrides);
-  }
-
-  static String noSuchModelConfigMap(String configMapName, String namespace) {
-    return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, namespace);
   }
 }
