@@ -251,6 +251,12 @@ class ItMiiConfigMapOverride implements LoggedTest {
             "weblogicenc", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
 
+    logger.info("Create database secret");
+    final String dbSecretName = domainUid  + "-db-secret";
+    assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName, "scott",
+            "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
+             String.format("createSecret failed for %s", dbSecretName));
+
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
     String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
@@ -277,7 +283,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     // create the domain CR with no configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount);
+        replicaCount, dbSecretName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -451,6 +457,22 @@ class ItMiiConfigMapOverride implements LoggedTest {
             REPO_SECRET_NAME, domNamespace));
   }
 
+  private void createDatabaseSecret(
+        String secretName, String username, String password, 
+        String dburl, String domNamespace) throws ApiException {
+    Map<String, String> secretMap = new HashMap();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("url", dburl);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+            .metadata(new V1ObjectMeta()
+                    .name(secretName)
+                    .namespace(domNamespace))
+            .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
+
+  }
+
   private void createDomainSecret(String secretName, String username, String password, String domNamespace)
           throws ApiException {
     Map<String, String> secretMap = new HashMap();
@@ -468,7 +490,10 @@ class ItMiiConfigMapOverride implements LoggedTest {
   private void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, 
-      int replicaCount) {
+      int replicaCount, String dbSecretName) {
+
+    List<String> securityList = new ArrayList<>();
+    securityList.add(dbSecretName);
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
@@ -505,6 +530,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
                             .replicas(replicaCount)
                             .serverStartState("RUNNING"))
                     .configuration(new Configuration()
+                            .secrets(securityList)
                             .model(new Model()
                                     .domainType("WLS")
                                     .runtimeEncryptionSecret(encryptionSecretName))

@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -106,6 +107,7 @@ class ItMiiConfigMap implements LoggedTest {
   private StringBuffer checkJdbc = null;
   private StringBuffer checkJms = null;
   private StringBuffer checkWldf = null;
+  private StringBuffer checkJdbcRuntime = null;
 
   private static Map<String, Object> secretNameMap;
 
@@ -245,6 +247,14 @@ class ItMiiConfigMap implements LoggedTest {
             "weblogicenc", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
 
+    //ToDo need to replace with actual URL once we have dynamic PDB instance 
+    //is available thru JUnit5 extension framework
+    logger.info("Create database secret");
+    final String dbSecretName = domainUid  + "-db-secret";
+    assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName, "scott",
+            "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
+             String.format("createSecret failed for %s", dbSecretName));
+
     String configMapName = "jdbc-jms-wldf-configmap";
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -289,7 +299,7 @@ class ItMiiConfigMap implements LoggedTest {
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount, configMapName);
+        replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -343,17 +353,18 @@ class ItMiiConfigMap implements LoggedTest {
     }
 
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
+    checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/weblogic/latest/domainConfig")
+         .append("/JDBCSystemResources/TestDataSource/")
+         .append(" --silent --show-error ")
+         .append(" -o /dev/null ")
+         .append(" -w %{http_code});")
+         .append("echo ${status}");
+    logger.info("CheckJdbc: curl command {0}", new String(checkJdbc));
     try {
-      checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/weblogic/latest/domainConfig")
-          .append("/JDBCSystemResources/TestDataSource/")
-          .append(" --silent --show-error ")
-          .append(" -o /dev/null ")
-          .append(" -w %{http_code});")
-          .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkJdbc));
       result = exec(new String(checkJdbc), true);
     } catch (Exception ex) {
       logger.info("CheckJdbc: caught unexpected exception {0}", ex);
@@ -363,16 +374,33 @@ class ItMiiConfigMap implements LoggedTest {
     assertEquals("200", result.stdout(), "DataSource configuration not found");
     logger.info("Found the DataSource configuration");
 
+    checkJdbcRuntime = new StringBuffer("curl --user weblogic:welcome1 ");
+    checkJdbcRuntime.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/wls/latest/datasources/id/TestDataSource/")
+         .append(" --silent --show-error ");
+    logger.info("checkJdbcRuntime: curl command {0}", new String(checkJdbcRuntime));
     try {
-      checkJms = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkJms.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+      result = exec(new String(checkJdbcRuntime), true);
+    } catch (Exception ex) {
+      logger.info("checkJdbcRuntime: caught unexpected exception {0}", ex);
+      fail("checkJdbcRuntime:  got unexpected exception" + ex);
+    }
+    logger.info("checkJdbcRuntime: curl command returns {0}", result.toString());
+    assertTrue(result.stdout().contains("jdbc:oracle:thin:localhost"),
+         String.format("Overriden Database URL not found on RuntimeMBean"));
+    assertTrue(result.stdout().contains("scott"),
+         String.format("Overriden Database user not found on RuntimeMBean"));
+
+    checkJms = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkJms.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/weblogic/latest/domainConfig")
           .append("/JMSSystemResources/TestClusterJmsModule/")
           .append(" --silent --show-error ")
           .append(" -o /dev/null ")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkJms));
+    logger.info("CheckJms: curl command {0}", new String(checkJms));
+    try {
       result = exec(new String(checkJms), true);
     } catch (Exception ex) {
       logger.info("CheckJms: caught unexpected exception {0}", ex);
@@ -382,20 +410,20 @@ class ItMiiConfigMap implements LoggedTest {
     assertEquals("200", result.stdout(), "JMSSystemResources configuration not found");
     logger.info("Found the JMSSystemResources configuration");
 
-    try {
-      checkWldf = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkWldf.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    checkWldf = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkWldf.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/weblogic/latest/domainConfig")
           .append("/WLDFSystemResources/TestWldfModule/")
           .append(" --silent --show-error ")
           .append(" -o /dev/null ")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkWldf));
+    logger.info("CheckWldf: curl command {0}", new String(checkWldf));
+    try {
       result = exec(new String(checkWldf), true);
     } catch (Exception ex) {
       logger.info("CheckWldf: caught unexpected exception {0}", ex);
-      fail("CheckWldf:  got unexpected exception" + ex);
+      fail("CheckWldf: got unexpected exception" + ex);
     }
     logger.info("CheckWldf: curl command returns {0}", result.toString());
     assertEquals("200", result.stdout(), "WLDFSystemResources configuration not found");
@@ -440,6 +468,23 @@ class ItMiiConfigMap implements LoggedTest {
             REPO_SECRET_NAME, domNamespace));
   }
 
+  private void createDatabaseSecret(
+        String secretName, String username, String password, 
+        String dburl, String domNamespace) throws ApiException {
+    Map<String, String> secretMap = new HashMap();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("url", dburl);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+            .metadata(new V1ObjectMeta()
+                    .name(secretName)
+                    .namespace(domNamespace))
+            .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
+
+  }
+
+
   private void createDomainSecret(String secretName, String username, String password, String domNamespace)
           throws ApiException {
     Map<String, String> secretMap = new HashMap();
@@ -457,7 +502,9 @@ class ItMiiConfigMap implements LoggedTest {
   private void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, 
-      int replicaCount, String configmapName) {
+      int replicaCount, String configmapName, String dbSecretName) {
+    List<String> securityList = new ArrayList<>();
+    securityList.add(dbSecretName);
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
@@ -494,6 +541,7 @@ class ItMiiConfigMap implements LoggedTest {
                             .replicas(replicaCount)
                             .serverStartState("RUNNING"))
                     .configuration(new Configuration()
+                            .secrets(securityList)
                             .model(new Model()
                                     .domainType("WLS")
                                     .configMap(configmapName)
