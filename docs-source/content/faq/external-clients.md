@@ -31,7 +31,7 @@ Here are the steps:
 
 ##### Kubernetes `NodePorts`
 
-The Kubernetes `NodePorts` approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and exposing a Kubernetes `NodePort` that redirects external network traffic on the Kubernetes nodes to the network channel.
+The Kubernetes `NodePorts` approach for giving external WebLogic EJB or JMS clients access to a Kubernetes hosted WebLogic cluster involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and exposing a Kubernetes `NodePort` that redirects external network traffic on the Kubernetes Nodes to the network channel.
 
 
 {{% notice note %}} The `NodePort` approach is available only when worker nodes are accessible by the clients, for example, when they have public IP addresses. If private worker nodes are used and access to them is possible only through a load balancer or bastion, then the `NodePort` approach is not a valid option to provide access to external clients.
@@ -128,7 +128,7 @@ In this example:
 
 - WebLogic binds the custom network channel to port `7999` and the default network channel to `8001`.
 
-- The operator will automatically create a Kubernetes service named `DOMAIN_UID-cluster-cluster-1` for both the custom and default channel.
+- The operator will automatically create a Kubernetes Service named `DOMAIN_UID-cluster-cluster-1` for both the custom and default channel.
 
 - Internal clients running in the same Kubernetes cluster as the channel can access the cluster using `t3://DOMAIN_UID-cluster-cluster-1:8001`.
 

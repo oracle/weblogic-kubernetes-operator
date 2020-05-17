@@ -11,9 +11,9 @@ import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
-
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -31,10 +31,30 @@ public class TestAssertions {
   }
 
   /**
-   * Check if operator Rest service is running.
+   * Check if NGINX is running.
    *
-   * @param namespace in which the operator rest service exists
-   * @return true if rest service is running otherwise false
+   * @param namespace in which to check if NGINX is running
+   * @return true if NGINX is running, false otherwise
+   */
+  public static Callable<Boolean> isNginxRunning(String namespace) {
+    return Nginx.isRunning(namespace);
+  }
+
+  /**
+   * Check if there are ready NGINX pods in the specified namespace.
+   *
+   * @param namespace in which to check if NGINX pods are in the ready state
+   * @return true if there are ready NGINX pods in the specified namespace , false otherwise
+   */
+  public static Callable<Boolean> isNginxReady(String namespace) {
+    return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if operator REST service is running.
+   *
+   * @param namespace in which the operator REST service exists
+   * @return true if REST service is running otherwise false
    */
   public static Callable<Boolean> operatorRestServiceRunning(String namespace) throws ApiException {
     return () -> {
@@ -205,4 +225,41 @@ public class TestAssertions {
     return Helm.isReleaseDeployed(releaseName, namespace);
   }
 
+  /**
+   * Check if a pod is restarted based on podCreationTimestamp.
+   *
+   * @param podName the name of the pod to check for
+   * @param domainUid the label the pod is decorated with
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @throws ApiException when query fails
+   */
+  public static Callable<Boolean> isPodRestarted(
+      String podName,
+      String domainUid,
+      String namespace,
+      String timestamp
+  ) throws ApiException {
+    return () -> {
+      return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
+    };
+  }
+
+  /*
+   * Verify the original managed server pod state is not changed during scaling the cluster.
+   * 
+   * @param podName the name of managed server pod to check
+   * @param domainUid the domain uid of the domain in which the managed server pod exists
+   * @param domainNamespace the domain namespace in which the domain exists
+   * @param podCreationTimestampBeforeScale the managed server pod creation time stamp before the scale
+   * @return true if the managed server pod state is not change during scaling the cluster, false otherwise
+   */
+  public static boolean podStateNotChangedDuringScalingCluster(String podName,
+                                                               String domainUid,
+                                                               String domainNamespace,
+                                                               String podCreationTimestampBeforeScale) {
+    return Domain.podStateNotChangedDuringScalingCluster(podName, domainUid, domainNamespace,
+        podCreationTimestampBeforeScale);
+  }
 }

@@ -53,9 +53,6 @@ public class Operator {
     return Helm.uninstall(params);
   }
 
-  public static boolean scaleDomain(String domainUid, String clusterName, int numOfServers) {
-    return true;
-  }
 
   /**
    * Image Name for the Operator. Uses branch name for tag in local runs
@@ -67,10 +64,12 @@ public class Operator {
     String imageName = Optional.ofNullable(System.getenv("IMAGE_NAME_OPERATOR"))
         .orElse(IMAGE_NAME_OPERATOR);
     // use branch name and build id for Jenkins runs in image tag
+    if (!REPO_NAME.isEmpty()) {
+      imageName = REPO_NAME + imageName;
+    }
     String branchName = "";
     if (!BUILD_ID.isEmpty()) {
       branchName = BRANCH_NAME_FROM_JENKINS;
-      imageName = REPO_NAME + imageName;
     } else  {
       CommandParams params = Command.defaultCommandParams()
           .command("git branch | grep \\* | cut -d ' ' -f2-")

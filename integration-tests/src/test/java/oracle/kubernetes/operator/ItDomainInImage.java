@@ -112,6 +112,7 @@ public class ItDomainInImage extends BaseTest {
       domainMap.remove("clusterType");
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
+      domain.enablePrecreateService();
       testBasicUseCases(domain, true);
       testClusterScaling(operator1, domain, false);
       testCompletedSuccessfully = true;
@@ -157,6 +158,7 @@ public class ItDomainInImage extends BaseTest {
 
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
+      domain.enablePrecreateService();
       List<ExecResult> execResultList = domain.verifySslListeners();
       Assert.assertTrue(execResultList.size() > 0);
       for (ExecResult execResult : execResultList) {
@@ -205,9 +207,11 @@ public class ItDomainInImage extends BaseTest {
           BaseTest.getProjectRoot()
               + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml");
       domainMap.put("createDomainFilesDir", "wdt");
+      // set cluster size based on the config in domain model yaml
+      domainMap.put("configuredManagedServerCount", 3);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-
+      domain.enablePrecreateService();
       testBasicUseCases(domain, false);
       testClusterScaling(operator1, domain, true);
       testCompletedSuccessfully = true;

@@ -14,7 +14,7 @@ This document describes _when_ to restart servers in the Oracle WebLogic Server 
 There are many situations where changes to the Oracle WebLogic Server in Kubernetes environment require that all the servers in
 a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.
 
-One of the operator's most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes pods. Sometimes, you need to make changes that make the pods obsolete, therefore the pods need to be deleted and recreated. Depending on the change, sometimes the pods can be gradually recreated, without taking the entire domain out of service
+One of the operator's most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes Pods. Sometimes, you need to make changes that make the pods obsolete, therefore the pods need to be deleted and recreated. Depending on the change, sometimes the pods can be gradually recreated, without taking the entire domain out of service
 (for example, `rolling restarts`) and sometimes all the pods need to be deleted then recreated, taking the entire domain out of
 service for a while (for example, `full restarts`).
 
@@ -92,8 +92,8 @@ Any change to domain configuration overrides requires a full domain restart.  Th
 
 #### Changing the WebLogic Server credentials
 
-A change to the WebLogic Server credentials (the user name and password), contained in the Kubernetes secret for the domain, requires a
-_full domain restart_.  The Kubernetes secret can be updated directly or a new secret can be created and then referenced by the `webLogicCredentialsSecret`
+A change to the WebLogic Server credentials (the user name and password), contained in the Kubernetes Secret for the domain, requires a
+_full domain restart_.  The Kubernetes Secret can be updated directly or a new secret can be created and then referenced by the `webLogicCredentialsSecret`
 property in the domain resource.
 
 #### Changing properties on the domain resource that affect server pods

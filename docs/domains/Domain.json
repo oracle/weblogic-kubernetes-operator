@@ -109,6 +109,10 @@
           "description": "The name of this cluster. Required",
           "type": "string"
         },
+        "allowReplicasBelowMinDynClusterSize": {
+          "description": "If true (the default), then the number of replicas is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration. Otherwise, the operator will ensure that the number of replicas is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only.",
+          "type": "boolean"
+        },
         "serverPod": {
           "description": "Configuration affecting server pods.",
           "$ref": "#/definitions/ServerPod"
@@ -506,8 +510,10 @@
       ]
     },
     "Map": {
-      "type": "object",
-      "properties": {}
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
     },
     "Model": {
       "type": "object",

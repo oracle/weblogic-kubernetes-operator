@@ -608,12 +608,13 @@ public class BaseTest {
                 + result.stdout());
       }
 
+      int retriesForDeployment = 10;
       domain.deployWebAppViaWlst(
           TESTWEBAPP,
           getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
           appLocationInPod,
           getUsername(),
-          getPassword());
+          getPassword(), retriesForDeployment);
       domain.callWebAppAndVerifyLoadBalancing(TESTWEBAPP, verifyLoadBalancing);
 
       /* The below check is done for domain-home-in-image domains, it needs 12.2.1.3 patched image
@@ -824,12 +825,13 @@ public class BaseTest {
     TestUtils.createRbacPoliciesForWldfScaling();
 
     // deploy opensessionapp
+    int retriesForDeployment = 10;
     domain.deployWebAppViaWlst(
         "opensessionapp",
         getProjectRoot() + "/src/integration-tests/apps/opensessionapp.war",
         appLocationInPod,
         getUsername(),
-        getPassword());
+        getPassword(), retriesForDeployment);
 
     TestUtils.createWldfModule(
         adminPodName, domainNS, ((Integer) domainMap.get("t3ChannelPort")).intValue());

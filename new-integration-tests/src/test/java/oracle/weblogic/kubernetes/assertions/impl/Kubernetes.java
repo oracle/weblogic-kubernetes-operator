@@ -20,6 +20,8 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
@@ -63,6 +65,29 @@ public class Kubernetes {
       podExist = true;
     }
     return podExist;
+  }
+
+  /**
+   * Checks if a pod does not exist in a given namespace in any state.
+   * @param namespace in which to check for the pod existence
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if pod does not exists otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean doesPodNotExist(String namespace, String domainUid, String podName) throws ApiException {
+    boolean podDeleted = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod == null) {
+      podDeleted = true;
+    } else {
+      logger.info("[" + pod.getMetadata().getName() + "] still exist");
+    }
+    return podDeleted;
   }
 
   /**
@@ -147,7 +172,7 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a Operator pod running in a given namespace.
+   * Checks if an operator pod is running in a given namespace.
    * The method assumes the operator name to starts with weblogic-operator-
    * and decorated with label weblogic.operatorName:namespace
    * @param namespace in which to check for the pod existence
@@ -175,6 +200,32 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a NGINX pod is running in the specified namespace.
+   * The method assumes that the NGINX pod name contains "nginx-ingress-controller".
+   *
+   * @param namespace in which to check if the NGINX pod is running
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isNginxPodRunning(String namespace) throws ApiException {
+
+    return isPodRunning(namespace, null, "nginx-ingress-controller");
+  }
+
+  /**
+   * Check whether the NGINX pod is ready in the specified namespace.
+   * The method assumes that the NGINX pod name starts with "nginx-ingress-controller".
+   *
+   * @param namespace in which to check if the NGINX pod is ready
+   * @return true if the pod is in the ready state, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isNginxPodReady(String namespace) throws ApiException {
+
+    return isPodReady(namespace, null, "nginx-ingress-controller");
+  }
+
+  /**
    * Returns the V1Pod object given the following parameters.
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
@@ -197,7 +248,7 @@ public class Kubernetes {
             Boolean.FALSE // Watch for changes to the described resources.
         );
     for (V1Pod item : v1PodList.getItems()) {
-      if (item.getMetadata().getName().startsWith(podName.trim())) {
+      if (item.getMetadata().getName().contains(podName.trim())) {
         logger.info("Pod Name: " + item.getMetadata().getName());
         logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
         logger.info("Pod UID: " + item.getMetadata().getUid());
@@ -351,4 +402,42 @@ public class Kubernetes {
     return true;
   }
 
+  /**
+   * Check if a pod is restarted based on podCreationTimestamp.
+   *
+   * @param podName the name of the pod to check for
+   * @param domainUid the label the pod is decorated with
+   * @param namespace in which the pod is running
+   * @param timestamp the initial podCreationTimestamp
+   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @throws ApiException when query fails
+   */
+  public static boolean isPodRestarted(
+      String podName, String domainUid, 
+      String namespace, String timestamp) throws ApiException {
+    boolean podRestarted = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod == null) {
+      podRestarted = false;
+    } else {
+      DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
+      String newTimestamp = dtf.print(pod.getMetadata().getCreationTimestamp());
+      if (newTimestamp == null) {
+        logger.info("getCreationTimestamp() returns NULL");
+        return false;
+      }
+      logger.info("OldPodCreationTimestamp [{0}]", timestamp);
+      logger.info("NewPodCreationTimestamp returns [{0}]", newTimestamp);
+      if (Long.parseLong(newTimestamp) == Long.parseLong(timestamp)) {
+        podRestarted = false;
+      } else {
+        podRestarted = true;
+      }
+    }
+    return podRestarted;
+  }
 }
