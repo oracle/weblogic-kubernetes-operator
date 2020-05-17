@@ -13,7 +13,10 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesServiceExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -78,6 +81,35 @@ public class Domain {
       boolean domainExist = (domainObject != null);
       logger.info("Domain Object exists : " + domainExist);
       return domainExist;
+    };
+  }
+
+  /**
+   * Check if the domain resource has been patched with a new image.
+   *
+   * @param domainUID identifier of the domain resource
+   * @param namespace Kubernetes namespace in which the domain exists
+   * @param image name of the image that the pod is expected to be using
+   * @return true if domain resource's image matches the expected value
+   */
+  public static Callable<Boolean> domainResourceImagePatched(
+      String domainUID,
+      String namespace,
+      String image
+  ) {
+    return () -> {
+      oracle.weblogic.domain.Domain domain = null;
+      try {
+        domain = oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes
+                .getDomainCustomResource(domainUID, namespace);
+      } catch (ApiException apex) {
+        logger.severe("Failed to obtain the domain resource object from the API server", apex);
+        return false;
+      }
+      
+      boolean domainPatched = (domain.spec().image().equals(image));
+      logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
+      return domainPatched;
     };
   }
 

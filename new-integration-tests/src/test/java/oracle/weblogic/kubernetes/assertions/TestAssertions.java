@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
@@ -70,6 +71,43 @@ public class TestAssertions {
    */
   public static Callable<Boolean> domainExists(String domainUid, String domainVersion, String namespace) {
     return Domain.doesDomainExist(domainUid, domainVersion, namespace);
+  }
+
+  /**
+   * Check if a WebLogic domain custom resource has been patched with a new image.
+   *
+   * @param domainUid ID of the domain resource
+   * @param namespace Kubernetes namespace in which the domain custom resource object exists
+   * @param image name of the image that was used to patch the domain resource
+   * @return true if the domain is patched correctly
+   */
+  public static Callable<Boolean> domainResourceImagePatched(
+      String domainUid,
+      String namespace,
+      String image
+  ) {
+    return Domain.domainResourceImagePatched(domainUid, namespace, image);
+  }
+
+  /**
+   * Check if a WebLogic server pod has been patched with a new image.
+   *
+   * @param domainUid ID of the domain resource
+   * @param namespace Kubernetes namespace in which the domain custom resource object exists
+   * @param podName name of the WebLogic server pod
+   * @param image name of the image that was used to patch the domain resource
+   * @return true if the pod is patched correctly
+   */
+  public static Callable<Boolean> podImagePatched(
+      String domainUid,
+      String namespace,
+      String podName,
+      String containerName,
+      String image
+  ) throws ApiException {
+    return () -> {
+      return Kubernetes.podImagePatched(namespace, domainUid, podName, containerName, image);
+    };
   }
 
   /**
@@ -181,7 +219,7 @@ public class TestAssertions {
   /**
    * Check if a admin server pod admin node port is accessible.
    *
-   * @param domainUid domainUID id of the domain in which admin server pod is running
+   * @param domainUid id of the domain in which admin server pod is running
    * @param namespace in which the WebLogic server pod exists
    * @return true if the admin node port is accessible otherwise false
    */
@@ -198,6 +236,68 @@ public class TestAssertions {
    */
   public static boolean dockerImageExists(String imageName, String imageTag) {
     return WitAssertion.doesImageExist(imageName, imageTag);
+  }
+
+  /**
+   * Check if an application is accessible inside a WebLogic server pod using
+   * "kubectl exec" command.
+   * 
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
+   * @param podName name of the WebLogic server pod
+   * @param port internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedResponse the expected response from the application
+   * @return true if the command succeeds 
+   */
+  public static boolean appAccessibleInPodKubectl(
+      String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse
+  ) {
+    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+  }
+
+  /**
+   * Check if an application is accessible inside a WebLogic server pod using
+   * Kubernetes Java client API.
+   * 
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
+   * @param podName name of the WebLogic server pod
+   * @param port internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedResponse the expected response from the application
+   * @return true if the command succeeds 
+   */
+  public static boolean appAccessibleInPod(
+      String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse
+  ) {
+    return Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
+  }
+
+  /**
+   * Check if an application is Not running inside a WebLogic server pod.
+   * .
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
+   * @param podName name of the WebLogic server pod
+   * @param port internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedResponse the expected response from the application
+   * @return true if the command succeeds 
+   */
+  public static boolean appNotAccessibleInPod(
+      String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse
+  ) {
+    return !Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**

@@ -39,6 +39,7 @@ import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -613,9 +614,10 @@ public class TestActions {
   // ----------------------- Execute a Command   ---------------------------
 
   /**
-   * Execute a command in a container.
+   * Execute a command in a container of a Kubernetes pod.
    *
-   * @param pod  The pod where the command is to be run
+   * @param namespace The Kubernetes namespace that the pod is in
+   * @param podName The name of the Kubernetes pod where the command is expected to run
    * @param containerName The container in the Pod where the command is to be run. If no
    *                         container name is provided than the first container in the Pod is used.
    * @param redirectToStdout copy process output to stdout
@@ -625,9 +627,20 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    * @throws InterruptedException if any thread has interrupted the current thread
    */
-  public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
-                                       String... command)
-      throws IOException, ApiException, InterruptedException {
+  public static ExecResult execCommand(
+      String namespace,
+      String podName,
+      String containerName,
+      boolean redirectToStdout,
+      String... command
+  ) throws IOException, ApiException, InterruptedException {
+    // get the pod given the namespace and name of the pod
+    // no label selector is needed (thus null below)
+    final V1Pod pod = Kubernetes.getPod(namespace, null, podName);
+    if (pod == null) {
+      throw new IllegalArgumentException(
+          String.format("The pod %s does not exist in namespace %s!", podName, namespace));
+    }
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 

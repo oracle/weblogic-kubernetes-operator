@@ -348,6 +348,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- pods -----------------------------------------
+
   /**
    * Get a pod's log.
    *
@@ -2044,7 +2045,9 @@ public class Kubernetes implements LoggedTest {
 
       // wait for reading thread to finish any last remaining output
       if (out != null) {
-        out.join();
+        // need to time out here, otherwise the command can take almost one minute to return.
+        // yet to see if we'll need a different timeout value for different environments.
+        out.join(1200);
       }
 
       // Read data from process's stdout
