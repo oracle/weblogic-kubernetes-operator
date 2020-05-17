@@ -133,10 +133,6 @@ public class MessageKeys {
   public static final String BAD_VOLUME_MOUNT_PATH = "WLSDO-0004";
   public static final String RESERVED_ENVIRONMENT_VARIABLES = "WLSDO-0005";
   public static final String ILLEGAL_SECRET_NAMESPACE = "WLSDO-0006";
-  public static final String ILLEGAL_SIT_CONFIG_MII = "WLSDO-0007";
-  public static final String MODEL_CONFIGMAP_NOT_FOUND = "WLSDO-0008";
-  public static final String SECRET_NOT_SPECIFIED = "WLSDO-0009";
-  public static final String OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0010";
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
 
