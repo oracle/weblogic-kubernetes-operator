@@ -3,15 +3,23 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.JsonObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -19,45 +27,84 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
+import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
+import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChangedDuringScalingCluster;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verify the model in image domain with multiple clusters can be scaled up and down.
- * Also verify the sample application can be accessed via NGINX ingress controller.
+ * Also verify the sample application can be accessed via NGINX.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify scaling multiple clusters domain and the sample application can be accessed via NGINX")
@@ -67,35 +114,46 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   // mii constants
   private static final String WDT_MODEL_FILE = "model-multiclusterdomain-sampleapp-wls.yaml";
   private static final String MII_IMAGE_NAME = "mii-image";
+  private static final String APP_NAME = "sample-app";
 
   // domain constants
-  private static final String domainUid = "domain1";
+  private static final String DOMAIN_VERSION = "v7";
+  private static final String API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   private static final int NUMBER_OF_CLUSTERS = 2;
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
-  private static final int replicaCount = 2;
 
+  private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static ConditionFactory withStandardRetryPolicy = null;
+  private static String dockerConfigJson = "";
   private static HelmParams nginxHelmParams = null;
+  private static String nginxNamespace = null;
   private static int nodeportshttp = 0;
-  private static List<String> ingressHostList = null;
+  private static int nodeportshttps = 0;
 
+  private final int replicaCount = 2;
+  private final String managedServerNameBase = "-managed-server";
+  private final String domainUid = "domain1";
   private String curlCmd = null;
 
   /**
-   * Install operator and NGINX. Create model in image domain with multiple clusters.
-   * Create ingress for the domain.
+   * Install operator and NGINX.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
+    // create standard, reusable retry/backoff policy
+    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(5, MINUTES).await();
 
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    String opNamespace = namespaces.get(0);
+    opNamespace = namespaces.get(0);
 
     // get a unique domain namespace
     logger.info("Get a unique namespace for WebLogic domain");
@@ -105,121 +163,82 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     // get a unique NGINX namespace
     logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(2), "Namespace list is null");
-    String nginxNamespace = namespaces.get(2);
+    nginxNamespace = namespaces.get(2);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator();
 
     // get a free node port for NGINX
     nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
+    nodeportshttps = getNextFreePort(30443, 30543);
 
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
-
-    // create model in image domain with multiple clusters
-    createMiiDomainWithMultiClusters();
-
-    // create ingress using host based routing
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-      clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
-    }
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    ingressHostList = createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
+    installAndVerifyNginx();
   }
 
   @Test
-  @DisplayName("Verify the application can be accessed through NGINX for each cluster in the domain")
-  public void testAppAccessThroughIngressController() {
-
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-
-      List<String> managedServerListBeforeScale =
-          listManagedServersBeforeScale(clusterName, replicaCount);
-
-      // check that NGINX can access the sample apps from all managed servers in the cluster of the domain
-      curlCmd = generateCurlCmd(clusterName);
-      assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerListBeforeScale, 50))
-          .as("Verify NGINX can access the sample app from all managed servers in the domain")
-          .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
-          .isTrue();
-    }
-  }
-
-  @Test
-  @DisplayName("Verify scale each cluster of the domain in domain namespace")
-  public void testScaleClusters() {
-
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-      int numberOfServers;
-      // scale cluster-1 to 1 server and cluster-2 to 3 servers
-      if (i == 1) {
-        numberOfServers = 1;
-      } else {
-        numberOfServers = 3;
-      }
-
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers);
-      curlCmd = generateCurlCmd(clusterName);
-      List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, replicaCount, numberOfServers,
-          curlCmd, managedServersBeforeScale);
-
-      // then scale cluster-1 and cluster-2 to 0 server
-      managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, numberOfServers, 0,
-          curlCmd, managedServersBeforeScale);
-    }
-  }
-
-  /**
-   * TODO: remove this after Sankar's PR is merged
-   * The cleanup framework does not uninstall NGINX release. Do it here for now.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
-  }
-
-  /**
-   * Create model in image domain with multiple clusters.
-   */
-  private static void createMiiDomainWithMultiClusters() {
+  @Order(1)
+  @DisplayName("Create model in image domain with multiple clusters")
+  @Slow
+  @MustNotRunInParallel
+  public void testCreateMiiDomainWithMultiClusters() {
 
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    final String adminServerPodName = domainUid + "-admin-server";
 
     // create image with model files
     logger.info("Creating image with model file and verify");
-    String miiImage = createMiiImageAndVerify(MII_IMAGE_NAME, WDT_MODEL_FILE, MII_BASIC_APP_NAME);
+    String miiImage = createImageAndVerify();
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // docker login, if necessary
+    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+      logger.info("docker login");
+      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+    }
 
-    // create docker registry secret to pull the image from registry
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createDockerRegistrySecret(domainNamespace);
+    // push image, if necessary
+    if (!REPO_NAME.isEmpty()) {
+      logger.info("docker push image {0} to {1}", miiImage, REPO_NAME);
+      assertTrue(dockerPush(miiImage), String.format("docker push failed for image %s", miiImage));
+    }
+
+    // Create the V1Secret configuration
+    V1Secret repoSecret = new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(REPO_SECRET_NAME)
+            .namespace(domainNamespace))
+        .type("kubernetes.io/dockerconfigjson")
+        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+    Map<String, String> adminSecretMap = new HashMap<>();
+    adminSecretMap.put("username", "weblogic");
+    adminSecretMap.put("password", "welcome1");
+    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(adminSecretName)
+            .namespace(domainNamespace))
+        .stringData(adminSecretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Creating encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+    Map<String, String> encryptionSecretMap = new HashMap<>();
+    encryptionSecretMap.put("username", "weblogicenc");
+    encryptionSecretMap.put("password", "weblogicenc");
+    secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(encryptionSecretName)
+            .namespace(domainNamespace))
+        .stringData(encryptionSecretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", encryptionSecretName));
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
@@ -232,7 +251,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
     // create the domain CR
     Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
+        .apiVersion(API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
@@ -260,49 +279,64 @@ class ItScaleMiiDomainNginx implements LoggedTest {
             .clusters(clusterList)
             .configuration(new Configuration()
                 .model(new Model()
-                    .domainType(WLS_DOMAIN_TYPE)
+                    .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))));
 
-    // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainAndVerify(domain, domainNamespace);
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
 
-    // check admin server pod exists in domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
+    // wait for the domain to exist
+    logger.info("Checking for domain custom resource existence in namespace {0}", domainNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUid,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+
+    // check admin server pod was created
+    logger.info("Checking that admin server pod {0} was created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodCreated(adminServerPodName);
 
     // check admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReady(adminServerPodName);
 
-    // check admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
+    // check admin service is created
+    logger.info("Checking that admin service {0} was created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
+    checkServiceCreated(adminServerPodName);
 
     // check the readiness for the managed servers in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
-            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + managedServerNameBase + j;
 
-        // check managed server pod exists in the namespace
-        logger.info("Checking that managed server pod {0} exists in namespace {1}",
+        // check managed server pod was created
+        logger.info("Checking that managed server pod {0} was created in namespace {1}",
             managedServerPodName, domainNamespace);
-        checkPodExists(managedServerPodName, domainUid, domainNamespace);
+        checkPodCreated(managedServerPodName);
 
         // check managed server pod is ready
         logger.info("Checking that managed server pod {0} is ready in namespace {1}",
             managedServerPodName, domainNamespace);
-        checkPodReady(managedServerPodName, domainUid, domainNamespace);
+        checkPodReady(managedServerPodName);
 
-        // check managed server service exists in the domain namespace
-        logger.info("Checking that managed server service {0} exists in namespace {1}",
+        // check managed server service was created
+        logger.info("Checking that managed server service {0} was created in namespace {1}",
             managedServerPodName, domainNamespace);
-        checkServiceExists(managedServerPodName, domainNamespace);
+        checkServiceCreated(managedServerPodName);
       }
     }
   }
@@ -795,7 +829,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private List<String> listManagedServersBeforeScale(String clusterName, int replicasBeforeScale) {
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
-      managedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+      managedServerNames.add(clusterName + managedServerNameBase + i);
     }
 
     return managedServerNames;
