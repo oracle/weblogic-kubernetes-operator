@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
+import org.junit.jupiter.api.Assertions;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -1017,7 +1018,7 @@ public class TestUtils {
   }
 
   /**
-   * Retrieve pod's name based on search expression.
+   * Retrieve pod name based on search expression.
    *
    * @param searchExp  Search expression (for example -l app=webhook).
    * @param namespace  namespace where pod is running
@@ -1031,13 +1032,25 @@ public class TestUtils {
             + searchExp
             + " -n "
             + namespace
-            + " -o jsonpath=\"{.items[0].metadata.name}\"");
-    LoggerHelper.getLocal().log(Level.INFO, " pod name cmd =" + cmd);
+            + " -o jsonpath=\"{.items[*].metadata.name}\"");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
-    LoggerHelper.getLocal().log(Level.INFO, " Result output" + result.stdout());
-    String podName = result.stdout().trim();
-    assertNotNull(podName, searchExp + "  was not created, can't find running pod ");
+    if (result.exitValue() != 0) {
+      throw new Exception(
+          "FAILED: command to get get pods " + cmd.toString() + " failed.");
+    }
+    LoggerHelper.getLocal().log(Level.INFO, " Result output to retrieve pod names : " + result.stdout());
+    String [] podsNames = (result.stdout().trim()).split(" ");
+    assertNotNull(podsNames, "Pod with "
+        + searchExp
+        + "  was not created, can't find the pod ");
+    Assertions.assertFalse((podsNames.length == 0), searchExp + "  was not created, can't find running pod ");
+    if (podsNames.length > 1) {
+      LoggerHelper.getLocal().log(Level.INFO, "Found multiple pods running in the namespace "
+          + getPods(namespace));
+    }
+    //return the last one
+    String podName = podsNames[podsNames.length - 1 ];
     return podName;
   }
 
