@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
@@ -70,15 +71,13 @@ public class Nginx {
    * @param ingressName name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
-   * @param managedServerPort the port number of the WebLogic domain managed servers
-   * @param clusterNames list of the WebLogic domain cluster names in the domain
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(String ingressName,
                                       String domainNamespace,
                                       String domainUid,
-                                      int managedServerPort,
-                                      List<String> clusterNames) {
+                                      Map<String, Integer> clusterNameMsPortMap) {
 
     // set the annotation for kubernetes.io/ingress.class to "nginx"
     HashMap<String, String> annotation = new HashMap<>();
@@ -86,7 +85,7 @@ public class Nginx {
 
     List<String> ingressHostList = new ArrayList<>();
     ArrayList<ExtensionsV1beta1IngressRule> ingressRules = new ArrayList<>();
-    for (String clusterName : clusterNames) {
+    clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
       ExtensionsV1beta1HTTPIngressPath httpIngressPath = new ExtensionsV1beta1HTTPIngressPath()
           .path(null)
@@ -106,7 +105,7 @@ public class Nginx {
 
       ingressRules.add(ingressRule);
       ingressHostList.add(ingressHost);
-    }
+    });
 
     // set the ingress
     ExtensionsV1beta1Ingress ingress = new ExtensionsV1beta1Ingress()

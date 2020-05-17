@@ -85,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The common utility class for tests.
  */
-public class CommonUtils {
+public class CommonTestUtils {
 
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
@@ -93,7 +93,7 @@ public class CommonUtils {
           .atMost(5, MINUTES).await();
 
   /**
-   * Install WebLogic operator and wait up to 5 minutes until the operator pod is ready.
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
    *
    * @param opNamespace the operator namespace in which the operator will be installed
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
@@ -153,7 +153,7 @@ public class CommonUtils {
     logger.info("Operator release {0} status is deployed in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
 
-    // wait for the operator is ready
+    // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -169,7 +169,7 @@ public class CommonUtils {
   }
 
   /**
-   * Install NGINX and wait up to 5 minutes until the NGINX pod is ready.
+   * Install NGINX and wait up to five minutes until the NGINX pod is ready.
    *
    * @param nginxNamespace the namespace in which the NGINX will be installed
    * @param nodeportshttp the http nodeport of NGINX
@@ -223,7 +223,7 @@ public class CommonUtils {
   }
 
   /**
-   * Create a domain in the specified namespace and wait up to 5 minutes until the domain exists.
+   * Create a domain in the specified namespace and wait up to five minutes until the domain exists.
    *
    * @param domain the oracle.weblogic.domain.Domain object to create domain custom resource
    * @param domainNamespace namespace in which the domain will be created
@@ -261,19 +261,17 @@ public class CommonUtils {
    *
    * @param domainUid WebLogic domainUid which is backend to the ingress to be created
    * @param domainNamespace WebLogic domain namespace in which the domain exists
-   * @param managedServerPort port number of WebLogic domain managed servers
-   * @param clusterNames list of the WebLogic domain cluster names in the domain
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @return list of ingress hosts
    */
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
-                                                             int managedServerPort,
-                                                             List<String> clusterNames) {
+                                                             Map<String, Integer> clusterNameMSPortMap) {
 
     // create an ingress in domain namespace
     String ingressName = domainUid + "-nginx";
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, managedServerPort, clusterNames);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap);
 
     assertNotNull(ingressHostList,
         String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -291,13 +289,13 @@ public class CommonUtils {
   }
 
   /**
-   * Check pod is created.
+   * Check pod exists in the specified namespace.
    *
    * @param podName pod name to check
-   * @param domainUid the domain in which the pod exists
+   * @param domainUid the label the pod is decorated with
    * @param domainNamespace the domain namespace in which the domain exists
    */
-  public static void checkPodCreated(String podName, String domainUid, String domainNamespace) {
+  public static void checkPodExists(String podName, String domainUid, String domainNamespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
@@ -315,7 +313,7 @@ public class CommonUtils {
    * Check pod is ready.
    *
    * @param podName pod name to check
-   * @param domainUid the domain in which the pod exists
+   * @param domainUid the label the pod is decorated with
    * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
@@ -333,68 +331,68 @@ public class CommonUtils {
   }
 
   /**
-   * Check service is created.
+   * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
-   * @param domainNamespace the domain namespace in which the service exists
+   * @param namespace the namespace in which to check for the service
    */
-  public static void checkServiceCreated(String serviceName, String domainNamespace) {
+  public static void checkServiceExists(String serviceName, String namespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
+            condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 serviceName,
-                domainNamespace,
+                namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domainNamespace),
+        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
             String.format("serviceExists failed with ApiException for service %s in namespace %s",
-                serviceName, domainNamespace)));
+                serviceName, namespace)));
   }
 
   /**
-   * Check pod was deleted.
+   * Check pod does not exist in the specified namespace.
    *
    * @param podName pod name to check
-   * @param domainUid the domain uid in which the pod exists
-   * @param domainNamespace the domain namespace in which the domain exists
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which to check whether the pod exists
    */
-  public static void checkPodDeleted(String podName, String domainUid, String domainNamespace) {
+  public static void checkPodDoesNotExist(String podName, String domainUid, String namespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 podName,
-                domainNamespace,
+                namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domainNamespace),
+        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, namespace),
             String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
-                podName, domainNamespace)));
+                podName, namespace)));
   }
 
   /**
-   * Check service was deleted.
+   * Check service does not exist in the specified namespace.
    *
    * @param serviceName service name to check
-   * @param domainNamespace the namespace in which to check whether the service was deleted
+   * @param namespace the namespace in which to check the service does not exist
    */
-  public static void checkServiceDeleted(String serviceName, String domainNamespace) {
+  public static void checkServiceDoesNotExist(String serviceName, String namespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 serviceName,
-                domainNamespace,
+                namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, domainNamespace),
+        .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
             String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
-                serviceName, domainNamespace)));
+                serviceName, namespace)));
   }
 
   /**
-   * Create a Docker image for model in image domain.
+   * Create a Docker image for a model in image domain.
    *
    * @param imageNameBase the base image name used in local or to construct the image name in repository
    * @param wdtModelFile the WDT model file used to build the Docker image
@@ -490,14 +488,14 @@ public class CommonUtils {
    * @param dockerImage the Docker image to push to registry
    */
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
-    // docker login, if necessary
-    if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-      logger.info("docker login");
-      assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
-    }
-
     // push image, if necessary
-    if (!REPO_NAME.isEmpty()) {
+    if (!REPO_NAME.isEmpty() && dockerImage.contains(REPO_NAME)) {
+      // docker login, if necessary
+      if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+        logger.info("docker login");
+        assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+      }
+
       logger.info("docker push image {0} to {1}", dockerImage, REPO_NAME);
       assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
     }
@@ -528,11 +526,11 @@ public class CommonUtils {
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
-   *  And verify the sample app can be accessed through NGINX.
+   *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
    *
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param domainUid the domain to which the cluster belongs
-   * @param domainNamespace the domain namespace in which the domain exists
+   * @param domainNamespace the namespace in which the domain exists
    * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
    * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
    * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
@@ -568,7 +566,8 @@ public class CommonUtils {
     assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
         .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
             clusterName, domainUid, domainNamespace)
-        .withFailMessage("Scaling cluster failed")
+        .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
+            clusterName, domainUid, domainNamespace)
         .isTrue();
 
     if (replicasBeforeScale <= replicasAfterScale) {
@@ -601,20 +600,20 @@ public class CommonUtils {
       for (int i = replicasBeforeScale + 1; i <= replicasAfterScale; i++) {
         String manageServerPodName = manageServerPodNamePrefix + i;
 
-        // check new managed server pod was created
-        logger.info("Checking that the new managed server pod {0} was created in namespace {1}",
+        // check new managed server pod exists in the namespace
+        logger.info("Checking that the new managed server pod {0} exists in namespace {1}",
             manageServerPodName, domainNamespace);
-        checkPodCreated(manageServerPodName, domainUid, domainNamespace);
+        checkPodExists(manageServerPodName, domainUid, domainNamespace);
 
         // check new managed server pod is ready
         logger.info("Checking that the new managed server pod {0} is ready in namespace {1}",
             manageServerPodName, domainNamespace);
         checkPodReady(manageServerPodName, domainUid, domainNamespace);
 
-        // check new managed server service was created
-        logger.info("Checking that the new managed server service {0} was created in namespace {1}",
+        // check new managed server service exists in the namespace
+        logger.info("Checking that the new managed server service {0} exists in namespace {1}",
             manageServerPodName, domainNamespace);
-        checkServiceCreated(manageServerPodName, domainNamespace);
+        checkServiceExists(manageServerPodName, domainNamespace);
 
         if (expectedServerNames != null) {
           // add the new managed server to the list
@@ -637,7 +636,7 @@ public class CommonUtils {
       for (int i = replicasBeforeScale; i > replicasAfterScale; i--) {
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
             manageServerPodNamePrefix + i, domainNamespace);
-        checkPodDeleted(manageServerPodNamePrefix + i, domainUid, domainNamespace);
+        checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
         expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
       }
 
