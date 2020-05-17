@@ -218,14 +218,12 @@ public class TestActions {
    * @param ingressName the name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which to create the ingress
    * @param domainUid WebLogic domainUid which is backend to the ingress
-   * @param managedServerPort the port number of the WebLogic domain managed servers
-   * @param clusterNames list of the WebLogic domain cluster names in the domain
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(String ingressName, String domainNamespace, String domainUid,
-                                      int managedServerPort, List<String> clusterNames) {
-    return Nginx.createIngress(ingressName, domainNamespace, domainUid,
-                               managedServerPort, clusterNames);
+                                           Map<String, Integer> clusterNameMsPortMap) {
+    return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap);
   }
 
   /**

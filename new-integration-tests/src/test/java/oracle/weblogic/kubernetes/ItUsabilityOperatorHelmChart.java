@@ -4,8 +4,9 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -44,18 +45,18 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodCreated;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceCreated;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createDockerRegistrySecret;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -151,8 +152,8 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
             String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                 adminServerPodName, domainNamespace));
 
-    // get the managed server pod original creation timestamp
-    logger.info("Getting managed server pods original creation timestamp");
+    // get the managed server pods original creation timestamps
+    logger.info("Getting managed server pods original creation timestamps");
     List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       final String managedServerPodName = managedServerPrefix + i;
@@ -164,8 +165,11 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
 
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(clusterName, managedServerPort);
+
     ingressHostList =
-        createIngressForDomainAndVerify(domainUid, domainNamespace, managedServerPort, Arrays.asList(clusterName));
+        createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
 
     // verify the sample apps for the domain
     logger.info("Checking that the sample app can be accessed from all managed servers through NGINX");
@@ -175,15 +179,21 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     logger.info("Uninstalling operator");
     uninstallOperator(opHelmParams);
 
-    // verify the operator pod was deleted
-    logger.info("Checking that operator pod was deleted");
-    checkPodDeleted("weblogic-operator-", null, opNamespace);
+    // verify the operator pod does not exist in the operator namespace
+    logger.info("Checking that operator pod does not exist in operator namespace");
+    checkPodDoesNotExist("weblogic-operator-", null, opNamespace);
 
-    // verify the operator service was deleted
-    logger.info("Checking that operator service was deleted");
-    checkServiceDeleted(OPERATOR_SERVICE_NAME, opNamespace);
+    // verify the operator service does not exist in the operator namespace
+    logger.info("Checking that operator service does not exist in operator namespace");
+    checkServiceDoesNotExist(OPERATOR_SERVICE_NAME, opNamespace);
 
     // check that the state of admin server pod in the domain was not changed
+    // wait some time here to ensure the pod state is not changed
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      // ignore
+    }
     logger.info("Checking that the admin server pod state was not changed after the operator was deleted");
     assertThat(podStateNotChanged(adminServerPodName, domainUid, domainNamespace, adminPodOriginalTimestamp))
         .as("Test state of pod {0} was not changed in namespace {1}", adminServerPodName, domainNamespace)
@@ -294,39 +304,39 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
-    // check that admin server pod was created in the domain
-    logger.info("Checking that admin server pod {0} was created in namespace {1}",
+    // check that admin server pod exists in the domain namespace
+    logger.info("Checking that admin server pod {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
+    checkPodExists(adminServerPodName, domainUid, domainNamespace);
 
     // check that admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check that admin service was created in the domain
-    logger.info("Checking that admin service {0} was created in namespace {1}",
+    // check that admin service exists in the domain namespace
+    logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
-    // check for managed server pods existence in the domain
+    // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
 
-      // check that the managed server pod was created
-      logger.info("Checking that managed server pod {0} was created in namespace {1}",
+      // check that the managed server pod exists
+      logger.info("Checking that managed server pod {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkPodCreated(managedServerPodName, domainUid, domainNamespace);
+      checkPodExists(managedServerPodName, domainUid, domainNamespace);
 
       // check that the managed server pod is ready
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
       checkPodReady(managedServerPodName, domainUid, domainNamespace);
 
-      // check that the managed server service was created
-      logger.info("Checking that managed server service {0} was created in namespace {1}",
+      // check that the managed server service exists in the domain namespace
+      logger.info("Checking that managed server service {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkServiceCreated(managedServerPodName, domainNamespace);
+      checkServiceExists(managedServerPodName, domainNamespace);
     }
   }
 
