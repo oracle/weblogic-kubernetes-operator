@@ -92,14 +92,17 @@ public class WebLogicImageTool {
   } 
 
   private String buildiWitCommand() {
-    String command = 
-        IMAGE_TOOL 
+    String command =
+        IMAGE_TOOL
         + " update "
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
-        + " --wdtDomainType " + params.domainType()
-        + " --wdtModelOnly ";
-  
+        + " --wdtDomainType " + params.domainType();
+
+    if (params.wdtModelOnly()) {
+      command += " --wdtModelOnly ";
+    }
+
     if (params.modelFiles() != null && params.modelFiles().size() != 0) {
       command += " --wdtModel " + buildList(params.modelFiles());
     }
@@ -109,7 +112,15 @@ public class WebLogicImageTool {
     if (params.modelArchiveFiles() != null && params.modelArchiveFiles().size() != 0) {
       command += " --wdtArchive " + buildList(params.modelArchiveFiles());
     }
-  
+
+    if (params.domainHome() != null) {
+      command += " --wdtDomainHome " + params.domainHome();
+    }
+
+    if (params.wdtOperation() != null) {
+      command += " --wdtOperation " + params.wdtOperation();
+    }
+
     return command;
   }
 

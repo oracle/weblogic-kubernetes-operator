@@ -67,8 +67,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -596,12 +596,14 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createMiiImage(
+    //boolean result = createMiiImage(
+    boolean result = createImage(
         defaultWitParams()
             .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
+            .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));

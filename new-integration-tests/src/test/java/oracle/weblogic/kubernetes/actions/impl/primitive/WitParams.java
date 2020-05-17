@@ -44,6 +44,15 @@ public class WitParams {
   
   // The type of the WebLogic domain. The valid values are "WLS, "JRF", and "Restricted JRF"
   private String domainType;
+
+  // The Path to the domain_home for WDT
+  private String domainHome;
+
+  // WDT operation for "update" command. Supported values are "CREATE", "UPDATE", "DEPLOY"
+  private String wdtOperation;
+
+  //Install WDT and copy the models to the image, but do not create the domain
+  private boolean wdtModelOnly;
   
   // The env variables that are needed for running WIT
   private Map<String, String> env;
@@ -116,6 +125,33 @@ public class WitParams {
 
   public String domainType() {
     return domainType;
+  }
+
+  public String domainHome() {
+    return domainHome;
+  }
+
+  public WitParams domainHome(String domainHome) {
+    this.domainHome = domainHome;
+    return this;
+  }
+
+  public String wdtOperation() {
+    return wdtOperation;
+  }
+
+  public WitParams wdtOperation(String wdtOperation) {
+    this.wdtOperation = wdtOperation;
+    return this;
+  }
+
+  public boolean wdtModelOnly() {
+    return wdtModelOnly;
+  }
+
+  public WitParams wdtModelOnly(boolean wdtModelOnly) {
+    this.wdtModelOnly = wdtModelOnly;
+    return this;
   }
 
   public WitParams modelFiles(List<String> modelFiles) {

@@ -59,6 +59,14 @@ public interface TestConstants {
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_APP_NAME = "sample-app";
 
+  // WDT domain-in-image constants
+  public static final String WDT_BASIC_MODEL_FILE = "wdt-singleclusterdomain-sampleapp-wls.yaml";
+  public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
+  public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
+  public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
+  public static final String WDT_BASIC_IMAGE_DomainHome = "/u01/oracle/user_projects/domains/domain1";
+  public static final String WDT_BASIC_APP_NAME = "sample-app";
+
   // domain constants
   public static final String DOMAIN_VERSION = "v7";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
