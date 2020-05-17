@@ -4,7 +4,9 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -36,18 +38,18 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodCreated;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.checkServiceCreated;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createDockerRegistrySecret;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -119,12 +121,12 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     createMiiDomainWithMultiClusters();
 
     // create ingress using host based routing
-    List<String> clusterNames = new ArrayList<>();
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-      clusterNames.add(CLUSTER_NAME_PREFIX + i);
+      clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
     }
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    ingressHostList = createIngressForDomainAndVerify(domainUid, domainNamespace, MANAGED_SERVER_PORT, clusterNames);
+    ingressHostList = createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
   }
 
   @Test
@@ -153,9 +155,14 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
 
       String clusterName = CLUSTER_NAME_PREFIX + i;
-      int numberOfServers = 2 * i - 1;
-
+      int numberOfServers;
       // scale cluster-1 to 1 server and cluster-2 to 3 servers
+      if (i == 1) {
+        numberOfServers = 1;
+      } else {
+        numberOfServers = 3;
+      }
+
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers);
       curlCmd = generateCurlCmd(clusterName);
@@ -261,20 +268,20 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
-    // check admin server pod was created
-    logger.info("Checking that admin server pod {0} was created in namespace {1}",
+    // check admin server pod exists in domain namespace
+    logger.info("Checking that admin server pod {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
+    checkPodExists(adminServerPodName, domainUid, domainNamespace);
 
     // check admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check admin service was created
-    logger.info("Checking that admin service {0} was created in namespace {1}",
+    // check admin service exists in the domain namespace
+    logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check the readiness for the managed servers in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
@@ -282,20 +289,20 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         String managedServerPodName =
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
 
-        // check managed server pod was created
-        logger.info("Checking that managed server pod {0} was created in namespace {1}",
+        // check managed server pod exists in the namespace
+        logger.info("Checking that managed server pod {0} exists in namespace {1}",
             managedServerPodName, domainNamespace);
-        checkPodCreated(managedServerPodName, domainUid, domainNamespace);
+        checkPodExists(managedServerPodName, domainUid, domainNamespace);
 
         // check managed server pod is ready
         logger.info("Checking that managed server pod {0} is ready in namespace {1}",
             managedServerPodName, domainNamespace);
         checkPodReady(managedServerPodName, domainUid, domainNamespace);
 
-        // check managed server service was created
-        logger.info("Checking that managed server service {0} was created in namespace {1}",
+        // check managed server service exists in the domain namespace
+        logger.info("Checking that managed server service {0} exists in namespace {1}",
             managedServerPodName, domainNamespace);
-        checkServiceCreated(managedServerPodName, domainNamespace);
+        checkServiceExists(managedServerPodName, domainNamespace);
       }
     }
   }
@@ -307,16 +314,8 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    * @return curl command string
    */
   private String generateCurlCmd(String clusterName) {
-    int index = 0;
-    for (int i = 0; i < ingressHostList.size(); i++) {
-      if (ingressHostList.get(i).contains(clusterName)) {
-        index = i;
-        break;
-      }
-    }
-
     return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-        ingressHostList.get(index), K8S_NODEPORT_HOST, nodeportshttp);
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
   }
 
   /**
