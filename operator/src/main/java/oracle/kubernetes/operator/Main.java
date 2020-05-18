@@ -105,6 +105,23 @@ public class Main {
   private static String principal;
   private static KubernetesVersion version = null;
 
+  /* MARKER-2.6.0-ONLY */
+  // This is needed only for 2.6.0 -- do not forward port to 3.x
+  // In 3.0.0, we are switching the CRD to enable the domain status endpoint. This means that all updates to the
+  // domain status must be made against that REST endpoint and that (according to the K8s doc) attempts to
+  // update the domain status through the normal endpoint will be ignored.
+  //
+  // However, for Kubernetes versions less than 1.16, the 2.6.0 CRD needs to remain
+  // unchanged for interoperability with 2.5.0. Therefore, 2.6.0 will detect if a 3.x operator has changed the
+  // CRD and modify its behavior. This provides an upgrade path from 2.x to 3.x, which is that all operators
+  // must be updated to 2.6.0 before a 3.0.0 operator is introduced to the cluster, but if this strategy is used
+  // then 2.5.0 is compatible with 2.6.0 and 2.6.0 is compatible with 3.0.0.
+  //
+  // When running on 1.16 and above, 2.6.0 will also create a CRD with the status endpoint enabled since there is
+  // no need to be compatible with 2.5.0.
+  public static AtomicBoolean useDomainStatusEndpoint = new AtomicBoolean(false);
+  /* END-2.6.0-ONLY */
+
   static {
     try {
       // suppress System.err since we catch all necessary output with Logger
