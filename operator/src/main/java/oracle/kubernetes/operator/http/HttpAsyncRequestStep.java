@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import oracle.kubernetes.operator.helpers.HttpClientPool;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -38,6 +37,7 @@ public class HttpAsyncRequestStep extends Step {
   private static FutureFactory factory = DEFAULT_FACTORY;
   private final HttpRequest request;
   private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
+  private static final HttpClient httpClient = HttpClient.newBuilder().build();
 
   private HttpAsyncRequestStep(HttpRequest request, HttpResponseStep responseStep) {
     super(responseStep);
@@ -123,11 +123,7 @@ public class HttpAsyncRequestStep extends Step {
 
 
   private static CompletableFuture<HttpResponse<String>> createFuture(HttpRequest request) {
-    return takeClient().sendAsync(request, HttpResponse.BodyHandlers.ofString());
-  }
-
-  private static HttpClient takeClient() {
-    return HttpClientPool.getInstance().take();
+    return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
   }
 
   static class HttpTimeoutException extends RuntimeException {

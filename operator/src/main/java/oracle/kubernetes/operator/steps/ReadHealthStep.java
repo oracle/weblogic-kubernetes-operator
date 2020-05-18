@@ -129,7 +129,7 @@ public class ReadHealthStep extends Step {
       if (secretData != null) {
         byte[] username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
         byte[] password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
-        packet.put(ProcessingConstants.KEY, createEncodedCredentials(username, password));
+        packet.put(ProcessingConstants.ENCODED_CREDENTIALS, createEncodedCredentials(username, password));
 
         clearCredential(username);
         clearCredential(password);
@@ -294,7 +294,7 @@ public class ReadHealthStep extends Step {
     }
 
     String getEncodedCredentials() {
-      return (String) packet.get(ProcessingConstants.KEY);
+      return (String) packet.get(ProcessingConstants.ENCODED_CREDENTIALS);
     }
 
     public V1Service getService() {
