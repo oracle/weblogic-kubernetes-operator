@@ -322,7 +322,6 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withRestartVersion(String restartVersion);
 
-
   /**
    * Defines a secret reference for the domain.
    * @param secretName the name of the secret
