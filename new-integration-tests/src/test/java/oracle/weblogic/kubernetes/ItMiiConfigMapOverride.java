@@ -69,9 +69,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -372,7 +372,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-
+    
     assertTrue(assertDoesNotThrow(
         () -> (podsRollingRestarted(domainUid, domainNamespace)),
          "Rolling restart didn't happen correctly"),
@@ -396,7 +396,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     }
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/wls/latest/datasources/id/TestDataSource/")
