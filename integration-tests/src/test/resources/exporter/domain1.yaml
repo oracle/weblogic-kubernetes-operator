@@ -14,7 +14,7 @@ metadata:
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user-projects/domains/domain1
-  domainHomeSourceType: Image
+  domainHomeInImage: true
   image: domain1-image:1.0
   imagePullPolicy: "Always"
   imagePullSecrets:
