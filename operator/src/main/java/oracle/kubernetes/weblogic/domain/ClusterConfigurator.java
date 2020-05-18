@@ -128,6 +128,4 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withToleration(V1Toleration toleration);
 
   ClusterConfigurator withPrecreateServerService(boolean precreateServerService);
-
-  ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize);
 }
