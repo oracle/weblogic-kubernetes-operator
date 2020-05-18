@@ -48,9 +48,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/<domainUID> if domainHomeSourceType is PersistentVolume."
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeSourceType is Image."
-          + " Defaults to /u01/domains/<domainUID> if domainHomeSourceType is FromModel.")
+          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.")
   private String domainHome;
 
   /**
@@ -80,13 +79,12 @@ public class DomainSpec extends BaseConfiguration {
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
-   * The in-pod name of the directory to store the domain, Node Manager, server logs, server
-   * .out, and HTTP access log files in.
+   * The in-pod name of the directory to store the domain, Node Manager, server logs, and server
+   * .out files in.
    */
   @Description(
       "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
-          + "server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. "
-          + "Ignored if logHomeEnabled is false.")
+          + "and server *.out files")
   private String logHome;
 
   /**
@@ -96,7 +94,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "Specified whether the log home folder is enabled. Not required. "
-          + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
+          + "Defaults to true if domainHomeInImage is false. "
+          + "Defaults to false if domainHomeInImage is true. ")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
@@ -114,20 +113,13 @@ public class DomainSpec extends BaseConfiguration {
   @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
 
-  /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
-   *  if {@link #logHomeEnabled} is true. Default is true. */
-  @Description("If true (the default), then server HTTP access log files will be written to the same "
-      + "directory specified in `logHome`. Otherwise, server HTTP access log files will be written to "
-      + "the directory configured in the WebLogic domain home configuration.")
-  private Boolean httpAccessLogInLogHome;
-
   /**
    * The WebLogic Docker image.
    *
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
-      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+      "The WebLogic Docker image; required when domainHomeInImage is true; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
@@ -346,18 +338,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  /**
-   * Reference to secret containing WebLogic startup credentials username and password. Secret must
-   * contain keys names 'username' and 'password'. Required.
-   *
-   * @param opssKeyPassPhrase WebLogic startup credentials secret
-   * @return this
-   */
-  public DomainSpec withOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
-    this.webLogicCredentialsSecret = opssKeyPassPhrase;
-    return this;
-  }
-
   @Nullable
   public String getImage() {
     return image;
@@ -425,7 +405,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return log home enabled
    */
   Boolean isLogHomeEnabled() {
-    return logHomeEnabled;
+    return Optional.ofNullable(logHomeEnabled).orElse(!isDomainHomeInImage());
   }
 
   /**
@@ -481,13 +461,7 @@ public class DomainSpec extends BaseConfiguration {
    *     to the directory as configured in the WebLogic domain home configuration
    */
   boolean getHttpAccessLogInLogHome() {
-    return Optional.ofNullable(httpAccessLogInLogHome)
-        .orElse(KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME);
-  }
-
-  public DomainSpec withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
-    this.httpAccessLogInLogHome = httpAccessLogInLogHome;
-    return this;
+    return KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME;
   }
 
   /**
@@ -497,7 +471,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   Boolean isDomainHomeInImage() {
-    return domainHomeInImage;
+    return Optional.ofNullable(domainHomeInImage).orElse(true);
   }
 
   /**
