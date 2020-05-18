@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
