@@ -70,7 +70,7 @@ function state_dump {
     for pod in $pods; do
       local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
       local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      $kubectlcmd log $pod -n $namespace > $logfile
+      $kubectlcmd logs $pod -n $namespace > $logfile
       $kubectlcmd describe pod $pod -n $namespace > $descfile
     done
   done

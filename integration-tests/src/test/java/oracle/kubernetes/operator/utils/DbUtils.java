@@ -6,10 +6,12 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import oracle.kubernetes.operator.BaseTest;
+
 public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "container-registry.oracle.com/middleware/fmw-infrastructure";
-  public static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
+  public static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.4";
   public static final String DEFAULT_RCU_SCHEMA_USERNAME = "myrcuuser";
   public static final String DEFAULT_RCU_SCHEMA_PASSWORD = "Oradoc_db1";
   public static final String DEFAULT_RCU_SYS_USERNAME = "sys";
@@ -31,7 +33,7 @@ public class DbUtils {
     String dbnamespace = oracledb.getNamespace();
     String cmd = "kubectl get pod -n " + dbnamespace + " -o jsonpath=\"{.items[0].metadata.name}\"";
     logger.info("running command " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
     String podName = result.stdout();
 
     logger.info("DEBUG: db namespace=" + dbnamespace);
@@ -53,10 +55,11 @@ public class DbUtils {
   public static void startOracleDB(String scriptsDir) throws Exception {
     String cmd1 = "sh "
         + scriptsDir
-        + "/scripts/create-oracle-db-service/start-db-service.sh";
-    TestUtils.exec(cmd1, true);
+        + "/scripts/create-oracle-db-service/start-db-service.sh -i "
+        + BaseTest.getOracledbImageName() + ":" + BaseTest.getOracledbImageTag();
+    TestUtils.execOrAbortProcess(cmd1, true);
     String cmd2 = "kubectl get pod | grep oracle-db | cut -f1 -d \" \" ";
-    ExecResult result = TestUtils.exec(cmd2);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd2);
     String podName = result.stdout();
 
     logger.info("DEBUG: DB podname=" + podName);
@@ -77,7 +80,7 @@ public class DbUtils {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-oracle-db-service/stop-db-service.sh";
-    TestUtils.exec(cmd, true);
+    TestUtils.execOrAbortProcess(cmd, true);
   }
   
   /**
@@ -89,8 +92,10 @@ public class DbUtils {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-rcu-schema/create-rcu-schema.sh -s "
-        + rcuSchemaPrefix;
-    TestUtils.exec(cmd, true);
+        + rcuSchemaPrefix
+        + " -i "
+        + BaseTest.getfmwImageName() + ":" + BaseTest.getfmwImageTag();
+    TestUtils.execOrAbortProcess(cmd, true);
   }
   
   /**
@@ -102,7 +107,7 @@ public class DbUtils {
     String cmd = "sh " 
         + scriptsDir
         + "/scripts/create-rcu-schema/drop-rcu-schema.sh -s rcuSchemaPrefix";
-    TestUtils.exec(cmd, true);
+    TestUtils.execOrAbortProcess(cmd, true);
   }
   
   /**
@@ -114,7 +119,7 @@ public class DbUtils {
     String cmd = "kubectl delete -f " 
         + scriptsDir
         + "/scripts/create-rcu-schema/common/rcu.yaml --ignore-not-found";
-    TestUtils.exec(cmd, true);
+    TestUtils.execOrAbortProcess(cmd, true);
   }
 
   /**
@@ -192,12 +197,12 @@ public class DbUtils {
             + DEFAULT_FMWINFRA_DOCKER_IMAGETAG
             + " -- sleep 100000";
     logger.info("running command " + cmd);
-    TestUtils.exec(cmd);
+    TestUtils.execOrAbortProcess(cmd);
 
     // get rcu pod name
     cmd = "kubectl get pod -n " + rcuNamespace + " -o jsonpath=\"{.items[0].metadata.name}\"";
     logger.info("running command " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
+    ExecResult result = TestUtils.execOrAbortProcess(cmd);
     String podName = result.stdout();
     logger.info("DEBUG: rcuPodName=" + podName);
 
@@ -234,7 +239,7 @@ public class DbUtils {
     if (!namespace.equalsIgnoreCase("default")) {
       String command = "kubectl create ns " + namespace;
       logger.info("Running " + command);
-      TestUtils.exec(command);
+      TestUtils.execOrAbortProcess(command);
     }
   }
 }

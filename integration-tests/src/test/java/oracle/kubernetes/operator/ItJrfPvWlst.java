@@ -59,7 +59,7 @@ public class ItJrfPvWlst extends BaseTest {
     if (QUICKTEST) {
       createResultAndPvDirs(testClassName);
       
-      TestUtils.exec(
+      TestUtils.execOrAbortProcess(
           "cp -rf " 
           + BaseTest.getProjectRoot() 
           + "/kubernetes/samples/scripts " 
@@ -122,7 +122,7 @@ public class ItJrfPvWlst extends BaseTest {
         Map<String, Object> domainMap = createDomainMap(getNewSuffixCount(), testClassName);
         domainMap.put("namespace", domainNS);
         domainMap.put("initialManagedServerReplicas", new Integer("2"));
-        domainMap.put("image", "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3");
+        domainMap.put("image", "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4");
         domainMap.put("clusterName", "infra-cluster");
         domainMap.put("managedServerNameBase", "infraserver");
         domainMap.put("rcuSchemaPrefix", "jrfdomain");
@@ -132,7 +132,7 @@ public class ItJrfPvWlst extends BaseTest {
             "Creating and verifying the domain creation with domainUid: " + domainUid);
 
         jrfdomain = new JrfDomain(domainMap);
-        jrfdomain.verifyDomainCreated();
+        jrfdomain.verifyDomainCreated(80);
         
         // basic test cases
         testBasicUseCases(jrfdomain, false);
