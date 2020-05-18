@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -68,7 +67,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -91,8 +89,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("Test to create model in image domain with a configmap")
 @IntegrationTest
 class ItMiiConfigMap implements LoggedTest {
-
-  private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -331,9 +327,6 @@ class ItMiiConfigMap implements LoggedTest {
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    logger.info("Check admin server status by calling read state command");
-    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
-
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
@@ -354,7 +347,7 @@ class ItMiiConfigMap implements LoggedTest {
 
     int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
 
-    oracle.weblogic.kubernetes.utils.ExecResult result = null;
+    ExecResult result = null;
     checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
          .append("/management/weblogic/latest/domainConfig")
@@ -600,25 +593,6 @@ class ItMiiConfigMap implements LoggedTest {
             String.format(
                 "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
 
-  }
-
-  private void checkServerReadyStatusByExec(String podName, String namespace) {
-    final V1Pod pod = assertDoesNotThrow(() -> oracle.weblogic.kubernetes.assertions.impl.Kubernetes
-        .getPod(namespace, null, podName));
-
-    if (pod != null) {
-      ExecResult execResult = assertDoesNotThrow(
-          () -> execCommand(pod, null, true, READ_STATE_COMMAND));
-      if (execResult.exitValue() == 0) {
-        logger.info("execResult: " + execResult);
-        assertEquals("RUNNING", execResult.stdout(),
-            "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
-      } else {
-        fail("Ready command failed with exit status code: " + execResult.exitValue());
-      }
-    } else {
-      fail("Did not find pod " + podName + " in namespace " + namespace);
-    }
   }
 
 }
