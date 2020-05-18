@@ -167,8 +167,7 @@ public class Pod {
       int terminatingPods = 0;
       boolean givenPodTerminating = false;
       for (var pod : pods) {
-        V1Pod v1Pod = Kubernetes.getPod(namespace, null, pod);
-        if (v1Pod != null && v1Pod.getMetadata().getDeletionTimestamp() != null) {
+        if (Kubernetes.isPodTerminating(namespace, null, podName)) {
           terminatingPods++;
           if (pod.equals(podName)) {
             givenPodTerminating = true;
