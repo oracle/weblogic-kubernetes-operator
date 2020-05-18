@@ -72,7 +72,7 @@ public class OracleDB {
             + dbbundle
             + "\" --expose";
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
-    TestUtils.exec(command);
+    TestUtils.execOrAbortProcess(command);
   }
 
   public String getName() {

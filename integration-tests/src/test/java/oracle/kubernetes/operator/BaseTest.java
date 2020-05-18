@@ -5,7 +5,10 @@ package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -50,6 +53,7 @@ public class BaseTest {
   public static String GRAFANA_CHART_VERSION;
   public static String MONITORING_EXPORTER_VERSION;
   public static String MONITORING_EXPORTER_BRANCH;
+  public static String VOYAGER_VERSION;
   public static boolean INGRESSPERDOMAIN = true;
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String resultRootCommon = "";
@@ -71,7 +75,12 @@ public class BaseTest {
   private static String weblogicImageDevTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
+  private static String oracledbImageTag;
+  private static String oracledbImageName;
+  private static String fmwImageTag;
+  private static String fmwImageName;
   private static String domainApiVersion;
+  private static String crdVersion;
   private static int suffixCount = 0;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
@@ -81,6 +90,33 @@ public class BaseTest {
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+
+    VOYAGER_VERSION = System.getenv("VOYAGER_VERSION");
+    if (VOYAGER_VERSION == null) {
+      VOYAGER_VERSION = "10.0.0";
+    }
+
+    String cmd = "helm version --short --client";
+    ExecResult result = null;
+    LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmd);
+    try {
+      result = ExecCommand.exec(cmd);
+    } catch (Exception ex) {
+      throw new RuntimeException(
+          "FAILURE: command to get Helm Version "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, result.stdout());
+    System.out.println("BaseTest: Detected helm client version[" + result.stdout() + "]");
+    if (result.stdout().contains("v2")) {
+      throw new RuntimeException(
+          "FAILURE: BaseTest Unsupported Helm Version ["
+              + result.stdout()
+              + "]");
+    }
 
     // if QUICKTEST is false, run all the tests including QUICKTEST
     if (!QUICKTEST) {
@@ -106,7 +142,7 @@ public class BaseTest {
   /**
    * initializes the application properties and creates directories for results.
    *
-   * @param appPropsFile application properties file
+   * @param appPropsFile  application properties file
    * @param testClassName test class name
    * @throws Exception exception
    */
@@ -143,10 +179,30 @@ public class BaseTest {
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
             : appProps.getProperty("OCR_SERVER");
+    fmwImageTag =
+        System.getenv("IMAGE_TAG_FMWINFRA") != null
+            ? System.getenv("IMAGE_TAG_FMWINFRA")
+            : appProps.getProperty("fmwImageTag");
+    fmwImageName =
+        System.getenv("IMAGE_NAME_FMWINFRA") != null
+            ? System.getenv("IMAGE_NAME_FMWINFRA")
+            : appProps.getProperty("fmwImageName");
+    oracledbImageTag =
+        System.getenv("IMAGE_TAG_ORACLEDB") != null
+            ? System.getenv("IMAGE_TAG_ORACLEDB")
+            : appProps.getProperty("oracledbImageTag");
+    oracledbImageName =
+        System.getenv("IMAGE_NAME_ORACLEDB") != null
+            ? System.getenv("IMAGE_NAME_ORACLEDB")
+            : appProps.getProperty("oracledbImageName");
     domainApiVersion =
         System.getenv("DOMAIN_API_VERSION") != null
             ? System.getenv("DOMAIN_API_VERSION")
             : appProps.getProperty("DOMAIN_API_VERSION");
+    crdVersion =
+        System.getenv("CRD_VERSION") != null
+            ? System.getenv("CRD_VERSION")
+            : appProps.getProperty("CRD_VERSION");
     WDT_VERSION =
         System.getenv("WDT_VERSION") != null
             ? System.getenv("WDT_VERSION")
@@ -170,13 +226,20 @@ public class BaseTest {
             : appProps.getProperty("MONITORING_EXPORTER_BRANCH", "master");
 
     maxIterationsPod =
-        new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
-    waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
+        Integer.parseInt(System.getenv("MAX_ITERATIONS") != null
+            ? System.getenv("MAX_ITERATIONS")
+            : appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
+
+    waitTimePod =
+        Integer.parseInt(System.getenv("WAIT_TIME_SECONDS") != null
+            ? System.getenv("WAIT_TIME_SECONDS")
+            : appProps.getProperty("waitTimePod", "" + waitTimePod));
+
     if (System.getenv("RESULT_ROOT") != null) {
       resultRootCommon = System.getenv("RESULT_ROOT");
     } else {
       resultRootCommon = baseDir + "/" + System.getProperty("user.name")
-            + "/wl_k8s_test_results";
+          + "/wl_k8s_test_results";
     }
 
     if (System.getenv("PV_ROOT") != null) {
@@ -211,7 +274,7 @@ public class BaseTest {
     // for manual/local run, create file handler, create PVROOT
     if (!SHARED_CLUSTER) {
       LoggerHelper.getLocal().log(Level.INFO, "Creating PVROOT " + pvRoot);
-      TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
+      TestUtils.execOrAbortProcess("/usr/local/packages/aime/ias/run_as_root \"mkdir -m777 -p "
           + pvRoot + "\"", true);
     }
 
@@ -301,8 +364,48 @@ public class BaseTest {
     return weblogicImageServer;
   }
 
+  /**
+   * getter method for fmwImageTag field.
+   *
+   * @return image tag of the FMW docker images
+   */
+  public static String getfmwImageTag() {
+    return fmwImageTag;
+  }
+
+  /**
+   * getter method for fmwImageName.
+   *
+   * @return image name of the FMW docker image
+   */
+  public static String getfmwImageName() {
+    return fmwImageName;
+  }
+
+  /**
+   * getter method for oracledbImageTag field.
+   *
+   * @return image tag of the Oracle DB docker images
+   */
+  public static String getOracledbImageTag() {
+    return oracledbImageTag;
+  }
+
+  /**
+   * getter method for oracledbImageName.
+   *
+   * @return image name of the Oracle DB docker image
+   */
+  public static String getOracledbImageName() {
+    return oracledbImageName;
+  }
+
   public static String getDomainApiVersion() {
     return domainApiVersion;
+  }
+
+  public static String getCrdVersion() {
+    return crdVersion;
   }
 
   protected ExecResult cleanup() throws Exception {
@@ -389,9 +492,9 @@ public class BaseTest {
   /**
    * build web service app inside pod.
    *
-   * @param domain domain
+   * @param domain      domain
    * @param testAppName test application name
-   * @param wsName web service name
+   * @param wsName      web service name
    * @throws Exception exception
    */
   public static void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
@@ -442,7 +545,8 @@ public class BaseTest {
 
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() == 0) {
-        LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh " + result.stdout());
+        LoggerHelper.getLocal().log(Level.INFO, "Executed statedump.sh "
+            + result.stdout() + "\n" + result.stderr());
       } else {
         LoggerHelper.getLocal().log(Level.INFO, "Execution of statedump.sh failed, "
             + result.stderr() + "\n" + result.stdout());
@@ -504,12 +608,13 @@ public class BaseTest {
                 + result.stdout());
       }
 
+      int retriesForDeployment = 10;
       domain.deployWebAppViaWlst(
           TESTWEBAPP,
           getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
           appLocationInPod,
           getUsername(),
-          getPassword());
+          getPassword(), retriesForDeployment);
       domain.callWebAppAndVerifyLoadBalancing(TESTWEBAPP, verifyLoadBalancing);
 
       /* The below check is done for domain-home-in-image domains, it needs 12.2.1.3 patched image
@@ -701,7 +806,7 @@ public class BaseTest {
   }
 
   /**
-   * Scale the cluster up using Weblogic WLDF scaling.
+   * Scale the cluster up using WebLogic WLDF scaling.
    *
    * @throws Exception exception
    */
@@ -720,12 +825,13 @@ public class BaseTest {
     TestUtils.createRbacPoliciesForWldfScaling();
 
     // deploy opensessionapp
+    int retriesForDeployment = 10;
     domain.deployWebAppViaWlst(
         "opensessionapp",
         getProjectRoot() + "/src/integration-tests/apps/opensessionapp.war",
         appLocationInPod,
         getUsername(),
-        getPassword());
+        getPassword(), retriesForDeployment);
 
     TestUtils.createWldfModule(
         adminPodName, domainNS, ((Integer) domainMap.get("t3ChannelPort")).intValue());
@@ -760,6 +866,7 @@ public class BaseTest {
    */
   public void testOperatorLifecycle(Operator operator, Domain domain) throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "Inside testOperatorLifecycle");
+    operator.writePodLog(getResultDir() + "/state-dump-logs/");
     operator.destroy();
     operator.create();
     operator.verifyExternalRestService();
@@ -789,7 +896,7 @@ public class BaseTest {
 
     TestUtils.kubectlexec(podName, domainNS,
         "chmod +x /shared/domains/"
-                  + domainUid + "/bin/scripts/scalingAction.sh");
+            + domainUid + "/bin/scripts/scalingAction.sh");
 
   }
 
@@ -825,6 +932,7 @@ public class BaseTest {
 
   /**
    * Returns a new suffixCount value which can be used to make namespaces,ports unique.
+   *
    * @return new suffixCount
    */
   public static int getNewSuffixCount() {
@@ -873,7 +981,7 @@ public class BaseTest {
    * @return map with domain input attributes
    */
   public Map<String, Object> createDomainMap(
-                      int suffixCount, String prefix) {
+      int suffixCount, String prefix) {
     Map<String, Object> domainMap = new HashMap<String, Object>();
     domainMap.put("domainUID", prefix.toLowerCase() + "-domain-" + suffixCount);
     domainMap.put("namespace", prefix.toLowerCase() + "-domainns-" + suffixCount);
@@ -937,16 +1045,20 @@ public class BaseTest {
       domainMap.put("domainHomeImageBuildPath",
           "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image");
     }
-    domainMap.put("domainHomeImageBase",
-        "container-registry.oracle.com/middleware/weblogic:12.2.1.3");
+    domainMap.put("domainHomeImageBase", weblogicImageName + ":" + weblogicImageTag);
     domainMap.put("logHomeOnPV", "true");
     domainMap.put("clusterType", "CONFIGURED");
+
+    // To get unique image name
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    String currentDateTime = dateFormat.format(date) + "-" + System.currentTimeMillis();
+
     if (prefix != null && !prefix.trim().equals("")) {
-      domainMap.put("image", prefix.toLowerCase() + "-dominimage-" + suffixCount + ":latest");
+      domainMap.put("image", prefix.toLowerCase() + "-dominimage:" + currentDateTime);
     } else {
-      domainMap.put("image", "dominimage-" + suffixCount + ":latest");
+      domainMap.put("image", "dominimage:" + currentDateTime);
     }
     return domainMap;
   }
-
 }
