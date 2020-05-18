@@ -22,7 +22,7 @@ weight: 5
         --wait
     ```
 
-1.  Configure Traefik to manage Ingresses created in this namespace:
+1.  Configure Traefik to manage ingresses created in this namespace:
 
     ```bash
     $ helm upgrade traefik-operator stable/traefik \

@@ -8,7 +8,7 @@ description: "The operator consists of several parts: the operator runtime, the 
 
 The operator consists of the following parts:
 
-*	The operator runtime, a process that runs in a Docker container deployed into a Kubernetes pod and which performs the actual management tasks.
+*	The operator runtime, a process that runs in a Docker container deployed into a Kubernetes Pod and which performs the actual management tasks.
 * The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains.
 *	A Helm chart for installing the operator runtime and related resources.
 * A variety of sample shell scripts for preparing or packaging  WebLogic domains for running in Kubernetes.

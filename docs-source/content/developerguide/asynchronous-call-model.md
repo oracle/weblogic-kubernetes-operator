@@ -6,7 +6,7 @@ weight: 7
 ---
 
 
-Our expectation is that customers will task the operator with managing hundreds of WebLogic domains across dozens of Kubernetes namespaces.  Therefore, we have designed the operator with an efficient user-level threads pattern.  We've used that pattern to implement an asynchronous call model for Kubernetes API requests.  This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.
+Our expectation is that customers will task the operator with managing hundreds of WebLogic domains across dozens of Kubernetes Namespaces.  Therefore, we have designed the operator with an efficient user-level threads pattern.  We've used that pattern to implement an asynchronous call model for Kubernetes API requests.  This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.
 
 #### User-level thread pattern
 

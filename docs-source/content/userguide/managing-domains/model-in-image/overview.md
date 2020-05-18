@@ -20,7 +20,7 @@ This feature is supported only in 3.0.0-RC1.
 
 #### Introduction
 
-Model in Image is an alternative to the operator's Domain in Image and Domain on PV domain types. See [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
+Model in Image is an alternative to the operator's Domain in Image and Domain in PV domain types. See [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
 
 Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your domain resource.
 
@@ -29,7 +29,7 @@ It enables:
  - Defining a WebLogic domain home configuration using WebLogic Deploy Tool (WDT) model files and application archives.
  - Embedding model files and archives in a custom Docker image, and using the WebLogic Image Tool (WIT) to generate this image.
  - Supplying additional model files using a Kubernetes ConfigMap.
- - Supplying Kubernetes secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
+ - Supplying Kubernetes Secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
  - Updating WDT model files at runtime. For example, you can add a data source to a running domain. Note that all such updates currently cause the domain to 'roll' in order to take effect.
 
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
@@ -43,7 +43,7 @@ For JRF domains, Model in Image provides additional support for initializing the
 
 When you deploy a Model in Image domain resource:
 
-  - The operator will run a Kubernetes job called the 'introspector job' that:
+  - The operator will run a Kubernetes Job called the 'introspector job' that:
     - Merges your WDT artifacts.
     - Runs WDT tooling to generate a domain home.
     - Packages the domain home and passes it to the operator.
