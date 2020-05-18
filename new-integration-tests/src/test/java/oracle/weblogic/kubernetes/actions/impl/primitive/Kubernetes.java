@@ -345,6 +345,7 @@ public class Kubernetes implements LoggedTest {
   }
 
   // --------------------------- pods -----------------------------------------
+
   /**
    * Get a pod's log.
    *
@@ -464,13 +465,12 @@ public class Kubernetes implements LoggedTest {
   public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
-    // DateTimeFormatter dtf = DateTimeFormat.forPattern("YYYYMMDDHHmmss");
+
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod != null) {
-      // return pod.getMetadata().getCreationTimestamp().toString();
+    if (pod != null && pod.getMetadata() != null) {
       return dtf.print(pod.getMetadata().getCreationTimestamp());
     } else {
-      logger.info("getPodCreationTimestamp(): Pod doesn't exist");
+      logger.info("Pod doesn't exist or pod metadata is null");
       return null;
     }
   }
@@ -2024,7 +2024,9 @@ public class Kubernetes implements LoggedTest {
 
       // wait for reading thread to finish any last remaining output
       if (out != null) {
-        out.join();
+        // need to time out here, otherwise the command can take almost one minute to return.
+        // yet to see if we'll need a different timeout value for different environments.
+        out.join(1200);
       }
 
       // Read data from process's stdout

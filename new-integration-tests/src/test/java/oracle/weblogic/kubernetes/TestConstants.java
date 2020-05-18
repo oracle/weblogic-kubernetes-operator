@@ -15,6 +15,9 @@ public interface TestConstants {
   // domain constants
   public static final String DOMAIN_VERSION = "v7";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+  public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
+  public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
+  public static final String WLS_DOMAIN_TYPE = "WLS";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -24,6 +27,7 @@ public interface TestConstants {
       "oracle/weblogic-kubernetes-operator";
   public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
       "../buildDockerImage.sh";
+  public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
   public static final String REPO_DUMMY_VALUE = "dummy";
   public static final String REPO_SECRET_NAME = "ocir-secret";
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
@@ -76,5 +80,12 @@ public interface TestConstants {
   public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_APP_NAME = "sample-app";
+  public static final String MII_TWO_APP_WDT_MODEL_FILE = "model-singlecluster-two-sampleapp-wls.yaml";
+
+  // application constants
+  public static final String MII_APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
+  public static final String MII_APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
+  public static final String MII_APP_RESPONSE_V3 = "How are you doing! You have reached server managed-server";
+  public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
 }
