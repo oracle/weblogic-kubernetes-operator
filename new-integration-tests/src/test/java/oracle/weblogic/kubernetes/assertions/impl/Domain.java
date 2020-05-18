@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
@@ -89,55 +90,49 @@ public class Domain {
    * @param image name of the image that the pod is expected to be using
    * @return true if domain resource's image matches the expected value
    */
-  public static Callable<Boolean> domainResourceImagePatched(
+  public static boolean domainResourceImagePatched(
       String domainUID,
       String namespace,
       String image
   ) {
-    return () -> {
-      oracle.weblogic.domain.Domain domain = null;
-      try {
-        domain = oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes
-                .getDomainCustomResource(domainUID, namespace);
-      } catch (ApiException apex) {
-        logger.severe("Failed to obtain the domain resource object from the API server", apex);
-        return false;
-      }
+    oracle.weblogic.domain.Domain domain = null;
+    try {
+      domain = getDomainCustomResource(domainUID, namespace);
+    } catch (ApiException apex) {
+      logger.severe("Failed to obtain the domain resource object from the API server", apex);
+      return false;
+    }
       
-      boolean domainPatched = (domain.spec().image().equals(image));
-      logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
-      return domainPatched;
-    };
+    boolean domainPatched = (domain.spec().image().equals(image));
+    logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
+    return domainPatched;
   }
 
   /**
-   * Check if the domain resource has been patched with a new WebLogic admin credentials secret.
+   * Check if the domain resource has been patched with a new WebLogic domain credentials secret.
    *
    * @param domainUID identifier of the domain resource
    * @param namespace Kubernetes namespace in which the domain exists
    * @param secretName name of the secret that the domain resource is expected to be using
-   * @return true if domain resource's image matches the expected value
+   * @return true if domain resource's webLogicCredentialsSecret matches the expected value
    */
-  public static Callable<Boolean> domainResourceAdminSecretPatched(
+  public static boolean domainResourceAdminSecretPatched(
       String domainUID,
       String namespace,
       String secretName
   ) {
-    return () -> {
-      oracle.weblogic.domain.Domain domain = null;
-      try {
-        domain = oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes
-                .getDomainCustomResource(domainUID, namespace);
-      } catch (ApiException apex) {
-        logger.severe("Failed to obtain the domain resource object from the API server", apex);
-        return false;
-      }
-      
-      boolean domainPatched = (domain.spec().webLogicCredentialsSecret().getName().equals(secretName));
-      logger.info("Domain Object patched : {0}, weblogicDomainSecret: {1}",
-          domain, domain.getSpec().webLogicCredentialsSecret().getName());
-      return domainPatched;
-    };
+    oracle.weblogic.domain.Domain domain = null;
+    try {
+      domain = getDomainCustomResource(domainUID, namespace);
+    } catch (ApiException apex) {
+      logger.severe("Failed to obtain the domain resource object from the API server", apex);
+      return false;
+    }
+    
+    boolean domainPatched = domain.spec().webLogicCredentialsSecret().getName().equals(secretName);
+    logger.info("Domain Object patched : {0}, webLogicCredentialsSecret: {1}",
+        domain, domain.getSpec().webLogicCredentialsSecret().getName());
+    return domainPatched;
   }
 
   public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {

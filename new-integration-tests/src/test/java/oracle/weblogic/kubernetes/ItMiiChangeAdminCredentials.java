@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Test to create model in image domain and verify the domain started successfully
+// Test to change the WebLogic credentials secret of a model in image domain and verify the change takes effect.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
@@ -74,7 +74,6 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   private static String domainUid = "domain1";
   private static ConditionFactory withStandardRetryPolicy = null;
 
-  // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
@@ -92,10 +91,10 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         .atMost(6, MINUTES).await();
 
     // get namespaces 
-    assertNotNull(namespaces.get(0), String.format("Namespace %s is null", namespaces.get(0)));
+    assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
     String opNamespace = namespaces.get(0);
 
-    assertNotNull(namespaces.get(1), String.format("Namespace %s is null", namespaces.get(1)));
+    assertNotNull(namespaces.get(1), String.format("Namespace namespaces.get(1) is null"));
     domainNamespace = namespaces.get(1);
 
     logger.info("Install an operator in namespace {0}, managing namespace {1}",
@@ -108,10 +107,11 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   }
   
   /**
-   * Test patching a running model-in-image domain with a new weblogicCredentialsSecret and then
+   * Test patching a running model-in-image domain with a new webLogicCredentialsSecret and then
    * update the domain's restartVersion to trigger a rolling restart of the managed server pods.
    * Verify that the WebLogic server pods are restarted by verifying that each pod's creation time,
    * and the weblogic.domainRestartVersion label are updated.
+   * Also verify that the new credentials are valid and can access WebLogic RESTful Management Services.
    */
   @Test
   @DisplayName("Change the WebLogic credentials")
@@ -124,10 +124,10 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     // get the creation time of the admin server pod before patching
     String adminPodLastCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
-        String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(adminPodLastCreationTime, "adminPodCreationTime returns NULL");
+        String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
+    assertNotNull(adminPodLastCreationTime, "creationTimestamp of the admin server pod is NULL");
 
-    logger.info("Domain {0} in namespace {1}, admin server pod {2} CreationTime before patching is {3}",
+    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
         domainUid,
         domainNamespace,
         adminServerPodName,
@@ -142,21 +142,21 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
             msLastCreationTime.add(creationTime);
 
-            logger.info("Domain {0} in namespace {1}, managed server pod {2} CreationTime before patching is {3}",
+            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
                 domainUid,
                 domainNamespace,
                 managedServerPodName,
                 creationTime);
           } 
         },
-        String.format("Failed to get PodCreationTime for managed server pods"));
+        String.format("Failed to get creationTimestamp for managed server pods"));
     
-    logger.info("Check that before patching current credentials are in valid and new credentials are not");
+    logger.info("Check that before patching current credentials are valid and new credentials are not");
     verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, VALID);
     verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, INVALID);
     
     // create a new secret for admin credentials
-    logger.info("Create a new secret for WebLogic admin credentials");
+    logger.info("Create a new secret that contains new WebLogic admin credentials");
     String adminSecretName = "weblogic-credentials-new";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
@@ -169,7 +169,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     logger.info("Patch domain {0} in namespace {1} with the secret {2}, and verify the result",
         domainUid, domainNamespace, adminSecretName); 
 
-    String restartVersion = patchAndVerifyDomainResource(
+    String restartVersion = patchDomainWithNewSecretAndVerify(
         domainUid,
         domainNamespace,
         adminServerPodName,
@@ -181,10 +181,10 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         domainUid, adminServerPodName, domainNamespace);
     checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodLastCreationTime);
     
-    // check that the admin server pod's label has been updated with the new restarVersion
+    // check that the admin server pod's label has been updated with the new restartVersion
     checkPodRestartVersionUpdated(adminServerPodName, domainUid, domainNamespace, restartVersion);
     
-    // check managed server pods are ready
+    // check that the managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       final String podName = managedServerPrefix + i;
       final String lastCreationTime = msLastCreationTime.get(i - 1);
@@ -192,7 +192,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
           podName, domainNamespace);
       checkPodRestarted(domainUid, domainNamespace, podName, lastCreationTime);
       
-      // check that the managed server pod's label has been updated with the new restarVersion`
+      // check that the managed server pod's label has been updated with the new restartVersion
       checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
     }
  
@@ -213,7 +213,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
    * @param secretName name of the new WebLogic admin credentials secret
    * @return restartVersion new restartVersion of the domain resource
    */
-  private String patchDomainResource(
+  private String patchDomainResourceWithNewAdminSecret(
       String domainResourceName,
       String namespace,
       String secretName
@@ -241,6 +241,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     patch =
         String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}\n]\n",
             newVersion);
+    
     logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
         domainResourceName, namespace, patch);
 
@@ -264,8 +265,19 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     return String.valueOf(newVersion);
   }
 
+  /**
+   * Create Domain object for creating a Kubernetes domain custom resource using the basic model-in-image image.
+   * 
+   * @param domainResourceName name of the domain resource
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret for introspector encryption
+   * @param replicaCount number of managed servers to start
+   * @return domain of the domain resource
+   */
   private static Domain createDomainResource(
-      String domainUid, 
+      String domainResourceName, 
       String domNamespace, 
       String adminSecretName,
       String repoSecretName, 
@@ -276,10 +288,10 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
-                    .name(domainUid)
+                    .name(domainResourceName)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
-                    .domainUid(domainUid)
+                    .domainUid(domainResourceName)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -313,8 +325,20 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
                         .introspectorJobActiveDeadlineSeconds(300L)));
 
   }
-
-  private String patchAndVerifyDomainResource(
+  
+  /**
+   * Patch domain resource with a new WebLogic domain credentials secret and a new restartVersion,
+   * and verify if the domain spec has been correctly updated.
+   * 
+   * @param domainUid name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName name of the WebLogic admin server
+   * @param managedServerPrefix prefix of the managed servers
+   * @param replicaCount number of managed servers to start
+   * @param secretNmae name of the secret that is used to patch the domain resource
+   * @return restartVersion of the domain resource
+   */
+  private String patchDomainWithNewSecretAndVerify(
       final String domainUid,
       final String namespace,
       final String adminServerPodName,
@@ -326,21 +350,28 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         "Patch domain resource {0} in namespace {1} to use the new secret {2}",
         domainUid, namespace, secretName);
 
-    String restartVersion = patchDomainResource(domainUid, namespace, secretName);
+    String restartVersion = patchDomainResourceWithNewAdminSecret(domainUid, namespace, secretName);
     
     logger.info(
         "Check that domain resource {0} in namespace {1} has been patched with new secret {3}",
         domainUid, namespace, secretName);
     checkDomainAdminSecretPatched(domainUid, namespace, secretName);
 
-    // check and wait for the admin server pod to be patched with the new image
+    // check and wait for the admin server pod to be patched with the new secret
     logger.info(
         "Check that admin server pod for domain resource {0} in namespace {1} has been patched with {2}: {3}",
-        domainUid, namespace, "/spec/WebLogicCredentialsSecret/name", secretName);
+        domainUid, namespace, "/spec/webLogicCredentialsSecret/name", secretName);
 
     return restartVersion;
   }
 
+  /**
+   * Check that domain resource has been updated with the new WebLogic domain credentials secret.
+   * 
+   * @param domainUid name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param newValue new secret name for the WebLogic domain credentials secret
+   */
   private void checkDomainAdminSecretPatched(
       String domainUid,
       String namespace,
@@ -397,13 +428,22 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             podName, namespace));
   }
   
+  /**
+   * Check if the given credentials are valid to access the WebLogic domain.
+   * 
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @param shouldBeValid true if the check expects a successful result
+   */
   private void verifyCredentials(
       String podName,
       String namespace,
       String username,
       String password,
       boolean shouldBeValid) {
-    logger.info("Check if new WebLogic admin credentials are valid");
+    logger.info("Check if the given WebLogic admin credentials are valid");
     boolean connectSucceeded = assertDoesNotThrow(
         () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
         String.format("Failed to check the credentials on pod %s", podName));
@@ -416,7 +456,11 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
           "Given credentials are valid when they are not expected to be"); 
     }
   }
-  
+
+  /**
+   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
+   *
+   */
   private static void createAndVerifyMiiDomain() {
     logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),

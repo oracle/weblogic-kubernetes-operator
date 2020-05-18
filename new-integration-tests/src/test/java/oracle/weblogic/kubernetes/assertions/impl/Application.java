@@ -132,7 +132,7 @@ public class Application {
    * @param namespace name of the namespace that the pod is running in
    * @param username WebLogic admin username
    * @param password WebLogic admin password
-   * @return true if the credentials are valid
+   * @return true if the RESTful Management Services command succeeded
    **/
   public static boolean credentialsValid(
       String host,

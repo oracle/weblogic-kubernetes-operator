@@ -80,7 +80,7 @@ public class TestAssertions {
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @param expectedRestartVersion restartVersion that is expected
-   * @return true if the pod has been restarted
+   * @return true if the pod's restartVersion has been updated
    */
   public static boolean podRestartVersionUpdated(
       String podName,
@@ -105,7 +105,7 @@ public class TestAssertions {
       String namespace,
       String secretName
   ) {
-    return Domain.domainResourceAdminSecretPatched(domainUid, namespace, secretName);
+    return () -> Domain.domainResourceAdminSecretPatched(domainUid, namespace, secretName);
   }
 
   /**
@@ -121,7 +121,7 @@ public class TestAssertions {
       String namespace,
       String image
   ) {
-    return Domain.domainResourceImagePatched(domainUid, namespace, image);
+    return () -> Domain.domainResourceImagePatched(domainUid, namespace, image);
   }
 
   /**
@@ -295,14 +295,15 @@ public class TestAssertions {
   }
 
   /**
-   * Check if the given WebLogic admin credentials are valid.
+   * Check if the given WebLogic credentials are valid by using the credentials to 
+   * invoke a RESTful Management Services command.
    *
-   * @param host hostname of WebLogic admin server pod
-   * @param podName name of WebLogic admin server pod
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
    * @param namespace name of the namespace that the pod is running in
    * @param username WebLogic admin username
    * @param password WebLogic admin password
-   * @return true if the console can be accessed
+   * @return true if the RESTful Management Services command succeeded
    */
   public static boolean credentialsValid(
       String host,
