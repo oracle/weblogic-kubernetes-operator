@@ -24,9 +24,47 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Pod {
 
-  // reusable condition factory
-  private static ConditionFactory retry
-      = with().pollInterval(5, SECONDS).atMost(10, MINUTES).await();
+  public static boolean verifyRollingRestartOccurred(ArrayList<String> pods, String namespace)
+      throws ApiException, InterruptedException, ExecutionException, TimeoutException, Exception {
+
+    // check the pods list is not empty
+    if (pods.isEmpty()) {
+      logger.severe("The pods list is empty");
+      return false;
+    }
+
+    // reusable condition factory
+    ConditionFactory retry
+        = with().pollInterval(5, SECONDS).atMost(5, MINUTES).await();
+
+    for (var podName : pods) {
+      retry
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for pod {0} to be terminating in namespace {1} "
+                  + "(elapsed time {2}ms, remaining time {3}ms)",
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> onlyGivenPodTerminating(pods, podName, namespace),
+              String.format(
+                  "pod %s didn't terminate in namespace %s", podName, namespace)));
+
+      retry
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
+                  + "(elapsed time {2}ms, remaining time {3}ms)",
+                  podName,
+                  namespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> podReady(namespace, null, podName),
+              String.format(
+                  "pod %s is not ready in namespace %s", podName, namespace)));
+    }
+
+    return true;
+  }
 
   /**
    * Check the pods in the given namespace are restarted in a rolling fashion.
@@ -42,6 +80,10 @@ public class Pod {
    */
   public static boolean isARollingRestart(String domainUid, String namespace)
       throws ApiException, InterruptedException, ExecutionException, TimeoutException {
+
+    // reusable condition factory
+    ConditionFactory retry
+        = with().pollInterval(5, SECONDS).atMost(5, MINUTES).await();
 
     // query cluster and get pods from the namespace
     String labelSelectors = "weblogic.serverName";
@@ -74,7 +116,7 @@ public class Pod {
                     namespace,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
-            .until(onlyGivenPodTerminating(podName, domainUid, namespace));
+            .until(onlyGivenPodTerminating(null, domainUid, namespace));
         return true;
       }));
       // wait for the callable to finish running and check if all pods were terminating
@@ -114,22 +156,17 @@ public class Pod {
    * @return true if given pod is terminating otherwise false
    * @throws Exception when more than one pod is terminating or cluster query fails
    */
-  private static Callable<Boolean> onlyGivenPodTerminating(String podName, String domainUid, String namespace)
+  private static Callable<Boolean> onlyGivenPodTerminating(ArrayList<String> pods, String podName, String namespace)
       throws Exception {
     return () -> {
-      String labelSelectors = String.format("weblogic.serverName", domainUid);
-      V1PodList listPods = Kubernetes.listPods(namespace, labelSelectors);
-      if (listPods.getItems().isEmpty()) {
-        logger.severe("No pods found in namespace {0}", namespace);
-        return false;
-      }
       int terminatingPods = 0;
-      boolean podTerminating = false;
-      for (var pod : listPods.getItems()) {
-        if (Kubernetes.isPodTerminating(namespace, domainUid, pod.getMetadata().getName())) {
+      boolean givenPodTerminating = false;
+      for (var pod : pods) {
+        V1Pod v1Pod = Kubernetes.getPod(namespace, null, pod);
+        if (v1Pod != null && v1Pod.getMetadata().getDeletionTimestamp() != null) {
           terminatingPods++;
-          if (pod.getMetadata().getName().equals(podName)) {
-            podTerminating = true;
+          if (pod.equals(podName)) {
+            givenPodTerminating = true;
           }
         }
       }
@@ -137,7 +174,7 @@ public class Pod {
         logger.severe("more than one pod is terminating");
         throw new Exception("more than one pod is terminating ");
       }
-      return podTerminating;
+      return givenPodTerminating;
     };
   }
 

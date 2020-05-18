@@ -369,12 +369,6 @@ public class TestAssertions {
     };
   }
 
-  /*
-   * Verify the original managed server pod state is not changed during scaling the cluster.
-   *
-   * @param podName the name of managed server pod to check
-   * @param domainUid the domain uid of the domain in which the managed server pod exists
-=======
   /**
    * Verify the pod state is not changed.
    * @param podName the name of the pod to check
