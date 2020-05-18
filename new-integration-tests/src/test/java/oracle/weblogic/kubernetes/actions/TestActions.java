@@ -39,6 +39,7 @@ import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -212,19 +213,17 @@ public class TestActions {
 
   /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * The ingress host is set to 'domainUid.clusterName.test'.
    *
    * @param ingressName the name of the ingress to be created
    * @param domainNamespace the WebLogic domain namespace in which to create the ingress
    * @param domainUid WebLogic domainUid which is backend to the ingress
-   * @param clusterName the name of the WebLogic domain cluster in the domain
-   * @param managedServerPort the port number of the WebLogic domain managed servers
-   * @param ingressHostname the host name used by the ingress for the host name based routing
-   * @return true on success, false otherwise
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
-  public static boolean createIngress(String ingressName, String domainNamespace, String domainUid,
-                                      String clusterName, int managedServerPort, String ingressHostname) {
-    return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterName,
-                               managedServerPort, ingressHostname);
+  public static List<String> createIngress(String ingressName, String domainNamespace, String domainUid,
+                                           Map<String, Integer> clusterNameMsPortMap) {
+    return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap);
   }
 
   /**
@@ -616,9 +615,10 @@ public class TestActions {
   // ----------------------- Execute a Command   ---------------------------
 
   /**
-   * Execute a command in a container.
+   * Execute a command in a container of a Kubernetes pod.
    *
-   * @param pod  The pod where the command is to be run
+   * @param namespace The Kubernetes namespace that the pod is in
+   * @param podName The name of the Kubernetes pod where the command is expected to run
    * @param containerName The container in the Pod where the command is to be run. If no
    *                         container name is provided than the first container in the Pod is used.
    * @param redirectToStdout copy process output to stdout
@@ -628,9 +628,20 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    * @throws InterruptedException if any thread has interrupted the current thread
    */
-  public static ExecResult execCommand(V1Pod pod, String containerName, boolean redirectToStdout,
-                                       String... command)
-      throws IOException, ApiException, InterruptedException {
+  public static ExecResult execCommand(
+      String namespace,
+      String podName,
+      String containerName,
+      boolean redirectToStdout,
+      String... command
+  ) throws IOException, ApiException, InterruptedException {
+    // get the pod given the namespace and name of the pod
+    // no label selector is needed (thus null below)
+    final V1Pod pod = Kubernetes.getPod(namespace, null, podName);
+    if (pod == null) {
+      throw new IllegalArgumentException(
+          String.format("The pod %s does not exist in namespace %s!", podName, namespace));
+    }
     return Exec.exec(pod, containerName, redirectToStdout, command);
   }
 
