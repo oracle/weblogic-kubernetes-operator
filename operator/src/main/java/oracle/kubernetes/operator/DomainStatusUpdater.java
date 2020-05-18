@@ -186,19 +186,44 @@ public class DomainStatusUpdater {
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer("status change: " + createPatchString(context, newStatus));
       }
+      /* MARKER-2.6.0-ONLY */
+      boolean useDomainStatusEndpoint = Main.useDomainStatusEndpoint.get();
+      /* END-2.6.0-ONLY */
       Domain oldDomain = context.getDomain();
       Domain newDomain = new Domain()
           .withKind(KubernetesConstants.DOMAIN)
           .withApiVersion(oldDomain.getApiVersion())
           .withMetadata(oldDomain.getMetadata())
-          .withSpec(null)
+          /* MARKER-2.6.0-ONLY */
+          // WAS .withSpec(null)
+          .withSpec(useDomainStatusEndpoint ? null : oldDomain.getSpec())
+          /* END-2.6.0-ONLY */
           .withStatus(newStatus);
 
+      /* MARKER-2.6.0-ONLY */
+      /* WAS
       return new CallBuilder().replaceDomainStatusAsync(
             context.getDomainName(),
             context.getNamespace(),
             newDomain,
             createResponseStep(context, getNext()));
+       */
+      if (useDomainStatusEndpoint) {
+        return new CallBuilder()
+            .replaceDomainStatusAsync(
+                context.getDomainName(),
+                context.getNamespace(),
+                newDomain,
+                createResponseStep(context, newStatus, useDomainStatusEndpoint, getNext()));
+      } else {
+        return new CallBuilder()
+            .replaceDomainAsync(
+                context.getDomainName(),
+                context.getNamespace(),
+                newDomain,
+                createResponseStep(context, newStatus, useDomainStatusEndpoint, getNext()));
+      }
+      /* END-2.6.0-ONLY */
     }
 
     private String createPatchString(DomainStatusUpdaterContext context, DomainStatus newStatus) {
@@ -207,24 +232,57 @@ public class DomainStatusUpdater {
       return builder.build().toString();
     }
 
-    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context, Step next) {
-      return new StatusReplaceResponseStep(this, context, next);
+    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context,
+                                                    /* MARKER-2.6.0-ONLY */
+                                                    DomainStatus newStatus, boolean useDomainStatusEndpoint,
+                                                    /* END-2.6.0-ONLY */
+                                                    Step next) {
+      return new StatusReplaceResponseStep(this,
+          /* MARKER-2.6.0-ONLY */
+          newStatus, useDomainStatusEndpoint,
+          /* END-2.6.0-ONLY */
+          context, next);
     }
   }
 
   static class StatusReplaceResponseStep extends DefaultResponseStep<Domain> {
     private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
+    /* MARKER-2.6.0-ONLY */
+    private final DomainStatus newStatus;
+    private final boolean useDomainStatusEndpoint;
+    /* END-2.6.0-ONLY */
 
     public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep,
+                                     /* MARKER-2.6.0-ONLY */
+                                     DomainStatus newStatus,
+                                     boolean useDomainStatusEndpoint,
+                                     /* END-2.6.0-ONLY */
                                      DomainStatusUpdaterContext context, Step nextStep) {
       super(nextStep);
       this.updaterStep = updaterStep;
       this.context = context;
+      /* MARKER-2.6.0-ONLY */
+      this.newStatus = newStatus;
+      this.useDomainStatusEndpoint = useDomainStatusEndpoint;
+      /* END-2.6.0-ONLY */
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+      /* MARKER-2.6.0-ONLY */
+      // If the 3.0.0 operator updated the CRD to use status endpoint while this operator is running
+      // then these domain replace calls will succeed, but the proposed domain status will have been
+      // ignored. Check if the status on the returned domain is expected
+      if (!useDomainStatusEndpoint && !newStatus.equals(callResponse.getResult().getStatus())) {
+        // TEST
+        System.out.println("**** **** ****: Domain status update ignored; switching to status endpoint");
+
+        // FIXME: would be better to recheck CRD
+        Main.useDomainStatusEndpoint.set(true);
+        return doNext(createRetry(context, getNext()), packet);
+      }
+      /* END-2.6.0-ONLY */
       packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       return doNext(packet);
     }
@@ -239,7 +297,7 @@ public class DomainStatusUpdater {
     }
 
     public Step createRetry(DomainStatusUpdaterContext context, Step next) {
-      return Step.chain(createDomainRefreshStep(context), updaterStep);
+      return Step.chain(createDomainRefreshStep(context), updaterStep, next);
     }
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {
