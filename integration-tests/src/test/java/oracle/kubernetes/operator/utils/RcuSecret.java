@@ -53,7 +53,7 @@ public class RcuSecret extends Secret {
             + " --from-literal=sys_password="
             + this.sysPassword;
     LoggerHelper.getLocal().log(Level.INFO, "Running " + command);
-    ExecResult result = TestUtils.exec(command);
+    ExecResult result = TestUtils.execOrAbortProcess(command);
     LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
 

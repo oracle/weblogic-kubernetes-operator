@@ -11,11 +11,14 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.LoggerHelper;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,30 +31,45 @@ import org.junit.jupiter.api.TestMethodOrder;
  */
 @TestMethodOrder(Alphanumeric.class)
 public class ItOperatorUpgrade extends BaseTest {
-
-  private static final String OP_BASE_REL = "2.0";
   private static String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
   private static String OP_NS = "";
   private static String OP_DEP_NAME = "";
   private static String OP_SA = "";
   private static String DOM_NS = "";
   private static String DUID = "";
+  private static String managed1CreateTimeStamp = "";
+  private static String managed2CreateTimeStamp = "";
+  private static String adminCreateTimeStamp = "";
   private static String opUpgradeTmpDir;
   private Domain domain = null;
   private static Operator operator;
   boolean testCompletedSuccessfully = false;
   static String testClassName = null;
+  private static StringBuffer namespaceList;
 
   /**
    * This method gets called only once before any of the test methods are executed.
    *
-   * @throws Exception exception
+   * @throws Exception exception when test initialization fails
    */
   @BeforeAll
   public static void staticPrepare() throws Exception {
+    namespaceList = new StringBuffer();
     testClassName = new Object() {
     }.getClass().getEnclosingClass().getSimpleName();
     initialize(APP_PROPS_FILE, testClassName);
+  }
+
+  /**
+   * Releases k8s cluster lease, archives result, pv directories.
+   * 
+   * @throws Exception if tearDown() fails
+   * @see BaseTest#tearDown
+   */
+  @AfterAll
+  public static void staticUnPrepare() throws Exception {
+    tearDown(new Object() {
+    }.getClass().getEnclosingClass().getSimpleName(), namespaceList.toString());
   }
 
   /**
@@ -80,7 +98,6 @@ public class ItOperatorUpgrade extends BaseTest {
     if (testCompletedSuccessfully) {
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
       if (domain != null) {
-        //domain.destroy();
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
         domain.deleteImage();
@@ -88,146 +105,42 @@ public class ItOperatorUpgrade extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
-      //ExecResult result = cleanup();
+      TestUtils.execOrAbortProcess("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+      TestUtils.execOrAbortProcess("kubectl delete crd domains.weblogic.oracle --ignore-not-found");
+      // Make sure domain CRD is deleted form k8s 
+      ExecResult result = ExecCommand.exec("kubectl get crd domains.weblogic.oracle",true);
+      Assertions.assertEquals(1, result.exitValue());
       LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
   }
 
   /**
-   * Test for upgrading Operator from release 2.0 to develop branch.
+   * Test for upgrading Operator from release 2.5.0 to develop branch.
    *
    * @throws Exception when upgrade fails
    */
   @Test
-  public void testOperatorUpgradeFrom2_0() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    testCompletedSuccessfully = false;
-    String testMethod = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
-    OP_NS = "weblogic-operator20";
-    OP_DEP_NAME = "operator-upgrade20";
-    OP_SA = "operator-sa20";
-    DOM_NS = "weblogic-domain20";
-    DUID = "operatordomain20";
-    setupOperatorAndDomain("2.0", "2.0");
-    upgradeOperator(true);
-    testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
-  }
-
-  /**
-   * Test for upgrading Operator from release 2.0.1 to develop branch.
-   *
-   * @throws Exception when upgrade fails
-   */
-  @Test
-  public void testOperatorUpgradeFrom2_0_1() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    testCompletedSuccessfully = false;
-    String testMethod = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
-    OP_NS = "weblogic-operator201";
-    OP_DEP_NAME = "operator-upgrade201";
-    OP_SA = "operator-sa201";
-    DOM_NS = "weblogic-domain201";
-    DUID = "operatordomain201";
-    setupOperatorAndDomain("release/2.0.1", "2.0.1");
-    upgradeOperator(true);
-    testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
-  }
-
-  /**
-   * Test for upgrading Operator from release 2.1 to develop branch.
-   *
-   * @throws Exception when upgrade fails
-   */
-  @Test
-  public void testOperatorUpgradeFrom2_1() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    testCompletedSuccessfully = false;
-    String testMethod = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
-    OP_NS = "weblogic-operator21";
-    OP_DEP_NAME = "operator-upgrade21";
-    OP_SA = "operator-sa21";
-    DOM_NS = "weblogic-domain21";
-    DUID = "operatordomain21";
-    setupOperatorAndDomain("release/2.1", "2.1");
-    upgradeOperator(false);
-    testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
-  }
-
-  /**
-   * Test for upgrading Operator from release 2.2.0 to develop branch.
-   *
-   * @throws Exception when upgrade fails
-   */
-  @Test
-  public void testOperatorUpgradeFrom2_2_0() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    testCompletedSuccessfully = false;
-    String testMethod = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
-    OP_NS = "weblogic-operator220";
-    OP_DEP_NAME = "operator-upgrade220";
-    OP_SA = "operator-sa220";
-    DOM_NS = "weblogic-domain220";
-    DUID = "operatordomain220";
-    setupOperatorAndDomain("release/2.2", "2.2.0");
-    upgradeOperator(false);
-    testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
-  }
-
-  /**
-   * Test for upgrading Operator from release 2.2.1 to develop branch.
-   *
-   * @throws Exception when upgrade fails
-   */
-  @Test
-  public void testOperatorUpgradeFrom2_2_1() throws Exception {
-    Assumptions.assumeTrue(FULLTEST);
-    testCompletedSuccessfully = false;
-    String testMethod = new Object() {
-    }.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
-    OP_NS = "weblogic-operator221";
-    OP_DEP_NAME = "operator-upgrade221";
-    OP_SA = "operator-sa221";
-    DOM_NS = "weblogic-domain221";
-    DUID = "operatordomain221";
-    setupOperatorAndDomain("release/2.2.1", "2.2.1");
-    upgradeOperator(false);
-    testCompletedSuccessfully = true;
-    LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
-  }
-
-  /**
-   * Test for upgrading Operator from release 2.3.0 to develop branch.
-   *
-   * @throws Exception when upgrade fails
-   */
-  @Test
-  public void testOperatorUpgradeFrom2_3_0() throws Exception {
+  public void testOperatorUpgradeFrom2_5_0() throws Exception {
     Assumptions.assumeTrue(QUICKTEST);
     testCompletedSuccessfully = false;
     String testMethod = new Object() {
     }.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    OP_NS = "weblogic-operator230";
-    OP_DEP_NAME = "operator-upgrade230";
-    OP_SA = "operator-sa230";
-    DOM_NS = "weblogic-domain230";
-    DUID = "operatordomain230";
-    setupOperatorAndDomain("release/2.3.0", "2.3.0");
-    upgradeOperator(false);
+    OP_NS = "weblogic-operator250";
+    DOM_NS = "weblogic-domain250";
+    namespaceList.append(OP_NS);
+    namespaceList.append(" ").append(DOM_NS);
+    OP_DEP_NAME = "operator-upgrade250";
+    OP_SA = "operator-sa250";
+    DUID = "operatordomain250";
+    setupOperatorAndDomain("release/2.5.0", "2.5.0");
+
+    // Save the CreateTimeStamp for the server pod(s) to compare with 
+    // CreateTimeStamp after upgrade to make sure the pod(s) are not re-stated
+    managed1CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
+    managed2CreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
+    adminCreateTimeStamp = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
+    upgradeOperator();
     testCompletedSuccessfully = true;
     LoggerHelper.getLocal().log(Level.INFO, "SUCCESS - " + testMethod);
   }
@@ -235,64 +148,67 @@ public class ItOperatorUpgrade extends BaseTest {
   /**
    * Upgrades operator to develop branch by using the helm upgrade.
    *
-   * @param restart boolean parameter used to determine if a restart of domain is checked
    * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
    */
-  private void upgradeOperator(boolean restart) throws Exception {
+  private void upgradeOperator() throws Exception {
     operator.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
-    if (restart) {
-      checkDomainRollingRestarted();
-    }
-    checkOperatorVersion();
+    checkCrdVersion();
+    checkDomainNotRestarted();
     testClusterScaling(operator, domain, false);
   }
 
   /**
-   * checks the expected version of the upgraded operator in a loop. In Jenkins it takes nearly 8
-   * minutes to show the updated value of the domain CRD.
+   * Checks the expected Upgraded Version of CustomResourceDefintion (CRD).
    *
    * @throws Exception when version does not match
    */
-  private void checkOperatorVersion() throws Exception {
+  private void checkCrdVersion() throws Exception {
     boolean result = false;
+    ExecResult exec = null;
     LoggerHelper.getLocal().log(
         Level.INFO,
-        "Checking for the domain apiVersion "
-            + getDomainApiVersion()
-            + " in a loop for up to 15 minutes");
-    for (int i = 0; i < 900; i = i + 10) {
-      ExecResult exec =
-          TestUtils.exec(
-              "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}", true);
-      if (exec.stdout().contains(getDomainApiVersion())) {
-        LoggerHelper.getLocal().log(Level.INFO, "Got the expected apiVersion");
+        "Checking for the CRD Version "
+            + getCrdVersion()
+            + " in a loop ");
+    for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
+      exec = ExecCommand.exec(
+              "kubectl get crd domains.weblogic.oracle -o jsonpath='{.spec.versions[?(@.storage==true)].name}'");
+      if (exec.stdout().contains(getCrdVersion())) {
+        LoggerHelper.getLocal().log(Level.INFO, "Got Expected CRD Version");
         result = true;
         break;
       }
-      Thread.sleep(1000 * 10);
+      try { 
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000); 
+      } catch (InterruptedException e) {
+        LoggerHelper.getLocal().log(Level.INFO,"Got InterruptedException " + e);
+      } 
     }
     if (!result) {
-      throw new RuntimeException("FAILURE: Didn't get the expected operator version");
+      throw new Exception("FAILURE: Expceted CRD version " + getCrdVersion() 
+         + "but got " + exec.stdout());
     }
   }
 
   /**
-   * Check whether the weblogic server instances are rolling restarted.
+   * Check whether the WebLogic server instances are still RUNNING 
+   * not restarted due to Operator Upgrade by comparing the creationTimestamp
+   * before and after upgrade.
    *
-   * @throws Exception If restart fails or not restarted
+   * @throws Exception If restarted
    */
-  private void checkDomainRollingRestarted() throws Exception {
-    domain.verifyAdminServerRestarted();
+  private void checkDomainNotRestarted() throws Exception {
     TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
     for (int i = 2; i >= 1; i--) {
-      LoggerHelper.getLocal().log(Level.INFO,
-          "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is restarted");
-      TestUtils.checkPodTerminating(DUID + "-managed-server" + i, DOM_NS);
-      TestUtils.checkPodCreated(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
+    String m1 = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server1");
+    String m2 = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-managed-server2");
+    String admin = TestUtils.getCreationTimeStamp(DOM_NS,DUID + "-admin-server");
+    Assertions.assertEquals(managed1CreateTimeStamp, m1);
+    Assertions.assertEquals(managed2CreateTimeStamp, m2);
+    Assertions.assertEquals(adminCreateTimeStamp, admin);
   }
-
 
   /**
    * Creates operator based on operatorRelease passed to it and then creates a WebLogic domain
@@ -307,7 +223,7 @@ public class ItOperatorUpgrade extends BaseTest {
       throws Exception {
     LoggerHelper.getLocal().log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     opUpgradeTmpDir = getResultDir() + "/operatorupgrade";
-    TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+    TestUtils.execOrAbortProcess("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     Map<String, Object> operatorMap = createOperatorMap(getNewSuffixCount(), true, "");
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");
@@ -322,15 +238,11 @@ public class ItOperatorUpgrade extends BaseTest {
     domNs.add(DOM_NS);
     operatorMap.put("domainNamespaces", domNs);
     operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
-    // TestUtils.exec("kubectl get all --all-namespaces", true);
-
-    // Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-    Map<String, Object> wlstDomainMap = createDomainInImageMap(getNewSuffixCount(), false, testClassName);
+    Map<String, Object> wlstDomainMap = createDomainMap(getNewSuffixCount(),testClassName);
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
-    // TestUtils.exec("kubectl get all --all-namespaces", true);
     domain.verifyPodsCreated();
     domain.verifyServicesCreated();
     domain.verifyServersReady();
