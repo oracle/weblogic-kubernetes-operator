@@ -24,8 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class Pod {
 
-  public static boolean verifyRollingRestartOccurred(ArrayList<String> pods, String namespace)
-      throws ApiException, InterruptedException, ExecutionException, TimeoutException, Exception {
+  /**
+   * Check if the given pods are restarted in the same order as in the pods list.
+   * @param pods list of names of the pods
+   * @param namespace name of the namespace in which to check for pod rolling restart
+   * @return true if pods are restarted in rolling fashion
+   */
+  public static boolean verifyRollingRestartOccurred(ArrayList<String> pods, String namespace) {
 
     // check the pods list is not empty
     if (pods.isEmpty()) {
