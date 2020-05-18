@@ -3,30 +3,46 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.util.List;
+
 /**
  * Contains the parameters for creating an application archive.
  */
 
 public class AppParams {
 
-  // Location of the source code. 
-  // This is the name of the directory under resources/apps for an application
-  private String srcDir;
+  // A list of directories under resources/apps that are part of the application.
+  // Note: the order of the directory names is significant. Files are copied into
+  // the staging directory in this order. 
+  private List<String> srcDirList;
+  
+  // The name of the final archive file.
+  // The name of the first dir in srcDirList will be used if the appName is absent.
+  private String appName;
   
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
-
+  
   public AppParams defaults() {
     return this;
   }
 
-  public AppParams srcDir(String srcDir) {
-    this.srcDir = srcDir;
+  public AppParams srcDirList(List<String> srcDirList) {
+    this.srcDirList = srcDirList;
     return this;
   }
 
-  public String srcDir() {
-    return srcDir;
+  public List<String> srcDirList() {
+    return srcDirList;
+  }
+
+  public AppParams appName(String appName) {
+    this.appName = appName;
+    return this;
+  }
+
+  public String appName() {
+    return appName;
   }
 
   public AppParams redirect(boolean redirect) {

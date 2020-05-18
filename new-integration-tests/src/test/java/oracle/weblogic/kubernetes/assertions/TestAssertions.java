@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
@@ -60,10 +61,8 @@ public class TestAssertions {
    * @param namespace in which the operator REST service exists
    * @return true if REST service is running otherwise false
    */
-  public static Callable<Boolean> operatorRestServiceRunning(String namespace) throws ApiException {
-    return () -> {
-      return Operator.doesExternalRestServiceExists(namespace);
-    };
+  public static Callable<Boolean> operatorRestServiceRunning(String namespace) {
+    return () -> Operator.doesExternalRestServiceExists(namespace);
   }
 
   /**
@@ -76,6 +75,43 @@ public class TestAssertions {
    */
   public static Callable<Boolean> domainExists(String domainUid, String domainVersion, String namespace) {
     return Domain.doesDomainExist(domainUid, domainVersion, namespace);
+  }
+
+  /**
+   * Check if a WebLogic domain custom resource has been patched with a new image.
+   *
+   * @param domainUid ID of the domain resource
+   * @param namespace Kubernetes namespace in which the domain custom resource object exists
+   * @param image name of the image that was used to patch the domain resource
+   * @return true if the domain is patched correctly
+   */
+  public static Callable<Boolean> domainResourceImagePatched(
+      String domainUid,
+      String namespace,
+      String image
+  ) {
+    return Domain.domainResourceImagePatched(domainUid, namespace, image);
+  }
+
+  /**
+   * Check if a WebLogic server pod has been patched with a new image.
+   *
+   * @param domainUid ID of the domain resource
+   * @param namespace Kubernetes namespace in which the domain custom resource object exists
+   * @param podName name of the WebLogic server pod
+   * @param image name of the image that was used to patch the domain resource
+   * @return true if the pod is patched correctly
+   */
+  public static Callable<Boolean> podImagePatched(
+      String domainUid,
+      String namespace,
+      String podName,
+      String containerName,
+      String image
+  ) throws ApiException {
+    return () -> {
+      return Kubernetes.podImagePatched(namespace, domainUid, podName, containerName, image);
+    };
   }
 
   /**
@@ -159,6 +195,63 @@ public class TestAssertions {
   }
 
   /**
+   * Check a service does not exist in the specified namespace.
+   *
+   * @param serviceName the name of the service to check for
+   * @param label       a Map of key value pairs the service is decorated with
+   * @param namespace   in which to check whether the service exists
+   * @return true if the service does not exist, false otherwise
+   */
+  public static Callable<Boolean> serviceDoesNotExist(String serviceName,
+                                                      Map<String, String> label,
+                                                      String namespace) {
+    return () -> !Kubernetes.doesServiceExist(serviceName, label, namespace);
+  }
+
+  /**
+   * Check if a loadbalancer pod is ready.
+   *
+   * @param domainUid id of the WebLogic domain custom resource domain
+   * @return true, if the load balancer is ready
+   */
+  public static boolean loadbalancerReady(String domainUid) {
+    return Kubernetes.loadBalancerReady(domainUid);
+  }
+
+  /**
+   * Check if the admin server pod is ready.
+   *
+   * @param domainUid id of the domain in which admin server pod is running
+   * @param namespace in which the pod exists
+   * @return true if the admin server is ready otherwise false
+   */
+  public static boolean adminServerReady(String domainUid, String namespace) {
+    return Kubernetes.adminServerReady(domainUid, namespace);
+  }
+
+  /**
+   * Check if a adminserver T3 channel is accessible.
+   *
+   * @param domainUid id of the domain in which admin server pod is running
+   * @param namespace in which the WebLogic server pod exists
+   * @return true if the admin T3 channel is accessible otherwise false
+   */
+  public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
+    return Domain.adminT3ChannelAccessible(domainUid, namespace);
+  }
+
+  /**
+   * Check if a admin server pod admin node port is accessible.
+   *
+   * @param domainUid id of the domain in which admin server pod is running
+   * @param namespace in which the WebLogic server pod exists
+   * @return true if the admin node port is accessible otherwise false
+   */
+  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
+    return Domain.adminNodePortAccessible(domainUid, namespace);
+  }
+
+  /**
    * Check if a Docker image exists.
    *
    * @param imageName the name of the image to be checked
@@ -167,6 +260,68 @@ public class TestAssertions {
    */
   public static boolean dockerImageExists(String imageName, String imageTag) {
     return WitAssertion.doesImageExist(imageName, imageTag);
+  }
+
+  /**
+   * Check if an application is accessible inside a WebLogic server pod using
+   * "kubectl exec" command.
+   *
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
+   * @param podName name of the WebLogic server pod
+   * @param port internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedResponse the expected response from the application
+   * @return true if the command succeeds
+   */
+  public static boolean appAccessibleInPodKubectl(
+      String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse
+  ) {
+    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+  }
+
+  /**
+   * Check if an application is accessible inside a WebLogic server pod using
+   * Kubernetes Java client API.
+   *
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
+   * @param podName name of the WebLogic server pod
+   * @param port internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedResponse the expected response from the application
+   * @return true if the command succeeds
+   */
+  public static boolean appAccessibleInPod(
+      String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse
+  ) {
+    return Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
+  }
+
+  /**
+   * Check if an application is Not running inside a WebLogic server pod.
+   * .
+   * @param namespace Kubernetes namespace where the WebLogic server pod is running
+   * @param podName name of the WebLogic server pod
+   * @param port internal port of the managed server running in the pod
+   * @param appPath path to access the application
+   * @param expectedResponse the expected response from the application
+   * @return true if the command succeeds
+   */
+  public static boolean appNotAccessibleInPod(
+      String namespace,
+      String podName,
+      String port,
+      String appPath,
+      String expectedResponse
+  ) {
+    return !Application.appAccessibleInPod(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
@@ -214,15 +369,20 @@ public class TestAssertions {
    *
    * @param podName the name of managed server pod to check
    * @param domainUid the domain uid of the domain in which the managed server pod exists
+=======
+  /**
+   * Verify the pod state is not changed.
+   * @param podName the name of the pod to check
+   * @param domainUid the domain in which the pod exists
+>>>>>>> 40a34fb7dbabb08e00fb56c68876c405e91e4ab3
    * @param domainNamespace the domain namespace in which the domain exists
-   * @param podCreationTimestampBeforeScale the managed server pod creation time stamp before the scale
-   * @return true if the managed server pod state is not change during scaling the cluster, false otherwise
+   * @param podOriginalCreationTimestamp the pod original creation timestamp
+   * @return true if the pod state is not changed, false otherwise
    */
-  public static boolean podStateNotChangedDuringScalingCluster(String podName,
-                                                               String domainUid,
-                                                               String domainNamespace,
-                                                               String podCreationTimestampBeforeScale) {
-    return Domain.podStateNotChangedDuringScalingCluster(podName, domainUid, domainNamespace,
-        podCreationTimestampBeforeScale);
+  public static boolean podStateNotChanged(String podName,
+                                           String domainUid,
+                                           String domainNamespace,
+                                           String podOriginalCreationTimestamp) {
+    return Domain.podStateNotChanged(podName, domainUid, domainNamespace, podOriginalCreationTimestamp);
   }
 }
