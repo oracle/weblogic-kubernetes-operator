@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test pods were restarted by some properties change.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test operator usability using Helm chart installation")
+@DisplayName("Test pods were restarted by some properties change")
 @IntegrationTest
 class ItPodsRestart implements LoggedTest {
 
@@ -118,23 +118,23 @@ class ItPodsRestart implements LoggedTest {
     assertNotNull(domain1, "domain1 is null");
     assertNotNull(domain1.getSpec(), "domain1 spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), "domain1 spec serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1 spec serverPod resources is null");
+    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1 spec serverPod resources are null");
 
     // get the current server pod compute resource limit
     Map<String, Quantity> limits = domain1.getSpec().getServerPod().getResources().getLimits();
-    assertNotNull(limits, "domain1 spec serverPod resources limits is null");
+    assertNotNull(limits, "domain1 spec serverPod resources limits are null");
 
     // print out current server pod compute resource limits
     logger.info("Current value for server pod compute resource limits:");
-    limits.forEach((key, value) -> logger.info(key + ":   " + value.toString()));
+    limits.forEach((key, value) -> logger.info(key + ": " + value.toString()));
 
-    // get the current server pod compute resource request
+    // get the current server pod compute resource requests
     Map<String, Quantity> requests = domain1.getSpec().getServerPod().getResources().getRequests();
-    assertNotNull(requests, "domain1 spec serverPod resources requests is null");
+    assertNotNull(requests, "domain1 spec serverPod resources requests are null");
 
     // print out current server pod compute resource requests
     logger.info("Current value for server pod compute resource requests:");
-    requests.forEach((key, value) -> logger.info(key + ":   " + value.toString()));
+    requests.forEach((key, value) -> logger.info(key + ": " + value.toString()));
 
     // get the admin server pod original creation timestamp
     logger.info("Getting admin server pod original creation timestamp");
@@ -143,8 +143,8 @@ class ItPodsRestart implements LoggedTest {
             String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                 adminServerPodName, domainNamespace));
 
-    // get the managed server pod original creation timestamp
-    logger.info("Getting managed server pods original creation timestamp");
+    // get the managed server pods original creation timestamps
+    logger.info("Getting managed server pods original creation timestamps");
     List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       final String managedServerPodName = managedServerPrefix + i;
@@ -173,7 +173,9 @@ class ItPodsRestart implements LoggedTest {
     }
 
     // add/modify the server pod resources by patching the domain custom resource
-    assertTrue(addServerPodResources(cpuLimit, cpuRequest), "Failed to add server pod compute resources");
+    assertTrue(addServerPodResources(cpuLimit, cpuRequest),
+        String.format("Failed to add server pod compute resources for domain {0} in namespace {1}",
+            domainUid, domainNamespace));
 
     // verify the admin server pod was restarted
     checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodOriginalTimestamp);
@@ -181,7 +183,7 @@ class ItPodsRestart implements LoggedTest {
     // check that the admin server pod is back to be ready
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // verify the managed server pod was restarted and back to be ready
+    // verify the managed server pods were restarted and back to be ready
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
       // check the managed server pod was restarted
@@ -199,11 +201,11 @@ class ItPodsRestart implements LoggedTest {
     assertNotNull(domain1, "domain1 is null");
     assertNotNull(domain1.getSpec(), "domain1 spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), "domain1 spec serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1 spec serverPod resources is null");
+    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1 spec serverPod resources are null");
 
-    // get the new server pod compute resources limit
+    // get new server pod compute resources limit
     limits = domain1.getSpec().getServerPod().getResources().getLimits();
-    assertNotNull(limits, "server pod resources limits are null");
+    assertNotNull(limits, "domain1 spec serverPod resources limits are null");
 
     // print out server pod compute resource limits
     logger.info("New value for server pod compute resource limits:");
@@ -211,14 +213,14 @@ class ItPodsRestart implements LoggedTest {
 
     // verify the server pod resources limits got updated
     logger.info("Checking that the server pod resources cpu limit was updated correctly");
-    assertNotNull(limits.get("cpu"), "server pod resources cpu limit is null");
+    assertNotNull(limits.get("cpu"), "domain1 spec serverPod resources cpu limit is null");
     assertEquals(limits.get("cpu").getNumber().toString(), cpuLimit,
-        String.format("server pod compute resource limits was not updated correctly, set cpu limit to %s, got %s",
+        String.format("server pod compute resource limits were not updated correctly, set cpu limit to %s, got %s",
             cpuLimit, limits.get("cpu").getNumber().toString()));
 
-    // get the new server pod compute resources request
+    // get new server pod compute resources requests
     requests = domain1.getSpec().getServerPod().getResources().getRequests();
-    assertNotNull(requests, "server pod resources requests are null");
+    assertNotNull(requests, "domain1 spec serverPod resources requests are null");
 
     // print out server pod compute resource requests
     logger.info("New value for server pod compute resource requests:");
@@ -226,7 +228,7 @@ class ItPodsRestart implements LoggedTest {
 
     // verify the server pod resources requests got updated
     logger.info("Checking that the server pod resources cpu request was updated correctly");
-    assertNotNull(requests.get("cpu"), "server pod resources cpu request is null");
+    assertNotNull(requests.get("cpu"), "domain1 spec serverPod resources cpu request is null");
     assertEquals(requests.get("cpu").getNumber().toString(), cpuRequest,
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber().toString()));
@@ -340,10 +342,12 @@ class ItPodsRestart implements LoggedTest {
   /**
    * Add server pod compute resources.
    *
+   * @param cpuLimit cpu limit to be added to domain spec serverPod resources limits
+   * @param cpuRequest cpu request to be added to domain spec serverPod resources requests
    * @return true if patch domain custom resource is successful, false otherwise
    */
   private boolean addServerPodResources(String cpuLimit, String cpuRequest) {
-    // construct the patch string for scaling the cluster in the domain
+    // construct the patch string for adding server pod resources
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/serverPod/resources/limits/cpu\", ")

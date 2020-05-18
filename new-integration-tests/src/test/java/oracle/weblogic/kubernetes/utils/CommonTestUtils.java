@@ -397,7 +397,7 @@ public class CommonTestUtils {
    *
    * @param podName name of pod to check
    * @param domainUid the label the pod is decorated with
-   * @param namespace the namespace in which the pod is running
+   * @param namespace the namespace in which the pod exists
    * @param timestamp the pod original creation timestamp
    */
   public static void checkPodRestarted(String podName, String domainUid, String namespace, String timestamp) {
