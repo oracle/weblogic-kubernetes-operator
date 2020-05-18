@@ -5,12 +5,12 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -208,31 +208,18 @@ public class RollingHelper {
 
       LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUid(), servers, readyServers);
 
-      int countToRestartNow = Math.max(1, countReady - dom.getMinAvailable(clusterName));
+      int countToRestartNow = countReady - dom.getMinAvailable(clusterName);
       Collection<StepAndPacket> restarts = new ArrayList<>();
       for (int i = 0; i < countToRestartNow; i++) {
-        restarts.add(new StepAndPacket(new RestartOneClusteredServerStep(servers, null), packet));
+        StepAndPacket serverToRestart = servers.poll();
+        if (serverToRestart != null) {
+          restarts.add(serverToRestart);
+        }
       }
-      return doForkJoin(getNext(), packet, restarts);
-    }
-  }
 
-  private static class RestartOneClusteredServerStep extends Step {
-    private final Queue<StepAndPacket> servers;
-
-    public RestartOneClusteredServerStep(Queue<StepAndPacket> servers, Step next) {
-      super(next);
-      this.servers = servers;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      StepAndPacket serverToRestart = servers.poll();
-      if (serverToRestart != null) {
-        Collection<StepAndPacket> col = Collections.singleton(serverToRestart);
-        return doForkJoin(this, packet, col);
-      }
-      return doNext(packet);
+      return restarts.isEmpty()
+          ? (servers.isEmpty() ? doNext(packet) : doDelay(this, packet, 10, TimeUnit.SECONDS))
+          : doForkJoin(this, packet, restarts);
     }
   }
 }
