@@ -131,11 +131,11 @@ if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
     fi
     mkdir -p ${DOMAIN_HOME}
     if [ $? -ne 0 ] ; then
-      trace SEVERE "cannot create domain home directory '${DOMAIN_HOME}'" && exit 1
+      trace SEVERE "DomainSourceType is FromModel, cannot create domain home directory '${DOMAIN_HOME}'" && exit 1
     fi
     createWLDomain || exit 1
     created_domain=$DOMAIN_CREATED
-    trace "created domain return code = " ${created_domain}
+    trace "Create domain return code = " ${created_domain}
 else
     created_domain=1
 fi
