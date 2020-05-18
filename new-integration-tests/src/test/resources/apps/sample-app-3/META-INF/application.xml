@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+-->
+<application xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4">
+  <description>JSP 2.0 Expression Language Example</description>
+  <display-name>JSP 2.0 Expression Language Example</display-name>
+  <module>
+    <web>
+      <web-uri>sample-war-3</web-uri>
+      <context-root>sample-war-3</context-root>
+    </web>
+  </module>
+</application>

@@ -90,7 +90,7 @@ public class Installer {
     boolean unzipSucceeded = true;
     if (params.verify()
         && new File(DOWNLOAD_DIR, params.fileName()).exists()) {
-      logger.info("File {0} already exists.", params.fileName());
+      logger.fine("File {0} already exists.", params.fileName());
     } else {
       // check and make sure DOWNLOAD_DIR exists; will create it if it is missing
       checkDirectory(DOWNLOAD_DIR);

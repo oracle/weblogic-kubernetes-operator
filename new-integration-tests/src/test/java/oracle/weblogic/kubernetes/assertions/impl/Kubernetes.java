@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -169,6 +170,43 @@ public class Kubernetes {
       logger.info("Pod doesn't exist");
     }
     return status;
+  }
+
+  /**
+   * Checks if a WebLogic server pod has been patched with an expected image.
+   *
+   * @param namespace Kubernetes namespace in which the pod is running
+   * @param domainUid label that the pod is decorated with
+   * @param podName name of the WebLogic server pod
+   * @param containerName name of the container
+   * @param image name of the image to check for
+   * @return true if pod's image has been patched
+   * @throws ApiException when there is an error in querying the Kubernetes cluster
+   */
+  public static boolean podImagePatched(
+      String namespace,
+      String domainUid,
+      String podName,
+      String containerName,
+      String image
+  ) throws ApiException {
+    boolean podPatched = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null && pod.getSpec() != null) {
+      List<V1Container> containers = pod.getSpec().getContainers();
+      for (V1Container container : containers) {
+        // look for the container
+        if (container.getName().equals(containerName)
+            && (container.getImage().equals(image))) {
+          podPatched = true;
+        }
+      }
+    }
+    return podPatched;
   }
 
   /**
