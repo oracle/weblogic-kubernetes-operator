@@ -14,8 +14,9 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 
 /**
  * Assertions for applications that are deployed in a domain custom resource.
@@ -140,7 +141,9 @@ public class Application {
       String namespace,
       String username,
       String password) {
-    int adminServiceNodePort = getAdminServiceNodePort(podName + "-external", null, namespace);
+    int adminServiceNodePort = getServiceNodePort(
+        namespace, podName + "-external", WLS_DEFAULT_CHANNEL_NAME);
+
     if (username == null) {
       username = ADMIN_USERNAME_DEFAULT;
     }
