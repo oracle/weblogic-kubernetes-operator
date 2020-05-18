@@ -4,10 +4,9 @@
 package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
@@ -165,19 +164,13 @@ public class TestAssertions {
   }
 
   /**
-   * Check the pods in the given namespace are restarted in a rolling fashion.
-   *
-   * @param domainUid UID of the WebLogic domain
-   * @param namespace name of the namespace in which to check for the pods status
-   * @return true if pods in the namespace are restarted in a rolling fashion otherwise false
-   * @throws ApiException when Kubernetes cluster query fails
-   * @throws InterruptedException when pod status check threads are interrupted
-   * @throws ExecutionException when pod status checks times out
-   * @throws TimeoutException when waiting for the threads times out
+   * Check if the given pods are restarted in the same order as in the pods list.
+   * @param pods list of names of the pods
+   * @param namespace name of the namespace in which to check for pod rolling restart
+   * @return true if pods are restarted in rolling fashion
    */
-  public static boolean podsRollingRestarted(String domainUid, String namespace)
-      throws ApiException, InterruptedException, ExecutionException, TimeoutException {
-    return Pod.isARollingRestart(domainUid, namespace);
+  public static boolean verifyRollingRestartOccurred(ArrayList<String> pods, String namespace) {
+    return Pod.verifyRollingRestartOccurred(pods, namespace);
   }
 
 

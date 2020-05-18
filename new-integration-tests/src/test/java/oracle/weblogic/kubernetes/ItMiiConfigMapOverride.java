@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -80,8 +81,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarte
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podsRollingRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -372,9 +373,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-    
+
+    ArrayList<String> pods = new ArrayList<>();
+    pods.add(adminServerPodName);
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.add(managedServerPrefix + i);
+    }
     assertTrue(assertDoesNotThrow(
-        () -> (podsRollingRestarted(domainUid, domainNamespace)),
+        () -> (verifyRollingRestartOccurred(pods, domainNamespace)),
          "Rolling restart didn't happen correctly"),
         "More than one pod was restarted at same time");
 
