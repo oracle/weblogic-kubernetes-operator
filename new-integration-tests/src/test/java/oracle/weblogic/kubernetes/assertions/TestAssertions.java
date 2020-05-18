@@ -379,7 +379,6 @@ public class TestAssertions {
    * Verify the pod state is not changed.
    * @param podName the name of the pod to check
    * @param domainUid the domain in which the pod exists
->>>>>>> 40a34fb7dbabb08e00fb56c68876c405e91e4ab3
    * @param domainNamespace the domain namespace in which the domain exists
    * @param podOriginalCreationTimestamp the pod original creation timestamp
    * @return true if the pod state is not changed, false otherwise
