@@ -133,8 +133,8 @@ public class ItDomainOnPV implements LoggedTest {
   private final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
   private String wlSecretName;
-  private final String adminUser = "system";
-  private final String adminPassword = "gumby1234";
+  private final String adminUser = "weblogic";
+  private final String adminPassword = "welcome1";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -275,18 +275,12 @@ public class ItDomainOnPV implements LoggedTest {
       checkServiceCreated(managedServerPodNamePrefix + i);
     }
 
-    logger.info("Validating WebLogic admin server access by login to console");
     logger.info("Getting node port");
     int serviceNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
-        "Accessing admin server node port failed");
-    String consoleUrl = new StringBuffer()
-        .append("http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(serviceNodePort)
-        .append("/console/login/LoginForm.jsp").toString();
+        "Getting admin server node port failed");
 
+    logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
       return TestAssertions.adminNodePortAccessible(serviceNodePort, adminUser, adminPassword);
     }, "Access to admin server node port failed");
@@ -367,12 +361,12 @@ public class ItDomainOnPV implements LoggedTest {
    * @param configMapName name of the configmap to create
    * @param files files to add in configmap
    * @throws IOException when reading the file fails
-   * @throws ApiException when create configmap fails
+   * @throws ApiException if create configmap fails
    */
   private void createConfigMapForDomainCreation(String configMapName, List<Path> files)
       throws IOException, ApiException {
 
-    // add wlst domain creation python script and properties files
+    // add WLST domain creation python script and properties files
     // to create domain to the configmap
     Map<String, String> data = new HashMap<>();
     for (Path file : files) {
@@ -391,7 +385,7 @@ public class ItDomainOnPV implements LoggedTest {
   }
 
   /**
-   * Create job to create a domain on a persistent volume.
+   * Create a job to create a domain on a persistent volume.
    */
   private void runCreateDomainJob(String pvName, String pvcName, String domainScriptCM, String namespace) {
     V1Job jobBody = new V1Job()
