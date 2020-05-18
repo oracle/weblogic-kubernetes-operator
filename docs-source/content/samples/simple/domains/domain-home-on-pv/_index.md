@@ -162,7 +162,7 @@ metadata:
 spec:
   # The WebLogic Domain Home
   domainHome: /shared/domains/domain1
-  # Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
+  # Set domain home in image to true for domain-in-image or false for domain-in-pv
   domainHomeInImage: false
   # The WebLogic Server Docker image that the operator uses to start the domain
   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
