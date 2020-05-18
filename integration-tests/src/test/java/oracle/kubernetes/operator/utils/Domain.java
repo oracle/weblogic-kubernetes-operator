@@ -242,9 +242,10 @@ public class Domain {
    */
   public void verifyServicesCreated(boolean precreateService, int maxIterations) throws Exception {
     // check admin service
+    String adminServiceName = domainUid + "-" + adminServerName;
     LoggerHelper.getLocal().log(Level.INFO,
-        "Checking if admin service(" + domainUid + "-" + adminServerName + ") is created");
-    TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS, maxIterations);
+        "Checking if admin service(" + adminServiceName + ") is created");
+    TestUtils.checkServiceCreated(adminServiceName, domainNS, maxIterations);
 
     if (exposeAdminT3Channel) {
       LoggerHelper.getLocal().log(Level.INFO,
@@ -253,9 +254,9 @@ public class Domain {
               + "-"
               + adminServerName
               + "-external) is created");
-      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS, maxIterations);
+      TestUtils.checkServiceCreated(adminServiceName + "-external", domainNS, maxIterations);
     }
-
+    int retriesToResolveServiceName = 15;
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server services
       for (int i = 1;
@@ -269,6 +270,9 @@ public class Domain {
                 + i
                 + ") is created");
         TestUtils.checkServiceCreated(domainUid + "-" + managedServerNameBase + i, domainNS, maxIterations);
+        // using adminServiceName for adminPodName as they both are same
+        TestUtils.resolveServiceName(domainUid + "-" + managedServerNameBase + i,
+            adminServiceName, domainNS, retriesToResolveServiceName);
       }
     }
   }
@@ -670,6 +674,7 @@ public class Domain {
    * @param webappLocation webappLocation
    * @param username       username
    * @param password       password
+   * @param retriesForDeployment number of retries to deploy the application if it fails
    * @throws Exception if deployment failed
    */
   public void deployWebAppViaWlst(
@@ -677,9 +682,10 @@ public class Domain {
       String webappLocation,
       String appLocationInPod,
       String username,
-      String password)
+      String password,
+      int retriesForDeployment)
       throws Exception {
-    deployWebAppViaWlst(webappName, webappLocation, appLocationInPod, username, password, false);
+    deployWebAppViaWlst(webappName, webappLocation, appLocationInPod, username, password, false, retriesForDeployment);
   }
 
   /**
@@ -691,6 +697,7 @@ public class Domain {
    * @param username             username
    * @param password             password
    * @param useAdminPortToDeploy useAdminPortToDeploy
+   * @param retriesForDeployment number of retries to deploy the application if it fails
    * @throws Exception If deployment failed
    */
   public void deployWebAppViaWlst(
@@ -699,7 +706,8 @@ public class Domain {
       String appLocationInPod,
       String username,
       String password,
-      boolean useAdminPortToDeploy)
+      boolean useAdminPortToDeploy,
+      int retriesForDeployment)
       throws Exception {
     String adminPod = domainUid + "-" + adminServerName;
 
@@ -736,7 +744,7 @@ public class Domain {
     };
 
     TestUtils.callShellScriptByExecToPod(
-        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
+        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args, retriesForDeployment);
   }
 
   /**
@@ -806,7 +814,8 @@ public class Domain {
 
       LoggerHelper.getLocal().log(Level.INFO, "Curl cmd with response code " + curlCmdResCode);
       LoggerHelper.getLocal().log(Level.INFO, "Curl cmd " + curlCmd);
-
+      //check helm status
+      checkLoadBalancer();
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
 
@@ -1713,6 +1722,15 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
+      if (createLoadBalancer && ingressPerDomain) {
+        String lbName = getLoadBalancerName().toLowerCase();
+        if (ingressPerDomain) {
+          TestUtils.checkHelmChartStatus(lbName
+                  + "-ingress-"
+                  + getDomainUid(),
+              getDomainNs(), "deployed");
+        }
+      }
       ExecResult result = ExecCommand.exec(curlCmd);
       String responseCode = result.stdout().trim();
       if (result.exitValue() != 0 || !responseCode.equals("200")) {
@@ -1724,6 +1742,9 @@ public class Domain {
                 + " of "
                 + maxIterations);
         if (i == (maxIterations - 1)) {
+          if (createLoadBalancer) {
+            checkLoadBalancer();
+          }
           throw new RuntimeException(
               "FAILURE: callWebApp did not return 200 status code, got " + responseCode);
         }
@@ -2420,6 +2441,32 @@ public class Domain {
     }
   }
 
+  /** Check LB related helm charts and pods statuses.
+   *
+   * @throws Exception if LB related charts are failed to retrieve.
+   */
+  public void checkLoadBalancer() throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "Checking LoadBalancer  ");
+
+    String lbName = getLoadBalancerName().toLowerCase();
+    TestUtils.printHelmChartInfo(lbName + "-operator", lbName);
+    String lbPod = TestUtils.getPodName(" -l app=" + lbName, lbName);
+    TestUtils.checkPodReadyAndRunning(lbPod,lbName);
+    TestUtils.writePodLog(resultsDir + "/state-dump-logs/", lbPod, lbName);
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Ingress is Running  ");
+    String ingress = "ingress";
+    if (lbName.equals("voyager")) {
+      ingress = "ingress.voyager.appscode.com";
+    }
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get ")
+        .append(ingress)
+        .append(" -n ")
+        .append(getDomainNs())
+        .append(" | grep ")
+        .append(getDomainUid());
+    TestUtils.checkAnyCmdInLoop(cmd.toString(),getDomainUid() + "-" + lbName);
+  }
 
   /**
    * Run the shell script in the admin pod.

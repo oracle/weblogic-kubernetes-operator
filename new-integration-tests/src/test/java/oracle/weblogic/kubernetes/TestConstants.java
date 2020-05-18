@@ -15,6 +15,9 @@ public interface TestConstants {
   // domain constants
   public static final String DOMAIN_VERSION = "v7";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
+  public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
+  public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
+  public static final String WLS_DOMAIN_TYPE = "WLS";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -24,6 +27,7 @@ public interface TestConstants {
       "oracle/weblogic-kubernetes-operator";
   public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
       "../buildDockerImage.sh";
+  public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
   public static final String REPO_DUMMY_VALUE = "dummy";
   public static final String REPO_SECRET_NAME = "ocir-secret";
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
@@ -38,6 +42,16 @@ public interface TestConstants {
   public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
 
+  // OCR registry
+  public static final String OCR_SECRET_NAME = "ocr-secret";
+  public static final String OCR_REGISTRY = "container-registry.oracle.com";
+  public static final String OCR_USERNAME = Optional.ofNullable(System.getenv("OCR_USERNAME"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCR_PASSWORD = Optional.ofNullable(System.getenv("OCR_PASSWORD"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
+      .orElse(REPO_DUMMY_VALUE);
+
   // jenkins constants
   public static final String BUILD_ID = Optional.ofNullable(System.getenv("BUILD_ID"))
       .orElse("");
@@ -47,6 +61,8 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
+  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
+      System.getProperty("java.io.tmpdir")) + "/ittestsresults";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
 

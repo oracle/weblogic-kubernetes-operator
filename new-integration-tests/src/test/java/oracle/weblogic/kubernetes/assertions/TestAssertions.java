@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.assertions;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -11,6 +12,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
+import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
@@ -57,10 +59,8 @@ public class TestAssertions {
    * @param namespace in which the operator REST service exists
    * @return true if REST service is running otherwise false
    */
-  public static Callable<Boolean> operatorRestServiceRunning(String namespace) throws ApiException {
-    return () -> {
-      return Operator.doesExternalRestServiceExists(namespace);
-    };
+  public static Callable<Boolean> operatorRestServiceRunning(String namespace) {
+    return () -> Operator.doesExternalRestServiceExists(namespace);
   }
 
   /**
@@ -120,10 +120,8 @@ public class TestAssertions {
    * @param namespace in which the pod exists
    * @return true if the pod exists in the namespace otherwise false
    */
-  public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) throws ApiException {
-    return () -> {
-      return Kubernetes.doesPodExist(namespace, domainUid, podName);
-    };
+  public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) {
+    return () -> Kubernetes.doesPodExist(namespace, domainUid, podName);
   }
 
   /**
@@ -133,13 +131,9 @@ public class TestAssertions {
    * @param domainUid Uid of WebLogic domain
    * @param namespace namespace in which to check for the pod
    * @return true if the pod does not exist in the namespace otherwise false
-   * @throws ApiException when cluster query fails
    */
-  public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace)
-      throws ApiException {
-    return () -> {
-      return !Kubernetes.doesPodExist(namespace, domainUid, podName);
-    };
+  public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace) {
+    return () -> !Kubernetes.doesPodExist(namespace, domainUid, podName);
   }
 
   /**
@@ -149,12 +143,9 @@ public class TestAssertions {
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @return true if the pod is running otherwise false
-   * @throws ApiException when Kubernetes cluster query fails to get pod
    */
-  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) throws ApiException {
-    return () -> {
-      return Kubernetes.isPodReady(namespace, domainUid, podName);
-    };
+  public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) {
+    return () -> Kubernetes.isPodReady(namespace, domainUid, podName);
   }
 
   /**
@@ -166,9 +157,7 @@ public class TestAssertions {
    * @return true if the pod is terminating otherwise false
    */
   public static Callable<Boolean> podTerminating(String podName, String domainUid, String namespace) {
-    return () -> {
-      return Kubernetes.isPodTerminating(namespace, domainUid, podName);
-    };
+    return () -> Kubernetes.isPodTerminating(namespace, domainUid, podName);
   }
 
   /**
@@ -178,16 +167,23 @@ public class TestAssertions {
    * @param label       a Map of key value pairs the service is decorated with
    * @param namespace   in which the service is running
    * @return true if the service exists otherwise false
-   * @throws ApiException when query fails
    */
-  public static Callable<Boolean> serviceExists(
-      String serviceName,
-      Map<String, String> label,
-      String namespace
-  ) throws ApiException {
-    return () -> {
-      return Kubernetes.doesServiceExist(serviceName, label, namespace);
-    };
+  public static Callable<Boolean> serviceExists(String serviceName, Map<String, String> label, String namespace) {
+    return () -> Kubernetes.doesServiceExist(serviceName, label, namespace);
+  }
+
+  /**
+   * Check a service does not exist in the specified namespace.
+   *
+   * @param serviceName the name of the service to check for
+   * @param label       a Map of key value pairs the service is decorated with
+   * @param namespace   in which to check whether the service exists
+   * @return true if the service does not exist, false otherwise
+   */
+  public static Callable<Boolean> serviceDoesNotExist(String serviceName,
+                                                      Map<String, String> label,
+                                                      String namespace) {
+    return () -> !Kubernetes.doesServiceExist(serviceName, label, namespace);
   }
 
   /**
@@ -225,12 +221,15 @@ public class TestAssertions {
   /**
    * Check if a admin server pod admin node port is accessible.
    *
-   * @param domainUid id of the domain in which admin server pod is running
-   * @param namespace in which the WebLogic server pod exists
-   * @return true if the admin node port is accessible otherwise false
+   * @param nodePort the node port of the WebLogic administration server service
+   * @param userName user name to access WebLogic administration server
+   * @param password password to access WebLogic administration server
+   * @return true if the WebLogic administration service node port is accessible otherwise false
+   * @throws java.io.IOException when connection to WebLogic administration server fails
    */
-  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
-    return Domain.adminNodePortAccessible(domainUid, namespace);
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+      throws IOException {
+    return Domain.adminNodePortAccessible(nodePort, userName, password);
   }
 
   /**
@@ -346,20 +345,30 @@ public class TestAssertions {
     };
   }
 
-  /*
-   * Verify the original managed server pod state is not changed during scaling the cluster.
-   * 
-   * @param podName the name of managed server pod to check
-   * @param domainUid the domain uid of the domain in which the managed server pod exists
+  /**
+   * Verify the pod state is not changed.
+   * @param podName the name of the pod to check
+   * @param domainUid the domain in which the pod exists
    * @param domainNamespace the domain namespace in which the domain exists
-   * @param podCreationTimestampBeforeScale the managed server pod creation time stamp before the scale
-   * @return true if the managed server pod state is not change during scaling the cluster, false otherwise
+   * @param podOriginalCreationTimestamp the pod original creation timestamp
+   * @return true if the pod state is not changed, false otherwise
    */
-  public static boolean podStateNotChangedDuringScalingCluster(String podName,
-                                                               String domainUid,
-                                                               String domainNamespace,
-                                                               String podCreationTimestampBeforeScale) {
-    return Domain.podStateNotChangedDuringScalingCluster(podName, domainUid, domainNamespace,
-        podCreationTimestampBeforeScale);
+  public static boolean podStateNotChanged(String podName,
+                                           String domainUid,
+                                           String domainNamespace,
+                                           String podOriginalCreationTimestamp) {
+    return Domain.podStateNotChanged(podName, domainUid, domainNamespace, podOriginalCreationTimestamp);
   }
+
+  /**
+   * Check if a job completed running.
+   *
+   * @param namespace name of the namespace in which the job running
+   * @param jobName name of the job to check for its completion status
+   * @return true if completed false otherwise
+   */
+  public static Callable<Boolean> jobCompleted(String jobName, String labelSelectors, String namespace) {
+    return Job.jobCompleted(namespace, labelSelectors, jobName);
+  }
+
 }

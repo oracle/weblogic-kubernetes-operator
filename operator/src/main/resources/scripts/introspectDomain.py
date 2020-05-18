@@ -423,7 +423,7 @@ class TopologyGenerator(Generator):
       return
     cluster = self.env.getClusterOrNone(adminServer)
     if cluster is not None:
-      self.addError("The admin server " + self.name(adminServer) + " belongs to the cluster " + self.name(cluster) + ".")
+      self.addError("The admin server " + self.name(adminServer) + " belongs to the WebLogic cluster " + self.name(cluster) + ", the operator does not support having an admin server participate in a cluster.")
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
@@ -434,7 +434,7 @@ class TopologyGenerator(Generator):
       self.validateNonDynamicCluster(cluster)
     else:
       if self.env.isFMWInfraDomain() and not self.env.allowDynamicClusterInFMWInfraDomain():
-        self.addError("Dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_CLUSTER_IN_FMW environment variable to true to bypass this validation.")
+        self.addError("WebLogic dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_CLUSTER_IN_FMW environment variable to true to bypass this validation.")
       else:
         self.validateDynamicCluster(cluster)
 
@@ -448,12 +448,12 @@ class TopologyGenerator(Generator):
     for server in self.env.getDomain().getServers():
       if self.env.getClusterOrNone(server) is cluster:
         return
-    self.addError("The non-dynamic cluster " + self.name(cluster) + " is not referenced by any servers.")
+    self.addError("The WebLogic configured cluster " + self.name(cluster) + " is not referenced by any servers.")
 
   def validateNonDynamicClusterNotReferencedByAnyServerTemplates(self, cluster):
     for template in self.env.getDomain().getServerTemplates():
       if self.env.getClusterOrNone(template) is cluster:
-        self.addError("The non-dynamic cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ".")
+        self.addError("The WebLogic configured cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   LISTEN_PORT = 'listen port'
   LISTEN_PORT_ENABLED = 'listen port enabled'
@@ -509,17 +509,17 @@ class TopologyGenerator(Generator):
           firstAdminPortEnabled = adminPortEnabled
         else:
           if listenPort != firstListenPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
           if listenPortEnabled != firstListenPortEnabled:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if sslListenPort != firstSslListenPort:
-             self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
+             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
           if sslListenPortEnabled != firstSslListenPortEnabled:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if adminPort != firstAdminPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
           if adminPortEnabled != firstAdminPortEnabled:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
 
 
 
@@ -549,16 +549,16 @@ class TopologyGenerator(Generator):
          else:
            naps = server.getNetworkAccessPoints()
            if len(naps) != len(serverNap):
-             self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+             self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
              return
            else:
              for nap in naps:
                if nap.getName() in serverNap:
                  if serverNap[nap.getName()] != nap.getProtocol() + "~" + str(nap.getListenPort()):
-                   self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                   self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
                    return
                else:
-                 self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                 self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
                  return
 
 
@@ -575,19 +575,19 @@ class TopologyGenerator(Generator):
           server_template = template
         else:
           if server_template is not None:
-            self.addError("The dynamic cluster " + self.name(cluster) + " is referenced the server template " + self.name(server_template) + " and the server template " + self.name(template) + ".")
+            self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced the server template " + self.name(server_template) + " and the server template " + self.name(template) + ".")
             return
     if server_template is None:
-      self.addError("The dynamic cluster " + self.name(cluster) + "' is not referenced by any server template.")
+      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "' is not referenced by any server template.")
 
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
       if self.env.getClusterOrNone(server) is cluster:
-        self.addError("The dynamic cluster " + self.name(cluster) + " is referenced by the server " + self.name(server) + ".")
+        self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced by configured server " + self.name(server) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
     if cluster.getDynamicServers().isCalculatedListenPorts() == True:
-      self.addError("The dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
+      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
   def validateServerCustomChannelName(self):
     reservedNames = ['default','default-secure','default-admin']
@@ -1274,7 +1274,7 @@ class CustomSitConfigIntrospector(SecretManager):
           + " is configured with DescriptorFileName='" + mfile + "'.")      
 
       if mfile.count(".xml") != 1 or mfile.find(".xml") + 4 != len(mfile):
-        self.env.AddError(
+        self.env.addError(
           "Error, the operator expects system resource module files"
           + " to end in '.xml'"
           + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
