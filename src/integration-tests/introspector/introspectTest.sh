@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #############################################################################
@@ -26,7 +26,10 @@
 #   IMAGE_NAME, etc, all have defaults, or can be passed in.  See the 'export'
 #   calls in the implementation below for the complete list.
 #
-
+# Usage:
+#
+#         introspectTest.sh
+#
 #############################################################################
 #
 # Initialize basic globals
@@ -60,7 +63,7 @@ export PV_ROOT=${PV_ROOT:-/scratch/$USER/wl_k8s_test_results}
 #
 
 export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-container-registry.oracle.com/middleware/weblogic}
-export WEBLOGIC_IMAGE_TAG=${WEBLOGIC_IMAGE_TAG:-12.2.1.3}
+export WEBLOGIC_IMAGE_TAG=${WEBLOGIC_IMAGE_TAG:-12.2.1.4}
 export WEBLOGIC_IMAGE_PULL_POLICY=${WEBLOGIC_IMAGE_PULL_POLICY:-IfNotPresent}
 
 export DOMAIN_UID=${DOMAIN_UID:-domain1}
@@ -68,6 +71,7 @@ export NAMESPACE=${NAMESPACE:-default}
 
 export LOG_HOME=${LOG_HOME:-/shared/logs}
 export SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG:-true}
+export ACCESS_LOG_IN_LOG_HOME=${ACCESS_LOG_IN_LOG_HOME:-true}
 export DOMAIN_HOME=${DOMAIN_HOME:-/shared/domains/${DOMAIN_UID}}
 
 [ -z ${WEBLOGIC_CREDENTIALS_SECRET_NAME} ] && \
@@ -98,6 +102,9 @@ export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
 
 # whether this test run is expecting a domain validation error
 export EXPECT_INVALID_DOMAIN=${EXPECT_INVALID_DOMAIN:-false}
+
+DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE:-PersistentVolume}
+export DOMAIN_SOURCE_TYPE=${DOMAIN_SOURCE_TYPE}
 
 #############################################################################
 #
@@ -133,7 +140,7 @@ function cleanupMajor() {
   printdots_start
   FAST_DELETE="--grace-period=1 --timeout=1s" \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
-    ${test_home}/cleanup.out
+    ${test_home}/cleanup.out 2>&1
   status=$?
   printdots_end
 
@@ -212,6 +219,7 @@ createConfigMapFromDir() {
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
     weblogic.resourceVersion=domain-v2 \
+    weblogic.domainUID=$DOMAIN_UID \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
 
@@ -334,7 +342,13 @@ function createTestRootPVDir() {
                              -l ${WEBLOGIC_IMAGE_PULL_POLICY} \
                              -f ${SCRIPTPATH}/createTestRoot.sh \
                              -c "sh /tmpmount/createTestRoot.sh ${DOMAIN_UID}" \
-                             || exit 1
+                              >  ${test_home}/util_krun.out 2>&1
+
+  if [ $? -ne 0 ]; then
+    trace "Error: Error creating physical directory. Output:"
+    cat ${test_home}/util_krun.out
+    exit 1
+  fi
 }
 
 #############################################################################
@@ -558,8 +572,8 @@ function deploySinglePodService() {
     export SERVICE_INTERNAL_PORT="${internal_port}"
     export SERVICE_EXTERNAL_PORT="${external_port}"
     export SERVICE_NAME=${service_name}
-    ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml} || exit 1
-  )
+    ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml}
+  ) || exit 1
 
   kubectl create -f ${target_yaml} \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
@@ -593,8 +607,8 @@ function checkOverrides() {
 
   linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
-
-  if [ "$linecount" != "5" ]; then
+  local target_linecount=5
+  if [ "$linecount" != "${target_linecount}" ]; then
     trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
@@ -605,9 +619,9 @@ function checkOverrides() {
   #
 
   trace "Info: Checking beans to see if sit-cfg took effect.  Input file '$test_home/checkBeans.input', output file '$test_home/checkBeans.out'."
-
+  local src_input_file=checkBeans.inputt
   rm -f ${test_home}/checkBeans.input
-  ${SCRIPTPATH}/util_subst.sh -g checkBeans.inputt ${test_home}/checkBeans.input || exit 1
+  ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
   tracen "Info: Waiting for WLST checkBeans.py to complete."
@@ -628,6 +642,7 @@ function checkOverrides() {
     exit 1
   fi
 }
+
 
 #############################################################################
 #
@@ -922,7 +937,10 @@ deployCustomOverridesConfigMap
 kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
 kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
+        --from-literal=encryptd=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
+kubectl -n $NAMESPACE label secret my-secret weblogic.domainUID=$DOMAIN_UID 2>&1 | tracePipe "Info: kubectl output: " \
+  || exit 1
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
