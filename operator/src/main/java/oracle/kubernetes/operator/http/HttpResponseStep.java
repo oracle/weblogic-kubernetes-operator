@@ -13,7 +13,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 public abstract class HttpResponseStep extends Step {
-  static final String RESPONSE = "httpResponse";
+  private static final String RESPONSE = "httpResponse";
 
   public HttpResponseStep(Step next) {
     super(next);
@@ -21,7 +21,7 @@ public abstract class HttpResponseStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    return Optional.ofNullable(getResponse(packet)).map(r -> doApply(packet, r)).orElse(null);
+    return Optional.ofNullable(getResponse(packet)).map(r -> doApply(packet, r)).orElse(doNext(packet));
   }
 
   private NextAction doApply(Packet packet, HttpResponse<String> response) {
@@ -42,8 +42,16 @@ public abstract class HttpResponseStep extends Step {
    * @param packet the packet to which the response should be added
    * @param response the response from the server
    */
-  public static void addToPacket(Packet packet, HttpResponse<String> response) {
+  static void addToPacket(Packet packet, HttpResponse<String> response) {
     packet.getComponents().put(RESPONSE, Component.createFor(HttpResponse.class, response));
+  }
+
+  /**
+   * Removes any current response from the packet.
+   * @param packet the packet from which the response should be removed
+   */
+  static void removeResponse(Packet packet) {
+    packet.getComponents().remove(RESPONSE);
   }
 
 

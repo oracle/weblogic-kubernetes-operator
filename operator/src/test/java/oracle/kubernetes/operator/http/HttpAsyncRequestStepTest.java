@@ -30,9 +30,12 @@ import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_REQUEST_TIMED_OUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.typeCompatibleWith;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -51,15 +54,17 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
   private CompletableFuture<HttpResponse<String>> responseFuture = new CompletableFuture<>();
   private HttpAsyncRequestStep.FutureFactory futureFactory = r -> responseFuture;
   private Collection<LogRecord> logRecords = new ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleMemento;
 
   /**
    * Checkstyle insists on a javadoc comment here. In a unit test *headdesk*.
    */
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger()
-          .collectLogMessages(logRecords, HTTP_METHOD_FAILED)
-          .withLogLevel(Level.FINE));
+    mementos.add(consoleMemento = TestUtils.silenceOperatorLogger()
+          .collectLogMessages(logRecords, HTTP_METHOD_FAILED, HTTP_REQUEST_TIMED_OUT)
+          .withLogLevel(Level.FINE)
+          .ignoringLoggedExceptions(HttpAsyncRequestStep.HttpTimeoutException.class));
     mementos.add(StaticStubSupport.install(HttpAsyncRequestStep.class, "factory", futureFactory));
 
     requestStep = createStep();
@@ -129,12 +134,34 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void whenResponseTimesOut_terminateProcessing() {
+  public void whenResponseTimesOut_resumeFiber() {
+    consoleMemento.ignoreMessage(HTTP_REQUEST_TIMED_OUT);
     NextAction nextAction = requestStep.apply(packet);
 
     receiveTimeout(nextAction);
 
-    assertThat(fiber.wasTerminated(), is(true));
+    assertThat(fiber.wasResumed(), is(true));
+  }
+
+  @Test
+  public void whenResponseTimesOut_packetHasNoResponse() {
+    consoleMemento.ignoreMessage(HTTP_REQUEST_TIMED_OUT);
+    HttpResponseStep.addToPacket(packet, response);
+    NextAction nextAction = requestStep.apply(packet);
+
+    receiveTimeout(nextAction);
+
+    assertThat(getResponse(), nullValue());
+  }
+
+  @Test
+  public void whenResponseTimesOut_logWarning() {
+    HttpResponseStep.addToPacket(packet, response);
+    NextAction nextAction = requestStep.apply(packet);
+
+    receiveTimeout(nextAction);
+
+    assertThat(logRecords, containsWarning(HTTP_REQUEST_TIMED_OUT));
   }
 
   @Test

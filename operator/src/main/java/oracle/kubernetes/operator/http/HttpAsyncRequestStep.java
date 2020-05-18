@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -91,6 +92,7 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     void process(AsyncFiber fiber) {
+      HttpResponseStep.removeResponse(packet);
       future = factory.createFuture(request);
       future.whenComplete((response, throwable) -> resume(fiber, response, throwable));
       fiber.scheduleOnce(timeoutSeconds, TimeUnit.SECONDS, () -> checkTimeout(fiber));
@@ -98,16 +100,24 @@ public class HttpAsyncRequestStep extends Step {
 
     private void checkTimeout(AsyncFiber fiber) {
       if (!future.isDone()) {
-        fiber.terminate(new RuntimeException("timeout"), packet);
+        resume(fiber, null, new HttpTimeoutException(request.method(), request.uri()));
       }
     }
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
+      if (throwable != null) {
+        LOGGER.warning(MessageKeys.HTTP_REQUEST_TIMED_OUT, request.method(), request.uri(), throwable);
+      }
+      
+      Optional.ofNullable(response).ifPresent(this::recordResponse);
+      fiber.resume(packet);
+    }
+
+    private void recordResponse(HttpResponse<String> response) {
       if (response.statusCode() != HttpURLConnection.HTTP_OK) {
         LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, request.method(), request.uri(), response.statusCode());
       }
       HttpResponseStep.addToPacket(packet, response);
-      fiber.resume(packet);
     }
   }
 
@@ -118,5 +128,20 @@ public class HttpAsyncRequestStep extends Step {
 
   private static HttpClient takeClient() {
     return HttpClientPool.getInstance().take();
+  }
+
+  static class HttpTimeoutException extends RuntimeException {
+    private final String method;
+    private final URI uri;
+
+    public HttpTimeoutException(String method, URI uri) {
+      this.method = method;
+      this.uri = uri;
+    }
+
+    @Override
+    public String getMessage() {
+      return method + " request to " + uri + " timed out";
+    }
   }
 }

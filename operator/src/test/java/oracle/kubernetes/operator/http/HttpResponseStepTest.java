@@ -7,6 +7,7 @@ import java.net.HttpURLConnection;
 import java.net.http.HttpResponse;
 
 import io.sundr.shaded.com.github.javaparser.ast.body.ModifierSet;
+import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -74,6 +75,15 @@ public class HttpResponseStepTest {
 
     assertThat(responseStep.getSuccessResponse(), nullValue());
     assertThat(responseStep.getFailureResponse(), notNullValue());
+  }
+
+  @Test
+  public void whenNoResponseProvided_skipProcessing() {
+    NextAction nextAction = responseStep.apply(new Packet());
+
+    assertThat(responseStep.getSuccessResponse(), nullValue());
+    assertThat(responseStep.getFailureResponse(), nullValue());
+    assertThat(nextAction.getNext(), sameInstance(terminalStep));
   }
 
   // todo when response is failure, invoke onFailure
