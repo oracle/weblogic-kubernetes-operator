@@ -239,14 +239,14 @@ Location | Description |
 
    - Option 2: Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
 
-   ```
-   $ cd /tmp/mii-sample/ingresses
-   $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
-   ```
+       ```
+       $ cd /tmp/mii-sample/ingresses
+       $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
+       ```
 
    > **NOTE**: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.
 
@@ -566,7 +566,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
   }
 %>
 ```
-{{% /expand%}}
+{{% /expand %}}
 
 The application displays important details about the WebLogic Server that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. You can also see that application output reports that it's at version `v1`; we will update this to `v2` in a future use case to demonstrate upgrading the application.
 
@@ -672,7 +672,7 @@ appDeployments:
             ModuleType: ear
             Target: 'cluster-1'
 ```
-{{% /expand%}}
+{{% /expand %}}
 
 
 The model files:
@@ -821,7 +821,7 @@ Run the following `kubectl` commands to deploy the required secrets:
     weblogic.domainUID=sample-domain1
   ```
 
-  {{% /expand%}}
+  {{% /expand %}}
 
 
 #### Domain resource
@@ -949,7 +949,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         #secrets:
         #- sample-domain1-datasource-secret
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
   {{%expand "Click here to expand the JRF domain resource YAML." %}}
   ```
@@ -1084,7 +1084,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
         #walletFileSecret: sample-domain1-opss-walletfile-secret
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
 
   Run the following command to create the domain custom resource:
@@ -1119,7 +1119,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   sample-domain1-managed-server1   1/1   Running   0     43s
   sample-domain1-managed-server2   1/1   Running   0     42s
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
 Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
@@ -1159,7 +1159,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
       -?              : This help.
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
   {{%expand "Click here to expand sample output from `wl-pod-wait.sh`." %}}
   ```
@@ -1236,7 +1236,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   @@ [2020-04-30T13:53:14][seconds=152] Info: Success!
 
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
@@ -1260,30 +1260,27 @@ Or, if Traefik is unavailable and your Administration Server pod is running, you
 
 You should see output like the following:
 
-  ```
-  $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
-    http://localhost:30305/myapp_war/index.jsp
+   ```
+   <html><body><pre>
+   *****************************************************************
 
-  <html><body><pre>
-  *****************************************************************
+   Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
-  Hello World! This is version 'v1' of the mii-sample JSP web-app.
+   Welcome to WebLogic server 'managed-server2'!
 
-  Welcome to WebLogic server 'managed-server2'!
+    domain UID  = 'sample-domain1'
+    domain name = 'domain1'
 
-   domain UID  = 'sample-domain1'
-   domain name = 'domain1'
+   Found 1 local cluster runtime:
+     Cluster 'cluster-1'
 
-  Found 1 local cluster runtime:
-    Cluster 'cluster-1'
+   Found 0 local data sources:
 
-  Found 0 local data sources:
+   *****************************************************************
+   </pre></body></html>
+   ```
 
-  *****************************************************************
-  </pre></body></html>
-  ```
-
-  **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
+ **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
 
  If you want to continue to the next use case, then leave your domain running.
 
@@ -1505,7 +1502,7 @@ Here are the steps:
 
          -?              : This help.
    ```
-     {{% /expand%}}
+     {{% /expand %}}
 
      {{%expand "Click here to expand sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```
@@ -1699,7 +1696,7 @@ Here are the steps:
 
      @@ [2020-04-30T13:57:09][seconds=230] Info: Success!
   ```
-     {{% /expand%}}
+     {{% /expand %}}
 
 1. After your domain is running, you can call the sample web application to determine if the data source was deployed.
 
@@ -1719,33 +1716,27 @@ Here are the steps:
 
    You should see something like the following:
 
-   {{%expand "Click here to see the expected web application output." %}}
+    ```  
+    <html><body><pre>
+    *****************************************************************
 
-   ```  
-   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
-      http://localhost:30305/myapp_war/index.jsp
+    Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
-   <html><body><pre>
-   *****************************************************************
+    Welcome to WebLogic server 'managed-server1'!
 
-   Hello World! This is version 'v1' of the mii-sample JSP web-app.
+     domain UID  = 'sample-domain1'
+     domain name = 'domain1'
 
-   Welcome to WebLogic server 'managed-server1'!
+    Found 1 local cluster runtime:
+      Cluster 'cluster-1'
 
-    domain UID  = 'sample-domain1'
-    domain name = 'domain1'
+    Found 1 local data source:
+      Datasource 'mynewdatasource': State='Running'
 
-   Found 1 local cluster runtime:
-     Cluster 'cluster-1'
+    *****************************************************************
+    </pre></body></html>
 
-   Found 1 local data source:
-     Datasource 'mynewdatasource': State='Running'
-
-   *****************************************************************
-   </pre></body></html>
-
-   ```
-   {{% /expand%}}
+    ```
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
@@ -1805,7 +1796,7 @@ Here are the steps for this use case:
 
    Run the following commands:
    ```
-   $ # spec.webLogicCredentialsSecret
+   # spec.webLogicCredentialsSecret
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-weblogic-credentials \
       --from-literal=username=weblogic --from-literal=password=welcome1
@@ -1813,7 +1804,7 @@ Here are the steps for this use case:
      sample-domain2-weblogic-credentials \
      weblogic.domainUID=sample-domain2
 
-   $ # spec.configuration.model.runtimeEncryptionSecret
+   # spec.configuration.model.runtimeEncryptionSecret
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-runtime-encryption-secret \
       --from-literal=password=my_runtime_password
@@ -1821,7 +1812,7 @@ Here are the steps for this use case:
      sample-domain2-runtime-encryption-secret \
      weblogic.domainUID=sample-domain2
 
-   $ # referenced by spec.configuration.secrets and by the datasource model YAML in the ConfigMap
+   # referenced by spec.configuration.secrets and by the datasource model YAML in the ConfigMap
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-datasource-secret \
       --from-literal=password=Oradoc_db1 \
@@ -1861,7 +1852,7 @@ Here are the steps for this use case:
      sample-domain2-opss-wallet-password-secret \
      weblogic.domainUID=sample-domain2
    ```
-   {{% /expand%}}
+   {{% /expand %}}
 
 1. Set up a domain resource that is similar to your "Update1" use case domain resource but with different domain UID, domain name, model update ConfigMap reference, and secret references:
 
@@ -1972,52 +1963,49 @@ Here are the steps for this use case:
 
       - Now, let's compare your original and changed domain resource files to double check your changes.
 
-        {{%expand "Click here to see the expected 'diff'." %}}
-
-        ```
-        $ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
-        9c9
-        <   name: sample-domain1
-        ---
-        >   name: sample-domain2
-        13c13
-        <     weblogic.domainUID: sample-domain1
-        ---
-        >     weblogic.domainUID: sample-domain2
-        21c21
-        <   domainHome: /u01/domains/sample-domain1
-        ---
-        >   domainHome: /u01/domains/sample-domain2
-        36c36
-        <     name: sample-domain1-weblogic-credentials
-        ---
-        >     name: sample-domain2-weblogic-credentials
-        46c46
-        <   #logHome: /shared/logs/sample-domain1
-        ---
-        >   #logHome: /shared/logs/sample-domain2
-        61c61
-        <       value: "domain1"
-        ---
-        >       value: "domain2"
-        71c71
-        <     #    claimName: sample-domain1-weblogic-sample-pvc
-        ---
-        >     #    claimName: sample-domain2-weblogic-sample-pvc
-        110c110
-        <       configMap: sample-domain1-wdt-config-map
-        ---
-        >       configMap: sample-domain2-wdt-config-map
-        113c113
-        <       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
-        ---
-        >       runtimeEncryptionSecret: sample-domain2-runtime-encryption-secret
-        118c118
-        <     - sample-domain1-datasource-secret
-        ---
-        >     - sample-domain2-datasource-secret
-        ```
-        {{% /expand%}}
+          ```
+          $ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
+          9c9
+          <   name: sample-domain1
+          ---
+          >   name: sample-domain2
+          13c13
+          <     weblogic.domainUID: sample-domain1
+          ---
+          >     weblogic.domainUID: sample-domain2
+          21c21
+          <   domainHome: /u01/domains/sample-domain1
+          ---
+          >   domainHome: /u01/domains/sample-domain2
+          36c36
+          <     name: sample-domain1-weblogic-credentials
+          ---
+          >     name: sample-domain2-weblogic-credentials
+          46c46
+          <   #logHome: /shared/logs/sample-domain1
+          ---
+          >   #logHome: /shared/logs/sample-domain2
+          61c61
+          <       value: "domain1"
+          ---
+          >       value: "domain2"
+          71c71
+          <     #    claimName: sample-domain1-weblogic-sample-pvc
+          ---
+          >     #    claimName: sample-domain2-weblogic-sample-pvc
+          110c110
+          <       configMap: sample-domain1-wdt-config-map
+          ---
+          >       configMap: sample-domain2-wdt-config-map
+          113c113
+          <       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+          ---
+          >       runtimeEncryptionSecret: sample-domain2-runtime-encryption-secret
+          118c118
+          <     - sample-domain1-datasource-secret
+          ---
+          >     - sample-domain2-datasource-secret
+          ```
 
         {{%expand "Click here to see additional 'diff' expected for the JRF path through the sample." %}}
 
@@ -2030,7 +2018,7 @@ Here are the steps for this use case:
         ---
         >       #walletFileSecret: sample-domain2-opss-walletfile-secret
         ```
-        {{% /expand%}}
+        {{% /expand %}}
 
         > __NOTE__: The diff should _not_ contain a namespace change. We are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
 
@@ -2081,7 +2069,7 @@ Here are the steps for this use case:
    sample-domain2-managed-server1               1/1     Running             0          45s
    sample-domain2-managed-server2               1/1     Running             0          45s
    ```
-   {{% /expand%}}
+   {{% /expand %}}
 
    For a more detailed view of this activity, you can instead call `/tmp/mii-sample/utils/wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3`. The output should look something like this:
 
@@ -2171,7 +2159,7 @@ Here are the steps for this use case:
    @@ [2020-05-13T17:08:34][seconds=155] Info: Success!
 
    ```
-   {{% /expand%}}
+   {{% /expand %}}
 
 1. After the `sample-domain2` domain is running, you can call its sample web application to verify that it's fully active.
 
@@ -2191,30 +2179,27 @@ Here are the steps for this use case:
 
    You should see something like the following:
 
-   {{%expand "Click here to see the expected web application output." %}}
+    ```  
+    <html><body><pre>
+    *****************************************************************
 
-   ```  
-   <html><body><pre>
-   *****************************************************************
+    Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
-   Hello World! This is version 'v1' of the mii-sample JSP web-app.
+    Welcome to WebLogic server 'managed-server1'!
 
-   Welcome to WebLogic server 'managed-server1'!
+     domain UID  = 'sample-domain2'
+     domain name = 'domain2'
 
-    domain UID  = 'sample-domain2'
-    domain name = 'domain2'
+    Found 1 local cluster runtime:
+      Cluster 'cluster-1'
 
-   Found 1 local cluster runtime:
-     Cluster 'cluster-1'
+    Found 1 local data source:
+      Datasource 'mynewdatasource': State='Running'
 
-   Found 1 local data source:
-     Datasource 'mynewdatasource': State='Running'
+    *****************************************************************
+    </pre></body></html>
 
-   *****************************************************************
-   </pre></body></html>
-
-   ```  
-   {{% /expand%}}
+    ```  
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
@@ -2222,7 +2207,7 @@ We will not be using the `sample-domain2` domain again in this sample; if you wi
 
 ### Update3 use case
 
-The Update3 use case demonstrates deploying an an updated WebLogic application to the running [Update1 use case](#update1-use-case) domain using an updated Docker image.
+The Update3 use case demonstrates deploying an updated WebLogic application to the running [Update1 use case](#update1-use-case) domain using an updated Docker image.
 
 In the use case, we will:
 
@@ -2231,7 +2216,7 @@ In the use case, we will:
    - An updated model YAML within the image that points to the new web application path.
  - Apply an updated domain resource that references the new image while still referencing the original [Update1 use case](#update1-use-case) case secrets and model ConfigMap. 
 
-After the updated domain resource is applied, we expect the operator to:
+After the updated domain resource is applied, the operator will:
 
  - Rerun the introspector job and generate a new domain home based on the new model.
  - Restart the domain's Administration Server pod so that it loads the new image and new domain home.
@@ -2379,7 +2364,7 @@ Here are the steps for this use case:
 
 1. Wait for the roll to complete.
 
-   Now that you've applied a domain resource with an updated image, the operator should automatically rerun the domain's introspector job in order to generate a new domain home, and then should restart ('roll') each of the domain's pods so that they use the new domain home and the new image. You'll need to wait for this roll to complete before we can verify that the new image and its associated new application have been deployed.
+   Now that you've applied a domain resource with an updated image, the operator will automatically rerun the domain's introspector job in order to generate a new domain home, and then will restart ('roll') each of the domain's pods so that they use the new domain home and the new image. You'll need to wait for this roll to complete before we can verify that the new image and its associated new application have been deployed.
 
    - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
 
@@ -2421,7 +2406,7 @@ Here are the steps for this use case:
 
          -?              : This help.
    ```
-     {{% /expand%}}
+     {{% /expand %}}
 
      {{%expand "Click here to expand sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```
@@ -2580,7 +2565,7 @@ Here are the steps for this use case:
    @@ [2020-05-14T17:33:25][seconds=279] Info: Success!
 
    ```
-     {{% /expand%}}
+     {{% /expand %}}
 
 1. After your domain roll is complete, you can call the sample web application to determine if the updated application was deployed. 
 
@@ -2602,33 +2587,27 @@ Here are the steps for this use case:
 
    You should see something like the following:
 
-   {{%expand "Click here to see the expected web application output." %}}
+    ```  
+    <html><body><pre>
+    *****************************************************************
 
-   ```  
-   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
-      http://localhost:30305/myapp_war/index.jsp
+    Hello World! This is version 'v2' of the mii-sample JSP web-app.
 
-   <html><body><pre>
-   *****************************************************************
+    Welcome to WebLogic server 'managed-server1'!
 
-   Hello World! This is version 'v2' of the mii-sample JSP web-app.
+     domain UID  = 'sample-domain1'
+     domain name = 'domain1'
 
-   Welcome to WebLogic server 'managed-server1'!
+    Found 1 local cluster runtime:
+      Cluster 'cluster-1'
 
-    domain UID  = 'sample-domain1'
-    domain name = 'domain1'
+    Found 1 local data source:
+      Datasource 'mynewdatasource': State='Running'
 
-   Found 1 local cluster runtime:
-     Cluster 'cluster-1'
+    *****************************************************************
+    </pre></body></html>
 
-   Found 1 local data source:
-     Datasource 'mynewdatasource': State='Running'
-
-   *****************************************************************
-   </pre></body></html>
-
-   ```
-   {{% /expand%}}
+    ```
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
@@ -2648,7 +2627,7 @@ To remove the resources you have created in these samples:
 
    It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
 
-   > **Note**: When you delete a domain, the operator should detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
+   > **Note**: When you delete a domain, the operator will detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
 
 2. If you set up the Traefik ingress controller:
 
