@@ -1,8 +1,13 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 /Log/base_domain,FileName,logs/base_domain.log,/shared/logs/base_domain.log
 
 /Servers/${ADMIN_NAME},ListenAddress,,${DOMAIN_UID}-${ADMIN_NAME}
 
 /Servers/${ADMIN_NAME}/Log/${ADMIN_NAME},FileName,logs/${ADMIN_NAME}.log,/shared/logs/${ADMIN_NAME}.log
+
+/Servers/${ADMIN_NAME}/WebServer/${ADMIN_NAME}/WebServerLog/${ADMIN_NAME},FileName,logs/access.log,/shared/logs/${ADMIN_NAME}_access.log
 
 /Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel1,ListenAddress,unresolvable-dns-name,${DOMAIN_UID}-${ADMIN_NAME}
 /Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel2,ListenAddress,junk,${DOMAIN_UID}-${ADMIN_NAME}
@@ -24,6 +29,7 @@
 /ServerTemplates/mycluster-template,ListenAddress,None,domain1-managed-server${id}
 # Note that a customer/admin should never override a port, they must stay fixed
 /ServerTemplates/mycluster-template,ListenPort,8001,8001
+/ServerTemplates/mycluster-template/WebServer/mycluster-template/WebServerLog/mycluster-template,FileName,logs/access.log,/shared/logs/managed-server${id}_access.log
 
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@invalid-host:1521:invalid-sid,jdbc:oracle:thin:@mynewhost:1521:mynewsid
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,PasswordEncrypted,*,!
