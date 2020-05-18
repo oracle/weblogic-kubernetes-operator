@@ -135,7 +135,7 @@ public class Domain {
       
       boolean domainPatched = (domain.spec().webLogicCredentialsSecret().getName().equals(secretName));
       logger.info("Domain Object patched : {0}, weblogicDomainSecret: {1}",
-          domain, domain.getSpec().webLogicCredentialsSecret());
+          domain, domain.getSpec().webLogicCredentialsSecret().getName());
       return domainPatched;
     };
   }

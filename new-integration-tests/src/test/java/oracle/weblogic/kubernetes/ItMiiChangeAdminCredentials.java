@@ -75,8 +75,8 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   private static ConditionFactory withStandardRetryPolicy = null;
 
   // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-  private static String adminServerPodName = domainUid + ADMIN_SERVER_NAME_BASE;
-  private static String managedServerPrefix = domainUid + MANAGED_SERVER_NAME_BASE;
+  private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+  private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
 
   /**
@@ -159,8 +159,10 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     logger.info("Create a new secret for WebLogic admin credentials");
     String adminSecretName = "weblogic-credentials-new";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        adminSecretName,ADMIN_USERNAME_PATCH,
-        ADMIN_PASSWORD_PATCH, domainNamespace),
+        adminSecretName,
+        domainNamespace,
+        ADMIN_USERNAME_PATCH,
+        ADMIN_PASSWORD_PATCH),
         String.format("createSecret failed for %s", adminSecretName));
 
     // patch the domain resource with the new secret and verify that the domain resource is patched.
@@ -416,7 +418,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   }
   
   private static void createAndVerifyMiiDomain() {
-    // Create the repo secret to pull the image
+    logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
             String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
@@ -425,9 +427,9 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
+        domainNamespace,
         ADMIN_USERNAME_DEFAULT,
-        ADMIN_PASSWORD_DEFAULT,
-        domainNamespace),
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
@@ -435,9 +437,9 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         encryptionSecretName,
+        domainNamespace,
         "weblogicenc",
-        "weblogicenc",
-        domainNamespace),
+        "weblogicenc"),
         String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain CR

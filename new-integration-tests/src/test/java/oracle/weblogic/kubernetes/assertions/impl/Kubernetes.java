@@ -21,10 +21,9 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
@@ -478,35 +477,22 @@ public class Kubernetes {
    * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
-   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @return true if the pod's new timestamp is later than the initial PodCreationTimestamp
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
       String podName, String domainUid,
       String namespace, String timestamp) throws ApiException {
-    boolean podRestarted = false;
-    String labelSelector = null;
-    if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    String newCreationTime = getPodCreationTimestamp(namespace, "", podName);
+
+    if (newCreationTime != null
+        && Long.parseLong(newCreationTime) > Long.parseLong(timestamp)) {
+      logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
+          podName, newCreationTime, timestamp);
+      return true;
     }
-    V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod == null) {
-      podRestarted = false;
-    } else {
-      DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
-      String newTimestamp = dtf.print(pod.getMetadata().getCreationTimestamp());
-      if (newTimestamp == null) {
-        logger.info("getCreationTimestamp() returns NULL");
-        return false;
-      }
-      logger.info("OldPodCreationTimestamp [{0}]", timestamp);
-      logger.info("NewPodCreationTimestamp returns [{0}]", newTimestamp);
-      if (Long.parseLong(newTimestamp) == Long.parseLong(timestamp)) {
-        podRestarted = false;
-      } else {
-        podRestarted = true;
-      }
-    }
-    return podRestarted;
+    logger.info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
+        podName, newCreationTime, timestamp);
+    return false;
   }
 }
