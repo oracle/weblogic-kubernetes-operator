@@ -416,7 +416,8 @@ public class CommonTestUtils {
 
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
-        .srcDir(appName)), String.format("Failed to create app archive for %s", appName));
+        .srcDirList(Collections.singletonList(appName))),
+        String.format("Failed to create app archive for %s", appName));
 
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);

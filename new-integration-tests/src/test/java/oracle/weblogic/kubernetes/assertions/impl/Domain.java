@@ -21,7 +21,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesServiceExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
