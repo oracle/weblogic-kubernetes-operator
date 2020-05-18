@@ -24,6 +24,8 @@ import io.kubernetes.client.util.ClientBuilder;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Kubernetes {
@@ -171,6 +173,35 @@ public class Kubernetes {
     }
     return status;
   }
+  
+  /**
+   * Checks if a pod in a given namespace has been updated with an expected
+   * weblogic.domainRestartVersion label.
+   *
+   * @param namespace in which to check for the pod
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @param expectedRestartVersion domainRestartVersion that is expected
+   * @return true if pod has been updated as expected
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean podRestartVersionUpdated(
+      String namespace,
+      String domainUid,
+      String podName,
+      String expectedRestartVersion
+  ) throws ApiException {
+    String restartVersion = getPodRestartVersion(namespace, "", podName);
+
+    if (restartVersion != null && restartVersion.equals(expectedRestartVersion)) {
+      logger.info("Pod {0}: domainRestartVersion has been updated to expected value {1}",
+          podName, expectedRestartVersion);
+      return true;
+    }
+    logger.info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
+        podName, restartVersion, expectedRestartVersion);
+    return false;
+  }
 
   /**
    * Checks if a WebLogic server pod has been patched with an expected image.
@@ -201,7 +232,7 @@ public class Kubernetes {
       for (V1Container container : containers) {
         // look for the container
         if (container.getName().equals(containerName)
-            && (container.getImage().equals(image))) {
+            && container.getImage().equals(image)) {
           podPatched = true;
         }
       }

@@ -12,7 +12,10 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 
 /**
  * Assertions for applications that are deployed in a domain custom resource.
@@ -119,4 +122,46 @@ public class Application {
       return false;
     }
   } 
+  
+  /**
+   * Check if the given WebLogic credentials are valid by using the credentials to 
+   * invoke a RESTful Management Services command.
+   *
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @return true if the credentials are valid
+   **/
+  public static boolean credentialsValid(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    int adminServiceNodePort = getAdminServiceNodePort(podName + "-external", null, namespace);
+    if (username == null) {
+      username = ADMIN_USERNAME_DEFAULT;
+    }
+    if (password == null) {
+      password = ADMIN_PASSWORD_DEFAULT;
+    }
+    StringBuffer cmdString = new StringBuffer()
+        .append("status=$(curl --user " + username + ":" + password)
+        .append(" http://" + host + ":" + adminServiceNodePort)
+        .append("/management/tenant-monitoring/servers/managed-server1")
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
+
+    CommandParams params = Command
+            .defaultCommandParams()
+            .command(cmdString.toString())
+            .saveResults(true)
+            .redirect(true)
+            .verbose(true);
+    return Command.withParams(params).executeAndVerify("200");
+  }
 }

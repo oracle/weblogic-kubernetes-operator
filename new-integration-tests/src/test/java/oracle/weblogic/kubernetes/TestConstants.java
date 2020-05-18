@@ -75,4 +75,10 @@ public interface TestConstants {
   public static final String MII_APP_RESPONSE_V3 = "How are you doing! You have reached server managed-server";
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
+  // credentials
+  public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
+  public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
+  public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
+  public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
+
 }

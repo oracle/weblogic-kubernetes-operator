@@ -110,6 +110,36 @@ public class Domain {
     };
   }
 
+  /**
+   * Check if the domain resource has been patched with a new WebLogic admin credentials secret.
+   *
+   * @param domainUID identifier of the domain resource
+   * @param namespace Kubernetes namespace in which the domain exists
+   * @param secretName name of the secret that the domain resource is expected to be using
+   * @return true if domain resource's image matches the expected value
+   */
+  public static Callable<Boolean> domainResourceAdminSecretPatched(
+      String domainUID,
+      String namespace,
+      String secretName
+  ) {
+    return () -> {
+      oracle.weblogic.domain.Domain domain = null;
+      try {
+        domain = oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes
+                .getDomainCustomResource(domainUID, namespace);
+      } catch (ApiException apex) {
+        logger.severe("Failed to obtain the domain resource object from the API server", apex);
+        return false;
+      }
+      
+      boolean domainPatched = (domain.spec().webLogicCredentialsSecret().getName().equals(secretName));
+      logger.info("Domain Object patched : {0}, weblogicDomainSecret: {1}",
+          domain, domain.getSpec().webLogicCredentialsSecret());
+      return domainPatched;
+    };
+  }
+
   public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
     return true;
   }
