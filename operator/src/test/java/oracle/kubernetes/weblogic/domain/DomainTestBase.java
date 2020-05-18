@@ -320,13 +320,6 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void afterAllowReplicasBelowMinDynamicClusterSizeSetForCluster_canReadIt() {
-    configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
-
-    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(false));
-  }
-
-  @Test
   public void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
     configureCluster("cluster1");
 

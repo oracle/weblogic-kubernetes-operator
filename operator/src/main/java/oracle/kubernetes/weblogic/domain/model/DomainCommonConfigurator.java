@@ -642,12 +642,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize) {
-      cluster.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
-      return this;
-    }
-
-    @Override
     public ClusterConfigurator withSchedulerName(String schedulerName) {
       getDomainSpec().setSchedulerName(schedulerName);
       return this;
