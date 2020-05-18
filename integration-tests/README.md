@@ -180,12 +180,12 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 
 * Maven and latest Git should be in PATH
 * export JAVA_HOME
-* export IMAGE_NAME_WEBLOGIC and IMAGE_TAG_WEBLOGIC if different from container-registry.oracle.com/middleware/weblogic and 12.2.1.3
+* export IMAGE_NAME_WEBLOGIC and IMAGE_TAG_WEBLOGIC if different from container-registry.oracle.com/middleware/weblogic and 12.2.1.4
 * Setup docker access to WebLogic 12c Images 
 
   * Method 1 
     - Setup a personal account on container-registry.oracle.com
-    - Then sign in to container-registry.oracle.com and signup for access to WebLogic 12.2.1.3 images from container-registry.oracle.com/middleware/weblogic:12.2.1.3
+    - Then sign in to container-registry.oracle.com and signup for access to WebLogic 12.2.1.4 images from container-registry.oracle.com/middleware/weblogic:12.2.1.4
     - Then export the following before running the tests: 
 	```
 	export OCR_USERNAME=<ocr_username>
@@ -193,7 +193,7 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 	```
  
   * Method 2 
-    - Make sure the weblogic image i.e. container-registry.oracle.com/middleware/weblogic:12.2.1.3 already exists locally in a docker repository the k8s cluster can access
+    - Make sure the weblogic image i.e. container-registry.oracle.com/middleware/weblogic:12.2.1.4 already exists locally in a docker repository the k8s cluster can access
     - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
 		
 		
@@ -223,6 +223,8 @@ The tests accepts optional env var overrides:
 | K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
 | BRANCH_NAME  | Git branch name.   Default is determined by calling 'git branch'. |
 | LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on the k8s cluster that indicates that no other test run should attempt to use the cluster, and (B) delete this lease when the test completes. |
+| MAX_ITERATIONS   | Maximum number of iterations to wait for a pod/application to come up or deploy.  |
+| WAIT_TIME_SECONDS   | Seconds to wait between the iterations.  |
 
 The following additional overrides are currently only used when
 SHARED_CLUSTER=true:
@@ -306,7 +308,7 @@ JUnit test results can be seen at "integration-tests/target/failsafe-reports/TES
    * Method 1 
       - Setup a personal account on container-registry.oracle.com
       - Then sign in to container-registry.oracle.com and accept license for access to Oracle Database 12c Images:  **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_**
-      - And get access to FMW Infrastructure 12c Image: **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_**
+      - And get access to FMW Infrastructure 12c Image: **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4_**
       - export the following before running the tests:
     ```
     export REPO_USERNAME=<ocr_username>
@@ -315,7 +317,7 @@ JUnit test results can be seen at "integration-tests/target/failsafe-reports/TES
     ```
  
    * Method 2 
-     - Make sure the FMW Infrastructure image i.e. **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_** and the Oracle database image i.e. **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_** already exist locally in a docker repository the k8s cluster can access
+     - Make sure the FMW Infrastructure image i.e. **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4_** and the Oracle database image i.e. **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_** already exist locally in a docker repository the k8s cluster can access
 		
 * Command to run the tests: 
 ```

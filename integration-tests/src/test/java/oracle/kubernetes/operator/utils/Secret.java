@@ -11,6 +11,7 @@ public class Secret {
   protected String namespace;
   protected String username;
   protected String password;
+  protected String jdbcUrl;
 
   public Secret() throws Exception {
     secretName = "";
@@ -58,6 +59,55 @@ public class Secret {
     LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
   }
 
+  /**
+   * Construct a secret object.
+   * @param namespace domain namespace where to create the secret in
+   * @param secretName secret name to create
+   * @param jdbcUrl JDBC URL to access to MySQL
+   * @param username user name used by MySQL for authentication purposes
+   * @param password password used by MySQL for authorization purposes
+   * @throws Exception if creating a secret fails
+   */
+  public Secret(String namespace, String secretName, String jdbcUrl,
+                String username, String password) throws Exception {
+    this.namespace = namespace;
+    this.secretName = secretName;
+    this.username = username;
+    this.password = password;
+    this.jdbcUrl = jdbcUrl;
+
+    StringBuffer command = new StringBuffer("kubectl -n ");
+    command.append(namespace)
+        .append(" delete secret ")
+        .append(secretName)
+        .append(" --ignore-not-found");
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command.toString());
+    ExecCommand.exec(command.toString());
+
+    command = new StringBuffer("kubectl -n ");
+    command.append(namespace)
+        .append(" create secret generic ")
+        .append(secretName)
+        .append(" --from-literal=dburl=")
+        .append(jdbcUrl)
+        .append(" --from-literal=username=")
+        .append(username)
+        .append(" --from-literal=password=")
+        .append(password);
+    LoggerHelper.getLocal().log(Level.INFO, "Running " + command.toString());
+    ExecResult result = ExecCommand.exec(command.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+        "FAILURE: command to create secret "
+          + command.toString()
+          + " failed, returned "
+          + result.stdout()
+          + "\n"
+          + result.stderr());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, "command result " + result.stdout().trim());
+  }
+
   public String getSecretName() {
     return secretName;
   }
@@ -74,4 +124,7 @@ public class Secret {
     return password;
   }
 
+  public String getJdbcUrl() {
+    return jdbcUrl;
+  }
 }
