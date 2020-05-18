@@ -85,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain and start the domain")
 @IntegrationTest
-class ItDomainInImage implements LoggedTest {
+class ItDomainInImageWdt implements LoggedTest {
 
   private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
