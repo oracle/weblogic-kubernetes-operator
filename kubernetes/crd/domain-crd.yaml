@@ -34,8 +34,8 @@ spec:
                 - ADMIN
               image:
                 type: string
-                description: The WebLogic Docker image; required when domainHomeSourceType
-                  is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
+                description: The WebLogic Docker image; required when domainHomeInImage
+                  is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
               imagePullPolicy:
                 type: string
                 description: The image pull policy for the WebLogic Docker image.
@@ -140,21 +140,14 @@ spec:
               domainHome:
                 type: string
                 description: The folder for the WebLogic Domain. Not required. Defaults
-                  to /shared/domains/domains/<domainUID> if domainHomeSourceType is
-                  PersistentVolume. Defaults to /u01/oracle/user_projects/domains/
-                  if domainHomeSourceType is Image. Defaults to /u01/domains/<domainUID>
-                  if domainHomeSourceType is FromModel.
+                  to /shared/domains/domains/domainUID if domainHomeInImage is false.
+                  Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage
+                  is true.
               logHomeEnabled:
                 type: boolean
-                description: Specified whether the log home folder is enabled. Not
-                  required. Defaults to true if domainHomeSourceType is PersistentVolume;
-                  false, otherwise.
-              httpAccessLogInLogHome:
-                type: boolean
-                description: If true (the default), then server HTTP access log files
-                  will be written to the same directory specified in `logHome`. Otherwise,
-                  server HTTP access log files will be written to the directory configured
-                  in the WebLogic domain home configuration.
+                description: 'Specified whether the log home folder is enabled. Not
+                  required. Defaults to true if domainHomeInImage is false. Defaults
+                  to false if domainHomeInImage is true. '
               webLogicCredentialsSecret:
                 type: object
                 description: The name of a pre-created Kubernetes secret, in the domain's
@@ -10419,9 +10412,7 @@ spec:
               logHome:
                 type: string
                 description: The in-pod name of the directory in which to store the
-                  domain, Node Manager, server logs, server  *.out, and optionally
-                  HTTP access log files if `httpAccessLogInLogHome` is true. Ignored
-                  if logHomeEnabled is false.
+                  domain, Node Manager, server logs, and server *.out files
               includeServerOutInPodLog:
                 type: boolean
                 description: If true (the default), then the server .out file will
