@@ -323,7 +323,7 @@ class ItMiiConfigMap implements LoggedTest {
     int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     try {
-      checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+      checkJdbc = new StringBuffer("status=$(curl --noproxy '*' --user weblogic:welcome1 ");
       checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/wls/latest/datasources/id/TestDataSource/")
           .append(" --silent --show-error ")
