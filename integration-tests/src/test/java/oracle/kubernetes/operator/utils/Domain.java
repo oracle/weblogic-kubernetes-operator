@@ -814,7 +814,8 @@ public class Domain {
 
       LoggerHelper.getLocal().log(Level.INFO, "Curl cmd with response code " + curlCmdResCode);
       LoggerHelper.getLocal().log(Level.INFO, "Curl cmd " + curlCmd);
-
+      //check helm status
+      checkLoadBalancer();
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
 
@@ -1721,6 +1722,15 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
+      if (createLoadBalancer && ingressPerDomain) {
+        String lbName = getLoadBalancerName().toLowerCase();
+        if (ingressPerDomain) {
+          TestUtils.checkHelmChartStatus(lbName
+                  + "-ingress-"
+                  + getDomainUid(),
+              getDomainNs(), "deployed");
+        }
+      }
       ExecResult result = ExecCommand.exec(curlCmd);
       String responseCode = result.stdout().trim();
       if (result.exitValue() != 0 || !responseCode.equals("200")) {
@@ -1732,6 +1742,9 @@ public class Domain {
                 + " of "
                 + maxIterations);
         if (i == (maxIterations - 1)) {
+          if (createLoadBalancer) {
+            checkLoadBalancer();
+          }
           throw new RuntimeException(
               "FAILURE: callWebApp did not return 200 status code, got " + responseCode);
         }
@@ -2428,6 +2441,32 @@ public class Domain {
     }
   }
 
+  /** Check LB related helm charts and pods statuses.
+   *
+   * @throws Exception if LB related charts are failed to retrieve.
+   */
+  public void checkLoadBalancer() throws Exception {
+    LoggerHelper.getLocal().log(Level.INFO, "Checking LoadBalancer  ");
+
+    String lbName = getLoadBalancerName().toLowerCase();
+    TestUtils.printHelmChartInfo(lbName + "-operator", lbName);
+    String lbPod = TestUtils.getPodName(" -l app=" + lbName, lbName);
+    TestUtils.checkPodReadyAndRunning(lbPod,lbName);
+    TestUtils.writePodLog(resultsDir + "/state-dump-logs/", lbPod, lbName);
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Ingress is Running  ");
+    String ingress = "ingress";
+    if (lbName.equals("voyager")) {
+      ingress = "ingress.voyager.appscode.com";
+    }
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get ")
+        .append(ingress)
+        .append(" -n ")
+        .append(getDomainNs())
+        .append(" | grep ")
+        .append(getDomainUid());
+    TestUtils.checkAnyCmdInLoop(cmd.toString(),getDomainUid() + "-" + lbName);
+  }
 
   /**
    * Run the shell script in the admin pod.

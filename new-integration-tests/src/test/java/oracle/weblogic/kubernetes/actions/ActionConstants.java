@@ -43,12 +43,12 @@ public interface ActionConstants {
 
   public static final String WIT_DOWNLOAD_URL 
       = "https://github.com/oracle/weblogic-image-tool";
-  public static final String WIT_VERSION    = System.getProperty("wit.version");
+  public static final String WIT_VERSION    = System.getProperty("wit.version", "latest");
   public static final String WIT_FILE_NAME  = "imagetool.zip";
 
   public static final String WDT_DOWNLOAD_URL 
       = "https://github.com/oracle/weblogic-deploy-tooling";
-  public static final String WDT_VERSION    = System.getProperty("wdt.version");
+  public static final String WDT_VERSION    = System.getProperty("wdt.version", "latest");
   public static final String WDT_FILE_NAME  = "weblogic-deploy.zip";
   
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";

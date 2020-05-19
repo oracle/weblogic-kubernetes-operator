@@ -53,7 +53,7 @@ public class WebLogicImageTool {
     if (!downloadWit()) {
       return false;
     } 
-   
+
     // download WDT if it is not in the expected location 
     if (!downloadWdt()) {
       return false;

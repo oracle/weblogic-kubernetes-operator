@@ -28,8 +28,10 @@ public class CommandParams {
   
   // The stderr of the command execution
   private String stderr;
-  
 
+  // Whether to turn on verbose logging  
+  private boolean verbose = true;
+  
   public CommandParams defaults() {
     return this;
   }
@@ -86,6 +88,15 @@ public class CommandParams {
 
   public String stdout() {
     return stdout;
+  }
+  
+  public CommandParams verbose(boolean verbose) {
+    this.verbose = verbose;
+    return this;
+  }
+
+  public boolean verbose() {
+    return verbose;
   }
  
 }

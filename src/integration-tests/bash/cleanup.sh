@@ -122,7 +122,10 @@ function doDeleteByName {
   kubectl get "$@" -o=jsonpath='{.items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
   # exit silently if nothing to delete
-  [ `cat $tmpfile | wc -l` -eq 0 ] && return
+  if [ `cat $tmpfile | wc -l` -eq 0 ]; then
+    rm -f $tmpfile
+    return
+  fi
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
@@ -147,7 +150,10 @@ function doDeleteByRange {
   kubectl get "$@" -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
   # exit silently if nothing to delete
-  [ `cat $tmpfile | wc -l` -eq 0 ] && return
+  if [ `cat $tmpfile | wc -l` -eq 0 ]; then
+    rm -f $tmpfile
+    return
+  fi
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
@@ -719,5 +725,5 @@ if [ ! "$LEASE_ID" = "" ] && [ ! "$SUCCESS" = "0" ]; then
   rm -f /tmp/release_lease.out
 fi
 
-echo @@ `timestamp` Exiting with status $SUCCESS
+echo @@ `timestamp` Exiting after $SECONDS seconds with status $SUCCESS 
 exit $SUCCESS

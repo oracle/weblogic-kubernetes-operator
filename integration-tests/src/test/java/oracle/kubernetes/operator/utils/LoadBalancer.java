@@ -131,14 +131,14 @@ public class LoadBalancer {
     createTraefikIngress();
   }
 
-  private void upgradeTraefikNamespace() throws Exception {
+  private synchronized void upgradeTraefikNamespace() throws Exception {
 
     String namespace = getKubernetesNamespaceToUpdate((String) lbMap.get("namespace"));
     LoggerHelper.getLocal().log(Level.INFO, "namespace to update" + namespace);
+    String traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" traefik-operator")
        .append(" stable/traefik ")
-       //.append(" --debug ")
        .append("--namespace traefik ")
        .append("--reuse-values ")
        .append("--set ")
@@ -150,10 +150,40 @@ public class LoadBalancer {
     LoggerHelper.getLocal().log(Level.INFO, " upgradeTraefikNamespace() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
+      TestUtils.printHelmChartInfo("traefik-operator","traefik");
       reportHelmInstallFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
     LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+    //check release status
+    String helmCmd = "helm status traefik-operator --namespace traefik";
+    TestUtils.checkAnyCmdInLoop(helmCmd, "deployed");
+    int i = 0;
+    //wait in case if pod is restarted after upgrade and check the status
+    cmd = new StringBuffer();
+    cmd.append("kubectl get pod -n traefik");
+    while (i < maxIterationsPod) {
+      if (TestUtils.checkPodContains(cmd.toString(), "Terminating", traefikPod)) {
+        Thread.sleep(5000);
+        i++;
+      } else {
+        break;
+      }
+      //if still in Terminating state, force to delete the pod
+      if (i == (maxIterationsPod - 1)) {
+        LoggerHelper.getLocal().log(Level.INFO, "Traefik pod "
+            + traefikPod + "is still in Terminating state , call delete pod ");
+        cmd = new StringBuffer();
+        cmd.append("kubectl delete ")
+            .append(traefikPod)
+            .append(" --force --grace-period=0 --ignore-not-found ")
+            .append(" -n traefik ");
+        ExecCommand.exec(cmd.toString());
+        Thread.sleep(5000);
+      }
+    }
+    traefikPod = TestUtils.getPodName(" -l app=traefik ", "traefik");
+    TestUtils.checkPodReadyAndRunning(traefikPod, "traefik");
   }
 
   /**
@@ -219,11 +249,26 @@ public class LoadBalancer {
 
     LoggerHelper.getLocal().log(Level.INFO, "createTraefikIngress() Running " + cmd.toString());
     ExecResult result = ExecCommand.exec(cmd.toString());
+    TestUtils.checkHelmChartStatus((String)lbMap.get("name"),
+        (String)lbMap.get("namespace"),"deployed");
+    TestUtils.printHelmChartInfo((String)lbMap.get("name"),
+        (String)lbMap.get("namespace"));
     if (result.exitValue() != 0) {
+      TestUtils.printHelmChartInfo((String)lbMap.get("name")
+          + "-ingress-"
+          + (String)lbMap.get("domainUID"),
+          (String)lbMap.get("namespace"));
       reportHelmInstallFailure(cmd.toString(), result);
     }
-    String outputStr = result.stdout().trim();
-    LoggerHelper.getLocal().log(Level.INFO, "Command returned " + outputStr);
+    LoggerHelper.getLocal().log(Level.INFO, "Checking if Ingress is created  ");
+    cmd = new StringBuffer();
+    cmd.append("kubectl get ingress")
+        .append(" -n ")
+        .append((String)lbMap.get("namespace"))
+        .append(" | grep ")
+        .append(lbMap.get("domainUID"));
+
+    TestUtils.checkAnyCmdInLoop(cmd.toString(),lbMap.get("domainUID") + "-traefik");
   }
 
   /**
@@ -235,7 +280,9 @@ public class LoadBalancer {
     String vversion = BaseTest.VOYAGER_VERSION;
     cmdLb = BaseTest.getProjectRoot() + "/kubernetes/samples/charts/util/setup.sh create voyager " + vversion;
     LoggerHelper.getLocal().log(Level.INFO, "Executing Install voyager operator cmd " + cmdLb);
-    executeHelmCommand(cmdLb);
+    executeHelmCommand(cmdLb, "voyager-operator", "voyager");
+    String voyagerPod = TestUtils.getPodName(" -l app=voyager ", "voyager");
+    TestUtils.checkPodReady(voyagerPod, "voyager");
   }
 
   private void createVoyagerIngressPerDomain() throws Exception {
@@ -247,12 +294,12 @@ public class LoadBalancer {
     Thread.sleep(20 * 1000);
   }
 
-  private void upgradeVoyagerNamespace() throws Exception {
+  private synchronized void upgradeVoyagerNamespace() throws Exception {
     String vversion = BaseTest.VOYAGER_VERSION;
+    String voyagerPod = TestUtils.getPodName(" -l app=voyager ", "voyager");
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append(" voyager-operator")
         .append(" appscode/voyager ")
-        //.append("--debug ")
         .append("--namespace voyager ")
         .append("--reuse-values ")
         .append("--set ")
@@ -272,7 +319,7 @@ public class LoadBalancer {
     int i = 0;
     // Wait max 300 seconds
     while (i < maxIterationsPod) {
-      returnStr = executeHelmCommand(cmd.toString());
+      returnStr = executeHelmCommand(cmd.toString(),"voyager-operator","voyager");
       if (null != returnStr && returnStr.contains("upgraded")) {
         LoggerHelper.getLocal().log(Level.INFO, "upgradeVoyagerNamespace() Result: " + returnStr);
         break;
@@ -291,8 +338,25 @@ public class LoadBalancer {
     }
 
     if (null == returnStr) {
-      executeHelmCommand(cmd.toString());
+      executeHelmCommand(cmd.toString(), "voyager-operator","voyager");
     }
+    //check release status
+    String helmCmd = "helm status voyager-operator --namespace voyager";
+    TestUtils.checkAnyCmdInLoop(helmCmd, "deployed");
+    i = 0;
+    //wait in case if pod is restarted after upgrade and check the status
+    cmd = new StringBuffer();
+    cmd.append("kubectl get pod -n voyager");
+    while (i < maxIterationsPod) {
+      if (TestUtils.checkPodContains(cmd.toString(), "Terminating", voyagerPod)) {
+        Thread.sleep(5000);
+        i++;
+      } else {
+        break;
+      }
+    }
+    voyagerPod = TestUtils.getPodName(" -l app=voyager ", "voyager");
+    TestUtils.checkPodReadyAndRunning(voyagerPod, "voyager");
   }
 
   private void createVoyagerIngress() throws Exception {
@@ -322,7 +386,7 @@ public class LoadBalancer {
     // Wait max 300 seconds
     while (i < maxIterationsPod) {
       try {
-        returnStr = executeHelmCommand(cmd.toString());
+        returnStr = executeHelmCommand(cmd.toString(),(String)lbMap.get("name"),(String)lbMap.get("namespace"));
       } catch (RuntimeException rtex) {
         LoggerHelper.getLocal().log(Level.INFO, "createVoyagerIngress() caught Exception. Retry");
       }
@@ -345,14 +409,27 @@ public class LoadBalancer {
     }
 
     if (null == returnStr) {
-      executeHelmCommand(cmd.toString());
+      executeHelmCommand(cmd.toString(),(String)lbMap.get("name"),(String)lbMap.get("namespace"));
     }
+
+    TestUtils.checkHelmChartStatus((String)lbMap.get("name"),
+        (String)lbMap.get("namespace"),"deployed");
+
+    cmd = new StringBuffer();
+    cmd.append("kubectl get ingress.voyager.appscode.com")
+        .append(" -n ")
+        .append((String)lbMap.get("namespace"))
+        .append(" | grep ")
+        .append(lbMap.get("domainUID"));
+
+    TestUtils.checkAnyCmdInLoop(cmd.toString(),lbMap.get("domainUID") + "-voyager");
   }
 
-  private String executeHelmCommand(String cmd) throws Exception {
+  private String executeHelmCommand(String cmd, String chartName, String chartNS) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       LoggerHelper.getLocal().log(Level.INFO, "executeHelmCommand failed with " + cmd);
+      TestUtils.printHelmChartInfo(chartName, chartNS);
       reportHelmInstallFailure(cmd, result);
     }
     String outputStr = result.stdout().trim();
@@ -415,5 +492,4 @@ public class LoadBalancer {
     // writing to the file
     Files.write(Paths.get(generatedYamlFile), changedLines.toString().getBytes());
   }
-
 }

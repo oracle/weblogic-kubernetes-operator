@@ -22,10 +22,7 @@ public class Docker {
         .saveResults(true)
         .redirect(false);
 
-    if (Command.withParams(cmdParams)
-        .execute()) {
-      return cmdParams.stdout().contains(searchString);
-    }
-    return false;
+    return Command.withParams(cmdParams)
+        .executeAndVerify(searchString);
   }
 }

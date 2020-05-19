@@ -80,6 +80,7 @@ The following features are **not** certified or supported in this release:
 * Multicast
 * Multitenancy
 * Production redeployment
+* Mixed clusters (configured servers targeted to a dynamic cluster)
 
 For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.
 

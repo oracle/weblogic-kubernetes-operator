@@ -70,9 +70,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -296,7 +296,7 @@ class ItMiiAddCluster implements LoggedTest {
   public void testAddMiiClusteriWithNoReplica() {
 
     // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensure that the server pods are running
+    // BeforeEach method ensures that the server pods are running
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -318,7 +318,7 @@ class ItMiiAddCluster implements LoggedTest {
         .metadata(meta);
 
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("createConfigMap %s failed", configMapName));
+        String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
     String adminPodCreationTime =
@@ -402,7 +402,7 @@ class ItMiiAddCluster implements LoggedTest {
   public void testAddMiiDynamicCluster() {
 
     // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensure that the server pods are running
+    // BeforeEach method ensures that the server pods are running
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -424,7 +424,7 @@ class ItMiiAddCluster implements LoggedTest {
         .metadata(meta);
 
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("createConfigMap %s failed", configMapName));
+        String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
     String adminPodCreationTime =
@@ -522,7 +522,7 @@ class ItMiiAddCluster implements LoggedTest {
   public void testAddMiiConfiguredCluster() {
  
     // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensure that the server pods are running
+    // BeforeEach method ensures that the server pods are running
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
@@ -544,7 +544,7 @@ class ItMiiAddCluster implements LoggedTest {
         .metadata(meta);
 
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("createConfigMap %s failed", configMapName));
+        String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
     String adminPodCreationTime =
@@ -802,7 +802,7 @@ class ItMiiAddCluster implements LoggedTest {
    **/
   private boolean checkManagedServerConfiguration(String managedServer) {
     ExecResult result = null;
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/")
