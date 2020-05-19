@@ -111,7 +111,7 @@ public class ManagedServersUpStep extends Step {
         packet);
   }
 
-  private void addServersToFactory(ServersUpStepFactory factory, WlsDomainConfig wlsDomainConfig) {
+  private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig) {
     Set<String> clusteredServers = new HashSet<>();
 
     wlsDomainConfig.getClusterConfigs().values()
@@ -122,8 +122,8 @@ public class ManagedServersUpStep extends Step {
         .forEach(wlsServerConfig -> factory.addServerIfNeeded(wlsServerConfig, null));
   }
 
-  private void addClusteredServersToFactory(ServersUpStepFactory factory, Set<String> clusteredServers,
-      WlsClusterConfig wlsClusterConfig) {
+  private void addClusteredServersToFactory(@Nonnull ServersUpStepFactory factory, Set<String> clusteredServers,
+      @Nonnull WlsClusterConfig wlsClusterConfig) {
     factory.logIfInvalidReplicaCount(wlsClusterConfig);
     wlsClusterConfig.getServerConfigs()
         .forEach(wlsServerConfig -> {
@@ -165,7 +165,7 @@ public class ManagedServersUpStep extends Step {
       return false;
     }
 
-    void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
+    private void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
       String serverName = serverConfig.getName();
       if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName())) {
         return;
