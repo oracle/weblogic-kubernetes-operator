@@ -107,11 +107,15 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   }
   
   /**
-   * Test patching a running model-in-image domain with a new webLogicCredentialsSecret and then
-   * update the domain's restartVersion to trigger a rolling restart of the managed server pods.
-   * Verify that the WebLogic server pods are restarted by verifying that each pod's creation time,
-   * and the weblogic.domainRestartVersion label are updated.
-   * Also verify that the new credentials are valid and can access WebLogic RESTful Management Services.
+   * Test patching a running model-in-image domain with a new WebLogic credentials secret。
+   * The test performs two patching operations to the domain spec：
+   * 1） Change the domain spec's webLogicCredentialsSecret；
+   * 2） Change the domain spec's domainRestartVersion to trigger a rolling restart of the server pods。
+   * The test verifies the following：
+   * 1） the domain spec's webLogicCredentialsSecret and restartVersion are updated；
+   * 2） the server pods are recreated by checking each pod's creationTimestamp before and after patching；
+   * 3） the server pods' weblogic.domainRestartVersion label is updated；
+   * 4） the new credentials are valid and can be used to access WebLogic RESTful Management Services。
    */
   @Test
   @DisplayName("Change the WebLogic credentials")
