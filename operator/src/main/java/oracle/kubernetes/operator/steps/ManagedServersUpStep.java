@@ -100,21 +100,7 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
     }
 
-    Set<String> clusteredServers = new HashSet<>();
-
-    for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
-      factory.logIfInvalidReplicaCount(clusterConfig);
-      for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
-        factory.addServerIfNeeded(serverConfig, clusterConfig);
-        clusteredServers.add(serverConfig.getName());
-      }
-    }
-
-    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
-      if (!clusteredServers.contains(serverConfig.getName())) {
-        factory.addServerIfNeeded(serverConfig, null);
-      }
-    }
+    Optional.ofNullable(config).ifPresent(wlsDomainConfig -> addServersToFactory(factory, wlsDomainConfig));
 
     info.setServerStartupInfo(factory.getStartupInfos());
     LOGGER.exiting();
@@ -123,6 +109,34 @@ public class ManagedServersUpStep extends Step {
         NEXT_STEP_FACTORY.createServerStep(
             info, config, factory.servers, factory.createNextStep(getNext())),
         packet);
+  }
+
+  private void addServersToFactory(ServersUpStepFactory factory, WlsDomainConfig wlsDomainConfig) {
+    Set<String> clusteredServers = new HashSet<>();
+
+    wlsDomainConfig.getClusterConfigs().values().stream()
+        .forEach(wlsClusterConfig -> addClusteredServersToFactory(factory, clusteredServers, wlsClusterConfig));
+
+    wlsDomainConfig.getServerConfigs().values().stream()
+        .filter(wlsServerConfig -> !clusteredServers.contains(wlsServerConfig.getName()))
+        .forEach(wlsServerConfig -> addServerToFactory(factory, wlsServerConfig));
+  }
+
+  private void addClusteredServersToFactory(ServersUpStepFactory factory, Set<String> clusteredServers,
+      WlsClusterConfig clusterConfig) {
+    factory.logIfInvalidReplicaCount(clusterConfig);
+    clusterConfig.getServerConfigs().stream()
+        .forEach(wlsServerConfig -> addServerToFactory(factory, clusteredServers, clusterConfig, wlsServerConfig));
+  }
+
+  private void addServerToFactory(ServersUpStepFactory factory, Set<String> clusteredServers,
+      WlsClusterConfig clusterConfig, WlsServerConfig serverConfig) {
+    factory.addServerIfNeeded(serverConfig, clusterConfig);
+    clusteredServers.add(serverConfig.getName());
+  }
+
+  private void addServerToFactory(ServersUpStepFactory factory, WlsServerConfig serverConfig) {
+    factory.addServerIfNeeded(serverConfig, null);
   }
 
   // an interface to provide a hook for unit testing.
