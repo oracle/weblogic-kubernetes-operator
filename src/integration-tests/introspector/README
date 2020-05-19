@@ -19,11 +19,7 @@ Usage:
     One way to do this when running locally is to run the integration tests.
     (Note that this test doesn't depend on Operator image as of 2018/10/16, but may in the future.)
 (2) Optionally specify values for input env vars (see introspectTest.sh for the list).
-(3) For a non Model In Image domain type.
-        Run introspectTest.sh
-    For a Model In Image domain type.
-        export DOMAIN_SOURCE_TYPE=FromModel
-        Run introspectTest.sh
+(3) Run introspectTest.sh
 -------------------
 Internal Test Flow:
 -------------------
