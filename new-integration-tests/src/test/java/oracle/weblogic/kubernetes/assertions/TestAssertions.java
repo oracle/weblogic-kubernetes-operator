@@ -164,9 +164,9 @@ public class TestAssertions {
   }
 
   /**
-   * Check if the given pods are restarted in the same order as in the pods list.
-   * @param pods list of names of the pods
-   * @param namespace name of the namespace in which to check for pod rolling restart
+   * Check pods are restarted in the same order as in the pods list.
+   * @param pods names of the pods in a list
+   * @param namespace name of the namespace in which to check for pods rolling restart
    * @return true if pods are restarted in rolling fashion
    */
   public static boolean verifyRollingRestartOccurred(ArrayList<String> pods, String namespace) {
