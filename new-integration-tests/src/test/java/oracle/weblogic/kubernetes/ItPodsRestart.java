@@ -57,10 +57,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test pods were restarted by some properties change.
+ * Test pods were restarted after some properties in server pods changed.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test pods were restarted by some properties change")
+@DisplayName("Test pods were restarted after some properties change in server pods changed")
 @IntegrationTest
 class ItPodsRestart implements LoggedTest {
 
@@ -74,7 +74,7 @@ class ItPodsRestart implements LoggedTest {
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
   /**
-   * Get namespaces for operator, domain1.
+   * Get namespaces for operator and WebLogic domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
@@ -116,13 +116,13 @@ class ItPodsRestart implements LoggedTest {
             domainUid, domainNamespace));
 
     assertNotNull(domain1, "domain1 is null");
-    assertNotNull(domain1.getSpec(), "domain1 spec is null");
-    assertNotNull(domain1.getSpec().getServerPod(), "domain1 spec serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1 spec serverPod resources are null");
+    assertNotNull(domain1.getSpec(), "domain1/spec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1/spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1/spec/serverPod/resources is null");
 
     // get the current server pod compute resource limit
     Map<String, Quantity> limits = domain1.getSpec().getServerPod().getResources().getLimits();
-    assertNotNull(limits, "domain1 spec serverPod resources limits are null");
+    assertNotNull(limits, "domain1/spec/serverPod/resources/limits is null");
 
     // print out current server pod compute resource limits
     logger.info("Current value for server pod compute resource limits:");
@@ -130,7 +130,7 @@ class ItPodsRestart implements LoggedTest {
 
     // get the current server pod compute resource requests
     Map<String, Quantity> requests = domain1.getSpec().getServerPod().getResources().getRequests();
-    assertNotNull(requests, "domain1 spec serverPod resources requests are null");
+    assertNotNull(requests, "domain1/spec/serverPod/resources/requests is null");
 
     // print out current server pod compute resource requests
     logger.info("Current value for server pod compute resource requests:");
@@ -199,13 +199,13 @@ class ItPodsRestart implements LoggedTest {
             domainUid, domainNamespace));
 
     assertNotNull(domain1, "domain1 is null");
-    assertNotNull(domain1.getSpec(), "domain1 spec is null");
-    assertNotNull(domain1.getSpec().getServerPod(), "domain1 spec serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1 spec serverPod resources are null");
+    assertNotNull(domain1.getSpec(), "domain1/spec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1/spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1/spec/serverPod/resources is null");
 
-    // get new server pod compute resources limit
+    // get new server pod compute resources limits
     limits = domain1.getSpec().getServerPod().getResources().getLimits();
-    assertNotNull(limits, "domain1 spec serverPod resources limits are null");
+    assertNotNull(limits, "domain1/spec/serverPod/resources/limits is null");
 
     // print out server pod compute resource limits
     logger.info("New value for server pod compute resource limits:");
@@ -213,14 +213,14 @@ class ItPodsRestart implements LoggedTest {
 
     // verify the server pod resources limits got updated
     logger.info("Checking that the server pod resources cpu limit was updated correctly");
-    assertNotNull(limits.get("cpu"), "domain1 spec serverPod resources cpu limit is null");
+    assertNotNull(limits.get("cpu"), "domain1/spec/serverPod/resources/limits/cpu is null");
     assertEquals(limits.get("cpu").getNumber().toString(), cpuLimit,
         String.format("server pod compute resource limits were not updated correctly, set cpu limit to %s, got %s",
             cpuLimit, limits.get("cpu").getNumber().toString()));
 
     // get new server pod compute resources requests
     requests = domain1.getSpec().getServerPod().getResources().getRequests();
-    assertNotNull(requests, "domain1 spec serverPod resources requests are null");
+    assertNotNull(requests, "domain1/spec/serverPod/resources/requests is null");
 
     // print out server pod compute resource requests
     logger.info("New value for server pod compute resource requests:");
@@ -228,14 +228,14 @@ class ItPodsRestart implements LoggedTest {
 
     // verify the server pod resources requests got updated
     logger.info("Checking that the server pod resources cpu request was updated correctly");
-    assertNotNull(requests.get("cpu"), "domain1 spec serverPod resources cpu request is null");
+    assertNotNull(requests.get("cpu"), "domain1/spec/serverPod/resources/requests/cpu is null");
     assertEquals(requests.get("cpu").getNumber().toString(), cpuRequest,
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber().toString()));
   }
 
   /**
-   * Create a model in image domain and verify the domain pods are ready.
+   * Create a model in image domain and verify the server pods are ready.
    */
   private static void createAndVerifyMiiDomain() {
 
@@ -344,7 +344,7 @@ class ItPodsRestart implements LoggedTest {
    *
    * @param cpuLimit cpu limit to be added to domain spec serverPod resources limits
    * @param cpuRequest cpu request to be added to domain spec serverPod resources requests
-   * @return true if patch domain custom resource is successful, false otherwise
+   * @return true if patching domain custom resource is successful, false otherwise
    */
   private boolean addServerPodResources(String cpuLimit, String cpuRequest) {
     // construct the patch string for adding server pod resources

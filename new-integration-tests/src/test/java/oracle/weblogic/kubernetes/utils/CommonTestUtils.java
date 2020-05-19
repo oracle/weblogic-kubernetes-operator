@@ -410,7 +410,7 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, namespace, timestamp),
-            String.format("isPodRestarted failed with ApiException for %s in namespace %s",
+            String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
                 podName, namespace)));
   }
 
