@@ -123,6 +123,7 @@ class OfflineWlstEnv(object):
     self.BOOT_FILE                = self.INTROSPECT_HOME + '/boot.properties'
     self.USERCONFIG_FILE          = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE             = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
+    self.DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
 
     self.DOMAIN_SOURCE_TYPE      = self.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
