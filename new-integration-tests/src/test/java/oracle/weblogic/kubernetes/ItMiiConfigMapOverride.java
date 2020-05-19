@@ -347,6 +347,12 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertNotNull(managed2PodCreationTime, "ManagedPodCreationTime returns NULL");
     logger.info("Got managed2PodCreationTime {0} ", managed2PodCreationTime);
 
+    ArrayList<String> pods = new ArrayList<>();
+    pods.add(adminServerPodName);
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.add(managedServerPrefix + i);
+    }
+
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -374,11 +380,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
 
-    ArrayList<String> pods = new ArrayList<>();
-    pods.add(adminServerPodName);
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.add(managedServerPrefix + i);
-    }
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, domainNamespace)),
          "More than one pod was restarted at same time"),

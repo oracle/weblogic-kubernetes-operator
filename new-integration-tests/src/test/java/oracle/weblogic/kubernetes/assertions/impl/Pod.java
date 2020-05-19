@@ -17,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public class Pod {
 
   /**
-   * Check pods are restarted in the same order as in the pods list.
+   * Check only one pod is restarted at a time in the same order as in the pods list.
+   * This assertion method needs to be called right after the domain is patched to ensure
+   * it doesn't miss any of the pods restart.
    * @param pods names of the pods in a list
    * @param namespace name of the namespace in which to check for pods rolling restart
    * @return true if pods are restarted in rolling fashion
