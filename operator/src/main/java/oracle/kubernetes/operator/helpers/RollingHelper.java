@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
  */
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static long DELAY_IN_SECONDS = 10;
 
   private RollingHelper() {
   }
@@ -211,15 +213,17 @@ public class RollingHelper {
       int countToRestartNow = countReady - dom.getMinAvailable(clusterName);
       Collection<StepAndPacket> restarts = new ArrayList<>();
       for (int i = 0; i < countToRestartNow; i++) {
-        StepAndPacket serverToRestart = servers.poll();
-        if (serverToRestart != null) {
-          restarts.add(serverToRestart);
-        }
+        Optional.ofNullable(servers.poll())
+            .ifPresent(serverToRestart -> restarts.add(serverToRestart));
       }
 
-      return restarts.isEmpty()
-          ? (servers.isEmpty() ? doNext(packet) : doDelay(this, packet, 10, TimeUnit.SECONDS))
-          : doForkJoin(this, packet, restarts);
+      if (!restarts.isEmpty()) {
+        return doForkJoin(this, packet, restarts);
+      } else if (!servers.isEmpty()) {
+        return doDelay(this, packet, DELAY_IN_SECONDS, TimeUnit.SECONDS);
+      } else {
+        return doNext(packet);
+      }
     }
   }
 }
