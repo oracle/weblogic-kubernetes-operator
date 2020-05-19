@@ -79,10 +79,9 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   private static int replicaCount = 2;
 
   /**
-   * Perform the following initialization for all the tests in this class:
-   * 1) set up the necessary namespaces for the operator and one domain,
-   * 2) install the operator in the first namespace, and
-   * 3) create a domain in the second namespace using the pre-created basic MII image.
+   * Perform initialization for all the tests in this class.
+   * Set up the necessary namespaces, install the operator in the first namespace, and
+   * create a domain in the second namespace using the pre-created basic MII image.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
@@ -112,15 +111,13 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   }
   
   /**
-   * Test patching a running model-in-image domain with a new WebLogic credentials secret。
-   * The test performs two patching operations to the domain spec：
-   * 1） Change the domain spec's webLogicCredentialsSecret；
-   * 2） Change the domain spec's domainRestartVersion to trigger a rolling restart of the server pods。
-   * The test verifies the following：
-   * 1） the domain spec's webLogicCredentialsSecret and restartVersion are updated；
-   * 2） the server pods are recreated by checking each pod's creationTimestamp before and after patching；
-   * 3） the server pods' weblogic.domainRestartVersion label is updated；
-   * 4） the new credentials are valid and can be used to access WebLogic RESTful Management Services。
+   * Test patching a running model-in-image domain with a new WebLogic credentials secret.
+   * Perform two patching operations to the domain spec: change the webLogicCredentialsSecret to a new
+   * secret, and change the domainRestartVersion to trigger a rolling restart of the server pods.
+   * Verify that the domain spec's webLogicCredentialsSecret and restartVersion are updated,
+   * the server pods are recreated by checking each pod's creationTimestamp before and after patching,
+   * the server pods' weblogic.domainRestartVersion label is updated, and 
+   * the new credentials are valid and can be used to access WebLogic RESTful Management Services.
    */
   @Test
   @DisplayName("Change the WebLogic credentials")
