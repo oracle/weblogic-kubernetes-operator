@@ -36,7 +36,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-//import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
@@ -209,7 +208,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
-    //return createMiiImage(
     return createImage(
         defaultWitParams()
             .modelImageName(imageName)

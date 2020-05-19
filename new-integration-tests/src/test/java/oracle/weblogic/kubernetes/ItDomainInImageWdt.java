@@ -4,18 +4,14 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.Arrays;
-//import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//import com.google.gson.JsonObject;
-//import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-//import io.kubernetes.client.openapi.models.V1Secret;
+
 import io.kubernetes.client.openapi.models.V1SecretReference;
-//import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -25,17 +21,15 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-//import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-//import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.awaitility.core.ConditionFactory;
-//import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -71,8 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItDomainInImageWdt implements LoggedTest {
 
   private static HelmParams opHelmParams = null;
-  //private static V1ServiceAccount serviceAccount = null;
-  //private String serviceAccountName = null;
   private static String opNamespace = null;
   private static String operatorImage = null;
   private static String domainNamespace = null;
@@ -191,7 +183,7 @@ class ItDomainInImageWdt implements LoggedTest {
 
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
-  //@AfterAll
+  @AfterAll
   void tearDown() {
 
     // Delete domain custom resource
