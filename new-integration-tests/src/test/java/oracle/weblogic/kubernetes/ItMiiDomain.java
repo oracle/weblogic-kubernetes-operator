@@ -903,6 +903,7 @@ class ItMiiDomain implements LoggedTest {
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
+            .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
