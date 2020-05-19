@@ -241,7 +241,7 @@ public class DomainStatusUpdater {
                                                     Step next) {
       return new StatusReplaceResponseStep(this,
           /* MARKER-2.6.0-ONLY */
-          newStatus, useDomainStatusEndpoint,
+          newStatus,
           /* END-2.6.0-ONLY */
           context, next);
     }
@@ -252,13 +252,11 @@ public class DomainStatusUpdater {
     private final DomainStatusUpdaterContext context;
     /* MARKER-2.6.0-ONLY */
     private final DomainStatus newStatus;
-    private final boolean useDomainStatusEndpoint;
     /* END-2.6.0-ONLY */
 
     public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep,
                                      /* MARKER-2.6.0-ONLY */
                                      DomainStatus newStatus,
-                                     boolean useDomainStatusEndpoint,
                                      /* END-2.6.0-ONLY */
                                      DomainStatusUpdaterContext context, Step nextStep) {
       super(nextStep);
@@ -266,7 +264,6 @@ public class DomainStatusUpdater {
       this.context = context;
       /* MARKER-2.6.0-ONLY */
       this.newStatus = newStatus;
-      this.useDomainStatusEndpoint = useDomainStatusEndpoint;
       /* END-2.6.0-ONLY */
     }
 
