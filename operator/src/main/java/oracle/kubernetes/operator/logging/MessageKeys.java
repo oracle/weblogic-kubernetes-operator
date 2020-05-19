@@ -14,6 +14,7 @@ public class MessageKeys {
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
   public static final String CREATING_CRD = "WLSKO-0012";
+  public static final String DOMAIN_STATUS_IGNORED = "WLSKO-0013";
   public static final String LISTING_DOMAINS = "WLSKO-0014";
   public static final String SECRET_NOT_FOUND = "WLSKO-0018";
   public static final String RETRIEVING_SECRET = "WLSKO-0019";

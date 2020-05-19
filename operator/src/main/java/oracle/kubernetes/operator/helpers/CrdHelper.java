@@ -557,9 +557,7 @@ public class CrdHelper {
 
       /* MARKER-2.6.0-ONLY */
       private void checkForStatusSubresource(V1beta1CustomResourceDefinition existingCrd) {
-        if (existingCrd.getSpec().getSubresources().getStatus() != null) {
-          Main.useDomainStatusEndpoint.set(true);
-        }
+        Main.useDomainStatusEndpoint.set(existingCrd.getSpec().getSubresources().getStatus() != null);
       }
       /* END-2.6.0-ONLY */
 
