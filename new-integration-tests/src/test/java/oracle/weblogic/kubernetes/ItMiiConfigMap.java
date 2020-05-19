@@ -399,8 +399,8 @@ class ItMiiConfigMap implements LoggedTest {
       fail("CheckJms:  got unexpected exception" + ex);
     }
     logger.info("CheckJms: curl command returns {0}", result.toString());
-    assertEquals("200", result.stdout(), "JMSSystemResources configuration not found");
-    logger.info("Found the JMSSystemResources configuration");
+    assertEquals("200", result.stdout(), "JMSSystemResource configuration not found");
+    logger.info("Found the JMSSystemResource configuration");
 
     checkWldf = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkWldf.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
@@ -418,8 +418,8 @@ class ItMiiConfigMap implements LoggedTest {
       fail("CheckWldf: got unexpected exception" + ex);
     }
     logger.info("CheckWldf: curl command returns {0}", result.toString());
-    assertEquals("200", result.stdout(), "WLDFSystemResources configuration not found");
-    logger.info("Found the WLDFSystemResources configuration");
+    assertEquals("200", result.stdout(), "WLDFSystemResource configuration not found");
+    logger.info("Found the WLDFSystemResource configuration");
   }
 
   // This method is needed in this test class, since the cleanup util

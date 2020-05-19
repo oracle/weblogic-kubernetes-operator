@@ -321,21 +321,33 @@ class ItMiiAddCluster implements LoggedTest {
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
+    // get the creation time of the admin server pod before patching
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("Couldn't get PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns null");
-    logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
+            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
+    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
+    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
+        domainUid,
+        domainNamespace,
+        adminServerPodName,
+        adminPodCreationTime);
 
+    // get the creation time of the managed server pods before patching
     List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      final String managedServerPodName = managedServerPrefix + i;
-      managedServerPodOriginalTimestampList.add(
-          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
-              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                  managedServerPodName, domainNamespace)));
-    }
-
+    assertDoesNotThrow(
+        () -> { 
+          for (int i = 1; i <= replicaCount; i++) {
+            String managedServerPodName = managedServerPrefix + i;
+            String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
+            managedServerPodOriginalTimestampList.add(creationTime);
+            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
+                domainUid,
+                domainNamespace,
+                managedServerPodName,
+                creationTime);
+          } 
+        },
+        String.format("Failed to get creationTimestamp for managed server pods"));
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -427,21 +439,33 @@ class ItMiiAddCluster implements LoggedTest {
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
+    // get the creation time of the admin server pod before patching
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("Couldn't get PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns null");
-    logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
+            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
+    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
+    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
+        domainUid,
+        domainNamespace,
+        adminServerPodName,
+        adminPodCreationTime);
 
+    // get the creation time of the managed server pods before patching
     List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      final String managedServerPodName = managedServerPrefix + i;
-      managedServerPodOriginalTimestampList.add(
-          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
-              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                  managedServerPodName, domainNamespace)));
-    }
-
+    assertDoesNotThrow(
+        () -> { 
+          for (int i = 1; i <= replicaCount; i++) {
+            String managedServerPodName = managedServerPrefix + i;
+            String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
+            managedServerPodOriginalTimestampList.add(creationTime);
+            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
+                domainUid,
+                domainNamespace,
+                managedServerPodName,
+                creationTime);
+          } 
+        },
+        String.format("Failed to get creationTimestamp for managed server pods"));
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -547,21 +571,33 @@ class ItMiiAddCluster implements LoggedTest {
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
      
+    // get the creation time of the admin server pod before patching
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("Couldn't get PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns null");
-    logger.info("AdminPodCreationTime {0} ", adminPodCreationTime);
+            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
+    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
+    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
+        domainUid,
+        domainNamespace,
+        adminServerPodName,
+        adminPodCreationTime);
 
+    // get the creation time of the managed server pods before patching
     List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      final String managedServerPodName = managedServerPrefix + i;
-      managedServerPodOriginalTimestampList.add(
-          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
-              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                  managedServerPodName, domainNamespace)));
-    }
-
+    assertDoesNotThrow(
+        () -> { 
+          for (int i = 1; i <= replicaCount; i++) {
+            String managedServerPodName = managedServerPrefix + i;
+            String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
+            managedServerPodOriginalTimestampList.add(creationTime);
+            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
+                domainUid,
+                domainNamespace,
+                managedServerPodName,
+                creationTime);
+          } 
+        },
+        String.format("Failed to get creationTimestamp for managed server pods"));
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")

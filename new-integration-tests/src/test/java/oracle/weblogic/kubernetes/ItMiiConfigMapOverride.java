@@ -50,9 +50,11 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
@@ -106,6 +108,8 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   private String domainUid = "miicfgoverride";
   private StringBuffer checkJdbc = null;
+  private StringBuffer checkJms = null;
+  private StringBuffer checkWldf = null;
   private V1Patch patch = null;
 
   private static Map<String, Object> secretNameMap;
@@ -213,20 +217,21 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   /**
    * Start a WebLogic domain with out any pre-defined configmap.
-   * Create a configmap with a sparse JDBC model file.
-   * Patch the domain resource with the configmap which is targeted to cluster
-   * Update the restart version of the domain resource
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp before and after rolling restart
-   * Verify the DataSource configuration using Rest API call to admin server
+   * Create a configmap with a sparse JDBC/JMS/WLDF model files.
+   * Patch the domain resource with the configmap.
+   * Update the restart version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp 
+   * for all the server pods before and after rolling restart.
+   * Verify SystemResource configurations using Rest API call to admin server.
    */
   @Test
   @Order(1)
-  @DisplayName("Add a JDBC DataSource to a model in image domain")
+  @DisplayName("Add JDBC/JMS/WLDF SystemResources to a model in image domain")
   @Slow
   @MustNotRunInParallel
-  public void testCreateMiiJdbcConfigMapDomain() {
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
+  public void testAddMiiSystemResources() {
+    final String adminServerPodName =  String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix =  String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
@@ -255,6 +260,8 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
+
+    // Add jdbc model file
     String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
     Map<String, String> data = new HashMap<>();
     String configMapName = "dsconfigmap";
@@ -263,6 +270,22 @@ class ItMiiConfigMapOverride implements LoggedTest {
         String.format("readString operation failed for %s", dsModelFile));
     assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
     data.put("model.jdbc.yaml", cmData);
+
+    // Add jms model file
+    final String jmsModelFile = MODEL_DIR + "/model.jms.yaml";
+    cmData = null;
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(jmsModelFile)),
+        String.format("readString operation failed for %s", jmsModelFile));
+    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+    data.put("model.jms.yaml", cmData);
+
+    // Add wldf model file
+    final String wldfModelFile = MODEL_DIR + "/model.wldf.yaml";
+    cmData = null;
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(wldfModelFile)),
+        String.format("readString operation failed for %s", wldfModelFile));
+    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+    data.put("model.wldf.yaml", cmData);
 
     V1ObjectMeta meta = new V1ObjectMeta()
         .labels(labels)
@@ -328,21 +351,33 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
+    // get the creation time of the admin server pod before patching
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
-
     assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
-    logger.info("Got adminPodCreationTime {0} ", adminPodCreationTime);
+    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
+        domainUid,
+        domainNamespace,
+        adminServerPodName,
+        adminPodCreationTime);
 
+    // get the creation time of the managed server pods before patching
     List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      final String managedServerPodName = managedServerPrefix + i;
-      managedServerPodOriginalTimestampList.add(
-          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
-              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                  managedServerPodName, domainNamespace)));
-    }
+    assertDoesNotThrow(
+        () -> { 
+          for (int i = 1; i <= replicaCount; i++) {
+            String managedServerPodName = managedServerPrefix + i;
+            String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
+            managedServerPodOriginalTimestampList.add(creationTime);
+            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
+                domainUid,
+                domainNamespace,
+                managedServerPodName,
+                creationTime);
+          } 
+        },
+        String.format("Failed to get creationTimestamp for managed server pods"));
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -411,7 +446,45 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
     logger.info("curl command returns {0}", result.toString());
     assertEquals("200", result.stdout(), "DataSource configuration not found");
-    logger.info("Found the DataSource configuration ");
+    logger.info("Found the DataSource configuration");
+
+    checkJms = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkJms.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainConfig")
+          .append("/JMSSystemResources/TestClusterJmsModule/")
+          .append(" --silent --show-error ")
+          .append(" -o /dev/null ")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
+    logger.info("CheckJms: curl command {0}", new String(checkJms));
+    try {
+      result = exec(new String(checkJms), true);
+    } catch (Exception ex) {
+      logger.info("CheckJms: caught unexpected exception {0}", ex);
+      fail("CheckJms:  got unexpected exception" + ex);
+    }
+    logger.info("CheckJms: curl command returns {0}", result.toString());
+    assertEquals("200", result.stdout(), "JMSSystemResource configuration not found");
+    logger.info("Found the JMSSystemResource configuration");
+
+    checkWldf = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkWldf.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainConfig")
+          .append("/WLDFSystemResources/TestWldfModule/")
+          .append(" --silent --show-error ")
+          .append(" -o /dev/null ")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
+    logger.info("CheckWldf: curl command {0}", new String(checkWldf));
+    try {
+      result = exec(new String(checkWldf), true);
+    } catch (Exception ex) {
+      logger.info("CheckWldf: caught unexpected exception {0}", ex);
+      fail("CheckWldf: got unexpected exception" + ex);
+    }
+    logger.info("CheckWldf: curl command returns {0}", result.toString());
+    assertEquals("200", result.stdout(), "WLDFSystemResource configuration not found");
+    logger.info("Found the WLDFSystemResource configuration");
 
   }
 
