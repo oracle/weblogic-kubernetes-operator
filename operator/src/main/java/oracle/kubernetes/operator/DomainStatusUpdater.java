@@ -25,8 +25,10 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -274,13 +276,10 @@ public class DomainStatusUpdater {
       // If the 3.0.0 operator updated the CRD to use status endpoint while this operator is running
       // then these domain replace calls will succeed, but the proposed domain status will have been
       // ignored. Check if the status on the returned domain is expected
-      if (!useDomainStatusEndpoint && !newStatus.equals(callResponse.getResult().getStatus())) {
-        // TEST
-        System.out.println("**** **** ****: Domain status update ignored; switching to status endpoint");
-
-        // FIXME: would be better to recheck CRD
-        Main.useDomainStatusEndpoint.set(true);
-        return doNext(createRetry(context, getNext()), packet);
+      if (callResponse.getResult() == null || !newStatus.equals(callResponse.getResult().getStatus())) {
+        LOGGER.info(MessageKeys.DOMAIN_STATUS_IGNORED);
+        return doNext(CrdHelper.createDomainCrdStep(packet.getSpi(KubernetesVersion.class),
+            createRetry(context, getNext())), packet);
       }
       /* END-2.6.0-ONLY */
       packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
