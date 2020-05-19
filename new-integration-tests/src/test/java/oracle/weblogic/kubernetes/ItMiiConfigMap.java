@@ -67,8 +67,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -263,7 +263,7 @@ class ItMiiConfigMap implements LoggedTest {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-     
+
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
@@ -320,7 +320,7 @@ class ItMiiConfigMap implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
     try {
       checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
@@ -397,7 +397,7 @@ class ItMiiConfigMap implements LoggedTest {
 
   private void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName) {
     // create the domain CR
     Domain domain = new Domain()

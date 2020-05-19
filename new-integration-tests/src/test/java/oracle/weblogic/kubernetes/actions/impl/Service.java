@@ -3,13 +3,11 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Service {
 
@@ -36,48 +34,26 @@ public class Service {
   }
 
   /**
-   * Get a Kubernetes Service.
+   * Get namespaced service object.
    *
-   * @param serviceName name of the Service
-   * @param label Map of key value pair with which the service is decorated with
-   * @param namespace name of namespace
-   * @return V1Service object if found otherwise null
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service object to get
+   * @return V1Service object if found, otherwise null
    */
-  public static V1Service getService(
-      String serviceName,
-      Map<String, String> label,
-      String namespace) {
-    V1Service v1Service;
-    try {
-      v1Service = Kubernetes.getService(serviceName, label, namespace);
-    } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
-      return null;
-    }
-    return v1Service;
+  public static V1Service getNamespacedService(String namespace, String serviceName) {
+    return Kubernetes.getNamespacedService(namespace, serviceName);
   }
 
   /**
-   * Returns NodePort of admin service.
+   * Get node port of a namespaced service given the channel name.
    *
-   * @param serviceName name of admin server service
-   * @param label key value pair with which the service is decorated with
-   * @param namespace the namespace in which to check for the service
-   * @return AdminNodePort of the Kubernetes service if exits else -1
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the nodeport
+   * @return node port if service and channel is found, otherwise -1
    */
-  public static int getAdminServiceNodePortString(
-      String serviceName,
-      Map<String, String> label,
-      String namespace) {
-
-    int adminNodePort = -1;
-    try {
-      adminNodePort = Kubernetes.getAdminServiceNodePort(serviceName, label, namespace);
-    } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
-      return -1;
-    }
-    return adminNodePort;
+  public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
+    return Kubernetes.getServiceNodePort(namespace, serviceName, channelName);
   }
-
 }
+

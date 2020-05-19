@@ -69,9 +69,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getAdminServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -271,7 +271,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("createConfigMap failed for %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-     
+
     // create the domain CR with no configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
@@ -333,13 +333,13 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
     logger.info("Got adminPodCreationTime {0} ", adminPodCreationTime);
 
-    String managed1PodCreationTime = 
+    String managed1PodCreationTime =
          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPrefix + 1),
          String.format("Can not find PodCreationTime for pod %s", managedServerPrefix + 1));
     assertNotNull(managed1PodCreationTime, "ManagedPodCreationTime returns NULL");
     logger.info("Got managed1PodCreationTime {0} ", managed1PodCreationTime);
 
-    String managed2PodCreationTime = 
+    String managed2PodCreationTime =
          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPrefix + 2),
          String.format("Can not find PodCreationTime for pod %s", managedServerPrefix + 2));
     assertNotNull(managed2PodCreationTime, "ManagedPodCreationTime returns NULL");
@@ -372,16 +372,16 @@ class ItMiiConfigMapOverride implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
 
-    // Check if the admin server pod has been restarted 
+    // Check if the admin server pod has been restarted
     // by comparing the PodCreationTime before and after rolling restart
     checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime);
 
-    // Check if the managed server pods have been restarted 
+    // Check if the managed server pods have been restarted
     // by comparing the PodCreationTime before and after rolling restart
     checkPodRestarted(managedServerPrefix + 1, domainUid, domainNamespace, managed1PodCreationTime);
     checkPodRestarted(managedServerPrefix + 2, domainUid, domainNamespace, managed2PodCreationTime);
     // check managed server services created
-    // Even if pods are created, need for the service to created 
+    // Even if pods are created, need for the service to created
     // before checking the DataSource configuration
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
@@ -390,7 +390,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     }
 
     oracle.weblogic.kubernetes.utils.ExecResult result = null;
-    int adminServiceNodePort = getAdminServiceNodePort(adminServerPodName + "-external", null, domainNamespace);
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/wls/latest/datasources/id/TestDataSource/")
@@ -467,7 +467,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   private void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()

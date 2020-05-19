@@ -12,6 +12,7 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -25,6 +26,7 @@ import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.Job;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Nginx;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -448,34 +450,28 @@ public class TestActions {
   }
 
   /**
-   * Returns the V1Service object given the following parameters.
+   * Get node port of a namespaced service given the channel name.
    *
-   * @param serviceName name of the Service to return
-   * @param label a Map of key value pairs the service is decorated with
-   * @param namespace namespace in which to check for the service existence
-   * @return V1Service object if found otherwise null
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the nodeport
+   * @return node port if service and channel is found, otherwise -1
    */
-  public static V1Service getService(
-      String serviceName,
-      Map<String, String> label,
-      String namespace) {
-    return Service.getService(serviceName, label, namespace);
+  public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
+    return Service.getServiceNodePort(namespace, serviceName, channelName);
   }
 
   /**
-   * Returns NodePort of a admin service.
+   * Get namespaced service object.
    *
-   * @param serviceName name of admin service
-   * @param label the key value pair with which the service is decorated with
-   * @param namespace namespace in which to check for the service
-   * @return AdminNodePort of the Kubernetes service if exits else -1
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service object to get
+   * @return V1Service object if found, otherwise null
    */
-  public static int getAdminServiceNodePort(
-      String serviceName,
-      Map<String, String> label,
-      String namespace) {
-    return Service.getAdminServiceNodePortString(serviceName, label, namespace);
+  public static V1Service getNamespacedService(String namespace, String serviceName) {
+    return Service.getNamespacedService(namespace, serviceName);
   }
+
 
   // ------------------------ service account  --------------------------
 
@@ -642,6 +638,19 @@ public class TestActions {
           String.format("The pod %s does not exist in namespace %s!", podName, namespace));
     }
     return Exec.exec(pod, containerName, redirectToStdout, command);
+  }
+
+  // ------------------------ Jobs ----------------------------------
+
+  /**
+   * Create a job.
+   *
+   * @param jobBody V1Job object containing job configuration data
+   * @return String job name if job creation is successful
+   * @throws ApiException when create job fails
+   */
+  public static String createNamespacedJob(V1Job jobBody) throws ApiException {
+    return Job.createNamespacedJob(jobBody);
   }
 
   // ----------------------   pod  ---------------------------------
