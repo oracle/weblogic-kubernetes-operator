@@ -71,14 +71,8 @@ INCLUDE_MODEL_CONFIGMAP ::: Tell sample to include a configuration.model.configM
   Used by './stage-domain-resource.sh' to add a reference to a configMap
   in the domain resource, and to add a configuration.model.secrets reference
   to a secret that's used by the configMap. Also used by './create-secrets.sh' to
-  deploy a secret the configMap uses. See also MODEL_CONFIGMAP_DIR.
+  deploy a secret the configMap uses. 
   Valid values are 'false' (default), and 'true'.
-
-MODEL_CONFIGMAP_DIR ::: Configmap model files.
-  Location of staged model files relative to WORKDIR that will be
-  loaded at runtime from a configmap specified by the domain resource.
-  Default is 'model-configmap/datasource'.
-  See also INCLUDE_MODEL_CONFIGMAP.
 
 http_proxy https_proxy ::: Proxies
   If running behind a proxy, then set as needed to allow curl access

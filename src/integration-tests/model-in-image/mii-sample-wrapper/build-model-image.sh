@@ -69,6 +69,10 @@ IMGTOOL=$WORKDIR/model-images/imagetool/bin/imagetool.sh
 
 function output_dryrun() {
 
+MODEL_YAML_FILES="$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
+MODEL_ARCHIVE_FILES=$WORKDIR/$MODEL_DIR/archive.zip
+MODEL_VARIABLE_FILES="$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
+
 cat << EOF
 
 dryrun:#!/bin/bash
@@ -98,20 +102,16 @@ dryrun:  --type wdt \\
 dryrun:  --version latest \\
 dryrun:  --path ${WORKDIR}/model-images/weblogic-deploy.zip
 dryrun:
-dryrun:MODEL_YAML_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
-dryrun:MODEL_ARCHIVE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"
-dryrun:MODEL_VARIABLE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
-dryrun:
 dryrun:$IMGTOOL update \\
 dryrun:  --tag $MODEL_IMAGE \\
 dryrun:  --fromImage $BASE_IMAGE \\
-dryrun:  \${MODEL_YAML_FILES:+--wdtModel \${MODEL_YAML_FILES}} \\
-dryrun:  \${MODEL_VARIABLE_FILES:+--wdtVariables \${MODEL_VARIABLE_FILES}} \\
-dryrun:  \${MODEL_ARCHIVE_FILES:+--wdtArchive \${MODEL_ARCHIVE_FILES}} \\
+dryrun:  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \\
+dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
+dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
 dryrun:  --wdtModelOnly \\
 dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
 dryrun:
-dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=$SECONDS."
+dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
 
 EOF
 

@@ -31,6 +31,12 @@ DO_UPDATE2=false
 DO_UPDATE3=false
 WDT_DOMAIN_TYPE=WLS
 
+# TBD parameterize:
+#       DB_NAMESPACE DB_NODE_PORT
+#       DOMAIN_NAMESPACE
+#       DOMAIN_UID1 DOMAIN_UID2
+#       multi-node/remote-repo?
+
 function usage() {
   cat << EOF
 
@@ -69,10 +75,6 @@ function usage() {
     -update3  : Run update3 use case (update first domain's app with new image).
 
     -?        : This help.
-
-  Optional env var:
-    
-    Set "DOMAIN_NAMESPACE" prior to running (default sample-domain1-ns).
 
 EOF
 }
@@ -113,6 +115,8 @@ fi
 #
 
 if [ "$DO_CLEAN" = "true" ]; then
+  doCommand -c "echo ====== CLEANUP ======"
+
   doCommand -c mkdir -p \$WORKDIR
   doCommand -c cd \$WORKDIR/..
   if [ "$bname" = "mii-sample" ]; then
@@ -120,7 +124,7 @@ if [ "$DO_CLEAN" = "true" ]; then
   else
     doCommand -c rm -fr ./model-in-image-sample-work-dir
   fi
-  doCommand  "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
+  doCommand    "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
   doCommand -c mkdir -p \$WORKDIR
   doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR
 
@@ -144,6 +148,7 @@ fi
 # Env var pre-reqs
 #
 
+doCommand -c "echo ====== SETUP ======"
 doCommand -c set -e
 doCommand -c SRCDIR=$SRCDIR
 doCommand -c TESTDIR=$TESTDIR
@@ -160,6 +165,7 @@ doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 #
 
 if [ "$DO_OPER" = "true" ]; then
+  doCommand -c "echo ====== OPER BUILD ======"
   doCommand  "\$TESTDIR/build-operator.sh" 
 fi
 
@@ -168,6 +174,7 @@ fi
 #
 
 if [ "$DO_DB" = "true" ]; then
+  doCommand -c "echo ====== DB DEPLOY ======"
   # TBD note that start-db (and maybe stop-db) seem to alter files right inside the source tree - 
   #     this should be fixed to have a WORKDIR or similar, and means that they aren't suitable for multi-user/multi-ns environments
   doCommand  "\$DBSAMPLEDIR/stop-db-service.sh -n \$DB_NAMESPACE"
@@ -179,10 +186,12 @@ if [ "$DO_DB" = "true" ]; then
 fi
 
 if [ "$DO_OPER" = "true" ]; then
+  doCommand -c "echo ====== OPER DEPLOY ======"
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
 if [ "$DO_TRAEFIK" = "true" ]; then
+  doCommand -c "echo ====== TRAEFIK DEPLOY ======"
   doCommand  "\$TESTDIR/deploy-traefik.sh"
 fi
 
@@ -190,41 +199,31 @@ fi
 # Deploy initial domain, wait for its pods to be ready, and test its cluster app
 #
 
-
 if [ "$DO_INITIAL" = "true" ]; then
-  wait_parms="-d $DOMAIN_UID1 -n $DOMAIN_NAMESPACE"
+  doCommand -c "echo ====== USE CASE: INITIAL ======"
 
-  doCommand  -c export DOMAIN_UID=$DOMAIN_UID1
-  doCommand  -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-initial.yaml"
-  doCommand  -c "export INCLUDE_CONFIGMAP=false"
-  doCommand  "\$MIIWRAPPERDIR/stage-tooling.sh"
-  doCommand  "\$MIIWRAPPERDIR/build-model-image.sh"
-  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand  "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
+  doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
+  doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-initial.yaml"
+  doCommand -c "export INCLUDE_CONFIGMAP=false"
 
-  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+  doCommand    "\$MIIWRAPPERDIR/stage-tooling.sh"
+  doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
+  doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
 
-  # Cheat to speedup a subsequent roll/shutdown.
-  [ ! "$DRY_RUN" = "true" ] && diefast
+  doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
+  doCommand -c "\$WORKDIR/utils/wl-pod-wait.sh -p 0 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE -q"
 
-  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "Hello World!"
-  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "Hello World!"
+  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand    "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  # TBD add JRF specific testing
-  # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  #   export wallet
-  #   import wallet to wallet secret 
-  #   set env var to tell creat-domain-resource to uncomment wallet secret
-  #   doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh -predelete"
-  #   doCommand  -c "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms -q"
-  # fi
-  # Cheat to speedup a subsequent roll/shutdown.
-  # diefast
-
+  if [ ! "$DRY_RUN" = "true" ]; then
+    diefast # (cheat to speedup a subsequent roll/shutdown)
+    testapp internal cluster-1 "Hello World!"
+    testapp traefik  cluster-1 "Hello World!"
+  fi
 fi
-
 
 #
 # Add datasource to the running domain, patch its
@@ -233,31 +232,25 @@ fi
 #
 
 if [ "$DO_UPDATE1" = "true" ]; then
-  wait_parms="-d $DOMAIN_UID1 -n $DOMAIN_NAMESPACE"
+  doCommand -c "echo ====== USE CASE: UPDATE1 ======"
 
-  # JRF specific testing
-  # if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  #   import wallet to wallet secret again
-  #   set env var to tell creat-domain-resource to uncomment wallet secret
-  # fi
+  doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
+  doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update1.yaml"
+  doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
 
-  doCommand  -c export DOMAIN_UID=$DOMAIN_UID1
-  doCommand  -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update1.yaml"
-  doCommand  -c "export INCLUDE_MODEL_CONFIGMAP=true"
-  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-model-configmap.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
-  doCommand  "\$WORKDIR/utils/patch-restart-version.sh $wait_parms"
+  doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand    "\$WORKDIR/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand    "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  # Cheat to speedup a subsequent roll/shutdown.
-  [ ! "$DRY_RUN" = "true" ] && diefast
-
-  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "mynewdatasource"
-  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "mynewdatasource"
-
+  if [ ! "$DRY_RUN" = "true" ]; then
+    diefast # (cheat to speedup a subsequent roll/shutdown)
+    testapp internal cluster-1 "mynewdatasource"
+    testapp traefik  cluster-1 "mynewdatasource"
+  fi
 fi
 
 #
@@ -268,32 +261,30 @@ fi
 #
 
 if [ "$DO_UPDATE2" = "true" ]; then
-  wait_parms="-d $DOMAIN_UID2 -n $DOMAIN_NAMESPACE"
+  doCommand -c "echo ====== USE CASE: UPDATE2 ======"
 
-  # JRF specific testing?
-
-  doCommand -c export DOMAIN_UID=$DOMAIN_UID2
+  doCommand -c "export DOMAIN_UID=$DOMAIN_UID2"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update2.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
-  doCommand -c export CUSTOM_DOMAIN_NAME=domain2
-  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand  "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-model-configmap.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
+  doCommand -c "export CUSTOM_DOMAIN_NAME=domain2"
 
-  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
+  doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
+  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  # Cheat to speedup a subsequent roll/shutdown.
-  [ ! "$DRY_RUN" = "true" ] && diefast
+  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
 
-  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "name....domain2"
-  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "name....domain2"
+  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand -c export DOMAIN_UID=$DOMAIN_UID1
-
-  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "name....domain1"
-  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "name....domain1"
+  if [ ! "$DRY_RUN" = "true" ]; then
+    diefast # (cheat to speedup a subsequent roll/shutdown)
+    testapp internal cluster-1 "name....domain2"
+    testapp traefik  cluster-1 "name....domain2"
+    doCommand -c export DOMAIN_UID=$DOMAIN_UID1
+    testapp internal cluster-1 "name....domain1"
+    testapp traefik  cluster-1 "name....domain1"
+  fi
 fi
 
 #
@@ -303,28 +294,44 @@ fi
 #
 
 if [ "$DO_UPDATE3" = "true" ]; then
-  wait_parms="-d $DOMAIN_UID1 -n $DOMAIN_NAMESPACE"
+  doCommand -c "echo ====== USE CASE: UPDATE3 ======"
 
-  # JRF specific testing?
-
-  doCommand -c export DOMAIN_UID=$DOMAIN_UID1
+  doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update3.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
-  doCommand -c export CUSTOM_DOMAIN_NAME=domain1
-  doCommand -c export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2
-  doCommand -c export ARCHIVE_SOURCEDIR=archives/archive-v2
+  doCommand -c "export CUSTOM_DOMAIN_NAME=domain1"
+  doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
+  doCommand -c "export ARCHIVE_SOURCEDIR=archives/archive-v2"
 
-  doCommand  "\$MIIWRAPPERDIR/build-model-image.sh"
-  doCommand  "\$MIIWRAPPERDIR/stage-domain-resource.sh"
-  doCommand  "\$MIIWRAPPERDIR/create-domain-resource.sh"
+  doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
+  doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand    "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 $wait_parms"
-
-  # Cheat to speedup a subsequent roll/shutdown.
-  [ ! "$DRY_RUN" = "true" ] && diefast
-
-  [ ! "$DRY_RUN" = "true" ] && testapp internal cluster-1 "v2"
-  [ ! "$DRY_RUN" = "true" ] && testapp traefik  cluster-1 "v2"
+  if [ ! "$DRY_RUN" = "true" ]; then
+    diefast # (cheat to speedup a subsequent roll/shutdown)
+    testapp internal cluster-1 "v2"
+    testapp traefik  cluster-1 "v2"
+  fi
 fi
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."
+
+
+# TBD add JRF specific testing?
+
+# after initial?
+# if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
+#   export wallet
+#   import wallet to wallet secret 
+#   set env var to tell creat-domain-resource to uncomment wallet secret
+#   shutdown domain completely (delete it)
+#   restart domain
+# fi
+
+# before each update?
+# if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
+#   import wallet to wallet secret again
+#   set env var to tell creat-domain-resource to uncomment wallet secret
+# fi
+

@@ -7,10 +7,10 @@
 # including extra secretes for the JRF domain type or for
 # the datasource config map as needed.
 #
-# Optional parameter:
+# Optional parameters:
 #
-#   -dry                      - Dry run. Show but don't do. Dry run
-#                               output is prefixed with 'dryrun:'.
+#   -dry kubectl              - Dry run. Show but don't do. Dry run
+#   -dry yaml                   output is prefixed with 'dryrun:'.
 #
 # Optional environment variables (see README for details):
 #

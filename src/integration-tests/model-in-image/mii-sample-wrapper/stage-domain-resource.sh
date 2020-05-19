@@ -8,12 +8,6 @@
 # This script creates 'WORKDIR/DOMAIN_RESOURCE_FILENAME'
 # from template './DOMAIN_RESOURCE_TEMPLATE'.
 #
-# Warning!!
-#
-#    'WORKDIR/DOMAIN_RESOURCE_FILENAME' is overwritten if it already
-#     exists, and the old file is copied into 
-#    'WORKDIR/$(dirname $DOMAIN_RESOURCE_FILENAME)/mii-domain-saved/'.
-#
 # Optional environment variables (see ./README for details):
 #
 #   WORKDIR, CUSTOM_DOMAIN_NAME, DOMAIN_UID, DOMAIN_NAMESPACE
@@ -42,24 +36,10 @@ do
   echo "@@ Info: ${var}=${!var}"
 done
 
-function timestamp() {
-  date --utc '+%Y-%m-%dT%H:%M:%S'
-}
-
 mkdir -p $(dirname $WORKDIR/$DOMAIN_RESOURCE_FILENAME)
 
 echo "@@"
 echo "@@ Info: Creating domain resource file 'WORKDIR/DOMAIN_RESOURCE_FILENAME' from 'SCRIPTDIR/DOMAIN_RESOURCE_TEMPLATE'"
-
-if [ -e "$WORKDIR/$DOMAIN_RESOURCE_FILENAME" ]; then
-  save_file=$(dirname $DOMAIN_RESOURCE_FILENAME)/mii-domain-saved/$(basename $DOMAIN_RESOURCEFILENAME).$(timestamp)
-  echo "@@"
-  echo "@@ Notice! An old version of the domain resource file already exists and will be replaced."
-  echo "@@ Notice! Saving old version of the domain resource file to 'WORKDIR/${save_file}'"
-  mkdir -p "$WORKDIR/$(dirname $save_file)"
-  cp "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"  "$WORKDIR/${save_file}"
-fi
-
 echo "@@"
 
 cp "$SCRIPTDIR/$DOMAIN_RESOURCE_TEMPLATE" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
