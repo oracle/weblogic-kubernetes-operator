@@ -242,7 +242,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     // build an application archive using what is in resources/apps/APP_NAME
     logger.info("Build an application archive using resources/apps/{0}", WDT_BASIC_APP_NAME);
     assertTrue(buildAppArchive(defaultAppParams()
-        .srcDir(WDT_BASIC_APP_NAME)), String.format("Failed to create app archive for %s", WDT_BASIC_APP_NAME));
+        .srcDirList(Collections.singletonList(WDT_BASIC_APP_NAME))),
+        String.format("Failed to create app archive for %s", WDT_BASIC_APP_NAME));
 
     // build the archive list
     String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, WDT_BASIC_APP_NAME);

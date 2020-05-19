@@ -78,7 +78,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -897,7 +897,7 @@ class ItMiiDomain implements LoggedTest {
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model list {1} and archive list {2}",
         image, modelList, archiveList);
-    boolean result = createMiiImage(
+    boolean result = createImage(
         defaultWitParams()
             .modelImageName(imageName)
             .modelImageTag(imageTag)
