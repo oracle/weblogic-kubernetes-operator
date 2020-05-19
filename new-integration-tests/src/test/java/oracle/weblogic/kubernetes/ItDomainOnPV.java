@@ -108,7 +108,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -174,6 +173,7 @@ public class ItDomainOnPV implements LoggedTest {
   public void testDomainOnPvUsingWlst() throws IOException {
 
     String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+    boolean isUseSecret = false;
     if (!KIND_REPO.isEmpty()) {
       // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
       // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
@@ -194,6 +194,7 @@ public class ItDomainOnPV implements LoggedTest {
     } else {
       // create pull secrets for WebLogic image
       createOCRRepoSecret();
+      isUseSecret = true;
     }
 
     // create WebLogic credentials secret
@@ -203,7 +204,7 @@ public class ItDomainOnPV implements LoggedTest {
     createPVandPVC();
 
     // create the domain on persistent volume
-    createDomainOnPV(image);
+    createDomainOnPV(image, isUseSecret);
 
     // create the domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -219,8 +220,10 @@ public class ItDomainOnPV implements LoggedTest {
             .domainHomeSourceType("PersistentVolume")
             .image(image)
             .imagePullPolicy("Always")
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCR_SECRET_NAME))
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(OCR_SECRET_NAME))
+                : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -319,9 +322,10 @@ public class ItDomainOnPV implements LoggedTest {
    * Creates a configmap containing domain scripts and property files.
    * Runs a job to create domain on persistent volume.
    * @param image Image name to use with job
+   * @param isUseSecret If image pull secret is needed
    * @throws IOException when reading/writing domain scripts fails
    */
-  private void createDomainOnPV(String image) throws IOException {
+  private void createDomainOnPV(String image, boolean isUseSecret) throws IOException {
 
     logger.info("create a staging location for domain creation scripts");
     Path pvTemp = Paths.get(RESULTS_ROOT, "ItDomainOnPV", "domainCreateTempPV");
@@ -350,7 +354,7 @@ public class ItDomainOnPV implements LoggedTest {
         "Creating configmap for domain creation failed");
 
     logger.info("Running a Kubernetes job to create the domain");
-    runCreateDomainJob(image, pvName, pvcName, domainScriptConfigMapName, domainNamespace);
+    runCreateDomainJob(image, isUseSecret, pvName, pvcName, domainScriptConfigMapName, domainNamespace);
 
   }
 
@@ -411,9 +415,9 @@ public class ItDomainOnPV implements LoggedTest {
   }
 
   /**
-   * Create job to create a domain on a persistent volume.
+   * Create a job to create a domain on a persistent volume.
    */
-  private void runCreateDomainJob(String image, String pvName,
+  private void runCreateDomainJob(String image, boolean isUseSecret, String pvName,
                                   String pvcName, String domainScriptCM, String namespace) {
     V1Job jobBody = new V1Job()
         .metadata(
@@ -468,9 +472,10 @@ public class ItDomainOnPV implements LoggedTest {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM))))  //config map containing domain scripts
-                    .imagePullSecrets(Arrays.asList(
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))))));
+                            .name(OCR_SECRET_NAME))
+                        : null))));
     String jobName = assertDoesNotThrow(() ->
         createNamespacedJob(jobBody), "Domain creation job failed");
 
