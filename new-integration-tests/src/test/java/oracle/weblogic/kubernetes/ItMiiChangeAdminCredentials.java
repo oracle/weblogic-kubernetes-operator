@@ -131,7 +131,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     String adminPodLastCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
         String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
-    assertNotNull(adminPodLastCreationTime, "creationTimestamp of the admin server pod is NULL");
+    assertNotNull(adminPodLastCreationTime, "creationTimestamp of the admin server pod is null");
 
     logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
         domainUid,

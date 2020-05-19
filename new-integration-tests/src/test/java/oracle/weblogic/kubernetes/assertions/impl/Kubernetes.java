@@ -27,9 +27,9 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
 
 import static io.kubernetes.client.util.Yaml.dump;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Kubernetes {
