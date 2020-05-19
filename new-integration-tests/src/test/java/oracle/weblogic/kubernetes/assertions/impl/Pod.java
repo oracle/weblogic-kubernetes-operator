@@ -67,7 +67,7 @@ public class Pod {
    * @param pods names of the pods in a list
    * @param podName name of pod to check for termination status
    * @param namespace name of the namespace in which the pod terminating status to be checked
-   * @return true if given pod is terminating
+   * @return true if given pod is the only pod terminating
    * @throws Exception when more than one pod is terminating or cluster query fails
    */
   public static Callable<Boolean> onlyGivenPodTerminating(ArrayList<String> pods, String podName, String namespace)
