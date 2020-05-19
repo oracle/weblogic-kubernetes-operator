@@ -49,7 +49,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceAdminSecretPatched;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Test to change the WebLogic credentials secret of a model in image domain and verify the change takes effect.
+// Test to change the WebLogic credentials secret of a domain custom resource that uses model-in-image.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
@@ -79,9 +79,12 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   private static int replicaCount = 2;
 
   /**
-   * Initialization.
+   * Perform the following initialization for all the tests in this class:
+   * 1) set up the necessary namespaces for the operator and one domain,
+   * 2) install the operator in the first namespace, and
+   * 3) create a domain in the second namespace using the pre-created basic MII image.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -97,10 +100,12 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     assertNotNull(namespaces.get(1), String.format("Namespace namespaces.get(1) is null"));
     domainNamespace = namespaces.get(1);
 
+    // install the operator
     logger.info("Install an operator in namespace {0}, managing namespace {1}",
         opNamespace, domainNamespace); 
     installAndVerifyOperator(opNamespace, domainNamespace);
    
+    // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
         domainUid, domainNamespace); 
     createAndVerifyMiiDomain();
@@ -225,7 +230,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     String patch = String.format(
         "[\n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}\n]\n",
             "webLogicCredentialsSecret/name", secretName);
-    logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
+    logger.info("Patch the domain resource {0} in namespace {1} with:{2}\n",
         domainResourceName, namespace, patch);
 
     assertTrue(patchDomainCustomResource(
@@ -236,17 +241,17 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         String.format("Failed to patch the domain resource %s in namespace %s with %s:%s",
             domainResourceName, namespace, "/spec/webLogicCredentialsSecret/name", secretName));
 
-    String restartVersion = assertDoesNotThrow(
+    String oldVersion = assertDoesNotThrow(
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    int newVersion = restartVersion == null ? 1 : Integer.valueOf(restartVersion) + 1;
-    logger.info("Update restartVersion of domain {0} from {1} to {2}",
-        domainResourceName, restartVersion, newVersion);
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+        domainResourceName, namespace, oldVersion, newVersion);
     patch =
         String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}\n]\n",
             newVersion);
     
-    logger.info("About to patch the domain resource {0} in namespace {1} with:{2}\n",
+    logger.info("Patch the domain resource {0} in namespace {1} with:{2}\n",
         domainResourceName, namespace, patch);
 
     assertTrue(patchDomainCustomResource(
@@ -257,26 +262,26 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         String.format("Failed to patch the domain resource %s in namespace %s with startVersion:%s",
               domainResourceName, namespace, newVersion));
 
-    String currentVersion = assertDoesNotThrow(
+    String updatedVersion = assertDoesNotThrow(
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    logger.info("Current restartVersion is %s", currentVersion);
-    assertTrue(currentVersion.equals(String.valueOf(newVersion)),
+    logger.info("Current restartVersion is %s", updatedVersion);
+    assertTrue(updatedVersion.equals(String.valueOf(newVersion)),
         String.format("Failed to update the restartVersion of domain %s from %s to %s",
             domainResourceName,
-            restartVersion,
+            oldVersion,
             newVersion));
     return String.valueOf(newVersion);
   }
 
   /**
-   * Create Domain object for creating a Kubernetes domain custom resource using the basic model-in-image image.
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
    * 
    * @param domainResourceName name of the domain resource
    * @param domainNamespace Kubernetes namespace that the domain is hosted
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret for introspector encryption
+   * @param encryptionSecretName name of the secret for encryption
    * @param replicaCount number of managed servers to start
    * @return domain of the domain resource
    */
@@ -359,7 +364,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     logger.info(
         "Check that domain resource {0} in namespace {1} has been patched with new secret {3}",
         domainUid, namespace, secretName);
-    checkDomainAdminSecretPatched(domainUid, namespace, secretName);
+    checkDomainCredentialsSecretPatched(domainUid, namespace, secretName);
 
     // check and wait for the admin server pod to be patched with the new secret
     logger.info(
@@ -376,7 +381,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
    * @param namespace Kubernetes namespace that the domain is hosted
    * @param newValue new secret name for the WebLogic domain credentials secret
    */
-  private void checkDomainAdminSecretPatched(
+  private void checkDomainCredentialsSecretPatched(
       String domainUid,
       String namespace,
       String newValue
@@ -391,9 +396,9 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             namespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainResourceAdminSecretPatched(domainUid, namespace, newValue),
+        .until(assertDoesNotThrow(() -> domainResourceCredentialsSecretPatched(domainUid, namespace, newValue),
             String.format(
-               "Domain %s is not patched in namespace %s with admin credentials secret %s",
+               "Domain %s in namespace %s is not patched with admin credentials secret %s",
                domainUid, namespace, newValue)));
 
   }
@@ -422,7 +427,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
       String domainUid,
       String namespace,
       String restartVersion) {
-    logger.info("Check if weblogic.domainRestartVersion of pod {0} has been updated", podName);
+    logger.info("Check that weblogic.domainRestartVersion of pod {0} has been updated", podName);
     boolean restartVersionUpdated = assertDoesNotThrow(
         () -> podRestartVersionUpdated(podName, domainUid, namespace, restartVersion),
         String.format("Failed to get weblogic.domainRestartVersion label of pod %s in namespace %s",
@@ -433,7 +438,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   }
   
   /**
-   * Check if the given credentials are valid to access the WebLogic domain.
+   * Check that the given credentials are valid to access the WebLogic domain.
    * 
    * @param podName name of the admin server pod
    * @param namespace name of the namespace that the pod is running in
@@ -490,7 +495,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         "weblogicenc"),
         String.format("createSecret failed for %s", encryptionSecretName));
 
-    // create the domain CR
+    // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
         domainUid, domainNamespace);
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,

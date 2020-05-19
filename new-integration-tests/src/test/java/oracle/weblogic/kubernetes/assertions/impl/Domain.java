@@ -121,7 +121,7 @@ public class Domain {
    * @param secretName name of the secret that the domain resource is expected to be using
    * @return true if domain resource's webLogicCredentialsSecret matches the expected value
    */
-  public static boolean domainResourceAdminSecretPatched(
+  public static boolean domainResourceCredentialsSecretPatched(
       String domainUID,
       String namespace,
       String secretName
@@ -130,12 +130,12 @@ public class Domain {
     try {
       domain = getDomainCustomResource(domainUID, namespace);
     } catch (ApiException apex) {
-      logger.severe("Failed to obtain the domain resource object from the API server", apex);
+      logger.severe(String.format("Failed to obtain domain resource %s in namespace %s", domainUID, namespace), apex);
       return false;
     }
     
     boolean domainPatched = domain.spec().webLogicCredentialsSecret().getName().equals(secretName);
-    logger.info("Domain Object patched : {0}, webLogicCredentialsSecret: {1}",
+    logger.info("Domain {0} is patched with webLogicCredentialsSecret: {1}",
         domainUID, domain.getSpec().webLogicCredentialsSecret().getName());
     return domainPatched;
   }

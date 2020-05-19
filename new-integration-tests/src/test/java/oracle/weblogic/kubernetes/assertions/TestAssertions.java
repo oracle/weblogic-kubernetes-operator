@@ -102,12 +102,12 @@ public class TestAssertions {
    * @param secretName name of the secret that was used to patch the domain resource
    * @return true if the domain is patched correctly
    */
-  public static Callable<Boolean> domainResourceAdminSecretPatched(
+  public static Callable<Boolean> domainResourceCredentialsSecretPatched(
       String domainUid,
       String namespace,
       String secretName
   ) {
-    return () -> Domain.domainResourceAdminSecretPatched(domainUid, namespace, secretName);
+    return () -> Domain.domainResourceCredentialsSecretPatched(domainUid, namespace, secretName);
   }
 
   /**
