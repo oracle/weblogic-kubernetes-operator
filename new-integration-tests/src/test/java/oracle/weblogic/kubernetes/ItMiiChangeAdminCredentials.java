@@ -265,7 +265,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     String updatedVersion = assertDoesNotThrow(
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    logger.info("Current restartVersion is %s", updatedVersion);
+    logger.info("Current restartVersion is {0}", updatedVersion);
     assertTrue(updatedVersion.equals(String.valueOf(newVersion)),
         String.format("Failed to update the restartVersion of domain %s from %s to %s",
             domainResourceName,
@@ -362,7 +362,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     String restartVersion = patchDomainResourceWithNewAdminSecret(domainUid, namespace, secretName);
     
     logger.info(
-        "Check that domain resource {0} in namespace {1} has been patched with new secret {3}",
+        "Check that domain resource {0} in namespace {1} has been patched with new secret {2}",
         domainUid, namespace, secretName);
     checkDomainCredentialsSecretPatched(domainUid, namespace, secretName);
 
