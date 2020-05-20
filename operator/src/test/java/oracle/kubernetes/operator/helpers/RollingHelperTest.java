@@ -89,6 +89,7 @@ public class RollingHelperTest {
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
     configSupport.setAdminServerName(ADMIN_SERVER);
     SERVER_NAMES.forEach(s -> configSupport.addWlsServer(s, LISTEN_PORT));
+    configSupport.addWlsCluster(CLUSTER_NAME, SERVER10_NAME, SERVER1_NAME, SERVER2_NAME);
 
     testSupport.defineResources(domain);
     domainTopology = configSupport.createDomainConfig();
