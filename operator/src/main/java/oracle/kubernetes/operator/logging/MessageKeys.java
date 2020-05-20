@@ -125,6 +125,7 @@ public class MessageKeys {
   public static final String REQUEST_PARAMS_WITH = "WLSKO-0167";
   public static final String CALL_FAILED = "WLSKO-0168";
   public static final String JOB_CREATION_TIMESTAMP_MESSAGE = "WLSKO-0169";
+  public static final String HTTP_REQUEST_TIMED_OUT = "WLSKO-0170";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
