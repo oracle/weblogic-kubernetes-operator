@@ -31,10 +31,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -58,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create domain in image domain using wdt and start the domain")
 @IntegrationTest
 class ItDomainInImageWdt implements LoggedTest {
@@ -100,11 +96,10 @@ class ItDomainInImageWdt implements LoggedTest {
   }
 
   @Test
-  @Order(1)
   @DisplayName("Create domain in image domain")
   @Slow
   @MustNotRunInParallel
-  public void testCreateDomaininImage() {
+  public void testCreateDomaininImageWdt() {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
