@@ -17,7 +17,7 @@ public class Docker {
    * @param registryName registry name
    * @param username user
    * @param password password
-   * @return true if successfull
+   * @return true if successful
    */
   public static boolean login(String registryName, String username, String password) {
     String cmdToExecute = String.format("docker login %s -u %s -p \"%s\"",
@@ -29,12 +29,39 @@ public class Docker {
   }
 
   /**
+   * Pull an image from a registry.
+   * @param image image
+   * @return true if successful
+   */
+  public static boolean pull(String image) {
+    String cmdToExecute = String.format("docker pull %s", image);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .execute();
+  }
+
+  /**
    * Push an image to a registry.
    * @param image image
-   * @return true if successfull
+   * @return true if successful
    */
   public static boolean push(String image) {
     String cmdToExecute = String.format("docker push %s", image);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .execute();
+  }
+
+  /**
+   * Tag an image.
+   * @param originalImage original image
+   * @param taggedImage tagged image
+   * @return true if successful
+   */
+  public static boolean tag(String originalImage, String taggedImage) {
+    String cmdToExecute = String.format("docker tag %s %s", originalImage, taggedImage);
     return new Command()
         .withParams(new CommandParams()
             .command(cmdToExecute))

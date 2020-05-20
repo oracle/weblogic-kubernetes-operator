@@ -69,6 +69,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
@@ -94,6 +95,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -103,7 +108,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -168,8 +172,30 @@ public class ItDomainOnPV implements LoggedTest {
   @DisplayName("Create domain in PV using WLST script")
   public void testDomainOnPvUsingWlst() throws IOException {
 
-    // create pull secrets for WebLogic image
-    createOCRRepoSecret();
+    String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+    boolean isUseSecret = false;
+    if (!KIND_REPO.isEmpty()) {
+      // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
+      // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
+      // The workaround will be to:
+      //   1. docker login
+      //   2. docker pull
+      //   3. docker tag with the KIND_REPO value
+      //   4. docker push this new image name
+      //   5. use this image name to create the domain resource
+      assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
+      assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
+
+      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      assertTrue(dockerTag(image, kindRepoImage),
+          String.format("docker tag failed for images %s, %s", image, kindRepoImage));
+      assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
+      image = kindRepoImage;
+    } else {
+      // create pull secrets for WebLogic image
+      createOCRRepoSecret();
+      isUseSecret = true;
+    }
 
     // create WebLogic credentials secret
     createWebLogicCredentialsSecret();
@@ -178,7 +204,7 @@ public class ItDomainOnPV implements LoggedTest {
     createPVandPVC();
 
     // create the domain on persistent volume
-    createDomainOnPV();
+    createDomainOnPV(image, isUseSecret);
 
     // create the domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -192,10 +218,12 @@ public class ItDomainOnPV implements LoggedTest {
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
-            .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+            .image(image)
             .imagePullPolicy("Always")
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCR_SECRET_NAME))
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(OCR_SECRET_NAME))
+                : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
                 .namespace(domainNamespace))
@@ -293,9 +321,11 @@ public class ItDomainOnPV implements LoggedTest {
    * Creates a domain properties in the temp location.
    * Creates a configmap containing domain scripts and property files.
    * Runs a job to create domain on persistent volume.
+   * @param image Image name to use with job
+   * @param isUseSecret If image pull secret is needed
    * @throws IOException when reading/writing domain scripts fails
    */
-  private void createDomainOnPV() throws IOException {
+  private void createDomainOnPV(String image, boolean isUseSecret) throws IOException {
 
     logger.info("create a staging location for domain creation scripts");
     Path pvTemp = Paths.get(RESULTS_ROOT, "ItDomainOnPV", "domainCreateTempPV");
@@ -324,7 +354,7 @@ public class ItDomainOnPV implements LoggedTest {
         "Creating configmap for domain creation failed");
 
     logger.info("Running a Kubernetes job to create the domain");
-    runCreateDomainJob(pvName, pvcName, domainScriptConfigMapName, domainNamespace);
+    runCreateDomainJob(image, isUseSecret, pvName, pvcName, domainScriptConfigMapName, domainNamespace);
 
   }
 
@@ -387,7 +417,8 @@ public class ItDomainOnPV implements LoggedTest {
   /**
    * Create a job to create a domain on a persistent volume.
    */
-  private void runCreateDomainJob(String pvName, String pvcName, String domainScriptCM, String namespace) {
+  private void runCreateDomainJob(String image, boolean isUseSecret, String pvName,
+                                  String pvcName, String domainScriptCM, String namespace) {
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -400,7 +431,7 @@ public class ItDomainOnPV implements LoggedTest {
                     .restartPolicy("Never")
                     .initContainers(Arrays.asList(new V1Container()
                         .name("fix-pvc-owner")  // change the ownership of the pv to opc:opc
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+                        .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
                         .addArgsItem("chown -R 1000:1000 /shared")
@@ -413,7 +444,7 @@ public class ItDomainOnPV implements LoggedTest {
                             .runAsUser(0L))))
                     .containers(Arrays.asList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
-                        .image(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG)
+                        .image(image)
                         .imagePullPolicy("Always")
                         .ports(Arrays.asList(new V1ContainerPort()
                             .containerPort(7001)))
@@ -441,9 +472,10 @@ public class ItDomainOnPV implements LoggedTest {
                             .configMap(
                                 new V1ConfigMapVolumeSource()
                                     .name(domainScriptCM))))  //config map containing domain scripts
-                    .imagePullSecrets(Arrays.asList(
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))))));
+                            .name(OCR_SECRET_NAME))
+                        : null))));
     String jobName = assertDoesNotThrow(() ->
         createNamespacedJob(jobBody), "Domain creation job failed");
 
