@@ -100,21 +100,7 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
     }
 
-    Set<String> clusteredServers = new HashSet<>();
-
-    for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
-      factory.logIfInvalidReplicaCount(clusterConfig);
-      for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
-        factory.addServerIfNeeded(serverConfig, clusterConfig);
-        clusteredServers.add(serverConfig.getName());
-      }
-    }
-
-    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
-      if (!clusteredServers.contains(serverConfig.getName())) {
-        factory.addServerIfNeeded(serverConfig, null);
-      }
-    }
+    Optional.ofNullable(config).ifPresent(wlsDomainConfig -> addServersToFactory(factory, wlsDomainConfig));
 
     info.setServerStartupInfo(factory.getStartupInfos());
     LOGGER.exiting();
@@ -123,6 +109,27 @@ public class ManagedServersUpStep extends Step {
         NEXT_STEP_FACTORY.createServerStep(
             info, config, factory.servers, factory.createNextStep(getNext())),
         packet);
+  }
+
+  private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig) {
+    Set<String> clusteredServers = new HashSet<>();
+
+    wlsDomainConfig.getClusterConfigs().values()
+        .forEach(wlsClusterConfig -> addClusteredServersToFactory(factory, clusteredServers, wlsClusterConfig));
+
+    wlsDomainConfig.getServerConfigs().values().stream()
+        .filter(wlsServerConfig -> !clusteredServers.contains(wlsServerConfig.getName()))
+        .forEach(wlsServerConfig -> factory.addServerIfNeeded(wlsServerConfig, null));
+  }
+
+  private void addClusteredServersToFactory(@Nonnull ServersUpStepFactory factory, Set<String> clusteredServers,
+      @Nonnull WlsClusterConfig wlsClusterConfig) {
+    factory.logIfInvalidReplicaCount(wlsClusterConfig);
+    wlsClusterConfig.getServerConfigs()
+        .forEach(wlsServerConfig -> {
+          factory.addServerIfNeeded(wlsServerConfig, wlsClusterConfig);
+          clusteredServers.add(wlsServerConfig.getName());
+        });
   }
 
   // an interface to provide a hook for unit testing.
@@ -158,7 +165,7 @@ public class ManagedServersUpStep extends Step {
       return false;
     }
 
-    void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
+    private void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
       String serverName = serverConfig.getName();
       if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName())) {
         return;
