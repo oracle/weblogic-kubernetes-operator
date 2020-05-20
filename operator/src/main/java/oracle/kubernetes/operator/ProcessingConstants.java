@@ -30,4 +30,6 @@ public interface ProcessingConstants {
   public static final String SIT_CONFIG_MAP = "sitConfigMap";
   public static final String DOMAIN_RESTART_VERSION = "weblogic.domainRestartVersion";
   public static final String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
+
+  public static final String ENCODED_CREDENTIALS = "encodedCredentials";
 }

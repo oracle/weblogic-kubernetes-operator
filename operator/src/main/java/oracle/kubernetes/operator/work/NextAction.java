@@ -16,7 +16,7 @@ public final class NextAction {
   Kind kind;
   Step next;
   Packet packet;
-  Consumer<Fiber> onExit;
+  Consumer<AsyncFiber> onExit;
   Throwable throwable;
 
   private void set(Kind k, Step v, Packet p) {
@@ -57,7 +57,7 @@ public final class NextAction {
    *
    * @param onExit Called once the fiber is suspended
    */
-  public void suspend(Consumer<Fiber> onExit) {
+  public void suspend(Consumer<AsyncFiber> onExit) {
     suspend(null, onExit);
   }
 
@@ -72,7 +72,7 @@ public final class NextAction {
    * @param next Next step
    * @param onExit Will be invoked after the fiber suspends
    */
-  public void suspend(Step next, Consumer<Fiber> onExit) {
+  public void suspend(Step next, Consumer<AsyncFiber> onExit) {
     set(Kind.SUSPEND, next, null);
     this.onExit = onExit;
   }
@@ -90,19 +90,7 @@ public final class NextAction {
    * @param unit Delay time unit
    */
   public void delay(Step next, Packet p, long delay, TimeUnit unit) {
-    suspend(
-        next,
-        (fiber) -> {
-          fiber
-              .owner
-              .getExecutor()
-              .schedule(
-                  () -> {
-                    fiber.resume(p);
-                  },
-                  delay,
-                  unit);
-        });
+    suspend(next, (fiber) -> fiber.scheduleOnce(delay, unit, () -> fiber.resume(p)));
   }
 
   /**
