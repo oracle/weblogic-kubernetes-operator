@@ -3,10 +3,12 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.models.V1Pod;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -17,14 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public class Pod {
 
   /**
-   * Check only one pod is restarted at a time in the same order as in the pods list.
-   * This assertion method needs to be called right after the domain is patched to ensure
-   * it doesn't miss any of the pods restart.
-   * @param pods names of the pods in a list
-   * @param namespace name of the namespace in which to check for pods rolling restart
-   * @return true if pods are restarted in rolling fashion
+   * Verify pods are restarted in a rolling fashion with not more than maxUnavailable pods restarted concurrently.
+   * @param pods map of pod names with its creation time stamps
+   * @param maxUnavailable number of pods can concurrently restart at the same time
+   * @param namespace name of the namespace in which the pod restart status to be checked
+   * @return true if pods are restarted in a rolling fashion
    */
-  public static boolean verifyRollingRestartOccurred(ArrayList<String> pods, String namespace) {
+  public static boolean verifyRollingRestartOccurred(Map<String, String> pods, int maxUnavailable, String namespace) {
 
     // check the pods list is not empty
     if (pods.isEmpty()) {
@@ -36,60 +37,60 @@ public class Pod {
     ConditionFactory retry
         = with().pollInterval(5, SECONDS).atMost(5, MINUTES).await();
 
-    // check pods are terminated and started.
-    for (var pod : pods) {
+    // check pods are restarted
+    for (Map.Entry<String, String> entry : pods.entrySet()) {
       retry
           .conditionEvaluationListener(condition -> logger.info("Waiting for pod {0} to be "
-          + "terminating in namespace {1} "
+          + "restarted in namespace {1} "
           + "(elapsed time {2}ms, remaining time {3}ms)",
-          pod,
+          entry.getKey(),
           namespace,
           condition.getElapsedTimeInMS(),
           condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> onlyGivenPodTerminating(pods, pod, namespace),
-              String.format("pod %s didn't terminate in namespace %s", pod, namespace)));
-
-      retry
-          .conditionEvaluationListener(condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
-          + "(elapsed time {2}ms, remaining time {3}ms)",
-          pod,
-          namespace,
-          condition.getElapsedTimeInMS(),
-          condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> podReady(namespace, null, pod),
-              String.format("pod %s is not ready in namespace %s", pod, namespace)));
+          .until(assertDoesNotThrow(() -> podRestarted(entry.getKey(), pods, maxUnavailable, namespace),
+              String.format("pod %s didn't restart in namespace %s", entry.getKey(), namespace)));
     }
 
     return true;
   }
 
   /**
-   * Return true if the given pod is the only one terminating from the list of pods.
+   * Return true if the given pod podName is restarted. This method will throw a exception if more than maxUnavailable
+   * pods are restarted at the same time.
    *
-   * @param pods names of the pods in a list
-   * @param podName name of pod to check for termination status
-   * @param namespace name of the namespace in which the pod terminating status to be checked
-   * @return true if given pod is the only pod terminating
-   * @throws Exception when more than one pod is terminating or cluster query fails
+   * @param pods map of pod names with its creation time stamps
+   * @param podName name of pod to check for restart status
+   * @param maxUnavailable number of pods that can concurrently restart at the same time
+   * @param namespace name of the namespace in which the pod restart status to be checked
+   * @return true if given pod is restarted
+   * @throws Exception when more than maxUnavailable pods are restarting concurrently or cluster query fails
    */
-  public static Callable<Boolean> onlyGivenPodTerminating(ArrayList<String> pods, String podName, String namespace)
-      throws Exception {
+  private static Callable<Boolean> podRestarted(String podName, Map<String, String> pods, int maxUnavailable,
+      String namespace) throws Exception {
     return () -> {
       int terminatingPods = 0;
-      boolean givenPodTerminating = false;
-      for (var pod : pods) {
-        if (Kubernetes.isPodTerminating(namespace, null, pod)) {
-          terminatingPods++;
-          if (pod.equals(podName)) {
-            givenPodTerminating = true;
+      boolean podRestartStatus = false;
+      for (Map.Entry<String, String> entry : pods.entrySet()) {
+        V1Pod pod = Kubernetes.getPod(namespace, null, entry.getKey());
+        if (pod != null) {
+          DateTime deletionTimestamp = pod.getMetadata().getDeletionTimestamp();
+          if (deletionTimestamp != null) {
+            if (++terminatingPods > maxUnavailable) {
+              logger.severe("more than maxUnavailable {0} pod(s) are restarting", maxUnavailable);
+              throw new Exception("more than maxUnavailable pods are restarting");
+            }
+          }
+          if (podName.equals(entry.getKey())) {
+            DateTime creationTimestamp = pod.getMetadata().getCreationTimestamp();
+            if (creationTimestamp != null) {
+              if (creationTimestamp.isAfter(Long.parseLong(entry.getValue()))) {
+                podRestartStatus = true;
+              }
+            }
           }
         }
       }
-      if (terminatingPods > 1) {
-        logger.severe("more than one pod is terminating");
-        throw new Exception("more than one pod is terminating ");
-      }
-      return givenPodTerminating;
+      return podRestartStatus;
     };
   }
 

@@ -5,9 +5,9 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -347,10 +347,14 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertNotNull(managed2PodCreationTime, "ManagedPodCreationTime returns NULL");
     logger.info("Got managed2PodCreationTime {0} ", managed2PodCreationTime);
 
-    ArrayList<String> pods = new ArrayList<>();
-    pods.add(adminServerPodName);
+    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
+    pods.put(adminServerPodName, adminPodCreationTime);
     for (int i = 1; i <= replicaCount; i++) {
-      pods.add(managedServerPrefix + i);
+      try {
+        pods.put(managedServerPrefix + i, getPodCreationTimestamp(domainNamespace, "", managedServerPrefix + i));
+      } catch (ApiException ex) {
+        logger.severe(ex.getResponseBody());
+      }
     }
 
     StringBuffer patchStr = null;
@@ -381,7 +385,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
 
     assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(pods, domainNamespace)),
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
          "More than one pod was restarted at same time"),
         "Rolling restart failed");
 

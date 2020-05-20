@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -164,13 +163,14 @@ public class TestAssertions {
   }
 
   /**
-   * Check pods are restarted in the same order as in the pods list.
-   * @param pods names of the pods in a list
-   * @param namespace name of the namespace in which to check for pods rolling restart
-   * @return true if pods are restarted in rolling fashion
+   * Verify pods are restarted in a rolling fashion with not more than maxUnavailable pods restarted concurrently.
+   * @param pods map of pod names with its creation time stamps
+   * @param maxUnavailable number of pods can concurrently restart at the same time
+   * @param namespace name of the namespace in which the pod restart status to be checked
+   * @return true if pods are restarted in a rolling fashion
    */
-  public static boolean verifyRollingRestartOccurred(ArrayList<String> pods, String namespace) {
-    return Pod.verifyRollingRestartOccurred(pods, namespace);
+  public static boolean verifyRollingRestartOccurred(Map<String, String> pods, int maxUnavailable, String namespace) {
+    return Pod.verifyRollingRestartOccurred(pods, maxUnavailable, namespace);
   }
 
 
