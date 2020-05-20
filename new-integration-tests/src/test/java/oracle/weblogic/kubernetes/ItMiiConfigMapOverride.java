@@ -662,13 +662,13 @@ class ItMiiConfigMapOverride implements LoggedTest {
   private ExecResult checkJdbcRuntime(String resourcesName) {
     int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
     ExecResult result = null;
-
-    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString = new StringBuffer("curl --user weblogic:welcome1 ");
     curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
          .append("/management/wls/latest/datasources/id/")
          .append(resourcesName)
          .append("/")
          .append(" --silent --show-error ");
+
     logger.info("checkJdbcRuntime: curl command {0}", new String(curlString));
     try {
       result = exec(new String(curlString), true);
