@@ -12,24 +12,15 @@
 #            may still implicilty perform some web actions in order
 #            to locate the installer in github.com).
 #
-# Optional environment variables (see 'env-custom.sh' for more details):
-#
-#    WORKDIR 
-#      Working directory for the sample with at least 10GB of space
-#      defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
+# Optional environment variables (see README for details):
 #
 #    http_proxy https_proxy
 #      If running behind a proxy, then set as needed to allow curl access
 #      to github.com.
 #
+#    WORKDIR 
 #    DOWNLOAD_WDT DOWNLOAD_WIT
-#      Default to 'when-missing'. Set to 'always' to force download even
-#      if local installer zip already exists.
-#
 #    WDT_INSTALLER_URL WIT_INSTALLER_URL
-#      Defaults to 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
-#      and 'https://github.com/oracle/weblogic-image-tool/releases/latest' respectively.
-#      To override an installer URL, see 'env-custom.sh' for an example.
 #
 
 set -eu
@@ -83,5 +74,14 @@ download_zip() {
   fi
 }
 
-download_zip weblogic-deploy-tooling.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
-download_zip weblogic-image-tool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT
+if [ "$dry_run" = "true" ]; then
+  echo "dryrun:#!/bin/bash"
+  echo "dryrun:# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates."
+  echo "dryrun:# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl."
+  echo "dryrun:"
+  echo "dryrun:set -eux"
+  echo "dryrun:"
+fi
+
+download_zip weblogic-deploy.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
+download_zip imagetool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT
