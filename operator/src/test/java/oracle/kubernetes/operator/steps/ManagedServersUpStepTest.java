@@ -562,6 +562,13 @@ public class ManagedServersUpStepTest {
     assertThat(0, equalTo(domain.getReplicaCount("cluster1")));
   }
 
+  @Test
+  public void whenDomainToplogyIsMissing_noExceptionAndDontStartServers() {
+    invokeStepWithoutDomainTopology();
+
+    assertServersWillNotBeStarted();
+  }
+
   private void assertStoppingServers(Step step, String... servers) {
     assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
   }
@@ -652,6 +659,12 @@ public class ManagedServersUpStepTest {
 
     testSupport.addToPacket(
         ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    testSupport.runSteps(step);
+  }
+
+  private void invokeStepWithoutDomainTopology() {
+    configSupport.setAdminServerName(ADMIN);
+
     testSupport.runSteps(step);
   }
 
