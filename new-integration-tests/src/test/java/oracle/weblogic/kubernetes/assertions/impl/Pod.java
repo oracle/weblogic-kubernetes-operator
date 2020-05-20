@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public class Pod {
 
   /**
-   * Verify pods are restarted in a rolling fashion with not more than maxUnavailable pods restarted concurrently.
+   * Verify pods are restarted in a rolling fashion with not more than maxUnavailable pods are restarted concurrently.
    * @param pods map of pod names with its creation time stamps
    * @param maxUnavailable number of pods can concurrently restart at the same time
    * @param namespace name of the namespace in which the pod restart status to be checked
