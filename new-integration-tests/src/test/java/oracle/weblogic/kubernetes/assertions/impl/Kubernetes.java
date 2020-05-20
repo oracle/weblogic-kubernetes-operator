@@ -12,9 +12,13 @@ import java.util.logging.Level;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -24,6 +28,7 @@ import io.kubernetes.client.util.ClientBuilder;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Kubernetes {
@@ -430,6 +435,95 @@ public class Kubernetes {
         }
       }
     }
+  }
+
+  /**
+   * List jobs in the given namespace.
+   *
+   * @param namespace in which to list the jobs
+   * @param labelSelectors labels to narrow the list of jobs
+   * @return V1JobList list of {@link V1Job} from Kubernetes cluster
+   * @throws ApiException when list fails
+   */
+  public static V1JobList listJobs(String namespace, String labelSelectors)
+      throws ApiException {
+    V1JobList list;
+    try {
+      BatchV1Api apiInstance = new BatchV1Api(apiClient);
+      list = apiInstance.listNamespacedJob(
+          namespace, // String | name of the namespace.
+          null, // String | pretty print output.
+          null, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          labelSelectors, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          "", // String | Shows changes that occur after that particular version of a resource.
+          5, // Integer | Timeout for the list/watch call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+    return list;
+  }
+
+  /**
+   * Returns the V1Job object given the following parameters.
+   * @param namespace in which to check for the job existence
+   * @param labelSelectors the labels the job is decorated with, if any
+   * @param jobName name of the job to return
+   * @return V1Job object if found otherwise null
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static V1Job getJob(String namespace, String labelSelectors, String jobName)
+      throws ApiException {
+    List<V1Job> jobs = listJobs(namespace, labelSelectors).getItems();
+    for (V1Job job : jobs) {
+      if (job != null && job.getMetadata().getName().equals(jobName)) {
+        return job;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Check if a pod completed running.
+   *
+   * @param namespace name of the namespace in which the job exists
+   * @param labelSelectors labels to narrow the job list
+   * @param jobName name of the job to check for its completion status
+   * @return true if completed false otherwise
+   * @throws ApiException when querying pod condition fails
+   */
+  public static boolean isJobComplete(String namespace, String labelSelectors, String jobName)
+      throws ApiException {
+    boolean completionStatus = false;
+
+    V1Job job = getJob(namespace, labelSelectors, jobName);
+    if (job != null && job.getStatus() != null) {
+      logger.info("\n" + dump(job.getStatus()));
+      if (job.getStatus().getConditions() != null) {
+        V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+            v1JobCondition
+              -> "Complete".equalsIgnoreCase(v1JobCondition.getType())
+                  || "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+            .findAny()
+            .orElse(null);
+        if (jobCondition != null) {
+          completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
+          if (jobCondition.getType().equalsIgnoreCase("failed")) {
+            logger.severe("Job {0} failed", jobName);
+          } else if (jobCondition.getType().equalsIgnoreCase("complete")) {
+            logger.severe("Job {0} completed successfully ", jobName);
+          }
+        }
+      }
+    } else {
+      logger.warning("Job doesn't exist");
+    }
+    return completionStatus;
   }
 
   public static boolean loadBalancerReady(String domainUid) {

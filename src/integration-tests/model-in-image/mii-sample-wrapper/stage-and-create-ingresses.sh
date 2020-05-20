@@ -23,7 +23,7 @@
 # Optional param:
 #   '-dry' Stage the ingress yaml files, but don't call 'kubectl'.
 #
-# Optional environment variables (see 'env-custom.sh' for details):
+# Optional environment variables (see ./README for details):
 #    WORKDIR
 #    DOMAIN_NAMESPACE
 #    DOMAIN_UID
@@ -104,13 +104,6 @@ do
 
   echo "@@ Info: Generating ingress file '$target_yaml'."
 
-  save_yaml=""
-  if [ -e "$target_yaml" ]; then
-    save_yaml="$(dirname $target_yaml)/old/$(basename $target_yaml).$(timestamp)"
-    mkdir -p "$(dirname $save_yaml)"
-    cp "$target_yaml" "$save_yaml"
-  fi
-
   if [ "${service_name/admin//}" = "$service_name" ]; then
     # assume we're _not_ an admin server
 
@@ -176,14 +169,6 @@ spec:
           serviceName: $(get_service_name $service_name)
           servicePort: 7001
 EOF
-    fi
-  fi
-
-  if [ ! -z "$save_yaml" ]; then
-    if [ "$(cat $save_yaml)" = "$(cat $target_yaml)" ]; then
-      rm $save_yaml
-    else
-      echo "@@ Notice! Saved old version of the ingress file to '$save_yaml'."
     fi
   fi
 

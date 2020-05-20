@@ -227,7 +227,7 @@ while [ 1 -eq 1 ]; do
     fi
   fi
 
-  currentImage=$(kubectl -n sample-domain1-ns get domain ${DOMAIN_UID} -o=jsonpath='{.spec.image}' 2>&1)
+  currentImage=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.image}' 2>&1)
   if [ $? -ne 0 ]; then
     if [ $expected -ne 0 ]; then
       echo "@@ Error: Could not obtain 'spec.image' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed?"

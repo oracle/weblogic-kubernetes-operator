@@ -33,13 +33,24 @@ public interface TestConstants {
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_DEFAULT = "phx.ocir.io/weblogick8s/";
-  public static final String REPO_NAME = Optional.ofNullable(System.getenv("KIND_REPO"))
+  public static final String KIND_REPO = System.getenv("KIND_REPO");
+  public static final String REPO_NAME = Optional.ofNullable(KIND_REPO)
       .orElse(!REPO_REGISTRY.equals(REPO_DUMMY_VALUE) ? REPO_DEFAULT : "");
   public static final String REPO_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_PASSWORD = Optional.ofNullable(System.getenv("REPO_PASSWORD"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_EMAIL = Optional.ofNullable(System.getenv("REPO_EMAIL"))
+      .orElse(REPO_DUMMY_VALUE);
+
+  // OCR registry
+  public static final String OCR_SECRET_NAME = "ocr-secret";
+  public static final String OCR_REGISTRY = "container-registry.oracle.com";
+  public static final String OCR_USERNAME = Optional.ofNullable(System.getenv("OCR_USERNAME"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCR_PASSWORD = Optional.ofNullable(System.getenv("OCR_PASSWORD"))
+      .orElse(REPO_DUMMY_VALUE);
+  public static final String OCR_EMAIL = Optional.ofNullable(System.getenv("OCR_EMAIL"))
       .orElse(REPO_DUMMY_VALUE);
 
   // jenkins constants
@@ -51,6 +62,8 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String GOOGLE_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
+  public static final String RESULTS_ROOT = System.getenv().getOrDefault("RESULT_ROOT",
+      System.getProperty("java.io.tmpdir")) + "/ittestsresults";
   public static final String LOGS_DIR = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir")) + "/diagnosticlogs";
 
