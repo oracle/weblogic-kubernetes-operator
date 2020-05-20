@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +25,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -169,9 +167,6 @@ class ItDomainInImageWdt implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
-
-    LoggingUtil.generateLog(this,
-        Arrays.asList(opNamespace, domainNamespace));
 
   }
 
