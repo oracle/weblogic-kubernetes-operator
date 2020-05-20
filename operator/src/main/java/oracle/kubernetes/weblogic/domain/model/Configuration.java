@@ -10,6 +10,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+
 public class Configuration {
 
   @Description("Model in image model files and properties.")
@@ -30,6 +31,9 @@ public class Configuration {
   @Description("The introspector job timeout value in seconds. If this field is specified"
           + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
   private Long introspectorJobActiveDeadlineSeconds;
+
+  @Description("Configuration for istio property.")
+  private Istio istio;
 
   public Model getModel() {
     return model;
@@ -96,6 +100,19 @@ public class Configuration {
     return this;
   }
 
+  public Istio getIstio() {
+    return istio;
+  }
+
+  public void setIstio(Istio istio) {
+    this.istio = istio;
+  }
+
+  public Configuration withIstio(Istio istio) {
+    this.istio = istio;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -104,7 +121,8 @@ public class Configuration {
             .append("opss", opss)
             .append("secrets", secrets)
             .append("overridesConfigMap", overridesConfigMap)
-            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
+            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
+            .append("istio", istio);
 
     return builder.toString();
   }
@@ -113,7 +131,7 @@ public class Configuration {
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(model).append(opss).append(secrets).append(overridesConfigMap)
-        .append(introspectorJobActiveDeadlineSeconds);
+        .append(introspectorJobActiveDeadlineSeconds).append(istio);
 
     return builder.toHashCode();
   }
@@ -134,7 +152,8 @@ public class Configuration {
             .append(opss, rhs.opss)
             .append(secrets, rhs.secrets)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
+            .append(istio, rhs.istio);
 
     return builder.isEquals();
   }

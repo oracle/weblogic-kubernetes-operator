@@ -646,8 +646,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return istioEnabled
    */
   boolean isIstioEnabled() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getEnabled)
         .orElse(false);
   }
@@ -658,8 +658,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return readinessPort
    */
   int getIstioReadinessPort() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
   }

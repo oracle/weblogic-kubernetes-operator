@@ -163,8 +163,12 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getDomainHomeSourceType();
   }
 
-  private boolean isIstioEnabled() {
+  public boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
+  }
+
+  public int getIstioReadinessPort() {
+    return getDomain().getIstioReadinessPort();
   }
 
   String getEffectiveLogHome() {

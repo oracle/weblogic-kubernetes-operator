@@ -65,6 +65,19 @@ spec:
                       the value of spec.configOverrideSecrets.
                     items:
                       type: string
+                  istio:
+                    type: object
+                    description: Configuration for istio property.
+                    properties:
+                      readinessPort:
+                        type: number
+                        description: The WebLogic readiness port for Istio. Defaults
+                          to 8888. Not required.
+                      enabled:
+                        type: boolean
+                        description: True, if this domain is deployed under an Istio
+                          service mesh. Defaults to true when the 'istio' element
+                          is included. Not required.
                   overridesConfigMap:
                     type: string
                     description: The name of the config map for WebLogic configuration

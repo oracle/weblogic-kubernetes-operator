@@ -1030,6 +1030,8 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
+    if server.getName() == self.env.getDomain().getAdminServerName():
+      self.customizeAdminIstioNetworkAccessPoint(listen_address, server.getListenPort())
     self.undent()
     self.writeln("</d:server>")
 
@@ -1050,6 +1052,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
+    self.customizeManagedIstioNetworkAccessPoint(listen_address, template.getListenPort())
     self.undent()
     self.writeln("</d:server-template>")
 
@@ -1071,6 +1074,152 @@ class SitConfigGenerator(Generator):
         self.writeListenAddress("force a replace",listen_address)
         self.undent()
         self.writeln("</d:network-access-point>")
+
+  def customizeAdminIstioNetworkAccessPoint(self, listen_address, admin_port):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return
+    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+    if istio_readiness_port is None:
+      return
+
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">istio-probe</d:name>');
+    self.writeln('<d:protocol f:combine-mode="add">http</d:protocol>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % istio_readiness_port)
+    self.writeln('<d:http-enabled-for-this-protocol f:combine-mode="add">true</d:http-enabled-for-this-protocol>')
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">istio-ldap</d:name>')
+    self.writeln('<d:protocol f:combine-mode="add">ldap</d:protocol>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.01</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % admin_port)
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">istio-t3</d:name>')
+    self.writeln('<d:protocol f:combine-mode="add">t3</d:protocol>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % admin_port)
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+    t3_channel_port = self.env.getEnvOrDef('T3_CHANNEL_PORT', None)
+    if t3_channel_port is None:
+      return
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">T3Channel</d:name>')
+    self.writeln('<d:protocol f:combine-mode="add">t3</d:protocol>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % t3_channel_port)
+    self.writeln('<d:public-port f:combine-mode="add">%s</d:public-port>' % t3_channel_port)
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+
+  def customizeManagedIstioNetworkAccessPoint(self, listen_address, listen_port):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return
+    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+    if istio_readiness_port is None:
+      return
+
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">istio-probe</d:name>');
+    self.writeln('<d:protocol f:combine-mode="add">http</d:protocol>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % istio_readiness_port)
+    self.writeln('<d:http-enabled-for-this-protocol f:combine-mode="add">true</d:http-enabled-for-this-protocol>')
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">istio-cluster</d:name>')
+    self.writeln('<d:protocol f:combine-mode="add">CLUSTER-BROADCAST</d:protocol>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % listen_port)
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">istio-t3</d:name>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % listen_port)
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+    # istio_http_port = self.env.getEnvOrDef("ISTIO_HTTP_PORT", None)
+    # if istio_http_port is None:
+    #   return
+
+    # self.writeln('<d:network-access-point f:combine-mode="add">')
+    # self.indent()
+    # self.writeln('<d:name f:combine-mode="add">istio-http</d:name>')
+    # self.writeln('<d:protocol f:combine-mode="add">http</d:protocol>')
+    # self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    # self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    # self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % listen_port)
+    # self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    # self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    # self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    # self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    # self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    # self.undent()
+    # self.writeln('</d:network-access-point>')
 
   def getLogOrNone(self,server):
     try:
