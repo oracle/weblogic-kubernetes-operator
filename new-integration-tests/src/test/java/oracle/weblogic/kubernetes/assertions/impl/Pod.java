@@ -84,9 +84,9 @@ public class Pod {
           if (podName.equals(entry.getKey())) {
             String newCreationTimeStamp = DateTimeFormat.forPattern("HHmmss")
                 .print(pod.getMetadata().getCreationTimestamp());
-            logger.info("Comparing creation timestamps old: {0} new {1}",
-                entry.getValue(), newCreationTimeStamp);
             if (newCreationTimeStamp != null) {
+              logger.info("Comparing creation timestamps old: {0} new {1}",
+                  entry.getValue(), newCreationTimeStamp);
               if (Long.parseLong(newCreationTimeStamp) > Long.parseLong(entry.getValue())) {
                 logger.info("Pod {0} is restarted", entry.getKey());
                 podRestartStatus = true;
