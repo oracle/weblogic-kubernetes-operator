@@ -389,14 +389,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
          "More than one pod was restarted at same time"),
         "Rolling restart failed");
 
-    // Check if the admin server pod has been restarted
-    // by comparing the PodCreationTime before and after rolling restart
-    checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime);
-
-    // Check if the managed server pods have been restarted
-    // by comparing the PodCreationTime before and after rolling restart
-    checkPodRestarted(managedServerPrefix + 1, domainUid, domainNamespace, managed1PodCreationTime);
-    checkPodRestarted(managedServerPrefix + 2, domainUid, domainNamespace, managed2PodCreationTime);
     // check managed server services created
     // Even if pods are created, need for the service to created
     // before checking the DataSource configuration
