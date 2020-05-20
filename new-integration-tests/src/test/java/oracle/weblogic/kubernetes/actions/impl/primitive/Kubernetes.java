@@ -2033,7 +2033,13 @@ public class Kubernetes implements LoggedTest {
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      String stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+      String stderr = null;
+      try {
+        stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+      } catch (IllegalStateException e) {
+        // IllegalStateException thrown when stream is already closed, ignore since there is
+        // nothing to read
+      }
 
       return new ExecResult(proc.exitValue(), stdout, stderr);
     } finally {
