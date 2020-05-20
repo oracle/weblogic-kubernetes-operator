@@ -90,7 +90,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to update a model in image domain with a configmap")
@@ -107,12 +106,12 @@ class ItMiiConfigMapOverride implements LoggedTest {
   private static String dockerConfigJson = "";
 
   private String domainUid = "miicfgoverride";
-  private StringBuffer checkJdbc = null;
-  private StringBuffer checkJms = null;
-  private StringBuffer checkWldf = null;
+  private StringBuffer curlString = null;
   private V1Patch patch = null;
 
   private static Map<String, Object> secretNameMap;
+  final String adminServerPodName =  String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+  final String managedServerPrefix =  String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
 
   /**
    * Install Operator.
@@ -230,8 +229,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testAddMiiSystemResources() {
-    final String adminServerPodName =  String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-    final String managedServerPrefix =  String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
@@ -355,7 +352,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(adminPodCreationTime, "adminPodCreationTime returns NULL");
+    assertNotNull(adminPodCreationTime, "adminPodCreationTime returned null");
     logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
         domainUid,
         domainNamespace,
@@ -428,62 +425,24 @@ class ItMiiConfigMapOverride implements LoggedTest {
     }
 
     ExecResult result = null;
-    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-    checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/wls/latest/datasources/id/TestDataSource/")
-          .append(" --silent --show-error ")
-          .append(" -o /dev/null")
-          .append(" -w %{http_code});")
-          .append("echo ${status}");
-    logger.info("curl command {0}", new String(checkJdbc));
-    try {
-      result = exec(new String(checkJdbc), true);
-    } catch (Exception ex) {
-      logger.info("Caught unexpected exception {0}", ex);
-      fail("Got unexpected exception" + ex);
-    }
-
-    logger.info("curl command returns {0}", result.toString());
+    result = checkSystemResourceConfiguration("JDBCSystemResources", "TestDataSource");
+    assertNotNull(result, "CheckJDBCSystemResources returned null");
+    logger.info("CheckJDBCSystemResource returned {0}", result.toString());
     assertEquals("200", result.stdout(), "DataSource configuration not found");
     logger.info("Found the DataSource configuration");
-
-    checkJms = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkJms.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/weblogic/latest/domainConfig")
-          .append("/JMSSystemResources/TestClusterJmsModule/")
-          .append(" --silent --show-error ")
-          .append(" -o /dev/null ")
-          .append(" -w %{http_code});")
-          .append("echo ${status}");
-    logger.info("CheckJms: curl command {0}", new String(checkJms));
-    try {
-      result = exec(new String(checkJms), true);
-    } catch (Exception ex) {
-      logger.info("CheckJms: caught unexpected exception {0}", ex);
-      fail("CheckJms:  got unexpected exception" + ex);
-    }
-    logger.info("CheckJms: curl command returns {0}", result.toString());
-    assertEquals("200", result.stdout(), "JMSSystemResource configuration not found");
+    
+    result = null;
+    result = checkSystemResourceConfiguration("JMSSystemResources", "TestClusterJmsModule");
+    assertNotNull(result, "CheckJMSSystemResources returned null");
+    logger.info("CheckJMSSystemResource returned {0}", result.toString());
+    assertEquals("200", result.stdout(), "JMSSystemResource not found");
     logger.info("Found the JMSSystemResource configuration");
 
-    checkWldf = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkWldf.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/weblogic/latest/domainConfig")
-          .append("/WLDFSystemResources/TestWldfModule/")
-          .append(" --silent --show-error ")
-          .append(" -o /dev/null ")
-          .append(" -w %{http_code});")
-          .append("echo ${status}");
-    logger.info("CheckWldf: curl command {0}", new String(checkWldf));
-    try {
-      result = exec(new String(checkWldf), true);
-    } catch (Exception ex) {
-      logger.info("CheckWldf: caught unexpected exception {0}", ex);
-      fail("CheckWldf: got unexpected exception" + ex);
-    }
-    logger.info("CheckWldf: curl command returns {0}", result.toString());
-    assertEquals("200", result.stdout(), "WLDFSystemResource configuration not found");
+    result = null;
+    result = checkSystemResourceConfiguration("WLDFSystemResources", "TestWldfModule");
+    assertNotNull(result, "CheckWLDFSystemResources returned null");
+    logger.info("CheckWLDFSystemResource returned {0}", result.toString());
+    assertEquals("200", result.stdout(), "WLDFSystemResource not found");
     logger.info("Found the WLDFSystemResource configuration");
 
   }
@@ -672,6 +631,52 @@ class ItMiiConfigMapOverride implements LoggedTest {
         .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, timestamp),
             String.format("podExists failed with ApiException for %s in namespace in %s",
                 podName, domNamespace)));
+  }
+
+  private ExecResult checkSystemResourceConfiguration(String resourcesType, String resourcesName) {
+
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    ExecResult result = null;
+    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/weblogic/latest/domainConfig")
+         .append("/")
+         .append(resourcesType)
+         .append("/")
+         .append(resourcesName)
+         .append("/")
+         .append(" --silent --show-error ")
+         .append(" -o /dev/null ")
+         .append(" -w %{http_code});")
+         .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    try {
+      result = exec(new String(curlString), true);
+    } catch (Exception ex) {
+      logger.info("checkSystemResource: caught unexpected exception {0}", ex);
+      return null;
+    }
+    return result;
+  }
+
+  private ExecResult checkJdbcRuntime(String resourcesName) {
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    ExecResult result = null;
+
+    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/wls/latest/datasources/id/")
+         .append(resourcesName)
+         .append("/")
+         .append(" --silent --show-error ");
+    logger.info("checkJdbcRuntime: curl command {0}", new String(curlString));
+    try {
+      result = exec(new String(curlString), true);
+    } catch (Exception ex) {
+      logger.info("checkJdbcRuntime: caught unexpected exception {0}", ex);
+      return null;
+    }
+    return result;
   }
 
 }
