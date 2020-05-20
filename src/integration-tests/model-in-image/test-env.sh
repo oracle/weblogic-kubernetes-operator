@@ -5,7 +5,7 @@
 # This file defines env vars and env defaults specific to the test.
 #
 # For env vars related directly to the sample see
-# '$SCRIPTDIR/mii-sample-helpers/custom-env.sh'.
+# '$SCRIPTDIR/mii-sample-wrappers/README'.
 # (Especially DOMAIN_NAMESPACE, DOMAIN_NAME, and DOMAIN_UID.)
 #
 
@@ -38,3 +38,7 @@ export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 #  Defaults are 'traefik-operator' and '${TRAEFIK_NAME}-ns'
 # export TRAEFIK_NAME=
 # export TRAEFIK_NAMESPACE=
+
+export DOMAIN_UID1="${DOMAIN_UID1:-sample-domain1}"
+export DOMAIN_UID2="${DOMAIN_UID2:-sample-domain2}"
+export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}

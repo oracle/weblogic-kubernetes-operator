@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -16,14 +15,9 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
-import oracle.kubernetes.operator.KubernetesConstants;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 /** Represents the effective configuration for a server, as seen by the operator runtime. */
 @SuppressWarnings("WeakerAccess")
@@ -37,24 +31,12 @@ public abstract class ServerSpecBase implements ServerSpec {
 
   @Override
   public String getImage() {
-    return Optional.ofNullable(domainSpec.getImage()).orElse(DEFAULT_IMAGE);
+    return domainSpec.getImage();
   }
 
   @Override
   public String getImagePullPolicy() {
-    return Optional.ofNullable(getConfiguredImagePullPolicy()).orElse(getInferredPullPolicy());
-  }
-
-  protected String getConfiguredImagePullPolicy() {
     return domainSpec.getImagePullPolicy();
-  }
-
-  private String getInferredPullPolicy() {
-    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
-  }
-
-  private boolean useLatestImage() {
-    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
   }
 
   @Override

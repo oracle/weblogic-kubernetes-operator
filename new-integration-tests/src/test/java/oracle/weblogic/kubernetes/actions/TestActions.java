@@ -578,10 +578,31 @@ public class TestActions {
    * Push an image to a registry.
    *
    * @param image fully qualified docker image, image name:image tag
-   * @return true if successfull
+   * @return true if successful
    */
   public static boolean dockerPush(String image) {
     return Docker.push(image);
+  }
+
+  /**
+   * Tag an image.
+   *
+   * @param originalImage fully qualified original docker image, image name:image tag
+   * @param taggedImage fully qualified tagged docker image, image name:image tag
+   * @return true if successful
+   */
+  public static boolean dockerTag(String originalImage, String taggedImage) {
+    return Docker.tag(originalImage, taggedImage);
+  }
+
+  /**
+   * Pull an image from a registry.
+   *
+   * @param image fully qualified docker image, image name:image tag
+   * @return true if successful
+   */
+  public static boolean dockerPull(String image) {
+    return Docker.pull(image);
   }
 
   /**

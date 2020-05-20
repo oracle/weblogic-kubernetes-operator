@@ -1030,6 +1030,7 @@ public class TestUtils {
     cmd.append(
         "kubectl get pod "
             + searchExp
+            + " --sort-by=.metadata.creationTimestamp "
             + " -n "
             + namespace
             + " -o jsonpath=\"{.items[*].metadata.name}\"");
