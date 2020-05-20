@@ -196,6 +196,13 @@ public class TestUtils {
       return this;
     }
 
+    /**
+     * Specifies the log messages to track during a test suite. To exclude a particular message
+     * for a single test, invoke {@link #ignoreMessage(String)}.
+     * @param collection a collection into which matching log messages will be recorded
+     * @param messages the keys whose log records should be captured
+     * @return this memento
+     */
     public ConsoleHandlerMemento collectLogMessages(
         Collection<LogRecord> collection, String... messages) {
       testHandler.collectLogMessages(collection, messages);
