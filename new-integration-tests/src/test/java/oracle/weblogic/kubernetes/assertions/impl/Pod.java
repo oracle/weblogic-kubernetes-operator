@@ -91,6 +91,7 @@ public class Pod {
             .map(metadata -> metadata.getMetadata())
             .map(timeStamp -> timeStamp.getDeletionTimestamp()).orElse(null);
         if (deletionTimeStamp != null) {
+          logger.info("Pod {0} is getting replaced", entry.getKey());
           if (++terminatingPods > maxUnavailable) {
             logger.severe("more than maxUnavailable {0} pod(s) are restarting", maxUnavailable);
             throw new Exception("more than maxUnavailable pods are restarting");
@@ -98,15 +99,13 @@ public class Pod {
         }
         if (podName.equals(entry.getKey())) {
           DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
-          if (pod.getMetadata().getCreationTimestamp() != null) {
+          if (pod != null && pod.getMetadata().getCreationTimestamp() != null) {
             String newCreationTimeStamp = dtf.print(pod.getMetadata().getCreationTimestamp());
-            if (newCreationTimeStamp != null) {
-              logger.info("Comparing creation timestamps old: {0} new {1}",
-                  entry.getValue(), newCreationTimeStamp);
-              if (Long.parseLong(newCreationTimeStamp) > Long.parseLong(entry.getValue())) {
-                logger.info("Pod {0} is restarted", entry.getKey());
-                podRestartStatus = true;
-              }
+            logger.info("Comparing creation timestamps old: {0} new {1}",
+                entry.getValue(), newCreationTimeStamp);
+            if (Long.parseLong(newCreationTimeStamp) > Long.parseLong(entry.getValue())) {
+              logger.info("Pod {0} is restarted", entry.getKey());
+              podRestartStatus = true;
             }
           }
         }
