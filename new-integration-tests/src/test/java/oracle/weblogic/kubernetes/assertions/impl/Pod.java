@@ -38,8 +38,8 @@ public class Pod {
     ConditionFactory retry
         = with().pollInterval(5, SECONDS).atMost(5, MINUTES).await();
 
-    // check pods are restarted
     for (Map.Entry<String, String> entry : pods.entrySet()) {
+      // check pods are replaced
       retry
           .conditionEvaluationListener(condition -> logger.info("Waiting for pod {0} to be "
           + "restarted in namespace {1} "
@@ -50,6 +50,18 @@ public class Pod {
           condition.getRemainingTimeInMS()))
           .until(assertDoesNotThrow(() -> podRestarted(entry.getKey(), pods, maxUnavailable, namespace),
               String.format("pod %s didn't restart in namespace %s", entry.getKey(), namespace)));
+
+      // check pods are in ready status
+      retry
+          .conditionEvaluationListener(condition -> logger.info("Waiting for pod {0} to be "
+          + "ready in namespace {1} "
+          + "(elapsed time {2}ms, remaining time {3}ms)",
+          entry.getKey(),
+          namespace,
+          condition.getElapsedTimeInMS(),
+          condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> podReady(namespace, null, entry.getKey()),
+              String.format("pod %s didn't become ready in namespace %s", entry.getKey(), namespace)));
     }
 
     return true;
