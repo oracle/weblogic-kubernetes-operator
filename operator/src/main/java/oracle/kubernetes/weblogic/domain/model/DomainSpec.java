@@ -27,7 +27,10 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 /** DomainSpec is a description of a domain. */
 @Description("DomainSpec is a description of a domain.")
@@ -338,9 +341,8 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  @Nullable
   public String getImage() {
-    return image;
+    return Optional.ofNullable(image).orElse(DEFAULT_IMAGE);
   }
 
   public void setImage(@Nullable String image) {
@@ -349,7 +351,15 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   public String getImagePullPolicy() {
-    return imagePullPolicy;
+    return Optional.ofNullable(imagePullPolicy).orElse(getInferredPullPolicy());
+  }
+
+  private String getInferredPullPolicy() {
+    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
+  }
+
+  private boolean useLatestImage() {
+    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
   }
 
   public void setImagePullPolicy(@Nullable String imagePullPolicy) {
@@ -639,8 +649,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
-            .append(image, rhs.image)
-            .append(imagePullPolicy, rhs.imagePullPolicy)
+            .append(getImage(), rhs.getImage())
+            .append(getImagePullPolicy(), rhs.getImagePullPolicy())
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
