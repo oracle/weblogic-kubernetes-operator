@@ -4,12 +4,14 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -85,17 +87,19 @@ public class Pod {
       boolean podRestartStatus = false;
       for (Map.Entry<String, String> entry : pods.entrySet()) {
         V1Pod pod = Kubernetes.getPod(namespace, null, entry.getKey());
-        if (pod != null && pod.getMetadata() != null) {
-          DateTime deletionTimestamp = pod.getMetadata().getDeletionTimestamp();
-          if (deletionTimestamp != null) {
-            if (++terminatingPods > maxUnavailable) {
-              logger.severe("more than maxUnavailable {0} pod(s) are restarting", maxUnavailable);
-              throw new Exception("more than maxUnavailable pods are restarting");
-            }
+        DateTime deletionTimeStamp = Optional.ofNullable(pod)
+            .map(metadata -> metadata.getMetadata())
+            .map(timeStamp -> timeStamp.getDeletionTimestamp()).orElse(null);
+        if (deletionTimeStamp != null) {
+          if (++terminatingPods > maxUnavailable) {
+            logger.severe("more than maxUnavailable {0} pod(s) are restarting", maxUnavailable);
+            throw new Exception("more than maxUnavailable pods are restarting");
           }
-          if (podName.equals(entry.getKey())) {
-            String newCreationTimeStamp = DateTimeFormat.forPattern("HHmmss")
-                .print(pod.getMetadata().getCreationTimestamp());
+        }
+        if (podName.equals(entry.getKey())) {
+          DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
+          if (pod.getMetadata().getCreationTimestamp() != null) {
+            String newCreationTimeStamp = dtf.print(pod.getMetadata().getCreationTimestamp());
             if (newCreationTimeStamp != null) {
               logger.info("Comparing creation timestamps old: {0} new {1}",
                   entry.getValue(), newCreationTimeStamp);
