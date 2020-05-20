@@ -21,6 +21,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -44,6 +45,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -52,7 +56,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -394,21 +397,42 @@ public class CommonTestUtils {
   /**
    * Create a Docker image for a model in image domain.
    *
-   * @param imageNameBase the base image name used in local or to construct the image name in repository
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
    * @param wdtModelFile the WDT model file used to build the Docker image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @return image name with tag
    */
-  public static  String createMiiImageAndVerify(String imageNameBase,
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
                                                 String wdtModelFile,
                                                 String appName) {
+    return createMiiImageAndVerify(miiImageNameBase, wdtModelFile, appName,
+        WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain.
+   *
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param appName the sample application name used to build sample app ear file in WDT model file
+   * @param baseImageName the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag the WebLogic base image tag to be used while creating mii image
+   * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @return image name with tag
+   */
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                String wdtModelFile,
+                                                String appName,
+                                                String baseImageName,
+                                                String baseImageTag,
+                                                String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + imageNameBase;
+    final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
 
     // build the model file list
@@ -439,14 +463,17 @@ public class CommonTestUtils {
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = createMiiImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
+          new WitParams()
+              .baseImageName(baseImageName)
+              .baseImageTag(baseImageTag)
+              .domainType(domainType)
+              .modelImageName(imageName)
+              .modelImageTag(imageTag)
+              .modelFiles(modelList)
+              .modelArchiveFiles(archiveList)
+              .wdtVersion(WDT_VERSION)
+              .env(env)
+              .redirect(true));
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 

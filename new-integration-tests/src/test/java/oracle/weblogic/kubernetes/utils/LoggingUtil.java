@@ -93,6 +93,14 @@ public class LoggingUtil {
       logger.warning(ex.getMessage());
     }
 
+    // get services
+    try {
+      writeToFile(Kubernetes.listServices(namespace), resultDir,
+          namespace + ".list.services.log");
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
+    }
+
     // get namespaces
     try {
       for (var ns : Kubernetes.listNamespacesAsObjects().getItems()) {

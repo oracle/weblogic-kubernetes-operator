@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.assertions;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -11,6 +12,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
+import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
@@ -219,12 +221,15 @@ public class TestAssertions {
   /**
    * Check if a admin server pod admin node port is accessible.
    *
-   * @param domainUid id of the domain in which admin server pod is running
-   * @param namespace in which the WebLogic server pod exists
-   * @return true if the admin node port is accessible otherwise false
+   * @param nodePort the node port of the WebLogic administration server service
+   * @param userName user name to access WebLogic administration server
+   * @param password password to access WebLogic administration server
+   * @return true if the WebLogic administration service node port is accessible otherwise false
+   * @throws java.io.IOException when connection to WebLogic administration server fails
    */
-  public static boolean adminNodePortAccessible(String domainUid, String namespace) {
-    return Domain.adminNodePortAccessible(domainUid, namespace);
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+      throws IOException {
+    return Domain.adminNodePortAccessible(nodePort, userName, password);
   }
 
   /**
@@ -354,4 +359,16 @@ public class TestAssertions {
                                            String podOriginalCreationTimestamp) {
     return Domain.podStateNotChanged(podName, domainUid, domainNamespace, podOriginalCreationTimestamp);
   }
+
+  /**
+   * Check if a job completed running.
+   *
+   * @param namespace name of the namespace in which the job running
+   * @param jobName name of the job to check for its completion status
+   * @return true if completed false otherwise
+   */
+  public static Callable<Boolean> jobCompleted(String jobName, String labelSelectors, String namespace) {
+    return Job.jobCompleted(namespace, labelSelectors, jobName);
+  }
+
 }

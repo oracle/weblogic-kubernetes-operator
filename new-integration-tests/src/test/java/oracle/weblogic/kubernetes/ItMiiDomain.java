@@ -39,18 +39,21 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
@@ -63,7 +66,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.READ_STATE_COMMAND;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
@@ -75,6 +77,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -87,7 +91,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -104,14 +107,18 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 // Test to create model in image domain and verify the domain started successfully
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -126,7 +133,6 @@ class ItMiiDomain implements LoggedTest {
   private static String operatorImage = null;
   private static String domainNamespace = null;
   private static String domainNamespace1 = null;
-  private static String domainNamespace2 = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static ConditionFactory withQuickRetryPolicy = null;
   private static String dockerConfigJson = "";
@@ -135,6 +141,7 @@ class ItMiiDomain implements LoggedTest {
   private String domainUid1 = "domain2";
   private String miiImagePatchAppV2 = null;
   private String miiImageAddSecondApp = null;
+  private String miiImage = null;
 
   private static Map<String, Object> secretNameMap;
 
@@ -310,9 +317,6 @@ class ItMiiDomain implements LoggedTest {
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    logger.info("Check admin server status by calling read state command");
-    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
-
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
@@ -443,7 +447,7 @@ class ItMiiDomain implements LoggedTest {
     }
   }
 
-  @Test
+  //@Test
   @Order(3)
   @DisplayName("Create a domain with same domainUid as first domain but in a new namespace")
   @Slow
@@ -721,6 +725,14 @@ class ItMiiDomain implements LoggedTest {
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
 
+  @AfterEach
+  public void tearDown() {
+    // delete mii domain images created for parameterized test
+    if (miiImage != null) {
+      deleteImage(miiImage);
+    }
+  }
+
   @AfterAll
   public void tearDownAll() {
     // Delete domain custom resource
@@ -746,6 +758,127 @@ class ItMiiDomain implements LoggedTest {
     if (miiImageAddSecondApp != null) {
       deleteImage(miiImageAddSecondApp);
     }
+  }
+
+  @ParameterizedTest
+  @DisplayName("Create model in image domain using different WebLogic images as parameters")
+  @ValueSource(strings = {"12.2.1.3", "12.2.1.4"})
+  public void testParamsCreateMiiDomain(String imageTag, @Namespaces(1) List<String> namespaces) {
+    logger.info("imageTag " + imageTag);
+
+    logger.info("Getting unique namespace for Domain");
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    domainNamespace = namespaces.get(0);
+
+    // upgrade Operator for the new domain namespace
+    OperatorParams opParams =
+        new OperatorParams()
+            .helmParams(opHelmParams)
+            .image(operatorImage)
+            .imagePullSecrets(secretNameMap)
+            .domainNamespaces(Arrays.asList(domainNamespace))
+            .serviceAccount(serviceAccountName);
+
+    // upgrade Operator
+    logger.info("Upgrading Operator in namespace {0}", opNamespace);
+    assertTrue(upgradeOperator(opParams),
+        String.format("Operator upgrade failed in namespace %s", opNamespace));
+    logger.info("Operator upgraded in namespace {0}", opNamespace);
+
+    // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
+    final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    final String managedServerPrefix = domainUid + "-managed-server";
+    final int replicaCount = 2;
+
+    // create image with model files
+    logger.info("Creating image with model file and verify");
+    miiImage = createMiiImageAndVerify(
+        "mii-image",
+                          MII_BASIC_WDT_MODEL_FILE,
+                          MII_BASIC_APP_NAME,
+                          WLS_BASE_IMAGE_NAME,
+                          imageTag,
+                          WLS);
+
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(miiImage);
+
+    // Create the repo secret to pull the image
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic",
+        "welcome1"),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    // create the domain object
+    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
+        encryptionSecretName, replicaCount, miiImage);
+
+    // create model in image domain
+    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, domainNamespace, miiImage);
+    createDomainAndVerify(domain, domainNamespace);
+
+    // check admin server pod exists
+    logger.info("Check for admin server pod {0} existence in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server pods exist
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check for managed server pod {0} existence in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceCreated(adminServerPodName, domainNamespace);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceCreated(managedServerPrefix + i, domainNamespace);
+    }
+
+    // check and wait for the application to be accessible in all server pods
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppRunning(
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war/index.jsp",
+          MII_APP_RESPONSE_V1 + i);
+    }
+
+    logger.info("Domain {0} is fully started - servers are running and application is available",
+        domainUid);
+
   }
 
   private void pushImageIfNeeded(String image) {
@@ -1013,6 +1146,53 @@ class ItMiiDomain implements LoggedTest {
                     domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
+  }
+
+  private Domain createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+                                    String repoSecretName, String encryptionSecretName, int replicaCount,
+                                      String miiImage) {
+    // create the domain CR
+    return new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+
+
   }
 
   private void checkPodCreated(String podName, String domainUid, String domNamespace) {
@@ -1292,15 +1472,4 @@ class ItMiiDomain implements LoggedTest {
     return true;
   }
 
-  private void checkServerReadyStatusByExec(String podName, String namespace) {
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(namespace, podName, null, true, READ_STATE_COMMAND));
-    if (execResult.exitValue() == 0) {
-      logger.info("execResult: " + execResult);
-      assertEquals("RUNNING", execResult.stdout(),
-          "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
-    } else {
-      fail("Read state command failed with exit status code: " + execResult.exitValue());
-    }
-  }
 }
