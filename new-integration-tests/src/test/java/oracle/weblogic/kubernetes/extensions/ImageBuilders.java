@@ -189,7 +189,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     final String image = imageName + ":" + imageTag;
 
-    // build the model file list and variable files list if there is one
+    // build the model file list 
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
 
     // build an application archive using what is in resources/apps/APP_NAME
