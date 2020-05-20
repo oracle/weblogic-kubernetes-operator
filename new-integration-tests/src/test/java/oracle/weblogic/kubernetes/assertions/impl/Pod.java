@@ -9,6 +9,7 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.models.V1Pod;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -72,7 +73,7 @@ public class Pod {
       boolean podRestartStatus = false;
       for (Map.Entry<String, String> entry : pods.entrySet()) {
         V1Pod pod = Kubernetes.getPod(namespace, null, entry.getKey());
-        if (pod != null) {
+        if (pod != null && pod.getMetadata() != null) {
           DateTime deletionTimestamp = pod.getMetadata().getDeletionTimestamp();
           if (deletionTimestamp != null) {
             if (++terminatingPods > maxUnavailable) {
@@ -81,9 +82,13 @@ public class Pod {
             }
           }
           if (podName.equals(entry.getKey())) {
-            DateTime creationTimestamp = pod.getMetadata().getCreationTimestamp();
-            if (creationTimestamp != null) {
-              if (creationTimestamp.isAfter(Long.parseLong(entry.getValue()))) {
+            String newCreationTimeStamp = DateTimeFormat.forPattern("HHmmss")
+                .print(pod.getMetadata().getCreationTimestamp());
+            logger.info("Comparing creation timestamps old: {0} new {1}",
+                entry.getValue(), newCreationTimeStamp);
+            if (newCreationTimeStamp != null) {
+              if (Long.parseLong(newCreationTimeStamp) > Long.parseLong(entry.getValue())) {
+                logger.info("Pod {0} is restarted", entry.getKey());
                 podRestartStatus = true;
               }
             }
