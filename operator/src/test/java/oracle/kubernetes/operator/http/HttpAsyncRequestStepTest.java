@@ -32,7 +32,6 @@ import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_REQUEST_TIMED_OUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -161,7 +160,7 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
 
     receiveTimeout(nextAction);
 
-    assertThat(logRecords, containsWarning(HTTP_REQUEST_TIMED_OUT));
+    assertThat(logRecords, containsFine(HTTP_REQUEST_TIMED_OUT));
   }
 
   @Test
