@@ -87,7 +87,7 @@ public class DomainPresenceInfo {
     return false;
   }
 
-  void setServerService(String serverName, V1Service service) {
+  public void setServerService(String serverName, V1Service service) {
     getSko(serverName).getService().set(service);
   }
 

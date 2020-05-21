@@ -19,6 +19,8 @@ This feature is supported only in 3.0.0-RC1.
    - [Additional prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
    - [Update1 use case](#update1-use-case): Dynamically adding a data source using a model ConfigMap
+   - [Update2 use case](#update2-use-case): Deploying an additional similar domain
+   - [Update3 use case](#update3-use-case): Updating an application in an image
    - [Cleanup](#cleanup)
    - [References](#references)
 
@@ -40,7 +42,7 @@ The `JRF` domain path through the sample includes additional steps required for 
 
 #### Use cases
 
-This sample demonstrates two Model in Image use cases:
+This sample demonstrates four Model in Image use cases:
 
 - [Initial](#initial-use-case): An initial WebLogic domain with the following characteristics:
 
@@ -56,22 +58,43 @@ This sample demonstrates two Model in Image use cases:
      - WebLogic credentials
      - Required WDT runtime password
    - A domain resource with:
+     - `metadata.name` and `weblogic.domainUID` label set to `sample-domain1`
      - `spec.domainHomeSourceType: FromModel`
      - `spec.image: model-in-image:WLS-v1`
      - References to the secrets
 
-- [Update1](#update1-use-case): Demonstrates udpating the initial domain by dynamically adding a data source using a model ConfigMap:
+- [Update1](#update1-use-case): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap:
 
    - Image `model-in-image:WLS-v1`:
      - Same image as Initial use case
    - Kubernetes Secrets:
-     - Same as Initial use case  plus secrets for data source credentials and URL
+     - Same as Initial use case plus secrets for data source credentials and URL
    - Kubernetes ConfigMap with:
      - A WDT model for a data source targeted to the cluster
-   - A domain resource with:
-     - Same as Initial use case plus:
-        - `spec.model.configMap` referencing the ConfigMap
-        - References to data source secrets
+   - A domain resource same as Initial use case plus:
+     - `spec.model.configMap` referencing the ConfigMap
+     - References to data source secrets
+
+- [Update2](#update2-use-case): Demonstrates deploying a second domain that is very similar to the Update1 use case domain:
+
+  - Image `model-in-image:WLS-v1`:
+    - Same image as the Initial and Update1 use cases
+  - Kubernetes Secrets and ConfigMap:
+    - Similar to the Update1 use case, except names and labels are decorated with a new domain UID
+  - A domain resource similar to Update1 use case, except:
+    - Its `metadata.name` and `weblogic.domainUid` label become `sample-domain2` instead of `sample-domain1`
+    - Its secret/ConfigMap references are decorated with `sample-domain2` instead of `sample-domain1`
+    - Has a changed `env` variable that sets a new domain name
+
+- [Update3](#update3-use-case): Demonstrates deploying an updated image with an updated application to the Update1 use case domain:
+
+  - Image `model-in-image:WLS-v2`, similar to `model-in-image:WLS-v1` image with:
+    - An updated web application `v2` at the `myapp-v2` directory path instead of `myapp-v1`
+    - An updated model that points to the new web application path
+  - Kubernetes secrets and ConfigMap:
+    - Same as the Update1 use case
+  - A domain resource:
+    - Same as the Update1 use case, except `spec.image` is `model-in-image:WLS-v2`.
 
 #### Sample directory structure
 
@@ -216,18 +239,18 @@ Location | Description |
 
    - Option 2: Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
 
-   ```
-   $ cd /tmp/mii-sample/ingresses
-   $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
-   $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
-   ```
+       ```
+       $ cd /tmp/mii-sample/ingresses
+       $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
+       $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
+       ```
 
    > **NOTE**: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.
 
-   For more on information ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
+   For more information on ingresses and load balancers, see [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
 
 1. Obtain the WebLogic 12.2.1.4 image that is required to create the sample's model images.
 
@@ -249,12 +272,15 @@ Location | Description |
 
    Both WDT and WIT are required to create your Model in Image Docker images. Download the latest version of each tool's installer ZIP file to the `/tmp/mii-sample/model-images` directory.
 
-   For example, visit the GitHub [WebLogic Deploy Tooling Releses](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.0` and `1.8.4` respectively, call:
+   For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.8.1` and `1.8.5` respectively, call:
 
    ```
-   $ curl -m 30 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.0/weblogic-deploy.zip \
+   $ cd /tmp/mii-sample/model-images
+
+   $ curl -m 30 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.1/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
-   $ curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.4/imagetool.zip \
+
+   $ curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.5/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 
@@ -361,7 +387,7 @@ When you follow the instructions later in this sample, avoid instructions that a
 
 For example:
 
-  - JRF domain resources in this sample have an `opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`.
+  - JRF domain resources in this sample have an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with `password=welcome1`.
 
   - JRF image models in this sample have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
@@ -540,7 +566,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
   }
 %>
 ```
-{{% /expand%}}
+{{% /expand %}}
 
 The application displays important details about the WebLogic Server that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. You can also see that application output reports that it's at version `v1`; we will update this to `v2` in a future use case to demonstrate upgrading the application.
 
@@ -646,7 +672,7 @@ appDeployments:
             ModuleType: ear
             Target: 'cluster-1'
 ```
-{{% /expand%}}
+{{% /expand %}}
 
 
 The model files:
@@ -662,7 +688,7 @@ The model files:
     - We set this environment variable later in this sample using an `env` field in its domain resource.
     - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image._
   - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
-    - This secret is in turn referenced using the `weblogicCredentialsSecret` field in the domain resource.
+    - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the domain resource.
     - The `weblogic-credentials` is a reserved name that always dereferences to the owning domain resource actual WebLogic credentials secret name.
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files, but in this sample we use just one of each. For a full discussion of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
@@ -704,7 +730,7 @@ This command runs the WebLogic Image Tool in its Model in Image mode, and does t
   - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
   - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
     - Note that we cached WDT in WIT using the keyword `latest` when we set up the cache during the sample prerequisites steps.
-    - This lets WIT implicitly assume its the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+    - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
   - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
 
 When the command succeeds, it should end with output like:
@@ -754,7 +780,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
-    - It must be referenced by the `spec.weblogicCredentialsSecret` field in your domain resource.
+    - It must be referenced by the `spec.webLogicCredentialsSecret` field in your domain resource.
     - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your model YAML file.
 
   - The Model WDT runtime secret:
@@ -795,7 +821,7 @@ Run the following `kubectl` commands to deploy the required secrets:
     weblogic.domainUID=sample-domain1
   ```
 
-  {{% /expand%}}
+  {{% /expand %}}
 
 
 #### Domain resource
@@ -923,7 +949,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         #secrets:
         #- sample-domain1-datasource-secret
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
   {{%expand "Click here to expand the JRF domain resource YAML." %}}
   ```
@@ -1058,7 +1084,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
         # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
         #walletFileSecret: sample-domain1-opss-walletfile-secret
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
 
   Run the following command to create the domain custom resource:
@@ -1093,7 +1119,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   sample-domain1-managed-server1   1/1   Running   0     43s
   sample-domain1-managed-server2   1/1   Running   0     42s
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
 Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
@@ -1133,7 +1159,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
       -?              : This help.
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
   {{%expand "Click here to expand sample output from `wl-pod-wait.sh`." %}}
   ```
@@ -1210,7 +1236,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   @@ [2020-04-30T13:53:14][seconds=152] Info: Success!
 
   ```
-  {{% /expand%}}
+  {{% /expand %}}
 
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
@@ -1234,30 +1260,27 @@ Or, if Traefik is unavailable and your Administration Server pod is running, you
 
 You should see output like the following:
 
-  ```
-  $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
-    http://localhost:30305/myapp_war/index.jsp
+   ```
+   <html><body><pre>
+   *****************************************************************
 
-  <html><body><pre>
-  *****************************************************************
+   Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
-  Hello World! This is version 'v1' of the mii-sample JSP web-app.
+   Welcome to WebLogic server 'managed-server2'!
 
-  Welcome to WebLogic server 'managed-server2'!
+    domain UID  = 'sample-domain1'
+    domain name = 'domain1'
 
-   domain UID  = 'sample-domain1'
-   domain name = 'domain1'
+   Found 1 local cluster runtime:
+     Cluster 'cluster-1'
 
-  Found 1 local cluster runtime:
-    Cluster 'cluster-1'
+   Found 0 local data sources:
 
-  Found 0 local data sources:
+   *****************************************************************
+   </pre></body></html>
+   ```
 
-  *****************************************************************
-  </pre></body></html>
-  ```
-
-  **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
+ **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
 
  If you want to continue to the next use case, then leave your domain running.
 
@@ -1359,11 +1382,17 @@ Here are the steps:
 
    We name and label ConfigMap using their associated domain UID for two reasons:
      - To make it obvious which ConfigMap belong to which domains.
-     - To make it easier to cleanup a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
 1. Update your domain resource to refer to the ConfigMap and secret.
 
-    - Option 1: Update your current domain resource file from the "Initial" use case.
+    - Option 1: Update a copy of your domain resource file from the "Initial" use case. 
+
+      - You might recall that in the [Initial use case](#initial-use-case) we suggested creating a domain resource file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` file that is supplied with the sample. 
+        - We suggest copying the original domain resource and naming the copy `/tmp/mii-sample/mii-update1.yaml` before making any changes. 
+
+        - Working on a copy is not strictly necessary, but it helps to keep track of your work for the different use cases in this sample and also provides you a backup of your previous work.
+
       - Add the secret to its `spec.configuration.secrets` stanza:
 
           ```
@@ -1390,13 +1419,13 @@ Here are the steps:
       - Apply your changed domain resource:
 
           ```
-          $ kubectl apply -f your-domain-resource.yaml
+          $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
           ```
 
     - Option 2: Use the updated domain resource file that is supplied with the sample:
 
         ```
-        $ kubectl apply -f /tmp/miisample/domain-resources/mii-update1-d1-WLS-v1-ds.yaml
+        $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
         ```
 
 
@@ -1473,7 +1502,7 @@ Here are the steps:
 
          -?              : This help.
    ```
-     {{% /expand%}}
+     {{% /expand %}}
 
      {{%expand "Click here to expand sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```
@@ -1667,7 +1696,7 @@ Here are the steps:
 
      @@ [2020-04-30T13:57:09][seconds=230] Info: Success!
   ```
-     {{% /expand%}}
+     {{% /expand %}}
 
 1. After your domain is running, you can call the sample web application to determine if the data source was deployed.
 
@@ -1687,38 +1716,902 @@ Here are the steps:
 
    You should see something like the following:
 
-   {{%expand "Click here to see the expected web application output." %}}
+    ```  
+    <html><body><pre>
+    *****************************************************************
+
+    Hello World! This is version 'v1' of the mii-sample JSP web-app.
+
+    Welcome to WebLogic server 'managed-server1'!
+
+     domain UID  = 'sample-domain1'
+     domain name = 'domain1'
+
+    Found 1 local cluster runtime:
+      Cluster 'cluster-1'
+
+    Found 1 local data source:
+      Datasource 'mynewdatasource': State='Running'
+
+    *****************************************************************
+    </pre></body></html>
+
+    ```
+
+If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+
+If you plan to run the [Update3 use case](#update3-use-case), then leave your domain running.
+
+### Update2 use case
+
+This use case demonstrates concurrently deploying a domain that is similar to the [Update1 use case](#update1-use-case) domain to the same `sample-domain1-ns` namespace but with a different domain UID, a different WebLogic domain name, and a different WebLogic domain encryption key. It does this by:
+
+- Using the same image, image model YAML, and application archive as the Initial and Update1 use cases.
+- Using the same model update ConfigMap source file as the Update1 use case (a data source).
+- Using a different (unique) domain UID, `sample-domain2`, for the new domain.
+- Using a different (unique) domain name, `domain2`, for the different domains.
+- Deploying secrets and a model update ConfigMap that are uniquely labeled and named for the new domain.
+
+Note that this use case shows Model in Image's unique ability to quickly deploy a copy of a WebLogic domain that has a different WebLogic domain name and domain encryption key. This is a useful capability that is not supported by the Domain in Image domain home source type:
+
+- A Domain in Image domain home source type does not support overriding the domain name, but different domain names are necessary when two domains need to interoperate. In this use case, we take advantage of model macros to ensure that its two different domains have a different domain name: 
+
+  - First, we define the domain name in the model YAML using the `@@ENV:CUSTOM_DOMAIN_NAME@@` environment variable macro.
+  - Second, we set the value of the `CUSTOM_DOMAIN_NAME` environment variable differently using the `env` stanza in each domain's domain resource.
+
+- Domain in Image requires that its images embed a WebLogic `security/SerializedSystemIni.dat` domain encryption key that cannot be changed for the image (see [why layering matters]({{< relref "/userguide/cicd/why-layering-matters.md" >}}) in CI/CD Considerations). This necessarily means that two Domain in Image domains that share the same image have the ability to decrypt each other's encrypted passwords. A Model in Image's domain encryption key, on the other hand, is not embedded in the image and instead, is dynamically and uniquely created each time the domain is started. 
+
+{{% notice warning %}}
+Oracle requires interoperating WebLogic domains to have different domain names. This is necessary when two domains communicate, or when a WebLogic Server or WebLogic Java client concurrently connects to multiple domains. 
+{{% /notice %}}
+
+Here are the steps for this use case:
+
+1. Make sure you have deployed the domain from the [Update1 use case](#update1-use-case).
+
+1. Create a ConfigMap with the WDT model that contains the data source definition.
+
+   Run the following commands:
+
+   ```
+   $ kubectl -n sample-domain1-ns create configmap sample-domain2-wdt-config-map \
+     --from-file=/tmp/mii-sample/model-configmaps/datasource
+   $ kubectl -n sample-domain1-ns label configmap sample-domain2-wdt-config-map \
+     weblogic.domainUID=sample-domain2
+   ```
+
+   If you've created your own data source file in the Update1 use case, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier). Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
+
+   Observations:
+     - We are leaving the namespace `sample-domain1-ns` unchanged for the ConfigMap because we plan to deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
+     - We name and label the ConfigMap using its associated domain UID for two reasons:
+       - To make it obvious which ConfigMap belongs to which domain.
+       - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+     - We use a different ConfigMap for the new domain for two reasons:
+       - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
+       - To 'future proof' the new domain so that changes to the original domain or new domain's ConfigMap can be independent.
+
+
+1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the domain resource.
+
+   Run the following commands:
+   ```
+   # spec.webLogicCredentialsSecret
+   $ kubectl -n sample-domain1-ns create secret generic \
+     sample-domain2-weblogic-credentials \
+      --from-literal=username=weblogic --from-literal=password=welcome1
+   $ kubectl -n sample-domain1-ns label  secret \
+     sample-domain2-weblogic-credentials \
+     weblogic.domainUID=sample-domain2
+
+   # spec.configuration.model.runtimeEncryptionSecret
+   $ kubectl -n sample-domain1-ns create secret generic \
+     sample-domain2-runtime-encryption-secret \
+      --from-literal=password=my_runtime_password
+   $ kubectl -n sample-domain1-ns label  secret \
+     sample-domain2-runtime-encryption-secret \
+     weblogic.domainUID=sample-domain2
+
+   # referenced by spec.configuration.secrets and by the datasource model YAML in the ConfigMap
+   $ kubectl -n sample-domain1-ns create secret generic \
+     sample-domain2-datasource-secret \
+      --from-literal=password=Oradoc_db1 \
+      --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+   $ kubectl -n sample-domain1-ns label  secret \
+     sample-domain2-datasource-secret \
+     weblogic.domainUID=sample-domain2
+   ```
+
+   Observations:
+     - We are leaving the namespace `sample-domain1-ns` unchanged for each secret because we plan to deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
+     - We name and label the secrets using their associated domain UID for two reasons:
+       - To make it obvious which secret belongs to which domain.
+       - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
+     - We use a different set of secrets for the new domain for two reasons:
+       - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent. 
+       - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
+
+   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
+
+   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
+
+   ```
+   $ kubectl -n sample-domain1-ns create secret generic \
+     sample-domain2-rcu-access \
+      --from-literal=rcu_prefix=FMW1 \
+      --from-literal=rcu_schema_password=Oradoc_db1 \
+      --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+   $ kubectl -n sample-domain1-ns label  secret \
+     sample-domain2-rcu-access \
+     weblogic.domainUID=sample-domain2
+ 
+   $ kubectl -n sample-domain1-ns create secret generic \
+     sample-domain2-opss-wallet-password-secret \
+      --from-literal=walletPassword=welcome1
+   $ kubectl -n sample-domain1-ns label  secret \
+     sample-domain2-opss-wallet-password-secret \
+     weblogic.domainUID=sample-domain2
+   ```
+   {{% /expand %}}
+
+1. Set up a domain resource that is similar to your "Update1" use case domain resource but with different domain UID, domain name, model update ConfigMap reference, and secret references:
+
+    - Option 1: Update a copy of your domain resource file from the "Update1" use case.
+
+      - You might recall that in the [Update1 use case](#update1-use-case) we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
+        - We suggest copying this domain resource file and naming the copy `/tmp/mii-sample/mii-update2.yaml` before making any changes.
+
+        - Working on a copy is not strictly necessary, but it helps to keep track of your work for the different use cases in this sample and also provides you a backup of your previous work.
+
+      - Change the `/tmp/mii-sample/mii-update2.yaml` domain resource name and `weblogic.domainUID` label to `sample-domain2`.
+
+        The final result should look something like this:
+
+          ``` 
+          apiVersion: "weblogic.oracle/v7"
+          kind: Domain
+          metadata:
+            name: sample-domain2
+            namespace: sample-domain1-ns
+            labels:
+              weblogic.resourceVersion: domain-v2
+              weblogic.domainUID: sample-domain2
+          ```
+
+        > __NOTE__: We are leaving the namespace `sample-domain1-ns` unchanged because we will be deploying domain `sample-domain2` to the same namespace as `sample-domain1`.
+
+      - Change the `/tmp/mii-sample/mii-update2.yaml` domain resource's `CUSTOM_DOMAIN_NAME` environment variable from `domain1` to `domain2`.
+
+        The model file in the image uses macro `@@ENV:CUSTOM_DOMAIN_NAME@@` to reference this environment variable when setting its domain name. 
+
+        Specifically, change the corresponding domain resource `spec.serverPod.env` YAML stanza to look something like this:
+
+        ```
+        ...
+        spec:
+          ...
+          serverPod:
+          ...
+            env:
+            - name: CUSTOM_DOMAIN_NAME
+              value: "domain2"
+          ...
+        ```
+
+      - Change the `/tmp/mii-sample/mii-update2.yaml` domain resource `spec.domainHome` value to `/u01/domains/sample-domain2`. The corresponding YAML stanza should look something like this:
+
+        ```
+        ...
+        spec:
+          ...
+          domainHome: /u01/domains/sample-domain2
+          ...
+        ```
+
+        (This change is not strictly needed, but it is a helpful convention to decorate a WebLogic domain's home directory with its domain name or domain UID.)
+
+      - Change the `/tmp/mii-sample/mii-update2.yaml` secret references in the `spec.webLogicCredentialsSecret` and `spec.configuration.secrets` stanzas to reference this use case's secrets. Specifically, change:
+
+          ```
+          spec:
+            ...
+            webLogicCredentialsSecret:
+              name: sample-domain1-weblogic-credentials
+            ...
+            configuration:
+            ...
+              secrets:
+              - sample-domain1-datasource-secret
+              ...
+              model:
+                ...
+                runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+          ```
+
+        To this:
+
+
+          ```
+          spec:
+            ...
+            webLogicCredentialsSecret:
+              name: sample-domain2-weblogic-credentials
+            ...
+            configuration:
+              ...
+              secrets:
+              - sample-domain2-datasource-secret
+              ...
+              model:
+                ...
+                runtimeEncryptionSecret: sample-domain2-runtime-encryption-secret
+          ```
+
+        > __NOTE__: If you are following the `JRF` path through the sample, similarly change your `spec.configuration.opss.walletPasswordSecret` and the RCU secret name referenced in `spec.configuration.secrets`.  
+
+
+      - Change the domain resource's `spec.configuration.model.configMap` value from `sample-domain1-wdt-config-map` to `sample-domain2-wdt-config-map`. The corresponding YAML stanza should look something like this:
+         ```
+         spec:
+           ...
+           configuration:
+             ...
+             model:
+             ...
+               configMap: configMap: sample-domain2-wdt-config-map
+         ```
+
+      - Now, let's compare your original and changed domain resource files to double check your changes.
+
+          ```
+          $ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
+          9c9
+          <   name: sample-domain1
+          ---
+          >   name: sample-domain2
+          13c13
+          <     weblogic.domainUID: sample-domain1
+          ---
+          >     weblogic.domainUID: sample-domain2
+          21c21
+          <   domainHome: /u01/domains/sample-domain1
+          ---
+          >   domainHome: /u01/domains/sample-domain2
+          36c36
+          <     name: sample-domain1-weblogic-credentials
+          ---
+          >     name: sample-domain2-weblogic-credentials
+          46c46
+          <   #logHome: /shared/logs/sample-domain1
+          ---
+          >   #logHome: /shared/logs/sample-domain2
+          61c61
+          <       value: "domain1"
+          ---
+          >       value: "domain2"
+          71c71
+          <     #    claimName: sample-domain1-weblogic-sample-pvc
+          ---
+          >     #    claimName: sample-domain2-weblogic-sample-pvc
+          110c110
+          <       configMap: sample-domain1-wdt-config-map
+          ---
+          >       configMap: sample-domain2-wdt-config-map
+          113c113
+          <       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+          ---
+          >       runtimeEncryptionSecret: sample-domain2-runtime-encryption-secret
+          118c118
+          <     - sample-domain1-datasource-secret
+          ---
+          >     - sample-domain2-datasource-secret
+          ```
+
+        {{%expand "Click here to see additional 'diff' expected for the JRF path through the sample." %}}
+
+        ```
+        <       walletPasswordSecret: sample-domain1-opss-wallet-password-secret
+        ---
+        >       walletPasswordSecret: sample-domain2-opss-wallet-password-secret
+        130c130
+        <       #walletFileSecret: sample-domain1-opss-walletfile-secret
+        ---
+        >       #walletFileSecret: sample-domain2-opss-walletfile-secret
+        ```
+        {{% /expand %}}
+
+        > __NOTE__: The diff should _not_ contain a namespace change. We are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
+
+
+      - Apply your changed domain resource:
+
+          ```
+          $ kubectl apply -f /tmp/mii-sample/mii-update2.yaml
+          ```
+
+    - Option 2: Use the updated domain resource file that is supplied with the sample:
+
+        ```
+        $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
+        ```
+
+1. Wait for `sample-domain2` to start.
+
+   If you run `kubectl get pods -n sample-domain1-ns --watch`, then you should see the introspector job for `sample-domain2` run and your WebLogic Server pods start. The output should look something like this:
+
+   {{%expand "Click here to expand." %}}
+   ```
+   $ kubectl get pods -n sample-domain1-ns --watch
+   NAME                             READY   STATUS    RESTARTS   AGE
+   sample-domain1-admin-server      1/1     Running   0          5d2h
+   sample-domain1-managed-server1   1/1     Running   1          5d2h
+   sample-domain1-managed-server2   1/1     Running   2          5d2h
+   sample-domain2-introspect-domain-job-plssr   0/1     Pending   0          0s
+   sample-domain2-introspect-domain-job-plssr   0/1     Pending   0          0s
+   sample-domain2-introspect-domain-job-plssr   0/1     ContainerCreating   0          0s
+   sample-domain2-introspect-domain-job-plssr   1/1     Running             0          2s
+   sample-domain2-introspect-domain-job-plssr   0/1     Completed           0          69s
+   sample-domain2-introspect-domain-job-plssr   0/1     Terminating         0          71s
+   sample-domain2-introspect-domain-job-plssr   0/1     Terminating         0          71s
+   sample-domain2-admin-server                  0/1     Pending             0          0s
+   sample-domain2-admin-server                  0/1     Pending             0          0s
+   sample-domain2-admin-server                  0/1     ContainerCreating   0          0s
+   sample-domain2-admin-server                  0/1     Running             0          1s
+   sample-domain2-admin-server                  1/1     Running             0          34s
+   sample-domain2-managed-server1               0/1     Pending             0          0s
+   sample-domain2-managed-server1               0/1     Pending             0          0s
+   sample-domain2-managed-server1               0/1     ContainerCreating   0          0s
+   sample-domain2-managed-server2               0/1     Pending             0          0s
+   sample-domain2-managed-server2               0/1     Pending             0          0s
+   sample-domain2-managed-server2               0/1     ContainerCreating   0          0s
+   sample-domain2-managed-server1               0/1     Running             0          1s
+   sample-domain2-managed-server2               0/1     Running             0          1s
+   sample-domain2-managed-server1               1/1     Running             0          45s
+   sample-domain2-managed-server2               1/1     Running             0          45s
+   ```
+   {{% /expand %}}
+
+   For a more detailed view of this activity, you can instead call `/tmp/mii-sample/utils/wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3`. The output should look something like this:
+
+   {{%expand "Click here to expand." %}}
+   ```
+   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
+   
+   @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
+   @@ [2020-05-13T17:06:00][seconds=1] Info:   ready='true'
+   @@ [2020-05-13T17:06:00][seconds=1] Info:   image='model-in-image:WLS-v1'
+   @@ [2020-05-13T17:06:00][seconds=1] Info:   domainRestartVersion='1'
+   @@ [2020-05-13T17:06:00][seconds=1] Info:   namespace='sample-domain1-ns'
+   @@ [2020-05-13T17:06:00][seconds=1] Info:   domainUID='sample-domain2'
+   
+   @@ [2020-05-13T17:06:00][seconds=1] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:06:00][seconds=1] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                                          VERSION  IMAGE  READY  PHASE      
+   --------------------------------------------  -------  -----  -----  ---------  
+   'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Running'  
+   
+   @@ [2020-05-13T17:07:03][seconds=64] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:03][seconds=64] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                                          VERSION  IMAGE  READY  PHASE        
+   --------------------------------------------  -------  -----  -----  -----------  
+   'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Succeeded'  
+   
+   @@ [2020-05-13T17:07:06][seconds=67] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:06][seconds=67] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME  VERSION  IMAGE  READY  PHASE  
+   ----  -------  -----  -----  -----  
+   
+   @@ [2020-05-13T17:07:14][seconds=75] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:14][seconds=75] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                           VERSION  IMAGE                    READY    PHASE      
+   -----------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain2-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
+   
+   @@ [2020-05-13T17:07:47][seconds=108] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:47][seconds=108] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'  
+   
+   @@ [2020-05-13T17:07:49][seconds=110] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:49][seconds=110] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
+   'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'  
+   
+   @@ [2020-05-13T17:07:50][seconds=111] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:50][seconds=111] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
+   'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
+   
+   @@ [2020-05-13T17:08:32][seconds=153] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:08:32][seconds=153] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
+   
+   @@ [2020-05-13T17:08:34][seconds=155] Info: '3' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:08:34][seconds=155] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   
+   @@ [2020-05-13T17:08:34][seconds=155] Info: Success!
+
+   ```
+   {{% /expand %}}
+
+1. After the `sample-domain2` domain is running, you can call its sample web application to verify that it's fully active.
+
+   Send a web application request to the ingress controller for `sample-domain2`:
+
+   ```  
+   $ curl -s -S -m 10 -H 'host: sample-domain2-cluster-cluster-1.mii-sample.org' \
+      http://localhost:30305/myapp_war/index.jsp
+   ```  
+
+   Or, if Traefik is unavailable and your `domain2` Administration Server pod is running, you can run `kubectl exec`:
+
+   ```  
+   $ kubectl exec -n sample-domain1-ns sample-domain2-admin-server -- bash -c \ 
+     "curl -s -S -m 10 http://sample-domain2-cluster-cluster-1:8001/myapp_war/index.jsp"
+   ```  
+
+   You should see something like the following:
+
+    ```  
+    <html><body><pre>
+    *****************************************************************
+
+    Hello World! This is version 'v1' of the mii-sample JSP web-app.
+
+    Welcome to WebLogic server 'managed-server1'!
+
+     domain UID  = 'sample-domain2'
+     domain name = 'domain2'
+
+    Found 1 local cluster runtime:
+      Cluster 'cluster-1'
+
+    Found 1 local data source:
+      Datasource 'mynewdatasource': State='Running'
+
+    *****************************************************************
+    </pre></body></html>
+
+    ```  
+
+If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+
+We will not be using the `sample-domain2` domain again in this sample; if you wish, you can shut it down now by calling `kubectl -n sample-domain1-ns delete domain sample-domain2`.
+
+### Update3 use case
+
+The Update3 use case demonstrates deploying an updated WebLogic application to the running [Update1 use case](#update1-use-case) domain using an updated Docker image.
+
+In the use case, we will:
+
+ - Create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with with the following updates:
+   - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
+   - An updated model YAML within the image that points to the new web application path.
+ - Apply an updated domain resource that references the new image while still referencing the original [Update1 use case](#update1-use-case) case secrets and model ConfigMap. 
+
+After the updated domain resource is applied, the operator will:
+
+ - Rerun the introspector job and generate a new domain home based on the new model.
+ - Restart the domain's Administration Server pod so that it loads the new image and new domain home.
+ - Roll the domain's cluster servers one at a time so that they each load the new image, new domain home, and revised application.
+
+Finally, we will call the application to verify that its revision is active.
+
+Note that the old version of the application `v1` remains in the new image's archive but is unused. We leave it there to demonstrate that the old version can remain in case you want to revert to it. After the new image is applied, you can revert by modifying your model's `configuration.model.configMap` to override the related application path in your image model.
+
+Here are the steps for this use case:
+
+1. Make sure you have deployed the domain from the [Update1 use case](#update1-use-case).
+
+2. Create an updated image. 
+
+   Recall that a goal of the [Initial use case](#initial-use-case) was to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-v1` and, in addition to having a copy of the staged files in its `/u01/wdt/models` directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.
+
+   In this use case, we will follow similar steps to the [Initial use case](#initial-use-case) in order to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update1 use case](#update1-use-case) domain.
+
+   - Understanding our updated WDT archive.
+
+     The updated archive for this use case is in directory `/tmp/mii-sample/archives/archive-v2`. We will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/mii-sample/archives/archive-v1` from the [Initial use case](#initial-use-case) with the the following differences:
+     - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
+     - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference from the original application: it changes the line `out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the mii-sample JSP web-app.");`.
+
+     For additional information about archives, see the [Understanding our first archive](#understanding-our-first-archive) section in the [Initial use case](#initial-use-case) within this sample.
+
+   - Stage a ZIP file of the WDT archive.
+
+     > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths below.
+
+     When we create our updated image, we will use the files in staging directory `/tmp/mii-sample/model-in-image__WLS-v2`. In preparation, we need it to contain a ZIP file of the new WDT application archive.
+
+     Run the following commands to create your application archive ZIP file and put it in the expected directory:
+
+     ```
+     # Delete existing archive.zip in case we have an old leftover version
+     $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip
+
+     # Move to the directory which contains the source files for our new archive
+     $ cd /tmp/mii-sample/archives/archive-v2
+
+     # Zip the archive to the location will later use when we run the WebLogic Image Tool
+     $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip wlsdeploy
+     ```
+
+   - Understanding our staged model files.
+
+     The WDT model YAML file and properties for this use case have already been staged for you to directory `/tmp/mii-sample/model-in-image__WLS-v2`. 
+
+     The `model.10.yaml` file in this directory has an updated path `wlsdeploy/applications/myapp-v2` that references the updated web application in our archive, but is otherwise identical to the model staged for the original image. The final related YAML stanza looks like this:
+
+     ```
+     appDeployments:
+         Application:
+             myapp:
+                 SourcePath: 'wlsdeploy/applications/myapp-v2'
+                 ModuleType: ear
+                 Target: 'cluster-1'
+     ```
+
+     If you would like to review the entire original model before this change, see [Staging model files](#staging-model-files) in the [Initial use case](#initial-use-case) within this sample.
+
+   - Create a new image from our staged model files using WIT.
+
+     > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the `imagetool` command line below, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
+
+     At this point, we have staged all of the files needed for image `model-in-image:WLS-v2`, they include:
+
+     - `/tmp/mii-sample/model-images/weblogic-deploy.zip`
+     - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/model.10.yaml`
+     - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/model.10.properties`
+     - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip`
+
+     If you don't see the `weblogic-deploy.zip` file, then it means that you missed a step in the prerequisites.
+
+     Now let's use the Image Tool to create an image named `model-in-image:WLS-v2` that's layered on a base WebLogic image. We've already set up this tool during the prerequisite steps at the beginning of this sample.
+
+     Run the following commands to create the model image and verify that it worked:
+
+     ```
+     $ cd /tmp/mii-sample/model-images
+     $ ./imagetool/bin/imagetool.sh update \
+       --tag model-in-image:WLS-v2 \
+       --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
+       --wdtModel      ./model-in-image__WLS-v2/model.10.yaml \
+       --wdtVariables  ./model-in-image__WLS-v2/model.10.properties \
+       --wdtArchive    ./model-in-image__WLS-v2/archive.zip \
+       --wdtModelOnly \
+       --wdtDomainType WLS
+     ```
+
+     If you don't see the `imagetool` directory, then it means that you missed a step in the prerequisites.
+
+     This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
+     - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+     - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
+       - Note that we cached WDT in WIT using the keyword `latest` when we set up the cache during the sample prerequisites steps.
+       - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
+     - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
+
+     When the command succeeds, it should end with output like:
+
+     ```
+     [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v2
+     ```
+
+     Also, if you run the `docker images` command, then you should see a Docker image named `model-in-image:WLS-v2`.
+
+1. Set up and apply a domain resource that is similar to your "Update1" use case domain resource but with a different image:
+
+   > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths, files, and image names below.
+
+   - Option 1: Update a copy of your domain resource file from the "Update1" use case.
+
+     - You might recall that in the [Update1 use case](#update1-use-case) we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
+
+       - We suggest copying this domain resource file and naming the copy `/tmp/mii-sample/mii-update3.yaml` before making any changes.
+
+       - Working on a copy is not strictly necessary, but it helps to keep track of your work for the different use cases in this sample and also provides you a backup of your previous work.
+
+     - Change the `/tmp/mii-sample/mii-update3.yaml` domain resource `image` field to reference `model-in-image:WLS-v2` instead of `model-in-image:WLS-v1`.
+
+        The final result should look something like this:
+
+        ```
+        ...
+        spec:
+          ...
+          image: "model-in-image:WLS-v2"
+        ```
+
+      - Apply your changed domain resource:
+
+          ```
+          $ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
+          ```
+
+    - Option 2: Use the updated domain resource file that is supplied with the sample:
+
+        ```
+        $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
+        ```
+
+
+1. Wait for the roll to complete.
+
+   Now that you've applied a domain resource with an updated image, the operator will automatically rerun the domain's introspector job in order to generate a new domain home, and then will restart ('roll') each of the domain's pods so that they use the new domain home and the new image. You'll need to wait for this roll to complete before we can verify that the new image and its associated new application have been deployed.
+
+   - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
+
+   - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
+
+     {{%expand "Click here to expand the `wl-pod-wait.sh` usage." %}}
+   ```
+     $ ./wl-pod-wait.sh -?
+
+       Usage:
+
+         wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
+            [-p expected_pod_count] \
+            [-t timeout_secs] \
+            [-q]
+
+         Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+
+       Parameters:
+
+         -d <domain_uid> : Defaults to 'sample-domain1'.
+
+         -n <namespace>  : Defaults to 'sample-domain1-ns'.
+
+         pod_count > 0   : Wait until exactly 'pod_count' WebLogic server pods for
+                           a domain all (a) are ready, (b) have the same
+                           'domainRestartVersion' label value as the
+                           current domain resource's 'spec.restartVersion, and
+                           (c) have the same image as the current domain
+                           resource's image.
+
+         pod_count = 0   : Wait until there are no running WebLogic server pods
+                           for a domain. The default.
+
+         -t <timeout>    : Timeout in seconds. Defaults to '600'.
+
+         -q              : Quiet mode. Show only a count of wl pods that
+                           have reached the desired criteria.
+
+         -?              : This help.
+   ```
+     {{% /expand %}}
+
+     {{%expand "Click here to expand sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
+   ```
+   $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
+   
+   @@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   ready='true'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   image='model-in-image:WLS-v2'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   domainRestartVersion='1'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   namespace='sample-domain1-ns'
+   @@ [2020-05-14T17:28:47][seconds=1] Info:   domainUID='sample-domain1'
+   
+   @@ [2020-05-14T17:28:47][seconds=1] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:28:47][seconds=1] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                                          VERSION  IMAGE                    READY   PHASE      
+   --------------------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'                 '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-introspect-domain-job-g5kzn'  ''       ''                       ''      'Running'  
+   'sample-domain1-managed-server1'              '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'              '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:29:39][seconds=53] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:39][seconds=53] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:29:50][seconds=64] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:50][seconds=64] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:29:58][seconds=72] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:58][seconds=72] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:29:59][seconds=73] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:59][seconds=73] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'false'  'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:30:30][seconds=104] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:30:30][seconds=104] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:31:13][seconds=147] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:13][seconds=147] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'false'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:31:15][seconds=149] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:15][seconds=149] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:31:41][seconds=175] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:41][seconds=175] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:31:42][seconds=176] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:42][seconds=176] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
+   
+   @@ [2020-05-14T17:32:21][seconds=215] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:21][seconds=215] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:32:31][seconds=225] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:31][seconds=225] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'false'  'Running'  
+   
+   @@ [2020-05-14T17:32:40][seconds=234] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:40][seconds=234] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   
+   @@ [2020-05-14T17:32:51][seconds=245] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:51][seconds=245] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
+   
+   @@ [2020-05-14T17:32:52][seconds=246] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:52][seconds=246] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY    PHASE      
+   --------------------------------  -------  -----------------------  -------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
+   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Running'  
+   
+   @@ [2020-05-14T17:33:25][seconds=279] Info: '3' WebLogic pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:33:25][seconds=279] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   
+   NAME                              VERSION  IMAGE                    READY   PHASE      
+   --------------------------------  -------  -----------------------  ------  ---------  
+   'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
+   
+   
+   @@ [2020-05-14T17:33:25][seconds=279] Info: Success!
+
+   ```
+     {{% /expand %}}
+
+1. After your domain roll is complete, you can call the sample web application to determine if the updated application was deployed. 
+
+   When the application is invoked, it should contain an output string like `Hello World! This is version 'v2' of the mii-sample JSP web-app.`.
+
+   Send a web application request to the ingress controller:
 
    ```  
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
+   ```  
 
-   <html><body><pre>
-   *****************************************************************
+   Or, if Traefik is unavailable and your Administration Server pod is running, you can run `kubectl exec`:
 
-   Hello World! This is version 'v1' of the mii-sample JSP web-app.
+   ```  
+   $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
+     "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
+   ```  
 
-   Welcome to WebLogic server 'managed-server1'!
+   You should see something like the following:
 
-    domain UID  = 'sample-domain1'
-    domain name = 'domain1'
+    ```  
+    <html><body><pre>
+    *****************************************************************
 
-   Found 1 local cluster runtime:
-     Cluster 'cluster-1'
+    Hello World! This is version 'v2' of the mii-sample JSP web-app.
 
-   Found 1 local data source:
-     Datasource 'mynewdatasource': State='Running'
+    Welcome to WebLogic server 'managed-server1'!
 
-   *****************************************************************
-   </pre></body></html>
+     domain UID  = 'sample-domain1'
+     domain name = 'domain1'
 
-   ```
-   {{% /expand%}}
+    Found 1 local cluster runtime:
+      Cluster 'cluster-1'
+
+    Found 1 local data source:
+      Datasource 'mynewdatasource': State='Running'
+
+    *****************************************************************
+    </pre></body></html>
+
+    ```
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 This completes the sample scenarios.
-
 
 ### Cleanup
 
@@ -1734,7 +2627,7 @@ To remove the resources you have created in these samples:
 
    It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).
 
-   > **Note**: When you delete a domain, the operator should detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
+   > **Note**: When you delete a domain, the operator will detect your domain deletion and shut down its pods. Wait for these pods to exit before deleting the operator that monitors the `sample-domain1-ns` namespace. You can monitor this process using the command `kubectl get pods -n sample-domain1-ns --watch` (`ctrl-c` to exit).
 
 2. If you set up the Traefik ingress controller:
 
