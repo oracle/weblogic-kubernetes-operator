@@ -3,24 +3,19 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This script deploys secrets for the Model in Image sample. 
+# This script deploys secrets for the Model in Image sample,
+# including extra secretes for the JRF domain type or for
+# the datasource config map as needed.
 #
-# Optional parameter:
+# Optional parameters:
 #
-#   -dry                      - Dry run. Show but don't do. Dry run
-#                               output is prefixed with 'dryrun:'.
+#   -dry kubectl              - Dry run. Show but don't do. Dry run
+#   -dry yaml                   output is prefixed with 'dryrun:'.
 #
-# Optional environment variables:
+# Optional environment variables (see README for details):
 #
-#   WORKDIR                   - Working directory for the sample with at least
-#                               10GB of space. Defaults to 
-#                               '/tmp/$USER/model-in-image-sample-work-dir'.
-#   DOMAIN_UID                - defaults to 'sample-domain1'
-#   DOMAIN_NAMESPACE          - defaults to 'sample-domain1-ns'
-#   WDT_DOMAIN_TYPE           - WLS (default), RestrictedJRF, or JRF
-#   DB_NAMESPACE              - default (default)
-#   INCLUDE_MODEL_CONFIGMAP   - 'true' if sample is deploying its
-#                               configuration.model.configMap
+#   WORKDIR, DOMAIN_UID, DOMAIN_NAMESPACE, WDT_DOMAIN_TYPE,
+#   DB_NAMESPACE, INCLUDE_MODEL_CONFIGMAP
 #
 
 set -eu

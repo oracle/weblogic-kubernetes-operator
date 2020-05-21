@@ -487,11 +487,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       boolean isDeleting,
       boolean isWillInterrupt) {
     Domain domain = info.getDomain();
-    DomainSpec spec = null;
-    if (domain != null) {
-      spec = domain.getSpec();
-      DomainPresenceControl.normalizeDomainSpec(spec);
-    }
     String ns = info.getNamespace();
     String domainUid = info.getDomainUid();
 
@@ -513,6 +508,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           // change just by looking at metadata.generation.
 
           // Has the spec actually changed? We will get watch events for status updates
+          DomainSpec spec = domain != null ? domain.getSpec() : null;
           if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
             // nothing in the spec has changed, but status likely did; update current
             existing.setDomain(domain);

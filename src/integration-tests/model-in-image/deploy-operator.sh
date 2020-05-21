@@ -17,8 +17,7 @@ SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
 set -u
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
-DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-${DOMAIN_UID}-ns}
+DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
 OPER_NAME=${OPER_NAME:-sample-weblogic-operator}
 OPER_NAMESPACE=${OPER_NAMESPACE:-${OPER_NAME}-ns}
