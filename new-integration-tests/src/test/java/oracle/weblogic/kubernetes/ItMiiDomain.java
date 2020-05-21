@@ -288,8 +288,8 @@ class ItMiiDomain implements LoggedTest {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
                             encryptionSecretName,
                             domainNamespace1,
-                  "weblogicenc",
-                  "weblogicenc"),
+                      "weblogicenc",
+                      "weblogicenc"),
                     String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain object
@@ -574,7 +574,7 @@ class ItMiiDomain implements LoggedTest {
   }
 
   @ParameterizedTest
-  @DisplayName("Create model in image domain using different WebLogic images as parameters")
+  @DisplayName("Create model in image domain using different WebLogic version images as parameters")
   @ValueSource(strings = {"12.2.1.3", "12.2.1.4"})
   public void testParamsCreateMiiDomain(String imageTag, @Namespaces(1) List<String> namespaces) {
     logger.info("Using imageTag {0}", imageTag);
@@ -584,7 +584,8 @@ class ItMiiDomain implements LoggedTest {
     domainNamespace = namespaces.get(0);
 
     // upgrade Operator for the new domain namespace
-    upgradeAndVerifyOperator(opNamespace, domainNamespace);
+    assertTrue(upgradeAndVerifyOperator(opNamespace, domainNamespace),
+        String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -600,7 +601,6 @@ class ItMiiDomain implements LoggedTest {
                           WLS_BASE_IMAGE_NAME,
                           imageTag,
                           WLS);
-
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
