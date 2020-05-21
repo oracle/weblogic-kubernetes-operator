@@ -18,8 +18,8 @@ public interface TestConstants {
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
-  public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
-  public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
+  public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
+  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 14.1.1.0";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -92,12 +92,18 @@ public interface TestConstants {
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   // WDT domain-in-image constants
-  public static final String WDT_BASIC_MODEL_FILE = "wdt-singleclusterdomain-sampleapp-wls.yaml";
+  public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
   public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
+
+  // credentials
+  public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
+  public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
+  public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
+  public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
 
 }
