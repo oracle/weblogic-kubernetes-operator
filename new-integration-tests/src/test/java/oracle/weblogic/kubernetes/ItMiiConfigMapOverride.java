@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -83,6 +84,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -219,7 +221,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
    * Create a configmap with a sparse JDBC/JMS/WLDF model files.
    * Patch the domain resource with the configmap.
    * Update the restart version of the domain resource.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp 
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * for all the server pods before and after rolling restart.
    * Verify SystemResource configurations using Rest API call to admin server.
    */
@@ -362,7 +364,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     // get the creation time of the managed server pods before patching
     List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
     assertDoesNotThrow(
-        () -> { 
+        () -> {
           for (int i = 1; i <= replicaCount; i++) {
             String managedServerPodName = managedServerPrefix + i;
             String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
@@ -372,9 +374,19 @@ class ItMiiConfigMapOverride implements LoggedTest {
                 domainNamespace,
                 managedServerPodName,
                 creationTime);
-          } 
+          }
         },
         String.format("Failed to get creationTimestamp for managed server pods"));
+
+    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
+    pods.put(adminServerPodName, adminPodCreationTime);
+    for (int i = 1; i <= replicaCount; i++) {
+      try {
+        pods.put(managedServerPrefix + i, getPodCreationTimestamp(domainNamespace, "", managedServerPrefix + i));
+      } catch (ApiException ex) {
+        logger.severe(ex.getResponseBody());
+      }
+    }
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -403,20 +415,13 @@ class ItMiiConfigMapOverride implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
 
-    // Check if the admin server pod has been restarted
-    // by comparing the PodCreationTime before and after rolling restart
-    checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime);
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
 
-    // Check if the managed server pods have been restarted
-    // by comparing the PodCreationTime before and after rolling restart
-    // check managed server services created
-    
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodRestarted(managedServerPrefix + 1, domainUid, 
-           domainNamespace, managedServerPodOriginalTimestampList.get(i - 1));
-    }
 
-    // Even if pods are created, need the service to created 
+    // Even if pods are created, need the service to created
     // before checking the DataSource configuration
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
@@ -430,7 +435,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
     logger.info("CheckJDBCSystemResource returned {0}", result.toString());
     assertEquals("200", result.stdout(), "DataSource configuration not found");
     logger.info("Found the DataSource configuration");
-    
+
     result = null;
     result = checkSystemResourceConfiguration("JMSSystemResources", "TestClusterJmsModule");
     assertNotNull(result, "CheckJMSSystemResources returned null");
@@ -487,7 +492,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
   }
 
   private void createDatabaseSecret(
-        String secretName, String username, String password, 
+        String secretName, String username, String password,
         String dburl, String domNamespace) throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
@@ -518,7 +523,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
 
   private void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount, String dbSecretName) {
 
     List<String> securityList = new ArrayList<>();
