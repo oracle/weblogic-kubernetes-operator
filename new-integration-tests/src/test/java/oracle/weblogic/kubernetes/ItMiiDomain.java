@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -575,8 +575,10 @@ class ItMiiDomain implements LoggedTest {
 
   @ParameterizedTest
   @DisplayName("Create model in image domain using different WebLogic version images as parameters")
-  @ValueSource(strings = {"12.2.1.3", "14.1.1"})
+  @MethodSource("oracle.weblogic.kubernetes.utils.Params#webLogicImageTags")
   public void testParamsCreateMiiDomain(String imageTag, @Namespaces(1) List<String> namespaces) {
+    imageTag = imageTag.trim();
+    assertTrue(!imageTag.isEmpty(), "imageTag can not be empty string");
     logger.info("Using imageTag {0}", imageTag);
 
     logger.info("Getting unique namespace for Domain");
