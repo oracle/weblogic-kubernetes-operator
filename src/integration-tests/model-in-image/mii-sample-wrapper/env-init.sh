@@ -1,16 +1,10 @@
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# This file sets the defaults for this sample's scripts, loads 
-# WORKDIR/custom-env.sh (which may contain customized values
-# set by the user), and does other actions that are common
-# to all of the sample's scripts.
+# This file sets the defaults for the sample wrapper scripts, 
+# and does other actions that are common to all of the sample's scripts.
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
-
-if [ -f $WORKDIR/env-custom.sh ]; then
-  source $WORKDIR/env-custom.sh
-fi
 
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
@@ -28,8 +22,6 @@ fi
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 CUSTOM_DOMAIN_NAME=${CUSTOM_DOMAIN_NAME:-domain1}
-
-MODEL_CONFIGMAP_DIR=${MODEL_CONFIGMAP_DIR:-model-configmaps/datasource}
 
 DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-mii-domain.yaml.template-$WDT_DOMAIN_TYPE}"
 DOMAIN_RESOURCE_FILENAME="${DOMAIN_RESOURCE_FILENAME:-domain-resources/mii-${DOMAIN_UID}.yaml}"

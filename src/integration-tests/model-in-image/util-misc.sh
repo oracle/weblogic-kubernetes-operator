@@ -104,7 +104,7 @@ function testapp() {
 
   if [ ! "$result" = "1" ]; then
     echo
-    echo "@@ Error: '$2' not found in app response:"
+    echo "@@ Error: '$3' not found in app response:"
     bash -c "$command"
     exit 1
   else
