@@ -59,8 +59,12 @@ public class Command {
       }
 
       // check exitValue to determine if the command execution has failed.
-      if (params.verbose() && result.exitValue() != 0) {
-        logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+      if (params.verbose()) {
+        if (result.exitValue() != 0) {
+          logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+        } else {
+          logger.info("The command execution succeeded with result: {0}.", result);
+        }
       } 
 
       return result.exitValue() == 0;
@@ -91,8 +95,12 @@ public class Command {
       }
 
       // check exitValue to determine if the command execution has failed.
-      if (params.verbose() && result.exitValue() != 0) {
-        logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+      if (params.verbose()) {
+        if (result.exitValue() != 0) {
+          logger.severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+        } else {
+          logger.info("The command execution succeeded with result: {0}.", result);
+        }
       } 
 
       return result.exitValue() == 0
