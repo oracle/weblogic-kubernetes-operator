@@ -3,6 +3,13 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -12,11 +19,34 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.google.gson.JsonObject;
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -25,13 +55,21 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
@@ -39,16 +77,22 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -65,6 +109,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -392,6 +438,28 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check the pod was restarted.
+   *
+   * @param podName name of pod to check
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
+   * @param timestamp the pod original creation timestamp
+   */
+  public static void checkPodRestarted(String podName, String domainUid, String namespace, String timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, namespace, timestamp),
+            String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
+                podName, namespace)));
+  }
+
+  /**
    * Create a Docker image for a model in image domain.
    *
    * @param imageNameBase the base image name used in local or to construct the image name in repository
@@ -464,23 +532,54 @@ public class CommonTestUtils {
    */
   public static void createDockerRegistrySecret(String namespace) {
 
-    // Create Docker registry secret in the namespace to pull the image from repository
+    logger.info("Creating image pull secret in namespace {0}", namespace);
+    createRepoSecret(REPO_SECRET_NAME, namespace, REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+  }
+
+  /**
+   * Create secret for OCR registry credentials in the specified namespace.
+   *
+   * @param namespace namespace in which the secret will be created
+   */
+  public static void createOCRRepoSecret(String namespace) {
+
+    logger.info("Creating image pull secret in namespace {0}", namespace);
+    createRepoSecret(OCR_SECRET_NAME, namespace, OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY);
+  }
+
+  /**
+   * Create a Docker registry secret in the specified namespace.
+   *
+   * @param secretName secret name to be created
+   * @param namespace the namespace in which the secret will be created
+   * @param registryUserName username to login to the docker registry
+   * @param registryPassword password to login to the docker registry
+   * @param registryEmail email to login to the docker registry
+   * @param registryName name of the docker registry
+   */
+  public static void createRepoSecret(String secretName,
+                                         String namespace,
+                                         String registryUserName,
+                                         String registryPassword,
+                                         String registryEmail,
+                                         String registryName) {
+
+    logger.info("Creating image pull secret in namespace {0}", namespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+        registryUserName, registryPassword, registryEmail, registryName);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
+            .name(secretName)
             .namespace(namespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
-        REPO_SECRET_NAME, namespace));
+        String.format("createSecret failed for %s", secretName));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", secretName));
   }
 
   /**
@@ -532,6 +631,7 @@ public class CommonTestUtils {
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param domainUid the domain to which the cluster belongs
    * @param domainNamespace the namespace in which the domain exists
+   * @param manageServerPodNamePrefix managed server pod name prefix
    * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
    * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
    * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
@@ -543,12 +643,11 @@ public class CommonTestUtils {
   public static void scaleAndVerifyCluster(String clusterName,
                                            String domainUid,
                                            String domainNamespace,
+                                           String manageServerPodNamePrefix,
                                            int replicasBeforeScale,
                                            int replicasAfterScale,
                                            String curlCmd,
                                            List<String> expectedServerNames) {
-
-    String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
 
     // get the original managed server pod creation timestamp before scale
     List<String> listOfPodCreationTimestamp = new ArrayList<>();
@@ -651,5 +750,278 @@ public class CommonTestUtils {
             .isTrue();
       }
     }
+  }
+
+  /**
+   * Create a persistent volume and persistent volume claim in the specified namespace.
+   *
+   * @param pvName name of persistent volume to create
+   * @param pvcName name of persistent volume claim to create
+   * @param domainUid the Uid of WebLogic domain for which the PV and PVC will be created
+   * @param domainNamespace namespace in which the PV and PVC will be created
+   * @param testClassName the test class name calling this method to unique identify PV host path
+   * @throws IOException when creating pv path fails
+   */
+  public static void createPVandPVC(String pvName,
+                                    String pvcName,
+                                    String domainUid,
+                                    String domainNamespace,
+                                    String testClassName) throws IOException {
+    logger.info("creating persistent volume and persistent volume claim");
+
+    Path pvHostPath = Files.createDirectories(Paths.get(
+        PV_ROOT, testClassName, domainUid + "-persistentVolume"));
+    logger.info("Creating PV directory {0}", pvHostPath);
+    org.apache.commons.io.FileUtils.deleteDirectory(pvHostPath.toFile());
+    Files.createDirectories(pvHostPath);
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("5Gi"))
+            .persistentVolumeReclaimPolicy("Recycle")
+            .accessModes(Arrays.asList("ReadWriteMany"))
+            .hostPath(new V1HostPathVolumeSource()
+                .path(pvHostPath.toString())))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvName)
+            .withNamespace(domainNamespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+    boolean success = assertDoesNotThrow(
+        () -> createPersistentVolume(v1pv),
+        "Persistent volume creation failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
+    );
+    assertTrue(success, "PersistentVolume creation failed");
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .storageClassName(domainUid + "-weblogic-domain-storage-class")
+            .volumeName(pvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("5Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(pvcName)
+            .withNamespace(domainNamespace)
+            .build()
+            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
+            .putLabelsItem("weblogic.domainUid", domainUid));
+
+    success = assertDoesNotThrow(
+        () -> createPersistentVolumeClaim(v1pvc),
+        "Persistent volume claim creation failed, "
+            + "look at the above console log messages for failure reason in ApiException responsebody"
+    );
+    assertTrue(success, "PersistentVolumeClaim creation failed");
+  }
+
+  /**
+   * Creates a WebLogic domain on a persistent volume by doing the following.
+   * Copies the WLST domain script to a temp location.
+   * Creates a domain properties in the temp location.
+   * Creates a configmap containing domain scripts and property files.
+   * Runs a job to create domain on persistent volume.
+   * @param image Image name to use with job
+   * @param isUseSecret If image pull secret is needed
+   * @param pvName the name of persistence volume
+   * @param pvcName the name of persistence volume claim
+   * @param domainUid the Uid of the domain to create
+   * @param domainNamespace the namespace in which the domain will be created
+   * @param clusterName the cluster name of the domain
+   * @param adminUser the admin username for the domain
+   * @param adminPassword the admin password for the domain
+   * @param testClassName the test class name calling this method to unique identify PV host path
+   * @throws IOException when reading/writing domain scripts fails
+   */
+  public static void createDomainOnPVWithWlst(String image,
+                                              boolean isUseSecret,
+                                              String pvName,
+                                              String pvcName,
+                                              String domainUid,
+                                              String domainNamespace,
+                                              String clusterName,
+                                              String adminUser,
+                                              String adminPassword,
+                                              String testClassName) throws IOException {
+
+    logger.info("create a staging location for domain creation scripts");
+    Path pvTemp = Paths.get(RESULTS_ROOT, testClassName, "domainCreateTempPV");
+    org.apache.commons.io.FileUtils.deleteDirectory(pvTemp.toFile());
+    Files.createDirectories(pvTemp);
+
+    logger.info("copy the create domain WLST script to staging location");
+    Path srcWlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+    Path targetWlstScript = Paths.get(pvTemp.toString(), "create-domain.py");
+    Files.copy(srcWlstScript, targetWlstScript, StandardCopyOption.REPLACE_EXISTING);
+
+    logger.info("create WebLogic domain properties file");
+    Path domainPropertiesFile = Paths.get(pvTemp.toString(), "domain.properties");
+    assertDoesNotThrow(
+        () -> createDomainProperties(domainPropertiesFile, domainUid, clusterName, adminUser, adminPassword),
+        "Creating domain properties file failed");
+
+    logger.info("add files to a config map for domain creation job");
+    List<Path> domainScriptFiles = new ArrayList<>();
+    domainScriptFiles.add(targetWlstScript);
+    domainScriptFiles.add(domainPropertiesFile);
+
+    logger.info("Create a config map to hold domain creation scripts");
+    String domainScriptConfigMapName = "create-domain-scripts-cm";
+    assertDoesNotThrow(
+        () -> createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles, domainNamespace),
+        "Creating configmap for domain creation failed");
+
+    logger.info("Running a Kubernetes job to create the domain");
+    runCreateDomainJob(image, isUseSecret, pvName, pvcName, domainScriptConfigMapName, domainNamespace);
+
+  }
+
+  /**
+   * Create a properties file for WebLogic domain configuration.
+   * @param wlstPropertiesFile path of the properties file
+   * @param domainUid the Uid of WebLogic domain to which the properties file is associated
+   * @param clusterName the cluster name of the domain
+   * @param adminUser the admin username for the domain
+   * @param adminPassword the admin password for the domain
+   * @throws FileNotFoundException when properties file path not found
+   * @throws IOException when writing properties fails
+   */
+  public static void createDomainProperties(Path wlstPropertiesFile,
+                                            String domainUid,
+                                            String clusterName,
+                                            String adminUser,
+                                            String adminPassword) throws FileNotFoundException, IOException {
+    // create a list of properties for the WebLogic domain configuration
+    Properties p = new Properties();
+
+    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_name", domainUid);
+    p.setProperty("cluster_name", clusterName);
+    p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);
+    p.setProperty("managed_server_port", "8001");
+    p.setProperty("admin_server_port", "7001");
+    p.setProperty("admin_username", adminUser);
+    p.setProperty("admin_password", adminPassword);
+    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("admin_t3_channel_port", "32001");
+    p.setProperty("number_of_ms", "4");
+    p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
+    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("production_mode_enabled", "true");
+
+    p.store(new FileOutputStream(wlstPropertiesFile.toFile()), "wlst properties file");
+  }
+
+  /**
+   * Create configmap containing domain scripts.
+   * @param configMapName name of the configmap to create
+   * @param files files to add in configmap
+   * @param domainNamespace the namespace where the domain exists
+   * @throws IOException when reading the file fails
+   * @throws ApiException if create configmap fails
+   */
+  public static void createConfigMapForDomainCreation(String configMapName,
+                                                      List<Path> files,
+                                                      String domainNamespace)
+      throws IOException, ApiException {
+
+    // add WLST domain creation python script and properties files
+    // to create the configmap of the domain
+    Map<String, String> data = new HashMap<>();
+    for (Path file : files) {
+      data.put(file.getFileName().toString(), Files.readString(file));
+    }
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .name(configMapName)
+        .namespace(domainNamespace);
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(meta);
+
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Failed to create configmap %s with files %s", configMapName, files));
+    assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
+  }
+
+  /**
+   * Create a job to create a domain on a persistent volume.
+   */
+  public static void runCreateDomainJob(String image, boolean isUseSecret, String pvName,
+                                  String pvcName, String domainScriptCM, String namespace) {
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job") // name of the create domain job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(new V1PodSpec()
+                    .restartPolicy("Never")
+                    .initContainers(Arrays.asList(new V1Container()
+                        .name("fix-pvc-owner")  // change the ownership of the pv to opc:opc
+                        .image(image)
+                        .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
+                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name(pvName)
+                                .mountPath("/shared")))
+                        .securityContext(new V1SecurityContext()
+                            .runAsGroup(0L)
+                            .runAsUser(0L))))
+                    .containers(Arrays.asList(new V1Container()
+                        .name("create-weblogic-domain-onpv-container")
+                        .image(image)
+                        .imagePullPolicy("Always")
+                        .ports(Arrays.asList(new V1ContainerPort()
+                            .containerPort(7001)))
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
+                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                            new V1VolumeMount()
+                                .name(pvName) // location to write domain
+                                .mountPath("/shared"))) // mounted under /shared inside pod
+                        .addCommandItem("/bin/sh") //call wlst.sh script with py and properties file
+                        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
+                        .addArgsItem("/u01/weblogic/create-domain.py")
+                        .addArgsItem("-skipWLSModuleScanning")
+                        .addArgsItem("-loadProperties")
+                        .addArgsItem("/u01/weblogic/domain.properties")))
+                    .volumes(Arrays.asList(
+                        new V1Volume()
+                            .name(pvName)
+                            .persistentVolumeClaim(
+                                new V1PersistentVolumeClaimVolumeSource()
+                                    .claimName(pvcName)),
+                        new V1Volume()
+                            .name("create-weblogic-domain-job-cm-volume")
+                            .configMap(
+                                new V1ConfigMapVolumeSource()
+                                    .name(domainScriptCM))))  //config map containing domain scripts
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(OCR_SECRET_NAME))
+                        : null))));
+    String jobName = assertDoesNotThrow(() ->
+        createNamespacedJob(jobBody), "Domain creation job failed");
+
+    logger.info("Checking if the domain creation job {0} completed in namespace {1}",
+        jobName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
+                jobName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(jobCompleted(jobName, null, namespace));
   }
 }
