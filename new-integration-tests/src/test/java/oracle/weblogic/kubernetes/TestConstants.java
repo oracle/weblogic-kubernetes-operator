@@ -18,6 +18,7 @@ public interface TestConstants {
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
+  public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -87,5 +88,11 @@ public interface TestConstants {
   public static final String MII_APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
   public static final String MII_APP_RESPONSE_V3 = "How are you doing! You have reached server managed-server";
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
+
+  // credentials
+  public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
+  public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
+  public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
+  public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
 
 }
