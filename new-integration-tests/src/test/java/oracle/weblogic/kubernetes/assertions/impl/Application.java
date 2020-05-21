@@ -187,10 +187,11 @@ public class Application {
         .append("status=$(curl --user " + username + ":" + password)
         .append(" http://" + host + ":" + adminServiceNodePort)
         .append("/management/tenant-monitoring/servers/managed-server1")
-        .append(" --silent --show-error ")
+        .append(" --silent --show-error")
+        .append(" --noproxy '*'")
         .append(" -o /dev/null")
         .append(" -w %{http_code});")
-        .append("echo ${status}");
+        .append(" echo ${status}");
 
     return Command
             .defaultCommandParams()

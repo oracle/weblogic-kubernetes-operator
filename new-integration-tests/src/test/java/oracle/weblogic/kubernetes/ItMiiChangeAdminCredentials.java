@@ -51,9 +51,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -118,8 +118,8 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   
   /**
    * Test patching a running model-in-image domain with a new WebLogic credentials secret.
-   * Perform two patching operations to the domain spec: change the webLogicCredentialsSecret to a new
-   * secret, and change the domainRestartVersion to trigger a rolling restart of the server pods.
+   * Perform two patching operations to the domain spec. First, change the webLogicCredentialsSecret to
+   * a new secret, and then change the domainRestartVersion to trigger a rolling restart of the server pods.
    * Verify that the domain spec's webLogicCredentialsSecret and restartVersion are updated,
    * the server pods are recreated by checking each pod's creationTimestamp before and after patching,
    * the server pods' weblogic.domainRestartVersion label is updated, and 
@@ -233,7 +233,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     String patch = String.format(
         "[\n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}\n]\n",
             "webLogicCredentialsSecret/name", secretName);
-    logger.info("Patch the domain resource {0} in namespace {1} with:{2}\n",
+    logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
         domainResourceName, namespace, patch);
 
     assertTrue(patchDomainCustomResource(
@@ -241,7 +241,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             namespace,
             new V1Patch(patch),
             V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource %s in namespace %s with %s:%s",
+        String.format("Failed to patch the domain resource %s in namespace %s with %s: %s",
             domainResourceName, namespace, "/spec/webLogicCredentialsSecret/name", secretName));
 
     String oldVersion = assertDoesNotThrow(
@@ -254,7 +254,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}\n]\n",
             newVersion);
     
-    logger.info("Patch the domain resource {0} in namespace {1} with:{2}\n",
+    logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
         domainResourceName, namespace, patch);
 
     assertTrue(patchDomainCustomResource(
@@ -262,7 +262,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             namespace,
             new V1Patch(patch),
             V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource %s in namespace %s with startVersion:%s",
+        String.format("Failed to patch the domain resource %s in namespace %s with startVersion: %s",
               domainResourceName, namespace, newVersion));
 
     String updatedVersion = assertDoesNotThrow(
@@ -406,25 +406,6 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
 
   }
   
-  private void checkPodRestarted(
-      String domainUid,
-      String domNamespace,
-      String podName,
-      String lastCreationTime
-  ) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            podName,
-            domNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
-            String.format(
-                "pod %s has not been restarted in namespace %s", podName, domNamespace)));
-  }
-
   private void checkPodRestartVersionUpdated(
       String podName,
       String domainUid,
