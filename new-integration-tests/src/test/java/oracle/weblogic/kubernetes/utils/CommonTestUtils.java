@@ -51,6 +51,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -84,6 +85,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
@@ -96,7 +100,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -105,6 +108,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -213,6 +217,49 @@ public class CommonTestUtils {
 
     return opHelmParams;
   }
+
+  /**
+   * Upgrade WebLogic operator to manage the given domain namespaces.
+   *
+   * @param opNamespace the operator namespace in which the operator will be upgraded
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return true if successful
+   */
+  public static boolean upgradeAndVerifyOperator(String opNamespace,
+                                                    String... domainNamespace) {
+    // Helm upgrade parameters
+    HelmParams opHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .domainNamespaces(Arrays.asList(domainNamespace));
+
+    // upgrade operator
+    logger.info("Upgrading operator in namespace {0}", opNamespace);
+    if (!upgradeOperator(opParams)) {
+      logger.info("Failed to upgrade operator in namespace {0}", opNamespace);
+      return false;
+    }
+    logger.info("Operator upgraded in namespace {0}", opNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+    if (!isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace)) {
+      logger.info("Operator release {0} is not in deployed status in namespace {1}",
+          OPERATOR_RELEASE_NAME, opNamespace);
+      return false;
+    }
+    logger.info("Operator release {0} status is deployed in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+
+    return true;
+  }
+
 
   /**
    * Install NGINX and wait up to five minutes until the NGINX pod is ready.
@@ -375,6 +422,33 @@ public class CommonTestUtils {
             String.format("podReady failed with ApiException for pod %s in namespace %s",
                podName, domainNamespace)));
   }
+  
+  /**
+   * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
+   *
+   * @param domainUid the label the pod is decorated with
+   * @param podName pod name to check
+   * @param domNamespace the Kubernetes namespace in which the domain exists
+   * @param lastCreationTime the previous creation time
+   */
+  public static void checkPodRestarted(
+      String domainUid,
+      String domNamespace,
+      String podName,
+      String lastCreationTime
+  ) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            podName,
+            domNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
+            String.format(
+                "pod %s has not been restarted in namespace %s", podName, domNamespace)));
+  }
 
   /**
    * Check service exists in the specified namespace.
@@ -438,45 +512,44 @@ public class CommonTestUtils {
   }
 
   /**
-   * Check the pod was restarted.
+   * Create a Docker image for a model in image domain.
    *
-   * @param podName name of pod to check
-   * @param domainUid the label the pod is decorated with
-   * @param namespace the namespace in which the pod exists
-   * @param timestamp the pod original creation timestamp
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param appName the sample application name used to build sample app ear file in WDT model file
+   * @return image name with tag
    */
-  public static void checkPodRestarted(String podName, String domainUid, String namespace, String timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, namespace, timestamp),
-            String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
-                podName, namespace)));
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                String wdtModelFile,
+                                                String appName) {
+    return createMiiImageAndVerify(miiImageNameBase, wdtModelFile, appName,
+        WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
   }
 
   /**
    * Create a Docker image for a model in image domain.
    *
-   * @param imageNameBase the base image name used in local or to construct the image name in repository
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
    * @param wdtModelFile the WDT model file used to build the Docker image
    * @param appName the sample application name used to build sample app ear file in WDT model file
+   * @param baseImageName the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag the WebLogic base image tag to be used while creating mii image
+   * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @return image name with tag
    */
-  public static  String createMiiImageAndVerify(String imageNameBase,
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
                                                 String wdtModelFile,
-                                                String appName) {
+                                                String appName,
+                                                String baseImageName,
+                                                String baseImageTag,
+                                                String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + imageNameBase;
+    final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
 
     // build the model file list
@@ -507,14 +580,17 @@ public class CommonTestUtils {
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = createMiiImage(
-        defaultWitParams()
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(modelList)
-            .modelArchiveFiles(archiveList)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
+          new WitParams()
+              .baseImageName(baseImageName)
+              .baseImageTag(baseImageTag)
+              .domainType(domainType)
+              .modelImageName(imageName)
+              .modelImageTag(imageTag)
+              .modelFiles(modelList)
+              .modelArchiveFiles(archiveList)
+              .wdtVersion(WDT_VERSION)
+              .env(env)
+              .redirect(true));
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
