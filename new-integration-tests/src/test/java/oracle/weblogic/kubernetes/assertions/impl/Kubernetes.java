@@ -39,7 +39,6 @@ public class Kubernetes {
   private static CoreV1Api coreV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static final String RUNNING = "Running";
-  private static final String TERMINATING = "Terminating";
 
   static {
     try {
@@ -154,27 +153,30 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod exists in a given namespace and in Terminating state.
+   * Check if a pod exists in a given namespace and is terminating.
    * @param namespace in which to check for the pod
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
-   * @return true if pod is in Terminating state otherwise false
+   * @return true if pod is terminating otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodTerminating(String namespace, String domainUid, String podName) throws ApiException {
-    boolean status = false;
-    logger.info("Checking if the pod terminating in namespace");
+  public static boolean isPodTerminating(String namespace, String domainUid, String podName)
+      throws ApiException {
+    boolean terminating = false;
     String labelSelector = null;
     if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+      labelSelector = String.format("weblogic.domainUID=%s", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod != null) {
-      status = pod.getStatus().getPhase().equals(TERMINATING);
-    } else {
-      logger.info("Pod doesn't exist");
+    if (null == pod) {
+      logger.severe("pod does not exist");
+      return false;
+    } else if (pod.getMetadata().getDeletionTimestamp() != null) {
+      terminating = true;
+      logger.info("{0} : !!!Terminating!!!, DeletionTimeStamp : {1}",
+          pod.getMetadata().getName(), pod.getMetadata().getDeletionTimestamp());
     }
-    return status;
+    return terminating;
   }
 
   /**
@@ -292,10 +294,8 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
-        logger.info("Pod Name: " + item.getMetadata().getName());
-        logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
-        logger.info("Pod UID: " + item.getMetadata().getUid());
-        logger.info("Pod Status: " + item.getStatus().getPhase());
+        logger.info("Name: {0}, Namespace: {1}, Phase: {2}",
+            item.getMetadata().getName(), namespace, item.getStatus().getPhase());
         return item;
       }
     }
@@ -370,15 +370,16 @@ public class Kubernetes {
   }
 
   /**
-   * A utility method to list all pods in given namespace and a label
-   * This method can be used as diagnostic tool to get the details of pods.
+   * Get a list of pods from given namespace and  label.
+   *
    * @param namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
+   * @return V1PodList list of {@link V1Pod} from the namespace
    * @throws ApiException when there is error in querying the cluster
    */
-  public static void listPods(String namespace, String labelSelectors) throws ApiException {
-    V1PodList v1PodList =
-        coreV1Api.listNamespacedPod(
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+    V1PodList v1PodList
+        = coreV1Api.listNamespacedPod(
             namespace, // namespace in which to look for the pods.
             Boolean.FALSE.toString(), // pretty print output.
             Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -390,8 +391,7 @@ public class Kubernetes {
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
-    List<V1Pod> items = v1PodList.getItems();
-    logger.info(Arrays.toString(items.toArray()));
+    return v1PodList;
   }
 
   /**
