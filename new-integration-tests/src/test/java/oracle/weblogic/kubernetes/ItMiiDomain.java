@@ -86,7 +86,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -208,18 +207,6 @@ class ItMiiDomain implements LoggedTest {
         domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
 
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -305,18 +292,6 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid1, domainNamespace1, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace1);
-
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace1);
-    checkPodExists(adminServerPodName, domainUid1, domainNamespace1);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace1);
-      checkPodExists(managedServerPrefix + i, domainUid1, domainNamespace1);
-    }
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
@@ -573,6 +548,13 @@ class ItMiiDomain implements LoggedTest {
     }
   }
 
+  /**
+   * Parameterized test to create model in image domain using different WebLogic version images
+   * as parameters.
+   *
+   * @param imageTag WebLogic image tag
+   * @param namespaces domain namespace
+   */
   @ParameterizedTest
   @DisplayName("Create model in image domain using different WebLogic version images as parameters")
   @MethodSource("oracle.weblogic.kubernetes.utils.Params#webLogicImageTags")
@@ -633,18 +615,6 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
-
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
