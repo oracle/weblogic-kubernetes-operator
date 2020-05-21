@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
@@ -60,7 +61,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,6 +73,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
   private static ConditionFactory withStandardRetryPolicy = null;
+  private static ConditionFactory withQuickRetryPolicy = null;
 
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
@@ -91,6 +92,11 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
         .atMost(6, MINUTES).await();
+
+    // create quick, reusable retry/backoff policy
+    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+        .and().with().pollInterval(3, SECONDS)
+        .atMost(12, SECONDS).await();
 
     // get namespaces 
     assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
@@ -441,26 +447,34 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
    * @param namespace name of the namespace that the pod is running in
    * @param username WebLogic admin username
    * @param password WebLogic admin password
-   * @param shouldBeValid true if the check expects a successful result
+   * @param expectValid true if the check expects a successful result
    */
   private void verifyCredentials(
       String podName,
       String namespace,
       String username,
       String password,
-      boolean shouldBeValid) {
-    logger.info("Check if the given WebLogic admin credentials are valid");
-    boolean connectSucceeded = assertDoesNotThrow(
-        () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
-        String.format("Failed to check the credentials on pod %s", podName));
-        
-    if (shouldBeValid) {
-      assertTrue(connectSucceeded, 
-          "Given credentials are invalid");
-    } else {
-      assertFalse(connectSucceeded, 
-          "Given credentials are valid when they are not expected to be"); 
-    }
+      boolean expectValid) {
+    String msg = expectValid ? "valid" : "invalid";
+    logger.info("Check if the given WebLogic admin credentials are {0}", msg);
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
+            + "(elapsed time {3}ms, remaining time {4}ms)",
+            username,
+            password,
+            msg,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(
+            expectValid 
+            ? 
+            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
+            :
+            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
+            String.format(
+               "Failed to validate credentials %s/%s on pod %s in namespace %s",
+               username, password, podName, namespace)));
   }
 
   /**

@@ -141,8 +141,38 @@ public class Application {
       String namespace,
       String username,
       String password) {
-    int adminServiceNodePort = getServiceNodePort(
-        namespace, podName + "-external", WLS_DEFAULT_CHANNEL_NAME);
+    CommandParams params = createCommandParams(host, podName, namespace, username, password);
+    return Command.withParams(params).executeAndVerify("200");
+  }
+  
+  /**
+   * Check if the given WebLogic credentials are not valid by using the credentials to 
+   * invoke a RESTful Management Services command.
+   *
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @return true if the RESTful Management Services command failed with exitCode 401
+   **/
+  public static boolean credentialsNotValid(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    CommandParams params = createCommandParams(host, podName, namespace, username, password);
+    return Command.withParams(params).executeAndVerify("401");
+  }
+ 
+  private static CommandParams createCommandParams(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    int adminServiceNodePort = getServiceNodePort(namespace, podName + "-external", WLS_DEFAULT_CHANNEL_NAME);
 
     if (username == null) {
       username = ADMIN_USERNAME_DEFAULT;
@@ -150,6 +180,9 @@ public class Application {
     if (password == null) {
       password = ADMIN_PASSWORD_DEFAULT;
     }
+
+    // create a RESTful management services command that connects to admin server using given credentials to get
+    // information about a managed server
     StringBuffer cmdString = new StringBuffer()
         .append("status=$(curl --user " + username + ":" + password)
         .append(" http://" + host + ":" + adminServiceNodePort)
@@ -159,12 +192,11 @@ public class Application {
         .append(" -w %{http_code});")
         .append("echo ${status}");
 
-    CommandParams params = Command
+    return Command
             .defaultCommandParams()
             .command(cmdString.toString())
             .saveResults(true)
             .redirect(true)
             .verbose(true);
-    return Command.withParams(params).executeAndVerify("200");
   }
 }

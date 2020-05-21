@@ -310,13 +310,33 @@ public class TestAssertions {
    * @param password WebLogic admin password
    * @return true if the RESTful Management Services command succeeded
    */
-  public static boolean credentialsValid(
+  public static Callable<Boolean> credentialsValid(
       String host,
       String podName,
       String namespace,
       String username,
       String password) {
-    return Application.credentialsValid(host, podName, namespace, username, password);
+    return () -> Application.credentialsValid(host, podName, namespace, username, password);
+  }
+
+  /**
+   * Check if the given WebLogic credentials are NOT valid by using the credentials to 
+   * invoke a RESTful Management Services command.
+   *
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @return true if the RESTful Management Services command failed with exitCode 401
+   */
+  public static Callable<Boolean> credentialsNotValid(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    return () -> Application.credentialsNotValid(host, podName, namespace, username, password);
   }
 
   /**
