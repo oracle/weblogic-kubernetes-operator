@@ -18,7 +18,7 @@ public interface TestConstants {
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
-  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.14";
+  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.1.4";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
