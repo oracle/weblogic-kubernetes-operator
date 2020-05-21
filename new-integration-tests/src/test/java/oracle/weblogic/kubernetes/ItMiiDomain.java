@@ -575,7 +575,7 @@ class ItMiiDomain implements LoggedTest {
 
   @ParameterizedTest
   @DisplayName("Create model in image domain using different WebLogic version images as parameters")
-  @ValueSource(strings = {"12.2.1.3", "12.2.1.4"})
+  @ValueSource(strings = {"12.2.1.3", "14.1.1"})
   public void testParamsCreateMiiDomain(String imageTag, @Namespaces(1) List<String> namespaces) {
     logger.info("Using imageTag {0}", imageTag);
 
