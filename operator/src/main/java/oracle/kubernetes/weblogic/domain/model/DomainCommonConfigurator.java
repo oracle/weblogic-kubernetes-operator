@@ -321,6 +321,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withIstio(int istioReadinessPort) {
+    getOrCreateIstio().setReadinessPort(istioReadinessPort);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withDomainType(String type) {
     getOrCreateModel().withDomainType(type);
     return this;
@@ -348,6 +354,14 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       configuration.withOpss(new Opss());
     }
     return configuration.getOpss();   
+  }
+
+  private Istio getOrCreateIstio() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getIstio() == null) {
+      configuration.withIstio(new Istio());
+    }
+    return configuration.getIstio();
   }
 
   @Override

@@ -451,6 +451,14 @@ public class DomainValidationTest {
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
+  @Test
+  public void whenIstioIsEnabled_DomainInImage_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+        .withIstio(8888);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
   private DomainConfigurator configureDomain(Domain domain) {
     return new DomainCommonConfigurator(domain);
   }

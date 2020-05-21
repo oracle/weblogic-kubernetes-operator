@@ -447,7 +447,6 @@ function createFiles {
     sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
     # entries for Istio
-    sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
@@ -517,7 +516,6 @@ function createFiles {
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
-  sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
   # MII settings are used for model-in-image integration testing
