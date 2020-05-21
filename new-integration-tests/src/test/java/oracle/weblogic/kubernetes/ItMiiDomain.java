@@ -29,7 +29,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -81,7 +80,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodKubectl;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
@@ -97,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAnd
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -189,11 +188,11 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-                              encryptionSecretName,
-                              domainNamespace,
-                    "weblogicenc",
-                    "weblogicenc"),
-        String.format("createSecret failed for %s", encryptionSecretName));
+                                      encryptionSecretName,
+                                      domainNamespace,
+                            "weblogicenc",
+                            "weblogicenc"),
+                    String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain object
     Domain domain = createDomainResource(domainUid,
@@ -287,20 +286,20 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        encryptionSecretName,
-        domainNamespace1,
-        "weblogicenc",
-        "weblogicenc"),
-        String.format("createSecret failed for %s", encryptionSecretName));
+                            encryptionSecretName,
+                            domainNamespace1,
+                  "weblogicenc",
+                  "weblogicenc"),
+                    String.format("createSecret failed for %s", encryptionSecretName));
 
     // create the domain object
     Domain domain = createDomainResource(domainUid1,
-        domainNamespace1,
-        adminSecretName,
-        REPO_SECRET_NAME,
-        encryptionSecretName,
-        replicaCount,
-        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+                domainNamespace1,
+                adminSecretName,
+                REPO_SECRET_NAME,
+                encryptionSecretName,
+                replicaCount,
+                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -578,26 +577,14 @@ class ItMiiDomain implements LoggedTest {
   @DisplayName("Create model in image domain using different WebLogic images as parameters")
   @ValueSource(strings = {"12.2.1.3", "12.2.1.4"})
   public void testParamsCreateMiiDomain(String imageTag, @Namespaces(1) List<String> namespaces) {
-    logger.info("imageTag " + imageTag);
+    logger.info("Using imageTag {0}", imageTag);
 
     logger.info("Getting unique namespace for Domain");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     domainNamespace = namespaces.get(0);
 
     // upgrade Operator for the new domain namespace
-    OperatorParams opParams =
-        new OperatorParams()
-            .helmParams(opHelmParams)
-            .image(operatorImage)
-            .imagePullSecrets(secretNameMap)
-            .domainNamespaces(Arrays.asList(domainNamespace))
-            .serviceAccount(serviceAccountName);
-
-    // upgrade Operator
-    logger.info("Upgrading Operator in namespace {0}", opNamespace);
-    assertTrue(upgradeOperator(opParams),
-        String.format("Operator upgrade failed in namespace %s", opNamespace));
-    logger.info("Operator upgraded in namespace {0}", opNamespace);
+    upgradeAndVerifyOperator(opNamespace, domainNamespace);
 
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -607,7 +594,7 @@ class ItMiiDomain implements LoggedTest {
     // create image with model files
     logger.info("Creating image with model file and verify");
     miiImage = createMiiImageAndVerify(
-        "mii-image",
+          "mii-image",
                           MII_BASIC_WDT_MODEL_FILE,
                           MII_BASIC_APP_NAME,
                           WLS_BASE_IMAGE_NAME,

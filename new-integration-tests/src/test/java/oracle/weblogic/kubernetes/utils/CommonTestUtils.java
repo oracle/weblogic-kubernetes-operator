@@ -64,6 +64,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -170,6 +171,49 @@ public class CommonTestUtils {
 
     return opHelmParams;
   }
+
+  /**
+   * Upgrade WebLogic operator to manage the given domain namespaces.
+   *
+   * @param opNamespace the operator namespace in which the operator will be upgraded
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return true if successful
+   */
+  public static boolean upgradeAndVerifyOperator(String opNamespace,
+                                                    String... domainNamespace) {
+    // Helm upgrade parameters
+    HelmParams opHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .domainNamespaces(Arrays.asList(domainNamespace));
+
+    // upgrade operator
+    logger.info("Upgrading operator in namespace {0}", opNamespace);
+    if (!upgradeOperator(opParams)) {
+      logger.info("Failed to upgrade operator in namespace {0}", opNamespace);
+      return false;
+    }
+    logger.info("Operator upgraded in namespace {0}", opNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+    if (!isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace)) {
+      logger.info("Operator release {0} is not in deployed status in namespace {1}",
+          OPERATOR_RELEASE_NAME, opNamespace);
+      return false;
+    }
+    logger.info("Operator release {0} status is deployed in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+
+    return true;
+  }
+
 
   /**
    * Install NGINX and wait up to five minutes until the NGINX pod is ready.
