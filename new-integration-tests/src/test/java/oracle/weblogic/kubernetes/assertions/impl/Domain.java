@@ -16,8 +16,15 @@ import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodNotExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
@@ -94,25 +101,49 @@ public class Domain {
    * @param image name of the image that the pod is expected to be using
    * @return true if domain resource's image matches the expected value
    */
-  public static Callable<Boolean> domainResourceImagePatched(
+  public static boolean domainResourceImagePatched(
       String domainUID,
       String namespace,
       String image
   ) {
-    return () -> {
-      oracle.weblogic.domain.Domain domain = null;
-      try {
-        domain = oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes
-                .getDomainCustomResource(domainUID, namespace);
-      } catch (ApiException apex) {
-        logger.severe("Failed to obtain the domain resource object from the API server", apex);
-        return false;
-      }
+    oracle.weblogic.domain.Domain domain = null;
+    try {
+      domain = getDomainCustomResource(domainUID, namespace);
+    } catch (ApiException apex) {
+      logger.severe("Failed to obtain the domain resource object from the API server", apex);
+      return false;
+    }
       
-      boolean domainPatched = (domain.spec().image().equals(image));
-      logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
-      return domainPatched;
-    };
+    boolean domainPatched = (domain.spec().image().equals(image));
+    logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
+    return domainPatched;
+  }
+
+  /**
+   * Check if the domain resource has been patched with a new WebLogic domain credentials secret.
+   *
+   * @param domainUID identifier of the domain resource
+   * @param namespace Kubernetes namespace in which the domain exists
+   * @param secretName name of the secret that the domain resource is expected to be using
+   * @return true if domain resource's webLogicCredentialsSecret matches the expected value
+   */
+  public static boolean domainResourceCredentialsSecretPatched(
+      String domainUID,
+      String namespace,
+      String secretName
+  ) {
+    oracle.weblogic.domain.Domain domain = null;
+    try {
+      domain = getDomainCustomResource(domainUID, namespace);
+    } catch (ApiException apex) {
+      logger.severe(String.format("Failed to obtain domain resource %s in namespace %s", domainUID, namespace), apex);
+      return false;
+    }
+    
+    boolean domainPatched = domain.spec().webLogicCredentialsSecret().getName().equals(secretName);
+    logger.info("Domain {0} is patched with webLogicCredentialsSecret: {1}",
+        domainUID, domain.getSpec().webLogicCredentialsSecret().getName());
+    return domainPatched;
   }
 
   public static boolean adminT3ChannelAccessible(String domainUid, String namespace) {
@@ -193,6 +224,83 @@ public class Domain {
     }
 
     return true;
+  }
+  
+  /**
+   * Check if the given WebLogic credentials are valid by using the credentials to 
+   * invoke a RESTful Management Services command.
+   *
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @return true if the RESTful Management Services command succeeded
+   **/
+  public static boolean credentialsValid(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    CommandParams params = createCommandParams(host, podName, namespace, username, password);
+    return Command.withParams(params).executeAndVerify("200");
+  }
+  
+  /**
+   * Check if the given WebLogic credentials are not valid by using the credentials to 
+   * invoke a RESTful Management Services command.
+   *
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @return true if the RESTful Management Services command failed with exitCode 401
+   **/
+  public static boolean credentialsNotValid(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    CommandParams params = createCommandParams(host, podName, namespace, username, password);
+    return Command.withParams(params).executeAndVerify("401");
+  }
+ 
+  private static CommandParams createCommandParams(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    int adminServiceNodePort = getServiceNodePort(namespace, podName + "-external", WLS_DEFAULT_CHANNEL_NAME);
+
+    if (username == null) {
+      username = ADMIN_USERNAME_DEFAULT;
+    }
+    if (password == null) {
+      password = ADMIN_PASSWORD_DEFAULT;
+    }
+
+    // create a RESTful management services command that connects to admin server using given credentials to get
+    // information about a managed server
+    StringBuffer cmdString = new StringBuffer()
+        .append("status=$(curl --user " + username + ":" + password)
+        .append(" http://" + host + ":" + adminServiceNodePort)
+        .append("/management/tenant-monitoring/servers/managed-server1")
+        .append(" --silent --show-error")
+        .append(" --noproxy '*'")
+        .append(" -o /dev/null")
+        .append(" -w %{http_code});")
+        .append(" echo ${status}");
+
+    return Command
+            .defaultCommandParams()
+            .command(cmdString.toString())
+            .saveResults(true)
+            .redirect(true)
+            .verbose(true);
   }
 
 }

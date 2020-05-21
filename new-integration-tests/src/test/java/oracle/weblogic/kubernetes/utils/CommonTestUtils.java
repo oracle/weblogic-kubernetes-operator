@@ -65,6 +65,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -328,6 +329,33 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
             String.format("podReady failed with ApiException for pod %s in namespace %s",
                podName, domainNamespace)));
+  }
+  
+  /**
+   * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
+   *
+   * @param domainUid the label the pod is decorated with
+   * @param podName pod name to check
+   * @param domNamespace the Kubernetes namespace in which the domain exists
+   * @param lastCreationTime the previous creation time
+   */
+  public static void checkPodRestarted(
+      String domainUid,
+      String domNamespace,
+      String podName,
+      String lastCreationTime
+  ) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            podName,
+            domNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
+            String.format(
+                "pod %s has not been restarted in namespace %s", podName, domNamespace)));
   }
 
   /**
