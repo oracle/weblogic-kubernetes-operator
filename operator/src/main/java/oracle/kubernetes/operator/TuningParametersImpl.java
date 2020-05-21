@@ -54,7 +54,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("targetNamespaceRecheckIntervalSeconds", 3),
             (int) readTuningParameter("statusUpdateTimeoutSeconds", 10),
             (int) readTuningParameter("statusUpdateUnchangedCountToDelayStatusRecheck", 10),
-            readTuningParameter("statusUpdateInitialShortDelay", 3),
+            readTuningParameter("statusUpdateInitialShortDelay", 5),
             readTuningParameter("statusUpdateEventualLongDelay", 30));
 
     CallBuilderTuning callBuilder =
