@@ -1134,7 +1134,7 @@ class SitConfigGenerator(Generator):
       return
     self.writeln('<d:network-access-point f:combine-mode="add">')
     self.indent()
-    self.writeln('<d:name f:combine-mode="add">T3Channel</d:name>')
+    self.writeln('<d:name f:combine-mode="add">istio-T3Channel</d:name>')
     self.writeln('<d:protocol f:combine-mode="add">t3</d:protocol>')
     self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
     self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
@@ -1202,24 +1202,20 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
-    # istio_http_port = self.env.getEnvOrDef("ISTIO_HTTP_PORT", None)
-    # if istio_http_port is None:
-    #   return
-
-    # self.writeln('<d:network-access-point f:combine-mode="add">')
-    # self.indent()
-    # self.writeln('<d:name f:combine-mode="add">istio-http</d:name>')
-    # self.writeln('<d:protocol f:combine-mode="add">http</d:protocol>')
-    # self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
-    # self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
-    # self.writeln('<d:listen-port f:combine-mode="add">%s</d:listen-port>' % listen_port)
-    # self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
-    # self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
-    # self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
-    # self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
-    # self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
-    # self.undent()
-    # self.writeln('</d:network-access-point>')
+    self.writeln('<d:network-access-point f:combine-mode="add">')
+    self.indent()
+    self.writeln('<d:name f:combine-mode="add">istio-http</d:name>')
+    self.writeln('<d:protocol f:combine-mode="add">http</d:protocol>')
+    self.writeln('<d:listen-address f:combine-mode="add">127.0.0.1</d:listen-address>')
+    self.writeln('<d:public-address f:combine-mode="add">%s</d:public-address>' % listen_address)
+    self.writeln('<d:listen-port f:combine-mode="add">31111</d:listen-port>')
+    self.writeln('<d:tunneling-enabled f:combine-mode="add">false</d:tunneling-enabled>')
+    self.writeln('<d:outbound-enabled f:combine-mode="add">false</d:outbound-enabled>')
+    self.writeln('<d:enabled f:combine-mode="add">true</d:enabled>')
+    self.writeln('<d:two-way-ssl-enabled f:combine-mode="add">false</d:two-way-ssl-enabled>')
+    self.writeln('<d:client-certificate-enforced f:combine-mode="add">false</d:client-certificate-enforced>')
+    self.undent()
+    self.writeln('</d:network-access-point>')
 
   def getLogOrNone(self,server):
     try:
