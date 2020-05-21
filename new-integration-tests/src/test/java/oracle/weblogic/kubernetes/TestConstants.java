@@ -33,7 +33,8 @@ public interface TestConstants {
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_DEFAULT = "phx.ocir.io/weblogick8s/";
-  public static final String KIND_REPO = System.getenv("KIND_REPO");
+  public static final String KIND_REPO = Optional.ofNullable(System.getenv("KIND_REPO"))
+      .orElse("");
   public static final String REPO_NAME = Optional.ofNullable(KIND_REPO)
       .orElse(!REPO_REGISTRY.equals(REPO_DUMMY_VALUE) ? REPO_DEFAULT : "");
   public static final String REPO_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
