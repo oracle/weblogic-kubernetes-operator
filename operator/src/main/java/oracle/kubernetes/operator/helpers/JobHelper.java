@@ -303,6 +303,7 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType());
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
+      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENVOY_PORT, Integer.toString(getIstioEnvoyPort()));
 
 
       String dataHome = getDataHome();

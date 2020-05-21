@@ -478,6 +478,10 @@ public class Domain {
     return spec.getIstioReadinessPort();
   }
 
+  public int getIstioEnvoyPort() {
+    return spec.getIstioEnvoyPort();
+  }
+
   public boolean isDomainSourceFromModel(String type) {
     return DomainSourceType.FromModel.toString().equals(type);
   }

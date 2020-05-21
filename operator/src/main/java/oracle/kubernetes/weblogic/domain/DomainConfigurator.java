@@ -473,10 +473,9 @@ public abstract class DomainConfigurator {
   /**
    * Add istio for the domain resource.
    *
-   * @param istioReadinessPort istio readiness port
    * @return this object
    */
-  public abstract DomainConfigurator withIstio(int istioReadinessPort);
+  public abstract DomainConfigurator withIstio();
 
   /**
    * Add domain type for the domain resource.

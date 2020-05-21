@@ -454,7 +454,7 @@ public class DomainValidationTest {
   @Test
   public void whenIstioIsEnabled_DomainInImage_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
-        .withIstio(8888);
+        .withIstio();
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }

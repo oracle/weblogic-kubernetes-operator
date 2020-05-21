@@ -321,8 +321,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withIstio(int istioReadinessPort) {
-    getOrCreateIstio().setReadinessPort(istioReadinessPort);
+  public DomainConfigurator withIstio() {
+    getOrCreateIstio();
     return this;
   }
 

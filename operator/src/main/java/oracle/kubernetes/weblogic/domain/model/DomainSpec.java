@@ -664,6 +664,18 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(8888);
   }
 
+  /**
+   * The WebLogic envoy port used under Istio environment.
+   *
+   * @return envoyPort
+   */
+  int getIstioEnvoyPort() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
+        .map(Istio::getEnvoyPort)
+        .orElse(31111);
+  }
+
   String getWdtDomainType() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)

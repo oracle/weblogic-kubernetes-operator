@@ -15,6 +15,9 @@ public class Istio {
           + "Defaults to true when the 'istio' element is included. Not required.")
   private Boolean enabled = true;
 
+  @Description("The WebLogic proxy envoy port for Istio. Defaults to 31111. Not required.")
+  private Integer envoyPort = 31111;
+
   @Description("The WebLogic readiness port for Istio. Defaults to 8888. Not required.")
   private Integer readinessPort = 8888;
 
@@ -34,6 +37,24 @@ public class Istio {
    */
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  /**
+   * Get the istio envoy port.
+   *
+   * @return the envoy port.
+   */
+  public Integer getEnvoyPort() {
+    return this.envoyPort;
+  }
+
+  /**
+   * Sets the Istio envoy port.
+   *
+   * @param envoyPort the Istio envoy port.
+   */
+  public void setEnvoyPort(Integer envoyPort) {
+    this.envoyPort = envoyPort;
   }
 
   /**
@@ -70,6 +91,7 @@ public class Istio {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("enabled", enabled)
+            .append("envoyPort", envoyPort)
             .append("readinessPort", readinessPort);
 
     return builder.toString();
@@ -77,7 +99,7 @@ public class Istio {
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort);
+    HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(envoyPort).append(readinessPort);
 
     return builder.toHashCode();
   }
@@ -95,6 +117,7 @@ public class Istio {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
+            .append(envoyPort, rhs.envoyPort)
             .append(readinessPort, rhs.readinessPort);
 
     return builder.isEquals();
