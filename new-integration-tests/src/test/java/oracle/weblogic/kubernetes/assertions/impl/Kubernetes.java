@@ -25,10 +25,11 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import static io.kubernetes.client.util.Yaml.dump;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Kubernetes {
@@ -178,6 +179,35 @@ public class Kubernetes {
     }
     return terminating;
   }
+  
+  /**
+   * Checks if a pod in a given namespace has been updated with an expected
+   * weblogic.domainRestartVersion label.
+   *
+   * @param namespace in which to check for the pod
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @param expectedRestartVersion domainRestartVersion that is expected
+   * @return true if pod has been updated as expected
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean podRestartVersionUpdated(
+      String namespace,
+      String domainUid,
+      String podName,
+      String expectedRestartVersion
+  ) throws ApiException {
+    String restartVersion = getPodRestartVersion(namespace, "", podName);
+
+    if (restartVersion != null && restartVersion.equals(expectedRestartVersion)) {
+      logger.info("Pod {0}: domainRestartVersion has been updated to expected value {1}",
+          podName, expectedRestartVersion);
+      return true;
+    }
+    logger.info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
+        podName, restartVersion, expectedRestartVersion);
+    return false;
+  }
 
   /**
    * Checks if a WebLogic server pod has been patched with an expected image.
@@ -208,7 +238,7 @@ public class Kubernetes {
       for (V1Container container : containers) {
         // look for the container
         if (container.getName().equals(containerName)
-            && (container.getImage().equals(image))) {
+            && container.getImage().equals(image)) {
           podPatched = true;
         }
       }
@@ -541,35 +571,22 @@ public class Kubernetes {
    * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
-   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @return true if the pod's new timestamp is later than the initial PodCreationTimestamp
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
       String podName, String domainUid,
       String namespace, String timestamp) throws ApiException {
-    boolean podRestarted = false;
-    String labelSelector = null;
-    if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    String newCreationTime = getPodCreationTimestamp(namespace, "", podName);
+
+    if (newCreationTime != null
+        && Long.parseLong(newCreationTime) > Long.parseLong(timestamp)) {
+      logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
+          podName, newCreationTime, timestamp);
+      return true;
     }
-    V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod == null) {
-      podRestarted = false;
-    } else {
-      DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
-      String newTimestamp = dtf.print(pod.getMetadata().getCreationTimestamp());
-      if (newTimestamp == null) {
-        logger.info("getCreationTimestamp() returns NULL");
-        return false;
-      }
-      logger.info("OldPodCreationTimestamp [{0}]", timestamp);
-      logger.info("NewPodCreationTimestamp returns [{0}]", newTimestamp);
-      if (Long.parseLong(newTimestamp) == Long.parseLong(timestamp)) {
-        podRestarted = false;
-      } else {
-        podRestarted = true;
-      }
-    }
-    return podRestarted;
+    logger.info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
+        podName, newCreationTime, timestamp);
+    return false;
   }
 }
