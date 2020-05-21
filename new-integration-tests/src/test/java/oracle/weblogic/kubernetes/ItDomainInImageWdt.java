@@ -33,6 +33,8 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
@@ -93,8 +95,12 @@ class ItDomainInImageWdt implements LoggedTest {
 
   }
 
+  /**
+   * create a domain in image domain and verify domain creation by checking pod
+   * ready/running and service exists.
+   */
   @Test
-  @DisplayName("Create domain in image domain")
+  @DisplayName("Create domain in image domain using WDT")
   @Slow
   @MustNotRunInParallel
   public void testCreateDomaininImageWdt() {
@@ -109,16 +115,11 @@ class ItDomainInImageWdt implements LoggedTest {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create the domain CR
     createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
-              encryptionSecretName, replicaCount);
+        replicaCount);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -184,7 +185,7 @@ class ItDomainInImageWdt implements LoggedTest {
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
-                                    String repoSecretName, String encryptionSecretName, int replicaCount) {
+                                    String repoSecretName, int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
@@ -222,8 +223,7 @@ class ItDomainInImageWdt implements LoggedTest {
                             .serverStartState("RUNNING"))
                     .configuration(new Configuration()
                             .model(new Model()
-                                    .domainType("WLS")
-                                    .runtimeEncryptionSecret(encryptionSecretName))
+                                    .domainType("WLS"))
                         .introspectorJobActiveDeadlineSeconds(300L)));
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
