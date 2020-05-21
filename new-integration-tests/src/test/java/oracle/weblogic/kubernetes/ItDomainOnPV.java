@@ -79,7 +79,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
@@ -175,7 +174,7 @@ public class ItDomainOnPV implements LoggedTest {
 
     String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
     boolean isUseSecret = false;
-    if (!REPO_NAME.isEmpty()) {
+    if (!KIND_REPO.isEmpty()) {
       // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
       // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
       // The workaround will be to:
