@@ -1078,11 +1078,13 @@ class SitConfigGenerator(Generator):
   def _getNapAction(self, svr, testname):
     found = False
     add_action = 'f:combine-mode="add"'
-    replace_action = 'f:combine-mode="add"'
+    replace_action = 'f:combine-mode="replace"'
 
     for nap in svr.getNetworkAccessPoints():
       if nap.getName() == testname:
         found = True
+        break
+
     if found:
       return replace_action
     else:
@@ -1099,9 +1101,9 @@ class SitConfigGenerator(Generator):
     admin_port = server.getListenPort()
     action = self._getNapAction(server, "istio-probe")
 
-    self.writeln('<d:network-access-point %s>' % (action))
+    self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name %s>istio-probe</d:name>' % (action));
+    self.writeln('<d:name>istio-probe</d:name>');
     self.writeln('<d:protocol %s>http</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
@@ -1116,9 +1118,9 @@ class SitConfigGenerator(Generator):
     self.writeln('</d:network-access-point>')
 
     action = self._getNapAction(server, "istio-ldap")
-    self.writeln('<d:network-access-point %s>' % (action))
+    self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name %s>istio-ldap</d:name>' % (action))
+    self.writeln('<d:name>istio-ldap</d:name>')
     self.writeln('<d:protocol %s>ldap</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.01</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
@@ -1132,9 +1134,9 @@ class SitConfigGenerator(Generator):
     self.writeln('</d:network-access-point>')
 
     action = self._getNapAction(server, "istio-t3")
-    self.writeln('<d:network-access-point %s>' % (action))
+    self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name %s>istio-t3</d:name>' % (action))
+    self.writeln('<d:name>istio-t3</d:name>')
     self.writeln('<d:protocol %s>t3</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
@@ -1159,9 +1161,9 @@ class SitConfigGenerator(Generator):
     listen_port = template.getListenPort()
     action = self._getNapAction(template, "istio-probe")
 
-    self.writeln('<d:network-access-point %s>' % (action))
+    self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name %s>istio-probe</d:name>' % (action))
+    self.writeln('<d:name>istio-probe</d:name>')
     self.writeln('<d:protocol %s>http</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' %  (action, listen_address))
@@ -1176,9 +1178,9 @@ class SitConfigGenerator(Generator):
     self.writeln('</d:network-access-point>')
 
     action = self._getNapAction(template, "istio-cluster")
-    self.writeln('<d:network-access-point %s>' % (action))
+    self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name %s>istio-cluster</d:name>' % (action))
+    self.writeln('<d:name>istio-cluster</d:name>')
     self.writeln('<d:protocol %s>CLUSTER-BROADCAST</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
@@ -1192,9 +1194,9 @@ class SitConfigGenerator(Generator):
     self.writeln('</d:network-access-point>')
 
     action = self._getNapAction(template, "istio-t3")
-    self.writeln('<d:network-access-point %s>' % (action))
+    self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name %s>istio-t3</d:name>' % (action))
+    self.writeln('<d:name>istio-t3</d:name>')
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action,listen_port))
@@ -1209,9 +1211,9 @@ class SitConfigGenerator(Generator):
     istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
 
     action = self._getNapAction(template, "istio-http")
-    self.writeln('<d:network-access-point %s>' % (action))
+    self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name %s>istio-http</d:name>' % (action))
+    self.writeln('<d:name>istio-http</d:name>')
     self.writeln('<d:protocol %s>http</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
