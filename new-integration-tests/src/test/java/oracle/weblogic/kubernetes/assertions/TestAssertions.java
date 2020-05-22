@@ -469,11 +469,11 @@ public class TestAssertions {
    * Check whether persistent volume with pvName exists.
    *
    * @param pvName persistent volume to check
-   * @param labels the label the PV is decorated with
+   * @param labelSelector String containing the labels the PV is decorated with
    * @return true if the persistent volume exists, false otherwise
    */
-  public static Callable<Boolean> pvExists(String pvName, String labels) {
-    return PersistentVolume.pvExists(pvName, labels);
+  public static Callable<Boolean> pvExists(String pvName, String labelSelector) {
+    return PersistentVolume.pvExists(pvName, labelSelector);
   }
 
   /**
