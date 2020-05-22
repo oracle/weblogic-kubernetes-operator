@@ -173,6 +173,10 @@ public class ServerStatusReader {
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
             try {
+
+              // TEST
+              LOGGER.info("*** START readState for " + pod.getMetadata().getName());
+
               KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
               kubernetesExec.setStdin(stdin);
               kubernetesExec.setTty(tty);
@@ -193,6 +197,11 @@ public class ServerStatusReader {
                 } else {
                   state = WebLogicConstants.UNKNOWN_STATE;
                 }
+              } else {
+
+                // TEST
+                LOGGER.info("*** TIMEOUT readState for " + pod.getMetadata().getName());
+
               }
             } catch (InterruptedException ignore) {
               Thread.currentThread().interrupt();
@@ -204,6 +213,9 @@ public class ServerStatusReader {
                 proc.destroy();
               }
             }
+
+            // TEST
+            LOGGER.info("*** END readState: " + state + " for " + pod.getMetadata().getName());
 
             state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
             serverStateMap.put(serverName, state);

@@ -319,6 +319,19 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
   }
 
   /**
+   * Test if Fiber is currently suspended.
+   * @return true, if the fiber is suspended
+   */
+  public boolean isSuspended() {
+    lock.lock();
+    try {
+      return na != null && na.kind == Kind.SUSPEND;
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /**
    * Wait for Fiber to complete.
    * @return none
    * @throws InterruptedException on interruption

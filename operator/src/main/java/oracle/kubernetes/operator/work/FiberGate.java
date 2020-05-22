@@ -6,9 +6,12 @@ package oracle.kubernetes.operator.work;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.Fiber.ExitCallback;
 
@@ -19,6 +22,8 @@ import oracle.kubernetes.operator.work.Fiber.ExitCallback;
  * in-flight.
  */
 public class FiberGate {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final Engine engine;
   private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<String, Fiber>();
 
@@ -32,6 +37,15 @@ public class FiberGate {
   public FiberGate(Engine engine) {
     this.engine = engine;
     this.placeholder = engine.createFiber();
+
+    // TEST
+    engine.getExecutor().scheduleWithFixedDelay(() -> {
+      gateMap.forEach((key, fiber) -> {
+        if (fiber.isSuspended()) {
+          LOGGER.info("*** Fiber: " + fiber.toString() + " is SUSPENDED");
+        }
+      });
+    }, 5, 5, TimeUnit.SECONDS);
   }
 
   public ScheduledExecutorService getExecutor() {
