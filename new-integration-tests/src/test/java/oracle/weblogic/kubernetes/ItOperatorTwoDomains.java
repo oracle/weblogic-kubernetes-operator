@@ -173,7 +173,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
 
-    if (!KIND_REPO.isEmpty()) {
+    if (KIND_REPO != null) {
       // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
       // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
       // The workaround will be to:
