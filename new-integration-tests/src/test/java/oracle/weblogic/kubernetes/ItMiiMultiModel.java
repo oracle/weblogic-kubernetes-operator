@@ -107,7 +107,7 @@ class ItMiiMultiModel implements LoggedTest {
   }
 
   /**
-   * Test two WDT model files in a domain resource's ConfigMap are applied in the expected order.
+   * Test that two WDT model files in a domain resource's ConfigMap are applied in the expected order.
    * Create a WebLogic domain with a Kubernetes ConfigMap that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected.
    */
@@ -203,7 +203,7 @@ class ItMiiMultiModel implements LoggedTest {
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
             domainUid, domainNamespace, dsName, "40"));
 
-    logger.info("Check the MaxCapacity setting of the DataSource {0}", dsName3);
+    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
     assertEquals("5", maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
@@ -213,6 +213,9 @@ class ItMiiMultiModel implements LoggedTest {
             domainUid, domainNamespace, dsName3, "5"));
   }
 
+  /**
+   * Construct a domain object with the given parameters that can be used to create a domain resource.
+   */
   private Domain createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, 
