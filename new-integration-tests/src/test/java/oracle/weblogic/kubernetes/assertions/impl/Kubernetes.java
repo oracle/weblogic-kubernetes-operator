@@ -19,6 +19,8 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
@@ -28,7 +30,6 @@ import io.kubernetes.client.util.ClientBuilder;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
@@ -589,4 +590,60 @@ public class Kubernetes {
         podName, newCreationTime, timestamp);
     return false;
   }
+
+  /**
+   * List persistent volumes in the Kubernetes cluster based on the label.
+   * @param labels String containing the labels the PV is decorated with
+   * @return V1PersistentVolumeList list of Persistent Volumes
+   * @throws ApiException when listing fails
+   */
+  public static V1PersistentVolumeList listPersistentVolumes(String labels) throws ApiException {
+    V1PersistentVolumeList listPersistentVolume;
+    try {
+      listPersistentVolume = coreV1Api.listPersistentVolume(
+          Boolean.FALSE.toString(), // pretty print output
+          Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+          null, // set when retrieving more results from the server
+          null, // selector to restrict the list of returned objects by their fields
+          labels, // selector to restrict the list of returned objects by their labels
+          null, // maximum number of responses to return for a list call
+          "", // shows changes that occur after that particular version of a resource
+          5, // Timeout for the list/watch call
+          false // Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+    return listPersistentVolume;
+  }
+
+  /**
+   * List persistent volume claims in the namespace.
+   * @param namespace name of the namespace in which persistent volume claims to be list
+   * @return V1PersistentVolumeClaimList of Persistent Volume Claims in namespace
+   */
+  public static V1PersistentVolumeClaimList listPersistentVolumeClaims(String namespace) throws ApiException {
+    V1PersistentVolumeClaimList v1PersistentVolumeClaimList;
+    try {
+      v1PersistentVolumeClaimList = coreV1Api.listNamespacedPersistentVolumeClaim(
+          namespace, // namespace in which the persistent volume claims to be listed
+          Boolean.FALSE.toString(), // pretty print output
+          Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK"
+          null, // set when retrieving more results from the server
+          null, // selector to restrict the list of returned objects by their fields
+          "", // selector to restrict the list of returned objects by their labels
+          null, // maximum number of responses to return for a list call
+          "", // shows changes that occur after that particular version of a resource
+          5, // Timeout for the list/watch call
+          false // Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return v1PersistentVolumeClaimList;
+  }
+
 }
