@@ -691,7 +691,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     String ns = info.getNamespace();
     String domainUid = info.getDomainUid();
     return Step.chain(
-          new DownHeadStep(info, ns),
+        new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
         new UnregisterStep(info));
   }

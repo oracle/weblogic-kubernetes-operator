@@ -271,7 +271,7 @@ public abstract class JobStepContext extends BasePodStepContext {
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
             .addVolumesItem(
                 new V1Volume()
-                    .name("mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+                    .name("mii" + KubernetesConstants.DOMAIN_CONFIG_MAP_NAME_SUFFIX)
                     .configMap(getIntrospectMD5VolumeSource()));
     if (getOpssWalletPasswordSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
@@ -336,7 +336,7 @@ public abstract class JobStepContext extends BasePodStepContext {
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(
           volumeMount(
-              "mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
+              "mii" + KubernetesConstants.DOMAIN_CONFIG_MAP_NAME_SUFFIX,
               "/weblogic-operator/introspectormii")
               .readOnly(false));
 
@@ -440,7 +440,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
     V1ConfigMapVolumeSource result =
         new V1ConfigMapVolumeSource()
-            .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+            .name(getDomainUid() + KubernetesConstants.DOMAIN_CONFIG_MAP_NAME_SUFFIX)
             .defaultMode(ALL_READ_AND_EXECUTE);
     result.setOptional(true);
     return result;

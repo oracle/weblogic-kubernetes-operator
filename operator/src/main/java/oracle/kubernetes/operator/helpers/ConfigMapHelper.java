@@ -134,7 +134,7 @@ public class ConfigMapHelper {
    * @param domainUid the unique ID of the domain
    */
   public static String getDomainConfigMapName(String domainUid) {
-    return domainUid + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+    return domainUid + KubernetesConstants.DOMAIN_CONFIG_MAP_NAME_SUFFIX;
   }
 
   /**
