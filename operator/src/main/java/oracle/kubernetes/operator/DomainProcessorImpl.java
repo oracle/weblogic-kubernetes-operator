@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -77,10 +76,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
   // Map from namespace to map of domainUID to Domain
-  private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
-        new ConcurrentHashMap<>();
-  private static final ConcurrentMap<String, ConcurrentMap<String, ScheduledFuture<?>>>
-        statusUpdaters = new ConcurrentHashMap<>();
+  @SuppressWarnings("FieldMayBeFinal") // unit tests may replace this value
+  private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
+  private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
@@ -114,7 +112,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static void unregisterStatusUpdater(String ns, String domainUid) {
-    ConcurrentMap<String, ScheduledFuture<?>> map = statusUpdaters.get(ns);
+    Map<String, ScheduledFuture<?>> map = statusUpdaters.get(ns);
     if (map != null) {
       ScheduledFuture<?> existing = map.remove(domainUid);
       if (existing != null) {
@@ -481,14 +479,14 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   /**
-   * Begin activity to align the cached domain status with the value reaa from Kubernetes.
+   * Begin activity to align the cached domain status with the value read from Kubernetes.
    * @param liveInfo domain presence info read from Kubernetes
    * @param explicitRecheck true if we are to skip comparing the reported domain to the cached value
    * @param isDeleting if is deleting domain
    * @param isWillInterrupt if will interrupt already running activities
    */
   public void makeRightDomainPresence(
-      DomainPresenceInfo liveInfo,
+      @Nonnull DomainPresenceInfo liveInfo,
       boolean explicitRecheck,
       boolean isDeleting,
       boolean isWillInterrupt) {

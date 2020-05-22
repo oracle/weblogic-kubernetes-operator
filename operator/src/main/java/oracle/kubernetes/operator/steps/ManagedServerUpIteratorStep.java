@@ -57,7 +57,7 @@ public class ManagedServerUpIteratorStep extends Step {
   protected String getDetail() {
     List<String> serversToStart = new ArrayList<>();
     for (ServerStartupInfo ssi : startupInfos) {
-      serversToStart.add(ssi.getName());
+      serversToStart.add(ssi.getServerName());
     }
     return String.join(",", serversToStart);
   }
@@ -86,7 +86,7 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   private List<String> getServerNames(Collection<ServerStartupInfo> startupInfos) {
-    return startupInfos.stream().map(ServerStartupInfo::getName).collect(Collectors.toList());
+    return startupInfos.stream().map(ServerStartupInfo::getServerName).collect(Collectors.toList());
   }
 
   private StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
@@ -96,7 +96,7 @@ public class ManagedServerUpIteratorStep extends Step {
   private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
     Packet p = packet.clone();
     p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
-    p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
+    p.put(ProcessingConstants.SERVER_NAME, ssi.getServerName());
     p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
     p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
     return p;

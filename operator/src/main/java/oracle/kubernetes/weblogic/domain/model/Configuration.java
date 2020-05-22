@@ -33,7 +33,7 @@ public class Configuration {
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
-      "The strategy for handling changes to changes to the secrets or overridesConfigMap fields. "
+      "The strategy for handling changes to the secrets or overridesConfigMap fields. "
           + "Legal values are DYNAMIC and ROLLING.")
   private ConfigOverrideDistributionStrategy distributionStrategy;
 

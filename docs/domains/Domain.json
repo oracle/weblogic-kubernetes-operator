@@ -184,7 +184,7 @@
           "$ref": "#/definitions/Model"
         },
         "distributionStrategy": {
-          "description": "The strategy for handling changes to changes to the secrets or overridesConfigMap fields. Legal values are DYNAMIC and ROLLING.",
+          "description": "The strategy for handling changes to the secrets or overridesConfigMap fields. Legal values are DYNAMIC and ROLLING.",
           "type": "string",
           "enum": [
             "DYNAMIC",
