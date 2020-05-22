@@ -609,11 +609,11 @@ public class CommonTestUtils {
    * @param registryName name of the docker registry
    */
   public static void createRepoSecret(String secretName,
-                                         String namespace,
-                                         String registryUserName,
-                                         String registryPassword,
-                                         String registryEmail,
-                                         String registryName) {
+                                      String namespace,
+                                      String registryUserName,
+                                      String registryPassword,
+                                      String registryEmail,
+                                      String registryName) {
 
     logger.info("Creating image pull secret in namespace {0}", namespace);
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
@@ -808,12 +808,12 @@ public class CommonTestUtils {
    *
    * @param v1pv V1PersistentVolume object to create the persistent volume
    * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
-   * @param label the label the persistence volume is decorated with
+   * @param labelSelector String containing the labels the PV is decorated with
    * @param namespace the namespace in which the persistence volume claim to be created
    */
   public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
                                           V1PersistentVolumeClaim v1pvc,
-                                          String label,
+                                          String labelSelector,
                                           String namespace) {
 
     assertNotNull(v1pv, "v1pv is null");
@@ -840,7 +840,7 @@ public class CommonTestUtils {
                 pvName,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvExists(pvName, label),
+        .until(assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
             String.format("pvExists failed with ApiException when checking pv %s", pvName)));
 
     withStandardRetryPolicy
@@ -852,16 +852,16 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
-            String.format("pvExists failed with ApiException when checking pvc %s in namespace %s",
+            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
                 pvcName, namespace)));
   }
 
   /**
    * Create ConfigMap containing domain scripts.
    * @param configMapName name of the ConfigMap to create
-   * @param files files to add in ConfigMap, including domain creation python script and properties files
+   * @param files files to be added in ConfigMap, including domain creation python script and properties files
    * @param namespace the namespace in which the ConfigMap to be created
-   * @throws IOException when reading the file fails
+   * @throws IOException when reading files fails
    */
   public static void createConfigMapForDomainCreation(String configMapName,
                                                       List<Path> files,
@@ -886,10 +886,10 @@ public class CommonTestUtils {
   }
 
   /**
-   * Create a job to create a domain on a persistent volume.
+   * Run a job to create a domain in the specified namespace.
    *
    * @param jobBody V1Job object to create a domain in the specified namespace
-   * @param namespace the namespace in which the domain will be created
+   * @param namespace the namespace in which the job will be run
    */
   public static void runCreateDomainJob(V1Job jobBody, String namespace) {
 

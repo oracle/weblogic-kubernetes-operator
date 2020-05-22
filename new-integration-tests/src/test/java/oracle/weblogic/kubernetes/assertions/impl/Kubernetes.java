@@ -593,9 +593,10 @@ public class Kubernetes {
 
   /**
    * List persistent volumes in the Kubernetes cluster based on the label.
+   *
    * @param labels String containing the labels the PV is decorated with
    * @return V1PersistentVolumeList list of Persistent Volumes
-   * @throws ApiException when listing fails
+   * @throws ApiException when Kubernetes client API call fails
    */
   public static V1PersistentVolumeList listPersistentVolumes(String labels) throws ApiException {
     V1PersistentVolumeList listPersistentVolume;
@@ -620,8 +621,9 @@ public class Kubernetes {
 
   /**
    * List persistent volume claims in the namespace.
-   * @param namespace name of the namespace in which persistent volume claims to be list
-   * @return V1PersistentVolumeClaimList of Persistent Volume Claims in namespace
+   *
+   * @param namespace the namespace in which persistent volume claims to be listed
+   * @return V1PersistentVolumeClaimList list of persistent volume claims in the namespace
    */
   public static V1PersistentVolumeClaimList listPersistentVolumeClaims(String namespace) throws ApiException {
     V1PersistentVolumeClaimList v1PersistentVolumeClaimList;

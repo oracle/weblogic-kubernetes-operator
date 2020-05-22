@@ -38,14 +38,14 @@ public class Domain {
   }
 
   /**
-   * Shutdown a domain in the specified namespace.
-   * @param domainUid the domain to be shutdown
+   * Shut down a domain in the specified namespace.
+   * @param domainUid the domain to shut down
    * @param namespace the namespace in which the domain exists
    * @return true if patching domain custom resource succeeded, false otherwise
    */
   public static boolean shutdown(String domainUid, String namespace) {
-    // change the /spec/serverStartPolicy to NEVER to shutdown all servers in the domain
-    // create patch string to shutdown the domain
+    // change the /spec/serverStartPolicy to NEVER to shut down all servers in the domain
+    // create patch string to shut down the domain
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/serverStartPolicy\", ")
@@ -61,9 +61,9 @@ public class Domain {
   }
 
   /**
-   * Restart the domain in the specified namespace by changing restartVersion.
+   * Restart a domain in the specified namespace.
    *
-   * @param domainUid unique domain identifier
+   * @param domainUid the domain to restart
    * @param namespace the namespace in which the domain exists
    * @return true if patching domain resource succeeded, false otherwise
    */
