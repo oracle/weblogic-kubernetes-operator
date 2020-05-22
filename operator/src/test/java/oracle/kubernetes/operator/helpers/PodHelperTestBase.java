@@ -45,6 +45,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -77,8 +78,8 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
@@ -342,7 +343,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
-    configurator.withDomainHomeSourceType(DomainSourceType.Image.toString());
+    configurator.withDomainHomeSourceType(DomainSourceType.Image);
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
@@ -354,7 +355,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
-    configurator.withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configurator.withDomainHomeSourceType(DomainSourceType.FromModel)
         .withRuntimeEncryptionSecret("my-runtime-encryption-secret");
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
@@ -489,6 +490,24 @@ public abstract class PodHelperTestBase {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
+  @Test
+  public void whenConfigOverridesUpdatesAndStrategyIsRolling_rollPod() {
+    initializeExistingPod();
+    getConfigurator().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.ROLLING);
+    testSupport.addToPacket(ProcessingConstants.OVERRIDES_MODIFIED, true);
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenConfigOverridesUpdatesAndStrategyIsDynamic_dontRollPod() {
+    initializeExistingPod();
+    getConfigurator().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.DYNAMIC);
+    testSupport.addToPacket(ProcessingConstants.OVERRIDES_MODIFIED, true);
+
+    verifyPodNotReplaced();
+  }
+
   protected abstract void verifyPodReplaced();
 
   protected void verifyPodNotReplaced() {
@@ -606,7 +625,7 @@ public abstract class PodHelperTestBase {
   public void createdPod_hasConfigMapVolume() {
     V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CONFIGMAP_VOLUME_NAME);
 
-    assertThat(credentialsVolume.getConfigMap().getName(), equalTo(DOMAIN_CONFIG_MAP_NAME));
+    assertThat(credentialsVolume.getConfigMap().getName(), equalTo(SCRIPT_CONFIG_MAP_NAME));
     assertThat(credentialsVolume.getConfigMap().getDefaultMode(), equalTo(READ_AND_EXECUTE_MODE));
   }
 

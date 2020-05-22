@@ -92,6 +92,7 @@ An element representing a cluster in the domain configuration.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `distributionStrategy` | string | The strategy for handling changes to changes to the secrets or overridesConfigMap fields. Legal values are DYNAMIC and ROLLING. |
 | `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Configuration for OPSS security. |

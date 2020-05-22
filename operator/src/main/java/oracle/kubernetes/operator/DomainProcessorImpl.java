@@ -672,12 +672,13 @@ public class DomainProcessorImpl implements DomainProcessor {
         Step.chain(
             domainIntrospectionSteps(),
             new DomainStatusStep(info, null),
+            ConfigMapHelper.createOverrideDetectionStep(info.getDomain(), null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
     return Step.chain(
           createDomainUpInitialStep(info),
-          ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUid()),
+          ConfigMapHelper.readExistingDomainConfigMap(info.getNamespace(), info.getDomainUid()),
           DomainStatusUpdater.createProgressingStep(INSPECTING_DOMAIN_PROGRESS_REASON,true, null),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }

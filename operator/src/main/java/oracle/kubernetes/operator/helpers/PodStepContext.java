@@ -32,6 +32,8 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
+import oracle.kubernetes.operator.DomainConfigMapKeys;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -74,20 +76,20 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
+  private final Object overridesModified;
   private V1Pod podModel;
   private String miiModelSecretsHash;
   private String miiDomainZipHash;
   private String domainRestartVersion;
-  private String domainImageName;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSpi(DomainPresenceInfo.class);
+    overridesModified = packet.get(ProcessingConstants.OVERRIDES_MODIFIED);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    miiModelSecretsHash = (String)packet.get(ProcessingConstants.SECRETS_HASH);
-    miiDomainZipHash = (String)packet.get(ProcessingConstants.DOMAIN_HASH);
-    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-    domainImageName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+    miiModelSecretsHash = (String)packet.get(DomainConfigMapKeys.SECRETS_MD_5);
+    miiDomainZipHash = (String)packet.get(DomainConfigMapKeys.DOMAINZIP_HASH);
+    domainRestartVersion = (String)packet.get(DomainConfigMapKeys.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
@@ -133,7 +135,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return info.getDomain().getMetadata().getName();
   }
 
-  private String getDomainHomeSourceType() {
+  private DomainSourceType getDomainHomeSourceType() {
     return getDomain().getDomainHomeSourceType();
   }
 
@@ -363,6 +365,11 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
+  private boolean forcePodReplacement() {
+    return overridesModified != null
+          && getDomain().getConfigOverrideDistributionStrategy() == ConfigOverrideDistributionStrategy.ROLLING;
+  }
+
   Step createCyclePodStep(Step next) {
     return new CyclePodStep(next);
   }
@@ -383,7 +390,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           AnnotationHelper.getDebugString(getPodModel()));
     }
 
-    return useCurrent;
+    return useCurrent && !forcePodReplacement();
   }
 
   private String getReasonToRecycle(V1Pod currentPod) {
@@ -557,7 +564,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
     volumes.addAll(getServerSpec().getAdditionalVolumes());
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
 
@@ -600,7 +607,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
     return mounts;
