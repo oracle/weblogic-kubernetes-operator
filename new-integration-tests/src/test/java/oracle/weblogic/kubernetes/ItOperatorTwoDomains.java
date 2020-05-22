@@ -90,6 +90,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runCreateDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -106,15 +107,19 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
 
+  private static String domain1Uid = null;
+  private static String domain2Uid = null;
+  private static String domain1Namespace = null;
+  private static String domain2Namespace = null;
   private static List<String> opNamespaces = new ArrayList<>();
   private static List<String> domainNamespaces = new ArrayList<>();
   private static List<String> domainUids = new ArrayList<>();
 
   // domain constants
   private final String clusterName = "cluster-1";
-  private final int replicaCount = 2;
   private final String adminUser = "weblogic";
   private final String adminPassword = "welcome1";
+  private final int replicaCount = 2;
 
   private String image = null;
   private boolean isUseSecret = false;
@@ -125,22 +130,22 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private List<String> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
 
   /**
-   * Install operator.
+   * Get namespaces, install operator and initiate domain UID list.
    *
    * @param namespaces injected by JUnit
    */
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
 
-    // get a unique operator namespace
-    logger.info("Get a unique namespace for operator1");
+    // get unique operator namespaces
+    logger.info("Get unique namespaces for operator1 and operator2");
     for (int i = 0; i < numberOfOperators; i++) {
       assertNotNull(namespaces.get(i), "Namespace list is null");
       opNamespaces.add(namespaces.get(i));
     }
 
-    // get a unique domain namespace
-    logger.info("Get a unique namespace for WebLogic domain");
+    // get unique domain namespaces
+    logger.info("Get unique namespaces for WebLogic domain1 and domain2");
     for (int i = numberOfOperators; i < numberOfOperators + numberOfDomains; i++) {
       assertNotNull(namespaces.get(i), "Namespace list is null");
       domainNamespaces.add(namespaces.get(i));
@@ -155,6 +160,11 @@ public class ItOperatorTwoDomains implements LoggedTest {
     for (int i = 1; i <= numberOfDomains; i++) {
       domainUids.add("domain" + i);
     }
+
+    domain1Uid = domainUids.get(0);
+    domain2Uid = domainUids.get(1);
+    domain1Namespace = domainNamespaces.get(0);
+    domain2Namespace = domainNamespaces.get(1);
   }
 
   /**
@@ -185,7 +195,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
       assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
       assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
 
-      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      String kindRepoImage = KIND_REPO + image.substring(OCR_REGISTRY.length() + 1);
       assertTrue(dockerTag(image, kindRepoImage),
           String.format("docker tag failed for images %s, %s", image, kindRepoImage));
       assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
@@ -201,10 +211,10 @@ public class ItOperatorTwoDomains implements LoggedTest {
     // create two domains on PV using WLST
     createTwoDomainsOnPVUsingWlstAndVerify();
 
-    // get the domain1 and domain2 pods original creation timestamp
+    // get the domain1 and domain2 pods original creation timestamps
     getBothDomainsPodsOriginalCreationTimestamp();
 
-    // scale cluster in domain 1 from 2 to 3 servers and verify no impact on domain 2
+    // scale cluster in domain1 from 2 to 3 servers and verify no impact on domain2
     replicasAfterScale = 3;
     scaleDomain1AndVerifyNoImpactOnDomain2();
 
@@ -274,18 +284,18 @@ public class ItOperatorTwoDomains implements LoggedTest {
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
       createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
 
-      // create a domain on PV using WLST
-      createDomainOnPVUsingWlst(pvName, pvcName, domainUid, domainNamespace);
+      // run create a domain on PV job using WLST
+      runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace);
 
       // create the domain custom resource configuration object
       logger.info("Creating domain custom resource");
       Domain domain = new Domain()
           .apiVersion(DOMAIN_API_VERSION)
           .kind("Domain")
-          .metadata(new V1ObjectMeta() //metadata
+          .metadata(new V1ObjectMeta()
               .name(domainUid)
               .namespace(domainNamespace))
-          .spec(new DomainSpec() //spec
+          .spec(new DomainSpec()
               .domainUid(domainUid)
               .domainHome("/shared/domains/" + domainUid)
               .domainHomeSourceType("PersistentVolume")
@@ -302,7 +312,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
               .logHome("/shared/logs/" + domainUid)
               .dataHome("")
               .serverStartPolicy("IF_NEEDED")
-              .serverPod(new ServerPod() //serverpod
+              .serverPod(new ServerPod()
                   .addEnvItem(new V1EnvVar()
                       .name("JAVA_OPTIONS")
                       .value("-Dweblogic.StdoutDebugEnabled=false"))
@@ -316,7 +326,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
                   .addVolumeMountsItem(new V1VolumeMount()
                       .mountPath("/shared")
                       .name(pvName)))
-              .adminServer(new AdminServer() //admin server
+              .adminServer(new AdminServer()
                   .serverStartState("RUNNING")
                   .adminService(new AdminService()
                       .addChannelsItem(new Channel()
@@ -325,7 +335,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
                       .addChannelsItem(new Channel()
                           .channelName("T3Channel")
                           .nodePort(0))))
-              .addClustersItem(new Cluster() //cluster
+              .addClustersItem(new Cluster()
                   .clusterName(clusterName)
                   .replicas(replicaCount)
                   .serverStartState("RUNNING")));
@@ -343,10 +353,9 @@ public class ItOperatorTwoDomains implements LoggedTest {
         checkPodExistsReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
       }
 
-      logger.info("Getting node port");
-      int serviceNodePort = assertDoesNotThrow(() ->
-              getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
-          "Getting admin server node port failed");
+      logger.info("Getting admin service node port");
+      int serviceNodePort =
+              getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
 
       logger.info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(() -> adminNodePortAccessible(serviceNodePort, adminUser, adminPassword),
@@ -355,7 +364,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
   }
 
   /**
-   * Creates a WebLogic domain on a persistent volume by doing the following.
+   * Run a job to create a WebLogic domain on a persistent volume by doing the following.
    * Copies the WLST domain script to a temp location.
    * Creates a domain properties in the temp location.
    * Creates a configmap containing domain scripts and property files.
@@ -367,43 +376,42 @@ public class ItOperatorTwoDomains implements LoggedTest {
    * @param domainNamespace the namespace in which the domain will be created
    * @throws IOException when reading/writing domain scripts fails
    */
-  private void createDomainOnPVUsingWlst(String pvName,
-                                         String pvcName,
-                                         String domainUid,
-                                         String domainNamespace) throws IOException {
+  private void runCreateDomainOnPVJobUsingWlst(String pvName,
+                                               String pvcName,
+                                               String domainUid,
+                                               String domainNamespace) throws IOException {
 
     logger.info("Creating a staging location for domain creation scripts");
     Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV");
     deleteDirectory(pvTemp.toFile());
     createDirectories(pvTemp);
 
-    logger.info("copy the create domain WLST script to staging location");
+    logger.info("Copying the domain creation WLST script to staging location");
     Path srcWlstScript = get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
     Path targetWlstScript = get(pvTemp.toString(), "create-domain.py");
     copy(srcWlstScript, targetWlstScript, StandardCopyOption.REPLACE_EXISTING);
 
-    logger.info("create WebLogic domain properties file");
+    logger.info("Creating WebLogic domain properties file");
     Path domainPropertiesFile = get(pvTemp.toString(), "domain.properties");
-    assertDoesNotThrow(
-        () -> createDomainProperties(domainPropertiesFile, domainUid),
+    assertDoesNotThrow(() -> createDomainProperties(domainPropertiesFile, domainUid),
         "Creating domain properties file failed");
 
-    logger.info("add files to a config map for domain creation job");
+    logger.info("Adding files to a ConfigMap for domain creation job");
     List<Path> domainScriptFiles = new ArrayList<>();
     domainScriptFiles.add(targetWlstScript);
     domainScriptFiles.add(domainPropertiesFile);
 
-    logger.info("Create a config map to hold domain creation scripts");
+    logger.info("Creating a ConfigMap to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
         () -> createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles, domainNamespace),
-        "Creating configmap for domain creation failed");
+        "Create ConfigMap for domain creation failed");
 
     logger.info("Running a Kubernetes job to create the domain");
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name("create-domain-onpv-job") // name of the create domain job
+                .name("create-domain-onpv-job")
                 .namespace(domainNamespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
@@ -411,7 +419,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
                     .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner")  // change the ownership of the pv to opc:opc
+                        .name("fix-pvc-owner")
                         .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
@@ -426,7 +434,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
                     .containers(Arrays.asList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
-                        .imagePullPolicy("Always")
                         .ports(Arrays.asList(new V1ContainerPort()
                             .containerPort(7001)))
                         .volumeMounts(Arrays.asList(
@@ -452,12 +459,14 @@ public class ItOperatorTwoDomains implements LoggedTest {
                             .name("create-weblogic-domain-job-cm-volume")
                             .configMap(
                                 new V1ConfigMapVolumeSource()
-                                    .name(domainScriptConfigMapName))))  //config map containing domain scripts
+                                    .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
                     .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))
                         : null))));
 
+    logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
+        jobBody.getMetadata().getName(), domainUid, domainNamespace);
     runCreateDomainJob(jobBody, domainNamespace);
 
   }
@@ -465,12 +474,12 @@ public class ItOperatorTwoDomains implements LoggedTest {
   /**
    * Create a properties file for WebLogic domain configuration.
    * @param wlstPropertiesFile path of the properties file
-   * @param domainUid the Uid of WebLogic domain to which the properties file is associated
+   * @param domainUid the WebLogic domain for which the properties file is created
    * @throws FileNotFoundException when properties file path not found
    * @throws IOException when writing properties fails
    */
   private void createDomainProperties(Path wlstPropertiesFile,
-                                            String domainUid) throws FileNotFoundException, IOException {
+                                      String domainUid) throws FileNotFoundException, IOException {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
 
@@ -483,7 +492,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
     p.setProperty("admin_username", adminUser);
     p.setProperty("admin_password", adminPassword);
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", "32001");
+    p.setProperty("admin_t3_channel_port", "" + getNextFreePort(32001, 32101));
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
     p.setProperty("domain_logs", "/shared/logs");
@@ -493,22 +502,22 @@ public class ItOperatorTwoDomains implements LoggedTest {
   }
 
   /**
-   * Scale domain1 and verify there is no impact on domain2.
+   * Scale domain1 and verify there was no impact on domain2.
    */
   private void scaleDomain1AndVerifyNoImpactOnDomain2() {
 
     // scale domain1
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-        clusterName, domainUids.get(0), domainNamespaces.get(0), replicasAfterScale);
-    scaleAndVerifyCluster(clusterName, domainUids.get(0), domainNamespaces.get(0),
-        domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
+        clusterName, domain1Uid, domain1Namespace, replicasAfterScale);
+    scaleAndVerifyCluster(clusterName, domain1Uid, domain1Namespace,
+        domain1Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, replicasAfterScale,
         null, null);
 
     // add the third managed server pod original creation timestamp to the list
     domain1ManagedServerPodOriginalTimestampList.add(
         getPodOriginalCreationTimestamp(
-            domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + replicasAfterScale,
-            domainNamespaces.get(0)));
+            domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + replicasAfterScale,
+            domain1Namespace));
 
     // verify scaling domain1 has no impact on domain2
     logger.info("Checking that domain2 was not changed after domain1 was scaled up");
@@ -519,38 +528,46 @@ public class ItOperatorTwoDomains implements LoggedTest {
    * Restart domain1 and verify there was no impact on domain2.
    */
   private void restartDomain1AndVerifyNoImpactOnDomain2() {
+    String domain1AdminServerPodName = domainAdminServerPodNames.get(0);
 
     // shutdown domain1
-    assertTrue(shutdown(domainUids.get(0), domainNamespaces.get(0)),
-        String.format("restart domain %s in namespace %s failed", domainUids.get(0), domainNamespaces.get(0)));
+    logger.info("Shutting down domain1");
+    assertTrue(shutdown(domain1Uid, domain1Namespace),
+        String.format("shutdown domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify all the server pods in domain1 were shutdown
-    checkPodDoesNotExist(domainAdminServerPodNames.get(0), domainUids.get(0), domainNamespaces.get(0));
+    logger.info("Checking that admin server pod in domain1 was shutdown");
+    checkPodDoesNotExist(domain1AdminServerPodName, domain1Uid, domain1Namespace);
 
+    logger.info("Checking managed server pods in domain1 were shutdown");
     for (int i = 1; i <= replicasAfterScale; i++) {
-      String domain1ManagedServerPodName = domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + i;
-      checkPodDoesNotExist(domain1ManagedServerPodName, domainUids.get(0), domainNamespaces.get(0));
+      String domain1ManagedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      checkPodDoesNotExist(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
     }
 
     // restart domain1
-    assertTrue(restart(domainUids.get(0), domainNamespaces.get(0)),
-        String.format("restart domain %s in namespace %s failed", domainUids.get(0), domainNamespaces.get(0)));
+    logger.info("Restarting domain1");
+    assertTrue(restart(domain1Uid, domain1Namespace),
+        String.format("restart domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify domain1 is restarted
     // check domain1 admin server pod exists and ready, also check admin service exists in the domain1 namespace
-    checkPodExistsReadyAndServiceExists(domainAdminServerPodNames.get(0), domainUids.get(0), domainNamespaces.get(0));
-    checkPodRestarted(domainUids.get(0), domainNamespaces.get(0), domainAdminServerPodNames.get(0),
+    logger.info("Checking admin server pod in domain1 was restarted");
+    checkPodExistsReadyAndServiceExists(domain1AdminServerPodName, domain1Uid, domain1Namespace);
+    checkPodRestarted(domain1Uid, domain1Namespace, domain1AdminServerPodName,
         domainAdminPodOriginalTimestamps.get(0));
 
     // check managed server pods in domain1
+    logger.info("Checking managed server pods in domain1 were restarted");
     for (int i = 1; i <= replicasAfterScale; i++) {
-      String domain1ManagedServerPodName = domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + i;
-      checkPodExistsReadyAndServiceExists(domain1ManagedServerPodName, domainUids.get(0), domainNamespaces.get(0));
-      checkPodRestarted(domainUids.get(0), domainNamespaces.get(0), domain1ManagedServerPodName,
+      String domain1ManagedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      checkPodExistsReadyAndServiceExists(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
+      checkPodRestarted(domain1Uid, domain1Namespace, domain1ManagedServerPodName,
           domain1ManagedServerPodOriginalTimestampList.get(i - 1));
     }
 
     // verify domain 2 was not changed after domain1 was restarted
+    logger.info("Verifying that domain2 was not changed after domain1 was restarted");
     verifyDomain2NotChanged();
   }
 
@@ -559,8 +576,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
    */
   private void verifyDomain2NotChanged() {
     String domain2AdminServerPodName = domainAdminServerPodNames.get(1);
-    String domain2Namespace = domainNamespaces.get(1);
-    String domain2Uid = domainUids.get(1);
 
     logger.info("Checking that domain2 admin server pod state was not changed");
     assertThat(podStateNotChanged(domain2AdminServerPodName, domain2Uid, domain2Namespace,
@@ -571,7 +586,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
             domain2AdminServerPodName, domain2Namespace)
         .isTrue();
 
-    logger.info("Checking that domain2 managed server pod state was not changed");
+    logger.info("Checking that domain2 managed server pods states were not changed");
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domain2Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       assertThat(podStateNotChanged(managedServerPodName, domain2Uid, domain2Namespace,
@@ -585,11 +600,11 @@ public class ItOperatorTwoDomains implements LoggedTest {
   }
 
   /**
-   * Get domain1 an domain2 server pods original creation timestamp.
+   * Get domain1 an domain2 server pods original creation timestamps.
    */
   private void getBothDomainsPodsOriginalCreationTimestamp() {
     // get the domain1 pods original creation timestamp
-    logger.info("Getting admin server pod original creation timestamp for both domains");
+    logger.info("Getting admin server pod original creation timestamps for both domains");
     for (int i = 0; i < numberOfDomains; i++) {
       domainAdminServerPodNames.add(domainUids.get(i) + "-" + ADMIN_SERVER_NAME_BASE);
       domainAdminPodOriginalTimestamps.add(
@@ -599,13 +614,13 @@ public class ItOperatorTwoDomains implements LoggedTest {
     // get the managed server pods original creation timestamps
     logger.info("Getting managed server pods original creation timestamps for both domains");
     for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + i;
+      String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain1ManagedServerPodOriginalTimestampList.add(
-          getPodOriginalCreationTimestamp(managedServerPodName, domainNamespaces.get(0)));
+          getPodOriginalCreationTimestamp(managedServerPodName, domain1Namespace));
 
-      managedServerPodName = domainUids.get(1) + "-" + MANAGED_SERVER_NAME_BASE + i;
+      managedServerPodName = domain2Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain2ManagedServerPodOriginalTimestampList.add(
-          getPodOriginalCreationTimestamp(managedServerPodName, domainNamespaces.get(1)));
+          getPodOriginalCreationTimestamp(managedServerPodName, domain2Namespace));
     }
   }
 
@@ -615,11 +630,13 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private void shutdownBothDomainsAndVerify() {
 
     // shutdown both domains
+    logger.info("Shutting down both domains");
     for (int i = 0; i < numberOfDomains; i++) {
       shutdown(domainUids.get(i), domainNamespaces.get(i));
     }
 
     // verify all the pods were shutdown
+    logger.info("Verifying all server pods were shutdown for both domains");
     for (int i = 0; i < numberOfDomains; i++) {
       // check admin server pod was shutdown
       checkPodDoesNotExist(domainUids.get(i) + "-" + ADMIN_SERVER_NAME_BASE,
@@ -631,10 +648,11 @@ public class ItOperatorTwoDomains implements LoggedTest {
       }
     }
 
-    // check the scaled up managed servers in domain1 was shutdown
+    // check the scaled up managed servers in domain1 were shutdown
+    logger.info("Verifying the scaled up managed servers in domain1 were shutdown");
     for (int i = replicaCount + 1; i <= replicasAfterScale; i++) {
-      String managedServerPodName = domainUids.get(0) + "-" + MANAGED_SERVER_NAME_BASE + i;
-      checkPodDoesNotExist(managedServerPodName, domainUids.get(0), domainNamespaces.get(0));
+      String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
+      checkPodDoesNotExist(managedServerPodName, domain1Uid, domain1Namespace);
     }
 
   }
