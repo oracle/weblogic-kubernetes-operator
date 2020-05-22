@@ -142,8 +142,21 @@ class ItSessionMigration implements LoggedTest {
   void tearDown() {
   }
 
+  /**
+   * Get the primary and secondary server name and session create time from the factory method,
+   * getOriginalServerAndSessionInfo. Stop the primary server by changing ServerStartPolicy to NEVER
+   * and patching domain. Send a HTTP request to get http session state (count number), primary server
+   * and session create time. Verify that a new primary server is picked and HTTP session state is migrated.
+   *
+   * @param origPrimaryServerName the primary server name from the factory method
+   *                              getOriginalServerAndSessionInfo when the domain is created
+   * @param origSecondaryServerName the secondary server name from the factory method
+   *                                getOriginalServerAndSessionInfo when the domain is created
+   * @param origPrimaryServerName the session create time from the factory method
+   *                              getOriginalServerAndSessionInfo when the domain is created
+   */
   @ParameterizedTest
-  @MethodSource("getOrigServerAndSessionInfo")
+  @MethodSource("getOriginalServerAndSessionInfo")
   @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
   @Slow
   @MustNotRunInParallel
@@ -155,12 +168,12 @@ class ItSessionMigration implements LoggedTest {
     final String countAttr = "count";
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
 
-    logger.info("Got the primary server: {0}, the secondary server: {1} "
-        + "and session create time: {2} from the factory method getOrigServerAndSessionInfo",
+    logger.info("Got the primary server {0}, the secondary server {1} "
+        + "and session create time {2} from the factory method getOriginalServerAndSessionInfo",
             origPrimaryServerName, origSecondaryServerName, origSessionCreateTime);
 
     // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
-    logger.info("Shut down the primary server: {0}", origPrimaryServerName);
+    logger.info("Shut down the primary server {0}", origPrimaryServerName);
     shutdownServerUsingServerStartPolicy(origPrimaryServerName);
 
     // get HTTP response data from web service deployed on the cluster
@@ -180,8 +193,8 @@ class ItSessionMigration implements LoggedTest {
 
     int count = Optional.ofNullable(countStr).map(Ints::tryParse).orElse(0);
 
-    logger.info("After patching the domain, the primary server changes to : {0} "
-        + ", session create time: {1} and session state: {2}",
+    logger.info("After patching the domain, the primary server changes to {0} "
+        + ", session create time {1} and session state {2}",
             primaryServerName, sessionCreateTime, countStr);
 
     // verify that a new primary server is picked and HTTP session state is migrated
@@ -194,18 +207,19 @@ class ItSessionMigration implements LoggedTest {
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
 
-    logger.info("SUCCESS --- testSessionMigration \nThe new primary server is : {0}, it was : {1}. "
+    logger.info("SUCCESS --- testSessionMigration \nThe new primary server is {0}, it was {1}. "
         + "\nThe session state was set to {2}, it is migrated to the new primary server.",
             primaryServerName, origPrimaryServerName, SESSION_STATE);
   }
 
   /**
-   * A factory method generates a stream of String and referred
-   * by the parameterized test method testSessionMigration.
+   * A factory method generates a stream of String and referred by the parameterized test method testSessionMigration
+   * It sends a HTTP request to set http session state (count number) and return the primary server,
+   * the secondary server and session create time to the parameterized test method.
    *
    * @return a stream of Arguments that contains primary and secondary server names and session create time
    */
-  static Stream<Arguments> getOrigServerAndSessionInfo() {
+  static Stream<Arguments> getOriginalServerAndSessionInfo() {
     final String primaryServerAttr = "primary";
     final String secondaryServerAttr = "secondary";
     final String sessionCreateTimeAttr = "sessioncreatetime";
@@ -213,7 +227,7 @@ class ItSessionMigration implements LoggedTest {
     final String serverName = managedServerPrefix + "1";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
-    logger.info("Process HTTP request with web service URL {0} in the pod {1}: ",
+    logger.info("Process HTTP request with web service URL {0} in the pod {1} ",
         webServiceSetUrl, serverName);
     Map<String, String> httpAttrInfo =
         processHttpRequest(serverName, webServiceSetUrl, " -D ");
@@ -230,8 +244,8 @@ class ItSessionMigration implements LoggedTest {
         () -> assertNotNull(sessionCreateTime,"Session create time shouldn’t be null")
     );
 
-    logger.info("HTTP response returns the primary server: {0} "
-        + "the secondary server: {1} and session create time: {2}",
+    logger.info("HTTP response returns the primary server {0} "
+        + "the secondary server {1} and session create time {2}",
             primaryServerName, secondaryServerName, sessionCreateTime);
 
     return Stream.of(arguments(primaryServerName, secondaryServerName, sessionCreateTime));
@@ -362,7 +376,7 @@ class ItSessionMigration implements LoggedTest {
   }
 
   private void shutdownServerUsingServerStartPolicy(String msName) {
-    logger.info("Shutdown the server: {0}", msName);
+    logger.info("Shutdown the server {0}", msName);
     final String podName = domainUid + "-" + msName;
 
     // shutdown a server by changing the it's serverStartPolicy property.
@@ -378,7 +392,7 @@ class ItSessionMigration implements LoggedTest {
   }
 
   private static String buildCurlCommand(String podName, String curlUrlPath, String headerOption) {
-    logger.info("Build a curl command with pod name: {0}, curl URL path: {1} and HTTP header option: {2}",
+    logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
         podName, curlUrlPath, headerOption);
     final String httpHeaderFile = "/u01/oracle/header";
 
@@ -403,14 +417,14 @@ class ItSessionMigration implements LoggedTest {
 
     // build curl command
     String curlCmd = buildCurlCommand(serverName, curlUrlPath, headerOption);
-    logger.info("Command to set HTTP request and get HTTP response {0}: ", curlCmd);
+    logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
 
     // set HTTP request and get HTTP response
     ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(domainNamespace, adminServerPodName,
             null, true, "/bin/sh", "-c", curlCmd));
     if (execResult.exitValue() == 0) {
-      logger.info("\n HTTP response is: \n " + execResult.stdout());
+      logger.info("\n HTTP response is \n " + execResult.stdout());
       assertAll("Check that primary server name is not null or empty",
           () -> assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null"),
           () -> assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty")
@@ -421,7 +435,7 @@ class ItSessionMigration implements LoggedTest {
         httpAttrInfo.put(httpAttrKey, httpAttrValue);
       }
     } else {
-      fail("Failed to process HTTP request: " + execResult.stderr());
+      fail("Failed to process HTTP request " + execResult.stderr());
     }
 
     return httpAttrInfo;
