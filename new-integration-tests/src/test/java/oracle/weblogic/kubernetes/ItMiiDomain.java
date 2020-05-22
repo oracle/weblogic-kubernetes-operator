@@ -509,45 +509,7 @@ class ItMiiDomain implements LoggedTest {
 
     logger.info("Both of the applications are running correctly after patching");
   }
-
-  // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
-
-  @AfterEach
-  public void tearDown() {
-    // delete mii domain images created for parameterized test
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
-  }
-
-  @AfterAll
-  public void tearDownAll() {
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
-
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace1),
-            "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domainNamespace1);
-
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace1),
-            "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
-
-    // delete the domain images created in the test class
-    if (miiImagePatchAppV2 != null) {
-      deleteImage(miiImagePatchAppV2);
-    }
-    if (miiImageAddSecondApp != null) {
-      deleteImage(miiImageAddSecondApp);
-    }
-  }
-
+  
   /**
    * Parameterized test to create model in image domain using different WebLogic version images
    * as parameters.
@@ -579,12 +541,12 @@ class ItMiiDomain implements LoggedTest {
     // create image with model files
     logger.info("Creating image with model file and verify");
     miiImage = createMiiImageAndVerify(
-          "mii-image",
-                          MII_BASIC_WDT_MODEL_FILE,
-                          MII_BASIC_APP_NAME,
-                          WLS_BASE_IMAGE_NAME,
-                          imageTag,
-                          WLS);
+        "mii-image",
+        MII_BASIC_WDT_MODEL_FILE,
+        MII_BASIC_APP_NAME,
+        WLS_BASE_IMAGE_NAME,
+        imageTag,
+        WLS);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -652,6 +614,44 @@ class ItMiiDomain implements LoggedTest {
     logger.info("Domain {0} is fully started - servers are running and application is available",
         domainUid);
 
+  }
+
+  // This method is needed in this test class, since the cleanup util
+  // won't cleanup the images.
+
+  @AfterEach
+  public void tearDown() {
+    // delete mii domain images created for parameterized test
+    if (miiImage != null) {
+      deleteImage(miiImage);
+    }
+  }
+
+  @AfterAll
+  public void tearDownAll() {
+    // Delete domain custom resource
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
+        "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
+
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace1),
+            "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domainNamespace1);
+
+    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace1),
+            "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
+
+    // delete the domain images created in the test class
+    if (miiImagePatchAppV2 != null) {
+      deleteImage(miiImagePatchAppV2);
+    }
+    if (miiImageAddSecondApp != null) {
+      deleteImage(miiImageAddSecondApp);
+    }
   }
 
   private void pushImageIfNeeded(String image) {
