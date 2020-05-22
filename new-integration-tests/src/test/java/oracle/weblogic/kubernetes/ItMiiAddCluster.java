@@ -5,9 +5,9 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -77,11 +78,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -302,12 +303,14 @@ class ItMiiAddCluster implements LoggedTest {
     String configMapName = "noreplicaconfigmap";
     createClusterConfigMap(configMapName, "model.config.cluster.yaml");
 
-    // get the creation time of the admin server pod before patching
-    String adminPodCreationTime = getadminPodCreationTime();
+    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
 
-    // get the creation time of the managed server pods before patching
-    List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    managedServerPodOriginalTimestampList = getManagedServerPodTimestampList();
+    // get the creation time of the admin server pod before patching
+    String adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
     
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -322,30 +325,14 @@ class ItMiiAddCluster implements LoggedTest {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    String newRestartVesrion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New Restart version : {0}", newRestartVesrion);
     
-    patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"1\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-
-    // Check if the admin server pod has been restarted 
-    // by comparing the PodCreationTime before and after rolling restart
-    checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime);
-
-    // Check if the managed server pods have been restarted 
-    // by comparing the PodCreationTime before and after rolling restart
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodRestarted(managedServerPrefix + 1, domainUid, 
-           domainNamespace, managedServerPodOriginalTimestampList.get(i - 1));
-    }
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
 
     // The ServerNamePrefix for the new configured cluster is config-server
     // Make sure the managed server from new cluster is not running
@@ -357,7 +344,6 @@ class ItMiiAddCluster implements LoggedTest {
     assertTrue(isServerConfigured, "Could not find new managed server configuration");
     logger.info("Found new managed server configuration");
   }
-
 
   /**
    * Create a configmap with a sparse model file to add a dynamic cluster.
@@ -381,12 +367,14 @@ class ItMiiAddCluster implements LoggedTest {
     String configMapName = "dynamicclusterconfigmap";
     createClusterConfigMap(configMapName, "model.dynamic.cluster.yaml");
 
+    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    String adminPodCreationTime = getadminPodCreationTime();
-
+    String adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
-    List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    managedServerPodOriginalTimestampList = getManagedServerPodTimestampList();
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -415,29 +403,16 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
 
-    patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"2\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-
+    String newRestartVesrion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New Restart version : {0}", newRestartVesrion);
+    
     // Check if the admin server pod has been restarted 
     // by comparing the PodCreationTime before and after rolling restart
-    checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime);
-
-    // Check if the managed server pods have been restarted 
-    // by comparing the PodCreationTime before and after rolling restart
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodRestarted(managedServerPrefix + 1, domainUid, 
-           domainNamespace, managedServerPodOriginalTimestampList.get(i - 1));
-    }
+    
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
 
     // The ServerNamePrefix for the new dynamic cluster is dynamic-server
     // Make sure the managed server from the new cluster is running
@@ -473,12 +448,15 @@ class ItMiiAddCluster implements LoggedTest {
     String configMapName = "configclusterconfigmap";
     createClusterConfigMap(configMapName, "model.config.cluster.yaml");
 
-    // get the creation time of the admin server pod before patching
-    String adminPodCreationTime = getadminPodCreationTime();
+    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
 
+    // get the creation time of the admin server pod before patching
+    String adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     // get the creation time of the managed server pods before patching
-    List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    managedServerPodOriginalTimestampList = getManagedServerPodTimestampList();
+    pods.put(adminServerPodName, adminPodCreationTime);
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -507,42 +485,23 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
 
-    patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"3\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+    String newRestartVesrion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New Restart version : {0}", newRestartVesrion);
+    
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
 
     // The ServerNamePrefix for the new configured cluster is config-server
     // Make sure the managed server from the new cluster is running
-    
     String newServerPodName = domainUid + "-config-server1";
     checkPodReady(newServerPodName, domainUid, domainNamespace);
     checkServiceCreated(newServerPodName, domainNamespace);
 
-    // Check if the admin server pod has been restarted 
-    // by comparing the PodCreationTime before and after rolling restart
-    checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodCreationTime);
-
-    // Check if the managed server pods have been restarted 
-    // by comparing the PodCreationTime before and after rolling restart
-    
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodRestarted(managedServerPrefix + 1, domainUid, 
-           domainNamespace, managedServerPodOriginalTimestampList.get(i - 1));
-    }
-
     boolean isServerConfigured = checkManagedServerConfiguration("config-server1");
     assertTrue(isServerConfigured, "Could not find new managed server configuration");
     logger.info("Found new managed server configuration");
-
   }
 
   // This method is needed in this test class, since the cleanup util
@@ -728,22 +687,8 @@ class ItMiiAddCluster implements LoggedTest {
     }
   }
 
-  private void checkPodRestarted(String podName, String domainUid, String domNamespace, String timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, timestamp),
-            String.format("podExists failed with ApiException for %s in namespace in %s",
-                podName, domNamespace)));
-  }
-
+  // Crate a ConfigMap with a model file to add a new WebLogic cluster
   private void createClusterConfigMap(String configMapName, String modelFile) {
-
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
     String dsModelFile =  String.format("%s/%s", MODEL_DIR,modelFile);
@@ -767,37 +712,57 @@ class ItMiiAddCluster implements LoggedTest {
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
   }     
 
-  private String getadminPodCreationTime() {
-
-    String adminPodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("Couldn't get PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(adminPodCreationTime, "adminPodCreationTime returned null");
-    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
-        domainUid,
-        domainNamespace,
-        adminServerPodName,
-        adminPodCreationTime);
-    return adminPodCreationTime;
+  /**
+   * Get the PodCreationTimestamp of a pod in a namespace.
+   * 
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param podName name of the pod 
+   * @return podCreationTimestamp of the pod
+   */
+  private String getPodCreationTime(String namespace, String podName) {
+    String podCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
+            String.format("Couldn't get PodCreationTime for pod %s", podName));
+    assertNotNull(podCreationTime, "PodCreationTime returned null");
+    logger.info("Pod {0} PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
+        namespace,
+        podName,
+        podCreationTime);
+    return podCreationTime;
   }
 
-  private List<String> getManagedServerPodTimestampList() {
-    List<String> managedServerPodTimestampList = new ArrayList<>();
-    assertDoesNotThrow(
-        () -> { 
-          for (int i = 1; i <= replicaCount; i++) {
-            String managedServerPodName = managedServerPrefix + i;
-            String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
-            managedServerPodTimestampList.add(creationTime);
-            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
-                domainUid,
-                domainNamespace,
-                managedServerPodName,
-                creationTime);
-          } 
-        },
-        String.format("Failed to get creationTimestamp for managed server pods"));
-    return managedServerPodTimestampList;
+  /**
+   * Patch the domain resource with a new restartVersion.
+   * 
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @return restartVersion new restartVersion of the domain resource
+   */
+  private String patchDomainResourceWithNewRestartVersion(
+      String domainResourceName, String namespace) {
+    String oldVersion = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
+        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+        domainResourceName, namespace, oldVersion, newVersion);
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/restartVersion\",")
+        .append(" \"value\": \"")
+        .append(newVersion)
+        .append("\"")
+        .append(" }]");
+
+    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean rvPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(restartVersion)  failed ");
+    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+
+    return String.valueOf(newVersion);
   }
 
 }

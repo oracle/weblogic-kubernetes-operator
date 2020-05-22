@@ -72,6 +72,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -79,7 +80,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -350,42 +350,13 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkServiceCreated(managedServerPrefix + i, domainNamespace);
     }
 
-    // get the creation time of the admin server pod before patching
-    String adminPodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("Can not find PodCreationTime for pod %s", adminServerPodName));
-    assertNotNull(adminPodCreationTime, "adminPodCreationTime returned null");
-    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
-        domainUid,
-        domainNamespace,
-        adminServerPodName,
-        adminPodCreationTime);
-
-    // get the creation time of the managed server pods before patching
-    List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
-    assertDoesNotThrow(
-        () -> {
-          for (int i = 1; i <= replicaCount; i++) {
-            String managedServerPodName = managedServerPrefix + i;
-            String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
-            managedServerPodOriginalTimestampList.add(creationTime);
-            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
-                domainUid,
-                domainNamespace,
-                managedServerPodName,
-                creationTime);
-          }
-        },
-        String.format("Failed to get creationTimestamp for managed server pods"));
-
     LinkedHashMap<String, String> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    String adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
-      try {
-        pods.put(managedServerPrefix + i, getPodCreationTimestamp(domainNamespace, "", managedServerPrefix + i));
-      } catch (ApiException ex) {
-        logger.severe(ex.getResponseBody());
-      }
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
     StringBuffer patchStr = null;
@@ -402,24 +373,13 @@ class ItMiiConfigMapOverride implements LoggedTest {
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
 
-    patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"2\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+    String newRestartVesrion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version is {0}", newRestartVesrion);
 
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
          "More than one pod was restarted at same time"),
         "Rolling restart failed");
-
 
     // Even if pods are created, need the service to created
     // before checking the DataSource configuration
@@ -449,7 +409,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
     logger.info("CheckWLDFSystemResource returned {0}", result.toString());
     assertEquals("200", result.stdout(), "WLDFSystemResource not found");
     logger.info("Found the WLDFSystemResource configuration");
-
   }
 
   // This method is needed in this test class, since the cleanup util
@@ -518,7 +477,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
                     .namespace(domNamespace))
             .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
-
   }
 
   private void createDomainResource(
@@ -606,7 +564,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domNamespace),
             String.format(
                 "pod %s is not ready in namespace %s", podName, domNamespace)));
-
   }
 
   private void checkServiceCreated(String serviceName, String domNamespace) {
@@ -621,21 +578,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
         .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domNamespace),
             String.format(
                 "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
-
-  }
-
-  private void checkPodRestarted(String podName, String domainUid, String domNamespace, String timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, timestamp),
-            String.format("podExists failed with ApiException for %s in namespace in %s",
-                podName, domNamespace)));
   }
 
   private ExecResult checkSystemResourceConfiguration(String resourcesType, String resourcesName) {
@@ -682,6 +624,59 @@ class ItMiiConfigMapOverride implements LoggedTest {
       return null;
     }
     return result;
+  }
+
+  /**
+   * Patch the domain resource with a new restartVersion.
+   * 
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @return restartVersion new restartVersion of the domain resource
+   */
+  private String patchDomainResourceWithNewRestartVersion(
+      String domainResourceName, String namespace) {
+    String oldVersion = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
+        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+        domainResourceName, namespace, oldVersion, newVersion);
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/restartVersion\",")
+        .append(" \"value\": \"")
+        .append(newVersion)
+        .append("\"")
+        .append(" }]");
+
+    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean rvPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(restartVersion)  failed ");
+    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+
+    return String.valueOf(newVersion);
+  }
+
+  /**
+   * Get the PodCreationTimestamp of a pod in a namespace.
+   * 
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param podName name of the pod 
+   * @return podCreationTimestamp of the pod
+   */
+  private String getPodCreationTime(String namespace, String podName) {
+    String podCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
+            String.format("Couldn't get PodCreationTime for pod %s", podName));
+    assertNotNull(podCreationTime, "PodCreationTime returned null");
+    logger.info("Pod {0} PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
+        namespace,
+        podName,
+        podCreationTime);
+    return podCreationTime;
   }
 
 }
