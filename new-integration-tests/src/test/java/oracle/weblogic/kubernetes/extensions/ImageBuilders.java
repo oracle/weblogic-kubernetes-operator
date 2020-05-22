@@ -189,7 +189,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     String imageAndTag = imageName.substring(secondSlashIdx + 1);
     String curlCmd = "curl -skL -X \"DELETE\" -H \"Authorization: Bearer " + token
         + "\" \"https://" + registry + "/20180419/docker/repos/"
-        + tenancy + "/" + imageAndTag.replace(':', '/');
+        + tenancy + "/" + imageAndTag.replace(':', '/') + "\"";
+    logger.info("About to invoke: " + curlCmd);
     ExecResult result = null;
     try {
       result = ExecCommand.exec(curlCmd, true);
