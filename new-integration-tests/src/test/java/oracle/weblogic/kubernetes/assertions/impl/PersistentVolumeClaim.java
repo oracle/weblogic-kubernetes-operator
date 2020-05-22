@@ -21,7 +21,7 @@ public class PersistentVolumeClaim {
    */
   public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
     return () -> {
-      List<String> pvcNames = new ArrayList<>();
+
       List<V1PersistentVolumeClaim> v1PersistentVolumeClaims = new ArrayList<>();
 
       V1PersistentVolumeClaimList v1PersistentVolumeClaimList = Kubernetes.listPersistentVolumeClaims(namespace);
@@ -31,10 +31,15 @@ public class PersistentVolumeClaim {
 
       for (V1PersistentVolumeClaim v1PersistentVolumeClaim : v1PersistentVolumeClaims) {
         if (v1PersistentVolumeClaim.getMetadata() != null) {
-          pvcNames.add(v1PersistentVolumeClaim.getMetadata().getName());
+          if (v1PersistentVolumeClaim.getMetadata().getName() != null) {
+            if (v1PersistentVolumeClaim.getMetadata().getName().equals(pvcName)) {
+              return true;
+            }
+          }
         }
       }
-      return pvcNames.contains(pvcName);
+
+      return false;
     };
   }
 }
