@@ -322,7 +322,7 @@ public class TestActions {
    * @param params - the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
-  public static boolean createMiiImage(WitParams params) {
+  public static boolean createImage(WitParams params) {
     return
         WebLogicImageTool
             .withParams(params)
