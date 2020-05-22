@@ -42,7 +42,9 @@ public class FiberGate {
     engine.getExecutor().scheduleWithFixedDelay(() -> {
       gateMap.forEach((key, fiber) -> {
         if (fiber.isSuspended()) {
-          LOGGER.info("*** Fiber: " + fiber.toString() + " is SUSPENDED");
+          Step next = fiber.getNext();
+          LOGGER.info("*** DomainUid: " + key + ", Fiber: " + fiber.toString()
+              + " is SUSPENDED" + (next != null ? (" at " + next.getName()) : ""));
         }
       });
     }, 5, 5, TimeUnit.SECONDS);

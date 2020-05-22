@@ -331,6 +331,16 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
     }
   }
 
+  // for debugging
+  Step getNext() {
+    lock.lock();
+    try {
+      return na != null ? na.next : null;
+    } finally {
+      lock.unlock();
+    }
+  }
+
   /**
    * Wait for Fiber to complete.
    * @return none
