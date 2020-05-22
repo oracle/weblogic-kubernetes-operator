@@ -326,8 +326,8 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
 
-    String newRestartVesrion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
-    logger.log(Level.INFO, "New Restart version : {0}", newRestartVesrion);
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
     
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
@@ -403,8 +403,8 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
 
-    String newRestartVesrion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
-    logger.log(Level.INFO, "New Restart version : {0}", newRestartVesrion);
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
     
     // Check if the admin server pod has been restarted 
     // by comparing the PodCreationTime before and after rolling restart
@@ -485,8 +485,8 @@ class ItMiiAddCluster implements LoggedTest {
         "patchDomainCustomResource(restartVersion)  failed ");
     assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
 
-    String newRestartVesrion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
-    logger.log(Level.INFO, "New Restart version : {0}", newRestartVesrion);
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
     
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
@@ -717,14 +717,14 @@ class ItMiiAddCluster implements LoggedTest {
    * 
    * @param namespace Kubernetes namespace that the domain is hosted
    * @param podName name of the pod 
-   * @return podCreationTimestamp of the pod
+   * @return PodCreationTimestamp of the pod
    */
   private String getPodCreationTime(String namespace, String podName) {
     String podCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTime for pod %s", podName));
-    assertNotNull(podCreationTime, "PodCreationTime returned null");
-    logger.info("Pod {0} PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
+    assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
+    logger.info("PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
         namespace,
         podName,
         podCreationTime);
