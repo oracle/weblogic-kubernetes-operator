@@ -1086,9 +1086,9 @@ class SitConfigGenerator(Generator):
         break
 
     if found:
-      return replace_action
+      return replace_action, "replace"
     else:
-      return add_action
+      return add_action, "add"
 
   def customizeAdminIstioNetworkAccessPoint(self, listen_address, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
@@ -1099,11 +1099,22 @@ class SitConfigGenerator(Generator):
       return
 
     admin_port = server.getListenPort()
-    action = self._getNapAction(server, "istio-probe")
+    action, type = self._getNapAction(server, "istio-probe")
 
-    self.writeln('<d:network-access-point>')
+    # For add, we must put the combine mode as add
+    # For replace, we must omit it
+
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
+
     self.indent()
-    self.writeln('<d:name>istio-probe</d:name>');
+    if type == "add":
+      self.writeln('<d:name %s>istio-probe</d:name>' % action)
+    else:
+      self.writeln('<d:name>istio-probe</d:name>')
+
     self.writeln('<d:protocol %s>http</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
@@ -1117,10 +1128,17 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
-    action = self._getNapAction(server, "istio-ldap")
-    self.writeln('<d:network-access-point>')
+    action, type = self._getNapAction(server, "istio-ldap")
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name>istio-ldap</d:name>')
+    if type == "add":
+      self.writeln('<d:name %s>istio-ldap</d:name>' % action)
+    else:
+      self.writeln('<d:name>istio-ldap</d:name>')
+
     self.writeln('<d:protocol %s>ldap</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.01</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
@@ -1133,10 +1151,18 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
-    action = self._getNapAction(server, "istio-t3")
-    self.writeln('<d:network-access-point>')
+    action, type = self._getNapAction(server, "istio-t3")
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name>istio-t3</d:name>')
+
+    if type == "add":
+      self.writeln('<d:name %s>istio-t3</d:name>' % action)
+    else:
+      self.writeln('<d:name>istio-t3</d:name>')
+
     self.writeln('<d:protocol %s>t3</d:protocol>' % (action))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
@@ -1159,70 +1185,100 @@ class SitConfigGenerator(Generator):
       return
 
     listen_port = template.getListenPort()
-    action = self._getNapAction(template, "istio-probe")
+    action, type = self._getNapAction(template, "istio-probe")
 
-    self.writeln('<d:network-access-point>')
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name>istio-probe</d:name>')
-    self.writeln('<d:protocol %s>http</d:protocol>' % (action))
-    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
+
+    if type == 'add':
+      self.writeln('<d:name %s>istio-probe</d:name>' % action)
+    else:
+      self.writeln('<d:name>istio-probe</d:name>')
+
+    self.writeln('<d:protocol %s>http</d:protocol>' % action)
+    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     self.writeln('<d:public-address %s>%s</d:public-address>' %  (action, listen_address))
     self.writeln('<d:listen-port %s>%s</d:listen-port>'  % (action, istio_readiness_port))
-    self.writeln('<d:http-enabled-for-this-protocol %s>true</d:http-enabled-for-this-protocol>' % (action))
-    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % (action))
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % (action))
-    self.writeln('<d:enabled %s>true</d:enabled>' % (action))
-    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % (action))
-    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % (action))
+    self.writeln('<d:http-enabled-for-this-protocol %s>true</d:http-enabled-for-this-protocol>' % action)
+    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
+    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
-    action = self._getNapAction(template, "istio-cluster")
-    self.writeln('<d:network-access-point>')
+    action, type = self._getNapAction(template, "istio-cluster")
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name>istio-cluster</d:name>')
-    self.writeln('<d:protocol %s>CLUSTER-BROADCAST</d:protocol>' % (action))
-    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
+
+    if type == 'add':
+      self.writeln('<d:name %s>istio-cluster</d:name>' % action)
+    else:
+      self.writeln('<d:name>istio-cluster</d:name>')
+
+    self.writeln('<d:protocol %s>CLUSTER-BROADCAST</d:protocol>' % action)
+    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
-    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % (action))
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % (action))
-    self.writeln('<d:enabled %s>true</d:enabled>' % (action))
-    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % (action))
-    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % (action))
+    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
+    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
-    action = self._getNapAction(template, "istio-t3")
-    self.writeln('<d:network-access-point>')
+    action, type = self._getNapAction(template, "istio-t3")
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name>istio-t3</d:name>')
-    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
+    if type == 'add':
+      self.writeln('<d:name %s>istio-t3</d:name>' % action)
+    else:
+      self.writeln('<d:name>istio-t3</d:name>')
+
+    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action,listen_port))
-    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % (action))
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % (action))
-    self.writeln('<d:enabled %s>true</d:enabled>' % (action))
-    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % (action))
-    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % (action))
+    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
+    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
     istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
 
-    action = self._getNapAction(template, "istio-http")
-    self.writeln('<d:network-access-point>')
+    action, type = self._getNapAction(template, "istio-http")
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
     self.indent()
-    self.writeln('<d:name>istio-http</d:name>')
-    self.writeln('<d:protocol %s>http</d:protocol>' % (action))
-    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % (action))
+    if type == 'add':
+      self.writeln('<d:name %s>istio-http</d:name>' % action)
+    else:
+      self.writeln('<d:name>istio-http</d:name>')
+
+    self.writeln('<d:protocol %s>http</d:protocol>' % action)
+    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, istio_envoy_port))
-    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % (action))
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % (action))
-    self.writeln('<d:enabled %s>true</d:enabled>' % (action))
-    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % (action))
-    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % (action))
+    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
+    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
