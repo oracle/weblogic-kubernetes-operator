@@ -41,10 +41,10 @@ public class FiberGate {
     // TEST
     engine.getExecutor().scheduleWithFixedDelay(() -> {
       gateMap.forEach((key, fiber) -> {
-        if (fiber.isSuspended()) {
-          Step next = fiber.getNext();
+        Step lastIfSuspended = fiber.getLastIfSuspended();
+        if (lastIfSuspended != null) {
           LOGGER.info("*** DomainUid: " + key + ", Fiber: " + fiber.toString()
-              + " is SUSPENDED" + (next != null ? (" at " + next.getName()) : ""));
+              + " is SUSPENDED at " + lastIfSuspended.getName());
         }
       });
     }, 5, 5, TimeUnit.SECONDS);
