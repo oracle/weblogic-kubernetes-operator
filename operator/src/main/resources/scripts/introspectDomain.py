@@ -1031,7 +1031,7 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
     if server.getName() == self.env.getDomain().getAdminServerName():
-      self.customizeAdminIstioNetworkAccessPoint(listen_address, server.getListenPort())
+      self.customizeAdminIstioNetworkAccessPoint(listen_address, server)
     self.undent()
     self.writeln("</d:server>")
 
@@ -1052,7 +1052,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
-    self.customizeManagedIstioNetworkAccessPoint(listen_address, template.getListenPort())
+    self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
     self.undent()
     self.writeln("</d:server-template>")
 
@@ -1075,7 +1075,20 @@ class SitConfigGenerator(Generator):
         self.undent()
         self.writeln("</d:network-access-point>")
 
-  def customizeAdminIstioNetworkAccessPoint(self, listen_address, admin_port):
+  def _getNapAction(self, svr, testname):
+    found = False
+    add_action = 'f:combine-mode="add"'
+    replace_action = 'f:combine-mode="add"'
+
+    for nap in svr.getNetworkAccessPoints():
+      if nap.getName() == testname:
+        found = True
+    if found:
+      return replace_action
+    else:
+      return add_action
+
+  def customizeAdminIstioNetworkAccessPoint(self, listen_address, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     if istio_enabled == 'false':
       return
@@ -1083,8 +1096,8 @@ class SitConfigGenerator(Generator):
     if istio_readiness_port is None:
       return
 
-    action = 'f:combine-mode="add"'
-    replace_action = 'f:combine-mode="add"'
+    admin_port = server.getListenPort()
+    action = self._getNapAction(server, "istio-probe")
 
     self.writeln('<d:network-access-point %s>' % (action))
     self.indent()
@@ -1102,6 +1115,7 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
+    action = self._getNapAction(server, "istio-ldap")
     self.writeln('<d:network-access-point %s>' % (action))
     self.indent()
     self.writeln('<d:name %s>istio-ldap</d:name>' % (action))
@@ -1117,6 +1131,7 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
+    action = self._getNapAction(server, "istio-t3")
     self.writeln('<d:network-access-point %s>' % (action))
     self.indent()
     self.writeln('<d:name %s>istio-t3</d:name>' % (action))
@@ -1133,7 +1148,7 @@ class SitConfigGenerator(Generator):
     self.writeln('</d:network-access-point>')
 
 
-  def customizeManagedIstioNetworkAccessPoint(self, listen_address, listen_port):
+  def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     if istio_enabled == 'false':
       return
@@ -1141,8 +1156,8 @@ class SitConfigGenerator(Generator):
     if istio_readiness_port is None:
       return
 
-    action = 'f:combine-mode="add"'
-    replace_action = 'f:combine-mode="add"'
+    listen_port = template.getListenPort()
+    action = self._getNapAction(template, "istio-probe")
 
     self.writeln('<d:network-access-point %s>' % (action))
     self.indent()
@@ -1160,6 +1175,7 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
+    action = self._getNapAction(template, "istio-cluster")
     self.writeln('<d:network-access-point %s>' % (action))
     self.indent()
     self.writeln('<d:name %s>istio-cluster</d:name>' % (action))
@@ -1175,6 +1191,7 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
+    action = self._getNapAction(template, "istio-t3")
     self.writeln('<d:network-access-point %s>' % (action))
     self.indent()
     self.writeln('<d:name %s>istio-t3</d:name>' % (action))
@@ -1191,6 +1208,7 @@ class SitConfigGenerator(Generator):
 
     istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
 
+    action = self._getNapAction(template, "istio-http")
     self.writeln('<d:network-access-point %s>' % (action))
     self.indent()
     self.writeln('<d:name %s>istio-http</d:name>' % (action))
