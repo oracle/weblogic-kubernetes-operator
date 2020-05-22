@@ -70,9 +70,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -80,9 +78,11 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -272,13 +272,13 @@ class ItMiiAddCluster implements LoggedTest {
 
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
   }
 
@@ -419,7 +419,7 @@ class ItMiiAddCluster implements LoggedTest {
     
     String newServerPodName = domainUid + "-dynamic-server1";
     checkPodReady(newServerPodName, domainUid, domainNamespace);
-    checkServiceCreated(newServerPodName, domainNamespace);
+    checkServiceExists(newServerPodName, domainNamespace);
 
     boolean isServerConfigured = checkManagedServerConfiguration("dynamic-server1");
     assertTrue(isServerConfigured, "Could not find new managed server configuration");
@@ -497,7 +497,7 @@ class ItMiiAddCluster implements LoggedTest {
     // Make sure the managed server from the new cluster is running
     String newServerPodName = domainUid + "-config-server1";
     checkPodReady(newServerPodName, domainUid, domainNamespace);
-    checkServiceCreated(newServerPodName, domainNamespace);
+    checkServiceExists(newServerPodName, domainNamespace);
 
     boolean isServerConfigured = checkManagedServerConfiguration("config-server1");
     assertTrue(isServerConfigured, "Could not find new managed server configuration");
@@ -626,36 +626,6 @@ class ItMiiAddCluster implements LoggedTest {
 
   }
 
-  private void checkPodReady(String podName, String domainUid, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domNamespace),
-            String.format(
-                "pod %s is not ready in namespace %s", podName, domNamespace)));
-
-  }
-
-  private void checkServiceCreated(String serviceName, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domNamespace),
-            String.format(
-                "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
-
-  }
-
   /* 
    * Verify the server MBEAN configuration through rest API.
    * @param managedServer name of the managed server 
@@ -711,58 +681,5 @@ class ItMiiAddCluster implements LoggedTest {
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
   }     
-
-  /**
-   * Get the PodCreationTimestamp of a pod in a namespace.
-   * 
-   * @param namespace Kubernetes namespace that the domain is hosted
-   * @param podName name of the pod 
-   * @return PodCreationTimestamp of the pod
-   */
-  private String getPodCreationTime(String namespace, String podName) {
-    String podCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
-            String.format("Couldn't get PodCreationTime for pod %s", podName));
-    assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
-    logger.info("PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
-        namespace,
-        podName,
-        podCreationTime);
-    return podCreationTime;
-  }
-
-  /**
-   * Patch the domain resource with a new restartVersion.
-   * 
-   * @param domainResourceName name of the domain resource
-   * @param namespace Kubernetes namespace that the domain is hosted
-   * @return restartVersion new restartVersion of the domain resource
-   */
-  private String patchDomainResourceWithNewRestartVersion(
-      String domainResourceName, String namespace) {
-    String oldVersion = assertDoesNotThrow(
-        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
-        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
-    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
-        domainResourceName, namespace, oldVersion, newVersion);
-
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"")
-        .append(newVersion)
-        .append("\"")
-        .append(" }]");
-
-    logger.log(Level.INFO, "Restart version patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-
-    return String.valueOf(newVersion);
-  }
 
 }
