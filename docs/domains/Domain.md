@@ -97,12 +97,13 @@ An element representing a cluster in the domain configuration.
 | `opss` | [Opss](#opss) | Configuration for OPSS security. |
 | `overridesConfigMap` | string | The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides. |
 | `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified it overrides the value of spec.configOverrideSecrets. |
+| `istio` | [Istio](#istio) | Moved under configuration. Should we remove this ??? |
 
 ### Experimental
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `istio` | [Istio](#istio) | Istio service mesh integration configuration. |
+| `istio` | [Istio](#istio) | Moved under configuration. Should we remove this ??? |
 
 ### Managed Server
 
@@ -224,6 +225,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the 'istio' element is included. Not required. |
 | `readinessPort` | number | The WebLogic readiness port for Istio. Defaults to 8888. Not required. |
+| `envoyPort` | number | The envoy port for Istio. Defaults to 31111. Not required. |
 
 ### Probe Tuning
 
