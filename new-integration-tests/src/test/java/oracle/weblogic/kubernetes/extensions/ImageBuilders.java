@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
@@ -24,13 +25,20 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -52,6 +60,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static final CountDownLatch initializationLatch = new CountDownLatch(1);
   private static String operatorImage;
   private static String miiBasicImage;
+  private static String wdtBasicImage;
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -85,9 +94,18 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         // build MII basic image
         miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-        assertTrue(createMiiBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG),
+        assertTrue(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+            null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
             String.format("Failed to create the image %s using WebLogic Image Tool",
                 miiBasicImage));
+
+        // build basic wdt-domain-in-image image
+        wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+        assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+            WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
+            String.format("Failed to create the image %s using WebLogic Image Tool",
+                wdtBasicImage));
+
 
         /* Check image exists using docker images | grep image tag.
          * Tag name is unique as it contains date and timestamp.
@@ -97,6 +115,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
          */
         assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
             String.format("Image %s doesn't exist", miiBasicImage));
+
+        assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
+            String.format("Image %s doesn't exist", wdtBasicImage));
 
         if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
@@ -110,6 +131,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           logger.info("docker push mii basic image {0} to registry", miiBasicImage);
           assertTrue(dockerPush(miiBasicImage), String.format("docker push failed for image %s", miiBasicImage));
+
+          logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
+          assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
+
         }
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
@@ -137,6 +162,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       deleteImage(miiBasicImage);
     }
 
+    // delete wdt domain-in-image basic image
+    if (wdtBasicImage != null) {
+      deleteImage(wdtBasicImage);
+    }
+
     // delete operator image
     if (operatorImage != null) {
       deleteImage(operatorImage);
@@ -145,26 +175,31 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   }
 
   /**
-   * Create image with basic domain model yaml and sample app.
+   * Create image with basic domain model yaml, variable file and sample application.
    * @param imageName name of the image
    * @param imageTag tag of the image
+   * @param modelFile model file to build the image
+   * @param varFile variable file to build the image
+   * @param appName name of the application to build the image
+   * @param domainType domain type to be built
    * @return true if image is created successfully
    */
-  private boolean createMiiBasicImage(String imageName, String imageTag) {
+  private boolean createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
+                                   String appName, String domainType) {
 
     final String image = imageName + ":" + imageTag;
 
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    // build the model file list 
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
 
     // build an application archive using what is in resources/apps/APP_NAME
-    logger.info("Build an application archive using resources/apps/{0}", MII_BASIC_APP_NAME);
+    logger.info("Build an application archive using resources/apps/{0}", appName);
     assertTrue(buildAppArchive(defaultAppParams()
-        .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+        .srcDirList(Collections.singletonList(appName))),
+        String.format("Failed to create app archive for %s", appName));
 
     // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME);
+    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
     final List<String> archiveList = Collections.singletonList(zipFile);
 
     // Set additional environment variables for WIT
@@ -181,16 +216,35 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
 
     // build an image using WebLogic Image Tool
+    boolean imageCreation = false;
     logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
-    return createMiiImage(
+    if (domainType.equalsIgnoreCase("wdt")) {
+      final List<String> modelVarList = Collections.singletonList(MODEL_DIR + "/" + varFile);
+      imageCreation = createImage(
+          defaultWitParams()
+              .modelImageName(imageName)
+              .modelImageTag(WDT_BASIC_IMAGE_TAG)
+              .modelFiles(modelList)
+              .modelArchiveFiles(archiveList)
+              .modelVariableFiles(modelVarList)
+              .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
+              .wdtOperation("CREATE")
+              .wdtVersion(WDT_VERSION)
+              .env(env)
+              .redirect(true));
+    } else if (domainType.equalsIgnoreCase("mii")) {
+      imageCreation = createImage(
         defaultWitParams()
             .modelImageName(imageName)
             .modelImageTag(MII_BASIC_IMAGE_TAG)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
+            .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
-
+    }
+    return imageCreation;
   }
+
 }

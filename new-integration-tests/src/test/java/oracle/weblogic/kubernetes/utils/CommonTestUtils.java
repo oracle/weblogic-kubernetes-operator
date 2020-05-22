@@ -64,8 +64,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
@@ -553,18 +553,19 @@ public class CommonTestUtils {
 
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createMiiImage(
-          new WitParams()
-              .baseImageName(baseImageName)
-              .baseImageTag(baseImageTag)
-              .domainType(domainType)
-              .modelImageName(imageName)
-              .modelImageTag(imageTag)
-              .modelFiles(modelList)
-              .modelArchiveFiles(archiveList)
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
+    boolean result = createImage(
+        new WitParams()
+            .baseImageName(baseImageName)
+            .baseImageTag(baseImageTag)
+            .domainType(domainType)
+            .modelImageName(imageName)
+            .modelImageTag(imageTag)
+            .modelFiles(modelList)
+            .modelArchiveFiles(archiveList)
+            .wdtModelOnly(true)
+            .wdtVersion(WDT_VERSION)
+            .env(env)
+            .redirect(true));
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
