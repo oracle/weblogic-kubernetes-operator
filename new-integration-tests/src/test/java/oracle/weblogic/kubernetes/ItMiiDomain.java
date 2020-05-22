@@ -318,7 +318,7 @@ class ItMiiDomain implements LoggedTest {
   }
 
   @Test
-  @Order(4)
+  @Order(3)
   @DisplayName("Update the sample-app application to version 2")
   @Slow
   @MustNotRunInParallel
@@ -431,7 +431,7 @@ class ItMiiDomain implements LoggedTest {
   }
 
   @Test
-  @Order(5)
+  @Order(4)
   @DisplayName("Update the domain with another application")
   @Slow
   @MustNotRunInParallel
@@ -509,7 +509,7 @@ class ItMiiDomain implements LoggedTest {
 
     logger.info("Both of the applications are running correctly after patching");
   }
-  
+
   /**
    * Parameterized test to create model in image domain using different WebLogic version images
    * as parameters.
