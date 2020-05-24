@@ -185,6 +185,10 @@ public class ServerStatusReader {
               InputStream in = proc.getInputStream();
               if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
                 int exitValue = proc.exitValue();
+
+                // TEST
+                LOGGER.info("*** PROC exit: " + exitValue + ", readState for " + pod.getMetadata().getName());
+
                 if (exitValue == 0) {
                   try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
                     state = CharStreams.toString(reader);
