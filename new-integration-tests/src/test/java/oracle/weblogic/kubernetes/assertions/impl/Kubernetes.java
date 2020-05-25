@@ -25,10 +25,11 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import static io.kubernetes.client.util.Yaml.dump;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Kubernetes {
@@ -39,7 +40,6 @@ public class Kubernetes {
   private static CoreV1Api coreV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
   private static final String RUNNING = "Running";
-  private static final String TERMINATING = "Terminating";
 
   static {
     try {
@@ -148,33 +148,65 @@ public class Kubernetes {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
       }
     } else {
-      logger.info("Pod doesn't exist");
+      logger.info("Pod {0} doesn't exist in namespace {1}", podName, namespace);
     }
     return status;
   }
 
   /**
-   * Checks if a pod exists in a given namespace and in Terminating state.
+   * Check if a pod exists in a given namespace and is terminating.
    * @param namespace in which to check for the pod
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
-   * @return true if pod is in Terminating state otherwise false
+   * @return true if pod is terminating otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodTerminating(String namespace, String domainUid, String podName) throws ApiException {
-    boolean status = false;
-    logger.info("Checking if the pod terminating in namespace");
+  public static boolean isPodTerminating(String namespace, String domainUid, String podName)
+      throws ApiException {
+    boolean terminating = false;
     String labelSelector = null;
     if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+      labelSelector = String.format("weblogic.domainUID=%s", domainUid);
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod != null) {
-      status = pod.getStatus().getPhase().equals(TERMINATING);
-    } else {
-      logger.info("Pod doesn't exist");
+    if (null == pod) {
+      logger.severe("pod does not exist");
+      return false;
+    } else if (pod.getMetadata().getDeletionTimestamp() != null) {
+      terminating = true;
+      logger.info("{0} : !!!Terminating!!!, DeletionTimeStamp : {1}",
+          pod.getMetadata().getName(), pod.getMetadata().getDeletionTimestamp());
     }
-    return status;
+    return terminating;
+  }
+  
+  /**
+   * Checks if a pod in a given namespace has been updated with an expected
+   * weblogic.domainRestartVersion label.
+   *
+   * @param namespace in which to check for the pod
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @param expectedRestartVersion domainRestartVersion that is expected
+   * @return true if pod has been updated as expected
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean podRestartVersionUpdated(
+      String namespace,
+      String domainUid,
+      String podName,
+      String expectedRestartVersion
+  ) throws ApiException {
+    String restartVersion = getPodRestartVersion(namespace, "", podName);
+
+    if (restartVersion != null && restartVersion.equals(expectedRestartVersion)) {
+      logger.info("Pod {0}: domainRestartVersion has been updated to expected value {1}",
+          podName, expectedRestartVersion);
+      return true;
+    }
+    logger.info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
+        podName, restartVersion, expectedRestartVersion);
+    return false;
   }
 
   /**
@@ -206,7 +238,7 @@ public class Kubernetes {
       for (V1Container container : containers) {
         // look for the container
         if (container.getName().equals(containerName)
-            && (container.getImage().equals(image))) {
+            && container.getImage().equals(image)) {
           podPatched = true;
         }
       }
@@ -292,10 +324,8 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
-        logger.info("Pod Name: " + item.getMetadata().getName());
-        logger.info("Pod Namespace: " + item.getMetadata().getNamespace());
-        logger.info("Pod UID: " + item.getMetadata().getUid());
-        logger.info("Pod Status: " + item.getStatus().getPhase());
+        logger.info("Name: {0}, Namespace: {1}, Phase: {2}",
+            item.getMetadata().getName(), namespace, item.getStatus().getPhase());
         return item;
       }
     }
@@ -370,15 +400,16 @@ public class Kubernetes {
   }
 
   /**
-   * A utility method to list all pods in given namespace and a label
-   * This method can be used as diagnostic tool to get the details of pods.
+   * Get a list of pods from given namespace and  label.
+   *
    * @param namespace in which to list all pods
    * @param labelSelectors with which the pods are decorated
+   * @return V1PodList list of {@link V1Pod} from the namespace
    * @throws ApiException when there is error in querying the cluster
    */
-  public static void listPods(String namespace, String labelSelectors) throws ApiException {
-    V1PodList v1PodList =
-        coreV1Api.listNamespacedPod(
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+    V1PodList v1PodList
+        = coreV1Api.listNamespacedPod(
             namespace, // namespace in which to look for the pods.
             Boolean.FALSE.toString(), // pretty print output.
             Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -390,8 +421,7 @@ public class Kubernetes {
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
-    List<V1Pod> items = v1PodList.getItems();
-    logger.info(Arrays.toString(items.toArray()));
+    return v1PodList;
   }
 
   /**
@@ -541,35 +571,22 @@ public class Kubernetes {
    * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
-   * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
+   * @return true if the pod's new timestamp is later than the initial PodCreationTimestamp
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
       String podName, String domainUid,
       String namespace, String timestamp) throws ApiException {
-    boolean podRestarted = false;
-    String labelSelector = null;
-    if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    String newCreationTime = getPodCreationTimestamp(namespace, "", podName);
+
+    if (newCreationTime != null
+        && Long.parseLong(newCreationTime) > Long.parseLong(timestamp)) {
+      logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
+          podName, newCreationTime, timestamp);
+      return true;
     }
-    V1Pod pod = getPod(namespace, labelSelector, podName);
-    if (pod == null) {
-      podRestarted = false;
-    } else {
-      DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
-      String newTimestamp = dtf.print(pod.getMetadata().getCreationTimestamp());
-      if (newTimestamp == null) {
-        logger.info("getCreationTimestamp() returns NULL");
-        return false;
-      }
-      logger.info("OldPodCreationTimestamp [{0}]", timestamp);
-      logger.info("NewPodCreationTimestamp returns [{0}]", newTimestamp);
-      if (Long.parseLong(newTimestamp) == Long.parseLong(timestamp)) {
-        podRestarted = false;
-      } else {
-        podRestarted = true;
-      }
-    }
-    return podRestarted;
+    logger.info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
+        podName, newCreationTime, timestamp);
+    return false;
   }
 }
