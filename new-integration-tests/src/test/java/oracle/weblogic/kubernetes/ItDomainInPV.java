@@ -295,15 +295,15 @@ public class ItDomainInPV implements LoggedTest {
     // verify admin server pod is ready
     CommonTestUtils.checkPodReady(adminServerPodName, domainUid, wlstDomainNamespace);
 
+    // verify the admin server service created
+    CommonTestUtils.checkServiceExists(adminServerPodName, wlstDomainNamespace);
+
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, wlstDomainNamespace);
       CommonTestUtils.checkPodReady(managedServerPodNamePrefix + i, domainUid, wlstDomainNamespace);
     }
-
-    // verify the admin server service created
-    CommonTestUtils.checkServiceExists(adminServerPodName, wlstDomainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
@@ -448,15 +448,15 @@ public class ItDomainInPV implements LoggedTest {
     // verify admin server pod is ready
     CommonTestUtils.checkPodReady(adminServerPodName, domainUid, wdtDomainNamespace);
 
+    // verify the admin server service created
+    CommonTestUtils.checkServiceExists(adminServerPodName, wdtDomainNamespace);
+
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, wdtDomainNamespace);
       CommonTestUtils.checkPodReady(managedServerPodNamePrefix + i, domainUid, wdtDomainNamespace);
     }
-
-    // verify the admin server service created
-    CommonTestUtils.checkServiceExists(adminServerPodName, wdtDomainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
