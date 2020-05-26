@@ -3,8 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,9 +27,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -44,7 +42,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -58,10 +55,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test pods were restarted after some properties in server pods changed.
+ * Test pods are restarted after some properties in server pods are changed.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test pods were restarted after some properties change in server pods changed")
+@DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
 class ItPodsRestart implements LoggedTest {
 
@@ -102,13 +98,13 @@ class ItPodsRestart implements LoggedTest {
 
   /**
    * Add/Modify server pod resources by patching the domain custom resource.
-   * Verify all pods were restarted and back to be ready.
+   * Verify all pods are restarted and back to ready state.
    * The resources tested: resources: limits: cpu: "1", resources: requests: cpu: "0.5"
-   * Test fails if any server pod was not restarted and back to be ready or the compute resources in the patched
-   * domain custom resource do not match the values we planed to add or modify.
+   * Test fails if any server pod is not restarted and back to ready state or the compute resources in the patched
+   * domain custom resource do not match the values we planned to add or modify.
    */
   @Test
-  @DisplayName("Verify server pods were restarted by changing the resources")
+  @DisplayName("Verify server pods are restarted by changing the resources")
   public void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
@@ -116,14 +112,14 @@ class ItPodsRestart implements LoggedTest {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
 
-    assertNotNull(domain1, "domain1 is null");
-    assertNotNull(domain1.getSpec(), "domain1/spec is null");
-    assertNotNull(domain1.getSpec().getServerPod(), "domain1/spec/serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1/spec/serverPod/resources is null");
+    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
 
     // get the current server pod compute resource limit
     Map<String, Quantity> limits = domain1.getSpec().getServerPod().getResources().getLimits();
-    assertNotNull(limits, "domain1/spec/serverPod/resources/limits is null");
+    assertNotNull(limits, domain1 + "/spec/serverPod/resources/limits is null");
 
     // print out current server pod compute resource limits
     logger.info("Current value for server pod compute resource limits:");
@@ -131,25 +127,22 @@ class ItPodsRestart implements LoggedTest {
 
     // get the current server pod compute resource requests
     Map<String, Quantity> requests = domain1.getSpec().getServerPod().getResources().getRequests();
-    assertNotNull(requests, "domain1/spec/serverPod/resources/requests is null");
+    assertNotNull(requests, domain1 + "/spec/serverPod/resources/requests is null");
 
     // print out current server pod compute resource requests
     logger.info("Current value for server pod compute resource requests:");
     requests.forEach((key, value) -> logger.info(key + ": " + value.toString()));
 
-    // get the admin server pod original creation timestamp
-    logger.info("Getting admin server pod original creation timestamp");
-    String adminPodOriginalTimestamp =
+    // create the map with server pods and their original creation timestamps
+    Map<String, String> podsWithTimeStamps = new LinkedHashMap<>();
+    podsWithTimeStamps.put(adminServerPodName,
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
-            String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                adminServerPodName, domainNamespace));
+        String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+            adminServerPodName, domainNamespace)));
 
-    // get the managed server pods original creation timestamps
-    logger.info("Getting managed server pods original creation timestamps");
-    List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
-      final String managedServerPodName = managedServerPrefix + i;
-      managedServerPodOriginalTimestampList.add(
+      String managedServerPodName = managedServerPrefix + i;
+      podsWithTimeStamps.put(managedServerPodName,
           assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                   managedServerPodName, domainNamespace)));
@@ -178,35 +171,27 @@ class ItPodsRestart implements LoggedTest {
         String.format("Failed to add server pod compute resources for domain {0} in namespace {1}",
             domainUid, domainNamespace));
 
-    // verify the admin server pod was restarted
-    checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodOriginalTimestamp);
-
-    // check that the admin server pod is back to be ready
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // verify the managed server pods were rolling restarted and back to be ready
-    Map<String, String> managedServerPodsWithTimeStamps = new HashMap<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPrefix + i;
-      managedServerPodsWithTimeStamps.put(managedServerPodName, managedServerPodOriginalTimestampList.get(i - 1));
-    }
-    logger.info("Verifying rolling restart occurred for managed servers {0} in namespace {1}",
-        managedServerPodsWithTimeStamps.keySet(), domainNamespace);
-    verifyRollingRestartOccurred(managedServerPodsWithTimeStamps, 1, domainNamespace);
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(
+        () -> verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        "More than one pod was restarted at same time"),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     // get the patched domain custom resource
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
 
-    assertNotNull(domain1, "domain1 is null");
-    assertNotNull(domain1.getSpec(), "domain1/spec is null");
-    assertNotNull(domain1.getSpec().getServerPod(), "domain1/spec/serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getResources(), "domain1/spec/serverPod/resources is null");
+    assertNotNull(domain1, domain1 + " is null");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), domain1 + "/spec/serverPod is null");
+    assertNotNull(domain1.getSpec().getServerPod().getResources(), domain1 + "/spec/serverPod/resources is null");
 
     // get new server pod compute resources limits
     limits = domain1.getSpec().getServerPod().getResources().getLimits();
-    assertNotNull(limits, "domain1/spec/serverPod/resources/limits is null");
+    assertNotNull(limits, domain1 + "/spec/serverPod/resources/limits is null");
 
     // print out server pod compute resource limits
     logger.info("New value for server pod compute resource limits:");
@@ -214,22 +199,22 @@ class ItPodsRestart implements LoggedTest {
 
     // verify the server pod resources limits got updated
     logger.info("Checking that the server pod resources cpu limit was updated correctly");
-    assertNotNull(limits.get("cpu"), "domain1/spec/serverPod/resources/limits/cpu is null");
+    assertNotNull(limits.get("cpu"), domain1 + "/spec/serverPod/resources/limits/cpu is null");
     assertEquals(limits.get("cpu").getNumber().toString(), cpuLimit,
         String.format("server pod compute resource limits were not updated correctly, set cpu limit to %s, got %s",
             cpuLimit, limits.get("cpu").getNumber().toString()));
 
     // get new server pod compute resources requests
     requests = domain1.getSpec().getServerPod().getResources().getRequests();
-    assertNotNull(requests, "domain1/spec/serverPod/resources/requests is null");
+    assertNotNull(requests, domain1 + "/spec/serverPod/resources/requests is null");
 
     // print out server pod compute resource requests
     logger.info("New value for server pod compute resource requests:");
     requests.forEach((key, value) -> logger.info(key + ": " + value.getNumber().toString()));
 
     // verify the server pod resources requests got updated
-    logger.info("Checking that the server pod resources cpu request was updated correctly");
-    assertNotNull(requests.get("cpu"), "domain1/spec/serverPod/resources/requests/cpu is null");
+    logger.info("Checking that the server pod resources cpu request is updated correctly");
+    assertNotNull(requests.get("cpu"), domain1 + "/spec/serverPod/resources/requests/cpu is null");
     assertEquals(requests.get("cpu").getNumber().toString(), cpuRequest,
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber().toString()));
