@@ -262,6 +262,9 @@ class ItMiiAddCluster implements LoggedTest {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -269,10 +272,6 @@ class ItMiiAddCluster implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
@@ -305,7 +304,7 @@ class ItMiiAddCluster implements LoggedTest {
 
     LinkedHashMap<String, String> pods = new LinkedHashMap<>();
 
-    // get the creation time of the admin server pod before patching
+    // get the creation time of the server pods before patching
     String adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     for (int i = 1; i <= replicaCount; i++) {

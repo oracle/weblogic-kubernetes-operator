@@ -330,6 +330,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -338,9 +341,6 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
