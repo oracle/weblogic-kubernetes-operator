@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import com.google.common.primitives.Ints;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -35,9 +34,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -64,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
  * Verify that when the primary server is down, another server takes on its clients
@@ -84,7 +80,7 @@ class ItSessionMigration implements LoggedTest {
   private static final int SESSION_STATE = 4;
   private static Map<String, String> httpAttrMap;
 
-  // constants for Operator and WebLogic domain
+  // constants for operator and WebLogic domain
   private static String domainUid = "sessmigr-domain-1";
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
@@ -96,7 +92,7 @@ class ItSessionMigration implements LoggedTest {
   private static ConditionFactory withStandardRetryPolicy = null;
 
   /**
-   * Install Operator, create a custom image using model in image with model files
+   * Install operator, create a custom image using model in image with model files
    * and create a one cluster domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -109,8 +105,8 @@ class ItSessionMigration implements LoggedTest {
       .and().with().pollInterval(10, SECONDS)
       .atMost(5, MINUTES).await();
 
-    // get a unique Operator namespace
-    logger.info("Get a unique namespace for Operator");
+    // get a unique operator namespace
+    logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
@@ -119,7 +115,7 @@ class ItSessionMigration implements LoggedTest {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    // install and verify Operator
+    // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create and verify WebLogic domain image using model in image with model files
@@ -143,56 +139,50 @@ class ItSessionMigration implements LoggedTest {
   }
 
   /**
-   * Get the primary and secondary server name and session create time from the factory method,
-   * getOriginalServerAndSessionInfo. Stop the primary server by changing ServerStartPolicy to NEVER
-   * and patching domain. Send a HTTP request to get http session state (count number), primary server
-   * and session create time. Verify that a new primary server is picked and HTTP session state is migrated.
-   *
-   * @param origPrimaryServerName the primary server name from the factory method
-   *                              getOriginalServerAndSessionInfo when the domain is created
-   * @param origSecondaryServerName the secondary server name from the factory method
-   *                                getOriginalServerAndSessionInfo when the domain is created
-   * @param origPrimaryServerName the session create time from the factory method
-   *                              getOriginalServerAndSessionInfo when the domain is created
+   * The test sends a HTTP request to set http session state(count number), get the primary and secondary server name,
+   * session create time and session state and from the util method and save HTTP session info,
+   * then stop the primary server by changing ServerStartPolicy to NEVER and patching domain.
+   * Send another HTTP request to get http session state (count number), primary server and
+   * session create time. Verify that a new primary server is selected and HTTP session state is migrated.
    */
-  @ParameterizedTest
-  @MethodSource("getOriginalServerAndSessionInfo")
+  @Test
   @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
   @Slow
   @MustNotRunInParallel
-  public void testSessionMigration(String origPrimaryServerName,
-                                   String origSecondaryServerName,
-                                   String origSessionCreateTime) {
-    final String sessionCreateTimeAttr = "sessioncreatetime";
+  public void testSessionMigration() {
     final String primaryServerAttr = "primary";
+    final String secondaryServerAttr = "secondary";
+    final String sessionCreateTimeAttr = "sessioncreatetime";
     final String countAttr = "count";
+    final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + SESSION_STATE;
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
+    String serverName = managedServerPrefix + "1";
 
+    // send a HTTP request to set http session state(count number) and save HTTP session info
+    // before shutting down the primary server
+    Map<String, String> httpDataInfo =
+        getServerAndSessionInfoAndVerify(serverName, webServiceSetUrl, " -D ");
+    // get server and session info from web service deployed on the cluster
+    String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
+    String origSecondaryServerName = httpDataInfo.get(secondaryServerAttr);
+    String origSessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
     logger.info("Got the primary server {0}, the secondary server {1} "
-        + "and session create time {2} from the factory method getOriginalServerAndSessionInfo",
+        + "and session create time {2} before shutting down the primary server",
             origPrimaryServerName, origSecondaryServerName, origSessionCreateTime);
 
     // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
     logger.info("Shut down the primary server {0}", origPrimaryServerName);
     shutdownServerUsingServerStartPolicy(origPrimaryServerName);
 
-    // get HTTP response data from web service deployed on the cluster
-    Map<String, String> httpDataInfo =
-        processHttpRequest(domainUid + "-" + origSecondaryServerName,
-            webServiceGetUrl, " -b ");
+    // send a HTTP request to get server and session info after shutting down the primary server
+    serverName = domainUid + "-" + origSecondaryServerName;
+    httpDataInfo =
+      getServerAndSessionInfoAndVerify(serverName, webServiceGetUrl, " -b ");
+    // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
     String countStr = httpDataInfo.get(countAttr);
-
-    // verify that the HTTP response data are not null
-    assertAll("Check that WebLogic server and session vars is not null or empty",
-        () -> assertNotNull(primaryServerName,"Primary server name shouldn’t be null"),
-        () -> assertNotNull(sessionCreateTime,"Session create time shouldn’t be null"),
-        () -> assertNotNull(countStr,"Session state shouldn’t be null")
-    );
-
     int count = Optional.ofNullable(countStr).map(Ints::tryParse).orElse(0);
-
     logger.info("After patching the domain, the primary server changes to {0} "
         + ", session create time {1} and session state {2}",
             primaryServerName, sessionCreateTime, countStr);
@@ -213,42 +203,52 @@ class ItSessionMigration implements LoggedTest {
   }
 
   /**
-   * A factory method generates a stream of String and referred by the parameterized test method testSessionMigration
-   * It sends a HTTP request to set http session state (count number) and return the primary server,
-   * the secondary server and session create time to the parameterized test method.
+   * An util method referred by the test method testSessionMigration. It sends a HTTP request
+   * to set or get http session state (count number) and return the primary server,
+   * the secondary server, session create time and session state(count number).
    *
-   * @return a stream of Arguments that contains primary and secondary server names and session create time
+   * @param serverName server name in the cluster on which the web app is running
+   * @param webServiceUrl fully qualified URL to the server on which the web app is running
+   * @param headerOption option to save or use HTTP session info
+   *
+   * @return map that contains primary and secondary server names, session create time and session state
    */
-  static Stream<Arguments> getOriginalServerAndSessionInfo() {
+  private Map<String, String> getServerAndSessionInfoAndVerify(String serverName,
+                                                               String webServiceUrl,
+                                                               String headerOption) {
     final String primaryServerAttr = "primary";
     final String secondaryServerAttr = "secondary";
     final String sessionCreateTimeAttr = "sessioncreatetime";
-    final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + SESSION_STATE;
-    final String serverName = managedServerPrefix + "1";
+    final String countAttr = "count";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     logger.info("Process HTTP request with web service URL {0} in the pod {1} ",
-        webServiceSetUrl, serverName);
+        webServiceUrl, serverName);
     Map<String, String> httpAttrInfo =
-        processHttpRequest(serverName, webServiceSetUrl, " -D ");
+        processHttpRequest(serverName, webServiceUrl, headerOption);
 
     // get HTTP response data
     String primaryServerName = httpAttrInfo.get(primaryServerAttr);
     String secondaryServerName = httpAttrInfo.get(secondaryServerAttr);
     String sessionCreateTime = httpAttrInfo.get(sessionCreateTimeAttr);
+    String countStr = httpAttrInfo.get(countAttr);
 
     // verify that the HTTP response data are not null
     assertAll("Check that WebLogic server and session vars is not null or empty",
         () -> assertNotNull(primaryServerName,"Primary server name shouldn’t be null"),
         () -> assertNotNull(secondaryServerName,"Second server name shouldn’t be null"),
-        () -> assertNotNull(sessionCreateTime,"Session create time shouldn’t be null")
+        () -> assertNotNull(sessionCreateTime,"Session create time shouldn’t be null"),
+        () -> assertNotNull(countStr,"Session state shouldn’t be null")
     );
 
-    logger.info("HTTP response returns the primary server {0} "
-        + "the secondary server {1} and session create time {2}",
-            primaryServerName, secondaryServerName, sessionCreateTime);
+    // map to save server and session info
+    Map<String, String> httpDataInfo = new HashMap<String, String>();
+    httpDataInfo.put(primaryServerAttr, primaryServerName);
+    httpDataInfo.put(secondaryServerAttr, secondaryServerName);
+    httpDataInfo.put(sessionCreateTimeAttr, sessionCreateTime);
+    httpDataInfo.put(countAttr, countStr);
 
-    return Stream.of(arguments(primaryServerName, secondaryServerName, sessionCreateTime));
+    return httpDataInfo;
   }
 
   private static String createAndVerifyDomainImage() {
@@ -376,22 +376,24 @@ class ItSessionMigration implements LoggedTest {
   }
 
   private void shutdownServerUsingServerStartPolicy(String msName) {
-    logger.info("Shutdown the server {0}", msName);
     final String podName = domainUid + "-" + msName;
 
     // shutdown a server by changing the it's serverStartPolicy property.
+    logger.info("Shutdown the server {0}", msName);
     boolean serverStopped = assertDoesNotThrow(() ->
         shutdownManagedServerUsingServerStartPolicy(domainUid, domainNamespace, msName));
     assertTrue(serverStopped,
         String.format("Failed to shutdown server %s ", msName));
 
     // check that the managed server pod shutdown successfylly
-    logger.info("Checking that managed server pod {0} exists in namespace {1}",
+    logger.info("Check that managed server pod {0} stopped in namespace {1}",
         podName, domainNamespace);
     checkPodDoesNotExist(podName, domainUid, domainNamespace);
   }
 
-  private static String buildCurlCommand(String podName, String curlUrlPath, String headerOption) {
+  private static String buildCurlCommand(String podName,
+                                         String curlUrlPath,
+                                         String headerOption) {
     logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
         podName, curlUrlPath, headerOption);
     final String httpHeaderFile = "/u01/oracle/header";
