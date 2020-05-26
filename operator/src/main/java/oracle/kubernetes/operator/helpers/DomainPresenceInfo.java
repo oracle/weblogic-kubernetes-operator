@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,6 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -526,9 +527,9 @@ public class DomainPresenceInfo {
      * @param isServiceOnly true, if only the server service should be created
      */
     public ServerStartupInfo(
-        WlsServerConfig serverConfig,
-        String clusterName,
-        ServerSpec serverSpec,
+        @Nonnull WlsServerConfig serverConfig,
+        @Nullable String clusterName,
+        @Nonnull ServerSpec serverSpec,
         boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
@@ -537,7 +538,7 @@ public class DomainPresenceInfo {
     }
 
     public String getServerName() {
-      return Optional.ofNullable(serverConfig).map(WlsServerConfig::getName).orElse(null);
+      return serverConfig.getName();
     }
 
     public String getClusterName() {
