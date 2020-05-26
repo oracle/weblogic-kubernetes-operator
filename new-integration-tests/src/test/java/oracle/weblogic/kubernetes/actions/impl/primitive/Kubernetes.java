@@ -1635,6 +1635,26 @@ public class Kubernetes implements LoggedTest {
     return list;
   }
 
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    V1JobList listJobs = listJobs(namespace);
+    for (V1Job job : listJobs.getItems()) {
+      if (job != null && job.getMetadata() != null) {
+        if (job.getMetadata().getName().equals(jobName)) {
+          return job;
+        }
+      }
+    }
+    return null;
+  }
+
   // --------------------------- replica sets ---------------------------
 
 
