@@ -7,7 +7,17 @@
 # the pod should be restarted. The script checks a WebLogic Server state file which
 # is updated by the node manager.
 
-function newCopySitCfg() {
+function copySitCfgWhileRunning() {
+  # Helper fn to copy sit cfg xml files to the WL server's domain home.
+  #   - params $1/$2/$3 == 'src_dir tgt_dir fil_prefix'
+  #   - $src_dir files are assumed to start with $fil_prefix and end with .xml
+  #   - copied $tgt_dir files are stripped of their $fil_prefix
+  #   - any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
+  #
+  # This method is called while the server is already running, see 
+  # 'copySitCfgWhileBooting' in 'startServer.sh' for a similar method that
+  # is called just before the server boots.
+
   (
   shopt -s nullglob  # force file matching 'glob' for loops below to run 0 times if 0 matches
   local src_dir=${1?}
@@ -66,9 +76,9 @@ if [ -f ${STATEFILE} ] && [ `grep -c "FAILED_NOT_RESTARTABLE" ${STATEFILE}` -eq 
   exit $RETVAL
 fi
 
-newCopySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
-newCopySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
-newCopySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
-newCopySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
+copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
+copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
+copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 
 exit 0
