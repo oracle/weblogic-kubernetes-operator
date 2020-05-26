@@ -41,6 +41,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
@@ -178,20 +179,20 @@ class ItPodsRestart implements LoggedTest {
             domainUid, domainNamespace));
 
     // verify the admin server pod was restarted
-    checkPodRestarted(adminServerPodName, domainUid, domainNamespace, adminPodOriginalTimestamp);
+    checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodOriginalTimestamp);
 
     // check that the admin server pod is back to be ready
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // verify the managed server pods were restarted and back to be ready
+    // verify the managed server pods were rolling restarted and back to be ready
+    Map<String, String> managedServerPodsWithTimeStamps = new HashMap<>();
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
-      // check the managed server pod was restarted
-      checkPodRestarted(managedServerPodName, domainUid, domainNamespace,
-          managedServerPodOriginalTimestampList.get(i - 1));
-      // check the managed server pod is back to be ready
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
+      managedServerPodsWithTimeStamps.put(managedServerPodName, managedServerPodOriginalTimestampList.get(i - 1));
     }
+    logger.info("Verifying rolling restart occurred for managed servers {0} in namespace {1}",
+        managedServerPodsWithTimeStamps.keySet(), domainNamespace);
+    verifyRollingRestartOccurred(managedServerPodsWithTimeStamps, 1, domainNamespace);
 
     // get the patched domain custom resource
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),

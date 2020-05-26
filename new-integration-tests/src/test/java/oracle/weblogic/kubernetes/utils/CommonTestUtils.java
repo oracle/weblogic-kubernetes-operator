@@ -467,28 +467,6 @@ public class CommonTestUtils {
   }
 
   /**
-   * Check the pod was restarted.
-   *
-   * @param podName name of pod to check
-   * @param domainUid the label the pod is decorated with
-   * @param namespace the namespace in which the pod exists
-   * @param timestamp the pod original creation timestamp
-   */
-  public static void checkPodRestarted(String podName, String domainUid, String namespace, String timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, namespace, timestamp),
-            String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
-                podName, namespace)));
-  }
-
-  /**
    * Create a Docker image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
