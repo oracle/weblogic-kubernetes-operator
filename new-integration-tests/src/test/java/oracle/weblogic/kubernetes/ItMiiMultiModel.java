@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,7 @@ import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.awaitility.core.ConditionFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -45,22 +48,27 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,12 +79,36 @@ class ItMiiMultiModel implements LoggedTest {
 
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  
+
+  private static String adminSecretName = null;
+  private static String encryptionSecretName = null;
+  private static String miiImageMultiModel = null;
   private static String domainUid = "mii-multimodel-cm-domain";
+  private static String domainUid2 = "mii-multimodel-image-cm-domain";
 
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
+
+  // There are four model files in this test case. 
+  // "multi-model-two-ds.yaml" and "multi-model-delete-one-ds.20.yaml" are in a MII image.
+  // "multi-model-two-ds.10.yaml" and "multi-model-two-ds.10.yaml" are in the domain's ConfigMap.
+
+  // Define two DS: "TestDataSource" and "TestDataSource2". Their MaxCapacity are 10 and 15 respectively
+  private static final String modelFileName1 = "multi-model-two-ds.yaml";
+
+  // Delete "TestDataSource2" and define "TestDataSource" with MaxCapacity of 20
+  private static final String modelFileName2 = "multi-model-delete-one-ds.20.yaml";
+
+  // Define two DS: "TestDataSource" and "TestDataSource3". Their MaxCapacity are 30 and 5
+  private static final String modelFileName3 = "multi-model-two-ds.10.yaml";
+
+  // Define one DS "TestDataSource" with MaxCapacity of 40
+  private static final String modelFileName4 = "multi-model-one-ds.20.yaml";
+
+  private static final String dsName = "TestDataSource";
+  private static final String dsName2 = "TestDataSource2";
+  private static final String dsName3 = "TestDataSource3";
 
   /**
    * Perform initialization for all the tests in this class.
@@ -104,6 +136,65 @@ class ItMiiMultiModel implements LoggedTest {
     logger.info("Install an operator in namespace {0}, managing namespace {1}",
         opNamespace, domainNamespace);
     installAndVerifyOperator(opNamespace, domainNamespace);
+
+    logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+            String.format("createSecret failed for %s", REPO_SECRET_NAME));
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        domainNamespace,
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        domainNamespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    logger.info("Create an image with two model files");
+    miiImageMultiModel = createMiiImageAndVerify(
+        String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-multi-model-image-cm"),
+        Arrays.asList(modelFileName1, modelFileName2),
+        Collections.singletonList(MII_BASIC_APP_NAME));
+
+    // push the image to a registry to make it accessible in multi node cluster
+    dockerLoginAndPushImageToRegistry(miiImageMultiModel);
+
+  }
+
+  @Test
+  @DisplayName("Create a domain with two model files in the image")
+  @Slow
+  @MustNotRunInParallel
+  public void testMultiModelInImage() {
+
+    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
+    String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
+    assertEquals("10", maxCapacityValue, 
+        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
+            domainUid, domainNamespace, dsName, maxCapacityValue, "10"));
+
+    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
+            domainUid, domainNamespace, dsName, "40"));
+
+    logger.info("Check DataSource {0} does not exist", dsName2);
+    assertFalse(doesDSExist(adminServerPodName, domainNamespace, dsName2),
+        String.format("Domain %s in namespace %s DataSource %s should not exist",
+            domainUid, domainNamespace, dsName2));
+
+    logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
+            domainUid, domainNamespace, dsName2));
+
   }
 
   /**
@@ -117,52 +208,89 @@ class ItMiiMultiModel implements LoggedTest {
   @MustNotRunInParallel
   public void testCreateMiiDomainWithMultiModeCM() {
 
-    // These two model files define the same DatatSource "TestDataSource". The only
-    // difference is the connection pool's MaxCapacity setting, which are 30 and 40 respectively.
+    // Use two model files modelFileName3 and modelFileName4, which define the same DS "TestDataSource".
+    // The only difference is that the connection pool's MaxCapacity setting is 30 and 40 respectively.
     // According to the ordering rules, the effective value of MaxCapacity should be 40 when both
     // model files are in the domain configuration model's ConfigMap.
     // In addition, the first model defines a second DataSource "TestDataSource3", which should
     // also be in the resultant configuration.
-    final String modelFileName1 = "multi-model-two-ds.10.yaml";
-    final String modelFileName2 = "multi-model-one-ds.20.yaml";
-
-    final String dsName = "TestDataSource";
-    final String dsName3 = "TestDataSource3";
 
     final String configMapName = "ds-multi-model-cm";
 
-    logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-            String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    logger.info("Create domain {0} in namespace {1} with CM {2} that contains WDT models {3} and {4}",
+        domainUid, domainNamespace, configMapName, modelFileName3, modelFileName4);
+    createDomainResourceAndVerify(domainUid, domainNamespace, configMapName);
 
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        adminSecretName,
-        domainNamespace,
-        ADMIN_USERNAME_DEFAULT,
-        ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret failed for %s", adminSecretName));
+    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
+    String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
+    assertEquals("40", maxCapacityValue, 
+        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
+            domainUid, domainNamespace, dsName, maxCapacityValue, "40"));
 
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        encryptionSecretName,
-        domainNamespace,
-        "weblogicenc",
-        "weblogicenc"),
-        String.format("createSecret failed for %s", encryptionSecretName));
+    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
+            domainUid, domainNamespace, dsName, "40"));
 
-    logger.info("Create ConfigMap {0} that contains model files {1} and {2}",
-        configMapName, modelFileName1, modelFileName2);
+    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
+    maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
+    assertEquals("5", maxCapacityValue, 
+        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
+            domainUid, domainNamespace, dsName3, maxCapacityValue, "5"));
 
-    Map<String, String> data = new HashMap<>();
-    addModelFile(data, modelFileName1);
-    addModelFile(data, modelFileName2);
+    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
+            domainUid, domainNamespace, dsName3, "5"));
 
-    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, data);
+  }
+
+  @Test
+  @DisplayName("Create a domain with two model files in the image and two models in CM")
+  @Slow
+  @MustNotRunInParallel
+  public void testMultiModelInImageAndCM() {
+    final String configMapName = "ds-multi-model-image-cm";
+
+    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
+    String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
+    assertEquals("40", maxCapacityValue, 
+        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
+            domainUid, domainNamespace, dsName, maxCapacityValue, "40"));
+
+    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
+            domainUid, domainNamespace, dsName, "40"));
+
+    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
+    maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
+    assertEquals("5", maxCapacityValue, 
+        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
+            domainUid, domainNamespace, dsName3, maxCapacityValue, "5"));
+
+    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
+            domainUid, domainNamespace, dsName3, "5"));
+
+    logger.info("Check DataSource {0} does not exist", dsName2);
+    assertFalse(doesDSExist(adminServerPodName, domainNamespace, dsName2),
+        String.format("Domain %s in namespace %s DataSource %s should not exist",
+            domainUid, domainNamespace, dsName2));
+
+    logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
+            domainUid, domainNamespace, dsName2));
+
+  }
+
+  private void createDomainResourceAndVerify(
+      String domainUid,
+      String domainNamespace,
+      String configMapName) {
+
+    if (configMapName != null) {
+      logger.info("Create ConfigMap {0} that contains model files {1} and {2}",
+          configMapName, modelFileName3, modelFileName4);
+
+      Map<String, String> data = new HashMap<>();
+      addModelFile(data, modelFileName3);
+      addModelFile(data, modelFileName4);
+
+      createConfigMapAndVerify(configMapName, domainUid, domainNamespace, data);
+    } 
 
     logger.info("Create the domain resource {0} in namespace {1} with ConfigMap {2}",
         domainUid, domainNamespace, configMapName);
@@ -193,24 +321,14 @@ class ItMiiMultiModel implements LoggedTest {
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
+  }
 
-    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
-    String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals("40", maxCapacityValue, 
-        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName, maxCapacityValue, "40"));
-
-    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName, "40"));
-
-    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
-    maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
-    assertEquals("5", maxCapacityValue, 
-        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName3, maxCapacityValue, "5"));
-
-    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName3, "5"));
+  @AfterAll
+  public void tearDownAll() {
+    // delete the domain images created in the test class
+    if (miiImageMultiModel != null) {
+      deleteImage(miiImageMultiModel);
+    }
   }
 
   /**
@@ -221,7 +339,7 @@ class ItMiiMultiModel implements LoggedTest {
       String repoSecretName, String encryptionSecretName, 
       int replicaCount, String configMapName) {
     // create the domain CR
-    return new Domain()
+    Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -258,10 +376,12 @@ class ItMiiMultiModel implements LoggedTest {
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")
-                                    .configMap(configMapName)
                                     .runtimeEncryptionSecret(encryptionSecretName))
                         .introspectorJobActiveDeadlineSeconds(300L)));
-
+    if (configMapName != null) {
+      domain.spec().configuration().model().configMap(configMapName);
+    }
+    return domain;
   }
 
   /**
@@ -304,6 +424,35 @@ class ItMiiMultiModel implements LoggedTest {
 
     Command.withParams(params).execute();
     return params.stdout();
+  }
+  
+  /**
+   * Check if a DataSource exists.
+   */
+  private static boolean doesDSExist(
+      String adminServerPodName,
+      String namespace,
+      String dsName) {
+    int adminServiceNodePort = getServiceNodePort(
+        namespace, adminServerPodName + "-external", WLS_DEFAULT_CHANNEL_NAME);
+
+    String command = new StringBuffer()
+        .append("curl --user weblogic:welcome1 ")
+        .append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append("/management/wls/latest/datasources")
+        .append(" --silent --show-error ")
+        .append("| grep " + dsName).toString();
+
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(command)
+        .saveResults(true)
+        .redirect(true);
+
+    assertTrue(Command.withParams(params).execute(),
+        String.format("Failed to check DataSource %s's existence", dsName));
+
+    return params.stdout() != null && params.stdout().length() != 0;
   }
   
   /**

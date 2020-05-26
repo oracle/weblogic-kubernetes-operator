@@ -498,6 +498,47 @@ public class CommonTestUtils {
                                                 String baseImageName,
                                                 String baseImageTag,
                                                 String domainType) {
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final List<String> appSrcDirList = Collections.singletonList(appName);
+   
+    return createMiiImageAndVerify(
+        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   *
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param appSrcDirList list of the sample application source directories used to build sample app ear files
+   * @return image name with tag
+   */
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                List<String> wdtModelList,
+                                                List<String> appSrcDirList) {
+    return createMiiImageAndVerify(
+        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+
+  }
+
+  /**
+   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   *
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param appSrcDirList list of the sample application source directories used to build sample app ear files
+   * @param baseImageName the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag the WebLogic base image tag to be used while creating mii image
+   * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @return image name with tag
+   */
+  public static String createMiiImageAndVerify(String miiImageNameBase,
+                                                List<String> wdtModelList,
+                                                List<String> appSrcDirList,
+                                                String baseImageName,
+                                                String baseImageTag,
+                                                String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -506,13 +547,11 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final String appName = appSrcDirList.get(0);
 
     // build an application archive using what is in resources/apps/APP_NAME
     assertTrue(buildAppArchive(defaultAppParams()
-        .srcDirList(Collections.singletonList(appName))),
+        .srcDirList(appSrcDirList)),
         String.format("Failed to create app archive for %s", appName));
 
     // build the archive list
@@ -541,7 +580,7 @@ public class CommonTestUtils {
               .domainType(domainType)
               .modelImageName(imageName)
               .modelImageTag(imageTag)
-              .modelFiles(modelList)
+              .modelFiles(wdtModelList)
               .modelArchiveFiles(archiveList)
               .wdtVersion(WDT_VERSION)
               .env(env)
