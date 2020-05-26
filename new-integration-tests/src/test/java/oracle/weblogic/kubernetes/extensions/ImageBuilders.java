@@ -185,6 +185,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           deleteImageOcir(token, miiBasicImage);
         }
 
+        if (wdtBasicImage != null) {
+          deleteImageOcir(token, wdtBasicImage);
+        }
+
         // delete operator image
         if (operatorImage != null) {
           deleteImageOcir(token, operatorImage);
