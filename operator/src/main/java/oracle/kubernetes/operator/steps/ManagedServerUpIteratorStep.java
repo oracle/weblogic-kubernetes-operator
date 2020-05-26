@@ -4,10 +4,13 @@
 package oracle.kubernetes.operator.steps;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -25,11 +28,11 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final Collection<ServerStartupInfo> cols;
+  private final Collection<ServerStartupInfo> startupInfos;
 
-  public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> cols, Step next) {
+  public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
     super(next);
-    this.cols = cols;
+    this.startupInfos = startupInfos;
   }
 
   // pre-conditions: DomainPresenceInfo SPI
@@ -47,7 +50,7 @@ public class ManagedServerUpIteratorStep extends Step {
   @Override
   protected String getDetail() {
     List<String> serversToStart = new ArrayList<>();
-    for (ServerStartupInfo ssi : cols) {
+    for (ServerStartupInfo ssi : startupInfos) {
       serversToStart.add(ssi.serverConfig.getName());
     }
     return String.join(",", serversToStart);
@@ -55,44 +58,67 @@ public class ManagedServerUpIteratorStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    Collection<StepAndPacket> startDetails = new ArrayList<>();
-    Map<String, StepAndPacket> rolling = new ConcurrentHashMap<>();
-    packet.put(ProcessingConstants.SERVERS_TO_ROLL, rolling);
-
-    for (ServerStartupInfo ssi : cols) {
-      Packet p = packet.clone();
-      p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
-      p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
-      p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
-
-      p.put(ProcessingConstants.SERVER_NAME, ssi.serverConfig.getName());
-
-      startDetails.add(new StepAndPacket(bringManagedServerUp(ssi, null), p));
+    if (startupInfos.isEmpty()) {
+      return doNext(packet);
     }
 
     if (LOGGER.isFineEnabled()) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-
-      Domain dom = info.getDomain();
-
-      Collection<String> serverList = new ArrayList<>();
-      for (ServerStartupInfo ssi : cols) {
-        serverList.add(ssi.serverConfig.getName());
-      }
-      LOGGER.fine(
-          "Starting or validating servers for domain with UID: "
-              + dom.getDomainUid()
-              + ", server list: "
-              + serverList);
+      LOGGER.fine(String.format("Starting or validating servers for domain with UID: %s, server list: %s",
+          getDomainUid(packet), getServerNames(startupInfos)));
     }
 
-    if (startDetails.isEmpty()) {
-      return doNext(packet);
-    }
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    Domain domain = info.getDomain();
+
+    packet.put(ProcessingConstants.SERVERS_TO_ROLL, new ConcurrentHashMap<String, StepAndPacket>());
+    Collection<StepAndPacket> startDetails =
+        startupInfos.stream()
+            .filter(ssi -> canServerStartsConcurrently(ssi, domain))
+            .map(ssi -> createManagedServerUpDetails(packet, ssi)).collect(Collectors.toList());
+
+    getSequentialServerStarts(startupInfos, packet, domain).values()
+        .forEach(servers -> startDetails.add(new StepAndPacket(new StartServersSequentially(servers), packet)));
+
     return doNext(
-        DomainStatusUpdater.createStatusUpdateStep(
-            new StartManagedServersStep(startDetails, getNext())),
+        DomainStatusUpdater.createStatusUpdateStep(new StartManagedServersStep(startDetails, getNext())),
         packet);
+  }
+
+  private Map<String, List<StepAndPacket>> getSequentialServerStarts(Collection<ServerStartupInfo> startupInfos,
+      Packet packet, Domain domain) {
+    Map<String, List<StepAndPacket>> clusterStartupInfos = new HashMap<>();
+    startupInfos.stream()
+        .filter(ssi -> !canServerStartsConcurrently(ssi, domain))
+        .forEach(ssi ->
+            clusterStartupInfos.computeIfAbsent(ssi.getClusterName(), l -> new ArrayList())
+                .add(createManagedServerUpDetails(packet, ssi)));
+
+    return clusterStartupInfos;
+  }
+
+  private String getDomainUid(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class).getDomain().getDomainUid();
+  }
+
+  private List<String> getServerNames(Collection<ServerStartupInfo> startupInfos) {
+    return startupInfos.stream().map(ServerStartupInfo::getServerName).collect(Collectors.toList());
+  }
+
+  private boolean canServerStartsConcurrently(ServerStartupInfo ssi, Domain dom) {
+    return ssi.getClusterName() == null || dom.isAllowConcurrentScaleUp(ssi.getClusterName());
+  }
+
+  private StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
+    return new StepAndPacket(bringManagedServerUp(ssi, null), createPacketForServer(packet, ssi));
+  }
+
+  private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
+    Packet p = packet.clone();
+    p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
+    p.put(ProcessingConstants.SERVER_NAME, ssi.getServerName());
+    p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
+    p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
+    return p;
   }
 
   static class StartManagedServersStep extends Step {
@@ -109,4 +135,23 @@ public class ManagedServerUpIteratorStep extends Step {
     }
   }
 
+  static class StartServersSequentially extends Step {
+
+    final List<StepAndPacket> serversToStart;
+
+    public StartServersSequentially(List<StepAndPacket> serversToStart) {
+      super(null);
+      this.serversToStart = serversToStart;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Collection<StepAndPacket> servers = Arrays.asList(serversToStart.remove(0));
+      if (servers.isEmpty()) {
+        return doNext(packet);
+      } else {
+        return doForkJoin(this, packet, servers);
+      }
+    }
+  }
 }

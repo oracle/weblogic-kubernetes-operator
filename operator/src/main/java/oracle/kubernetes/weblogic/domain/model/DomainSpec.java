@@ -30,6 +30,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_CONCURRENT_SCALE_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
@@ -170,6 +171,18 @@ public class DomainSpec extends BaseConfiguration {
       "The number of managed servers to run in any cluster that does not specify a replica count.")
   @Range(minimum = 0)
   private Integer replicas;
+
+  @Description("Whether to allow the number of replicas to drop below the minimum "
+      + "dynamic cluster size configured in the WebLogic domain home configuration, "
+      + "if this is not specified at the cluster level."
+  )
+  private Boolean allowReplicasBelowDynClusterSize;
+
+  @Description(
+      "Whether to allow the operator to start up more than one managed servers at the same time "
+      + "during scale up operation if this is not specify at the cluster level."
+  )
+  private Boolean allowConcurrentScaleUp;
 
   /**
    * Whether the domain home is part of the image.
@@ -626,6 +639,10 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  public Boolean isAllowConcurrentScaleUp() {
+    return allowConcurrentScaleUp;
+  }
+
   @Nullable
   String getConfigOverrides() {
     return configOverrides;
@@ -854,8 +871,24 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
-    return cluster == null ? DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE :
-        cluster.isAllowReplicasBelowMinDynClusterSize();
+    return hasAllowReplicasBelowDynClusterSize(cluster)
+        ? cluster.isAllowReplicasBelowMinDynClusterSize()
+        : Optional.ofNullable(allowReplicasBelowDynClusterSize)
+            .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+  }
+
+  private boolean hasAllowReplicasBelowDynClusterSize(Cluster cluster) {
+    return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
+  }
+
+  private boolean isAllowConcurrentScaleUpFor(Cluster cluster) {
+    return hasAllowConcurrentScaleUp(cluster)
+        ? cluster.isAllowConcurrentScaleUp()
+        : Optional.ofNullable(allowConcurrentScaleUp).orElse(DEFAULT_ALLOW_CONCURRENT_SCALE_UP);
+  }
+
+  private boolean hasAllowConcurrentScaleUp(Cluster cluster) {
+    return cluster != null && cluster.isAllowConcurrentScaleUp() != null;
   }
 
   public AdminServer getAdminServer() {
@@ -926,6 +959,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
       return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
+    }
+
+    @Override
+    public boolean isAllowConcurrentScaleUp(String clusterName) {
+      return isAllowConcurrentScaleUpFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {

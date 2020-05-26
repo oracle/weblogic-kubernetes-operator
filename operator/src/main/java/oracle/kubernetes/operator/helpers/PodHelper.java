@@ -257,6 +257,11 @@ public class PodHelper {
     }
 
     @Override
+    boolean getWaitForPodReadyForCreatePod() {
+      return false;
+    }
+
+    @Override
     V1Pod withNonHashedElements(V1Pod pod) {
       V1Pod v1Pod = super.withNonHashedElements(pod);
       getContainer(v1Pod).ifPresent(c -> c.addEnvItem(internalCertEnvValue()));
@@ -314,11 +319,13 @@ public class PodHelper {
 
     private final String clusterName;
     private final Packet packet;
+    private final boolean waitForPodReadyForCreatePod;
 
     ManagedPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       this.packet = packet;
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
+      waitForPodReadyForCreatePod = ! getDomain().isAllowConcurrentScaleUp(clusterName);
 
       init();
     }
@@ -403,6 +410,11 @@ public class PodHelper {
     @Override
     protected String getPodReplacedMessageKey() {
       return MessageKeys.MANAGED_POD_REPLACED;
+    }
+
+    @Override
+    boolean getWaitForPodReadyForCreatePod() {
+      return waitForPodReadyForCreatePod;
     }
 
     @Override

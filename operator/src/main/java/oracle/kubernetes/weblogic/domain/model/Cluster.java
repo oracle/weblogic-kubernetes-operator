@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Map;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -13,7 +12,6 @@ import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -59,14 +57,19 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Expose
   private KubernetesResource clusterService = new KubernetesResource();
 
-  /** Whether to allow the number of replicas to drop below the minimum dynamic cluster
-   *  size configured in the WebLogic domain home configuration. Default is true. */
   @Description("If true (the default), then the number of replicas is allowed to drop below the "
       + "minimum dynamic cluster size configured in the WebLogic domain home configuration. "
       + "Otherwise, the operator will ensure that the number of replicas is not less than "
       + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only."
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
+
+  @Description("If true (the default), the operator may start up more than one managed server "
+       + "in this cluster at the same time during scale up operations. Otherwise, the operator "
+       + "will wait until a managed server to be in Ready state before starting up the next "
+       + "one when scaling up more than one server."
+  )
+  private Boolean allowConcurrentScaleUp;
 
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
@@ -103,13 +106,27 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
    * @return whether to allow number of replicas to drop below the minimum dynamic cluster size
    *     configured in the WebLogic domain home configuration.
    */
-  public boolean isAllowReplicasBelowMinDynClusterSize() {
-    return Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
-        .orElse(KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+  public Boolean isAllowReplicasBelowMinDynClusterSize() {
+    return allowReplicasBelowMinDynClusterSize;
   }
 
-  public void setAllowReplicasBelowMinDynClusterSize(boolean value) {
+  public void setAllowReplicasBelowMinDynClusterSize(Boolean value) {
     allowReplicasBelowMinDynClusterSize = value;
+  }
+
+  /**
+   * Whether to allow the operator to start more than one managed servers at * the same
+   *     time during scale up operation.
+   *
+   * @return whether to allow the operator to start more than one managed servers at * the same
+   *     time during scale up operation.
+   */
+  public Boolean isAllowConcurrentScaleUp() {
+    return allowConcurrentScaleUp;
+  }
+
+  public void setAllowConcurrentScaleUp(Boolean value) {
+    allowConcurrentScaleUp = value;
   }
 
   @Nullable

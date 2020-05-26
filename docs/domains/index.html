@@ -1041,6 +1041,10 @@ window.onload = function() {
           "description": "Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.",
           "$ref": "#/definitions/KubernetesResource"
         },
+        "allowConcurrentScaleUp": {
+          "description": "If true (the default), the operator may starts up more than one managed server in the cluster at the same time during scale up operation. Otherwise, the operator will start up managed servers one at a time.",
+          "type": "boolean"
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED.",
           "type": "string",
@@ -1190,6 +1194,10 @@ window.onload = function() {
           "description": "Experimental feature configurations.",
           "$ref": "#/definitions/Experimental"
         },
+        "allowConcurrentScaleUp": {
+          "description": "Whether to allow the operator to start up more than one managed servers at the same time during scale up operation if this is not specify at the cluster level.",
+          "type": "boolean"
+        },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
@@ -1259,6 +1267,10 @@ window.onload = function() {
           "description": "The number of managed servers to run in any cluster that does not specify a replica count.",
           "type": "number",
           "minimum": 0.0
+        },
+        "allowReplicasBelowDynClusterSize": {
+          "description": "Whether to allow the number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration, if this is not specified at the cluster level.",
+          "type": "boolean"
         },
         "domainHomeInImage": {
           "deprecated": "true",

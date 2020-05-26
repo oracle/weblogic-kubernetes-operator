@@ -17,6 +17,8 @@ DomainSpec is a description of a domain.
 | Name | Type | Description |
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Configuration for the Administration Server. |
+| `allowConcurrentScaleUp` | Boolean | Whether to allow the operator to start up more than one managed servers at the same time during scale up operation if this is not specify at the cluster level. |
+| `allowReplicasBelowDynClusterSize` | Boolean | Whether to allow the number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration, if this is not specified at the cluster level. |
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
 | `configOverrides` | string | Deprecated. Use configuration.overridesConfigMap instead. Ignored if configuration.overridesConfigMap is specified. The name of the config map for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified. A list of names of the secrets for optional WebLogic configuration overrides. |
@@ -77,6 +79,7 @@ An element representing a cluster in the domain configuration.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `allowConcurrentScaleUp` | Boolean | If true (the default), the operator may start up more than one managed server in this cluster at the same time during scale up operations. Otherwise, the operator will wait until a managed server to be in Ready state before starting up the next one when scaling up more than one server. |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | If true (the default), then the number of replicas is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration. Otherwise, the operator will ensure that the number of replicas is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. |
 | `clusterName` | string | The name of this cluster. Required |
 | `clusterService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for the WebLogic cluster. |

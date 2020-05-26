@@ -309,6 +309,10 @@ public class Domain {
     return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
   }
 
+  public boolean isAllowConcurrentScaleUp(String clusterName) {
+    return getEffectiveConfigurationFactory().isAllowConcurrentScaleUp(clusterName);
+  }
+
 
   /**
    * DomainSpec is a description of a domain.
