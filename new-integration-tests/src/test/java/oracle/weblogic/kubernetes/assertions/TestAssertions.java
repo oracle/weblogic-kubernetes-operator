@@ -16,6 +16,8 @@ import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.Pod;
+import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 
 /**
@@ -76,6 +78,41 @@ public class TestAssertions {
   }
 
   /**
+   * Check if a pod's restartVersion has been updated. 
+   *
+   * @param podName   name of the pod to check
+   * @param domainUid WebLogic domain uid in which the pod belongs
+   * @param namespace in which the pod is running
+   * @param expectedRestartVersion restartVersion that is expected
+   * @return true if the pod's restartVersion has been updated
+   */
+  public static boolean podRestartVersionUpdated(
+      String podName,
+      String domainUid,
+      String namespace,
+      String expectedRestartVersion
+  ) throws ApiException {
+    return Kubernetes.podRestartVersionUpdated(namespace, domainUid, podName, expectedRestartVersion);
+  }
+
+
+  /**
+   * Check if a WebLogic domain custom resource has been patched with a new WebLogic credentials secret.
+   *
+   * @param domainUid ID of the domain resource
+   * @param namespace Kubernetes namespace in which the domain custom resource object exists
+   * @param secretName name of the secret that was used to patch the domain resource
+   * @return true if the domain is patched correctly
+   */
+  public static Callable<Boolean> domainResourceCredentialsSecretPatched(
+      String domainUid,
+      String namespace,
+      String secretName
+  ) {
+    return () -> Domain.domainResourceCredentialsSecretPatched(domainUid, namespace, secretName);
+  }
+
+  /**
    * Check if a WebLogic domain custom resource has been patched with a new image.
    *
    * @param domainUid ID of the domain resource
@@ -88,7 +125,7 @@ public class TestAssertions {
       String namespace,
       String image
   ) {
-    return Domain.domainResourceImagePatched(domainUid, namespace, image);
+    return () -> Domain.domainResourceImagePatched(domainUid, namespace, image);
   }
 
   /**
@@ -121,7 +158,7 @@ public class TestAssertions {
    * @return true if the pod exists in the namespace otherwise false
    */
   public static Callable<Boolean> podExists(String podName, String domainUid, String namespace) {
-    return () -> Kubernetes.doesPodExist(namespace, domainUid, podName);
+    return Pod.podExists(podName, domainUid, namespace);
   }
 
   /**
@@ -133,7 +170,7 @@ public class TestAssertions {
    * @return true if the pod does not exist in the namespace otherwise false
    */
   public static Callable<Boolean> podDoesNotExist(String podName, String domainUid, String namespace) {
-    return () -> !Kubernetes.doesPodExist(namespace, domainUid, podName);
+    return Pod.podDoesNotExist(podName, domainUid, namespace);
   }
 
   /**
@@ -145,7 +182,7 @@ public class TestAssertions {
    * @return true if the pod is running otherwise false
    */
   public static Callable<Boolean> podReady(String podName, String domainUid, String namespace) {
-    return () -> Kubernetes.isPodReady(namespace, domainUid, podName);
+    return Pod.podReady(namespace, domainUid, podName);
   }
 
   /**
@@ -157,8 +194,20 @@ public class TestAssertions {
    * @return true if the pod is terminating otherwise false
    */
   public static Callable<Boolean> podTerminating(String podName, String domainUid, String namespace) {
-    return () -> Kubernetes.isPodTerminating(namespace, domainUid, podName);
+    return Pod.podTerminating(namespace, domainUid, podName);
   }
+
+  /**
+   * Verify pods are restarted in a rolling fashion with not more than maxUnavailable pods are restarted concurrently.
+   * @param pods map of pod names with its creation time stamps
+   * @param maxUnavailable number of pods can concurrently restart at the same time
+   * @param namespace name of the namespace in which the pod restart status to be checked
+   * @return true if pods are restarted in a rolling fashion
+   */
+  public static boolean verifyRollingRestartOccurred(Map<String, String> pods, int maxUnavailable, String namespace) {
+    return Pod.verifyRollingRestartOccurred(pods, maxUnavailable, namespace);
+  }
+
 
   /**
    * Check is a service exists in given namespace.
@@ -168,8 +217,11 @@ public class TestAssertions {
    * @param namespace   in which the service is running
    * @return true if the service exists otherwise false
    */
-  public static Callable<Boolean> serviceExists(String serviceName, Map<String, String> label, String namespace) {
-    return () -> Kubernetes.doesServiceExist(serviceName, label, namespace);
+  public static Callable<Boolean> serviceExists(
+      String serviceName,
+      Map<String, String> label,
+      String namespace) {
+    return Service.serviceExists(serviceName, label, namespace);
   }
 
   /**
@@ -246,13 +298,13 @@ public class TestAssertions {
   /**
    * Check if an application is accessible inside a WebLogic server pod using
    * "kubectl exec" command.
-   * 
+   *
    * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
    * @param appPath path to access the application
    * @param expectedResponse the expected response from the application
-   * @return true if the command succeeds 
+   * @return true if the command succeeds
    */
   public static boolean appAccessibleInPodKubectl(
       String namespace,
@@ -265,15 +317,55 @@ public class TestAssertions {
   }
 
   /**
+   * Check if the given WebLogic credentials are valid by using the credentials to 
+   * invoke a RESTful Management Services command.
+   *
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @return true if the RESTful Management Services command succeeded
+   */
+  public static Callable<Boolean> credentialsValid(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    return () -> Domain.credentialsValid(host, podName, namespace, username, password);
+  }
+
+  /**
+   * Check if the given WebLogic credentials are NOT valid by using the credentials to 
+   * invoke a RESTful Management Services command.
+   *
+   * @param host hostname of the admin server pod
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @return true if the RESTful Management Services command failed with exitCode 401
+   */
+  public static Callable<Boolean> credentialsNotValid(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password) {
+    return () -> Domain.credentialsNotValid(host, podName, namespace, username, password);
+  }
+
+  /**
    * Check if an application is accessible inside a WebLogic server pod using
    * Kubernetes Java client API.
-   * 
+   *
    * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
    * @param port internal port of the managed server running in the pod
    * @param appPath path to access the application
    * @param expectedResponse the expected response from the application
-   * @return true if the command succeeds 
+   * @return true if the command succeeds
    */
   public static boolean appAccessibleInPod(
       String namespace,
@@ -293,7 +385,7 @@ public class TestAssertions {
    * @param port internal port of the managed server running in the pod
    * @param appPath path to access the application
    * @param expectedResponse the expected response from the application
-   * @return true if the command succeeds 
+   * @return true if the command succeeds
    */
   public static boolean appNotAccessibleInPod(
       String namespace,

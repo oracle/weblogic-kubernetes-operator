@@ -322,7 +322,7 @@ public class TestActions {
    * @param params - the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
-  public static boolean createMiiImage(WitParams params) {
+  public static boolean createImage(WitParams params) {
     return
         WebLogicImageTool
             .withParams(params)
@@ -714,6 +714,21 @@ public class TestActions {
   public static String getPodLog(String podName, String namespace) throws ApiException {
     return Pod.getPodLog(podName, namespace);
   }
+  
+  /**
+   * Get the weblogic.domainRestartVersion label from a given pod.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName  name of the pod
+   * @return value of weblogic.domainRestartVersion label, null if unset or the pod is not available
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static String getPodRestartVersion(String namespace, String labelSelector, String podName)
+      throws ApiException {
+    return Kubernetes.getPodRestartVersion(namespace, labelSelector, podName);
+  }
+
 
   // ------------------------ where does this go  -------------------------
 
