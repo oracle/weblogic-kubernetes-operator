@@ -27,15 +27,12 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -64,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model-in-image domain with a ConfigMap that contains multiple WDT models")
 @IntegrationTest
 class ItMiiMultiModel implements LoggedTest {
@@ -114,15 +110,16 @@ class ItMiiMultiModel implements LoggedTest {
   @Test
   @DisplayName("Create model-in-image domain with a ConfigMap that contains multiple model files")
   @Slow
-  @MustNotRunInParallel
   public void testCreateMiiDomainWithMultiModeCM() {
 
-    // These two model files define the same DatatSource "TestDataSource". The only
-    // difference is the connection pool's MaxCapacity setting, which are 30 and 40 respectively.
-    // According to the ordering rules, the effective value of MaxCapacity should be 40 when both
-    // model files are in the domain configuration model's ConfigMap.
+    // These two model files define the same DatatSource "TestDataSource". The only difference
+    // is the connection pool's MaxCapacity setting, which are 30 and 40 respectively.
+    // According to the ordering rules, when both of the files are in the domain's ConfigMap,
+    // the model files will be passed to WebLogic Deploy Tooling in the order of 
+    // "multi-model-two-ds.10.yaml" and "multi-model-one-ds.20.yaml". As a result, the effective
+    // value of MaxCapacity should be 40 for "TestDataSource".
     // In addition, the first model defines a second DataSource "TestDataSource3", which should
-    // also be in the resultant configuration.
+    // also be in the resultant configuration as it is in the first model.
     final String modelFileName1 = "multi-model-two-ds.10.yaml";
     final String modelFileName2 = "multi-model-one-ds.20.yaml";
 
@@ -176,16 +173,16 @@ class ItMiiMultiModel implements LoggedTest {
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
