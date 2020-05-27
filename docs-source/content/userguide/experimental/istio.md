@@ -102,7 +102,7 @@ introspect job will automatcially create configuration overrrides with the neces
       you specified as the admin port.
     * A channel called `istio-ldap` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the LDAP protocol enabled.
-    * The introspect job will not create any configuration network channel for external access for you.  YOu can create a channel called `istio-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your regular domain configuration.
+    * The introspect job will not create any configuration network channel for external access for you.  You can create a channel called `istio-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your regular WebLogic domain configuration.
 * In the server template that is used to create Managed Servers in clusters:
     * A channel called `istio-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting) and the public address
