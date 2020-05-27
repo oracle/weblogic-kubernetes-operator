@@ -547,16 +547,20 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
-    final String appName = appSrcDirList.get(0);
+    List<String> archiveList = null;
 
-    // build an application archive using what is in resources/apps/APP_NAME
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDirList(appSrcDirList)),
-        String.format("Failed to create app archive for %s", appName));
+    if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
+      final String appName = appSrcDirList.get(0);
 
-    // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-    final List<String> archiveList = Collections.singletonList(zipFile);
+      // build an application archive using what is in resources/apps/APP_NAME
+      assertTrue(buildAppArchive(defaultAppParams()
+          .srcDirList(appSrcDirList)),
+          String.format("Failed to create app archive for %s", appName));
+
+      // build the archive list
+      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+      archiveList = Collections.singletonList(zipFile);
+    }
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -592,6 +596,7 @@ public class CommonTestUtils {
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s does not exist", image));
 
+    logger.info("Image {0} are created successfully", image);
     return image;
   }
 

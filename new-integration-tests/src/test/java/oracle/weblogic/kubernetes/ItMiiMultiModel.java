@@ -29,16 +29,13 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -72,7 +69,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model-in-image domain with a ConfigMap that contains multiple WDT models")
 @IntegrationTest
 class ItMiiMultiModel implements LoggedTest {
@@ -83,11 +79,7 @@ class ItMiiMultiModel implements LoggedTest {
   private static String adminSecretName = null;
   private static String encryptionSecretName = null;
   private static String miiImageMultiModel = null;
-  private static String domainUid = "mii-multimodel-cm-domain";
-  private static String domainUid2 = "mii-multimodel-image-cm-domain";
 
-  private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-  private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
 
   // There are four model files in this test case. 
@@ -100,7 +92,7 @@ class ItMiiMultiModel implements LoggedTest {
   // Delete "TestDataSource2" and define "TestDataSource" with MaxCapacity of 20
   private static final String modelFileName2 = "multi-model-delete-one-ds.20.yaml";
 
-  // Define two DS: "TestDataSource" and "TestDataSource3". Their MaxCapacity are 30 and 5
+  // Define two DS: "TestDataSource" and "TestDataSource3". Their MaxCapacity are 30 and 5 respectively
   private static final String modelFileName3 = "multi-model-two-ds.10.yaml";
 
   // Define one DS "TestDataSource" with MaxCapacity of 40
@@ -163,8 +155,9 @@ class ItMiiMultiModel implements LoggedTest {
 
     logger.info("Create an image with two model files");
     miiImageMultiModel = createMiiImageAndVerify(
-        String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-multi-model-image-cm"),
-        Arrays.asList(modelFileName1, modelFileName2),
+        String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-multi-model-image"),
+        //Arrays.asList(MODEL_DIR + "/" + modelFileName1, MODEL_DIR + "/" + modelFileName2),
+        Arrays.asList(MODEL_DIR + "/" + modelFileName1),
         Collections.singletonList(MII_BASIC_APP_NAME));
 
     // push the image to a registry to make it accessible in multi node cluster
@@ -175,8 +168,17 @@ class ItMiiMultiModel implements LoggedTest {
   @Test
   @DisplayName("Create a domain with two model files in the image")
   @Slow
-  @MustNotRunInParallel
-  public void testMultiModelInImage() {
+  public void testMiiWithMultiModelInImage() {
+    final String domainUid = "mii-mm-image-domain";
+    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+
+    logger.info("Create domain {0} in namespace {1} with image {2} that contains WDT models {3} and {4}",
+        domainUid, domainNamespace, miiImageMultiModel, modelFileName1, modelFileName2);
+    createDomainResourceAndVerify(
+        domainUid, domainNamespace, adminServerPodName,
+        managedServerPrefix, miiImageMultiModel, null);
+    // managedServerPrefix, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, null);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -202,11 +204,13 @@ class ItMiiMultiModel implements LoggedTest {
    * Create a WebLogic domain with a Kubernetes ConfigMap that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected.
    */
-  @Test
+  //@Test
   @DisplayName("Create model-in-image domain with a ConfigMap that contains multiple model files")
   @Slow
-  @MustNotRunInParallel
-  public void testCreateMiiDomainWithMultiModeCM() {
+  public void testMiiWithMultiModeCM() {
+    final String domainUid = "mii-mm-cm-domain";
+    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
 
     // Use two model files modelFileName3 and modelFileName4, which define the same DS "TestDataSource".
     // The only difference is that the connection pool's MaxCapacity setting is 30 and 40 respectively.
@@ -219,7 +223,9 @@ class ItMiiMultiModel implements LoggedTest {
 
     logger.info("Create domain {0} in namespace {1} with CM {2} that contains WDT models {3} and {4}",
         domainUid, domainNamespace, configMapName, modelFileName3, modelFileName4);
-    createDomainResourceAndVerify(domainUid, domainNamespace, configMapName);
+    createDomainResourceAndVerify(
+        domainUid, domainNamespace, adminServerPodName,
+        managedServerPrefix, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -241,12 +247,18 @@ class ItMiiMultiModel implements LoggedTest {
 
   }
 
-  @Test
+  //@Test
   @DisplayName("Create a domain with two model files in the image and two models in CM")
   @Slow
-  @MustNotRunInParallel
-  public void testMultiModelInImageAndCM() {
+  public void testMiiWithMultiModelInImageAndCM() {
+    final String domainUid = "mii-mm-image-cm-domain";
+    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
     final String configMapName = "ds-multi-model-image-cm";
+
+    createDomainResourceAndVerify(
+        domainUid, domainNamespace, adminServerPodName,
+        managedServerPrefix, miiImageMultiModel, configMapName);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -279,6 +291,9 @@ class ItMiiMultiModel implements LoggedTest {
   private void createDomainResourceAndVerify(
       String domainUid,
       String domainNamespace,
+      String adminServerPodName,
+      String managedServerPrefix,
+      String miiImage,
       String configMapName) {
 
     if (configMapName != null) {
@@ -295,7 +310,7 @@ class ItMiiMultiModel implements LoggedTest {
     logger.info("Create the domain resource {0} in namespace {1} with ConfigMap {2}",
         domainUid, domainNamespace, configMapName);
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
-        REPO_SECRET_NAME, encryptionSecretName, replicaCount, configMapName);
+        REPO_SECRET_NAME, encryptionSecretName, replicaCount, miiImage, configMapName);
     
     createDomainAndVerify(domain, domainNamespace);
 
@@ -304,16 +319,16 @@ class ItMiiMultiModel implements LoggedTest {
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
@@ -337,7 +352,7 @@ class ItMiiMultiModel implements LoggedTest {
   private Domain createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, 
-      int replicaCount, String configMapName) {
+      int replicaCount, String miiImage, String configMapName) {
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
@@ -348,7 +363,7 @@ class ItMiiMultiModel implements LoggedTest {
             .spec(new DomainSpec()
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
-                    .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+                    .image(miiImage)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(repoSecretName))
                     .webLogicCredentialsSecret(new V1SecretReference()
