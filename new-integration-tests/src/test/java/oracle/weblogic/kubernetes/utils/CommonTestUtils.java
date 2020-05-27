@@ -752,4 +752,24 @@ public class CommonTestUtils {
       }
     }
   }
+
+  /**
+   * Get the PodCreationTimestamp of a pod in a namespace.
+   * 
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param podName name of the pod 
+   * @return PodCreationTimestamp of the pod
+   */
+  public static String getPodCreationTime(String namespace, String podName) {
+    String podCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
+            String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
+    assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
+    logger.info("PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
+        namespace,
+        podName,
+        podCreationTime);
+    return podCreationTime;
+  }
+
 }
