@@ -78,7 +78,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   private String miiModelSecretsHash;
   private String miiDomainZipHash;
   private String domainRestartVersion;
-  private String domainIntrospectVersion;
   private String domainImageName;
 
   PodStepContext(Step conflictStep, Packet packet) {
@@ -87,7 +86,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     miiModelSecretsHash = (String)packet.get(ProcessingConstants.SECRETS_HASH);
     miiDomainZipHash = (String)packet.get(ProcessingConstants.DOMAIN_HASH);
-    domainIntrospectVersion = (String)packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
     domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
     domainImageName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
@@ -506,8 +504,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from INIT "
         + domainRestartVersion);
-    LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from INIT "
-        + domainIntrospectVersion);
     LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from serverspec "
         + getServerSpec().getDomainRestartVersion());
     LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from spec "
@@ -520,7 +516,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
         .putLabelsItem(
             LabelConstants.DOMAINRESTARTVERSION_LABEL, getServerSpec().getDomainRestartVersion())
-        .putLabelsItem(LabelConstants.DOMAININTROSPECTVERSION_LABEL, getDomain().getIntrospectVersion())
         .putLabelsItem(
             LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
         .putLabelsItem(
