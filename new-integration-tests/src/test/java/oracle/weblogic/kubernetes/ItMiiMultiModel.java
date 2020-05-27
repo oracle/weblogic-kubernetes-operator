@@ -66,7 +66,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -232,7 +231,6 @@ class ItMiiMultiModel implements LoggedTest {
     createDomainResourceAndVerify(
         domainUid, domainNamespace, adminServerPodName,
         managedServerPrefix, miiImageMultiModel, null);
-    // managedServerPrefix, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, null);
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -244,7 +242,7 @@ class ItMiiMultiModel implements LoggedTest {
             domainUid, domainNamespace, dsName, expectedMaxCapacity));
 
     logger.info("Check DataSource {0} does not exist", dsName2);
-    assertFalse(doesDSExist(adminServerPodName, domainNamespace, dsName2),
+    assertTrue(dsDoesNotExist(adminServerPodName, domainNamespace, dsName2),
         String.format("Domain %s in namespace %s DataSource %s should not exist",
             domainUid, domainNamespace, dsName2));
 
@@ -253,7 +251,7 @@ class ItMiiMultiModel implements LoggedTest {
 
   }
 
-  @Test
+  //@Test
   @DisplayName("Create a domain with two model files in the image and two models in CM")
   @Slow
   public void testMiiWithMultiModelInImageAndCM() {
@@ -287,7 +285,7 @@ class ItMiiMultiModel implements LoggedTest {
             domainUid, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
     logger.info("Check DataSource {0} does not exist", dsName2);
-    assertFalse(doesDSExist(adminServerPodName, domainNamespace, dsName2),
+    assertTrue(dsDoesNotExist(adminServerPodName, domainNamespace, dsName2),
         String.format("Domain %s in namespace %s DataSource %s should not exist",
             domainUid, domainNamespace, dsName2));
 
@@ -452,7 +450,7 @@ class ItMiiMultiModel implements LoggedTest {
   /**
    * Check if a DataSource exists.
    */
-  private static boolean doesDSExist(
+  private static boolean dsDoesNotExist(
       String adminServerPodName,
       String namespace,
       String dsName) {
@@ -463,8 +461,9 @@ class ItMiiMultiModel implements LoggedTest {
         .append("curl --user weblogic:welcome1 ")
         .append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
         .append("/management/wls/latest/datasources")
-        .append(" --silent --show-error ")
-        .append("| grep " + dsName).toString();
+        .append("/id/" + dsName)
+        .append(" --silent --show-error ").toString();
+    //.append("| grep name ").toString();
 
     CommandParams params = Command
         .defaultCommandParams()
@@ -474,8 +473,10 @@ class ItMiiMultiModel implements LoggedTest {
 
     assertTrue(Command.withParams(params).execute(),
         String.format("Failed to check DataSource %s's existence", dsName));
+    String expectedStr = String.format("'%s' was not found", dsName);
+    logger.info("dsDoesNotExist: stdout = " + params.stdout() + " execpted {0}", expectedStr);
 
-    return params.stdout() != null && params.stdout().length() != 0;
+    return params.stdout() != null && params.stdout().contains(expectedStr);
   }
   
   /**

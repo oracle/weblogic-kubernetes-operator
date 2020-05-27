@@ -51,8 +51,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -577,18 +577,19 @@ public class CommonTestUtils {
 
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createMiiImage(
-          new WitParams()
-              .baseImageName(baseImageName)
-              .baseImageTag(baseImageTag)
-              .domainType(domainType)
-              .modelImageName(imageName)
-              .modelImageTag(imageTag)
-              .modelFiles(wdtModelList)
-              .modelArchiveFiles(archiveList)
-              .wdtVersion(WDT_VERSION)
-              .env(env)
-              .redirect(true));
+    boolean result = createImage(
+        new WitParams()
+            .baseImageName(baseImageName)
+            .baseImageTag(baseImageTag)
+            .domainType(domainType)
+            .modelImageName(imageName)
+            .modelImageTag(imageTag)
+            .modelFiles(wdtModelList)
+            .modelArchiveFiles(archiveList)
+            .wdtModelOnly(true)
+            .wdtVersion(WDT_VERSION)
+            .env(env)
+            .redirect(true));
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
@@ -795,4 +796,24 @@ public class CommonTestUtils {
       }
     }
   }
+
+  /**
+   * Get the PodCreationTimestamp of a pod in a namespace.
+   * 
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param podName name of the pod 
+   * @return PodCreationTimestamp of the pod
+   */
+  public static String getPodCreationTime(String namespace, String podName) {
+    String podCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
+            String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
+    assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
+    logger.info("PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
+        namespace,
+        podName,
+        podCreationTime);
+    return podCreationTime;
+  }
+
 }
