@@ -67,6 +67,10 @@
 
 # Initialize globals
 
+# using "-" instead of ":-" in case proxy vars are explicitly set to "".
+https_proxy=${https_proxy-""}
+https_proxy2=${https_proxy2-"http://www-proxy-hqdc.us.oracle.com:80"}
+
 export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
@@ -75,17 +79,25 @@ WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
 if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
-WDT_BASE_URL=$(curl -Ls -w %{url_effective} -o /dev/null https://github.com/oracle/weblogic-deploy-tooling/releases/latest)
+  for proxy in "${https_proxy2}" "${https_proxy}"; do
+    echo @@ "Info: Getting latest release WDT url with https_proxy=\"$proxy\""
+    https_proxy="${proxy}" \
+      curl -Ls -w %{url_effective} --connect-timeout 10 -o /dev/null \
+        https://github.com/oracle/weblogic-deploy-tooling/releases/latest > out
+    if [ $? -eq 0 ]; then
+      echo "Got URL"
+      WDT_BASE_URL=$(cat out)
+      rm out
+      break
+    fi
+  done
 else
 WDT_BASE_URL="https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION"
 fi
 
+
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"$WDT_BASE_URL/$WDT_INSTALL_ZIP_FILE"}
-
-# using "-" instead of ":-" in case proxy vars are explicitly set to "".
-https_proxy=${https_proxy-""}
-https_proxy2=${https_proxy2-"http://www-proxy-hqdc.us.oracle.com:80"}
 
 # Define functions
 
