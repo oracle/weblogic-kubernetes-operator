@@ -121,6 +121,40 @@ introspect job will automatcially create configuration overrrides with the neces
 Additionally, when the Istio support is enabled for a domain, the operator will
 ensure that the Istio sidecar is not injected into the introspector job's pods.
 
+
+### Apply the domain resource yaml
+
+Once the domain resource yaml is modified, you can apply it by
+
+```
+kubect apply -f domain.yaml
+```
+
+and after all the servers are up, you should see something like this
+
+```
+kubectl -n sample-domain1-ns get pods
+
+NAME                             READY   STATUS    RESTARTS   AGE
+sample-domain1-admin-server      2/2     Running   0          154m
+sample-domain1-managed-server1   2/2     Running   0          153m
+sample-domain1-managed-server2   2/2     Running   0          153m
+
+```
+
+and if you use `istioctl proxy-status`, you should see the mesh status
+
+```
+istioctl proxy-status 
+NAME                                                               CDS        LDS        EDS        RDS          PILOT                            VERSION
+istio-ingressgateway-5c7d8d7b5d-tjgtd.istio-system                 SYNCED     SYNCED     SYNCED     NOT SENT     istio-pilot-6cfcdb75dd-87lqm     1.5.4
+sample-domain1-admin-server.sample-domain1-ns                      SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
+sample-domain1-managed-server1.sample-domain1-ns                   SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
+sample-domain1-managed-server2.sample-domain1-ns                   SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
+weblogic-operator-7d86fffbdd-5dxzt.sample-weblogic-operator-ns     SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
+
+```
+
 #### Exposing applications in Istio-enabled domains
 
 When a domain is running with the Istio support, you should use the Istio
