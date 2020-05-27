@@ -491,6 +491,17 @@ public abstract class PodHelperTestBase {
 
   protected abstract void verifyPodReplaced();
 
+  protected void verifyPodNotReplaced() {
+    testSupport.addComponent(
+        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+        PodAwaiterStepFactory.class,
+        new NullPodAwaiterStepFactory(terminalStep));
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
+  }
+
   protected abstract void verifyPodNotReplacedWhen(PodMutator mutator);
 
   private void misconfigurePod(PodMutator mutator) {
@@ -886,6 +897,15 @@ public abstract class PodHelperTestBase {
     configureServer().withRestartVersion("123");
 
     verifyPodReplaced();
+  }
+
+  @Test
+  public void whenServerConfigurationAddsIntrospectionVersion_dontReplacePod() {
+    initializeExistingPod();
+
+    configurator.withIntrospectVersion("123");
+
+    verifyPodNotReplaced();
   }
 
   @Test

@@ -954,6 +954,37 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYamlTwice_objectsEquals()
+      throws IOException {
+    Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain1, equalTo(domain2));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYamlTwice_matchingIntrospectionVersionValuesLeaveDomainsEqual()
+      throws IOException {
+    Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    domain1.getSpec().setIntrospectVersionn("123");
+    domain2.getSpec().setIntrospectVersionn("123");
+    assertThat(domain1, equalTo(domain2));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYamlTwice_differentIntrospectionVersionValuesLeaveDomainsUnequal()
+      throws IOException {
+    Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    domain1.getSpec().setIntrospectVersionn("123");
+    domain2.getSpec().setIntrospectVersionn("124");
+    assertThat(domain1, not(equalTo(domain2)));
+  }
+
+  @Test
   public void whenDomain2ReadFromYaml_ManagedServerInheritContainerSecurityContextFromCluster()
       throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);

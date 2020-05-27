@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -188,7 +189,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private String getConfigOverrides() {
-    return getDomain().getConfigOverrides();
+    return Strings.emptyToNull(getDomain().getConfigOverrides());
   }
 
   private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
@@ -199,7 +200,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   // ---------------------- model methods ------------------------------
 
   String getWdtConfigMap() {
-    return getDomain().getWdtConfigMap();
+    return Strings.emptyToNull(getDomain().getWdtConfigMap());
   }
 
   private ResponseStep<V1Job> createResponse(Step next) {
@@ -287,33 +288,46 @@ public abstract class JobStepContext extends BasePodStepContext {
       podSpec.addVolumesItem(additionalVolume);
     }
 
-    List<String> configOverrideSecrets = getConfigOverrideSecrets();
-    for (String secretName : configOverrideSecrets) {
-      podSpec.addVolumesItem(
-            new V1Volume()
-                  .name(secretName + "-volume")
-                  .secret(getOverrideSecretVolumeSource(secretName)));
-    }
-    if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
-      podSpec.addVolumesItem(
-            new V1Volume()
-                  .name(getConfigOverrides() + "-volume")
-                  .configMap(getOverridesVolumeSource(getConfigOverrides())));
-    }
-    // For WDT
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
-      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
-        podSpec.addVolumesItem(
-            new V1Volume()
-                .name(getWdtConfigMap() + "-volume")
-                .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
-      }
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
-              .secret(getRuntimeEncryptionSecretVolume()));
+    getConfigOverrideSecrets().forEach(secretName -> addConfigOverrideSecretVolume(podSpec, secretName));
+    Optional.ofNullable(getConfigOverrides()).ifPresent(overrides -> addConfigOverrideVolume(podSpec, overrides));
+
+    if (isSourceWdt()) {
+      Optional.ofNullable(getWdtConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
+      addWdtSecretVolume(podSpec);
     }
     return podSpec;
+  }
+
+  private void addConfigOverrideSecretVolume(V1PodSpec podSpec, String secretName) {
+    podSpec.addVolumesItem(
+          new V1Volume()
+                .name(secretName + "-volume")
+                .secret(getOverrideSecretVolumeSource(secretName)));
+  }
+
+  private void addConfigOverrideVolume(V1PodSpec podSpec, String configOverrides) {
+    podSpec.addVolumesItem(
+          new V1Volume()
+                .name(configOverrides + "-volume")
+                .configMap(getOverridesVolumeSource(configOverrides)));
+  }
+
+  private boolean isSourceWdt() {
+    return DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType());
+  }
+
+  private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
+    podSpec.addVolumesItem(
+        new V1Volume()
+            .name(configMapName + "-volume")
+            .configMap(getWdtConfigMapVolumeSource(configMapName)));
+  }
+
+  private void addWdtSecretVolume(V1PodSpec podSpec) {
+    podSpec.addVolumesItem(
+        new V1Volume()
+            .name(RUNTIME_ENCRYPTION_SECRET_VOLUME)
+            .secret(getRuntimeEncryptionSecretVolume()));
   }
 
   protected V1Container createContainer(TuningParameters tuningParameters) {
@@ -349,8 +363,8 @@ public abstract class JobStepContext extends BasePodStepContext {
                   secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
-      if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+    if (isSourceWdt()) {
+      if (getWdtConfigMap() != null) {
         container.addVolumeMountsItem(
             readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
       }
