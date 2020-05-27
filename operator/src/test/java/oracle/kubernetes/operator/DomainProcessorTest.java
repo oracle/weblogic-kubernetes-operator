@@ -9,11 +9,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -21,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -30,6 +39,7 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -44,6 +54,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
@@ -54,9 +65,12 @@ import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -74,9 +88,10 @@ public class DomainProcessorTest {
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
 
   private List<Memento> mementos = new ArrayList<>();
+  private List<LogRecord> logRecords = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private DomainConfigurator domainConfigurator;
-  private Map<String, DomainPresenceInfo> presenceInfoMap = new HashMap<>();
+  private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
   private DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private Domain domain = DomainProcessorTestSetup.createTestDomain();
@@ -97,7 +112,8 @@ public class DomainProcessorTest {
    */
   @Before
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger()
+          .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(TuningParametersStub.install());
@@ -119,6 +135,26 @@ public class DomainProcessorTest {
     for (Memento memento : mementos) {
       memento.revert();
     }
+  }
+
+  @Test
+  public void whenDomainSpecNotChanged_dontRunUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, false, false, false);
+
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  public void whenDomainExplicitSet_runUpdateThread() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
 
   @Test
@@ -145,7 +181,6 @@ public class DomainProcessorTest {
     processor.makeRightDomainPresence(info, true, false, false);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    DomainStatus domainStatus = updatedDomain.getStatus();
 
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[0]), equalTo(RUNNING_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[1]), equalTo(RUNNING_STATE));
@@ -211,7 +246,7 @@ public class DomainProcessorTest {
         .metadata(
             new V1ObjectMeta()
                 .name("do-not-delete-service")
-                .namespace(DomainProcessorTestSetup.NS)
+                .namespace(NS)
                 .putLabelsItem("serviceType", "SERVER")
                 .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
                 .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
@@ -233,6 +268,69 @@ public class DomainProcessorTest {
     assertThat(info.getExternalService(ADMIN_NAME), notNullValue());
   }
 
+  @Test
+  public void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
+    defineServerResources(ADMIN_NAME);
+    defineSituationConfigMap();
+    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+
+    processor.makeRightDomainPresence(new DomainPresenceInfo(domain), false, false, true);
+
+    assertThat(job, nullValue());
+
+  }
+
+  @Test
+  public void whenDomainHasIntrospectVersionDifferentFromOldDomain_runIntrospectionJob() throws Exception {
+    defineServerResources(ADMIN_NAME);
+    defineSituationConfigMap();
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+
+    processor.makeRightDomainPresence(
+          new DomainPresenceInfo(createDomainWithIntrospectVersion("789")), false, false, true);
+
+    assertThat(job, notNullValue());
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private Domain createDomainWithIntrospectVersion(String introspectVersion) {
+    final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
+    DomainConfiguratorFactory.forDomain(newDomain).withIntrospectVersion(introspectVersion);
+    return newDomain;
+  }
+
+  private void defineSituationConfigMap() throws JsonProcessingException {
+    testSupport.defineResources(createSituConfigMap());
+  }
+
+  private V1Job job;
+
+  private void recordJob(V1Job job) {
+    this.job = job;
+  }
+
+  // define a config map with a topology to avoid the no-topology condition that always runs the introspector
+  private V1ConfigMap createSituConfigMap() throws JsonProcessingException {
+    return new V1ConfigMap()
+          .metadata(createSituConfigMapMeta())
+          .data(new HashMap<>(Map.of("topology.yaml", defineTopology())));
+  }
+
+  private V1ObjectMeta createSituConfigMapMeta() {
+    return new V1ObjectMeta().namespace(NS).name(ConfigMapHelper.SitConfigMapContext.getConfigMapName(UID));
+  }
+
+  private String defineTopology() throws JsonProcessingException {
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain")
+          .withAdminServerName("admin").withWlsServer("admin", 8045);
+
+    return new ObjectMapper(new YAMLFactory())
+          .setSerializationInclusion(JsonInclude.Include.NON_DEFAULT)
+          .writeValueAsString(new ConfigMapHelper.DomainTopology(configSupport.createDomainConfig()));
+  }
+
+
   // todo after external service created, if adminService deleted, delete service
 
   // problem - ServiceType doesn't know what this is, so does not
@@ -242,7 +340,7 @@ public class DomainProcessorTest {
         .metadata(
             new V1ObjectMeta()
                 .name(LegalNames.toExternalServiceName(DomainProcessorTestSetup.UID, ADMIN_NAME))
-                .namespace(DomainProcessorTestSetup.NS)
+                .namespace(NS)
                 .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
                 .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
@@ -277,7 +375,7 @@ public class DomainProcessorTest {
                 withServerLabels(
                     new V1ObjectMeta()
                         .name(LegalNames.toPodName(DomainProcessorTestSetup.UID, serverName))
-                        .namespace(DomainProcessorTestSetup.NS),
+                        .namespace(NS),
                     serverName))
             .spec(new V1PodSpec()));
   }
@@ -296,7 +394,7 @@ public class DomainProcessorTest {
                         .name(
                             LegalNames.toServerServiceName(
                                 DomainProcessorTestSetup.UID, serverName))
-                        .namespace(DomainProcessorTestSetup.NS),
+                        .namespace(NS),
                     serverName)));
   }
 
@@ -344,7 +442,7 @@ public class DomainProcessorTest {
   }
 
   private String getDesiredState(Domain domain, String serverName) {
-    return getServerStatus(domain, serverName).getDesiredState();
+    return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getDesiredState).orElse("");
   }
 
   private ServerStatus getServerStatus(Domain domain, String serverName) {

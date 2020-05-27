@@ -24,18 +24,17 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.operator.LabelConstants;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAININTROSPECTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
 
-/** A class which defines the compatability rules for existing vs. specified pods. */
+/** A class which defines the compatibility rules for existing vs. specified pods. */
 class PodCompatibility extends CollectiveCompatibility {
   PodCompatibility(V1Pod expected, V1Pod actual) {
     add("sha256Hash", AnnotationHelper.getHash(expected), AnnotationHelper.getHash(actual));
     add(new PodMetadataCompatibility(expected.getMetadata(), actual.getMetadata()));
-    add(new PodSpecCompatibility(expected.getSpec(), actual.getSpec()));
+    add(new PodSpecCompatibility(Objects.requireNonNull(expected.getSpec()), Objects.requireNonNull(actual.getSpec())));
   }
 
   static <T> Set<T> asSet(Collection<T> collection) {
@@ -100,29 +99,27 @@ class PodCompatibility extends CollectiveCompatibility {
     public boolean isCompatible() {
       return isLabelSame(DOMAINRESTARTVERSION_LABEL)
           && isLabelSame(CLUSTERRESTARTVERSION_LABEL)
-          && isLabelSame(DOMAININTROSPECTVERSION_LABEL)
           && isLabelSame(SERVERRESTARTVERSION_LABEL);
     }
 
     private boolean isLabelSame(String labelName) {
-      return Objects.equals(expected.getLabels().get(labelName), actual.getLabels().get(labelName));
+      return Objects.equals(
+            Objects.requireNonNull(expected.getLabels()).get(labelName),
+            Objects.requireNonNull(actual.getLabels()).get(labelName)
+      );
     }
 
     @Override
     public String getIncompatibility() {
       if (!isLabelSame(DOMAINRESTARTVERSION_LABEL)) {
         return "domain restart label changed.";
-      }
-      if (!isLabelSame(CLUSTERRESTARTVERSION_LABEL)) {
+      } else if (!isLabelSame(CLUSTERRESTARTVERSION_LABEL)) {
         return "cluster restart label changed.";
-      }
-      if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) {
+      } else if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) {
         return "server restart label changed.";
+      } else {
+        return null;
       }
-      if (!isLabelSame(DOMAININTROSPECTVERSION_LABEL)) {
-        return "domain introspect version label changed.";
-      }
-      return null;
     }
   }
 

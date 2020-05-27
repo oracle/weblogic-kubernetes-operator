@@ -10,13 +10,13 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class DomainPresenceStep extends Step {
 
-  private DomainPresenceStep(Step adminStep) {
-    super(adminStep);
+  private DomainPresenceStep(Step domainUpSteps) {
+    super(domainUpSteps);
   }
 
   public static DomainPresenceStep createDomainPresenceStep(
-      Domain dom, Step adminStep, Step managedServerStep) {
-    return new DomainPresenceStep(dom.isShuttingDown() ? managedServerStep : adminStep);
+      Domain dom, Step domainUpSteps, Step managedServerStep) {
+    return new DomainPresenceStep(dom.isShuttingDown() ? managedServerStep : domainUpSteps);
   }
 
   @Override
