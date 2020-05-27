@@ -479,7 +479,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   /**
-   * Begin activity to align the cached domain status with the value reaa from Kubernetes.
+   * Begin activity to align the cached domain status with the value read from Kubernetes.
    * @param liveInfo domain presence info read from Kubernetes
    * @param explicitRecheck true if we are to skip comparing the reported domain to the cached value
    * @param isDeleting if is deleting domain
