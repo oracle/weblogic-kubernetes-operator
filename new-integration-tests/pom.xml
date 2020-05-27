@@ -19,7 +19,7 @@
     <properties>
         <skipITs>false</skipITs>
         <wit.version>latest</wit.version>
-        <wdt.version>1.8.1</wdt.version>
+        <wdt.version>latest</wdt.version>
         <includes-failsafe>**/It*</includes-failsafe>
         <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>

@@ -74,10 +74,14 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-WDT_VERSION=${WDT_VERSION:-1.7.2}
+if [ -z ${WDT_VERSION+x} ] then
+WDT_BASE_URL="https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION"
+else
+WDT_BASE_URL=$(curl -Ls -w %{url_effective} -o /dev/null https://github.com/oracle/weblogic-deploy-tooling/releases/latest)
+fi
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
+WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"$WDT_BASE_URL/$WDT_INSTALL_ZIP_FILE"}
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
