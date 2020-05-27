@@ -20,24 +20,7 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
-import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
-import oracle.weblogic.kubernetes.actions.impl.AppParams;
-import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
-import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
-import oracle.weblogic.kubernetes.actions.impl.Domain;
-import oracle.weblogic.kubernetes.actions.impl.Exec;
-import oracle.weblogic.kubernetes.actions.impl.Job;
-import oracle.weblogic.kubernetes.actions.impl.Namespace;
-import oracle.weblogic.kubernetes.actions.impl.Nginx;
-import oracle.weblogic.kubernetes.actions.impl.NginxParams;
-import oracle.weblogic.kubernetes.actions.impl.Operator;
-import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
-import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
-import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
-import oracle.weblogic.kubernetes.actions.impl.Pod;
-import oracle.weblogic.kubernetes.actions.impl.Secret;
-import oracle.weblogic.kubernetes.actions.impl.Service;
-import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.*;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -746,6 +729,29 @@ public class TestActions {
   public static boolean deployApplication(String appName, String appLocation, String t3Url,
                                           String username, String password, String target) {
     return true;
+  }
+
+  // --------------------------- Prometheus ---------------------------------
+
+  /**
+   * Install Prometheus.
+   *
+   * @param params prometheus parameters for Helm values
+   * @return true if the prometheus is successfully installed, false otherwise.
+   */
+  public static boolean installPrometheus(PrometheusParams params) {
+    return Prometheus.install(params);
+  }
+
+  /**
+   * Uninstall the Prometheus release.
+   *
+   * @param params the parameters to Helm uninstall command, release name and namespace
+   * @return true on success, false otherwise
+   */
+
+  public static boolean uninstallPrometheus(HelmParams params) {
+    return Prometheus.uninstall(params);
   }
 
 }

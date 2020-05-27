@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
@@ -463,4 +464,13 @@ public class TestAssertions {
     return Job.jobCompleted(namespace, labelSelectors, jobName);
   }
 
+  /**
+   * Check if Prometheus is running.
+   *
+   * @param namespace in which is prometheus is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> prometheusIsReady(String namespace) {
+    return Prometheus.isReady(namespace);
+  }
 }

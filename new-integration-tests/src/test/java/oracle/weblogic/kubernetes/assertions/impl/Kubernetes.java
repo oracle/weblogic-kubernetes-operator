@@ -589,4 +589,47 @@ public class Kubernetes {
         podName, newCreationTime, timestamp);
     return false;
   }
+
+  /**
+   * Checks if the promethues pods are running in a given namespace.
+   * The method assumes the prometheus pods name to starts with prometheus-server, alertmanager
+   * and decorated with label weblogic.operatorName:namespace
+   * @param namespace in which to check for the pod existence
+   * @return true if pods are exist and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean arePrometheusPodsReady(String namespace) throws ApiException {
+    boolean status = false;
+
+    V1Pod pod = getPod(namespace, "component=alertmanager", "prometheus-alertmanager");
+    if (pod != null) {
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
+    } else {
+      logger.info("Prometheus-alertmanager pods don't exist");
+    }
+
+    pod = getPod(namespace, "component=server", "prometheus-server");
+    if (pod != null) {
+      // get the podCondition with the 'Ready' type field
+      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+          .findAny()
+          .orElse(null);
+
+      if (v1PodReadyCondition != null) {
+        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+      }
+    } else {
+      logger.info("Prometheus-server pods don't exist");
+    }
+    return status;
+  }
 }

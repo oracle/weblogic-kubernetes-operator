@@ -18,8 +18,10 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
@@ -61,22 +63,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.*;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
@@ -751,5 +743,70 @@ public class CommonTestUtils {
             .isTrue();
       }
     }
+  }
+
+  /**
+   * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
+   *
+   * @param promReleaseName the prometheus release name
+   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promValueFile the promeheus value.yaml file path
+   * @param promVersion the version of the prometheus helm chart
+   * @param promServerNodePort nodePort value for prometheus server
+   * @param alertManagerNodePort nodePort value for alertmanager
+   * @return the prometheus Helm installation parameters
+   */
+  public static HelmParams installAndVerifyPrometheus(String promReleaseName,
+                                                      String promNamespace,
+                                                      String promValueFile,
+                                                      String promVersion,
+                                                      int promServerNodePort,
+                                                      int alertManagerNodePort) {
+
+    // Helm install parameters
+    HelmParams promHelmParams = new HelmParams()
+        .releaseName(promReleaseName)
+        .namespace(promNamespace)
+        .chartDir("stable/prometheus")
+        .chartValuesFile(promValueFile);
+
+    if (promVersion != null) {
+      promHelmParams.chartVersion(promVersion);
+    }
+
+    // prometheus chart values to override
+    PrometheusParams prometheusParams = new PrometheusParams()
+        .helmParams(promHelmParams)
+        .nodePortServer(promServerNodePort)
+        .nodePortAlertManager(alertManagerNodePort);
+
+    // install prometheus
+    logger.info("Installing prometheus in namespace {0}", promNamespace);
+    assertTrue(installPrometheus(prometheusParams),
+        String.format("Failed to install prometheus in namespace %s", promNamespace));
+    logger.info("Prometheus installed in namespace {0}", promNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking prometheus release {0} status in namespace {1}",
+        promReleaseName, promNamespace);
+    assertTrue(isHelmReleaseDeployed(promReleaseName, promNamespace),
+        String.format("Prometheus release %s is not in deployed status in namespace %s",
+            promReleaseName, promNamespace));
+    logger.info("Prometheus release {0} status is deployed in namespace {1}",
+        promReleaseName, promNamespace);
+
+    // wait for the promethues pods to be ready
+    logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                promNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> prometheusIsReady(promNamespace),
+            "prometheusIsReady failed with ApiException"));
+
+    return promHelmParams;
   }
 }
