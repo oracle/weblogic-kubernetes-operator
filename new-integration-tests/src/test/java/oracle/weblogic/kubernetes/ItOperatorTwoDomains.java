@@ -86,6 +86,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runCreateDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -174,11 +175,10 @@ public class ItOperatorTwoDomains implements LoggedTest {
    * scale cluster in domain1 from 2 to 3 servers and verify no impact on domain2, domain2 continues to run
    * restart domain1 and verify no impact on domain2, domain2 continues to run
    * shutdown the domains using serverStartPolicy
-   * @throws IOException when creating PV path fails
    */
   @Test
   @DisplayName("Create domain on PV using WLST script")
-  public void testTwoDomainsManagedByTwoOperators() throws IOException {
+  public void testTwoDomainsManagedByTwoOperators() {
 
     image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
 
@@ -208,7 +208,8 @@ public class ItOperatorTwoDomains implements LoggedTest {
     }
 
     // create two domains on PV using WLST
-    createTwoDomainsOnPVUsingWlstAndVerify();
+    assertDoesNotThrow(() -> createTwoDomainsOnPVUsingWlstAndVerify(),
+        "createTwoDomainsOnPVUsingWlstAndVerify failed with IOException");
 
     // get the domain1 and domain2 pods original creation timestamps
     getBothDomainsPodsOriginalCreationTimestamp();
@@ -330,9 +331,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
                   .adminService(new AdminService()
                       .addChannelsItem(new Channel()
                           .channelName("default")
-                          .nodePort(0))
-                      .addChannelsItem(new Channel()
-                          .channelName("T3Channel")
                           .nodePort(0))))
               .addClustersItem(new Cluster()
                   .clusterName(clusterName)
@@ -490,8 +488,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
     p.setProperty("admin_server_port", "7001");
     p.setProperty("admin_username", adminUser);
     p.setProperty("admin_password", adminPassword);
-    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", "32101");
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
     p.setProperty("domain_logs", "/shared/logs");
@@ -514,9 +510,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     // add the third managed server pod original creation timestamp to the list
     domain1ManagedServerPodOriginalTimestampList.add(
-        getPodOriginalCreationTimestamp(
-            domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + replicasAfterScale,
-            domain1Namespace));
+        getPodCreationTime(domain1Namespace, domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + replicasAfterScale));
 
     // verify scaling domain1 has no impact on domain2
     logger.info("Checking that domain2 was not changed after domain1 was scaled up");
@@ -611,7 +605,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
     for (int i = 0; i < numberOfDomains; i++) {
       domainAdminServerPodNames.add(domainUids.get(i) + "-" + ADMIN_SERVER_NAME_BASE);
       domainAdminPodOriginalTimestamps.add(
-          getPodOriginalCreationTimestamp(domainAdminServerPodNames.get(i), domainNamespaces.get(i)));
+          getPodCreationTime(domainNamespaces.get(i), domainAdminServerPodNames.get(i)));
     }
 
     // get the managed server pods original creation timestamps
@@ -619,11 +613,11 @@ public class ItOperatorTwoDomains implements LoggedTest {
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain1ManagedServerPodOriginalTimestampList.add(
-          getPodOriginalCreationTimestamp(managedServerPodName, domain1Namespace));
+          getPodCreationTime(domain1Namespace, managedServerPodName));
 
       managedServerPodName = domain2Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       domain2ManagedServerPodOriginalTimestampList.add(
-          getPodOriginalCreationTimestamp(managedServerPodName, domain2Namespace));
+          getPodCreationTime(domain2Namespace, managedServerPodName));
     }
   }
 
@@ -658,18 +652,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
       checkPodDoesNotExist(managedServerPodName, domain1Uid, domain1Namespace);
     }
 
-  }
-
-  /**
-   * Get pod original creation timestamp.
-   * @param podName pod name to get the original creation timestamp
-   * @param namespace the namespace in which the pod exists
-   * @return the pod original creation timestamp
-   */
-  private String getPodOriginalCreationTimestamp(String podName, String namespace) {
-    return assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
-        String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-            podName, namespace));
   }
 
   /**

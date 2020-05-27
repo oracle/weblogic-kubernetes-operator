@@ -16,7 +16,6 @@ public interface LabelConstants {
   String JOBNAME_LABEL = "job-name";
   String APP_LABEL = "app";
   String DOMAINRESTARTVERSION_LABEL = "weblogic.domainRestartVersion";
-  String DOMAININTROSPECTVERSION_LABEL = "weblogic.domainIntrospectVersion";
   String CLUSTERRESTARTVERSION_LABEL = "weblogic.clusterRestartVersion";
   String SERVERRESTARTVERSION_LABEL = "weblogic.serverRestartVersion";
   String MODEL_IN_IMAGE_MODEL_SECRETS_HASH = "weblogic.modelInImageModelSecretsHash";

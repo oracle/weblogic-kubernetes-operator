@@ -57,6 +57,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   }
 
   @Override
+  public WatchTuning getWatchTuning() {
+    return null;
+  }
+
+  @Override
   public String get(Object key) {
     return namedParameters.get(key);
   }
