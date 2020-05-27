@@ -30,9 +30,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_CONCURRENT_SCALE_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 /** DomainSpec is a description of a domain. */
@@ -176,13 +176,14 @@ public class DomainSpec extends BaseConfiguration {
       + "dynamic cluster size configured in the WebLogic domain home configuration, "
       + "if this is not specified at the cluster level."
   )
-  private Boolean allowReplicasBelowDynClusterSize;
+  private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "Whether to allow the operator to start up more than one managed servers at the same time "
-      + "during scale up operation if this is not specify at the cluster level."
+      "The maximum number of managed servers that the operator will start concurrently "
+          + "for a cluster, if this is not specified at the cluster level. "
+          + "A default value of 0 means there is no configured limit."
   )
-  private Boolean allowConcurrentScaleUp;
+  private Integer maxClusterServerConcurrentStartup;
 
   /**
    * Whether the domain home is part of the image.
@@ -639,8 +640,8 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public Boolean isAllowConcurrentScaleUp() {
-    return allowConcurrentScaleUp;
+  public Integer getMaxClusterServerConcurrentStartup() {
+    return maxClusterServerConcurrentStartup;
   }
 
   @Nullable
@@ -871,24 +872,33 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
-    return hasAllowReplicasBelowDynClusterSize(cluster)
+    return hasAllowReplicasBelowMinDynClusterSize(cluster)
         ? cluster.isAllowReplicasBelowMinDynClusterSize()
-        : Optional.ofNullable(allowReplicasBelowDynClusterSize)
+        : Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
             .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
   }
 
-  private boolean hasAllowReplicasBelowDynClusterSize(Cluster cluster) {
+  private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
     return cluster != null && cluster.isAllowReplicasBelowMinDynClusterSize() != null;
   }
 
-  private boolean isAllowConcurrentScaleUpFor(Cluster cluster) {
-    return hasAllowConcurrentScaleUp(cluster)
-        ? cluster.isAllowConcurrentScaleUp()
-        : Optional.ofNullable(allowConcurrentScaleUp).orElse(DEFAULT_ALLOW_CONCURRENT_SCALE_UP);
+  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
-  private boolean hasAllowConcurrentScaleUp(Cluster cluster) {
-    return cluster != null && cluster.isAllowConcurrentScaleUp() != null;
+  private int getMaxClusterServerConcurrentStartupFor(Cluster cluster) {
+    return hasMaxClusterServerConcurrentStartup(cluster)
+        ? cluster.getMaxClusterServerConcurrentStartup()
+        : Optional.ofNullable(maxClusterServerConcurrentStartup)
+            .orElse(DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP);
+  }
+
+  private boolean hasMaxClusterServerConcurrentStartup(Cluster cluster) {
+    return cluster != null && cluster.getMaxClusterServerConcurrentStartup() != null;
+  }
+
+  public void setMaxClusterServerConcurrentStartup(Integer maxClusterServerConcurrentStartup) {
+    this.maxClusterServerConcurrentStartup = maxClusterServerConcurrentStartup;
   }
 
   public AdminServer getAdminServer() {
@@ -962,8 +972,8 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public boolean isAllowConcurrentScaleUp(String clusterName) {
-      return isAllowConcurrentScaleUpFor(getCluster(clusterName));
+    public int getMaxClusterServerConcurrentStartup(String clusterName) {
+      return getMaxClusterServerConcurrentStartupFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {

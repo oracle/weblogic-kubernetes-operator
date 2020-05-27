@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -325,7 +326,8 @@ public class PodHelper {
       super(conflictStep, packet);
       this.packet = packet;
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-      waitForPodReadyForCreatePod = ! getDomain().isAllowConcurrentScaleUp(clusterName);
+      waitForPodReadyForCreatePod =
+          (boolean) Optional.ofNullable(packet.get(ProcessingConstants.WAIT_FOR_POD_READY)).orElse(false);
 
       init();
     }

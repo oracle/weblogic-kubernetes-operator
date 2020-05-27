@@ -714,6 +714,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ClusterConfigurator withMaxClusterServerConcurrentStartup(Integer maxClusterServerConcurrentStartup) {
+      cluster.setMaxClusterServerConcurrentStartup(maxClusterServerConcurrentStartup);
+      return this;
+    }
+
+    @Override
     public ClusterConfigurator withSchedulerName(String schedulerName) {
       getDomainSpec().setSchedulerName(schedulerName);
       return this;

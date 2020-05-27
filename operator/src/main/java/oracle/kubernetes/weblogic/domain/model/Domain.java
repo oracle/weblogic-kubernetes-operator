@@ -309,8 +309,8 @@ public class Domain {
     return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
   }
 
-  public boolean isAllowConcurrentScaleUp(String clusterName) {
-    return getEffectiveConfigurationFactory().isAllowConcurrentScaleUp(clusterName);
+  public int getMaxClusterServerConcurrentStartup(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxClusterServerConcurrentStartup(clusterName);
   }
 
 

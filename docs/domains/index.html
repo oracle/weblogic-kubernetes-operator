@@ -1041,10 +1041,6 @@ window.onload = function() {
           "description": "Customization affecting ClusterIP Kubernetes services for the WebLogic cluster.",
           "$ref": "#/definitions/KubernetesResource"
         },
-        "allowConcurrentScaleUp": {
-          "description": "If true (the default), the operator may start up more than one managed server in this cluster at the same time during scale up operations. Otherwise, the operator will wait until a managed server to be in Ready state before starting up the next one when scaling up more than one server.",
-          "type": "boolean"
-        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED.",
           "type": "string",
@@ -1052,6 +1048,11 @@ window.onload = function() {
             "NEVER",
             "IF_NEEDED"
           ]
+        },
+        "maxClusterServerConcurrentStartup": {
+          "description": "The maximum number of managed servers that the operator will start concurrently for the cluster. The operator will wait until a managed server to be in Ready state before starting the next server, until the configured replica count is reached. A default value of 0 means there is no configured limit.",
+          "type": "number",
+          "minimum": 0.0
         },
         "restartVersion": {
           "description": "If present, every time this value is updated the operator will restart the required servers.",
@@ -1194,10 +1195,6 @@ window.onload = function() {
           "description": "Experimental feature configurations.",
           "$ref": "#/definitions/Experimental"
         },
-        "allowConcurrentScaleUp": {
-          "description": "Whether to allow the operator to start up more than one managed servers at the same time during scale up operation if this is not specify at the cluster level.",
-          "type": "boolean"
-        },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
@@ -1235,6 +1232,10 @@ window.onload = function() {
           "description": "If true (the default), then the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
         },
+        "maxClusterServerConcurrentStartup": {
+          "description": "The maximum number of managed servers that the operator will start concurrently for a cluster, if this is not specified at the cluster level. A default value of 0 means there is no configured limit.",
+          "type": "number"
+        },
         "clusters": {
           "description": "Configuration for the clusters.",
           "type": "array",
@@ -1267,10 +1268,6 @@ window.onload = function() {
           "description": "The number of managed servers to run in any cluster that does not specify a replica count.",
           "type": "number",
           "minimum": 0.0
-        },
-        "allowReplicasBelowDynClusterSize": {
-          "description": "Whether to allow the number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration, if this is not specified at the cluster level.",
-          "type": "boolean"
         },
         "domainHomeInImage": {
           "deprecated": "true",
@@ -1305,6 +1302,10 @@ window.onload = function() {
         },
         "logHomeEnabled": {
           "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.",
+          "type": "boolean"
+        },
+        "allowReplicasBelowMinDynClusterSize": {
+          "description": "Whether to allow the number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration, if this is not specified at the cluster level.",
           "type": "boolean"
         },
         "serverPod": {

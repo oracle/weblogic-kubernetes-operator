@@ -118,11 +118,6 @@ spec:
                       description: True, if this domain is deployed under an Istio
                         service mesh. Defaults to true when the 'istio' element is
                         included. Not required.
-            allowConcurrentScaleUp:
-              type: boolean
-              description: Whether to allow the operator to start up more than one
-                managed servers at the same time during scale up operation if this
-                is not specify at the cluster level.
             serverService:
               type: object
               description: Customization affecting ClusterIP Kubernetes services for
@@ -5348,6 +5343,12 @@ spec:
               type: boolean
               description: If true (the default), then the server .out file will be
                 included in the pod's stdout.
+            maxClusterServerConcurrentStartup:
+              type: number
+              description: The maximum number of managed servers that the operator
+                will start concurrently for a cluster, if this is not specified at
+                the cluster level. A default value of 0 means there is no configured
+                limit.
             clusters:
               type: array
               description: Configuration for the clusters.
@@ -10589,13 +10590,6 @@ spec:
                         additionalProperties:
                           type: string
                         type: object
-                  allowConcurrentScaleUp:
-                    description: If true (the default), the operator may start up
-                      more than one managed server in this cluster at the same time
-                      during scale up operations. Otherwise, the operator will wait
-                      until a managed server to be in Ready state before starting
-                      up the next one when scaling up more than one server.
-                    type: boolean
                   serverStartPolicy:
                     description: The strategy for deciding whether to start a server.
                       Legal values are NEVER, or IF_NEEDED.
@@ -10603,6 +10597,14 @@ spec:
                     enum:
                     - NEVER
                     - IF_NEEDED
+                  maxClusterServerConcurrentStartup:
+                    description: The maximum number of managed servers that the operator
+                      will start concurrently for the cluster. The operator will wait
+                      until a managed server to be in Ready state before starting
+                      the next server, until the configured replica count is reached.
+                      A default value of 0 means there is no configured limit.
+                    type: number
+                    minimum: 0.0
                   restartVersion:
                     description: If present, every time this value is updated the
                       operator will restart the required servers.
@@ -10634,11 +10636,6 @@ spec:
               description: The number of managed servers to run in any cluster that
                 does not specify a replica count.
               minimum: 0.0
-            allowReplicasBelowDynClusterSize:
-              type: boolean
-              description: Whether to allow the number of replicas to drop below the
-                minimum dynamic cluster size configured in the WebLogic domain home
-                configuration, if this is not specified at the cluster level.
             domainHomeInImage:
               type: boolean
               description: Deprecated. Use domainHomeSourceType instead. Ignored if
@@ -10678,6 +10675,11 @@ spec:
               description: Specified whether the log home folder is enabled. Not required.
                 Defaults to true if domainHomeSourceType is PersistentVolume; false,
                 otherwise.
+            allowReplicasBelowMinDynClusterSize:
+              type: boolean
+              description: Whether to allow the number of replicas to drop below the
+                minimum dynamic cluster size configured in the WebLogic domain home
+                configuration, if this is not specified at the cluster level.
             serverPod:
               type: object
               description: Configuration affecting server pods.

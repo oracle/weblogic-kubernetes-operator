@@ -171,6 +171,16 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    getDomainSpec().setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize);
+    return this;
+  }
+
+  public DomainConfigurator withMaxClusterServerConcurrentStartup(Integer maxClusterServerConcurrentStartup) {
+    getDomainSpec().setMaxClusterServerConcurrentStartup(maxClusterServerConcurrentStartup);
+    return this;
+  }
+
   /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *

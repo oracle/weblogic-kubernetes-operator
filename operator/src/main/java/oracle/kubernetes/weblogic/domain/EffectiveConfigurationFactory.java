@@ -33,5 +33,5 @@ public interface EffectiveConfigurationFactory {
 
   boolean isAllowReplicasBelowMinDynClusterSize(String clusterName);
 
-  boolean isAllowConcurrentScaleUp(String clusterName);
+  int getMaxClusterServerConcurrentStartup(String clusterName);
 }

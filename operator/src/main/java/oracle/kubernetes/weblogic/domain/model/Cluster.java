@@ -64,12 +64,14 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
 
-  @Description("If true (the default), the operator may start up more than one managed server "
-       + "in this cluster at the same time during scale up operations. Otherwise, the operator "
-       + "will wait until a managed server to be in Ready state before starting up the next "
-       + "one when scaling up more than one server."
+  @Description(
+      "The maximum number of managed servers that the operator will start concurrently "
+      + "for the cluster. The operator will wait until a managed server to be in Ready state "
+      + "before starting the next server, until the configured replica count is reached. "
+      + "A default value of 0 means there is no configured limit."
   )
-  private Boolean allowConcurrentScaleUp;
+  @Range(minimum = 0)
+  private Integer maxClusterServerConcurrentStartup;
 
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
@@ -114,19 +116,12 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     allowReplicasBelowMinDynClusterSize = value;
   }
 
-  /**
-   * Whether to allow the operator to start more than one managed servers at * the same
-   *     time during scale up operation.
-   *
-   * @return whether to allow the operator to start more than one managed servers at * the same
-   *     time during scale up operation.
-   */
-  public Boolean isAllowConcurrentScaleUp() {
-    return allowConcurrentScaleUp;
+  public Integer getMaxClusterServerConcurrentStartup() {
+    return maxClusterServerConcurrentStartup;
   }
 
-  public void setAllowConcurrentScaleUp(Boolean value) {
-    allowConcurrentScaleUp = value;
+  public void setMaxClusterServerConcurrentStartup(Integer value) {
+    maxClusterServerConcurrentStartup = value;
   }
 
   @Nullable
