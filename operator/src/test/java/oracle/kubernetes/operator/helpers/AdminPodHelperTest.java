@@ -7,9 +7,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import oracle.kubernetes.operator.LabelConstants;
@@ -158,7 +160,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   private V1Pod getIncompatiblePod() {
     V1Pod existingPod = createTestPodModel();
-    existingPod.getSpec().setContainers(null);
+    Objects.requireNonNull(existingPod.getSpec()).setContainers(null);
     return existingPod;
   }
 
@@ -190,7 +192,11 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreated_specHasPodNameAsHostName() {
-    assertThat(getCreatedPod().getSpec().getHostname(), equalTo(getPodName()));
+    assertThat(getCreatedPodSpec().getHostname(), equalTo(getPodName()));
+  }
+
+  private V1PodSpec getCreatedPodSpec() {
+    return getCreatedPod().getSpec();
   }
 
   @Test
@@ -352,8 +358,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withAdditionalPvClaimVolume("volume-$(SERVER_NAME)", "$(SERVER_NAME)-claim");
 
     assertThat(
-        getCreatedPod().getSpec().getVolumes(),
-        allOf(hasPvClaimVolume("volume-admin-server", "admin-server-claim")));
+        getCreatedPodSpec().getVolumes(),
+        hasPvClaimVolume("volume-admin-server", "admin-server-claim"));
   }
 
   @Test
@@ -363,7 +369,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withAdditionalVolume("volume2", "/source-path2");
 
     assertThat(
-        getCreatedPod().getSpec().getVolumes(),
+        getCreatedPodSpec().getVolumes(),
         allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
   }
 
@@ -389,7 +395,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withAdditionalVolume("volume2", "/server-path");
 
     assertThat(
-        getCreatedPod().getSpec().getVolumes(),
+        getCreatedPodSpec().getVolumes(),
         allOf(hasVolume("volume1", "/domain-path1"), hasVolume("volume2", "/server-path")));
   }
 
@@ -540,9 +546,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
         .withPodLabel("label2", "domain-label-value2");
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
     assertThat(podLabels, hasEntry("label2", "domain-label-value2"));
+  }
+
+  private V1ObjectMeta getCreatedPodMetadata() {
+    return getCreatedPod().getMetadata();
   }
 
   @Test
@@ -550,7 +560,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withPodAnnotation("annotation1", "domain-annotation-value1")
         .withPodAnnotation("annotation2", "domain-annotation-value2");
-    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    Map<String, String> podAnnotations = getCreatedPodMetadata().getAnnotations();
 
     assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
     assertThat(podAnnotations, hasEntry("annotation2", "domain-annotation-value2"));
@@ -562,7 +572,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withPodLabel("label1", "server-label-value1")
         .withPodLabel("label2", "server-label-value2");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry("label1", "server-label-value1"));
     assertThat(podLabels, hasEntry("label2", "server-label-value2"));
   }
@@ -573,7 +583,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withPodAnnotation("annotation1", "server-annotation-value1")
         .withPodAnnotation("annotation2", "server-annotation-value2");
 
-    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    Map<String, String> podAnnotations = getCreatedPodMetadata().getAnnotations();
     assertThat(podAnnotations, hasEntry("annotation1", "server-annotation-value1"));
     assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value2"));
   }
@@ -586,7 +596,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .configureAdminServer()
         .withPodLabel("label2", "server-label-value1");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
     assertThat(podLabels, hasEntry("label2", "server-label-value1"));
   }
@@ -599,7 +609,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .configureAdminServer()
         .withPodAnnotation("annotation2", "server-annotation-value1");
 
-    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    Map<String, String> podAnnotations = getCreatedPodMetadata().getAnnotations();
     assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
     assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value1"));
   }
@@ -612,7 +622,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1")
         .withPodLabel("label1", "server-label-value1");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(
         podLabels,
         hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION));
@@ -627,7 +637,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .configureAdminServer()
         .withRestartVersion("adminRestartV1");
 
-    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    Map<String, String> podLabels = getCreatedPodMetadata().getLabels();
     assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
     assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
     assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));

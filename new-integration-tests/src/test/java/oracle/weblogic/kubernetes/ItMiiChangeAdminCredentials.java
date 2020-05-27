@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -52,8 +53,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVersionUpdated;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -133,18 +134,21 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
     final boolean VALID = true;
     final boolean INVALID = false;
 
+    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    String adminPodLastCreationTime =
+    String adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
         String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
-    assertNotNull(adminPodLastCreationTime, "creationTimestamp of the admin server pod is null");
+    assertNotNull(adminPodCreationTime, "creationTimestamp of the admin server pod is null");
 
     logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
         domainUid,
         domainNamespace,
         adminServerPodName,
-        adminPodLastCreationTime);
+        adminPodCreationTime);
     
+    pods.put(adminServerPodName, adminPodCreationTime);    
+
     List<String> msLastCreationTime = new ArrayList<String>();
     // get the creation time of the managed server pods before patching
     assertDoesNotThrow(
@@ -153,6 +157,7 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             String managedServerPodName = managedServerPrefix + i;
             String creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
             msLastCreationTime.add(creationTime);
+            pods.put(managedServerPodName, creationTime);    
 
             logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
                 domainUid,
@@ -191,19 +196,15 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
 
     logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
         domainUid, adminServerPodName, domainNamespace);
-    checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodLastCreationTime);
-    
-    // check that the admin server pod's label has been updated with the new restartVersion
-    checkPodRestartVersionUpdated(adminServerPodName, domainUid, domainNamespace, restartVersion);
-    
-    // check that the managed server pods are ready
+
+    assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
+         "More than one pod was restarted at same time"),
+        "Rolling restart failed");
+
     for (int i = 1; i <= replicaCount; i++) {
       final String podName = managedServerPrefix + i;
       final String lastCreationTime = msLastCreationTime.get(i - 1);
-      logger.info("Wait for managed server pod {0} to be restarted in namespace {1}",
-          podName, domainNamespace);
-      checkPodRestarted(domainUid, domainNamespace, podName, lastCreationTime);
-      
       // check that the managed server pod's label has been updated with the new restartVersion
       checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
     }
