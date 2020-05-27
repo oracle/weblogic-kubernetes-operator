@@ -6,7 +6,7 @@ weight: 1
 
 #### Overview
 
-WebLogic Server Kubernetes Operator version 2.3 and later includes experimental support for Istio 1.2.2 and later.
+WebLogic Server Kubernetes Operator version 2.3 and later includes support for Istio 1.2.2 and later.
 This support allows you to run the operator itself, and WebLogic domains managed by
 the operator, with Istio sidecar injection enabled.  It will allow you to use
 Istio gateways and virtual services to access applications deployed in these domains.
@@ -23,7 +23,7 @@ The current support for Istio has these limitations:
 * Support is provided only for domains with a single dynamic cluster.
   Multiple clusters and configured clusters are not currently supported ???
 
-#### Using the operator with experimental Istio support
+#### Using the operator with Istio support
 
 {{% notice note %}}
 These instructions assume that you are using a Kubernetes cluster with
@@ -53,7 +53,7 @@ $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yam
 
 In the second command, change `weblogic-operator-xxx-xxx` to the name of your pod.
 
-#### Creating a domain with experimental Istio support
+#### Creating a domain with Istio support
 
 You can configure your domains to run with Istio automatic sidecar injection enabled.
 Before creating your domain, create the namespace you wish to run the domain in,
@@ -123,7 +123,7 @@ ensure that the Istio sidecar is not injected into the introspector job's pods.
 
 #### Exposing applications in Istio-enabled domains
 
-When a domain is running with the experimental Istio support, you should use the Istio
+When a domain is running with the Istio support, you should use the Istio
 gateway to provide external access to applications, instead of using an ingress
 controller like Traefik.  Using the Istio gateway will enable you to view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
@@ -184,7 +184,7 @@ For more information about providing ingress using Istio, refer to the [Istio do
 Istio provides traffic management capabilities, including the ability to
 visualize traffic in Kiali.  You do not need to change your applications to use
 this feature.  The Istio proxy (envoy) sidecar that is injected into your pods
-provides this visibility. The experimental Istio support does enable
+provides this visibility. The Istio support does enable
 traffic management.  The image below shows an example with traffic
 flowing:
 
