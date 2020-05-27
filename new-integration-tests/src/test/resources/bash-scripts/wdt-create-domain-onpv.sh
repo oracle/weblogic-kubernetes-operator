@@ -82,11 +82,11 @@ if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
   for proxy in "${https_proxy2}" "${https_proxy}"; do
     echo @@ "Info: Getting latest release WDT url with https_proxy=\"$proxy\""
     https_proxy="${proxy}" \
-      curl -Ls -w %{url_effective} --connect-timeout 10 -o /dev/null \
+      curl -Ls -w %{url_effective} --connect-timeout 60 -o /dev/null \
         https://github.com/oracle/weblogic-deploy-tooling/releases/latest > out
     if [ $? -eq 0 ]; then
-      echo "Got URL"
-      WDT_BASE_URL=$(cat out)
+      echo "Got URL $(cat out)"
+      WDT_BASE_URL=$(cat out | sed -e "s/tag/download/g")
       rm out
       break
     fi

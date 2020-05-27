@@ -161,7 +161,7 @@ public class ItDomainInPV implements LoggedTest {
    */
   @Test
   @DisplayName("Create WebLogic domain in PV using WLST script")
-  public void testDomainOnPvUsingWlst() {
+  public void testDomainInPvUsingWlst() {
 
     final String domainUid = "wlstdomain-inpv";
     final String clusterName = "cluster-wlstdomain-inpv";
@@ -316,7 +316,7 @@ public class ItDomainInPV implements LoggedTest {
    */
   @Test
   @DisplayName("Create WebLogic domain in PV using WDT")
-  public void testDomainOnPvUsingWdt() {
+  public void testDomainInPvUsingWdt() {
 
     final String domainUid = "wdtdomain-inpv";
     final String clusterName = "cluster-wdtdomain-inpv";
