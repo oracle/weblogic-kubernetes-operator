@@ -78,7 +78,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.shutdown;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -90,7 +89,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runCreateDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -165,6 +163,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
     domain2Uid = domainUids.get(1);
     domain1Namespace = domainNamespaces.get(0);
     domain2Namespace = domainNamespaces.get(1);
+
   }
 
   /**
@@ -345,12 +344,12 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
       String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
       // check admin server pod is ready and service exists in domain namespace
-      checkPodExistsReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-      // check for managed server pods existence
+      // check for managed server pods are ready and services exist in domain namespace
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
-        checkPodExistsReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
       }
 
       logger.info("Getting admin service node port");
@@ -492,7 +491,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
     p.setProperty("admin_username", adminUser);
     p.setProperty("admin_password", adminPassword);
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", "" + getNextFreePort(32001, 32101));
+    p.setProperty("admin_t3_channel_port", "32101");
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
     p.setProperty("domain_logs", "/shared/logs");
@@ -502,7 +501,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
   }
 
   /**
-   * Scale domain1 and verify there was no impact on domain2.
+   * Scale domain1 and verify there is no impact on domain2.
    */
   private void scaleDomain1AndVerifyNoImpactOnDomain2() {
 
@@ -545,15 +544,19 @@ public class ItOperatorTwoDomains implements LoggedTest {
       checkPodDoesNotExist(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
     }
 
+    // verify domain2 was not changed after domain1 was shut down
+    logger.info("Verifying that domain2 was not changed after domain1 was shut down");
+    verifyDomain2NotChanged();
+
     // restart domain1
     logger.info("Restarting domain1");
     assertTrue(restart(domain1Uid, domain1Namespace),
         String.format("restart domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify domain1 is restarted
-    // check domain1 admin server pod exists and ready, also check admin service exists in the domain1 namespace
+    // check domain1 admin server pod is ready, also check admin service exists in the domain1 namespace
     logger.info("Checking admin server pod in domain1 was restarted");
-    checkPodExistsReadyAndServiceExists(domain1AdminServerPodName, domain1Uid, domain1Namespace);
+    checkPodReadyAndServiceExists(domain1AdminServerPodName, domain1Uid, domain1Namespace);
     checkPodRestarted(domain1Uid, domain1Namespace, domain1AdminServerPodName,
         domainAdminPodOriginalTimestamps.get(0));
 
@@ -561,18 +564,18 @@ public class ItOperatorTwoDomains implements LoggedTest {
     logger.info("Checking managed server pods in domain1 were restarted");
     for (int i = 1; i <= replicasAfterScale; i++) {
       String domain1ManagedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
-      checkPodExistsReadyAndServiceExists(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
+      checkPodReadyAndServiceExists(domain1ManagedServerPodName, domain1Uid, domain1Namespace);
       checkPodRestarted(domain1Uid, domain1Namespace, domain1ManagedServerPodName,
           domain1ManagedServerPodOriginalTimestampList.get(i - 1));
     }
 
-    // verify domain 2 was not changed after domain1 was restarted
+    // verify domain2 was not changed after domain1 was restarted
     logger.info("Verifying that domain2 was not changed after domain1 was restarted");
     verifyDomain2NotChanged();
   }
 
   /**
-   * Verify domain2 server pods were no changed.
+   * Verify domain2 server pods were not changed.
    */
   private void verifyDomain2NotChanged() {
     String domain2AdminServerPodName = domainAdminServerPodNames.get(1);
@@ -600,7 +603,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
   }
 
   /**
-   * Get domain1 an domain2 server pods original creation timestamps.
+   * Get domain1 and domain2 server pods original creation timestamps.
    */
   private void getBothDomainsPodsOriginalCreationTimestamp() {
     // get the domain1 pods original creation timestamp
@@ -670,16 +673,13 @@ public class ItOperatorTwoDomains implements LoggedTest {
   }
 
   /**
-   * Check pod exist, ready and service exists in the specified namespace.
+   * Check pod is ready and service exists in the specified namespace.
    *
    * @param podName pod name to check
    * @param domainUid the label the pod is decorated with
    * @param namespace the namespace in which the pod exists
    */
-  private void checkPodExistsReadyAndServiceExists(String podName, String domainUid, String namespace) {
-    logger.info("Checking that pod {0} exists in namespace {1}", podName, namespace);
-    checkPodExists(podName, domainUid, namespace);
-
+  private void checkPodReadyAndServiceExists(String podName, String domainUid, String namespace) {
     logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
     checkPodReady(podName, domainUid, namespace);
 
