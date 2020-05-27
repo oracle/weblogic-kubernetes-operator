@@ -64,6 +64,8 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -74,6 +76,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -82,10 +85,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -114,10 +113,6 @@ public class ItDomainInPV implements LoggedTest {
   private static boolean isUseSecret = true;
 
   private final String wlSecretName = "weblogic-credentials";
-  private final String adminUser = "weblogic";
-  private final String adminPassword = "welcome1";
-
-  private static final String WDT_VERSION = "1.8.1";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -148,23 +143,9 @@ public class ItDomainInPV implements LoggedTest {
     // install operator and verify its running in ready state
     CommonTestUtils.installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
 
-    //pull images using docker pull if its a Kind cluster
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
-      // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
-      // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
-      // The workaround will be to:
-      //   1. docker login
-      //   2. docker pull
-      //   3. docker tag with the KIND_REPO value
-      //   4. docker push this new image name
-      //   5. use this image name to create the domain resource
-      assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
-      assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
-
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      assertTrue(dockerTag(image, kindRepoImage),
-          String.format("docker tag failed for images %s, %s", image, kindRepoImage));
-      assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
       logger.info("Using image {0}", kindRepoImage);
       image = kindRepoImage;
       isUseSecret = false;
@@ -202,7 +183,7 @@ public class ItDomainInPV implements LoggedTest {
     }
 
     // create WebLogic domain credential secret
-    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace, adminUser, adminPassword);
+    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
@@ -218,8 +199,8 @@ public class ItDomainInPV implements LoggedTest {
     p.setProperty("admin_server_name", adminServerName);
     p.setProperty("managed_server_port", "8001");
     p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", adminUser);
-    p.setProperty("admin_password", adminPassword);
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "4");
@@ -319,7 +300,7 @@ public class ItDomainInPV implements LoggedTest {
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, adminUser, adminPassword);
+      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
   }
@@ -356,7 +337,7 @@ public class ItDomainInPV implements LoggedTest {
     }
 
     // create WebLogic domain credential secret
-    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wdtDomainNamespace, adminUser, adminPassword);
+    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wdtDomainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
@@ -366,8 +347,8 @@ public class ItDomainInPV implements LoggedTest {
     // create a temporary WebLogic domain property file as a input for WDT model file
     File domainPropertiesFile = File.createTempFile("domain", "properties");
     Properties p = new Properties();
-    p.setProperty("adminUsername", adminUser);
-    p.setProperty("adminPassword", adminPassword);
+    p.setProperty("ADMIN_USERNAME_DEFAULTname", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("ADMIN_PASSWORD_DEFAULT", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("domainName", domainUid);
     p.setProperty("adminServerName", adminServerName);
     p.setProperty("productionModeEnabled", "true");
@@ -472,7 +453,7 @@ public class ItDomainInPV implements LoggedTest {
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, adminUser, adminPassword);
+      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
   }
