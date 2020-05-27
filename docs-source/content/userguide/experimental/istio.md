@@ -16,16 +16,12 @@ other components and services that have tracing enabled.
 
 #### Limitations
 
-The current experimental support for Istio has these limitations:
+The current support for Istio has these limitations:
 
 * It is tested with Istio 1.2.2 and later (up to 1.5), however it is tested with both single and
   multicluster installations of Istio.
-* Support is provided only for domains that are stored in persistent
-  volumes and created with the provided sample using the WLST option.
-  We intend to support Domain in Image and WDT options as well, but that is not currently
-  available.
 * Support is provided only for domains with a single dynamic cluster.
-  Multiple clusters and configured clusters are not currently supported.
+  Multiple clusters and configured clusters are not currently supported ???
 
 #### Using the operator with experimental Istio support
 
@@ -68,9 +64,8 @@ $ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-Currently, the experimental Istio support is provided only for domains stored on
-persistent volumes.  To enable the support for a domain, you need to add the
-`experimental` section to your domain custom resource YAML file as shown in the
+To enable the support for a domain, you need to add the
+`configuration` section to your domain custom resource YAML file as shown in the
 example below.  
 
 This *must* be done in the inputs file before running the `create-domain.sh` script
@@ -89,47 +84,46 @@ metadata:
     weblogic.domainUID: domain2
 spec:
   ... other content ...
-  experimental:
+  configuration:
     istio:
       enabled: true
       readinessPort: 8888
+      envoyPort: 31111
 ```
 
 To enable the experimental Istio support, you must include the `istio` section
 and you must set `enabled: true` as shown.  The `readniessPort` is optional
-and defaults to `8888` if not provided.  
+and defaults to `8888` if not provided.  The `envoyPort` is optional and defaults to `31111` if not provided.
 
 ##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on pods.  When you enable Istio support, the
-domain on a persistent volume sample scripts will make the following adjustments
-to your domain in order to satisy Istio's requirements:
+introspect job will automatcially create configuration overrrides with the necessary channels for the domain to satisy Istio's requirements:
 
 * On the Administration Server:
-    * Create a channel called `istio-probe` with listen address `127.0.0.1:8888` (or
+    * A network channel called `istio-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting).
-    * Create a channel called `istio-t3` with listen address `127.0.0.1` and the port
+    * A network channel called `istio-t3` with listen address `127.0.0.1` and the port
       you specified as the admin port.
-    * Create a channel called `istio-ldap` with listen address `127.0.0.1` and the port
+    * A channel called `istio-ldap` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the LDAP protocol enabled.
-    * Create a channel called `istio-T3Channel` with listen
-      address `127.0.0.1` and the port you specified as the T3 port.
+    * The introspect job will not create any configuration network channel for external access for you.  YOu can create a channel called `istio-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your regular domain configuration.
 * In the server template that is used to create Managed Servers in clusters:
-    * Create a channel called `istio-probe` with listen address `127.0.0.1:8888` (or
+    * A channel called `istio-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting) and the public address
       set to the Kubernetes Service for the Managed Server.
-    * Create a channel called `istio-t3` with listen address `127.0.0.1` and the port
+    * A channel called `istio-t3` with listen address `127.0.0.1` and the port
       you specified as the admin port and the public address
       set to the Kubernetes Service for the Managed Server.
-    * Create a channel called `istio-cluster` with listen address `127.0.0.1` and the port
+    * A channel called `istio-cluster` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the CLUSTER_BROADCAST protocol enabled,
       and the public address set to the Kubernetes Service for the Managed Server.
-    * Create a channel called `istio-http` with listen address `127.0.0.1:31111` and the
+    * A channel called `istio-http` with listen address `127.0.0.1:31111` and the
       public address set to the Kubernetes Service for the Managed Server. Note that `31111`
-      is the Istio proxy (envoy) port.
-* The create domain job will be configured to disable injection of the Istio sidecar.
+      is the Istio proxy (envoy) port.  You can set it to according to your environment of omit it to use the default (31111)
 
-Additionally, when the experimental Istio support is enabled for a domain, the operator will
+
+Additionally, when the Istio support is enabled for a domain, the operator will
 ensure that the Istio sidecar is not injected into the introspector job's pods.
 
 #### Exposing applications in Istio-enabled domains
