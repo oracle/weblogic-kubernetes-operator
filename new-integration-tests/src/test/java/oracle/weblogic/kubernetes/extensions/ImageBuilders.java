@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes.extensions;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +68,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static String operatorImage;
   private static String miiBasicImage;
   private static String wdtBasicImage;
+
+  private static Collection<String> pushedImages = new ArrayList<>();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -158,6 +162,15 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
   }
 
+  /**
+   * Called when images are pushed to Docker allowing conditional cleanup of images that are pushed
+   * to a remote registry.
+   * @param imageName Image name
+   */
+  public static void registerPushedImage(String imageName) {
+    pushedImages.add(imageName);
+  }
+
   @Override
   public void close() {
     logger.info("Cleanup images after all test suites are run");
@@ -181,17 +194,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     if (REPO_NAME.contains("ocir.io")) {
       String token = getOcirToken();
       if (token != null) {
-        if (miiBasicImage != null) {
-          deleteImageOcir(token, miiBasicImage);
-        }
-
-        if (wdtBasicImage != null) {
-          deleteImageOcir(token, wdtBasicImage);
-        }
-
-        // delete operator image
-        if (operatorImage != null) {
-          deleteImageOcir(token, operatorImage);
+        for (String image : pushedImages) {
+          deleteImageOcir(token, image);
         }
       }
     }
