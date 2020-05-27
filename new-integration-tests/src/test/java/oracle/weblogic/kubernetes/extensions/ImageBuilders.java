@@ -4,6 +4,10 @@
 package oracle.weblogic.kubernetes.extensions;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +16,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -35,6 +41,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIE
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
@@ -61,6 +68,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static String operatorImage;
   private static String miiBasicImage;
   private static String wdtBasicImage;
+
+  private static Collection<String> pushedImages = new ArrayList<>();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -153,6 +162,15 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
   }
 
+  /**
+   * Called when images are pushed to Docker allowing conditional cleanup of images that are pushed
+   * to a remote registry.
+   * @param imageName Image name
+   */
+  public static void registerPushedImage(String imageName) {
+    pushedImages.add(imageName);
+  }
+
   @Override
   public void close() {
     logger.info("Cleanup images after all test suites are run");
@@ -172,6 +190,56 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       deleteImage(operatorImage);
     }
 
+    // delete images from OCIR, if necessary
+    if (REPO_NAME.contains("ocir.io")) {
+      String token = getOcirToken();
+      if (token != null) {
+        for (String image : pushedImages) {
+          deleteImageOcir(token, image);
+        }
+      }
+    }
+  }
+
+  private String getOcirToken() {
+    Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
+    String cmd = scriptPath.toFile().getAbsolutePath();
+    ExecResult result = null;
+    try {
+      result = ExecCommand.exec(cmd, true);
+    } catch (Exception e) {
+      logger.info("Got exception while running command: {0}", cmd);
+      logger.info(e.toString());
+    }
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
+    }
+
+    return result != null ? result.stdout().trim() : null;
+  }
+
+  private void deleteImageOcir(String token, String imageName) {
+    int firstSlashIdx = imageName.indexOf('/');
+    String registry = imageName.substring(0, firstSlashIdx);
+    int secondSlashIdx = imageName.indexOf('/', firstSlashIdx + 1);
+    String tenancy = imageName.substring(firstSlashIdx + 1, secondSlashIdx);
+    String imageAndTag = imageName.substring(secondSlashIdx + 1);
+    String curlCmd = "curl -skL -X \"DELETE\" -H \"Authorization: Bearer " + token
+        + "\" \"https://" + registry + "/20180419/docker/images/"
+        + tenancy + "/" + imageAndTag.replace(':', '/') + "\"";
+    logger.info("About to invoke: " + curlCmd);
+    ExecResult result = null;
+    try {
+      result = ExecCommand.exec(curlCmd, true);
+    } catch (Exception e) {
+      logger.info("Got exception while running command: {0}", curlCmd);
+      logger.info(e.toString());
+    }
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
+    }
   }
 
   /**
