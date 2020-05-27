@@ -106,6 +106,8 @@ class ItMiiMultiModel implements LoggedTest {
    * Test that two WDT model files in a domain resource's ConfigMap are applied in the expected order.
    * Create a WebLogic domain with a Kubernetes ConfigMap that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected.
+   * Please refer to docs-source/content/userguide/managing-domains/model-in-image/model-files.md
+   * for more details about the ordering rules.
    */
   @Test
   @DisplayName("Create model-in-image domain with a ConfigMap that contains multiple model files")
