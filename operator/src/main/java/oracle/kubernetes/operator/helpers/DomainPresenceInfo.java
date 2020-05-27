@@ -537,6 +537,10 @@ public class DomainPresenceInfo {
       this.isServiceOnly = isServiceOnly;
     }
 
+    public String getName() {
+      return this.serverConfig.getName();
+    }
+
     public String getServerName() {
       return serverConfig.getName();
     }

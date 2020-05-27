@@ -42,7 +42,7 @@ public class DeleteDomainStep extends Step {
         Step.chain(
             deletePods(),
             deleteServices(),
-            ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUid, namespace, getNext()));
+            ConfigMapHelper.deleteGeneratedDomainConfigMapStep(domainUid, namespace, getNext()));
     if (info != null) {
       serverDownStep =
           new ServerDownIteratorStep(

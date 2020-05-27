@@ -213,6 +213,12 @@ public abstract class StepContextBase implements StepContextConstants {
     vars.add(new V1EnvVar().name(name).value(value));
   }
 
+  protected void addEnvVarIfTrue(boolean condition, List<V1EnvVar> vars, String name) {
+    if (condition) {
+      addEnvVar(vars, name, "true");
+    }
+  }
+
   protected boolean hasEnvVar(List<V1EnvVar> vars, String name) {
     for (V1EnvVar var : vars) {
       if (name.equals(var.getName())) {

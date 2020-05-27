@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainConfigMapKeys;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -35,6 +36,8 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+
+import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 
 public class JobHelper {
 
@@ -86,11 +89,11 @@ public class JobHelper {
   }
 
   private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
-    if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
+    if (info.getDomain().getDomainHomeSourceType() == FromModel) {
 
       final String currentPodRestartVersion = info.getDomain().getRestartVersion();
-      final String configMapRestartVersion = (String) packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-      final String configMapSpecHash = (String) packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+      final String configMapRestartVersion = (String) packet.get(DomainConfigMapKeys.DOMAIN_RESTART_VERSION);
+      final String configMapSpecHash = (String) packet.get(DomainConfigMapKeys.DOMAIN_INPUTS_HASH);
       final String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
           .getSpec().getImage()));
 
@@ -295,7 +298,7 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
-      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType());
+      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
 
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
@@ -341,7 +344,7 @@ public class JobHelper {
               context.createNewJob(
                     readDomainIntrospectorPodLogStep(
                           deleteDomainIntrospectorJobStep(
-                                ConfigMapHelper.createSitConfigMapStep(getNext())))),
+                                ConfigMapHelper.createGeneratedDomainConfigMapStep(getNext())))),
               packet);
       }
 

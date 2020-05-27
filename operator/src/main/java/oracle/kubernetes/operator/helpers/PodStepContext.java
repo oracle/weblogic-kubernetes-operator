@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainConfigMapKeys;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -78,16 +79,14 @@ public abstract class PodStepContext extends BasePodStepContext {
   private String miiModelSecretsHash;
   private String miiDomainZipHash;
   private String domainRestartVersion;
-  private String domainImageName;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    miiModelSecretsHash = (String)packet.get(ProcessingConstants.SECRETS_HASH);
-    miiDomainZipHash = (String)packet.get(ProcessingConstants.DOMAIN_HASH);
-    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-    domainImageName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+    miiModelSecretsHash = (String)packet.get(DomainConfigMapKeys.SECRETS_MD_5);
+    miiDomainZipHash = (String)packet.get(DomainConfigMapKeys.DOMAINZIP_HASH);
+    domainRestartVersion = (String)packet.get(DomainConfigMapKeys.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
@@ -133,7 +132,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return info.getDomain().getMetadata().getName();
   }
 
-  private String getDomainHomeSourceType() {
+  private DomainSourceType getDomainHomeSourceType() {
     return getDomain().getDomainHomeSourceType();
   }
 
@@ -557,7 +556,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
     volumes.addAll(getServerSpec().getAdditionalVolumes());
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
 
@@ -600,7 +599,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
     return mounts;
@@ -625,16 +624,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
     addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
-    if (isLocalAdminProtocolChannelSecure()) {
-      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
-    }
-    if (isAdminServerProtocolChannelSecure()) {
-      // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
-      // in NM startup.properties.
-      // WebLogic Node Manager then sets the ADMIN_URL env variable(based on the "AdminURL") before starting
-      // the managed server
-      addEnvVar(vars, "ADMIN_SERVER_PORT_SECURE", "true");
-    }
+    addEnvVarIfTrue(isLocalAdminProtocolChannelSecure(), vars, "ADMIN_PORT_SECURE");
+    addEnvVarIfTrue(isAdminServerProtocolChannelSecure(), vars, ServerEnvVars.ADMIN_SERVER_PORT_SECURE);
     addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
@@ -642,17 +633,17 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
-    String dataHome = getDataHome();
-    if (dataHome != null && !dataHome.isEmpty()) {
-      addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
-    }
-    if (mockWls()) {
-      addEnvVar(vars, "MOCK_WLS", "true");
-    }
+    Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
+    addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
+    addEnvVarIfTrue(distributeOverridesDynamically(), vars, ServerEnvVars.DYNAMIC_CONFIG_OVERRIDE);
   }
 
   private String getDomainHome() {
     return getDomain().getDomainHome();
+  }
+
+  private boolean distributeOverridesDynamically() {
+    return getDomain().distributeOverridesDynamically();
   }
 
   private V1Lifecycle createLifecycle() {

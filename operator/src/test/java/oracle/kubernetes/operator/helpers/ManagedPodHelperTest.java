@@ -906,7 +906,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
   }
 
-
   @Override
   void setServerPort(int port) {
     getServerTopology().setListenPort(port);

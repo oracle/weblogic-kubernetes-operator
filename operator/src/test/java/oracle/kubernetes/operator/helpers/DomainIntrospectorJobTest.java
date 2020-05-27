@@ -170,7 +170,7 @@ public class DomainIntrospectorJobTest {
             .metadata(
                 new V1ObjectMeta()
                     .namespace(NS)
-                    .name(ConfigMapHelper.SitConfigMapContext.getConfigMapName(UID))));
+                    .name(ConfigMapHelper.getDomainConfigMapName(UID))));
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 

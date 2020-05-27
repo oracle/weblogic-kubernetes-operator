@@ -58,6 +58,13 @@ spec:
                       configMap:
                         type: string
                         description: WDT config map name.
+                  distributionStrategy:
+                    type: string
+                    description: The strategy for handling changes to the secrets
+                      or overridesConfigMap fields. Legal values are DYNAMIC and ON_RESTART.
+                    enum:
+                    - DYNAMIC
+                    - ON_RESTART
                   secrets:
                     type: array
                     description: A list of names of the secrets for WebLogic configuration

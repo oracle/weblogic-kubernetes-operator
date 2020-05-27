@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.DomainTopology;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -301,7 +302,7 @@ public class DomainProcessorTest {
   }
 
   private void defineSituationConfigMap() throws JsonProcessingException {
-    testSupport.defineResources(createSituConfigMap());
+    testSupport.defineResources(createGenerateDomainMap());
   }
 
   private V1Job job;
@@ -311,14 +312,14 @@ public class DomainProcessorTest {
   }
 
   // define a config map with a topology to avoid the no-topology condition that always runs the introspector
-  private V1ConfigMap createSituConfigMap() throws JsonProcessingException {
+  private V1ConfigMap createGenerateDomainMap() throws JsonProcessingException {
     return new V1ConfigMap()
-          .metadata(createSituConfigMapMeta())
-          .data(new HashMap<>(Map.of("topology.yaml", defineTopology())));
+          .metadata(createGeneratedDomainMapMeta())
+          .data(new HashMap<>(Map.of(DomainConfigMapKeys.TOPOLOGY_YAML, defineTopology())));
   }
 
-  private V1ObjectMeta createSituConfigMapMeta() {
-    return new V1ObjectMeta().namespace(NS).name(ConfigMapHelper.SitConfigMapContext.getConfigMapName(UID));
+  private V1ObjectMeta createGeneratedDomainMapMeta() {
+    return new V1ObjectMeta().namespace(NS).name(ConfigMapHelper.getDomainConfigMapName(UID));
   }
 
   private String defineTopology() throws JsonProcessingException {
@@ -327,7 +328,7 @@ public class DomainProcessorTest {
 
     return new ObjectMapper(new YAMLFactory())
           .setSerializationInclusion(JsonInclude.Include.NON_DEFAULT)
-          .writeValueAsString(new ConfigMapHelper.DomainTopology(configSupport.createDomainConfig()));
+          .writeValueAsString(new DomainTopology(configSupport.createDomainConfig()));
   }
 
 
