@@ -53,7 +53,9 @@ import org.junit.jupiter.api.Test;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -71,7 +73,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.restart;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdown;
@@ -90,6 +91,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTim
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runCreateDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -116,10 +118,9 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
   // domain constants
   private final String clusterName = "cluster-1";
-  private final String adminUser = "weblogic";
-  private final String adminPassword = "welcome1";
   private final int replicaCount = 2;
 
+  private int t3ChannelPort = 0;
   private String image = null;
   private boolean isUseSecret = false;
   private int replicasAfterScale;
@@ -234,13 +235,17 @@ public class ItOperatorTwoDomains implements LoggedTest {
     String wlSecretName = "weblogic-credentials";
 
     for (int i = 0; i < numberOfDomains; i++) {
+
+      t3ChannelPort = getNextFreePort(32001, 32767);
+      logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
+
       String domainUid = domainUids.get(i);
       String domainNamespace = domainNamespaces.get(i);
       String pvName = domainUid + "-pv";
       String pvcName = domainUid + "-pvc";
 
       // create WebLogic credentials secret
-      createSecretWithUsernamePassword(wlSecretName, domainNamespace, adminUser, adminPassword);
+      createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
       // create persistent volume and persistent volume claims
       Path pvHostPath =
@@ -262,7 +267,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
                   .path(pvHostPath.toString())))
           .metadata(new V1ObjectMetaBuilder()
               .withName(pvName)
-              .withNamespace(domainNamespace)
               .build()
               .putLabelsItem("weblogic.resourceVersion", "domain-v2")
               .putLabelsItem("weblogic.domainUid", domainUid));
@@ -331,7 +335,10 @@ public class ItOperatorTwoDomains implements LoggedTest {
                   .adminService(new AdminService()
                       .addChannelsItem(new Channel()
                           .channelName("default")
-                          .nodePort(0))))
+                          .nodePort(0))
+                      .addChannelsItem(new Channel()
+                          .channelName("T3Channel")
+                          .nodePort(t3ChannelPort))))
               .addClustersItem(new Cluster()
                   .clusterName(clusterName)
                   .replicas(replicaCount)
@@ -355,7 +362,8 @@ public class ItOperatorTwoDomains implements LoggedTest {
               getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
 
       logger.info("Validating WebLogic admin server access by login to console");
-      assertTrue(assertDoesNotThrow(() -> adminNodePortAccessible(serviceNodePort, adminUser, adminPassword),
+      assertTrue(assertDoesNotThrow(
+          () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
           "Access to admin server node port failed"), "Console login validation failed");
     }
   }
@@ -486,8 +494,10 @@ public class ItOperatorTwoDomains implements LoggedTest {
     p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);
     p.setProperty("managed_server_port", "8001");
     p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", adminUser);
-    p.setProperty("admin_password", adminPassword);
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "4");
     p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
     p.setProperty("domain_logs", "/shared/logs");
