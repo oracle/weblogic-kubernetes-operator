@@ -183,7 +183,8 @@ public class ItDomainInPV implements LoggedTest {
     }
 
     // create WebLogic domain credential secret
-    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
@@ -337,7 +338,8 @@ public class ItDomainInPV implements LoggedTest {
     }
 
     // create WebLogic domain credential secret
-    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wdtDomainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wdtDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
