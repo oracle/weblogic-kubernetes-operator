@@ -68,11 +68,6 @@ To enable the support for a domain, you need to add the
 `configuration` section to your domain custom resource YAML file as shown in the
 example below.  
 
-This *must* be done in the inputs file before running the `create-domain.sh` script
-in the [sample directory]({{< relref "/samples/simple/domains/domain-home-on-pv" >}})
-because the `create-domain.sh` script makes the necessary adjustments to the domain
-to make it work in an Istio environment.
-
 ```
 apiVersion: "weblogic.oracle/v7"
 kind: Domain
@@ -91,13 +86,13 @@ spec:
       envoyPort: 31111
 ```
 
-To enable the experimental Istio support, you must include the `istio` section
+To enable the Istio support, you must include the `istio` section
 and you must set `enabled: true` as shown.  The `readniessPort` is optional
 and defaults to `8888` if not provided.  The `envoyPort` is optional and defaults to `31111` if not provided.
 
 ##### How Istio-enabled domains differ from regular domains
 
-Istio enforces a number of requirements on pods.  When you enable Istio support, the
+Istio enforces a number of requirements on pods.  When you enable Istio support in the domain resource, the
 introspect job will automatcially create configuration overrrides with the necessary channels for the domain to satisy Istio's requirements:
 
 * On the Administration Server:
