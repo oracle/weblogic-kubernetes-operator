@@ -8,7 +8,7 @@ import org.joda.time.DateTime;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class KubernetesUtilsTest {
 
