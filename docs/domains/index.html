@@ -1042,7 +1042,7 @@ window.onload = function() {
           "$ref": "#/definitions/KubernetesResource"
         },
         "allowConcurrentScaleUp": {
-          "description": "If true (the default), the operator may starts up more than one managed server in the cluster at the same time during scale up operation. Otherwise, the operator will start up managed servers one at a time.",
+          "description": "If true (the default), the operator may start up more than one managed server in this cluster at the same time during scale up operations. Otherwise, the operator will wait until a managed server to be in Ready state before starting up the next one when scaling up more than one server.",
           "type": "boolean"
         },
         "serverStartPolicy": {
