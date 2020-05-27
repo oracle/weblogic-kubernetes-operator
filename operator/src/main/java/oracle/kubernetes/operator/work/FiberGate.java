@@ -3,10 +3,11 @@
 
 package oracle.kubernetes.operator.work;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -37,17 +38,14 @@ public class FiberGate {
   public FiberGate(Engine engine) {
     this.engine = engine;
     this.placeholder = engine.createFiber();
+  }
 
-    // TEST
-    engine.getExecutor().scheduleWithFixedDelay(() -> {
-      gateMap.forEach((key, fiber) -> {
-        Step lastIfSuspended = fiber.getLastIfSuspended();
-        if (lastIfSuspended != null) {
-          LOGGER.info("*** DomainUid: " + key + ", Fiber: " + fiber.toString()
-              + " is SUSPENDED at " + lastIfSuspended.getName());
-        }
-      });
-    }, 5, 5, TimeUnit.SECONDS);
+  /**
+   * Access map of current fibers.
+   * @return Map of fibers in this gate
+   */
+  public Map<String, Fiber> getCurrentFibers() {
+    return new HashMap<>(gateMap);
   }
 
   public ScheduledExecutorService getExecutor() {

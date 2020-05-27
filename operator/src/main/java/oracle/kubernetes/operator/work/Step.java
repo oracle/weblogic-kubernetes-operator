@@ -10,14 +10,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
 /** Individual step in a processing flow. */
 public abstract class Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private Step next;
 
   /** Create a step with no next step. */
@@ -101,8 +97,11 @@ public abstract class Step {
     return stepsArray;
   }
 
-
-  String getName() {
+  /**
+   * The name of the step. This will default to the class name minus "Step".
+   * @return The name of the step
+   */
+  public String getName() {
     String name = getClass().getName();
     int idx = name.lastIndexOf('.');
     if (idx >= 0) {
@@ -281,29 +280,13 @@ public abstract class Step {
                 @Override
                 public void onCompletion(Packet p) {
                   int current = count.decrementAndGet();
-
-                  // TEST
-                  LOGGER.info("*** ForkJoin *** Fiber: " + fiber + ", count remaining: " + current);
-
                   if (current == 0) {
                     // no need to synchronize throwables as all fibers are done
                     if (throwables.isEmpty()) {
-
-                      // TEST
-                      LOGGER.info("*** ForkJoin END *** Fiber: " + fiber + ", RESUMING");
-
                       fiber.resume(packet);
                     } else if (throwables.size() == 1) {
-
-                      // TEST
-                      LOGGER.info("*** ForkJoin END *** Fiber: " + fiber + ", TERMINATING");
-
                       fiber.terminate(throwables.get(0), packet);
                     } else {
-
-                      // TEST
-                      LOGGER.info("*** ForkJoin END *** Fiber: " + fiber + ", TERMINATING-MULTI");
-
                       fiber.terminate(new MultiThrowable(throwables), packet);
                     }
                   }
@@ -391,23 +374,11 @@ public abstract class Step {
         throwables.add(throwable);
       }
       int current = count.decrementAndGet();
-
-      // TEST
-      LOGGER.info("*** ForkJoin *** onThrowable Fiber: " + fiber + ", count remaining: " + current);
-
       if (current == 0) {
         // no need to synchronize throwables as all fibers are done
         if (throwables.size() == 1) {
-
-          // TEST
-          LOGGER.info("*** ForkJoin END onThrowable *** Fiber: " + fiber + ", TERMINATING");
-
           fiber.terminate(throwable, packet);
         } else {
-
-          // TEST
-          LOGGER.info("*** ForkJoin END onThrowable *** Fiber: " + fiber + ", TERMINATING-MULTI");
-
           fiber.terminate(new MultiThrowable(throwables), packet);
         }
       }

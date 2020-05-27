@@ -288,6 +288,11 @@ public class Main {
       int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
       DateTime now = DateTime.now();
       if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
+        processor.reportSuspendedFibers();
+
+        // HERE: We're not doing anything special on full recheck time
+        // This is where I would have expected to full relist the domains and other resources
+
         lastFullRecheck.set(now);
       } else {
         // check for namespaces that need to be started
