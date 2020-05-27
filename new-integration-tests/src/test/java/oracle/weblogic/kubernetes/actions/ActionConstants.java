@@ -50,7 +50,7 @@ public interface ActionConstants {
 
   public static final String WDT_DOWNLOAD_URL
       = "https://github.com/oracle/weblogic-deploy-tooling";
-  public static final String WDT_VERSION    = System.getProperty("wdt.version", "1.8.1");
+  public static final String WDT_VERSION    = System.getProperty("wdt.version", "latest");
   public static final String WDT_FILE_NAME  = "weblogic-deploy.zip";
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";

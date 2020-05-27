@@ -74,10 +74,10 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-if [ -z ${WDT_VERSION+x} ] then
-WDT_BASE_URL="https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION"
-else
+if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
 WDT_BASE_URL=$(curl -Ls -w %{url_effective} -o /dev/null https://github.com/oracle/weblogic-deploy-tooling/releases/latest)
+else
+WDT_BASE_URL="https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION"
 fi
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"

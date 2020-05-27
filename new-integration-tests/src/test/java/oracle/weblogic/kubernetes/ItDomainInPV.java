@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -39,7 +38,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -53,7 +51,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.apache.commons.io.FileUtils;
@@ -80,17 +77,21 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
-import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -141,7 +142,7 @@ public class ItDomainInPV implements LoggedTest {
     wdtDomainNamespace = namespaces.get(2);
 
     // install operator and verify its running in ready state
-    CommonTestUtils.installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
+    installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -157,13 +158,10 @@ public class ItDomainInPV implements LoggedTest {
    * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful.
-   * @throws IOException when creating directories for persistent volume,
-     creating temporary domain property file fails
-   * @throws ApiException when Kubernetes cluster query fails
    */
   @Test
   @DisplayName("Create WebLogic domain in PV using WLST script")
-  public void testDomainOnPvUsingWlst() throws IOException, ApiException {
+  public void testDomainOnPvUsingWlst() {
 
     final String domainUid = "wlstdomain-inpv";
     final String clusterName = "cluster-wlstdomain-inpv";
@@ -183,7 +181,7 @@ public class ItDomainInPV implements LoggedTest {
     }
 
     // create WebLogic domain credential secret
-    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace,
+    createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
@@ -192,7 +190,9 @@ public class ItDomainInPV implements LoggedTest {
     createPVC(pvName, pvcName, domainUid, wlstDomainNamespace);
 
     // create a temporary WebLogic domain property file
-    File domainPropertiesFile = File.createTempFile("domain", "properties");
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+        File.createTempFile("domain", "properties"),
+        "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
     p.setProperty("domain_name", domainUid);
@@ -208,7 +208,9 @@ public class ItDomainInPV implements LoggedTest {
     p.setProperty("managed_server_name_base", managedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
-    p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file");
+    assertDoesNotThrow(() ->
+        p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file"),
+        "Failed to write domain properties file");
 
     // WLST script for creating domain
     Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
@@ -272,26 +274,26 @@ public class ItDomainInPV implements LoggedTest {
                 .serverStartState("RUNNING")));
 
     // verify the domain custom resource is created
-    CommonTestUtils.createDomainAndVerify(domain, wlstDomainNamespace);
+    createDomainAndVerify(domain, wlstDomainNamespace);
 
     // verify admin server pod is ready
-    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, wlstDomainNamespace);
+    checkPodReady(adminServerPodName, domainUid, wlstDomainNamespace);
 
     // verify the admin server service created
-    CommonTestUtils.checkServiceExists(adminServerPodName, wlstDomainNamespace);
+    checkServiceExists(adminServerPodName, wlstDomainNamespace);
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, wlstDomainNamespace);
-      CommonTestUtils.checkPodReady(managedServerPodNamePrefix + i, domainUid, wlstDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, wlstDomainNamespace);
     }
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, wlstDomainNamespace);
-      CommonTestUtils.checkServiceExists(managedServerPodNamePrefix + i, wlstDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, wlstDomainNamespace);
     }
 
     logger.info("Getting node port for default channel");
@@ -301,7 +303,7 @@ public class ItDomainInPV implements LoggedTest {
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
   }
@@ -311,13 +313,10 @@ public class ItDomainInPV implements LoggedTest {
    * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful.
-   * @throws IOException when creating directories for persistent volume,
-     creating temporary domain property file fails
-   * @throws ApiException when Kubernetes cluster query fails
    */
   @Test
   @DisplayName("Create WebLogic domain in PV using WDT")
-  public void testDomainOnPvUsingWdt() throws IOException, ApiException {
+  public void testDomainOnPvUsingWdt() {
 
     final String domainUid = "wdtdomain-inpv";
     final String clusterName = "cluster-wdtdomain-inpv";
@@ -338,7 +337,7 @@ public class ItDomainInPV implements LoggedTest {
     }
 
     // create WebLogic domain credential secret
-    CommonTestUtils.createSecretWithUsernamePassword(wlSecretName, wdtDomainNamespace,
+    createSecretWithUsernamePassword(wlSecretName, wdtDomainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
@@ -347,7 +346,9 @@ public class ItDomainInPV implements LoggedTest {
     createPVC(pvName, pvcName, domainUid, wdtDomainNamespace);
 
     // create a temporary WebLogic domain property file as a input for WDT model file
-    File domainPropertiesFile = File.createTempFile("domain", "properties");
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+        File.createTempFile("domain", "properties"),
+        "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("ADMIN_USERNAME_DEFAULTname", ADMIN_USERNAME_DEFAULT);
     p.setProperty("ADMIN_PASSWORD_DEFAULT", ADMIN_PASSWORD_DEFAULT);
@@ -360,7 +361,9 @@ public class ItDomainInPV implements LoggedTest {
     p.setProperty("t3ChannelPort", Integer.toString(t3ChannelPort));
     p.setProperty("t3PublicAddress", K8S_NODEPORT_HOST);
     p.setProperty("managedServerPort", "8001");
-    p.store(new FileOutputStream(domainPropertiesFile), "WDT properties file");
+    assertDoesNotThrow(() ->
+        p.store(new FileOutputStream(domainPropertiesFile), "WDT properties file"),
+        "Failed to write domain properties file");
 
     // shell script to download WDT and run the WDT createDomain script
     Path wdtScript = Paths.get(RESOURCE_DIR, "bash-scripts", "wdt-create-domain-onpv.sh");
@@ -426,26 +429,26 @@ public class ItDomainInPV implements LoggedTest {
                 .serverStartState("RUNNING")));
 
     // verify the domain custom resource is created
-    CommonTestUtils.createDomainAndVerify(domain, wdtDomainNamespace);
+    createDomainAndVerify(domain, wdtDomainNamespace);
 
     // verify admin server pod is ready
-    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, wdtDomainNamespace);
+    checkPodReady(adminServerPodName, domainUid, wdtDomainNamespace);
 
     // verify the admin server service created
-    CommonTestUtils.checkServiceExists(adminServerPodName, wdtDomainNamespace);
+    checkServiceExists(adminServerPodName, wdtDomainNamespace);
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, wdtDomainNamespace);
-      CommonTestUtils.checkPodReady(managedServerPodNamePrefix + i, domainUid, wdtDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, wdtDomainNamespace);
     }
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, wdtDomainNamespace);
-      CommonTestUtils.checkServiceExists(managedServerPodNamePrefix + i, wdtDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, wdtDomainNamespace);
     }
 
     logger.info("Getting node port for default channel");
@@ -455,7 +458,7 @@ public class ItDomainInPV implements LoggedTest {
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
   }
@@ -470,10 +473,9 @@ public class ItDomainInPV implements LoggedTest {
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
    * @param namespace name of the domain namespace in which the job is created
-   * @throws ApiException when Kubernetes cluster query fails
    */
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-      String pvName, String pvcName, String namespace) throws ApiException {
+      String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run create domain job using WLST");
 
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -496,7 +498,7 @@ public class ItDomainInPV implements LoggedTest {
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
-    runCreateDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
+    createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
 
   }
 
@@ -512,11 +514,9 @@ public class ItDomainInPV implements LoggedTest {
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
    * @param namespace name of the domain namespace in which the job is created
-   * @throws ApiException when Kubernetes cluster query fails
    */
   private void createDomainOnPVUsingWdt(Path domainCreationScriptFile, Path modelFile,
-      Path domainPropertiesFile, String domainUid, String pvName, String pvcName, String namespace)
-      throws ApiException {
+      Path domainPropertiesFile, String domainUid, String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run create domain job using WDT");
 
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -548,7 +548,7 @@ public class ItDomainInPV implements LoggedTest {
             .value("/shared/domains/" + domainUid)); // domain location
 
     logger.info("Running a Kubernetes job to create the domain");
-    runCreateDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
+    createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
 
   }
 
@@ -597,10 +597,9 @@ public class ItDomainInPV implements LoggedTest {
    * @param domainScriptCM configmap holding domain creation script files
    * @param namespace name of the domain namespace in which the job is created
    * @param jobContainer V1Container with job commands to create domain
-   * @throws ApiException when Kubernetes cluster query fails
    */
-  private void runCreateDomainJob(String pvName,
-      String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) throws ApiException {
+  private void createDomainJob(String pvName,
+      String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
 
     V1Job jobBody = new V1Job()
@@ -670,7 +669,8 @@ public class ItDomainInPV implements LoggedTest {
         .until(jobCompleted(jobName, null, namespace));
 
     // check job status and fail test if the job failed to create domain
-    V1Job job = getJob(jobName, namespace);
+    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+        "Getting the job failed");
     if (job != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
           v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
@@ -678,9 +678,13 @@ public class ItDomainInPV implements LoggedTest {
           .orElse(null);
       if (jobCondition != null) {
         logger.severe("Job {0} failed to create domain", jobName);
-        List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
+        List<V1Pod> pods = assertDoesNotThrow(()
+            -> listPods(namespace, "job-name=" + jobName).getItems(),
+            "Listing pods failed");
         if (!pods.isEmpty()) {
-          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+              "Failed to get pod log");
+          logger.severe(podLog);
           fail("Domain create job failed");
         }
       }
@@ -695,14 +699,20 @@ public class ItDomainInPV implements LoggedTest {
    * @param domainUid domain UID
    * @throws IOException when creating pv path fails
    */
-  private void createPV(String pvName, String domainUid) throws IOException {
+  private void createPV(String pvName, String domainUid) {
     logger.info("creating persistent volume");
 
-    Path pvHostPath = Files.createDirectories(Paths.get(
-        PV_ROOT, this.getClass().getSimpleName(), pvName));
-    logger.info("Creating PV directory host path {0}", pvHostPath);
-    FileUtils.deleteDirectory(pvHostPath.toFile());
-    Files.createDirectories(pvHostPath);
+    Path pvHostPath = null;
+    try {
+      pvHostPath = Files.createDirectories(Paths.get(
+          PV_ROOT, this.getClass().getSimpleName(), pvName));
+      logger.info("Creating PV directory host path {0}", pvHostPath);
+      FileUtils.deleteDirectory(pvHostPath.toFile());
+      Files.createDirectories(pvHostPath);
+    } catch (IOException ioex) {
+      logger.severe(ioex.getMessage());
+      fail("Create persistent volume host path failed");
+    }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -758,23 +768,8 @@ public class ItDomainInPV implements LoggedTest {
    * @param namespace name of the namespace in which to create secret
    */
   private void createOCRRepoSecret(String namespace) {
-    logger.info("Creating image pull secret in namespace {0}", namespace);
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY);
-    String dockerConfigJson = dockerConfigJsonObject.toString();
-
-    // Create the V1Secret configuration
-    V1Secret repoSecret = new V1Secret()
-        .metadata(new V1ObjectMeta()
-            .name(OCR_SECRET_NAME)
-            .namespace(namespace))
-        .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
-
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", OCR_SECRET_NAME));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", OCR_SECRET_NAME));
-
+    CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
 
 }
