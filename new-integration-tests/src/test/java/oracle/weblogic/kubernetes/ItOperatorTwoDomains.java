@@ -74,8 +74,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.restart;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdown;
+import static oracle.weblogic.kubernetes.actions.TestActions.restartDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -236,7 +236,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     for (int i = 0; i < numberOfDomains; i++) {
 
-      t3ChannelPort = getNextFreePort(32001, 32767);
+      t3ChannelPort = getNextFreePort(32001 + 10 * i, 32700 + 10 * i);
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
 
       String domainUid = domainUids.get(i);
@@ -535,7 +535,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     // shutdown domain1
     logger.info("Shutting down domain1");
-    assertTrue(shutdown(domain1Uid, domain1Namespace),
+    assertTrue(shutdownDomain(domain1Uid, domain1Namespace),
         String.format("shutdown domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify all the server pods in domain1 were shutdown
@@ -554,7 +554,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     // restart domain1
     logger.info("Restarting domain1");
-    assertTrue(restart(domain1Uid, domain1Namespace),
+    assertTrue(restartDomain(domain1Uid, domain1Namespace),
         String.format("restart domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify domain1 is restarted
@@ -639,7 +639,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
     // shutdown both domains
     logger.info("Shutting down both domains");
     for (int i = 0; i < numberOfDomains; i++) {
-      shutdown(domainUids.get(i), domainNamespaces.get(i));
+      shutdownDomain(domainUids.get(i), domainNamespaces.get(i));
     }
 
     // verify all the pods were shutdown

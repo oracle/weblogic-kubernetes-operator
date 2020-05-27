@@ -150,7 +150,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean shutdown(String domainUid, String namespace) {
+  public static boolean shutdownDomain(String domainUid, String namespace) {
     return Domain.shutdown(domainUid, namespace);
   }
 
@@ -161,7 +161,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restart(String domainUid, String namespace) {
+  public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
 
