@@ -323,7 +323,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
    * The most recently invoked step if the fiber is currently suspended.
    * @return Last invoked step for suspended fiber.
    */
-  public Step getLastIfSuspended() {
+  public Step getSuspendedStep() {
     lock.lock();
     try {
       if (na != null && na.kind == Kind.SUSPEND) {

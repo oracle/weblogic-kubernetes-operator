@@ -230,11 +230,10 @@ public class DomainProcessorImpl implements DomainProcessor {
           (namespace, gate) -> {
             gate.getCurrentFibers().forEach(
                 (key, fiber) -> {
-                  Step lastIfSuspended = fiber.getLastIfSuspended();
-                  if (lastIfSuspended != null) {
+                  Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
                     LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
-                        + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + lastIfSuspended.getName());
-                  }
+                        + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
+                  });
                 });
           };
       makeRightFiberGates.forEach(consumer);
