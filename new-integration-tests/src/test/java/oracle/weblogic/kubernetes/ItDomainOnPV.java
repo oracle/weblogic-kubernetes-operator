@@ -106,8 +106,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -283,24 +283,23 @@ public class ItDomainOnPV implements LoggedTest {
     // check admin server pod is ready
     logger.info("Waiting for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPodNamePrefix + i);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
     }
 
     logger.info("Getting node port");
@@ -670,39 +669,4 @@ public class ItDomainOnPV implements LoggedTest {
                 condition.getRemainingTimeInMS()))
         .until(operatorIsReady(opNamespace));
   }
-
-  /**
-   * Check pod is ready.
-   *
-   * @param podName pod name to check
-   */
-  private void checkPodReady(String podName) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podReady(podName, domainUid, domainNamespace));
-  }
-
-  /**
-   * Check service is created.
-   *
-   * @param serviceName service name to check
-   */
-  private void checkServiceCreated(String serviceName) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(serviceExists(serviceName, null, domainNamespace));
-  }
-
 }
