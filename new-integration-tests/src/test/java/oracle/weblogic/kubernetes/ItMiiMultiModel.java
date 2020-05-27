@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -156,46 +157,14 @@ class ItMiiMultiModel implements LoggedTest {
     logger.info("Create an image with two model files");
     miiImageMultiModel = createMiiImageAndVerify(
         String.format("%s-%s", MII_BASIC_IMAGE_NAME, "test-multi-model-image"),
-        //Arrays.asList(MODEL_DIR + "/" + modelFileName1, MODEL_DIR + "/" + modelFileName2),
-        Arrays.asList(MODEL_DIR + "/" + modelFileName1),
+        Arrays.asList(
+            MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE, 
+            MODEL_DIR + "/" + modelFileName1, 
+            MODEL_DIR + "/" + modelFileName2),
         Collections.singletonList(MII_BASIC_APP_NAME));
 
     // push the image to a registry to make it accessible in multi node cluster
     dockerLoginAndPushImageToRegistry(miiImageMultiModel);
-
-  }
-
-  @Test
-  @DisplayName("Create a domain with two model files in the image")
-  @Slow
-  public void testMiiWithMultiModelInImage() {
-    final String domainUid = "mii-mm-image-domain";
-    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
-
-    logger.info("Create domain {0} in namespace {1} with image {2} that contains WDT models {3} and {4}",
-        domainUid, domainNamespace, miiImageMultiModel, modelFileName1, modelFileName2);
-    createDomainResourceAndVerify(
-        domainUid, domainNamespace, adminServerPodName,
-        managedServerPrefix, miiImageMultiModel, null);
-    // managedServerPrefix, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, null);
-
-    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
-    String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals("10", maxCapacityValue, 
-        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName, maxCapacityValue, "10"));
-
-    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName, "40"));
-
-    logger.info("Check DataSource {0} does not exist", dsName2);
-    assertFalse(doesDSExist(adminServerPodName, domainNamespace, dsName2),
-        String.format("Domain %s in namespace %s DataSource %s should not exist",
-            domainUid, domainNamespace, dsName2));
-
-    logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
-            domainUid, domainNamespace, dsName2));
 
   }
 
@@ -211,6 +180,8 @@ class ItMiiMultiModel implements LoggedTest {
     final String domainUid = "mii-mm-cm-domain";
     final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+    final String expectedMaxCapacity = "40";
+    final String expectedMaxCapacityDS3 = "5";
 
     // Use two model files modelFileName3 and modelFileName4, which define the same DS "TestDataSource".
     // The only difference is that the connection pool's MaxCapacity setting is 30 and 40 respectively.
@@ -229,25 +200,60 @@ class ItMiiMultiModel implements LoggedTest {
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals("40", maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName, maxCapacityValue, "40"));
+            domainUid, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName, "40"));
+            domainUid, domainNamespace, dsName, expectedMaxCapacity));
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
-    assertEquals("5", maxCapacityValue, 
+    assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName3, maxCapacityValue, "5"));
+            domainUid, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName3, "5"));
+            domainUid, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
   }
 
-  //@Test
+  @Test
+  @DisplayName("Create a domain with two model files in the image")
+  @Slow
+  public void testMiiWithMultiModelInImage() {
+    final String domainUid = "mii-mm-image-domain";
+    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+    final String expectedMaxCapacity = "20";
+
+    logger.info("Create domain {0} in namespace {1} with image {2} that contains WDT models {3} and {4}",
+        domainUid, domainNamespace, miiImageMultiModel, modelFileName1, modelFileName2);
+    createDomainResourceAndVerify(
+        domainUid, domainNamespace, adminServerPodName,
+        managedServerPrefix, miiImageMultiModel, null);
+    // managedServerPrefix, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, null);
+
+    logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
+    String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
+    assertEquals(expectedMaxCapacity, maxCapacityValue, 
+        String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
+            domainUid, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
+
+    logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
+            domainUid, domainNamespace, dsName, expectedMaxCapacity));
+
+    logger.info("Check DataSource {0} does not exist", dsName2);
+    assertFalse(doesDSExist(adminServerPodName, domainNamespace, dsName2),
+        String.format("Domain %s in namespace %s DataSource %s should not exist",
+            domainUid, domainNamespace, dsName2));
+
+    logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
+            domainUid, domainNamespace, dsName2));
+
+  }
+
+  @Test
   @DisplayName("Create a domain with two model files in the image and two models in CM")
   @Slow
   public void testMiiWithMultiModelInImageAndCM() {
@@ -255,6 +261,8 @@ class ItMiiMultiModel implements LoggedTest {
     final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
     final String configMapName = "ds-multi-model-image-cm";
+    final String expectedMaxCapacity = "40";
+    final String expectedMaxCapacityDS3 = "5";
 
     createDomainResourceAndVerify(
         domainUid, domainNamespace, adminServerPodName,
@@ -262,21 +270,21 @@ class ItMiiMultiModel implements LoggedTest {
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
-    assertEquals("40", maxCapacityValue, 
+    assertEquals(expectedMaxCapacity, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName, maxCapacityValue, "40"));
+            domainUid, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName, "40"));
+            domainUid, domainNamespace, dsName, expectedMaxCapacity));
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
-    assertEquals("5", maxCapacityValue, 
+    assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName3, maxCapacityValue, "5"));
+            domainUid, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName3, "5"));
+            domainUid, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
     logger.info("Check DataSource {0} does not exist", dsName2);
     assertFalse(doesDSExist(adminServerPodName, domainNamespace, dsName2),
