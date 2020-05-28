@@ -3,9 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -60,19 +58,12 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.restartDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
@@ -82,14 +73,14 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotEx
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOCRRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runCreateDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
@@ -108,6 +99,8 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
 
+  private static boolean isUseSecret = true;
+  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static String domain1Uid = null;
   private static String domain2Uid = null;
   private static String domain1Namespace = null;
@@ -121,8 +114,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private final int replicaCount = 2;
 
   private int t3ChannelPort = 0;
-  private String image = null;
-  private boolean isUseSecret = false;
   private int replicasAfterScale;
   private List<String> domainAdminServerPodNames = new ArrayList<>();
   private List<String> domainAdminPodOriginalTimestamps = new ArrayList<>();
@@ -166,6 +157,13 @@ public class ItOperatorTwoDomains implements LoggedTest {
     domain1Namespace = domainNamespaces.get(0);
     domain2Namespace = domainNamespaces.get(1);
 
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
+    if (KIND_REPO != null) {
+      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      logger.info("Using image {0}", kindRepoImage);
+      image = kindRepoImage;
+      isUseSecret = false;
+    }
   }
 
   /**
@@ -181,36 +179,8 @@ public class ItOperatorTwoDomains implements LoggedTest {
   @DisplayName("Create domain on PV using WLST script")
   public void testTwoDomainsManagedByTwoOperators() {
 
-    image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-
-    if (KIND_REPO != null) {
-      // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
-      // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
-      // The workaround will be to:
-      //   1. docker login
-      //   2. docker pull
-      //   3. docker tag with the KIND_REPO value
-      //   4. docker push this new image name
-      //   5. use this image name to create the domain resource
-      assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
-      assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
-
-      String kindRepoImage = KIND_REPO + image.substring(OCR_REGISTRY.length() + 1);
-      assertTrue(dockerTag(image, kindRepoImage),
-          String.format("docker tag failed for images %s, %s", image, kindRepoImage));
-      assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
-      image = kindRepoImage;
-    } else {
-      // create pull secrets for WebLogic image
-      for (int i = 0; i < numberOfDomains; i++) {
-        createOCRRepoSecret(domainNamespaces.get(i));
-      }
-      isUseSecret = true;
-    }
-
     // create two domains on PV using WLST
-    assertDoesNotThrow(() -> createTwoDomainsOnPVUsingWlstAndVerify(),
-        "createTwoDomainsOnPVUsingWlstAndVerify failed with IOException");
+    createTwoDomainsOnPVUsingWlstAndVerify();
 
     // get the domain1 and domain2 pods original creation timestamps
     getBothDomainsPodsOriginalCreationTimestamp();
@@ -228,13 +198,17 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
   /**
    * Create two domains on PV using WLST.
-   * @throws IOException when creating PV path fails
    */
-  private void createTwoDomainsOnPVUsingWlstAndVerify() throws IOException {
+  private void createTwoDomainsOnPVUsingWlstAndVerify() {
 
     String wlSecretName = "weblogic-credentials";
 
     for (int i = 0; i < numberOfDomains; i++) {
+
+      if (isUseSecret) {
+        // create pull secrets for WebLogic image
+        createOCRRepoSecret(domainNamespaces.get(i));
+      }
 
       t3ChannelPort = getNextFreePort(32001 + 10 * i, 32700 + 10 * i);
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
@@ -248,12 +222,13 @@ public class ItOperatorTwoDomains implements LoggedTest {
       createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
       // create persistent volume and persistent volume claims
-      Path pvHostPath =
-          createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume"));
+      Path pvHostPath = assertDoesNotThrow(
+          () -> createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), domainUid + "-persistentVolume")),
+              "createDirectories failed with IOException");
 
       logger.info("Creating PV directory {0}", pvHostPath);
-      deleteDirectory(pvHostPath.toFile());
-      createDirectories(pvHostPath);
+      assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+      assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
 
       V1PersistentVolume v1pv = new V1PersistentVolume()
           .spec(new V1PersistentVolumeSpec()
@@ -379,27 +354,26 @@ public class ItOperatorTwoDomains implements LoggedTest {
    * @param pvcName persistence volume claim for the WebLogic domain
    * @param domainUid the Uid of the domain to create
    * @param domainNamespace the namespace in which the domain will be created
-   * @throws IOException when reading/writing domain scripts fails
    */
   private void runCreateDomainOnPVJobUsingWlst(String pvName,
                                                String pvcName,
                                                String domainUid,
-                                               String domainNamespace) throws IOException {
+                                               String domainNamespace) {
 
     logger.info("Creating a staging location for domain creation scripts");
     Path pvTemp = get(RESULTS_ROOT, this.getClass().getSimpleName(), "domainCreateTempPV");
-    deleteDirectory(pvTemp.toFile());
-    createDirectories(pvTemp);
+    assertDoesNotThrow(() -> deleteDirectory(pvTemp.toFile()),"deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvTemp), "createDirectories failed with IOException");
 
     logger.info("Copying the domain creation WLST script to staging location");
     Path srcWlstScript = get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
     Path targetWlstScript = get(pvTemp.toString(), "create-domain.py");
-    copy(srcWlstScript, targetWlstScript, StandardCopyOption.REPLACE_EXISTING);
+    assertDoesNotThrow(() -> copy(srcWlstScript, targetWlstScript, StandardCopyOption.REPLACE_EXISTING),
+        "copy failed with IOException");
 
     logger.info("Creating WebLogic domain properties file");
     Path domainPropertiesFile = get(pvTemp.toString(), "domain.properties");
-    assertDoesNotThrow(() -> createDomainProperties(domainPropertiesFile, domainUid),
-        "Creating domain properties file failed");
+    createDomainProperties(domainPropertiesFile, domainUid);
 
     logger.info("Adding files to a ConfigMap for domain creation job");
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -408,9 +382,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     logger.info("Creating a ConfigMap to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
-    assertDoesNotThrow(
-        () -> createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles, domainNamespace),
-        "Create ConfigMap for domain creation failed");
+    createConfigMapFromFiles(domainScriptConfigMapName, domainScriptFiles, domainNamespace);
 
     logger.info("Running a Kubernetes job to create the domain");
     V1Job jobBody = new V1Job()
@@ -472,19 +444,16 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     logger.info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
         jobBody.getMetadata().getName(), domainUid, domainNamespace);
-    runCreateDomainJob(jobBody, domainNamespace);
-
+    createJobAndWaitUntilComplete(jobBody, domainNamespace);
   }
 
   /**
    * Create a properties file for WebLogic domain configuration.
    * @param wlstPropertiesFile path of the properties file
    * @param domainUid the WebLogic domain for which the properties file is created
-   * @throws FileNotFoundException when properties file path not found
-   * @throws IOException when writing properties fails
    */
   private void createDomainProperties(Path wlstPropertiesFile,
-                                      String domainUid) throws FileNotFoundException, IOException {
+                                      String domainUid) {
     // create a list of properties for the WebLogic domain configuration
     Properties p = new Properties();
 
@@ -503,7 +472,11 @@ public class ItOperatorTwoDomains implements LoggedTest {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
 
-    p.store(new FileOutputStream(wlstPropertiesFile.toFile()), "WLST properties file");
+    FileOutputStream fileOutputStream =
+        assertDoesNotThrow(() -> new FileOutputStream(wlstPropertiesFile.toFile()),
+            "new FileOutputStream failed with FileNotFoundException");
+    assertDoesNotThrow(() -> p.store(fileOutputStream, "WLST properties file"),
+        "Writing the property list to the specified output stream failed with IOException");
   }
 
   /**
