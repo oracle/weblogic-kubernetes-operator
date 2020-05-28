@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
+import org.joda.time.DateTime;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
@@ -573,16 +574,16 @@ public class Kubernetes {
    * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
-   * @return true if the pod's new timestamp is later than the initial PodCreationTimestamp
+   * @return true if the pod's creation timestamp is later than the initial PodCreationTimestamp
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
       String podName, String domainUid,
-      String namespace, String timestamp) throws ApiException {
-    String newCreationTime = getPodCreationTimestamp(namespace, "", podName);
+      String namespace, DateTime timestamp) throws ApiException {
+    DateTime newCreationTime = getPodCreationTimestamp(namespace, "", podName);
 
     if (newCreationTime != null
-        && Long.parseLong(newCreationTime) > Long.parseLong(timestamp)) {
+        && newCreationTime.isAfter(timestamp)) {
       logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
           podName, newCreationTime, timestamp);
       return true;

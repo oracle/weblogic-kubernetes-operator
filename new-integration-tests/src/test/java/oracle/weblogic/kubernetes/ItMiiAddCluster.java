@@ -40,6 +40,7 @@ import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -284,7 +285,7 @@ class ItMiiAddCluster implements LoggedTest {
   /**
    * Patch the domain resource with the configmap to add a cluster.
    * Update the restart version of the domain resource to 1.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp 
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
    * Verify servers from new cluster are not in running state, because i
    * the spec level replica count to zero(default).
@@ -302,15 +303,15 @@ class ItMiiAddCluster implements LoggedTest {
     String configMapName = "noreplicaconfigmap";
     createClusterConfigMap(configMapName, "model.config.cluster.yaml");
 
-    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
 
     // get the creation time of the server pods before patching
-    String adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
-    
+
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -327,7 +328,7 @@ class ItMiiAddCluster implements LoggedTest {
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
-    
+
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
          "More than one pod was restarted at same time"),
@@ -349,7 +350,7 @@ class ItMiiAddCluster implements LoggedTest {
    * Patch the domain resource with the configmap.
    * Update the restart version of the domain resource to 2.
    * Patch the domain resource with the spec/replicas set to 1.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp 
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
    * Verify servers from new cluster are in running state.
    */
@@ -362,13 +363,13 @@ class ItMiiAddCluster implements LoggedTest {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    
+
     String configMapName = "dynamicclusterconfigmap";
     createClusterConfigMap(configMapName, "model.dynamic.cluster.yaml");
 
-    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    String adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -388,7 +389,7 @@ class ItMiiAddCluster implements LoggedTest {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
-    
+
     patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
         .append(" \"path\": \"/spec/replicas\",")
@@ -404,10 +405,10 @@ class ItMiiAddCluster implements LoggedTest {
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
-    
-    // Check if the admin server pod has been restarted 
+
+    // Check if the admin server pod has been restarted
     // by comparing the PodCreationTime before and after rolling restart
-    
+
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
          "More than one pod was restarted at same time"),
@@ -415,7 +416,7 @@ class ItMiiAddCluster implements LoggedTest {
 
     // The ServerNamePrefix for the new dynamic cluster is dynamic-server
     // Make sure the managed server from the new cluster is running
-    
+
     String newServerPodName = domainUid + "-dynamic-server1";
     checkPodReady(newServerPodName, domainUid, domainNamespace);
     checkServiceExists(newServerPodName, domainNamespace);
@@ -430,7 +431,7 @@ class ItMiiAddCluster implements LoggedTest {
    * Patch the domain resource with the configmap.
    * Update the restart version of the domain resource to 3.
    * Patch the domain resource with the spec/replicas set to 1.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp 
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
    * Verify servers from new cluster are in running state.
    */
@@ -440,17 +441,17 @@ class ItMiiAddCluster implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testAddMiiConfiguredCluster() {
- 
+
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
     String configMapName = "configclusterconfigmap";
     createClusterConfigMap(configMapName, "model.config.cluster.yaml");
 
-    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
 
     // get the creation time of the admin server pod before patching
-    String adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     // get the creation time of the managed server pods before patching
     pods.put(adminServerPodName, adminPodCreationTime);
     for (int i = 1; i <= replicaCount; i++) {
@@ -470,7 +471,7 @@ class ItMiiAddCluster implements LoggedTest {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
-    
+
     patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
         .append(" \"path\": \"/spec/replicas\",")
@@ -486,7 +487,7 @@ class ItMiiAddCluster implements LoggedTest {
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
-    
+
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
          "More than one pod was restarted at same time"),
@@ -558,7 +559,7 @@ class ItMiiAddCluster implements LoggedTest {
 
   private static void  createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
@@ -625,9 +626,9 @@ class ItMiiAddCluster implements LoggedTest {
 
   }
 
-  /* 
+  /*
    * Verify the server MBEAN configuration through rest API.
-   * @param managedServer name of the managed server 
+   * @param managedServer name of the managed server
    * @returns true if MBEAN is found otherwise false
    **/
   private boolean checkManagedServerConfiguration(String managedServer) {
@@ -679,6 +680,6 @@ class ItMiiAddCluster implements LoggedTest {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-  }     
+  }
 
 }
