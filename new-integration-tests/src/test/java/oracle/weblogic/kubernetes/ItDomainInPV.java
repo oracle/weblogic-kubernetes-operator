@@ -350,8 +350,8 @@ public class ItDomainInPV implements LoggedTest {
         File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
-    p.setProperty("ADMIN_USERNAME_DEFAULTname", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("ADMIN_PASSWORD_DEFAULT", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("adminUsername", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("adminPassword", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("domainName", domainUid);
     p.setProperty("adminServerName", adminServerName);
     p.setProperty("productionModeEnabled", "true");

@@ -79,17 +79,24 @@ WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
 if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
-  for proxy in "${https_proxy2}" "${https_proxy}"; do
-    echo @@ "Info: Getting latest release WDT url with https_proxy=\"$proxy\""
-    https_proxy="${proxy}" \
-      curl -Ls -w %{url_effective} --connect-timeout 60 -o /dev/null \
-        https://github.com/oracle/weblogic-deploy-tooling/releases/latest > out
-    if [ $? -eq 0 ]; then
-      echo "Got URL $(cat out)"
-      WDT_BASE_URL=$(cat out | sed -e "s/tag/download/g")
-      rm out
-      break
-    fi
+  curl_res=1
+  max=20
+  count=0
+  while [ $curl_res -ne 0 -a $count -lt $max ] ; do
+    sleep 1
+    for proxy in "${https_proxy2}" "${https_proxy}"; do
+      echo @@ "Info: Getting latest release WDT url with https_proxy=\"$proxy\""
+      https_proxy="${proxy}" \
+        curl -Ls -w %{url_effective} --connect-timeout 30 -o /dev/null \
+          https://github.com/oracle/weblogic-deploy-tooling/releases/latest > out
+      curl_res=$?
+      if [ $curl_res -eq 0 ]; then
+        echo "Got URL $(cat out)"
+        WDT_BASE_URL=$(cat out | sed -e "s/tag/download/g")
+        rm out
+        break
+      fi
+    done
   done
 else
 WDT_BASE_URL="https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-$WDT_VERSION"
