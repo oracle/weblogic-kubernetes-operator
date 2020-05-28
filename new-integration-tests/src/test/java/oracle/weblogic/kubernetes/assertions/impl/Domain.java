@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -113,7 +114,7 @@ public class Domain {
       logger.severe("Failed to obtain the domain resource object from the API server", apex);
       return false;
     }
-      
+
     boolean domainPatched = (domain.spec().image().equals(image));
     logger.info("Domain Object patched : " + domainPatched + " domain image = " + domain.spec().image());
     return domainPatched;
@@ -139,7 +140,7 @@ public class Domain {
       logger.severe(String.format("Failed to obtain domain resource %s in namespace %s", domainUID, namespace), apex);
       return false;
     }
-    
+
     boolean domainPatched = domain.spec().webLogicCredentialsSecret().getName().equals(secretName);
     logger.info("Domain {0} is patched with webLogicCredentialsSecret: {1}",
         domainUID, domain.getSpec().webLogicCredentialsSecret().getName());
@@ -195,7 +196,7 @@ public class Domain {
   public static boolean podStateNotChanged(String podName,
                                            String domainUid,
                                            String domainNamespace,
-                                           String podOriginalCreationTimestamp) {
+                                           DateTime podOriginalCreationTimestamp) {
 
     // if pod does not exist, return false
     if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName),
@@ -225,9 +226,9 @@ public class Domain {
 
     return true;
   }
-  
+
   /**
-   * Check if the given WebLogic credentials are valid by using the credentials to 
+   * Check if the given WebLogic credentials are valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
    * @param host hostname of the admin server pod
@@ -246,9 +247,9 @@ public class Domain {
     CommandParams params = createCommandParams(host, podName, namespace, username, password);
     return Command.withParams(params).executeAndVerify("200");
   }
-  
+
   /**
-   * Check if the given WebLogic credentials are not valid by using the credentials to 
+   * Check if the given WebLogic credentials are not valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
    * @param host hostname of the admin server pod
@@ -267,7 +268,7 @@ public class Domain {
     CommandParams params = createCommandParams(host, podName, namespace, username, password);
     return Command.withParams(params).executeAndVerify("401");
   }
- 
+
   private static CommandParams createCommandParams(
       String host,
       String podName,

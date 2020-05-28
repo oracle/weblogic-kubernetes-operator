@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -377,7 +378,7 @@ public class CommonTestUtils {
             String.format("podReady failed with ApiException for pod %s in namespace %s",
                podName, domainNamespace)));
   }
-  
+
   /**
    * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
    *
@@ -390,7 +391,7 @@ public class CommonTestUtils {
       String domainUid,
       String domNamespace,
       String podName,
-      String lastCreationTime
+      DateTime lastCreationTime
   ) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -651,10 +652,10 @@ public class CommonTestUtils {
     String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
 
     // get the original managed server pod creation timestamp before scale
-    List<String> listOfPodCreationTimestamp = new ArrayList<>();
+    List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
       String managedServerPodName = manageServerPodNamePrefix + i;
-      String originalCreationTimestamp =
+      DateTime originalCreationTimestamp =
           assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                   managedServerPodName, domainNamespace));
@@ -755,13 +756,13 @@ public class CommonTestUtils {
 
   /**
    * Get the PodCreationTimestamp of a pod in a namespace.
-   * 
+   *
    * @param namespace Kubernetes namespace that the domain is hosted
-   * @param podName name of the pod 
+   * @param podName name of the pod
    * @return PodCreationTimestamp of the pod
    */
-  public static String getPodCreationTime(String namespace, String podName) {
-    String podCreationTime =
+  public static DateTime getPodCreationTime(String namespace, String podName) {
+    DateTime podCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
     assertNotNull(podCreationTime, "Got null PodCreationTimestamp");

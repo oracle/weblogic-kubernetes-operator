@@ -76,8 +76,7 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -459,16 +458,15 @@ public class Kubernetes implements LoggedTest {
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName  name of the pod
-   * @return creationTimestamp from metadata section of the Pod
+   * @return creationTimestamp DateTime from metadata of the Pod
    * @throws ApiException if Kubernetes client API call fail
    */
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
-    DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
 
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null && pod.getMetadata() != null) {
-      return dtf.print(pod.getMetadata().getCreationTimestamp());
+      return pod.getMetadata().getCreationTimestamp();
     } else {
       logger.info("Pod doesn't exist or pod metadata is null");
       return null;

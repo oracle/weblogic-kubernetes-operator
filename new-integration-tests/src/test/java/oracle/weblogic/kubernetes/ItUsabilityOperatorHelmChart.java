@@ -25,6 +25,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -147,14 +148,14 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
 
     // get the admin server pod original creation timestamp
     logger.info("Getting admin server pod original creation timestamp");
-    String adminPodOriginalTimestamp =
+    DateTime adminPodOriginalTimestamp =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                 adminServerPodName, domainNamespace));
 
     // get the managed server pods original creation timestamps
     logger.info("Getting managed server pods original creation timestamps");
-    List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
+    List<DateTime> managedServerPodOriginalTimestampList = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       final String managedServerPodName = managedServerPrefix + i;
       managedServerPodOriginalTimestampList.add(
