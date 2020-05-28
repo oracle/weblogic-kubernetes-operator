@@ -35,7 +35,9 @@ function get_service_yaml() {
 }
 
 function get_kube_address() {
-  kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
+  # kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
+  # This is the heuristic used by the integration test framework:
+  echo ${K8S_NODEPORT_HOST:-$(hostname)}
 }
 
 function get_sample_host() {
