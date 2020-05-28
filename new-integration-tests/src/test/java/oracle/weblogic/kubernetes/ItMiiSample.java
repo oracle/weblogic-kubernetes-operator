@@ -19,7 +19,10 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -90,8 +93,9 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_IMAGE_NAME1);
-    envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V1);
     envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME);
+    envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+
     // kind cluster uses openjdk which is not supported by image tool
     String witJavaHome = System.getenv("WIT_JAVA_HOME");
     if (witJavaHome != null) {
@@ -196,7 +200,6 @@ public class ItMiiSample implements LoggedTest {
   @Order(4)
   public void testUpdate3UseCase() {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_IMAGE_NAME2);
-    envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V2);
 
     // run update3 use case
     boolean success = Command.withParams(new CommandParams()
