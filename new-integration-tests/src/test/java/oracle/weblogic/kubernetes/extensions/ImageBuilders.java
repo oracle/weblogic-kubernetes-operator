@@ -15,17 +15,22 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
@@ -44,13 +49,17 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -89,7 +98,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         } catch (IOException ioe) {
           logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, ioe);
         }
-                             
+
         // Only the first thread will enter this block.
 
         logger.info("Building docker Images before any integration test classes are run");
@@ -144,6 +153,25 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
           assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
 
+        }
+        // The following code is for pulling WLS images if running tests in Kind cluster
+        if (KIND_REPO != null) {
+          // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
+          // is some evidence it may be a containerd bug. Therefore, we are going to "give up" and workaround the issue.
+          // The workaround will be to:
+          //   1. docker login
+          //   2. docker pull
+          //   3. docker tag with the KIND_REPO value
+          //   4. docker push this new image name
+          //   5. use this image name to create the domain resource
+          String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+          assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
+          assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
+
+          String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+          assertTrue(dockerTag(image, kindRepoImage),
+              String.format("docker tag failed for images %s, %s", image, kindRepoImage));
+          assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
         }
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
@@ -257,7 +285,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     final String image = imageName + ":" + imageTag;
 
-    // build the model file list 
+    // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
 
     // build an application archive using what is in resources/apps/APP_NAME

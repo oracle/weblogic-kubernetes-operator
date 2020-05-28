@@ -72,6 +72,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
   private final Map<String, Component> components = new ConcurrentHashMap<>();
   /** The next action for this Fiber. */
   private NextAction na;
+  private NextAction last;
   private ClassLoader contextClassLoader;
   private CompletionCallback completionCallback;
   /** The thread on which this Fiber is currently executing, if applicable. */
@@ -88,7 +89,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
   Fiber(Engine engine, Fiber parent) {
     this.owner = engine;
     this.parent = parent;
-    id = iotaGen.incrementAndGet();
+    id = (parent == null) ? iotaGen.incrementAndGet() : (parent.children.size() + 1);
 
     // if this is run from another fiber, then we naturally inherit its context
     // classloader,
@@ -254,12 +255,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
    */
   @Override
   public Fiber createChildFiber() {
-    Fiber child = owner.createChildFiber(this);
-
     synchronized (this) {
       if (children == null) {
         children = new ArrayList<>();
       }
+      Fiber child = owner.createChildFiber(this);
+
       children.add(child);
       if (status.get() == NOT_COMPLETE) {
         addBreadCrumb(child);
@@ -267,9 +268,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
         // Race condition where child is created after parent is cancelled or done
         child.status.set(CANCELLED);
       }
-    }
 
-    return child;
+      return child;
+    }
   }
 
   /**
@@ -316,6 +317,22 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
   @Override
   public boolean isDone() {
     return status.get() == DONE;
+  }
+
+  /**
+   * The most recently invoked step if the fiber is currently suspended.
+   * @return Last invoked step for suspended fiber.
+   */
+  public Step getSuspendedStep() {
+    lock.lock();
+    try {
+      if (na != null && na.kind == Kind.SUSPEND) {
+        return last.next;
+      }
+      return null;
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
@@ -631,6 +648,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, A
         result.packet = na.packet;
       }
 
+      last = na;
       na = result;
       switch (result.kind) {
         case INVOKE:

@@ -146,6 +146,9 @@ public class Kubernetes {
 
       if (v1PodReadyCondition != null) {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+        if (status) {
+          logger.info("Pod {0} is READY in namespace {1}", podName, namespace);
+        }
       }
     } else {
       logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);

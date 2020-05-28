@@ -564,24 +564,39 @@ public class CommonTestUtils {
    * @param namespace the namespace in which the secret will be created
    */
   public static void createDockerRegistrySecret(String namespace) {
+    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
+        REPO_REGISTRY, REPO_SECRET_NAME, namespace);
+  }
 
-    // Create Docker registry secret in the namespace to pull the image from repository
+  /**
+   * Create docker registry secret with given parameters.
+   * @param userName repository user name
+   * @param password repository password
+   * @param email repository email
+   * @param registry registry name
+   * @param secretName name of the secret to create
+   * @param namespace namespace in which to create the secret
+   */
+  public static void createDockerRegistrySecret(String userName, String password,
+      String email, String registry, String secretName, String namespace) {
+
+    // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+        userName, password, email, registry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
+            .name(secretName)
             .namespace(namespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", secretName));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
-        REPO_SECRET_NAME, namespace));
+        secretName, namespace));
   }
 
   /**
