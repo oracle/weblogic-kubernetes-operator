@@ -62,7 +62,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test multiple WDT model files in a model-in-image domain are processed in the expected order.
- * There are three test methods that cover three basic scenarios.
+ * 
+ * <p>There are three test methods in this class, covering three basic scenarios. </p>
+ *
  * <ul>
  *   <li> testMiiWithMultiModelImage: test multiple WDT model files in the Docker image. </li>
  *   <li> testMiiWithMultiModelCM: test multiple WDT model files in the domain resource's ConfigMap. </li>
@@ -103,8 +105,10 @@ class ItMiiMultiModel implements LoggedTest {
 
   /**
    * Perform initialization for all the tests in this class.
+   *
    * <p>Set up the necessary namespaces and install the operator in the first namespace, and
    * create a model-in-image image with two WDT model files. </p>
+   *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
@@ -165,11 +169,14 @@ class ItMiiMultiModel implements LoggedTest {
 
   /**
    * Test that two WDT model files in a domain resource's ConfigMap are applied in the expected order.
+   *
    * <p>Create a WebLogic domain with a Kubernetes ConfigMap that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected. </p>
+   *
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
    * MaxCapacity set to 30 and 40 respectively. In addition, the first model file also 
    * specifies a second DataSource "TestDataSource3" with the maxCapacity set to 5. </p>
+   *
    * <p>According to the ordering rules, the resultant configuration should have two DataSources,
    * "TestDataSource" and "TestDataSource3", with the MaxCapacity set to 40 and 5 respectively. </p>
    */
@@ -225,11 +232,14 @@ class ItMiiMultiModel implements LoggedTest {
 
   /**
    * Test that two WDT model files in a model-in-image Docker image are applied in the expected order.
+   *
    * <p>Create a WebLogic domain using a model-in-image Docker image that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected. </p>
+   *
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
    * MaxCapacity set to 15 and 20 respectively. In addition, the first model defines a second 
    * DataSource "TestDataSource2", which is deleted by the second model. </p>
+   *
    * <p>According to the ordering rules, When the two model files are applied, the resultant domain should
    * only have "TestDataSource" with MaxCapacity set to 20, and "TestDataSource2" should not exist. </p>
    */
@@ -274,19 +284,23 @@ class ItMiiMultiModel implements LoggedTest {
   /**
    * Test that two WDT model files in a model-in-image image and two WDT model files in the domain
    * resource's ConfigMap are handled as expected.
+   *
    * <p>Create a WebLogic domain using a model-in-image Docker image that contains two WDT model files,
    * and also using a ConfigMap that contains two more model files.
    * Verify that the effective configuration of the domain is as expected. Note that the model files
    * in the image are ordered independently from the model files in the domain's ConfigMap. </p>
+   *
    * <p>The two model files in the Docker image define the same DataSource "TestDataSource" with 
    * the connection pool's MaxCapacity set to 15 and 20 respectively.
    * In addition, the first model defines a second DataSource "TestDataSource2", which is deleted by
    * the second model. When the two model files are applied, the resultant domain will only have
    * "TestDataSource" with MaxCapacity set to 20, and "TestDataSource2" should not exist. </p>
+   *
    * <p>Then the two model files in the ConfigMap will be applied.
    * They define the same DataSource "TestDataSource" with MaxCapaqcity set to 30 and 40 respectively,
    * and, in addition, the first model defines another DataSource "TestDataSource3" with MaxCapacity
    * set to 5. </p>
+   *
    * <p>According to the ordering rules, the effective domain should contain "TestDataSource" with 
    * MaxCapacity set to 40, "TestDataSource3" with MaxCapacity set to "5", and "TestDataSource2"
    * should not exist after all four model files are processed by the WebLogic Deploy Tooling. </p>
