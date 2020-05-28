@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.steps.ManagedServerUpIteratorStepTest.TestStepFactory.getServers;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -104,6 +105,7 @@ public class ManagedServerUpIteratorStepTest {
     invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER,"ms1", "ms2"));
 
     assertThat(getServers(), hasItem(Arrays.asList("ms1", "ms2")));
+    assertThat(getServers().size(), equalTo(1));
   }
 
   @Test
@@ -127,6 +129,17 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
+  public void verifyThat_withConcurrencyOf2_4clusteredServersShouldStartIn2Threads() {
+    configureCluster(CLUSTER).withMaxClusterServerConcurrentStartup(2);
+    addWlsCluster(CLUSTER, "ms1", "ms2", "ms3", "ms4");
+
+    invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER, "ms1", "ms2", "ms3", "ms4"));
+
+    assertThat(getServers(), hasItem(Arrays.asList("ms1", "ms2", "ms3", "ms4")));
+    assertThat(getServers().size(), equalTo(2));
+  }
+
+  @Test
   public void verifyThat_withMultipleClusters_differentClusterShouldStartDifferently() {
     final String CLUSTER2 = "cluster2";
     configureCluster(CLUSTER).withMaxClusterServerConcurrentStartup(1);
@@ -144,17 +157,13 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_withBothClusteredAndNonClusteredServers_nonClusterdServersShouldStartConcurrently() {
+  public void verifyThat_maxClusterServerConcurrentStartup_doesNotApplyToNonClusterdServers() {
     domain.getSpec().setMaxClusterServerConcurrentStartup(1);
 
-    addWlsCluster(CLUSTER, "ms1", "ms2");
     addWlsServers("ms3", "ms4");
 
-    Collection<ServerStartupInfo> serverStartupInfos = createServerStartupInfosForCluster(CLUSTER, "ms1", "ms2");
-    serverStartupInfos.addAll(createServerStartupInfos("ms3", "ms4"));
-    invokeStepWithServerStartupInfos(serverStartupInfos);
+    invokeStepWithServerStartupInfos(createServerStartupInfos("ms3", "ms4"));
 
-    assertThat(getServers(), hasItem(Arrays.asList("ms1", "ms2")));
     assertThat(getServers(), allOf(hasItem("ms3"), hasItem("ms4")));
   }
 
