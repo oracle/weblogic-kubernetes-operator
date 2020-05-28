@@ -37,12 +37,52 @@ public class Domain {
     return Kubernetes.listDomains(namespace);
   }
 
+  /**
+   * Shut down a domain in the specified namespace.
+   * @param domainUid the domain to shut down
+   * @param namespace the namespace in which the domain exists
+   * @return true if patching domain custom resource succeeded, false otherwise
+   */
   public static boolean shutdown(String domainUid, String namespace) {
-    return true;
+    // change the /spec/serverStartPolicy to NEVER to shut down all servers in the domain
+    // create patch string to shut down the domain
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/serverStartPolicy\", ")
+        .append("\"value\": \"NEVER\"")
+        .append("}]");
+
+    logger.info("Shutting down domain {0} in namespace {1} using patch string: {2}",
+        domainUid, namespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
+  /**
+   * Restart a domain in the specified namespace.
+   *
+   * @param domainUid the domain to restart
+   * @param namespace the namespace in which the domain exists
+   * @return true if patching domain resource succeeded, false otherwise
+   */
   public static boolean restart(String domainUid, String namespace) {
-    return true;
+
+    // change the /spec/serverStartPolicy to IF_NEEDED to start all servers in the domain
+    // create patch string to start the domain
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec/serverStartPolicy\", ")
+        .append("\"value\": \"IF_NEEDED\"")
+        .append("}]");
+
+    logger.info("Restarting domain {0} in namespace {1} using patch string: {2}",
+        domainUid, namespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
   /**
