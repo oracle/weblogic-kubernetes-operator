@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -857,20 +856,20 @@ public class CommonTestUtils {
   }
 
   /**
-   * Create ConfigMap containing domain scripts.
+   * Create ConfigMap from the specified files.
    * @param configMapName name of the ConfigMap to create
-   * @param files files to be added in ConfigMap, including domain creation python script and properties files
+   * @param files files to be added in ConfigMap
    * @param namespace the namespace in which the ConfigMap to be created
-   * @throws IOException when reading files fails
    */
-  public static void createConfigMapForDomainCreation(String configMapName,
-                                                      List<Path> files,
-                                                      String namespace) throws IOException {
+  public static void createConfigMapFromFiles(String configMapName,
+                                              List<Path> files,
+                                              String namespace) {
 
     // create a ConfigMap of the domain
     Map<String, String> data = new HashMap<>();
     for (Path file : files) {
-      data.put(file.getFileName().toString(), readString(file));
+      data.put(file.getFileName().toString(),
+          assertDoesNotThrow(() -> readString(file), "readString failed with IOException"));
     }
 
     V1ConfigMap configMap = new V1ConfigMap()
@@ -886,17 +885,16 @@ public class CommonTestUtils {
   }
 
   /**
-   * Run a job to create a domain in the specified namespace.
+   * Create a job in the specified namespace and wait until it completes.
    *
-   * @param jobBody V1Job object to create a domain in the specified namespace
-   * @param namespace the namespace in which the job will be run
+   * @param jobBody V1Job object to create in the specified namespace
+   * @param namespace the namespace in which the job will be created
    */
-  public static void runCreateDomainJob(V1Job jobBody, String namespace) {
+  public static void createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
 
-    String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "Domain creation job failed");
+    String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
 
-    logger.info("Checking if the domain creation job {0} completed in namespace {1}",
-        jobName, namespace);
+    logger.info("Checking if the job {0} completed in namespace {1}", jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
