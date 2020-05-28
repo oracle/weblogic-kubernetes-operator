@@ -155,7 +155,7 @@ abstract class WaitForReadyStep<T> extends Step {
     return getMetadata(initialResource).getNamespace();
   }
 
-  private String getName() {
+  public String getName() {
     return getMetadata(initialResource).getName();
   }
 
