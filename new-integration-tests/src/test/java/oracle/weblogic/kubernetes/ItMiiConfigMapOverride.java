@@ -41,6 +41,7 @@ import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -349,9 +350,9 @@ class ItMiiConfigMapOverride implements LoggedTest {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    LinkedHashMap<String, String> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    String adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
