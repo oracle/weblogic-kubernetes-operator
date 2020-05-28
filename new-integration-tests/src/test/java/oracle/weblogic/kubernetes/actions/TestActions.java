@@ -152,7 +152,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean shutdown(String domainUid, String namespace) {
+  public static boolean shutdownDomain(String domainUid, String namespace) {
     return Domain.shutdown(domainUid, namespace);
   }
 
@@ -163,7 +163,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restart(String domainUid, String namespace) {
+  public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
 
@@ -361,6 +361,15 @@ public class TestActions {
   }
 
   /**
+   * List all persistent volumes.
+   *
+   * @return list of persistence volume names
+   */
+  public static List<String> listPersistentVolumes() {
+    return PersistentVolume.listPersistentVolumes();
+  }
+
+  /**
    * Create a Kubernetes Persistent Volume Claim.
    *
    * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes
@@ -382,6 +391,16 @@ public class TestActions {
    */
   public static boolean deletePersistentVolumeClaim(String name, String namespace) {
     return PersistentVolumeClaim.delete(name, namespace);
+  }
+
+  /**
+   * List all persistent volume claims in the specified namespace.
+   *
+   * @param namespace the namespace in which the persistent volume claims listed
+   * @return list of persistence volume claim names
+   */
+  public static List<String> listPersistentVolumeClaims(String namespace) {
+    return PersistentVolumeClaim.listPersistentVolumeClaims(namespace);
   }
 
   // --------------------------  secret  ----------------------------------
