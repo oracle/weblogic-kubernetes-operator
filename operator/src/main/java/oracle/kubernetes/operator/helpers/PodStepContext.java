@@ -363,8 +363,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract String getPodReplacedMessageKey();
 
-  abstract boolean getWaitForPodReadyForCreatePod();
-
   Step createCyclePodStep(Step next) {
     return new CyclePodStep(next);
   }
@@ -394,7 +392,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private ResponseStep<V1Pod> createResponse(Step next) {
-    return new CreateResponseStep(next, getWaitForPodReadyForCreatePod());
+    return new CreateResponseStep(next);
   }
 
   private ResponseStep<V1Status> deleteResponse(Step next) {
@@ -850,11 +848,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private class CreateResponseStep extends BaseResponseStep {
-    final boolean waitForPodReady;
 
-    CreateResponseStep(Step next, boolean waitForPodReady) {
+    CreateResponseStep(Step next) {
       super(next);
-      this.waitForPodReady = waitForPodReady;
     }
 
     @Override
@@ -864,6 +860,9 @@ public abstract class PodStepContext extends BasePodStepContext {
         info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
         setRecordedPod(callResponse.getResult());
       }
+
+      boolean waitForPodReady =
+          (boolean) Optional.ofNullable(packet.get(ProcessingConstants.WAIT_FOR_POD_READY)).orElse(false);
 
       if (waitForPodReady) {
         PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);

@@ -79,7 +79,7 @@ public class ManagedServerUpIteratorStep extends Step {
             .filter(ssi -> !isServerInCluster(ssi))
             .map(ssi -> createManagedServerUpDetails(packet, ssi)).collect(Collectors.toList());
 
-    getClusteredServersStartupFactories(startupInfos, packet, domain).values()
+    getStartClusteredServersStepFactories(startupInfos, packet, domain).values()
         .forEach(factory -> startDetails.addAll(factory.getServerStartsStepAndPackets()));
 
     return doNext(
@@ -87,16 +87,17 @@ public class ManagedServerUpIteratorStep extends Step {
         packet);
   }
 
-  private Map<String, ClusteredServersStepFactory> getClusteredServersStartupFactories(
+  private Map<String, StartClusteredServersStepFactory> getStartClusteredServersStepFactories(
       Collection<ServerStartupInfo> startupInfos,
       Packet packet,
       Domain domain) {
-    Map<String, ClusteredServersStepFactory> clusterStartupInfos = new HashMap<>();
+    Map<String, StartClusteredServersStepFactory> clusterStartupInfos = new HashMap<>();
     startupInfos.stream()
         .filter(ssi -> isServerInCluster(ssi))
         .forEach(ssi ->
             clusterStartupInfos.computeIfAbsent(ssi.getClusterName(),
-                l -> new ClusteredServersStepFactory(domain.getMaxClusterServerConcurrentStartup(ssi.getClusterName())))
+                l -> new StartClusteredServersStepFactory(
+                    domain.getMaxClusterServerConcurrentStartup(ssi.getClusterName())))
                 .add(createManagedServerUpDetails(packet, ssi)));
 
     return clusterStartupInfos;
@@ -141,12 +142,12 @@ public class ManagedServerUpIteratorStep extends Step {
     }
   }
 
-  private static class ClusteredServersStepFactory {
+  private static class StartClusteredServersStepFactory {
 
     private final Queue<StepAndPacket> serversToStart;
     private final int maxConcurrency;
 
-    ClusteredServersStepFactory(int maxConcurrency) {
+    StartClusteredServersStepFactory(int maxConcurrency) {
       this.serversToStart = new ConcurrentLinkedQueue<>();
       this.maxConcurrency = maxConcurrency;
     }
@@ -160,7 +161,7 @@ public class ManagedServerUpIteratorStep extends Step {
         return serversToStart;
       }
       ArrayList<StepAndPacket> steps = new ArrayList<>(maxConcurrency);
-      IntStream.range(1, maxConcurrency)
+      IntStream.range(0, maxConcurrency)
           .forEach(i -> steps.add(StartClusteredServersStep.createStepAndPacket(serversToStart)));
       return steps;
     }

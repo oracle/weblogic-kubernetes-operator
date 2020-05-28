@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -258,11 +257,6 @@ public class PodHelper {
     }
 
     @Override
-    boolean getWaitForPodReadyForCreatePod() {
-      return false;
-    }
-
-    @Override
     V1Pod withNonHashedElements(V1Pod pod) {
       V1Pod v1Pod = super.withNonHashedElements(pod);
       getContainer(v1Pod).ifPresent(c -> c.addEnvItem(internalCertEnvValue()));
@@ -320,14 +314,11 @@ public class PodHelper {
 
     private final String clusterName;
     private final Packet packet;
-    private final boolean waitForPodReadyForCreatePod;
 
     ManagedPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       this.packet = packet;
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-      waitForPodReadyForCreatePod =
-          (boolean) Optional.ofNullable(packet.get(ProcessingConstants.WAIT_FOR_POD_READY)).orElse(false);
 
       init();
     }
@@ -412,11 +403,6 @@ public class PodHelper {
     @Override
     protected String getPodReplacedMessageKey() {
       return MessageKeys.MANAGED_POD_REPLACED;
-    }
-
-    @Override
-    boolean getWaitForPodReadyForCreatePod() {
-      return waitForPodReadyForCreatePod;
     }
 
     @Override
