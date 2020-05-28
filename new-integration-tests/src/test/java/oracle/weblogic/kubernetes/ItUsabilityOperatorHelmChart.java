@@ -167,7 +167,6 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-
     ingressHostList =
         createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
 
@@ -190,10 +189,11 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     // check that the state of admin server pod in the domain was not changed
     // wait some time here to ensure the pod state is not changed
     try {
-      Thread.sleep(5000);
+      Thread.sleep(15000);
     } catch (InterruptedException e) {
       // ignore
     }
+
     logger.info("Checking that the admin server pod state was not changed after the operator was deleted");
     assertThat(podStateNotChanged(adminServerPodName, domainUid, domainNamespace, adminPodOriginalTimestamp))
         .as("Test state of pod {0} was not changed in namespace {1}", adminServerPodName, domainNamespace)
