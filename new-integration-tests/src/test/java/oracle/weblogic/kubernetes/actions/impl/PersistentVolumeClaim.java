@@ -3,12 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class PersistentVolumeClaim {
@@ -34,29 +30,5 @@ public class PersistentVolumeClaim {
    */
   public static boolean delete(String name, String namespace) {
     return Kubernetes.deletePvc(name, namespace);
-  }
-
-  /**
-   * List all persistent volume claims in the specified namespace.
-   *
-   * @param namespace the namespace in which the persistent volume claims exist
-   * @return list of persistent volume claim names
-   */
-  public static List<String> listPersistentVolumeClaims(String namespace) {
-    List<String> pvcNames = new ArrayList<>();
-    List<V1PersistentVolumeClaim> v1PersistentVolumeClaims = new ArrayList<>();
-
-    V1PersistentVolumeClaimList v1PersistentVolumeClaimList = Kubernetes.listPersistentVolumeClaims(namespace);
-    if (v1PersistentVolumeClaimList != null) {
-      v1PersistentVolumeClaims = v1PersistentVolumeClaimList.getItems();
-    }
-
-    for (V1PersistentVolumeClaim v1PersistentVolumeClaim : v1PersistentVolumeClaims) {
-      if (v1PersistentVolumeClaim.getMetadata() != null) {
-        pvcNames.add(v1PersistentVolumeClaim.getMetadata().getName());
-      }
-    }
-
-    return pvcNames;
   }
 }
