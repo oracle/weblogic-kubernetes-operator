@@ -36,6 +36,9 @@
 #         export DOMAIN_SOURCE_TYPE=FromModel
 #         introspectTest.sh
 #
+#     To check for ISTIO
+#         export ISTIO_ENABELD=true for any model test
+#
 #############################################################################
 #
 # Initialize basic globals
@@ -102,6 +105,9 @@ export CLUSTER_TYPE="${CLUSTER_TYPE:-DYNAMIC}"
 export T3CHANNEL1_PORT=${T3CHANNEL1_PORT:-30012}
 export T3CHANNEL2_PORT=${T3CHANNEL2_PORT:-30013}
 export T3CHANNEL3_PORT=${T3CHANNEL3_PORT:-30014}
+export ISTIO_ENABLED=${ISTIO_ENABLED:-false}
+export ISTIO_READINESS_PORT=${ISTIO_READINESS_PORT:-8888}
+export ISTIO_ENVOY_PORT=${ISTIO_ENVOY_PORT:-31111}
 export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-}
 export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
 export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
@@ -713,7 +719,14 @@ function checkOverrides() {
     src_input_file=checkMIIBeans.inputt
   fi
   rm -f ${test_home}/checkBeans.input
-  ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
+
+  cp ${src_input_file} ${src_input_file}_2 || exit 1
+  if [ "${ISTIO_ENABLED}" == "true" ]; then
+    cat checkBeansIstio.inputt >> ${src_input_file}_2 || exit 1
+  fi
+
+  ${SCRIPTPATH}/util_subst.sh -g ${src_input_file}_2 ${test_home}/checkBeans.input || exit 1
+
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
   tracen "Info: Waiting for WLST checkBeans.py to complete."
