@@ -1,0 +1,32 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@PROP:adminUsername@@'
+    AdminPassword: '@@PROP:adminPassword@@'
+    ServerStartMode: prod
+topology:
+    Name: '@@PROP:domainName@@'
+    AdminServerName: '@@PROP:adminServerName@@'
+    ProductionModeEnabled: '@@PROP:productionModeEnabled@@'
+    Cluster:
+        '@@PROP:clusterName@@':
+            DynamicServers:
+                CalculatedListenPorts: false
+                DynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
+                MaxDynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
+                ServerNamePrefix: '@@PROP:managedServerNameBase@@'
+                ServerTemplate: '@@PROP:clusterName@@-template'
+    Server:
+        '@@PROP:adminServerName@@':
+            NetworkAccessPoint:
+                T3Channel:
+                    ListenPort: '@@PROP:t3ChannelPort@@'
+                    PublicAddress: '@@PROP:t3PublicAddress@@'
+                    PublicPort: '@@PROP:t3ChannelPort@@'
+    ServerTemplate:
+        '@@PROP:clusterName@@-template':
+            Cluster: '@@PROP:clusterName@@'
+            ListenPort: '@@PROP:managedServerPort@@'
+            JTAMigratableTarget:
+                Cluster: '@@PROP:clusterName@@'
