@@ -435,6 +435,15 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenDistributionStrategyModified_dontReplacePod() {
+    configureDomain().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.DYNAMIC);
+    initializeExistingPod();
+
+    configureDomain().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.ON_RESTART);
+    verifyPodNotReplaced();
+  }
+
+  @Test
   public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
         .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);

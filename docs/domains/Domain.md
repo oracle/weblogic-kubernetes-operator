@@ -92,7 +92,7 @@ An element representing a cluster in the domain configuration.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `distributionStrategy` | string | The strategy for handling changes to the secrets or overridesConfigMap fields. Legal values are DYNAMIC and ON_RESTART. |
+| `distributionStrategy` | string | The strategy for how configuration overrides are distributed to WebLogic servers following introspection. Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. |
 | `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Configuration for OPSS security. |
