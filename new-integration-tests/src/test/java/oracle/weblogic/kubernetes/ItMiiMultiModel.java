@@ -3,15 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -49,11 +44,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -459,21 +454,6 @@ class ItMiiMultiModel implements LoggedTest {
   }
 
   /**
-   * Read the content of a model file as a String and add it to a map.
-   */
-  private void addModelFile(Map<String, String> data, String modelFileName) {
-    logger.info("Add model file {0}", modelFileName);
-    String dsModelFile = String.format("%s/%s", MODEL_DIR, modelFileName);
-
-    String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
-        String.format("Failed to read model file %s", dsModelFile));
-    assertNotNull(cmData, 
-        String.format("Failed to read model file %s", dsModelFile));
-
-    data.put(modelFileName, cmData);
-  }
-
-  /**
    * Get a DataSource's connection pool MaxCapacity setting.
    */
   private String getDSMaxCapacity(
@@ -528,38 +508,4 @@ class ItMiiMultiModel implements LoggedTest {
     return Command.withParams(params).executeAndVerify(expectedStr);
   }
   
-  /**
-   * Create a Kubernetes ConfigMap with the given parameters and verify that the operation succeeds.
-   */
-  private void createConfigMapAndVerify(
-      String configMapName,
-      String domainUid,
-      String namespace,
-      List<String> modelFiles) {
-    Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUid", domainUid);
-   
-    assertNotNull(configMapName, "ConfigMap name cannot be null");
-
-    logger.info("Create ConfigMap {0} that contains model files {1}",
-        configMapName, modelFiles);
-   
-    Map<String, String> data = new HashMap<>();
-
-    for (String modelFile : modelFiles) {
-      addModelFile(data, modelFile);
-    }
-
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .labels(labels)
-        .name(configMapName)
-        .namespace(domainNamespace);
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(meta);
-
-    assertTrue(assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
-        String.format("Failed to create ConfigMap %s", configMapName));
-  }
 }

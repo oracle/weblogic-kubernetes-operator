@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -49,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
@@ -816,4 +820,61 @@ public class CommonTestUtils {
     return podCreationTime;
   }
 
+  /**
+   * Create a Kubernetes ConfigMap with the given parameters and verify that the operation succeeds.
+   *
+   * @param configMapName the name of the Kubernetes ConfigMap to be created
+   * @param domainUid the domain to which the cluster belongs
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param modelFiles list of the names of the WDT mode files in the ConfigMap
+   */
+  public static void createConfigMapAndVerify(
+      String configMapName,
+      String domainUid,
+      String namespace,
+      List<String> modelFiles) {
+    
+    assertNotNull(configMapName, "ConfigMap name cannot be null");
+    
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUid", domainUid);
+   
+    assertNotNull(configMapName, "ConfigMap name cannot be null");
+
+    logger.info("Create ConfigMap {0} that contains model files {1}",
+        configMapName, modelFiles);
+   
+    Map<String, String> data = new HashMap<>();
+
+    for (String modelFile : modelFiles) {
+      addModelFile(data, modelFile);
+    }
+
+    V1ObjectMeta meta = new V1ObjectMeta()
+        .labels(labels)
+        .name(configMapName)
+        .namespace(namespace);
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(meta);
+
+    assertTrue(assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
+        String.format("Failed to create ConfigMap %s", configMapName));
+  }
+  
+  /**
+   * Read the content of a model file as a String and add it to a map.
+   */
+  private static void addModelFile(Map<String, String> data, String modelFileName) {
+    logger.info("Add model file {0}", modelFileName);
+    String dsModelFile = String.format("%s/%s", MODEL_DIR, modelFileName);
+
+    String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
+        String.format("Failed to read model file %s", dsModelFile));
+    assertNotNull(cmData, 
+        String.format("Failed to read model file %s", dsModelFile));
+
+    data.put(modelFileName, cmData);
+  }
 }
