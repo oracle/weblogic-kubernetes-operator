@@ -777,7 +777,9 @@ public class Kubernetes implements LoggedTest {
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           json, // JSON schema of the Resource to create
-          null // pretty print output
+          null, // pretty print output
+          null, // dry run
+          null // field manager
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
@@ -1633,6 +1635,26 @@ public class Kubernetes implements LoggedTest {
       throw apex;
     }
     return list;
+  }
+
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    V1JobList listJobs = listJobs(namespace);
+    for (V1Job job : listJobs.getItems()) {
+      if (job != null && job.getMetadata() != null) {
+        if (job.getMetadata().getName().equals(jobName)) {
+          return job;
+        }
+      }
+    }
+    return null;
   }
 
   // --------------------------- replica sets ---------------------------
