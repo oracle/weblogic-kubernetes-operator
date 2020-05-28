@@ -28,7 +28,6 @@ import io.kubernetes.client.util.ClientBuilder;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
@@ -146,6 +145,9 @@ public class Kubernetes {
 
       if (v1PodReadyCondition != null) {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
+        if (status) {
+          logger.info("Pod {0} is READY in namespace {1}", podName, namespace);
+        }
       }
     } else {
       logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);
@@ -179,7 +181,7 @@ public class Kubernetes {
     }
     return terminating;
   }
-  
+
   /**
    * Checks if a pod in a given namespace has been updated with an expected
    * weblogic.domainRestartVersion label.
