@@ -33,6 +33,9 @@ public class ManagedServerUpIteratorStep extends Step {
 
   private final Collection<ServerStartupInfo> startupInfos;
 
+  private static NextStepFactory NEXT_STEP_FACTORY =
+      (next) -> DomainStatusUpdater.createStatusUpdateStep(next);
+
   public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
     super(next);
     this.startupInfos = startupInfos;
@@ -83,7 +86,7 @@ public class ManagedServerUpIteratorStep extends Step {
         .forEach(factory -> startDetails.addAll(factory.getServerStartsStepAndPackets()));
 
     return doNext(
-        DomainStatusUpdater.createStatusUpdateStep(new StartManagedServersStep(startDetails, getNext())),
+        NEXT_STEP_FACTORY.createStatusUpdateStep(new StartManagedServersStep(startDetails, getNext())),
         packet);
   }
 
@@ -91,16 +94,16 @@ public class ManagedServerUpIteratorStep extends Step {
       Collection<ServerStartupInfo> startupInfos,
       Packet packet,
       Domain domain) {
-    Map<String, StartClusteredServersStepFactory> clusterStartupInfos = new HashMap<>();
+    Map<String, StartClusteredServersStepFactory> factories = new HashMap<>();
     startupInfos.stream()
         .filter(ssi -> isServerInCluster(ssi))
         .forEach(ssi ->
-            clusterStartupInfos.computeIfAbsent(ssi.getClusterName(),
+            factories.computeIfAbsent(ssi.getClusterName(),
                 l -> new StartClusteredServersStepFactory(
                     domain.getMaxClusterServerConcurrentStartup(ssi.getClusterName())))
                 .add(createManagedServerUpDetails(packet, ssi)));
 
-    return clusterStartupInfos;
+    return factories;
   }
 
   private String getDomainUid(Packet packet) {
@@ -136,6 +139,10 @@ public class ManagedServerUpIteratorStep extends Step {
       this.startDetails = startDetails;
     }
 
+    Collection<StepAndPacket> getStartDetails() {
+      return startDetails;
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       return doForkJoin(new ManagedServerUpAfterStep(getNext()), packet, startDetails);
@@ -144,11 +151,10 @@ public class ManagedServerUpIteratorStep extends Step {
 
   private static class StartClusteredServersStepFactory {
 
-    private final Queue<StepAndPacket> serversToStart;
+    private final Queue<StepAndPacket> serversToStart = new ConcurrentLinkedQueue<>();
     private final int maxConcurrency;
 
     StartClusteredServersStepFactory(int maxConcurrency) {
-      this.serversToStart = new ConcurrentLinkedQueue<>();
       this.maxConcurrency = maxConcurrency;
     }
 
@@ -157,7 +163,7 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     Collection<StepAndPacket> getServerStartsStepAndPackets() {
-      if (maxConcurrency == 0 || maxConcurrency > serversToStart.size()) {
+      if (maxConcurrency == 0 || serversToStart.size() <= maxConcurrency) {
         return serversToStart;
       }
       ArrayList<StepAndPacket> steps = new ArrayList<>(maxConcurrency);
@@ -168,7 +174,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
   }
 
-  private static class StartClusteredServersStep extends Step {
+  static class StartClusteredServersStep extends Step {
 
     private final Queue<StepAndPacket> serversToStart;
 
@@ -180,6 +186,10 @@ public class ManagedServerUpIteratorStep extends Step {
       super(null);
       this.serversToStart = serversToStart;
       serversToStart.forEach(stepAndPacket -> setupSequentialStartPacket(stepAndPacket.packet));
+    }
+
+    Collection<StepAndPacket> getServersToStart() {
+      return serversToStart;
     }
 
     private void setupSequentialStartPacket(Packet packet) {
@@ -196,4 +206,10 @@ public class ManagedServerUpIteratorStep extends Step {
       }
     }
   }
+
+  // an interface to provide a hook for unit testing.
+  interface NextStepFactory {
+    Step createStatusUpdateStep(Step next);
+  }
+
 }
