@@ -44,6 +44,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -117,9 +118,9 @@ public class ItOperatorTwoDomains implements LoggedTest {
   private int t3ChannelPort = 0;
   private int replicasAfterScale;
   private List<String> domainAdminServerPodNames = new ArrayList<>();
-  private List<String> domainAdminPodOriginalTimestamps = new ArrayList<>();
-  private List<String> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
-  private List<String> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
+  private List<DateTime> domainAdminPodOriginalTimestamps = new ArrayList<>();
+  private List<DateTime> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
+  private List<DateTime> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
 
   /**
    * Get namespaces, install operator and initiate domain UID list.

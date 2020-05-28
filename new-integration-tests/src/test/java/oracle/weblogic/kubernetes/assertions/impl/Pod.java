@@ -10,8 +10,6 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.models.V1Pod;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -28,7 +26,7 @@ public class Pod {
    * @param namespace name of the namespace in which the pod restart status to be checked
    * @return true if pods are restarted in a rolling fashion
    */
-  public static boolean verifyRollingRestartOccurred(Map<String, String> pods, int maxUnavailable, String namespace) {
+  public static boolean verifyRollingRestartOccurred(Map<String, DateTime> pods, int maxUnavailable, String namespace) {
 
     // check the pods list is not empty
     if (pods.isEmpty()) {
@@ -40,7 +38,7 @@ public class Pod {
     ConditionFactory retry
         = with().pollInterval(5, SECONDS).atMost(5, MINUTES).await();
 
-    for (Map.Entry<String, String> entry : pods.entrySet()) {
+    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
       // check pods are replaced
       retry
           .conditionEvaluationListener(condition -> logger.info("Waiting for pod {0} to be "
@@ -80,12 +78,12 @@ public class Pod {
    * @return true if given pod is restarted
    * @throws Exception when more than maxUnavailable pods are restarting concurrently or cluster query fails
    */
-  private static Callable<Boolean> podRestarted(String podName, Map<String, String> pods, int maxUnavailable,
+  private static Callable<Boolean> podRestarted(String podName, Map<String, DateTime> pods, int maxUnavailable,
       String namespace) throws Exception {
     return () -> {
       int terminatingPods = 0;
       boolean podRestartStatus = false;
-      for (Map.Entry<String, String> entry : pods.entrySet()) {
+      for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
         V1Pod pod = Kubernetes.getPod(namespace, null, entry.getKey());
         DateTime deletionTimeStamp = Optional.ofNullable(pod)
             .map(metadata -> metadata.getMetadata())
@@ -98,12 +96,11 @@ public class Pod {
           }
         }
         if (podName.equals(entry.getKey())) {
-          DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
           if (pod != null && pod.getMetadata().getCreationTimestamp() != null) {
-            String newCreationTimeStamp = dtf.print(pod.getMetadata().getCreationTimestamp());
+            DateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
             logger.info("Comparing creation timestamps old: {0} new {1}",
                 entry.getValue(), newCreationTimeStamp);
-            if (Long.parseLong(newCreationTimeStamp) > Long.parseLong(entry.getValue())) {
+            if (newCreationTimeStamp.isAfter(entry.getValue())) {
               logger.info("Pod {0} is restarted", entry.getKey());
               podRestartStatus = true;
             }
