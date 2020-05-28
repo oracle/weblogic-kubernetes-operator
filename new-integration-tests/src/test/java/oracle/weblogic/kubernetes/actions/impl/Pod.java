@@ -7,6 +7,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import org.joda.time.DateTime;
 
 public class Pod {
 
@@ -55,7 +56,7 @@ public class Pod {
    * @return creationTimestamp from metadata section of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName) 
+  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     return Kubernetes.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
