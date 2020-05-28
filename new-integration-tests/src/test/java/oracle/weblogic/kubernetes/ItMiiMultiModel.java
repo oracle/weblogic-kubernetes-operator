@@ -85,16 +85,16 @@ class ItMiiMultiModel implements LoggedTest {
   // "multi-model-two-ds.yaml" and "multi-model-delete-one-ds.20.yaml" are in the MII image.
   // "multi-model-two-ds.10.yaml" and "multi-model-two-ds.10.yaml" are in the domain's ConfigMap.
 
-  // Define "TestDataSource" and "TestDataSource2" with MaxCapacity being 10 and 15 respectively
+  // Define "TestDataSource" and "TestDataSource2" with MaxCapacity set to 10 and 15 respectively
   private static final String modelFileName1 = "multi-model-two-ds.yaml";
 
-  // Delete "TestDataSource2" and define "TestDataSource" with MaxCapacity being 20.
+  // Delete "TestDataSource2" and define "TestDataSource" with MaxCapacity set to 20
   private static final String modelFileName2 = "multi-model-delete-one-ds.20.yaml";
 
-  // Define "TestDataSource" and "TestDataSource3" with MaxCapacity being 30 and 5 respectively.
+  // Define "TestDataSource" and "TestDataSource3" with MaxCapacity set to 30 and 5 respectively
   private static final String modelFileName3 = "multi-model-two-ds.10.yaml";
 
-  // Define "TestDataSource" with MaxCapacity being 40
+  // Define "TestDataSource" with MaxCapacity set to 40
   private static final String modelFileName4 = "multi-model-one-ds.20.yaml";
 
   private static final String dsName = "TestDataSource";
@@ -168,10 +168,10 @@ class ItMiiMultiModel implements LoggedTest {
    * <p>Create a WebLogic domain with a Kubernetes ConfigMap that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected. </p>
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
-   * MaxCapacity being set to 30 and 40 respectively. In addition, the first model file also 
-   * specifies a second DataSource "TestDataSource3" with the maxCapacity being set to 5. </p>
+   * MaxCapacity set to 30 and 40 respectively. In addition, the first model file also 
+   * specifies a second DataSource "TestDataSource3" with the maxCapacity set to 5. </p>
    * <p>According to the ordering rules, the resultant configuration should have two DataSources,
-   * "TestDataSource" and "TestDataSource3", with the MaxCapacity being set to 40 and 5 respectively. </p>
+   * "TestDataSource" and "TestDataSource3", with the MaxCapacity set to 40 and 5 respectively. </p>
    */
   @Test
   @DisplayName("Create model-in-image domain with a ConfigMap that contains multiple model files")
@@ -228,10 +228,10 @@ class ItMiiMultiModel implements LoggedTest {
    * <p>Create a WebLogic domain using a model-in-image Docker image that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected. </p>
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
-   * MaxCapacity being set to 15 and 20 respectively. In addition, the first model defines a second 
+   * MaxCapacity set to 15 and 20 respectively. In addition, the first model defines a second 
    * DataSource "TestDataSource2", which is deleted by the second model. </p>
    * <p>According to the ordering rules, When the two model files are applied, the resultant domain should
-   * only have "TestDataSource" with MaxCapacity being set to 20, and "TestDataSource2" should not exist. </p>
+   * only have "TestDataSource" with MaxCapacity set to 20, and "TestDataSource2" should not exist. </p>
    */
   @Test
   @DisplayName("Create a model-in-image domain with two WDT model files in the image")
@@ -279,16 +279,16 @@ class ItMiiMultiModel implements LoggedTest {
    * Verify that the effective configuration of the domain is as expected. Note that the model files
    * in the image are ordered independently from the model files in the domain's ConfigMap. </p>
    * <p>The two model files in the Docker image define the same DataSource "TestDataSource" with 
-   * the connection pool's MaxCapacity being set to 15 and 20 respectively.
+   * the connection pool's MaxCapacity set to 15 and 20 respectively.
    * In addition, the first model defines a second DataSource "TestDataSource2", which is deleted by
    * the second model. When the two model files are applied, the resultant domain will only have
-   * "TestDataSource" with MaxCapacity being 20, and "TestDataSource2" should not exist. </p>
+   * "TestDataSource" with MaxCapacity set to 20, and "TestDataSource2" should not exist. </p>
    * <p>Then the two model files in the ConfigMap will be applied.
-   * They define the same DataSource "TestDataSource" with MaxCapaqcity being set to 30 and 40 respectively,
+   * They define the same DataSource "TestDataSource" with MaxCapaqcity set to 30 and 40 respectively,
    * and, in addition, the first model defines another DataSource "TestDataSource3" with MaxCapacity
-   * being set to 5. </p>
+   * set to 5. </p>
    * <p>According to the ordering rules, the effective domain should contain "TestDataSource" with 
-   * MaxCapacity being set to 40, "TestDataSource3" with MaxCapacity being set to "5", and "TestDataSource2"
+   * MaxCapacity set to 40, "TestDataSource3" with MaxCapacity set to "5", and "TestDataSource2"
    * should not exist after all four model files are processed by the WebLogic Deploy Tooling. </p>
    */
   @Test
