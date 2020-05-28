@@ -166,13 +166,15 @@ class ItScaleMiiDomainNginx implements LoggedTest {
           clusterName, domainUid, domainNamespace, numberOfServers);
       curlCmd = generateCurlCmd(clusterName);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, replicaCount, numberOfServers,
-          curlCmd, managedServersBeforeScale);
+      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
+          domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE, replicaCount,
+          numberOfServers, curlCmd, managedServersBeforeScale);
 
       // then scale cluster-1 and cluster-2 to 0 server
       managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, numberOfServers, 0,
-          curlCmd, managedServersBeforeScale);
+      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
+          domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE, numberOfServers,
+          0, curlCmd, managedServersBeforeScale);
     }
   }
 
