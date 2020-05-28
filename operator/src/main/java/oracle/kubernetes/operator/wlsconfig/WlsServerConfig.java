@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -334,6 +335,7 @@ public class WlsServerConfig {
    * Get the name of the Admin protocol channel as a safe/legal kubernetes service name.
    * @return the name of the admin channel
    */
+  @JsonIgnore
   public String getAdminProtocolChannelName() {
     String adminProtocolChannel = null;
     if (networkAccessPoints != null) {
@@ -361,6 +363,7 @@ public class WlsServerConfig {
    * Get the port number of the local admin protocol channel.
    * @return the port number
    */
+  @JsonIgnore
   public Integer getLocalAdminProtocolChannelPort() {
     Integer adminProtocolPort = null;
     if (networkAccessPoints != null) {

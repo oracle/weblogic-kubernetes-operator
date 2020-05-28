@@ -63,7 +63,7 @@ function usage() {
     -precleandb : Deletes db leftover from running -db.
 
 
-  Setup:
+  Setup dependencies:
 
     -oper     : Build and deploy Operator. This
                 operator will monitor '\$DOMAIN_NAMESPACE'
@@ -72,18 +72,39 @@ function usage() {
                 'DOMAIN_NAMESPACE' which defaults 
                 to 'sample-domain1-ns', and open port 30305.
     -db       : Deploy Oracle DB. A DB is needed for JRF mode.
+                See 'set-env.sh' for DB settings.
     -rcu      : Initialize FMW1 schema in the DB. Needed for JRF.
+                See 'set-env.sh' for DB settings.
 
   Tests:
 
     -check-sample : Generate sample and verify that this matches the source
                     checked into the mii sample git location.
+
     -initial-image: Build image required for initial use case.
-    -initial-main : Run initial use case (domain resource, secrets, etc).
-    -update1      : Run update1 use case (add data source to initial via configmap).
-    -update2      : Run update2 use case (deploy second domain).
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v1' or '...:JRF-v1'
+
+    -initial-main : Deployinitial use case (domain resource, secrets, etc).
+                    Domain uid 'sample-domain1'.
+                    Depends on '-initial-image'.
+
+    -update1      : Deploy update1 use case (add data source to initial via configmap).
+                    Domain uid 'sample-domain1'.
+                    Rolls 'sample-domain1' if already running.
+                    Depends on '-initial-image'.
+
+    -update2      : Run update2 use case (deploy second domain similar to -update1).
+                    Domain uid 'sample-domain2'.
+                    Depends on '-initial-image'.
+                    Depends on '-initial-main' (calls its app).
+
     -update3-image: Build image required for update3 use case.
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v2' or '...:JRF-v2'
+
     -update3-main : Run update3 use case (update initial domain's app via new image).
+                    Depends on '-update3-image'.
+                    Rolls 'sample-domain1' if already running.
+
     -all          : All of the above tests.
 
 EOF

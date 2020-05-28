@@ -17,6 +17,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -31,8 +32,10 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.JobHelper.DomainIntrospectorJobStepContext;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -45,6 +48,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
@@ -64,6 +68,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -82,15 +87,20 @@ public class JobHelperTest {
   private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
   private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
-  protected List<Memento> mementos = new ArrayList<>();
+  private List<Memento> mementos = new ArrayList<>();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   /**
    * Setup test environment.
-   * @throws Exception if TuningParameterStub fails to install
+   * @throws Exception if setup fails
    */
   @Before
   public void setup() throws Exception {
+    mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
+    mementos.add(testSupport.install());
+
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
   /**
@@ -98,9 +108,7 @@ public class JobHelperTest {
    */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -250,8 +258,6 @@ public class JobHelperTest {
 
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined() {
-    DomainConfigurator domainConfigurator = configureDomain();
-
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
@@ -263,7 +269,7 @@ public class JobHelperTest {
 
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
-    DomainConfigurator domainConfigurator = configureDomain().withDataHome(OVERRIDE_DATA_DIR);
+    configureDomain().withDataHome(OVERRIDE_DATA_DIR);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -273,8 +279,7 @@ public class JobHelperTest {
 
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome() {
-    DomainConfigurator domainConfigurator =
-            configureDomain().withDataHome(EMPTY_DATA_HOME);
+    configureDomain().withDataHome(EMPTY_DATA_HOME);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -286,8 +291,7 @@ public class JobHelperTest {
 
   @Test
   public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome() {
-    DomainConfigurator domainConfigurator =
-            configureDomain().withDataHome(NULL_DATA_HOME);
+    configureDomain().withDataHome(NULL_DATA_HOME);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -376,10 +380,18 @@ public class JobHelperTest {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
+          getActiveDeadlineSeconds(jobSpec),
         is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
     assertThat(
         jobSpec.getActiveDeadlineSeconds(), is(TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+  }
+
+  private static Long getActiveDeadlineSeconds(V1JobSpec jobSpec) {
+    return getTemplateSpec(jobSpec).getActiveDeadlineSeconds();
+  }
+
+  private static V1PodSpec getTemplateSpec(V1JobSpec jobSpec) {
+    return jobSpec.getTemplate().getSpec();
   }
 
   @Test
@@ -391,9 +403,7 @@ public class JobHelperTest {
     long expectedActiveDeadlineSeconds =
         TuningParametersStub.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS
             + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
-    assertThat(
-        jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
-        is(expectedActiveDeadlineSeconds));
+    assertThat(getActiveDeadlineSeconds(jobSpec), is(expectedActiveDeadlineSeconds));
     assertThat(jobSpec.getActiveDeadlineSeconds(), is(expectedActiveDeadlineSeconds));
   }
 
@@ -403,11 +413,8 @@ public class JobHelperTest {
    
     V1JobSpec jobSpec = createJobSpec();
 
-    assertThat(
-        jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
-        is(600L));
-    assertThat(
-        jobSpec.getActiveDeadlineSeconds(), is(600L));
+    assertThat(getActiveDeadlineSeconds(jobSpec), is(600L));
+    assertThat(jobSpec.getActiveDeadlineSeconds(), is(600L));
   }
 
   @Test
@@ -497,7 +504,7 @@ public class JobHelperTest {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getMatchingContainer(domainPresenceInfo, jobSpec).get().getName(),
+        getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getName).orElse(null),
         is(JobHelper.createJobName(DOMAIN_UID)));
   }
 
@@ -706,6 +713,69 @@ public class JobHelperTest {
     );
   }
 
+  @Test
+  public void whenNoExistingTopologyRunIntrospector() {
+    runCreateJob();
+
+    assertThat(job, notNullValue());
+  }
+
+  private void runCreateJob() {
+    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+    testSupport.runSteps(JobHelper.createDomainIntrospectorJobStep(null));
+  }
+
+  @Test
+  public void whenTopologyExistsAndNothingChanged_dontRunIntrospector() {
+    defineTopology();
+
+    runCreateJob();
+
+    assertThat(job, nullValue());
+  }
+
+  @Test
+  public void whenIntrospectNotRequested_dontRunIntrospector() {
+    defineTopology();
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, false);
+
+    runCreateJob();
+
+    assertThat(job, nullValue());
+  }
+
+  @Test
+  public void whenIntrospectNotSet_dontRunIntrospector() {
+    defineTopology();
+
+    runCreateJob();
+
+    assertThat(job, nullValue());
+  }
+
+  @Test
+  public void whenIntrospectRequestSet_runIntrospector() {
+    defineTopology();
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, true);
+
+    runCreateJob();
+
+    assertThat(job, notNullValue());
+  }
+
+  private V1Job job;
+
+  private void recordJob(V1Job job) {
+    this.job = job;
+  }
+
+  private void defineTopology() {
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain");
+    configSupport.addWlsServer("admin", 8045);
+    configSupport.setAdminServerName("admin");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+  }
+
   private DomainPresenceInfo createDomainPresenceInfo() {
     DomainPresenceInfo domainPresenceInfo =
         new DomainPresenceInfo(
@@ -762,8 +832,10 @@ public class JobHelperTest {
   }
 
   private Stream<V1Container> getContainerStream(V1JobSpec jobSpec) {
-    return Optional.ofNullable(jobSpec.getTemplate().getSpec().getContainers()).stream()
-        .flatMap(Collection::stream);
+    return Optional.ofNullable(jobSpec.getTemplate().getSpec())
+          .map(V1PodSpec::getContainers)
+          .stream()
+          .flatMap(Collection::stream);
   }
 
   private DomainSpec getConfiguredDomainSpec(DomainConfigurator domainConfigurator)
