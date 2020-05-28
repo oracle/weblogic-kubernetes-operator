@@ -97,8 +97,11 @@ public abstract class Step {
     return stepsArray;
   }
 
-
-  String getName() {
+  /**
+   * The name of the step. This will default to the class name minus "Step".
+   * @return The name of the step
+   */
+  public String getName() {
     String name = getClass().getName();
     int idx = name.lastIndexOf('.');
     if (idx >= 0) {
@@ -276,7 +279,8 @@ public abstract class Step {
               new JoinCompletionCallback(fiber, packet, startDetails.size()) {
                 @Override
                 public void onCompletion(Packet p) {
-                  if (count.decrementAndGet() == 0) {
+                  int current = count.decrementAndGet();
+                  if (current == 0) {
                     // no need to synchronize throwables as all fibers are done
                     if (throwables.isEmpty()) {
                       fiber.resume(packet);
@@ -369,7 +373,8 @@ public abstract class Step {
       synchronized (throwables) {
         throwables.add(throwable);
       }
-      if (count.decrementAndGet() == 0) {
+      int current = count.decrementAndGet();
+      if (current == 0) {
         // no need to synchronize throwables as all fibers are done
         if (throwables.size() == 1) {
           fiber.terminate(throwable, packet);
