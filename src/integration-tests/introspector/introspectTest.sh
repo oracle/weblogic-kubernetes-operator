@@ -441,13 +441,13 @@ function deployCreateDomainJobPod() {
 function createMII_Image() {
   trace "Info: Create MII Image"
 
+  (
   mkdir -p ${test_home}/mii/workdir/models || exit 1
   cp ${SCRIPTPATH}/mii/models/*  ${test_home}/mii/workdir/models || exit 1
   cd ${test_home}/mii/workdir  || exit 1
   echo "place holder" > dummy.txt || exit 1
   zip ${test_home}/mii/workdir/models/archive.zip dummy.txt > /dev/null 2>&1 || exit 1
 
-  (
   export WORKDIR=${test_home}/mii/workdir  || exit 1
   export MODEL_IMAGE_TAG=it || exit 1
   export MODEL_IMAGE_NAME=model-in-image || exit 1
