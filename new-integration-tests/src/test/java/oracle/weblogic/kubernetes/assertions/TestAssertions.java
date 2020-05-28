@@ -16,6 +16,8 @@ import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
@@ -465,4 +467,25 @@ public class TestAssertions {
     return Job.jobCompleted(namespace, labelSelectors, jobName);
   }
 
+  /**
+   * Check whether persistent volume with pvName exists.
+   *
+   * @param pvName persistent volume to check
+   * @param labelSelector String containing the labels the PV is decorated with
+   * @return true if the persistent volume exists, false otherwise
+   */
+  public static Callable<Boolean> pvExists(String pvName, String labelSelector) {
+    return PersistentVolume.pvExists(pvName, labelSelector);
+  }
+
+  /**
+   * Check whether persistent volume claims with pvcName exists in the specified namespace.
+   *
+   * @param pvcName persistent volume claim to check
+   * @param namespace the namespace in which the persistent volume claim to be checked
+   * @return true if the persistent volume claim exists in the namespace, false otherwise
+   */
+  public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
+    return PersistentVolumeClaim.pvcExists(pvcName, namespace);
+  }
 }
