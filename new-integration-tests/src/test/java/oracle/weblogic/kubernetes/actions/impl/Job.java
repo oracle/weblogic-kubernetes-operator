@@ -20,4 +20,16 @@ public class Job {
     return Kubernetes.createNamespacedJob(jobBody);
   }
 
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    return Kubernetes.getJob(jobName, namespace);
+  }
+
 }
