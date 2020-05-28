@@ -109,7 +109,7 @@ public interface TestConstants {
 
   // mii sample constants
   public static final String MII_SAMPLES_WORK_DIR = WORK_DIR
-                          + "model-in-image-sample-work-dir";
+                          + "/model-in-image-sample-work-dir";
   public static final String MII_SAMPLES_SCRIPT =
       "../src/integration-tests/model-in-image/run-test.sh";
 
