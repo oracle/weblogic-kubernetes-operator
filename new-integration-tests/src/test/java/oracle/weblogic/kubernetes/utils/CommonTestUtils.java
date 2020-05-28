@@ -396,7 +396,7 @@ public class CommonTestUtils {
             String.format("podReady failed with ApiException for pod %s in namespace %s",
                podName, domainNamespace)));
   }
-  
+
   /**
    * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
    *
@@ -576,17 +576,6 @@ public class CommonTestUtils {
   }
 
   /**
-   * Create a Docker registry secret in the specified namespace.
-   *
-   * @param namespace the namespace in which the secret will be created
-   */
-  public static void createDockerRegistrySecret(String namespace) {
-
-    logger.info("Creating image pull secret in namespace {0}", namespace);
-    createRepoSecret(REPO_SECRET_NAME, namespace, REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
-  }
-
-  /**
    * Create secret for OCR registry credentials in the specified namespace.
    *
    * @param namespace namespace in which the secret will be created
@@ -594,29 +583,34 @@ public class CommonTestUtils {
   public static void createOCRRepoSecret(String namespace) {
 
     logger.info("Creating image pull secret in namespace {0}", namespace);
-    createRepoSecret(OCR_SECRET_NAME, namespace, OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY);
+    createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
 
   /**
    * Create a Docker registry secret in the specified namespace.
    *
-   * @param secretName secret name to be created
    * @param namespace the namespace in which the secret will be created
-   * @param registryUserName username to login to the docker registry
-   * @param registryPassword password to login to the docker registry
-   * @param registryEmail email to login to the docker registry
-   * @param registryName name of the docker registry
    */
-  public static void createRepoSecret(String secretName,
-                                      String namespace,
-                                      String registryUserName,
-                                      String registryPassword,
-                                      String registryEmail,
-                                      String registryName) {
+  public static void createDockerRegistrySecret(String namespace) {
+    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
+        REPO_REGISTRY, REPO_SECRET_NAME, namespace);
+  }
 
-    logger.info("Creating image pull secret in namespace {0}", namespace);
+  /**
+   * Create docker registry secret with given parameters.
+   * @param userName repository user name
+   * @param password repository password
+   * @param email repository email
+   * @param registry registry name
+   * @param secretName name of the secret to create
+   * @param namespace namespace in which to create the secret
+   */
+  public static void createDockerRegistrySecret(String userName, String password,
+      String email, String registry, String secretName, String namespace) {
+
+    // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        registryUserName, registryPassword, registryEmail, registryName);
+        userName, password, email, registry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
@@ -629,7 +623,8 @@ public class CommonTestUtils {
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", secretName));
-    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s", secretName));
+    assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
+        secretName, namespace));
   }
 
   /**
@@ -908,9 +903,9 @@ public class CommonTestUtils {
 
   /**
    * Get the PodCreationTimestamp of a pod in a namespace.
-   * 
+   *
    * @param namespace Kubernetes namespace that the domain is hosted
-   * @param podName name of the pod 
+   * @param podName name of the pod
    * @return PodCreationTimestamp of the pod
    */
   public static String getPodCreationTime(String namespace, String podName) {

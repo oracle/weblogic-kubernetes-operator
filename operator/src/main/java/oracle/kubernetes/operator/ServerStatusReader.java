@@ -181,6 +181,7 @@ public class ServerStatusReader {
               InputStream in = proc.getInputStream();
               if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
                 int exitValue = proc.exitValue();
+                LOGGER.fine("readState exit: " + exitValue + ", readState for " + pod.getMetadata().getName());
                 if (exitValue == 0) {
                   try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
                     state = CharStreams.toString(reader);
@@ -204,7 +205,7 @@ public class ServerStatusReader {
                 proc.destroy();
               }
             }
-
+            LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
             state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
             serverStateMap.put(serverName, state);
             fiber.resume(packet);
