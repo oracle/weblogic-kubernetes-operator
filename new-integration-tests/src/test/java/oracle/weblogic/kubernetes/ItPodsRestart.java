@@ -25,6 +25,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -134,7 +135,7 @@ class ItPodsRestart implements LoggedTest {
     requests.forEach((key, value) -> logger.info(key + ": " + value.toString()));
 
     // create the map with server pods and their original creation timestamps
-    Map<String, String> podsWithTimeStamps = new LinkedHashMap<>();
+    Map<String, DateTime> podsWithTimeStamps = new LinkedHashMap<>();
     podsWithTimeStamps.put(adminServerPodName,
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
         String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
