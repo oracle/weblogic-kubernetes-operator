@@ -777,7 +777,9 @@ public class Kubernetes implements LoggedTest {
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           json, // JSON schema of the Resource to create
-          null // pretty print output
+          null, // pretty print output
+          null, // dry run
+          null // field manager
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
