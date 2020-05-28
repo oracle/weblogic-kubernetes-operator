@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -44,6 +45,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -585,7 +587,11 @@ public class TestActions {
    * @return true if successful
    */
   public static boolean dockerPush(String image) {
-    return Docker.push(image);
+    boolean result = Docker.push(image);
+    if (result) {
+      ImageBuilders.registerPushedImage(image);
+    }
+    return result;
   }
 
   /**
@@ -678,6 +684,18 @@ public class TestActions {
     return Job.createNamespacedJob(jobBody);
   }
 
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    return Job.getJob(jobName, namespace);
+  }
+
   // ----------------------   pod  ---------------------------------
 
   /**
@@ -718,7 +736,19 @@ public class TestActions {
   public static String getPodLog(String podName, String namespace) throws ApiException {
     return Pod.getPodLog(podName, namespace);
   }
-  
+
+  /**
+   * List Kubernetes pods in a namespace.
+   *
+   * @param namespace name of namespace
+   * @param labelSelectors with which pods are decorated
+   * @return V1PodList list of pods
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+    return Pod.listPods(namespace, labelSelectors);
+  }
+
   /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *

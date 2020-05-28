@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.work;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,6 +34,14 @@ public class FiberGate {
   public FiberGate(Engine engine) {
     this.engine = engine;
     this.placeholder = engine.createFiber();
+  }
+
+  /**
+   * Access map of current fibers.
+   * @return Map of fibers in this gate
+   */
+  public Map<String, Fiber> getCurrentFibers() {
+    return new HashMap<>(gateMap);
   }
 
   public ScheduledExecutorService getExecutor() {

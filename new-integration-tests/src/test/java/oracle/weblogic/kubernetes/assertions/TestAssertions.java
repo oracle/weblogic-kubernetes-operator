@@ -439,17 +439,18 @@ public class TestAssertions {
 
   /**
    * Verify the pod state is not changed.
+   *
    * @param podName the name of the pod to check
-   * @param domainUid the domain in which the pod exists
-   * @param domainNamespace the domain namespace in which the domain exists
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
    * @param podOriginalCreationTimestamp the pod original creation timestamp
    * @return true if the pod state is not changed, false otherwise
    */
   public static boolean podStateNotChanged(String podName,
                                            String domainUid,
-                                           String domainNamespace,
+                                           String namespace,
                                            String podOriginalCreationTimestamp) {
-    return Domain.podStateNotChanged(podName, domainUid, domainNamespace, podOriginalCreationTimestamp);
+    return Domain.podStateNotChanged(podName, domainUid, namespace, podOriginalCreationTimestamp);
   }
 
   /**
