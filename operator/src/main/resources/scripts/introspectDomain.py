@@ -1140,7 +1140,7 @@ class SitConfigGenerator(Generator):
       self.writeln('<d:name>istio-ldap</d:name>')
 
     self.writeln('<d:protocol %s>ldap</d:protocol>' % action)
-    self.writeln('<d:listen-address %s>127.0.01</d:listen-address>' % action)
+    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, admin_port))
     self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
