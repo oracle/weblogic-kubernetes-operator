@@ -47,12 +47,12 @@ public class ItMiiSample implements LoggedTest {
       "../src/integration-tests/model-in-image/run-test.sh";
 
   private static String DOMAIN_TYPE = "WLS";
-  private static String MII_SAMPLE_IMAGE_NAME = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  //private static String MII_SAMPLE_IMAGE_NAME2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
+  private static String MII_SAMPLE_IMAGE_NAME1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
+  private static String MII_SAMPLE_IMAGE_NAME2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
   private static String MII_SAMPLE_IMAGE_TAG_V1 = DOMAIN_TYPE + "-v1";
   private static String MII_SAMPLE_IMAGE_TAG_V2 = DOMAIN_TYPE + "-v2";
-  private static String imageNameV1 = MII_SAMPLE_IMAGE_NAME + ":" + MII_SAMPLE_IMAGE_TAG_V1;
-  private static String imageNameV2 = MII_SAMPLE_IMAGE_NAME + ":" + MII_SAMPLE_IMAGE_TAG_V2;
+  private static String imageNameV1 = MII_SAMPLE_IMAGE_NAME1 + ":" + MII_SAMPLE_IMAGE_TAG_V1;
+  private static String imageNameV2 = MII_SAMPLE_IMAGE_NAME2 + ":" + MII_SAMPLE_IMAGE_TAG_V2;
   private static String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
@@ -89,8 +89,9 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_IMAGE_NAME);
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_IMAGE_NAME1);
     envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V1);
+    envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME);
 
     // install traefik and create ingress using the mii sample script
     boolean success = Command.withParams(new CommandParams()
@@ -136,7 +137,7 @@ public class ItMiiSample implements LoggedTest {
     assertTrue(success, "Initial image creation failed");
 
     // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(MII_SAMPLE_IMAGE_NAME),
+    assertTrue(doesImageExist(MII_SAMPLE_IMAGE_NAME1),
         String.format("Image %s does not exist", imageNameV1));
 
     // docker login and push image to docker registry if necessary
@@ -189,6 +190,7 @@ public class ItMiiSample implements LoggedTest {
   @Test
   @Order(4)
   public void testUpdate3UseCase() {
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_IMAGE_NAME2);
     envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V2);
 
     // run update3 use case
@@ -199,7 +201,7 @@ public class ItMiiSample implements LoggedTest {
     assertTrue(success, "Update3 create image failed");
 
     // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(MII_SAMPLE_IMAGE_NAME),
+    assertTrue(doesImageExist(MII_SAMPLE_IMAGE_NAME2),
         String.format("Image %s does not exist", imageNameV2));
 
     // docker login and push image to docker registry if necessary
