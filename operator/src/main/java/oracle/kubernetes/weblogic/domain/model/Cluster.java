@@ -208,6 +208,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterService, cluster.clusterService)
         .append(maxUnavailable, cluster.maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
+        .append(maxClusterServerConcurrentStartup, cluster.maxClusterServerConcurrentStartup)
         .isEquals();
   }
 
@@ -221,6 +222,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterService)
         .append(maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize)
+        .append(maxClusterServerConcurrentStartup)
         .toHashCode();
   }
 

@@ -640,8 +640,14 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  public boolean isAllowReplicasBelowMinDynClusterSize() {
+    return Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
+        .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+  }
+
   public Integer getMaxClusterServerConcurrentStartup() {
-    return maxClusterServerConcurrentStartup;
+    return Optional.ofNullable(maxClusterServerConcurrentStartup)
+        .orElse(DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP);
   }
 
   @Nullable
@@ -789,6 +795,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets)
+            .append(allowReplicasBelowMinDynClusterSize)
+            .append(maxClusterServerConcurrentStartup)
             .append(experimental);
 
     return builder.toHashCode();
@@ -827,6 +835,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
+            .append(getMaxClusterServerConcurrentStartup(), rhs.getMaxClusterServerConcurrentStartup())
             .append(experimental, rhs.experimental);
     return builder.isEquals();
   }
@@ -874,8 +884,7 @@ public class DomainSpec extends BaseConfiguration {
   private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
     return hasAllowReplicasBelowMinDynClusterSize(cluster)
         ? cluster.isAllowReplicasBelowMinDynClusterSize()
-        : Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
-            .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+        : isAllowReplicasBelowMinDynClusterSize();
   }
 
   private boolean hasAllowReplicasBelowMinDynClusterSize(Cluster cluster) {
@@ -889,8 +898,7 @@ public class DomainSpec extends BaseConfiguration {
   private int getMaxClusterServerConcurrentStartupFor(Cluster cluster) {
     return hasMaxClusterServerConcurrentStartup(cluster)
         ? cluster.getMaxClusterServerConcurrentStartup()
-        : Optional.ofNullable(maxClusterServerConcurrentStartup)
-            .orElse(DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP);
+        : getMaxClusterServerConcurrentStartup();
   }
 
   private boolean hasMaxClusterServerConcurrentStartup(Cluster cluster) {
