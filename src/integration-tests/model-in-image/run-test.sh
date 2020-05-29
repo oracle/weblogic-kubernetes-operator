@@ -2,11 +2,13 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+#
 # This is a stand-alone test for testing the MII sample.
 #
+# Note! This is called by integration test 'ItMiiSample.java'.
+#
 # See "usage()" below for usage.
-
-# TBD Verify again that this works for JRF and RestrictedJRF.
+#
 
 set -eu
 set -o pipefail
@@ -41,11 +43,19 @@ function usage() {
 
   Usage: $(basename $0)
 
-  Env vars (default):
+  Commonly tuned env vars and their defaults:
 
-    WORKDIR          : /tmp/\$USER/mii-sample-work-dir
-    DOMAIN_NAMESPACE : sample-domain1-ns
-    MODEL_IMAGE_NAME : model-in-image 
+    POD_WAIT_TIMEOUT_SECS : 600
+    WORKDIR               : /tmp/\$USER/mii-sample-work-dir
+    DOMAIN_NAMESPACE      : sample-domain1-ns
+    MODEL_IMAGE_NAME      : model-in-image 
+    IMAGE_PULL_SECRET_NAME: (not set)
+    DB_NAMESPACE          : default (used by -db and -rcu)
+    DB_IMAGE_PULL_SECRET  : docker-secret (used by -db and -rcu)
+    TRAEFIK_NAMESPACE     : traefik-operator-ns (used by -traefik)
+    OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
+
+    (see test-env.sh for full list)
 
   Misc:
 
@@ -72,10 +82,10 @@ function usage() {
                 'DOMAIN_NAMESPACE' which defaults 
                 to 'sample-domain1-ns', and open port 30305.
     -db       : Deploy Oracle DB. A DB is needed for JRF mode.
-                See 'set-env.sh' for DB settings.
+                See 'test-env.sh' for DB settings.
     -rcu      : Initialize FMWdomain1 and FMWdomain2 schemas
                 in the DB. Needed for JRF.
-                See 'set-env.sh' for DB settings.
+                See 'test-env.sh' for DB settings.
 
   Tests:
 
@@ -152,6 +162,22 @@ if [ ! "$bname" = "model-in-image-sample-work-dir" ] \
   exit 1
 fi
 
+#
+# Helper script ($1 == number of pods)
+#
+
+function doPodWait() {
+  # wl-pod-wait.sh is a public script that's checked into the sample utils directory
+
+  local wcmd="\$WORKDIR/utils/wl-pod-wait.sh -p $1 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE -t \$POD_WAIT_TIMEOUT_SECS"
+
+  if [ $1 -eq 0 ]; then
+    doCommand -c "$wcmd -q"
+  else
+    doCommand    "$wcmd"
+  fi
+}
+
 # 
 # Clean
 #
@@ -186,8 +212,7 @@ fi
 
 if [ "$DO_CLEANDB" = "true" ]; then
   doCommand -c "echo ====== CLEANDB ======"
-  # TBD call sample's cleanup script? 
-  # TBD use env var for namespace
+  # TBD call DB sample's cleanup script? 
   doCommand -c "kubectl -n $DB_NAMESPACE delete deployment oracle-db --ignore-not-found"
   doCommand -c "kubectl -n $DB_NAMESPACE delete service oracle-db --ignore-not-found"
 fi
@@ -203,6 +228,7 @@ doCommand -c TESTDIR=$TESTDIR
 doCommand -c MIISAMPLEDIR=$MIISAMPLEDIR
 doCommand -c MIIWRAPPERDIR=$MIIWRAPPERDIR
 doCommand -c DBSAMPLEDIR=$DBSAMPLEDIR
+doCommand -c POD_WAIT_TIMEOUT_SECS=$POD_WAIT_TIMEOUT_SECS
 doCommand -c source \$TESTDIR/test-env.sh
 doCommand -c export WORKDIR=$WORKDIR
 doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
@@ -305,10 +331,10 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
 
   doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
-  doCommand -c "\$WORKDIR/utils/wl-pod-wait.sh -p 0 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE -q"
+  doPodWait 0
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doCommand    "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doPodWait 3
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -336,7 +362,7 @@ if [ "$DO_UPDATE1" = "true" ]; then
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   doCommand    "\$WORKDIR/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doCommand    "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doPodWait 3
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -366,8 +392,7 @@ if [ "$DO_UPDATE2" = "true" ]; then
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-
-  doCommand  "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doPodWait 3
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -403,7 +428,7 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doCommand    "\$WORKDIR/utils/wl-pod-wait.sh -p 3 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doPodWait 3
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
@@ -414,21 +439,4 @@ fi
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."
 
-
-# TBD add JRF specific testing?
-
-# after initial?
-# if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-#   export wallet
-#   import wallet to wallet secret 
-#   set env var to tell creat-domain-resource to uncomment wallet secret
-#   shutdown domain completely (delete it)
-#   restart domain
-# fi
-
-# before each update?
-# if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-#   import wallet to wallet secret again
-#   set env var to tell creat-domain-resource to uncomment wallet secret
-# fi
-
+# TBD Add JRF wallet export/import testing?  There's another test that already tests the sample's import/export script.

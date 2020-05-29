@@ -42,3 +42,5 @@ export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 export DOMAIN_UID1="${DOMAIN_UID1:-sample-domain1}"
 export DOMAIN_UID2="${DOMAIN_UID2:-sample-domain2}"
 export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
+
+export POD_WAIT_TIMEOUT_SECS=${POD_WAIT_TIMEOUT_SECS:-600}

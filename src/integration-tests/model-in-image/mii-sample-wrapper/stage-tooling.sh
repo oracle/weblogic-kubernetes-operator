@@ -58,6 +58,7 @@ download_zip() {
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
     echo "@@ Info: The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
     local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
+    echo "@@ Info: Calling 'curl -m 30 -fL $LOCATION -o $tempfile' to find location of latest version."
     curl -m 30 -fL $LOCATION -o $tempfile
     LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
     rm -f $tempfile
@@ -67,6 +68,7 @@ download_zip() {
 
   if [ ! "$dry_run" = "true" ]; then
     rm -f $ZIPFILE
+    echo "@@ Info: Calling 'curl -m 30 -fL $LOCATION -o $ZIPFILE'"
     curl -m 30 -fL $LOCATION -o $ZIPFILE
   else
     echo "dryrun:rm -f $ZIPFILE"
@@ -82,6 +84,9 @@ if [ "$dry_run" = "true" ]; then
   echo "dryrun:set -eux"
   echo "dryrun:"
 fi
+
+echo "@@ Info: Proxy settings:"
+env | grep -i _proxy=
 
 download_zip weblogic-deploy.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
 download_zip imagetool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT
