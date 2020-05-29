@@ -92,6 +92,11 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_IMAGE_NAME1);
     envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V1);
     envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME);
+    // kind cluster uses openjdk which is not supported by image tool
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      envMap.put("JAVA_HOME", witJavaHome);
+    }
 
     // install traefik and create ingress using the mii sample script
     boolean success = Command.withParams(new CommandParams()
