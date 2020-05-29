@@ -499,6 +499,7 @@ class ItMiiMultiModel implements LoggedTest {
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
         .append("/management/wls/latest/datasources/id/" + dsName)
+        .append(" --noproxy '*'")
         .append(" --silent --show-error ")
         .append("| grep maxCapacity | tr -d -c 0-9 ").toString();
 
@@ -527,6 +528,7 @@ class ItMiiMultiModel implements LoggedTest {
         .append(" http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
         .append("/management/wls/latest/datasources")
         .append("/id/" + dsName)
+        .append(" --noproxy '*'")
         .append(" --silent --show-error ").toString();
 
     CommandParams params = Command
