@@ -293,8 +293,13 @@ public class IntegrationTestWatcher implements
   @Override
   public void afterAll(ExtensionContext context) {
     printHeader(String.format("Ending Test Suite %s", className), "+");
-    logger.info("Starting cleanup after test class");
-    CleanupUtil.cleanup(namespaces);
+    if (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
+      logger.info("Skipping cleanup after test class");
+    } else {
+      logger.info("Starting cleanup after test class");
+      CleanupUtil.cleanup(namespaces);
+    }
   }
 
 
