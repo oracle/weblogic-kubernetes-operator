@@ -91,10 +91,14 @@ errors=[]
 def addError(err):
   errors.append(err)
 
-# Check to see if there is a network access points defined in the domainConfig tree
-# Avoid getting cd exception by navigating the tree using ls()
-#
 def checkNAPInDomainConfig(path):
+  """
+  Check to see if there is a network access points defined in the domainConfig tree
+  Avoid getting cd exception by navigating the tree using ls()
+
+  :param path:
+  :return:  domainConfig nap path, true if the test path is istio network access points
+  """
   rep=re.compile('/(?:Servers|ServerTemplates)/.*/NetworkAccessPoints/istio-')
   match = False
   if re.match(rep, path):
@@ -137,8 +141,10 @@ for line in file:
   )
 
   domainConfig()
-  existing_istio_paths, istio_matched = checkNAPInDomainConfig(bean_path)
-  if istio_matched and existing_istio_paths is None:
+  existing_istio_paths, is_istio_testpath = checkNAPInDomainConfig(bean_path)
+  # if it is an istio test path from the input file
+  # and not actually in the domain config (add case)
+  if is_istio_testpath and existing_istio_paths is None:
     originalActual = originalExpected
   else:
     cd(bean_path)
