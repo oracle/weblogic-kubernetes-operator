@@ -47,6 +47,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -151,7 +152,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean shutdown(String domainUid, String namespace) {
+  public static boolean shutdownDomain(String domainUid, String namespace) {
     return Domain.shutdown(domainUid, namespace);
   }
 
@@ -162,10 +163,10 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restart(String domainUid, String namespace) {
+  public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
-
+  
   /**
    * Delete a Domain Custom Resource.
    *
@@ -707,7 +708,7 @@ public class TestActions {
    * @return creationTimestamp from metadata section of the Pod
    * @throws ApiException if Kubernetes client API call fails
    **/
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
@@ -784,7 +785,7 @@ public class TestActions {
 
   /**
    * Patch the domain resource with a new restartVersion.
-   * 
+   *
    * @param domainResourceName name of the domain resource
    * @param namespace Kubernetes namespace that the domain is hosted
    * @return restartVersion new restartVersion of the domain resource
