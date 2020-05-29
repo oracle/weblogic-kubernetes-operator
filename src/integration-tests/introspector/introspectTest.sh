@@ -746,6 +746,8 @@ function checkOverrides() {
   if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
     exit 1
   fi
+
+  rm ${src_input_file}_2
 }
 
 
