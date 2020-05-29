@@ -244,11 +244,23 @@ if [ "$DO_RCU" = "true" ]; then
   BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
   BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
-  # TBD set namespace
-  doCommand    "./create-rcu-schema.sh -s FMW1 -i ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
+  rcuCommand="./create-rcu-schema.sh"
+  rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/devpdb.k8s" # DB url
+  rcuCommand+=" -s FMW1"                       # RCU schema prefix
+  if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
+    rcuCommand+=" -p \$DB_IMAGE_PULL_SECRET"   # FMW infra image pull secret for rcu pod
+  fi
+  rcuCommand+=" -i ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"  # image for rcu pod
+  rcuCommand+=" -n \$DB_NAMESPACE"             # namespace to run rcu pod
+  rcuCommand+=" -o \$WORKDIR/rcuoutput"        # output directory for generated YAML
+  doCommand "$rcuCommand"
 
-  # TBD the above leaves a pod behind, is this a concern, TBD set namespace?
-  doCommand    "kubectl -n default delete pod rcu --ignore-not-found"
+  # The rcu command leaves a pod named 'rcu' running:
+  doCommand "kubectl -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
+
+  # This works in default namespace:
+    # doCommand    "./create-rcu-schema.sh -s FMW1 -i ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
+    # doCommand    "kubectl -n default delete pod rcu --ignore-not-found"
 fi
 
 if [ "$DO_OPER" = "true" ]; then
