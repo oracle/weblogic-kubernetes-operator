@@ -36,7 +36,7 @@ This feature is supported for standard WLS domains, Restricted JRF domains, and 
 
 WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file.  The WDT model format is described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
-For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain, when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#prerequisites-for-jrf-domain-types" >}}).
+For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain, when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
 
 #### Runtime behavior overview

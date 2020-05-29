@@ -93,7 +93,8 @@ During domain home creation, model, and property files are first loaded from the
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
- * Embedding a `.##.` in a filename is optional and can appear anywhere in the file name before the `properties` or `yaml` extension.
+ * Embedding a `.##.` in a filename is optional.
+   * When present, it must be placed just before the `properties` or `yaml` extension in order for it to take precedence over alphabetical precedence.
    * The precedence of file names that include more than one `.##.` is undefined.
    * The number can be any integer greater than or equal to zero.
  * File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`  

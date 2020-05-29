@@ -15,6 +15,7 @@ This feature is supported only in 3.0.0-RC1.
      - [Model in Image domain types (WLS, JRF, and Restricted JRF)](#model-in-image-domain-types-wls-jrf-and-restricted-jrf)
      - [Use cases](#use-cases)
      - [Sample directory structure](#sample-directory-structure)
+     - [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images)
    - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
    - [Additional prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
    - [Initial use case](#initial-use-case): An initial WebLogic domain
@@ -110,6 +111,22 @@ Location | Description |
 `utils/wl-pod-wait.sh` | Utility for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state. |
 `utils/patch-restart-version.sh` | Utility for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
 `utils/opss-wallet.sh` | Utility for exporting or importing a JRF domain OPSS wallet file. |
+
+#### Ensuring your Kubernetes cluster can access images
+
+If you run the sample from a machine that is remote to one or more of your Kubernetes cluster worker nodes, then you need to ensure that the images you create can be accessed from any node in the cluster.
+
+For example, if you have permission to put the image in a Docker repository that the cluster can also access, then:
+  - After you've created an image:
+    - `docker tag` the image with a target image name (including the registry hostname, port, repository name, and the tag, if needed).
+    - `docker push` the tagged image to the target repository.
+  - Before you deploy a domain resource:
+    - Modify the domain resource file's `image:` value to match the Docker tag for the image in the repository. 
+    - If the repository requires a login, then also deploy a corresponding Kubernetes docker secret to the same namespace that the domain resource will use, and modify the domain resource file's `imagePullSecrets:` to reference this secret. 
+
+Alternatively, if you have access to the local Docker image cache on each worker node in the cluster, then you can use a docker command to save the image to a file, copy the image file to each worker node, and use a docker command to load the image file into the node's image cache.
+
+For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
 ### Prerequisites for all domain types
 
@@ -265,7 +282,7 @@ Location | Description |
    e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the above licensed images as specified in the tool's command line using the `--fromImage` parameter. For `JRF`, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, and for `WLS`, the sample specifies `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
      {{% notice info %}}
-   If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
+   If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
      {{% /notice %}}
 
 1. Download the latest WebLogic Deploying Tooling and WebLogic Image Tool installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image Docker images.
@@ -275,10 +292,10 @@ Location | Description |
    ```
    $ cd /tmp/mii-sample/model-images
 
-   $ curl -m 30 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.1/weblogic-deploy.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-1.8.1/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
 
-   $ curl -m 30 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.5/imagetool.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.8.5/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 
@@ -318,7 +335,7 @@ A JRF domain requires an infrastructure database, initializing this database wit
 
 ##### Set up and initialize an infrastructure database
 
-A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables. The following example shows how to set up a database and use the RCU tool to create the infrastructure schema for a JRF domain. The database is set up with the following attributes:
+A JRF domain requires an infrastructure database and also requires initializing this database with a schema and a set of tables for each different domain. The following example shows how to set up a database and use the RCU tool to create the infrastructure schemas for two JRF domains. The database is set up with the following attributes:
 
 | Attribute | Value |
 | --------- | ----- |
@@ -326,7 +343,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
 | database Kubernetes pod | `oracle-db` |
 | database image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
 | database password | `Oradoc_db1` |
-| infrastructure schema prefix | `FMW1` |
+| infrastructure schema prefixes | `FMW1` and `FMW2` (for domain1 and domain2) |
 | infrastructure schema password | `Oradoc_db1` |
 | database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 
@@ -350,23 +367,29 @@ A JRF domain requires an infrastructure database and also requires initializing 
 
      This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
+     __NOTE__: If your Kubernetes cluster nodes do not all have access to the database image in a local docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+
      **WARNING:** The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
 
-2. Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with the schema prefix `FMW1`.
+2. Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`).
 
    Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
    ```
    $ cd /tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema
    $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
+   $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
-   __NOTE__:  If you need to drop the repository, use this command:
+   __NOTE__: If your Kubernetes cluster nodes do not all have access to the fmw infrastructure image in a local docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the fmw infrastructure image to each local docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+
+   __NOTE__: If you need to drop the repository, use this command:
 
    ```
    $ drop-rcu-schema.sh -s FMW1
    ```
+
 
 
 ##### Increase introspection job timeout
@@ -737,6 +760,8 @@ When the command succeeds, it should end with output like the following:
 
 Also, if you run the `docker images` command, then you will see a Docker image named `model-in-image:WLS-v1`.
 
+> Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
+
 #### Deploy resources - Introduction
 
 In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
@@ -1082,6 +1107,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   ```
   {{% /expand %}}
 
+  > Note: Before you deploy the domain custom resource, check if you have have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
 
   Run the following command to create the domain custom resource:
 
@@ -1411,14 +1437,19 @@ Here are the steps:
               model:
                 ...
                 configMap: sample-domain1-wdt-config-map
-           ```
+          ```
+
       - Apply your changed domain resource:
 
-          ```
-          $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
-          ```
+        > Note: Before you deploy the domain custom resource, check if you have have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
+
+        ```
+        $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
+        ```
 
     - Option 2: Use the updated domain resource file that is supplied with the sample:
+
+        > Note: Before you deploy the domain custom resource, check if you have have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
 
         ```
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
@@ -1827,14 +1858,14 @@ Here are the steps for this use case:
        - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
 
-   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
+   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using RCU prefix `FMW2` for this domain, as the first domain is already using `FMW1`.
 
    {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
    ```
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-rcu-access \
-      --from-literal=rcu_prefix=FMW1 \
+      --from-literal=rcu_prefix=FMW2 \
       --from-literal=rcu_schema_password=Oradoc_db1 \
       --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
    $ kubectl -n sample-domain1-ns label  secret \
@@ -1954,7 +1985,7 @@ Here are the steps for this use case:
              ...
              model:
              ...
-               configMap: configMap: sample-domain2-wdt-config-map
+               configMap: sample-domain2-wdt-config-map
          ```
 
       - Now, compare your original and changed domain resource files to double check your changes.
@@ -2021,11 +2052,15 @@ Here are the steps for this use case:
 
       - Apply your changed domain resource:
 
+          > Note: Before you deploy the domain custom resource, check if you have have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
+
           ```
           $ kubectl apply -f /tmp/mii-sample/mii-update2.yaml
           ```
 
     - Option 2: Use the updated domain resource file that is supplied with the sample:
+
+        > Note: Before you deploy the domain custom resource, check if you have have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
 
         ```
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
@@ -2322,6 +2357,10 @@ Here are the steps for this use case:
 
      Also, if you run the `docker images` command, then you will see a Docker image named `model-in-image:WLS-v2`.
 
+     > Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
+
+#### Deploy resources - Introduction
+
 1. Set up and apply a domain resource that is similar to your "Update1" use case domain resource but with a different image:
 
    > **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths, files, and image names below.
@@ -2347,11 +2386,15 @@ Here are the steps for this use case:
 
       - Apply your changed domain resource:
 
+          > Note: Before you deploy the domain custom resource, check if you have have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
+
           ```
           $ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
           ```
 
     - Option 2: Use the updated domain resource file that is supplied with the sample:
+
+        > Note: Before you deploy the domain custom resource, check if you have have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the domain resource's image in a location that these nodes can access and you may also need to modify your domain resource file to reference the new location. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
 
         ```
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
