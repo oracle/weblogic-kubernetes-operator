@@ -66,7 +66,7 @@ $ kubectl label namespace domain1 istio-injection=enabled
 
 To enable the support for a domain, you need to add the
 `configuration` section to your domain custom resource YAML file as shown in the
-example below.  
+following example:  
 
 ```
 apiVersion: "weblogic.oracle/v7"
@@ -93,7 +93,7 @@ and defaults to `8888` if not provided.  The `envoyPort` is optional and default
 ##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on pods.  When you enable Istio support in the domain resource, the
-introspect job will automatcially create configuration overrrides with the necessary channels for the domain to satisy Istio's requirements:
+introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
 * On the Administration Server:
     * A network channel called `istio-probe` with listen address `127.0.0.1:8888` (or
@@ -102,7 +102,7 @@ introspect job will automatcially create configuration overrrides with the neces
       you specified as the admin port.
     * A channel called `istio-ldap` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the LDAP protocol enabled.
-    * The introspect job will not create any configuration network channel for external access for you.  You can create a channel called `istio-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your regular WebLogic domain configuration.
+    * The introspector job does not create any configuration network channel for external access.  You can create a channel called `istio-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your WebLogic domain configuration.
 * In the server template that is used to create Managed Servers in clusters:
     * A channel called `istio-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting) and the public address
@@ -115,22 +115,22 @@ introspect job will automatcially create configuration overrrides with the neces
       and the public address set to the Kubernetes Service for the Managed Server.
     * A channel called `istio-http` with listen address `127.0.0.1:31111` and the
       public address set to the Kubernetes Service for the Managed Server. Note that `31111`
-      is the Istio proxy (envoy) port.  You can set it to according to your environment of omit it to use the default (31111)
+      is the Istio proxy (envoy) port.  You can set it according to your environment or omit it, to use the default (31111)
 
 
-Additionally, when the Istio support is enabled for a domain, the operator will
+Additionally, when Istio support is enabled for a domain, the operator
 ensure that the Istio sidecar is not injected into the introspector job's pods.
 
 
 ### Apply the domain resource yaml
 
-Once the domain resource yaml is modified, you can apply it by
+After the domain resource YAML is modified, apply it by
 
 ```
 kubect apply -f domain.yaml
 ```
 
-and after all the servers are up, you should see something like this
+After all the servers are up, you will see output like this:
 
 ```
 kubectl -n sample-domain1-ns get pods
@@ -142,7 +142,7 @@ sample-domain1-managed-server2   2/2     Running   0          153m
 
 ```
 
-and if you use `istioctl proxy-status`, you should see the mesh status
+If you use `istioctl proxy-status`, you will see the mesh status:
 
 ```
 istioctl proxy-status 
@@ -157,7 +157,7 @@ weblogic-operator-7d86fffbdd-5dxzt.sample-weblogic-operator-ns     SYNCED     SY
 
 #### Exposing applications in Istio-enabled domains
 
-When a domain is running with the Istio support, you should use the Istio
+When a domain is running with Istio support, you should use the Istio
 gateway to provide external access to applications, instead of using an ingress
 controller like Traefik.  Using the Istio gateway will enable you to view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
@@ -218,7 +218,7 @@ For more information about providing ingress using Istio, refer to the [Istio do
 Istio provides traffic management capabilities, including the ability to
 visualize traffic in Kiali.  You do not need to change your applications to use
 this feature.  The Istio proxy (envoy) sidecar that is injected into your pods
-provides this visibility. The Istio support does enable
+provides this visibility. The Istio support enables
 traffic management.  The image below shows an example with traffic
 flowing:
 
