@@ -187,8 +187,8 @@ if [ "$DO_CLEANDB" = "true" ]; then
   doCommand -c "echo ====== CLEANDB ======"
   # TBD call sample's cleanup script? 
   # TBD use env var for namespace
-  doCommand -c "kubectl -n default delete deployment oracle-db --ignore-not-found"
-  doCommand -c "kubectl -n default delete service oracle-db --ignore-not-found"
+  doCommand -c "kubectl -n $DB_NAMESPACE delete deployment oracle-db --ignore-not-found"
+  doCommand -c "kubectl -n $DB_NAMESPACE delete service oracle-db --ignore-not-found"
 fi
 
 # 
@@ -242,7 +242,6 @@ if [ "$DO_RCU" = "true" ]; then
   defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
   BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-$defaultBaseImage}"
   BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
-  BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
   rcuCommand="./create-rcu-schema.sh"
   rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/devpdb.k8s" # DB url
