@@ -408,15 +408,10 @@ public class ConfigMapHelper {
           packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
         }
         String domainRestartVersion = info.getDomain().getRestartVersion();
-        String domainIntrospectVersion = info.getDomain().getIntrospectVersion();
         int modelInImageSpecHash =  ConfigMapHelper.getModelInImageSpecHash(info.getDomain().getSpec().getImage());
         if (domainRestartVersion != null) {
           packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
           data.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
-        }
-        if (domainIntrospectVersion != null) {
-          packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
-          data.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
         }
         if ("FromModel".equals(info.getDomain().getDomainHomeSourceType())) {
           packet.put(ProcessingConstants.DOMAIN_INPUTS_HASH, String.valueOf(modelInImageSpecHash));
@@ -632,7 +627,6 @@ public class ConfigMapHelper {
         final String miiModelSecretsHash = data.get("secrets.md5");
         final String miiDomainZipHash = data.get("domainzip_hash");
         final String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-        final String domainIntrospectVersion = data.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
         final String modelInImageSpecHash = data.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
 
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
@@ -641,8 +635,6 @@ public class ConfigMapHelper {
             + info.getDomain().getIntrospectVersion());
         LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
             + domainRestartVersion);
-        LOGGER.finest("ReadSituConfigMapStep.onSuccess introspect version from cm result "
-            + domainIntrospectVersion);
         LOGGER.finest("ReadSituConfigMapStep.onSuccess image spec hash from cm result "
             + modelInImageSpecHash);
 
@@ -654,10 +646,6 @@ public class ConfigMapHelper {
 
           if (miiModelSecretsHash != null) {
             packet.put(ProcessingConstants.SECRETS_HASH, miiModelSecretsHash);
-          }
-
-          if (domainIntrospectVersion != null) {
-            packet.put(ProcessingConstants.DOMAIN_INTROSPECT_VERSION, domainIntrospectVersion);
           }
 
           if (domainRestartVersion != null) {
@@ -693,6 +681,14 @@ public class ConfigMapHelper {
     private boolean domainValid;
     private WlsDomainConfig domain;
     private List<String> validationErrors;
+
+    public DomainTopology() {
+    }
+
+    public DomainTopology(WlsDomainConfig domain) {
+      this.domain = domain;
+      this.domainValid = true;
+    }
 
     /**
      * check if domain is valid.

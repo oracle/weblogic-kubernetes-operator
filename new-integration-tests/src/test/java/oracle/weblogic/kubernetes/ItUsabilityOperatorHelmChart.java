@@ -25,6 +25,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -147,14 +148,14 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
 
     // get the admin server pod original creation timestamp
     logger.info("Getting admin server pod original creation timestamp");
-    String adminPodOriginalTimestamp =
+    DateTime adminPodOriginalTimestamp =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                 adminServerPodName, domainNamespace));
 
     // get the managed server pods original creation timestamps
     logger.info("Getting managed server pods original creation timestamps");
-    List<String> managedServerPodOriginalTimestampList = new ArrayList<>();
+    List<DateTime> managedServerPodOriginalTimestampList = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
       final String managedServerPodName = managedServerPrefix + i;
       managedServerPodOriginalTimestampList.add(
@@ -167,7 +168,6 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-
     ingressHostList =
         createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
 
@@ -190,10 +190,11 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
     // check that the state of admin server pod in the domain was not changed
     // wait some time here to ensure the pod state is not changed
     try {
-      Thread.sleep(5000);
+      Thread.sleep(15000);
     } catch (InterruptedException e) {
       // ignore
     }
+
     logger.info("Checking that the admin server pod state was not changed after the operator was deleted");
     assertThat(podStateNotChanged(adminServerPodName, domainUid, domainNamespace, adminPodOriginalTimestamp))
         .as("Test state of pod {0} was not changed in namespace {1}", adminServerPodName, domainNamespace)
