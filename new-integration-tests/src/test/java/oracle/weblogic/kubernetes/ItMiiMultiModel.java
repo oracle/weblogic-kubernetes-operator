@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -80,6 +81,10 @@ class ItMiiMultiModel implements LoggedTest {
   private static String adminSecretName = null;
   private static String encryptionSecretName = null;
   private static String miiImageMultiModel = null;
+
+  private static final String domainUid1 = "mii-mm-cm-domain";
+  private static final String domainUid2 = "mii-mm-image-domain";
+  private static final String domainUid3 = "mii-mm-image-cm-domain";
 
   private static int replicaCount = 2;
 
@@ -184,9 +189,8 @@ class ItMiiMultiModel implements LoggedTest {
   @DisplayName("Create model-in-image domain with a ConfigMap that contains multiple model files")
   @Slow
   public void testMiiWithMultiModelCM() {
-    final String domainUid = "mii-mm-cm-domain";
-    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+    final String adminServerPodName = String.format("%s-%s", domainUid1, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix = String.format("%s-%s", domainUid1, MANAGED_SERVER_NAME_BASE);
     final String expectedMaxCapacity = "40";
     final String expectedMaxCapacityDS3 = "5";
 
@@ -197,13 +201,13 @@ class ItMiiMultiModel implements LoggedTest {
 
     List<String> modelFiles = Arrays.asList(modelFileName3, modelFileName4);
     createConfigMapAndVerify(
-        configMapName, domainUid, domainNamespace, modelFiles);
+        configMapName, domainUid1, domainNamespace, modelFiles);
 
     logger.info("Create domain {0} in namespace {1} with CM {2} that contains WDT models {3} and {4}",
-        domainUid, domainNamespace, configMapName, modelFileName3, modelFileName4);
+        domainUid1, domainNamespace, configMapName, modelFileName3, modelFileName4);
 
     createDomainResourceAndVerify(
-        domainUid,
+        domainUid1,
         domainNamespace,
         adminServerPodName,
         managedServerPrefix, 
@@ -214,19 +218,19 @@ class ItMiiMultiModel implements LoggedTest {
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
     assertEquals(expectedMaxCapacity, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
+            domainUid1, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName, expectedMaxCapacity));
+            domainUid1, domainNamespace, dsName, expectedMaxCapacity));
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
     assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
+            domainUid1, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName3, expectedMaxCapacityDS3));
+            domainUid1, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
   }
 
@@ -247,15 +251,14 @@ class ItMiiMultiModel implements LoggedTest {
   @DisplayName("Create a model-in-image domain with two WDT model files in the image")
   @Slow
   public void testMiiWithMultiModelImage() {
-    final String domainUid = "mii-mm-image-domain";
-    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+    final String adminServerPodName = String.format("%s-%s", domainUid2, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix = String.format("%s-%s", domainUid2, MANAGED_SERVER_NAME_BASE);
     final String expectedMaxCapacity = "20";
 
     logger.info("Create domain {0} in namespace {1} with image {2} that contains WDT models {3} and {4}",
-        domainUid, domainNamespace, miiImageMultiModel, modelFileName2, modelFileName1);
+        domainUid2, domainNamespace, miiImageMultiModel, modelFileName2, modelFileName1);
     createDomainResourceAndVerify(
-        domainUid,
+        domainUid2,
         domainNamespace,
         adminServerPodName,
         managedServerPrefix, 
@@ -266,18 +269,18 @@ class ItMiiMultiModel implements LoggedTest {
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
     assertEquals(expectedMaxCapacity, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
+            domainUid2, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName, expectedMaxCapacity));
+            domainUid2, domainNamespace, dsName, expectedMaxCapacity));
 
     logger.info("Check DataSource {0} does not exist", dsName2);
     assertTrue(dsDoesNotExist(adminServerPodName, domainNamespace, dsName2),
         String.format("Domain %s in namespace %s DataSource %s should not exist",
-            domainUid, domainNamespace, dsName2));
+            domainUid2, domainNamespace, dsName2));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
-            domainUid, domainNamespace, dsName2));
+            domainUid2, domainNamespace, dsName2));
 
   }
 
@@ -309,9 +312,8 @@ class ItMiiMultiModel implements LoggedTest {
   @DisplayName("Create a model-in-image domain with two model files in both the image and the ConfigMap")
   @Slow
   public void testMiiWithMultiModelImageAndCM() {
-    final String domainUid = "mii-mm-image-cm-domain";
-    final String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-    final String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+    final String adminServerPodName = String.format("%s-%s", domainUid3, ADMIN_SERVER_NAME_BASE);
+    final String managedServerPrefix = String.format("%s-%s", domainUid3, MANAGED_SERVER_NAME_BASE);
     final String configMapName = "ds-multi-model-image-cm";
     final String expectedMaxCapacity = "40";
     final String expectedMaxCapacityDS3 = "5";
@@ -321,13 +323,13 @@ class ItMiiMultiModel implements LoggedTest {
 
     List<String> modelFiles = Arrays.asList(modelFileName4, modelFileName3);
     createConfigMapAndVerify(
-        configMapName, domainUid, domainNamespace, modelFiles);
+        configMapName, domainUid3, domainNamespace, modelFiles);
 
     logger.info("Create domain {0} in namespace {1} with image {2} and CM {3} that contains {4} and {5}",
-        domainUid, domainNamespace, miiImageMultiModel, configMapName, modelFileName4, modelFileName3);
+        domainUid3, domainNamespace, miiImageMultiModel, configMapName, modelFileName4, modelFileName3);
 
     createDomainResourceAndVerify(
-        domainUid,
+        domainUid3,
         domainNamespace,
         adminServerPodName,
         managedServerPrefix, 
@@ -338,27 +340,27 @@ class ItMiiMultiModel implements LoggedTest {
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
     assertEquals(expectedMaxCapacity, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
+            domainUid3, domainNamespace, dsName, maxCapacityValue, expectedMaxCapacity));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName, expectedMaxCapacity));
+            domainUid3, domainNamespace, dsName, expectedMaxCapacity));
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName3);
     maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName3);
     assertEquals(expectedMaxCapacityDS3, maxCapacityValue, 
         String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, instead of %s",
-            domainUid, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
+            domainUid3, domainNamespace, dsName3, maxCapacityValue, expectedMaxCapacityDS3));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
-            domainUid, domainNamespace, dsName3, expectedMaxCapacityDS3));
+            domainUid3, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
     logger.info("Check that DataSource {0} does not exist", dsName2);
     assertTrue(dsDoesNotExist(adminServerPodName, domainNamespace, dsName2),
         String.format("Domain %s in namespace %s DataSource %s should not exist",
-            domainUid, domainNamespace, dsName2));
+            domainUid3, domainNamespace, dsName2));
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
-            domainUid, domainNamespace, dsName2));
+            domainUid3, domainNamespace, dsName2));
 
   }
 
@@ -408,6 +410,22 @@ class ItMiiMultiModel implements LoggedTest {
 
   @AfterAll
   public void tearDownAll() {
+    // Delete domain custom resources
+    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid1, domainNamespace);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace),
+        "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domainNamespace);
+
+    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid2, domainNamespace);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid2, domainNamespace),
+        "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domainUid2 + " from " + domainNamespace);
+
+    logger.info("Delete domain custom resource {0} in namespace {1}", domainUid3, domainNamespace);
+    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid3, domainNamespace),
+        "deleteDomainCustomResource failed with ApiException");
+    logger.info("Deleted Domain Custom Resource " + domainUid3 + " from " + domainNamespace);
+
     // delete the domain image created in the test class
     if (miiImageMultiModel != null) {
       deleteImage(miiImageMultiModel);
