@@ -33,6 +33,8 @@ public class WebLogicImageTool {
 
   /**
    * Set up the WebLogicImageTool with given parameters.
+   * 
+   * @param params instance of {@link WitParams} that contains parameters to run WebLogic Image Tool
    * @return the instance of WebLogicImageTool 
    */
   public static WebLogicImageTool withParams(WitParams params) {

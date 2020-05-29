@@ -71,6 +71,7 @@ public class TestAssertions {
    * namespace.
    *
    * @param domainUid ID of the domain
+   * @param domainVersion version of the domain resource definition
    * @param namespace in which the domain custom resource object exists
    * @return true if domain object exists
    */
@@ -86,6 +87,7 @@ public class TestAssertions {
    * @param namespace in which the pod is running
    * @param expectedRestartVersion restartVersion that is expected
    * @return true if the pod's restartVersion has been updated
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean podRestartVersionUpdated(
       String podName,
@@ -135,8 +137,10 @@ public class TestAssertions {
    * @param domainUid ID of the domain resource
    * @param namespace Kubernetes namespace in which the domain custom resource object exists
    * @param podName name of the WebLogic server pod
+   * @param containerName name of the container inside the pod where the image is used
    * @param image name of the image that was used to patch the domain resource
    * @return true if the pod is patched correctly
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static Callable<Boolean> podImagePatched(
       String domainUid,
@@ -457,8 +461,9 @@ public class TestAssertions {
   /**
    * Check if a job completed running.
    *
-   * @param namespace name of the namespace in which the job running
    * @param jobName name of the job to check for its completion status
+   * @param labelSelectors label selectors used to get the right pod object
+   * @param namespace name of the namespace in which the job running
    * @return true if completed false otherwise
    */
   public static Callable<Boolean> jobCompleted(String jobName, String labelSelectors, String namespace) {

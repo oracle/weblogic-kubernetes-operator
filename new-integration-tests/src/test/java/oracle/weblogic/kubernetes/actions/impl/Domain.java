@@ -21,6 +21,7 @@ public class Domain {
    *
    * @param domain Domain custom resource model object
    * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
       throws ApiException {
