@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -44,7 +45,13 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.joda.time.DateTime;
+
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -145,7 +152,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean shutdown(String domainUid, String namespace) {
+  public static boolean shutdownDomain(String domainUid, String namespace) {
     return Domain.shutdown(domainUid, namespace);
   }
 
@@ -156,10 +163,10 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restart(String domainUid, String namespace) {
+  public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
-
+  
   /**
    * Delete a Domain Custom Resource.
    *
@@ -581,7 +588,11 @@ public class TestActions {
    * @return true if successful
    */
   public static boolean dockerPush(String image) {
-    return Docker.push(image);
+    boolean result = Docker.push(image);
+    if (result) {
+      ImageBuilders.registerPushedImage(image);
+    }
+    return result;
   }
 
   /**
@@ -674,6 +685,18 @@ public class TestActions {
     return Job.createNamespacedJob(jobBody);
   }
 
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    return Job.getJob(jobName, namespace);
+  }
+
   // ----------------------   pod  ---------------------------------
 
   /**
@@ -685,7 +708,7 @@ public class TestActions {
    * @return creationTimestamp from metadata section of the Pod
    * @throws ApiException if Kubernetes client API call fails
    **/
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
@@ -714,7 +737,19 @@ public class TestActions {
   public static String getPodLog(String podName, String namespace) throws ApiException {
     return Pod.getPodLog(podName, namespace);
   }
-  
+
+  /**
+   * List Kubernetes pods in a namespace.
+   *
+   * @param namespace name of namespace
+   * @param labelSelectors with which pods are decorated
+   * @return V1PodList list of pods
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+    return Pod.listPods(namespace, labelSelectors);
+  }
+
   /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
@@ -746,6 +781,40 @@ public class TestActions {
   public static boolean deployApplication(String appName, String appLocation, String t3Url,
                                           String username, String password, String target) {
     return true;
+  }
+
+  /**
+   * Patch the domain resource with a new restartVersion.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @return restartVersion new restartVersion of the domain resource
+   */
+  public static String patchDomainResourceWithNewRestartVersion(
+      String domainResourceName, String namespace) {
+    String oldVersion = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
+        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+        domainResourceName, namespace, oldVersion, newVersion);
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/restartVersion\",")
+        .append(" \"value\": \"")
+        .append(newVersion)
+        .append("\"")
+        .append(" }]");
+
+    logger.info("Restart version patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean rvPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainResourceName, namespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(restartVersion)  failed ");
+    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
+
+    return String.valueOf(newVersion);
   }
 
 }
