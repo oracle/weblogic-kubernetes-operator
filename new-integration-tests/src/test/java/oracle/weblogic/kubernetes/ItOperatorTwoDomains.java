@@ -212,7 +212,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
         createOCRRepoSecret(domainNamespaces.get(i));
       }
 
-      t3ChannelPort = getNextFreePort(32001 + 10 * i, 32700 + 10 * i);
+      t3ChannelPort = getNextFreePort(32001, 32700);
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
 
       String domainUid = domainUids.get(i);
