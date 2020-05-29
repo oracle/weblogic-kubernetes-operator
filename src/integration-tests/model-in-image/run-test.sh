@@ -73,7 +73,8 @@ function usage() {
                 to 'sample-domain1-ns', and open port 30305.
     -db       : Deploy Oracle DB. A DB is needed for JRF mode.
                 See 'set-env.sh' for DB settings.
-    -rcu      : Initialize FMW1 schema in the DB. Needed for JRF.
+    -rcu      : Initialize FMWdomain1 and FMWdomain2 schemas
+                in the DB. Needed for JRF.
                 See 'set-env.sh' for DB settings.
 
   Tests:
@@ -236,7 +237,10 @@ if [ "$DO_DB" = "true" ]; then
 fi
 
 if [ "$DO_RCU" = "true" ]; then
-  doCommand -c "echo ====== DB RCU Schema Init ======"
+  for _custom_domain_name_ in domain1 domain2
+  do
+
+  doCommand -c "echo ====== DB RCU Schema Init for domain $_custom_domain_name_ ======"
   doCommand -c "cd \$SRCDIR/kubernetes/samples/scripts/create-rcu-schema"
 
   defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
@@ -245,21 +249,19 @@ if [ "$DO_RCU" = "true" ]; then
 
   rcuCommand="./create-rcu-schema.sh"
   rcuCommand+=" -d oracle-db.\$DB_NAMESPACE.svc.cluster.local:1521/devpdb.k8s" # DB url
-  rcuCommand+=" -s FMW1"                       # RCU schema prefix
+  rcuCommand+=" -s FMW$_custom_domain_name_"    # RCU schema prefix
   if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
     rcuCommand+=" -p \$DB_IMAGE_PULL_SECRET"   # FMW infra image pull secret for rcu pod
   fi
   rcuCommand+=" -i ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"  # image for rcu pod
   rcuCommand+=" -n \$DB_NAMESPACE"             # namespace to run rcu pod
-  rcuCommand+=" -o \$WORKDIR/rcuoutput"        # output directory for generated YAML
+  rcuCommand+=" -o \$WORKDIR/rcuoutput_${_custom_domain_name_}" # output directory for generated YAML
   doCommand "$rcuCommand"
 
   # The rcu command leaves a pod named 'rcu' running:
   doCommand "kubectl -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
 
-  # This works in default namespace:
-    # doCommand    "./create-rcu-schema.sh -s FMW1 -i ${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
-    # doCommand    "kubectl -n default delete pod rcu --ignore-not-found"
+  done
 fi
 
 if [ "$DO_OPER" = "true" ]; then
