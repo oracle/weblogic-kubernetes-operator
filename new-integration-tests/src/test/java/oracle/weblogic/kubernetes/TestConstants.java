@@ -18,6 +18,8 @@ public interface TestConstants {
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
+  public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
+  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 14.1.1.0";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -33,7 +35,8 @@ public interface TestConstants {
   public static final String REPO_REGISTRY = Optional.ofNullable(System.getenv("REPO_REGISTRY"))
       .orElse(REPO_DUMMY_VALUE);
   public static final String REPO_DEFAULT = "phx.ocir.io/weblogick8s/";
-  public static final String REPO_NAME = Optional.ofNullable(System.getenv("KIND_REPO"))
+  public static final String KIND_REPO = System.getenv("KIND_REPO");
+  public static final String REPO_NAME = Optional.ofNullable(KIND_REPO)
       .orElse(!REPO_REGISTRY.equals(REPO_DUMMY_VALUE) ? REPO_DEFAULT : "");
   public static final String REPO_USERNAME = Optional.ofNullable(System.getenv("REPO_USERNAME"))
       .orElse(REPO_DUMMY_VALUE);
@@ -78,6 +81,7 @@ public interface TestConstants {
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
   public static final String MII_BASIC_IMAGE_NAME = REPO_NAME + "mii-basic-image";
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
+  public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
   public static final String MII_TWO_APP_WDT_MODEL_FILE = "model-singlecluster-two-sampleapp-wls.yaml";
 
@@ -86,5 +90,20 @@ public interface TestConstants {
   public static final String MII_APP_RESPONSE_V2 = "Hello World AGAIN, you have reached server managed-server";
   public static final String MII_APP_RESPONSE_V3 = "How are you doing! You have reached server managed-server";
   public static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
+
+  // WDT domain-in-image constants
+  public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
+  public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
+  public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
+  public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
+  public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
+  public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
+  public static final String WDT_BASIC_APP_NAME = "sample-app";
+
+  // credentials
+  public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
+  public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
+  public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
+  public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
 
 }

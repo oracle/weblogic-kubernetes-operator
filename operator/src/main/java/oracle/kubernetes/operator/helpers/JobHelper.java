@@ -52,6 +52,11 @@ public class JobHelper {
 
   /**
    * Factory for {@link Step} that creates WebLogic domain introspector job.
+   * Uses the following packet values:
+   *  ProcessingConstants.DOMAIN_TOPOLOGY - the domain topology
+   *  ProcessingConstants.DOMAIN_RESTART_VERSION - the restart version from the domain
+   *  ProcessingConstants.DOMAIN_INPUTS_HASH
+   *  ProcessingConstants.DOMAIN_INTROSPECT_VERSION - the introspect version from the old domain spec
    *
    * @param next Next processing step
    * @return Step for creating job
@@ -66,36 +71,33 @@ public class JobHelper {
     LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(packet, info);
+    return topology == null
+          || isBringingUpNewDomain(info)
+          || introspectionRequested(packet)
+          || isModelInImageUpdate(packet, info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
     return runningServersCount(info) == 0 && creatingServers(info);
   }
 
+  private static boolean introspectionRequested(Packet packet) {
+    return (Boolean) packet.getOrDefault(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, false);
+  }
+
   private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
     if (info.getDomain().getDomainHomeSourceType().equals("FromModel")) {
 
       final String currentPodRestartVersion = info.getDomain().getRestartVersion();
-      final String currentPodIntrospectVersion = info.getDomain().getIntrospectVersion();
       final String configMapRestartVersion = (String) packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-      final String configMapIntrospectVersion = (String) packet.get(ProcessingConstants.DOMAIN_INTROSPECT_VERSION);
       final String configMapSpecHash = (String) packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
       final String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
           .getSpec().getImage()));
 
       LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
-      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodIntrospectVersion " + currentPodIntrospectVersion);
       LOGGER.finest("JobHelper.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
-      LOGGER.finest("JobHelper.isModelInImageUpdate configMapIntrospectVersion " + configMapIntrospectVersion);
 
       // If either one is set, check for differences and decide to run intropsect job
-
-      if (currentPodIntrospectVersion != null
-            && !currentPodIntrospectVersion.equals(configMapIntrospectVersion)) {
-        LOGGER.fine("JobHelper: currentPodIntrospect version different from configmap");
-        return true;
-      }
 
       if (currentPodRestartVersion != null
             && !currentPodRestartVersion.equals(configMapRestartVersion)) {
@@ -106,12 +108,6 @@ public class JobHelper {
       if (configMapRestartVersion != null
           && !configMapRestartVersion.equals(currentPodRestartVersion)) {
         LOGGER.fine("JobHelper: configMapRestartVersion version different from configmap");
-        return true;
-      }
-
-      if (configMapIntrospectVersion != null
-          && !configMapIntrospectVersion.equals(currentPodIntrospectVersion)) {
-        LOGGER.fine("JobHelper: configMapIntrospectVersion version different ");
         return true;
       }
 

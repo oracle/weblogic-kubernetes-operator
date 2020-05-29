@@ -21,7 +21,9 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -44,15 +46,17 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
-import static oracle.weblogic.kubernetes.actions.TestActions.createMiiImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -61,10 +65,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
@@ -167,6 +173,49 @@ public class CommonTestUtils {
 
     return opHelmParams;
   }
+
+  /**
+   * Upgrade WebLogic operator to manage the given domain namespaces.
+   *
+   * @param opNamespace the operator namespace in which the operator will be upgraded
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return true if successful
+   */
+  public static boolean upgradeAndVerifyOperator(String opNamespace,
+                                                    String... domainNamespace) {
+    // Helm upgrade parameters
+    HelmParams opHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .domainNamespaces(Arrays.asList(domainNamespace));
+
+    // upgrade operator
+    logger.info("Upgrading operator in namespace {0}", opNamespace);
+    if (!upgradeOperator(opParams)) {
+      logger.info("Failed to upgrade operator in namespace {0}", opNamespace);
+      return false;
+    }
+    logger.info("Operator upgraded in namespace {0}", opNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+    if (!isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace)) {
+      logger.info("Operator release {0} is not in deployed status in namespace {1}",
+          OPERATOR_RELEASE_NAME, opNamespace);
+      return false;
+    }
+    logger.info("Operator release {0} status is deployed in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+
+    return true;
+  }
+
 
   /**
    * Install NGINX and wait up to five minutes until the NGINX pod is ready.
@@ -331,6 +380,33 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
+   *
+   * @param domainUid the label the pod is decorated with
+   * @param podName pod name to check
+   * @param domNamespace the Kubernetes namespace in which the domain exists
+   * @param lastCreationTime the previous creation time
+   */
+  public static void checkPodRestarted(
+      String domainUid,
+      String domNamespace,
+      String podName,
+      DateTime lastCreationTime
+  ) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            podName,
+            domNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
+            String.format(
+                "pod %s has not been restarted in namespace %s", podName, domNamespace)));
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
@@ -394,21 +470,42 @@ public class CommonTestUtils {
   /**
    * Create a Docker image for a model in image domain.
    *
-   * @param imageNameBase the base image name used in local or to construct the image name in repository
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
    * @param wdtModelFile the WDT model file used to build the Docker image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @return image name with tag
    */
-  public static  String createMiiImageAndVerify(String imageNameBase,
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
                                                 String wdtModelFile,
                                                 String appName) {
+    return createMiiImageAndVerify(miiImageNameBase, wdtModelFile, appName,
+        WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain.
+   *
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param appName the sample application name used to build sample app ear file in WDT model file
+   * @param baseImageName the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag the WebLogic base image tag to be used while creating mii image
+   * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @return image name with tag
+   */
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                String wdtModelFile,
+                                                String appName,
+                                                String baseImageName,
+                                                String baseImageTag,
+                                                String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + imageNameBase;
+    final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
 
     // build the model file list
@@ -438,12 +535,16 @@ public class CommonTestUtils {
 
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createMiiImage(
-        defaultWitParams()
+    boolean result = createImage(
+        new WitParams()
+            .baseImageName(baseImageName)
+            .baseImageTag(baseImageTag)
+            .domainType(domainType)
             .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(modelList)
             .modelArchiveFiles(archiveList)
+            .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));
@@ -463,24 +564,39 @@ public class CommonTestUtils {
    * @param namespace the namespace in which the secret will be created
    */
   public static void createDockerRegistrySecret(String namespace) {
+    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
+        REPO_REGISTRY, REPO_SECRET_NAME, namespace);
+  }
 
-    // Create Docker registry secret in the namespace to pull the image from repository
+  /**
+   * Create docker registry secret with given parameters.
+   * @param userName repository user name
+   * @param password repository password
+   * @param email repository email
+   * @param registry registry name
+   * @param secretName name of the secret to create
+   * @param namespace namespace in which to create the secret
+   */
+  public static void createDockerRegistrySecret(String userName, String password,
+      String email, String registry, String secretName, String namespace) {
+
+    // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+        userName, password, email, registry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
+            .name(secretName)
             .namespace(namespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", secretName));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
-        REPO_SECRET_NAME, namespace));
+        secretName, namespace));
   }
 
   /**
@@ -551,10 +667,10 @@ public class CommonTestUtils {
     String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
 
     // get the original managed server pod creation timestamp before scale
-    List<String> listOfPodCreationTimestamp = new ArrayList<>();
+    List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
       String managedServerPodName = manageServerPodNamePrefix + i;
-      String originalCreationTimestamp =
+      DateTime originalCreationTimestamp =
           assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                   managedServerPodName, domainNamespace));
@@ -652,4 +768,24 @@ public class CommonTestUtils {
       }
     }
   }
+
+  /**
+   * Get the PodCreationTimestamp of a pod in a namespace.
+   *
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param podName name of the pod
+   * @return PodCreationTimestamp of the pod
+   */
+  public static DateTime getPodCreationTime(String namespace, String podName) {
+    DateTime podCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
+            String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
+    assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
+    logger.info("PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
+        namespace,
+        podName,
+        podCreationTime);
+    return podCreationTime;
+  }
+
 }

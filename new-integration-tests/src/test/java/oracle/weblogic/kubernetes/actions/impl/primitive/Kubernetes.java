@@ -76,8 +76,7 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -459,18 +458,38 @@ public class Kubernetes implements LoggedTest {
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName  name of the pod
-   * @return creationTimestamp from metadata section of the Pod
+   * @return creationTimestamp DateTime from metadata of the Pod
    * @throws ApiException if Kubernetes client API call fail
    */
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
-    DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
 
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null && pod.getMetadata() != null) {
-      return dtf.print(pod.getMetadata().getCreationTimestamp());
+      return pod.getMetadata().getCreationTimestamp();
     } else {
       logger.info("Pod doesn't exist or pod metadata is null");
+      return null;
+    }
+  }
+
+  /**
+   * Get the weblogic.domainRestartVersion label from a given pod.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName  name of the pod
+   * @return value of weblogic.domainRestartVersion label, null if unset or the pod is not available
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static String getPodRestartVersion(String namespace, String labelSelector, String podName)
+      throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      // return the value of the weblogic.domainRestartVersion label
+      return pod.getMetadata().getLabels().get("weblogic.domainRestartVersion");
+    } else {
+      logger.info("getPodRestartVersion(): Pod doesn't exist");
       return null;
     }
   }
@@ -756,7 +775,9 @@ public class Kubernetes implements LoggedTest {
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           json, // JSON schema of the Resource to create
-          null // pretty print output
+          null, // pretty print output
+          null, // dry run
+          null // field manager
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
@@ -1614,6 +1635,26 @@ public class Kubernetes implements LoggedTest {
     return list;
   }
 
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    V1JobList listJobs = listJobs(namespace);
+    for (V1Job job : listJobs.getItems()) {
+      if (job != null && job.getMetadata() != null) {
+        if (job.getMetadata().getName().equals(jobName)) {
+          return job;
+        }
+      }
+    }
+    return null;
+  }
+
   // --------------------------- replica sets ---------------------------
 
 
@@ -2033,7 +2074,13 @@ public class Kubernetes implements LoggedTest {
       String stdout = readExecCmdData(copyOut.getInputStream());
 
       // Read from process's stderr, if data available
-      String stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+      String stderr = null;
+      try {
+        stderr = (proc.getErrorStream().available() != 0) ? readExecCmdData(proc.getErrorStream()) : null;
+      } catch (IllegalStateException e) {
+        // IllegalStateException thrown when stream is already closed, ignore since there is
+        // nothing to read
+      }
 
       return new ExecResult(proc.exitValue(), stdout, stderr);
     } finally {

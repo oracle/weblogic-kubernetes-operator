@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -66,16 +67,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -83,14 +82,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to create model in image domain with a configmap")
 @IntegrationTest
 class ItMiiConfigMap implements LoggedTest {
-
-  private static final String READ_STATE_COMMAND = "/weblogic-operator/scripts/readState.sh";
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -102,9 +98,11 @@ class ItMiiConfigMap implements LoggedTest {
   private static String dockerConfigJson = "";
 
   private String domainUid = "miiconfigmap";
-  private StringBuffer checkJdbc = null;
+  private StringBuffer curlString = null;
 
   private static Map<String, Object> secretNameMap;
+  final String adminServerPodName = domainUid + "-admin-server";
+  final String managedServerPrefix = domainUid + "-managed-server";
 
   /**
    * Install Operator.
@@ -210,8 +208,9 @@ class ItMiiConfigMap implements LoggedTest {
 
   /**
    * Deploy a WebLogic domain with a defined configmap in configuration/model section of the domain resource.
-   * The configmap has a sparse WDT model file that defines a DataSource targeted to the cluster.
-   * Verify the DataSource configuration using the rest API call using adminserver's public nodeport
+   * The configmap has multiple sparse WDT model files that define 
+   * a JDBCSystemResource, a JMSSystemResource, and a WLDFSystemResource.
+   * Verify all the SystemResource configurations using the rest API call using adminserver's public nodeport
    */
   @Test
   @Order(1)
@@ -219,8 +218,6 @@ class ItMiiConfigMap implements LoggedTest {
   @Slow
   @MustNotRunInParallel
   public void testCreateMiiConfigMapDomain() {
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
     // Create the repo secret to pull the image
@@ -241,16 +238,42 @@ class ItMiiConfigMap implements LoggedTest {
             "weblogicenc", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
 
+    //ToDo need to replace with actual URL once we have dynamic PDB instance 
+    //is available thru JUnit5 extension framework
+    logger.info("Create database secret");
+    final String dbSecretName = domainUid  + "-db-secret";
+    assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName, "scott",
+            "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
+             String.format("createSecret failed for %s", dbSecretName));
+
+    String configMapName = "jdbc-jms-wldf-configmap";
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
-    String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
+
+    // Add jdbc model file
+    final String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
     Map<String, String> data = new HashMap<>();
-    String configMapName = "dsconfigmap";
     String cmData = null;
     cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
         String.format("readString operation failed for %s", dsModelFile));
     assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
     data.put("model.jdbc.yaml", cmData);
+
+    // Add jms model file
+    final String jmsModelFile = MODEL_DIR + "/model.jms.yaml";
+    cmData = null;
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(jmsModelFile)),
+        String.format("readString operation failed for %s", jmsModelFile));
+    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+    data.put("model.jms.yaml", cmData);
+
+    // Add wldf model file
+    final String wldfModelFile = MODEL_DIR + "/model.wldf.yaml";
+    cmData = null;
+    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(wldfModelFile)),
+        String.format("readString operation failed for %s", wldfModelFile));
+    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+    data.put("model.wldf.yaml", cmData);
 
     V1ObjectMeta meta = new V1ObjectMeta()
         .labels(labels)
@@ -267,7 +290,7 @@ class ItMiiConfigMap implements LoggedTest {
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
         REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount, configMapName);
+        replicaCount, configMapName, dbSecretName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -285,22 +308,19 @@ class ItMiiConfigMap implements LoggedTest {
     // check admin server pod exists
     logger.info("Check for admin server pod {0} existence in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodCreated(adminServerPodName, domainUid, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods exist
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check for managed server pod {0} existence in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodCreated(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    logger.info("Check admin server status by calling read state command");
-    checkServerReadyStatusByExec(adminServerPodName, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -311,35 +331,43 @@ class ItMiiConfigMap implements LoggedTest {
 
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceCreated(adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkServiceCreated(managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-    oracle.weblogic.kubernetes.utils.ExecResult result = null;
-    try {
-      checkJdbc = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-      checkJdbc.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/wls/latest/datasources/id/TestDataSource/")
-          .append(" --silent --show-error ")
-          .append(" -o /dev/null ")
-          .append(" -w %{http_code});")
-          .append("echo ${status}");
-      logger.info("curl command {0}", new String(checkJdbc));
-      result = exec(new String(checkJdbc), true);
-    } catch (Exception ex) {
-      logger.info("Caught unexpected exception {0}", ex);
-      fail("Got unexpected exception" + ex);
-    }
-
-    logger.info("curl command returns {0}", result.toString());
+    ExecResult result = null;
+    result = checkSystemResourceConfiguration("JDBCSystemResources", "TestDataSource");
+    assertNotNull(result, "CheckJDBCSystemResources returned null");
+    logger.info("CheckJDBCSystemResource returned {0}", result.toString());
     assertEquals("200", result.stdout(), "DataSource configuration not found");
-    logger.info("Found the DataSource configuration ");
+    logger.info("Found the DataSource configuration");
+
+    result = null;
+    result = checkSystemResourceConfiguration("JMSSystemResources", "TestClusterJmsModule");
+    assertNotNull(result, "CheckJMSSystemResources returned null");
+    logger.info("CheckJMSSystemResource returned {0}", result.toString());
+    assertEquals("200", result.stdout(), "JMSSystemResource not found");
+    logger.info("Found the JMSSystemResource configuration");
+
+    result = null;
+    result = checkSystemResourceConfiguration("WLDFSystemResources", "TestWldfModule");
+    assertNotNull(result, "CheckWLDFSystemResources returned null");
+    logger.info("CheckWLDFSystemResource returned {0}", result.toString());
+    assertEquals("200", result.stdout(), "WLDFSystemResource not found");
+    logger.info("Found the WLDFSystemResource configuration");
+
+    result = null;
+    result = checkJdbcRuntime("TestDataSource");
+    logger.info("checkJdbcRuntime: returned {0}", result.toString());
+    assertTrue(result.stdout().contains("jdbc:oracle:thin:localhost"),
+         String.format("Overriden Database URL not found on RuntimeMBean"));
+    assertTrue(result.stdout().contains("scott"),
+         String.format("Overriden Database user not found on RuntimeMBean"));
   }
 
   // This method is needed in this test class, since the cleanup util
@@ -369,7 +397,6 @@ class ItMiiConfigMap implements LoggedTest {
       logger.info("Status code: " + e.getCode());
       logger.info("Reason: " + e.getResponseBody());
       logger.info("Response headers: " + e.getResponseHeaders());
-      //409 means that the secret already exists - it is not an error, so can proceed
       if (e.getCode() != 409) {
         throw e;
       } else {
@@ -380,6 +407,23 @@ class ItMiiConfigMap implements LoggedTest {
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s",
             REPO_SECRET_NAME, domNamespace));
   }
+
+  private void createDatabaseSecret(
+        String secretName, String username, String password, 
+        String dburl, String domNamespace) throws ApiException {
+    Map<String, String> secretMap = new HashMap();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("url", dburl);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+            .metadata(new V1ObjectMeta()
+                    .name(secretName)
+                    .namespace(domNamespace))
+            .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
+
+  }
+
 
   private void createDomainSecret(String secretName, String username, String password, String domNamespace)
           throws ApiException {
@@ -397,8 +441,10 @@ class ItMiiConfigMap implements LoggedTest {
 
   private void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName,
-      int replicaCount, String configmapName) {
+      String repoSecretName, String encryptionSecretName, 
+      int replicaCount, String configmapName, String dbSecretName) {
+    List<String> securityList = new ArrayList<>();
+    securityList.add(dbSecretName);
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
@@ -435,6 +481,7 @@ class ItMiiConfigMap implements LoggedTest {
                             .replicas(replicaCount)
                             .serverStartState("RUNNING"))
                     .configuration(new Configuration()
+                            .secrets(securityList)
                             .model(new Model()
                                     .domainType("WLS")
                                     .configMap(configmapName)
@@ -450,61 +497,49 @@ class ItMiiConfigMap implements LoggedTest {
                     + "for %s in namespace %s", domainUid, domNamespace));
   }
 
-  private void checkPodCreated(String podName, String domainUid, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domNamespace),
-            String.format("podExists failed with ApiException for %s in namespace in %s",
-                podName, domNamespace)));
+  private ExecResult checkSystemResourceConfiguration(String resourcesType, String resourcesName) {
 
-  }
-
-  private void checkPodReady(String podName, String domainUid, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domNamespace),
-            String.format(
-                "pod %s is not ready in namespace %s", podName, domNamespace)));
-
-  }
-
-  private void checkServiceCreated(String serviceName, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, domNamespace),
-            String.format(
-                "Service %s is not ready in namespace %s", serviceName, domainNamespace)));
-
-  }
-
-  private void checkServerReadyStatusByExec(String podName, String namespace) {
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(namespace, podName, null, true, READ_STATE_COMMAND));
-    if (execResult.exitValue() == 0) {
-      logger.info("execResult: " + execResult);
-      assertEquals("RUNNING", execResult.stdout(),
-          "Expected " + podName + ", in namespace " + namespace + ", to be in RUNNING ready status");
-    } else {
-      fail("Ready command failed with exit status code: " + execResult.exitValue());
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    ExecResult result = null;
+    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/weblogic/latest/domainConfig")
+         .append("/")
+         .append(resourcesType)
+         .append("/")
+         .append(resourcesName)
+         .append("/")
+         .append(" --silent --show-error ")
+         .append(" -o /dev/null ")
+         .append(" -w %{http_code});")
+         .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    try {
+      result = exec(new String(curlString), true);
+    } catch (Exception ex) {
+      logger.info("checkSystemResource: caught unexpected exception {0}", ex);
+      return null;
     }
+    return result;
   }
 
+  private ExecResult checkJdbcRuntime(String resourcesName) {
+    int adminServiceNodePort = getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
+    ExecResult result = null;
+
+    curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+         .append("/management/wls/latest/datasources/id/")
+         .append(resourcesName)
+         .append("/")
+         .append(" --silent --show-error ");
+    logger.info("checkJdbcRuntime: curl command {0}", new String(curlString));
+    try {
+      result = exec(new String(curlString), true);
+    } catch (Exception ex) {
+      logger.info("checkJdbcRuntime: caught unexpected exception {0}", ex);
+      return null;
+    }
+    return result;
+  }
 }

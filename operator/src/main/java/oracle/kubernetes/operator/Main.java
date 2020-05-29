@@ -193,7 +193,7 @@ public class Main {
           new InitializeNamespacesSecurityStep(targetNamespaces),
           new NamespaceRulesReviewStep(),
           CrdHelper.createDomainCrdStep(version,
-              new StartNamespacesStep(targetNamespaces)));
+              new StartNamespacesStep(targetNamespaces, false)));
       if (!isDedicated()) {
         strategy = Step.chain(strategy, readExistingNamespaces());
       }
@@ -287,7 +287,10 @@ public class Main {
       Collection<String> namespacesToStart = targetNamespaces;
       int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
       DateTime now = DateTime.now();
+      boolean isFullRecheck = false;
       if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
+        processor.reportSuspendedFibers();
+        isFullRecheck = true;
         lastFullRecheck.set(now);
       } else {
         // check for namespaces that need to be started
@@ -301,7 +304,7 @@ public class Main {
       }
 
       if (!namespacesToStart.isEmpty()) {
-        runSteps(new StartNamespacesStep(namespacesToStart));
+        runSteps(new StartNamespacesStep(namespacesToStart, isFullRecheck));
       }
     };
   }
@@ -569,30 +572,35 @@ public class Main {
   }
 
   private static class StartNamespacesStep extends ForEachNamespaceStep {
-    StartNamespacesStep(Collection<String> targetNamespaces) {
+    private final boolean isFullRecheck;
+
+    StartNamespacesStep(Collection<String> targetNamespaces, boolean isFullRecheck) {
       super(targetNamespaces);
+      this.isFullRecheck = isFullRecheck;
     }
 
     @Override
     protected Step action(String ns) {
       return Step.chain(
           new NamespaceRulesReviewStep(ns),
-          new StartNamespaceBeforeStep(ns),
+          new StartNamespaceBeforeStep(ns, isFullRecheck),
           readExistingResources(operatorNamespace, ns));
     }
   }
 
   private static class StartNamespaceBeforeStep extends Step {
     private final String ns;
+    private final boolean isFullRecheck;
 
-    StartNamespaceBeforeStep(String ns) {
+    StartNamespaceBeforeStep(String ns, boolean isFullRecheck) {
       this.ns = ns;
+      this.isFullRecheck = isFullRecheck;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
-      if (!nss.isNamespaceStarting().getAndSet(true)) {
+      if (isFullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
         return doNext(packet);
       }
       return doEnd(packet);

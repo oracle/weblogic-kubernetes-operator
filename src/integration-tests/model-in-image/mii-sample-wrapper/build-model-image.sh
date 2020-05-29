@@ -8,7 +8,7 @@
 #    This script builds a model image using the WebLogic Image Tool. The
 #    tool pulls a base image if there isn't already a local base image.
 #    This script, by default, builds the model image with model files from
-#    MODEL_DIR using tooling downloaded by './stage-tooling.sh.'.
+#    WORKDIR/MODEL_DIR using tooling downloaded by './stage-tooling.sh.'.
 #
 #  Optional Argument(s):
 #
@@ -17,18 +17,14 @@
 #  Assumptions:
 #
 #    - The WebLogic Image Tool zip is:
-#         'WORKDIR/model-images/weblogic-image-tool.zip' 
+#         'WORKDIR/model-images/imagetool.zip' 
 #      the WebLogic Deploy Tool zip is:
-#         'WORKDIR/model-images/weblogic-deploy-tooling.zip'
+#         'WORKDIR/model-images/weblogic-deploy.zip'
 #      (see './stage-tooling.sh').
 #
 #    - Model files have been staged in the MODEL_DIR directory.
 #
 #  Optional environment variables:
-#
-#    WORKDIR
-#      Working directory for the sample with at least 10GB of space.
-#      Defaults to '/tmp/$USER/model-in-image-sample-work-dir'.
 #
 #    MODEL_DIR:
 #      Location relative to WORKDIR of the model .zip, .properties,
@@ -40,23 +36,14 @@
 #      Default is "archives/archive-v1". This directory must contain a
 #      'wlsdeploy' directory.
 #
-#    MODEL_IMAGE_BUILD:
-#      Set to 'when-changed' or 'always' (default). 'when-changed' behavior is to
-#      exit without building if the docker image BASE_IMAGE_NAME:BASE_IMAGE_TAG
-#      is found in the local docker image cache.
-#
-#    WDT_DOMAIN_TYPE
-#      'WLS' (default), 'RestrictedJRF', or 'JRF'.
-#
-#    BASE_IMAGE_NAME, BASE_IMAGE_TAG:
-#      The base image name defaults to 
-#         'container-registry.oracle.com/middleware/weblogic'
-#      for the 'WLS' domain type, and otherwise defaults to 
-#         'container-registry.oracle.com/middleware/fmw-infrastructure'. 
-#      The tag defaults to '12.2.1.4'.
-#
 #    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG:
 #      Defaults to 'model-in-image' and 'WDT_DOMAIN_TYPE-v1'.
+#
+#    Others (see README)
+#      WORKDIR
+#      MODEL_IMAGE_BUILD
+#      WDT_DOMAIN_TYPE
+#      BASE_IMAGE_NAME, BASE_IMAGE_TAG
 #
 
 set -eu
@@ -82,6 +69,10 @@ IMGTOOL=$WORKDIR/model-images/imagetool/bin/imagetool.sh
 
 function output_dryrun() {
 
+MODEL_YAML_FILES="$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
+MODEL_ARCHIVE_FILES=$WORKDIR/$MODEL_DIR/archive.zip
+MODEL_VARIABLE_FILES="$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
+
 cat << EOF
 
 dryrun:#!/bin/bash
@@ -95,7 +86,7 @@ dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
 dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
 dryrun:
 dryrun:cd $WORKDIR/model-images
-dryrun:unzip -o weblogic-image-tool.zip
+dryrun:unzip -o imagetool.zip
 dryrun:
 dryrun:mkdir -p $WORKDIR/model-images/imagetool/cache
 dryrun:export WLSIMG_CACHEDIR=$WORKDIR/model-images/imagetool/cache
@@ -109,22 +100,18 @@ dryrun:
 dryrun:$IMGTOOL cache addInstaller \\
 dryrun:  --type wdt \\
 dryrun:  --version latest \\
-dryrun:  --path ${WORKDIR}/model-images/weblogic-deploy-tooling.zip
-dryrun:
-dryrun:MODEL_YAML_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
-dryrun:MODEL_ARCHIVE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.zip | xargs | sed 's/ /,/g')"
-dryrun:MODEL_VARIABLE_FILES="\$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
+dryrun:  --path ${WORKDIR}/model-images/weblogic-deploy.zip
 dryrun:
 dryrun:$IMGTOOL update \\
 dryrun:  --tag $MODEL_IMAGE \\
 dryrun:  --fromImage $BASE_IMAGE \\
-dryrun:  \${MODEL_YAML_FILES:+--wdtModel \${MODEL_YAML_FILES}} \\
-dryrun:  \${MODEL_VARIABLE_FILES:+--wdtVariables \${MODEL_VARIABLE_FILES}} \\
-dryrun:  \${MODEL_ARCHIVE_FILES:+--wdtArchive \${MODEL_ARCHIVE_FILES}} \\
+dryrun:  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \\
+dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
+dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
 dryrun:  --wdtModelOnly \\
 dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
 dryrun:
-dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=$SECONDS."
+dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
 
 EOF
 
