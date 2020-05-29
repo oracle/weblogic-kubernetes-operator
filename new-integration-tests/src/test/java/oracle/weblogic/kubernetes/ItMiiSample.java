@@ -20,14 +20,16 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.MII_SAMPLES_SCRIPT;
-import static oracle.weblogic.kubernetes.TestConstants.MII_SAMPLES_WORK_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getDateAndTimeStamp;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,9 +41,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItMiiSample implements LoggedTest {
 
-  private static String opNamespace = null;
-  private static String domainNamespace = null;
-  private static Map<String, String> envMap = null;
+  private static final String MII_SAMPLES_WORK_DIR = WORK_DIR
+      + "/model-in-image-sample-work-dir";
+  private static final String MII_SAMPLES_SCRIPT =
+      "../src/integration-tests/model-in-image/run-test.sh";
+
   private static String DOMAIN_TYPE = "WLS";
   private static String MII_SAMPLE_IMAGE_NAME = REPO_NAME + "mii-" + getDateAndTimeStamp();
   //private static String MII_SAMPLE_IMAGE_NAME2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
@@ -51,13 +55,18 @@ public class ItMiiSample implements LoggedTest {
   private static String imageNameV2 = MII_SAMPLE_IMAGE_NAME + ":" + MII_SAMPLE_IMAGE_TAG_V2;
   private static String SUCCESS_SEARCH_STRING = "Finished without errors";
 
+  private static String opNamespace = null;
+  private static String domainNamespace = null;
+  private static String traefikNamespace = null;
+  private static Map<String, String> envMap = null;
+
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -68,14 +77,20 @@ public class ItMiiSample implements LoggedTest {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
+    logger.info("Creating unique namespace for Treafik");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    traefikNamespace = namespaces.get(2);
+
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
+    // env variables to override default values in sample scripts
     envMap = new HashMap<String, String>();
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
+    envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_IMAGE_NAME);
-    envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V1); //workaround
+    envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V1);
 
     // install traefik and create ingress using the mii sample script
     boolean success = Command.withParams(new CommandParams()
@@ -83,6 +98,10 @@ public class ItMiiSample implements LoggedTest {
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "Traefik deployment is not successful");
+
+    // Create the repo secret to pull the image
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
   }
 
   /**
@@ -93,9 +112,8 @@ public class ItMiiSample implements LoggedTest {
   @DisplayName("Test to verify MII Sample source")
   public void testCheckSampleSource() {
 
-    String cmd = MII_SAMPLES_SCRIPT + " -check-sample";
     boolean success = Command.withParams(new CommandParams()
-                    .command(cmd)
+                    .command(MII_SAMPLES_SCRIPT + " -check-sample")
                     .env(envMap)
                     .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "Sample source doesn't match with the generated source");
@@ -171,7 +189,7 @@ public class ItMiiSample implements LoggedTest {
   @Test
   @Order(4)
   public void testUpdate3UseCase() {
-    envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V2); //workaround
+    envMap.put("MODEL_DIR", "model-images/model-in-image__" + MII_SAMPLE_IMAGE_TAG_V2);
 
     // run update3 use case
     boolean success = Command.withParams(new CommandParams()
@@ -205,6 +223,13 @@ public class ItMiiSample implements LoggedTest {
     }
     if (imageNameV2 != null) {
       deleteImage(imageNameV2);
+    }
+
+    //uninstall traefik
+    if (traefikNamespace != null) {
+      Command.withParams(new CommandParams()
+          .command("helm uninstall traefik-operator -n " + traefikNamespace)
+          .redirect(true)).execute();
     }
   }
 

@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import oracle.weblogic.kubernetes.utils.TestUtils;
 
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public interface TestConstants {
@@ -106,11 +105,5 @@ public interface TestConstants {
   public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
   public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
   public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
-
-  // mii sample constants
-  public static final String MII_SAMPLES_WORK_DIR = WORK_DIR
-                          + "/model-in-image-sample-work-dir";
-  public static final String MII_SAMPLES_SCRIPT =
-      "../src/integration-tests/model-in-image/run-test.sh";
 
 }
