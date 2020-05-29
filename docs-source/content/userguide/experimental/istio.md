@@ -21,7 +21,6 @@ The current support for Istio has these limitations:
 * It is tested with Istio 1.2.2 and later (up to 1.5), however it is tested with both single and
   multicluster installations of Istio.
 * Support is provided only for domains with a single dynamic cluster.
-  Multiple clusters and configured clusters are not currently supported ???
 
 #### Using the operator with Istio support
 

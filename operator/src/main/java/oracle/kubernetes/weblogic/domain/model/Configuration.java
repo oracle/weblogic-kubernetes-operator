@@ -130,8 +130,11 @@ public class Configuration {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
-        .append(model).append(opss).append(secrets).append(overridesConfigMap)
-        .append(introspectorJobActiveDeadlineSeconds).append(istio);
+        .append(model).append(opss)
+        .append(secrets)
+        .append(overridesConfigMap)
+        .append(introspectorJobActiveDeadlineSeconds)
+        .append(istio);
 
     return builder.toHashCode();
   }

@@ -1030,8 +1030,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
-    if server.getName() == self.env.getDomain().getAdminServerName():
-      self.customizeAdminIstioNetworkAccessPoint(listen_address, server)
+    self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     self.undent()
     self.writeln("</d:server>")
 
@@ -1090,7 +1089,7 @@ class SitConfigGenerator(Generator):
     else:
       return add_action, "add"
 
-  def customizeAdminIstioNetworkAccessPoint(self, listen_address, server):
+  def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     if istio_enabled == 'false':
       return
