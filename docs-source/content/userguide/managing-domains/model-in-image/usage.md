@@ -20,6 +20,7 @@ This document describes what's needed to create and deploy a typical Model in Im
    - [Required runtime encryption secret](#required-runtime-encryption-secret)
    - [Secrets for model macros](#secrets-for-model-macros)
    - [Domain resource attributes](#domain-resource-attributes)
+   - [Always use external state](#always-use-external-state)
    - [Requirements for JRF domain types](#requirements-for-jrf-domain-types)
 
 ### WebLogic Server Kubernetes Operator
@@ -120,6 +121,18 @@ The following domain resource attributes are specific to Model in Image domains.
  - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
 
  - Sample domain resource: For an example of a fully specified sample domain resource, see the the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/k8s-domain.yaml.template` file for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. Note that the `@@` entries in this template are not processed by the operator; they need to replaced with actual values before the resource can be applied.
+
+### Always use external state
+
+Regardless of the domain home source type, we recommend that you always keep
+state outside the Docker image. This includes JDBC stores for leasing tables, JMS and transaction stores,
+EJB timers, JMS queues, and so on. This ensures that data will not be lost when
+a container is destroyed.
+
+We recommend that state be kept in a database to take advantage of built-in
+database server high availability features, and the fact that disaster recovery of sites across all
+but the shortest distances, almost always requires using a single database
+server to consolidate and replicate data (DataGuard).
 
 ### Requirements for JRF domain types
 
