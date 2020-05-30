@@ -27,6 +27,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
@@ -48,6 +50,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
@@ -240,8 +243,20 @@ public class DeployUtil {
     } else {
       // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
       image = ocrImage;
-      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+      boolean secretExists = false;
+      V1SecretList listSecrets = listSecrets(namespace);
+      if (null != listSecrets) {
+        for (V1Secret item : listSecrets.getItems()) {
+          if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
+            secretExists = true;
+            break;
+          }
+        }
+      }
+      if (!secretExists) {
+        CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+            OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+      }
       isUseSecret = true;
     }
     logger.info("Using image {0}", image);
