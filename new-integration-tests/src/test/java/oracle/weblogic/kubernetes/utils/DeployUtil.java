@@ -35,7 +35,11 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
@@ -55,8 +59,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class DeployUtil {
 
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static boolean isUseSecret = true;
+  private static String image;
+  private static boolean isUseSecret;
   private static final String MOUNT_POINT = "/deployScripts/";
   private static final String DEPLOY_SCRIPT = "application_deployment.py";
   private static final String DOMAIN_PROPERTIES = "domain.properties";
@@ -80,7 +84,7 @@ public class DeployUtil {
   public static void deployApplication(String host, String port, String userName,
       String password, String targets, Path archivePath, String namespace) {
 
-    setImageName();
+    setImage(namespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("domain", "properties"),
@@ -221,15 +225,26 @@ public class DeployUtil {
 
   }
 
-  private static void setImageName() {
+  /**
+   * Set the image to use and create secrets if needed.
+   *
+   * @param namespace namespace in which secrets needs to be created
+   */
+  private static void setImage(String namespace) {
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
+    String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
     if (KIND_REPO != null) {
-      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-      logger.info("Using image {0}", kindRepoImage);
-      image = kindRepoImage;
+      image = KIND_REPO + ocrImage.substring(TestConstants.OCR_REGISTRY.length() + 1);
       isUseSecret = false;
+    } else {
+      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+      image = ocrImage;
+      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+      isUseSecret = true;
     }
+    logger.info("Using image {0}", image);
   }
 
 }
