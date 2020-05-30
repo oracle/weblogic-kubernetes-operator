@@ -395,20 +395,6 @@ class TopologyGenerator(Generator):
       ret = None
     return ret
 
-  # Work-around bugs in off-line WLST when accessing an SSL mbean
-  def getSSLOrNone(self,server):
-    try:
-      # this can throw if SSL mbean not there
-      ret = server.getSSL()
-      # this can throw if SSL mbean is there but enabled is false 
-      ssl.getListenPort()
-      # this can throw if SSL mbean is there but enabled is false
-      ssl.isListenPortEnabled()
-    except:
-      trace("Ignoring getSSL() exception, this is expected.")
-      ret = None
-    return ret
-
   def validateAdminServer(self):
     adminServerName = self.env.getDomain().getAdminServerName()
     if adminServerName is None:
@@ -464,7 +450,7 @@ class TopologyGenerator(Generator):
 
   def getServerClusterPortPropertyValue(self, server, clusterListenPortProperty):
     sslListenPort = None
-    ssl = self.getSSLOrNone(server)
+    ssl = getSSLOrNone(server)
     if ssl is not None:
       sslListenPort = ssl.getListenPort()
     sslListenPortEnabled = None
@@ -491,7 +477,7 @@ class TopologyGenerator(Generator):
       if cluster is self.env.getClusterOrNone(server):
         listenPort = server.getListenPort()
         listenPortEnabled = server.isListenPortEnabled()
-        ssl = self.getSSLOrNone(server)
+        ssl = getSSLOrNone(server)
         sslListenPort = None
         sslListenPortEnabled = None
         if ssl is not None:
@@ -693,7 +679,7 @@ class TopologyGenerator(Generator):
     self.addNetworkAccessPoints(server)
 
   def addSSL(self, server):
-    ssl = self.getSSLOrNone(server)
+    ssl = getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
@@ -1077,12 +1063,12 @@ class SitConfigGenerator(Generator):
         self.writeln("<d:network-access-point>")
         self.indent()
         self.writeln("<d:name>" + nap_name + "</d:name>")
-        # if istio_enabled:
-        #   self.writeListenAddress("force a replace", '127.0.0.1')
-        #   replace_action = 'f:combine-mode="replace"'
-        #   self.writeln('<d:public-address %s>%s</d:public-address>' % (replace_action, listen_address))
-        # else:
-        self.writeListenAddress("force a replace",listen_address)
+        if istio_enabled:
+          self.writeListenAddress("force a replace", '127.0.0.1')
+          replace_action = 'f:combine-mode="replace"'
+          self.writeln('<d:public-address %s>%s</d:public-address>' % (replace_action, listen_address))
+        else:
+          self.writeListenAddress("force a replace",listen_address)
 
         self.undent()
         self.writeln("</d:network-access-point>")
@@ -1117,8 +1103,7 @@ class SitConfigGenerator(Generator):
     else:
       self.writeln('<d:name>%s</d:name>' % name)
 
-    if protocol != 't3':
-      self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
+    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
@@ -1154,25 +1139,13 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='istio-t3', type=type, action=action, listen_address=listen_address,
                         listen_port=admin_port, protocol='t3')
 
-    ssl = self.getSSLOrNone(server)
+    ssl = getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       action, type = self._getNapConfigOverrideAction(server, "istio-https")
       ssl_listen_port = ssl.getListenPort()
       self._writeIstioNAP(name='istio-https', type=type, action=action, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
-  def getSSLOrNone(self,server):
-    try:
-      # this can throw if SSL mbean not there
-      ret = server.getSSL()
-      # this can throw if SSL mbean is there but enabled is false
-      ssl.getListenPort()
-      # this can throw if SSL mbean is there but enabled is false
-      ssl.isListenPortEnabled()
-    except:
-      trace("Ignoring getSSL() exception, this is expected.")
-      ret = None
-    return ret
 
   def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
@@ -1201,7 +1174,7 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='istio-http', type=type, action=action, listen_address=listen_address,
                         listen_port=istio_envoy_port, protocol='http', http_enabled="true")
 
-    ssl = self.getSSLOrNone(template)
+    ssl = getSSLOrNone(template)
     if ssl is not None and ssl.isEnabled():
       action, type = self._getNapConfigOverrideAction(template, "istio-https")
       ssl_listen_port = ssl.getListenPort()
@@ -1578,6 +1551,21 @@ class DomainIntrospector(SecretManager):
     # instead of a topology.
   
     tg.generate()
+
+
+# Work-around bugs in off-line WLST when accessing an SSL mbean
+def getSSLOrNone(server):
+  try:
+    # this can throw if SSL mbean not there
+    ret = server.getSSL()
+    # this can throw if SSL mbean is there but enabled is false
+    ret.getListenPort()
+    # this can throw if SSL mbean is there but enabled is false
+    ret.isEnabled()
+  except:
+    trace("Ignoring getSSL() exception, this is expected.")
+    ret = None
+  return ret
 
 
 def main(env):
