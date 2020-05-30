@@ -199,37 +199,49 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
+  private String getIstioNapNameIfEnabled(String name) {
+    boolean istioEnabled = this.getDomain().isIstioEnabled();
+    if (istioEnabled && name != null && ! name.startsWith("istio-")) {
+      name = "istio-" + name;
+    }
+    return name;
+  }
+
   private List<V1ContainerPort> getContainerPorts() {
     if (scan != null) {
       List<V1ContainerPort> ports = new ArrayList<>();
       if (scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+          String napName = getIstioNapNameIfEnabled(nap.getName());
           V1ContainerPort port =
               new V1ContainerPort()
-                  .name(LegalNames.toDns1123LegalName(nap.getName()))
+                  .name(LegalNames.toDns1123LegalName(napName))
                   .containerPort(nap.getListenPort())
                   .protocol("TCP");
           ports.add(port);
         }
       }
       if (scan.getListenPort() != null) {
+        String napName = getIstioNapNameIfEnabled("default");
         ports.add(
             new V1ContainerPort()
-                .name("default")
+                .name(napName)
                 .containerPort(scan.getListenPort())
                 .protocol("TCP"));
       }
       if (scan.getSslListenPort() != null) {
+        String napName = getIstioNapNameIfEnabled("default-secure");
         ports.add(
             new V1ContainerPort()
-                .name("default-secure")
+                .name(napName)
                 .containerPort(scan.getSslListenPort())
                 .protocol("TCP"));
       }
       if (scan.getAdminPort() != null) {
+        String napName = getIstioNapNameIfEnabled("default-admin");
         ports.add(
             new V1ContainerPort()
-                .name("default-admin")
+                .name(napName)
                 .containerPort(scan.getAdminPort())
                 .protocol("TCP"));
       }
