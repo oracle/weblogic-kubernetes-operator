@@ -19,6 +19,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -157,7 +158,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(1)
-  @DiabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   public void testInitialUseCase() {
 
@@ -189,7 +190,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(2)
-  @DiabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   public void testUpdate1UseCase() {
 
@@ -207,7 +208,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(3)
-  @DiabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   public void testUpdate2UseCase() {
 
@@ -225,7 +226,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(4)
-  @DiabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testUpdate3UseCase() {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME2);
@@ -257,7 +258,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(5)
-  @DiabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
 
@@ -305,7 +306,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(6)
-  @DiabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   public void testJrfUpdate1UseCase() {
 
@@ -323,7 +324,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(7)
-  @DiabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   public void testJrfUpdate2UseCase() {
 
@@ -341,7 +342,7 @@ public class ItMiiSample implements LoggedTest {
    */
   @Test
   @Order(8)
-  @DiabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
   public void testJrfUpdate3UseCase() {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME2);
