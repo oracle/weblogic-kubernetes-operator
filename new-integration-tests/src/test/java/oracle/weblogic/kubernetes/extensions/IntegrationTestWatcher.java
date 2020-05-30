@@ -293,6 +293,7 @@ public class IntegrationTestWatcher implements
   @Override
   public void afterAll(ExtensionContext context) {
     printHeader(String.format("Ending Test Suite %s", className), "+");
+    // set SKIP_CLEANUP env. var to skip cleanup, mainly used for debugging in local runs
     if (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
       logger.info("Skipping cleanup after test class");
