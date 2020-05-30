@@ -111,12 +111,12 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME);
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("WL_POD_WAIT_SECS", "800");
-    envMap.put("HTTPS_PROXY", System.getenv("HTTPS_PROXY"));
+    /* envMap.put("HTTPS_PROXY", System.getenv("HTTPS_PROXY"));
     envMap.put("https_proxy", System.getenv("https_proxy"));
     envMap.put("NO_PROXY", System.getenv("NO_PROXY"));
     envMap.put("no_proxy", System.getenv("no_proxy"));
     envMap.put("HTTP_PROXY", System.getenv("HTTP_PROXY"));
-    envMap.put("http_proxy", System.getenv("http_proxy"));
+    envMap.put("http_proxy", System.getenv("http_proxy")); */
 
 
     logger.info("Env. variables to the script {0}", envMap);
@@ -342,7 +342,7 @@ public class ItMiiSample implements LoggedTest {
    * Test to verify update3 use case. Deploys an updated WebLogic application to the running
    * domain using an updated Docker image.
    */
-  @Test
+  //@Test
   @Order(8)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
