@@ -110,7 +110,9 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME1);
     envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME);
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    envMap.put("WL_POD_WAIT_SECS", "800");
+    envMap.put("POD_WAIT_TIMEOUT_SECS", "800");
+    envMap.put("DB_NAMESPACE", dbNamespace);
+    envMap.put("DB_IMAGE_PULL_SECRET", "docker-store");
     /* envMap.put("HTTPS_PROXY", System.getenv("HTTPS_PROXY"));
     envMap.put("https_proxy", System.getenv("https_proxy"));
     envMap.put("NO_PROXY", System.getenv("NO_PROXY"));
@@ -264,8 +266,6 @@ public class ItMiiSample implements LoggedTest {
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
 
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", "docker-store");
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME1);
 
     // create ocr docker registry secret to pull the images
@@ -389,6 +389,14 @@ public class ItMiiSample implements LoggedTest {
     }
     if (jrfImageNameV2 != null) {
       deleteImage(jrfImageNameV2);
+    }
+
+    // db cleanup or deletion
+    if (envMap != null) {
+      Command.withParams(new CommandParams()
+          .command(MII_SAMPLES_SCRIPT + " -precleandb")
+          .env(envMap)
+          .redirect(true)).execute();
     }
 
     //uninstall traefik
