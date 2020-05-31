@@ -183,26 +183,7 @@ public class ItMiiSample implements LoggedTest {
   @DisplayName("Test to verify MII sample WLS initial use case")
   public void testInitialUseCase() {
     previousWlsTestSuccessful = false;
-    // create image
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -initial-image")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Initial image creation failed");
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(MII_SAMPLE_WLS_IMAGE_NAME1),
-        String.format("Image %s does not exist", wlsImageNameV1));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(wlsImageNameV1);
-
-    // run initial use case
-    success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -initial-main")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Initial use case failed");
+    initialUseCase("WLS");
     previousWlsTestSuccessful = true;
   }
 
@@ -307,32 +288,7 @@ public class ItMiiSample implements LoggedTest {
         String.format("DB/RCU creation failed, {%s}",
             (result != null ? result.stderr() : "")));
 
-    // create image
-    result = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -initial-image -jrf")
-        .env(envMap)
-        .redirect(true)).executeAndReturnResult();
-    assertTrue((result == null || result.exitValue() != 0
-            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
-        String.format("JRF Initial image creation failed, {%s}",
-            (result != null ? result.stderr() : "")));
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(MII_SAMPLE_JRF_IMAGE_NAME1),
-        String.format("Image %s does not exist", jrfImageNameV1));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(jrfImageNameV1);
-
-    // run initial use case
-    result = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -initial-main -jrf")
-        .env(envMap)
-        .redirect(true)).executeAndReturnResult();
-    assertTrue((result == null || result.exitValue() != 0
-        || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
-            String.format("JRF Initial use case failed, {%s}",
-                (result != null ? result.stderr() : "")));
+    initialUseCase("JRF");
 
     previousJrfTestSuccessful = true;
   }
@@ -431,6 +387,38 @@ public class ItMiiSample implements LoggedTest {
           .command("helm uninstall traefik-operator -n " + traefikNamespace)
           .redirect(true)).execute();
     }
+  }
+
+  private void initialUseCase(String domainType) {
+    // create image
+    ExecResult result = Command.withParams(new CommandParams()
+        .command(MII_SAMPLES_SCRIPT + " -initial-image "
+            + (domainType == "JRF" ? " -jrf" : ""))
+        .env(envMap)
+        .redirect(true)).executeAndReturnResult();
+    assertTrue((result == null || result.exitValue() != 0
+            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
+        String.format("%s Initial image creation failed, %s",
+            domainType, (result != null ? result.stderr() : "")));
+
+    // Check image exists using docker images | grep image image.
+    assertTrue(doesImageExist(
+        domainType == "JRF" ? MII_SAMPLE_JRF_IMAGE_NAME1 : MII_SAMPLE_WLS_IMAGE_NAME1),
+        String.format("Image %s does not exist", (domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1)));
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry((domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1));
+
+    // run initial use case
+    result = Command.withParams(new CommandParams()
+        .command(MII_SAMPLES_SCRIPT + " -initial-main " + (domainType == "JRF" ? " -jrf" : ""))
+        .env(envMap)
+        .redirect(true)).executeAndReturnResult();
+    assertTrue((result == null || result.exitValue() != 0
+            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
+        String.format("%s Initial use case failed, %s",
+              domainType, (result != null ? result.stderr() : "")));
+
   }
 
 }
