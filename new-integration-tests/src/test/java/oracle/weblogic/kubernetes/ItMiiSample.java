@@ -12,6 +12,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -297,18 +298,24 @@ public class ItMiiSample implements LoggedTest {
         OCR_SECRET_NAME, dbNamespace);
 
     // create db and rcu
-    boolean success = Command.withParams(new CommandParams()
+    ExecResult result = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -db -rcu")
         .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "DB/RCU creation is not successful");
+        .redirect(true)).executeAndReturnResult();
+    assertTrue((result == null || result.exitValue() != 0
+            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
+        String.format("DB/RCU creation failed, {%s}",
+            (result != null ? result.stderr() : "")));
 
     // create image
-    success = Command.withParams(new CommandParams()
+    result = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -initial-image -jrf")
         .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "JRF Initial image creation failed");
+        .redirect(true)).executeAndReturnResult();
+    assertTrue((result == null || result.exitValue() != 0
+            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
+        String.format("JRF Initial image creation failed, {%s}",
+            (result != null ? result.stderr() : "")));
 
     // Check image exists using docker images | grep image image.
     assertTrue(doesImageExist(MII_SAMPLE_JRF_IMAGE_NAME1),
@@ -318,11 +325,15 @@ public class ItMiiSample implements LoggedTest {
     dockerLoginAndPushImageToRegistry(jrfImageNameV1);
 
     // run initial use case
-    success = Command.withParams(new CommandParams()
+    result = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -initial-main -jrf")
         .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "JRF Initial use case failed");
+        .redirect(true)).executeAndReturnResult();
+    assertTrue((result == null || result.exitValue() != 0
+        || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
+            String.format("JRF Initial use case failed, {%s}",
+                (result != null ? result.stderr() : "")));
+
     previousJrfTestSuccessful = true;
   }
 
