@@ -13,6 +13,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -26,8 +27,12 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -53,6 +58,7 @@ public class ItMiiSample implements LoggedTest {
       "../src/integration-tests/model-in-image/run-test.sh";
 
   private static String DOMAIN_TYPE = "WLS";
+  private static String OCR_SECRET_NAME = "docker-store";
   private static String MII_SAMPLE_WLS_IMAGE_NAME1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
   private static String MII_SAMPLE_WLS_IMAGE_NAME2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
   private static String MII_SAMPLE_WLS_IMAGE_TAG_V1 = "WLS-v1";
@@ -73,6 +79,7 @@ public class ItMiiSample implements LoggedTest {
   private static String traefikNamespace = null;
   private static String dbNamespace = null;
   private static Map<String, String> envMap = null;
+  private boolean previousTestSuccessfull = false;
 
   /**
    * Install Operator.
@@ -108,17 +115,11 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME1);
-    envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME);
+    envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "800");
+    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
     envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", "docker-store");
-    /* envMap.put("HTTPS_PROXY", System.getenv("HTTPS_PROXY"));
-    envMap.put("https_proxy", System.getenv("https_proxy"));
-    envMap.put("NO_PROXY", System.getenv("NO_PROXY"));
-    envMap.put("no_proxy", System.getenv("no_proxy"));
-    envMap.put("HTTP_PROXY", System.getenv("HTTP_PROXY"));
-    envMap.put("http_proxy", System.getenv("http_proxy")); */
+    envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret
 
 
     logger.info("Env. variables to the script {0}", envMap);
@@ -137,8 +138,11 @@ public class ItMiiSample implements LoggedTest {
     assertTrue(success, "Traefik deployment is not successful");
 
     // Create the repo secret to pull the image
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
+    assertDoesNotThrow(() -> createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
+        REPO_REGISTRY, REPO_SECRET_NAME, domainNamespace),
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    logger.info("Docker registry secret {0} created successfully in namespace {1}",
+        REPO_SECRET_NAME, domainNamespace);
   }
 
   /**
@@ -265,12 +269,14 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
-
+    previousTestSuccessfull = false;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME1);
 
-    // create ocr docker registry secret to pull the images
+    // create ocr docker registry secret to pull the db images
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-        OCR_EMAIL, OCR_REGISTRY, "docker-store", dbNamespace);
+        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
+    logger.info("Docker registry secret {0} created in namespace {1}",
+        OCR_SECRET_NAME, dbNamespace);
 
     // create db and rcu
     boolean success = Command.withParams(new CommandParams()
@@ -299,7 +305,7 @@ public class ItMiiSample implements LoggedTest {
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "JRF Initial use case failed");
-
+    previousTestSuccessfull = true;
   }
 
 
@@ -311,13 +317,15 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   public void testJrfUpdate1UseCase() {
-
+    Assumptions.assumeTrue(previousTestSuccessfull);
+    previousTestSuccessfull = false;
     // run update1 use case
     boolean success = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -update1 -jrf")
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "JRF Update1 use case failed");
+    previousTestSuccessfull = true;
   }
 
   /**
@@ -329,13 +337,15 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   public void testJrfUpdate2UseCase() {
-
+    Assumptions.assumeTrue(previousTestSuccessfull);
+    previousTestSuccessfull = false;
     // run update2 use case
     boolean success = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -update2 -jrf")
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "JRF Update2 use case failed");
+    previousTestSuccessfull = true;
   }
 
   /**
@@ -392,12 +402,12 @@ public class ItMiiSample implements LoggedTest {
     }
 
     // db cleanup or deletion
-    if (envMap != null) {
+    /* if (envMap != null) {
       Command.withParams(new CommandParams()
           .command(MII_SAMPLES_SCRIPT + " -precleandb")
           .env(envMap)
           .redirect(true)).execute();
-    }
+    } */
 
     //uninstall traefik
     if (traefikNamespace != null) {
@@ -406,6 +416,5 @@ public class ItMiiSample implements LoggedTest {
           .redirect(true)).execute();
     }
   }
-
 
 }
