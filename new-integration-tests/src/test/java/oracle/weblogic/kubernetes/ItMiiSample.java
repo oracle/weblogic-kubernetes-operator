@@ -34,7 +34,6 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
@@ -118,6 +117,7 @@ public class ItMiiSample implements LoggedTest {
     // env variables to override default values in sample scripts
     envMap = new HashMap<String, String>();
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
+    envMap.put("WDT_DOMAIN_TYPE", "WLS");
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME1);
@@ -288,6 +288,7 @@ public class ItMiiSample implements LoggedTest {
     previousJrfTestSuccessful = false;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME1);
     envMap.put("DOMAIN_NAMESPACE", jrfDomainNamespace);
+    envMap.put("WDT_DOMAIN_TYPE", "JRF");
 
     // create ocr docker registry secret to pull the db images
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
@@ -404,19 +405,6 @@ public class ItMiiSample implements LoggedTest {
    */
   @AfterAll
   public void tearDownAll() {
-    // delete images created for the test
-    if (wlsImageNameV1 != null) {
-      deleteImage(wlsImageNameV1);
-    }
-    if (wlsImageNameV2 != null) {
-      deleteImage(wlsImageNameV2);
-    }
-    if (jrfImageNameV1 != null) {
-      deleteImage(jrfImageNameV1);
-    }
-    if (jrfImageNameV2 != null) {
-      deleteImage(jrfImageNameV2);
-    }
 
     // db cleanup or deletion
     if (envMap != null) {

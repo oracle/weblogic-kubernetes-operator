@@ -206,19 +206,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   public void close() {
     logger.info("Cleanup images after all test suites are run");
 
-    // delete mii basic image
-    if (miiBasicImage != null) {
-      deleteImage(miiBasicImage);
-    }
-
-    // delete wdt domain-in-image basic image
-    if (wdtBasicImage != null) {
-      deleteImage(wdtBasicImage);
-    }
-
-    // delete operator image
-    if (operatorImage != null) {
-      deleteImage(operatorImage);
+    // delete all the images from local repo
+    for (String image : pushedImages) {
+      deleteImage(image);
     }
 
     // delete images from OCIR, if necessary
