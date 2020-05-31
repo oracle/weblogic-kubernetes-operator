@@ -32,10 +32,10 @@ source $SCRIPTDIR/env-init.sh
 # curl timeout args:
 
 curl_parms="--connect-timeout 5"
-curl_parms+=" --max-time 60"        # max seconds for each try
+curl_parms+=" --max-time 120"       # max seconds for each try
 curl_parms+=" --retry 3"            # retry up to 3 times
 curl_parms+=" --retry-delay 0"      # disable exponential backoff 
-curl_parms+=" --retry-max-time 200" # total seconds before giving up
+curl_parms+=" --retry-max-time 400" # total seconds before giving up
 
 dry_run=false
 [ "${1:-}" = "-dry" ] && dry_run=true
