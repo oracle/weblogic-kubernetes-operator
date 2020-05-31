@@ -76,10 +76,12 @@ public class ItMiiSample implements LoggedTest {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String jrfDomainNamespace = null;
   private static String traefikNamespace = null;
   private static String dbNamespace = null;
   private static Map<String, String> envMap = null;
-  private boolean previousTestSuccessfull = false;
+  private boolean previousWlsTestSuccessful = false;
+  private boolean previousJrfTestSuccessful = false;
 
   /**
    * Install Operator.
@@ -87,7 +89,7 @@ public class ItMiiSample implements LoggedTest {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(5) List<String> namespaces) {
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -106,8 +108,12 @@ public class ItMiiSample implements LoggedTest {
     assertNotNull(namespaces.get(3), "Namespace list is null");
     dbNamespace = namespaces.get(3);
 
+    logger.info("Creating unique namespace for JRF Domain");
+    assertNotNull(namespaces.get(4), "Namespace list is null");
+    jrfDomainNamespace = namespaces.get(4);
+
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace, jrfDomainNamespace);
 
     // env variables to override default values in sample scripts
     envMap = new HashMap<String, String>();
@@ -143,6 +149,12 @@ public class ItMiiSample implements LoggedTest {
         String.format("createSecret failed for %s", REPO_SECRET_NAME));
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         REPO_SECRET_NAME, domainNamespace);
+
+    assertDoesNotThrow(() -> createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
+        REPO_REGISTRY, REPO_SECRET_NAME, jrfDomainNamespace),
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    logger.info("Docker registry secret {0} created successfully in namespace {1}",
+        REPO_SECRET_NAME, jrfDomainNamespace);
   }
 
   /**
@@ -169,7 +181,7 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   public void testInitialUseCase() {
-
+    previousWlsTestSuccessful = false;
     // create image
     boolean success = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -initial-image")
@@ -190,7 +202,7 @@ public class ItMiiSample implements LoggedTest {
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "Initial use case failed");
-
+    previousWlsTestSuccessful = true;
   }
 
   /**
@@ -201,13 +213,15 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   public void testUpdate1UseCase() {
-
+    Assumptions.assumeTrue(previousWlsTestSuccessful);
+    previousWlsTestSuccessful = false;
     // run update1 use case
     boolean success = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -update1")
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "Update1 use case failed");
+    previousWlsTestSuccessful = true;
   }
 
   /**
@@ -219,13 +233,15 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   public void testUpdate2UseCase() {
-
+    Assumptions.assumeTrue(previousWlsTestSuccessful);
+    previousWlsTestSuccessful = false;
     // run update2 use case
     boolean success = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -update2")
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "Update2 use case failed");
+    previousWlsTestSuccessful = true;
   }
 
   /**
@@ -269,8 +285,9 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
-    previousTestSuccessfull = false;
+    previousJrfTestSuccessful = false;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME1);
+    envMap.put("DOMAIN_NAMESPACE", jrfDomainNamespace);
 
     // create ocr docker registry secret to pull the db images
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
@@ -305,7 +322,7 @@ public class ItMiiSample implements LoggedTest {
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "JRF Initial use case failed");
-    previousTestSuccessfull = true;
+    previousJrfTestSuccessful = true;
   }
 
 
@@ -317,15 +334,15 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   public void testJrfUpdate1UseCase() {
-    Assumptions.assumeTrue(previousTestSuccessfull);
-    previousTestSuccessfull = false;
+    Assumptions.assumeTrue(previousJrfTestSuccessful);
+    previousJrfTestSuccessful = false;
     // run update1 use case
     boolean success = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -update1 -jrf")
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "JRF Update1 use case failed");
-    previousTestSuccessfull = true;
+    previousJrfTestSuccessful = true;
   }
 
   /**
@@ -337,15 +354,15 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   public void testJrfUpdate2UseCase() {
-    Assumptions.assumeTrue(previousTestSuccessfull);
-    previousTestSuccessfull = false;
+    Assumptions.assumeTrue(previousJrfTestSuccessful);
+    previousJrfTestSuccessful = false;
     // run update2 use case
     boolean success = Command.withParams(new CommandParams()
         .command(MII_SAMPLES_SCRIPT + " -update2 -jrf")
         .env(envMap)
         .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
     assertTrue(success, "JRF Update2 use case failed");
-    previousTestSuccessfull = true;
+    previousJrfTestSuccessful = true;
   }
 
   /**
@@ -402,12 +419,12 @@ public class ItMiiSample implements LoggedTest {
     }
 
     // db cleanup or deletion
-    /* if (envMap != null) {
+    if (envMap != null) {
       Command.withParams(new CommandParams()
           .command(MII_SAMPLES_SCRIPT + " -precleandb")
           .env(envMap)
           .redirect(true)).execute();
-    } */
+    }
 
     //uninstall traefik
     if (traefikNamespace != null) {
