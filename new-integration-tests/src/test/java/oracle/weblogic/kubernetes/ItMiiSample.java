@@ -198,11 +198,7 @@ public class ItMiiSample implements LoggedTest {
     Assumptions.assumeTrue(previousWlsTestSuccessful);
     previousWlsTestSuccessful = false;
     // run update1 use case
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update1")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Update1 use case failed");
+    update1UseCase("WLS");
     previousWlsTestSuccessful = true;
   }
 
@@ -218,11 +214,7 @@ public class ItMiiSample implements LoggedTest {
     Assumptions.assumeTrue(previousWlsTestSuccessful);
     previousWlsTestSuccessful = false;
     // run update2 use case
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update2")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Update2 use case failed");
+    update2UseCase("WLS");
     previousWlsTestSuccessful = true;
   }
 
@@ -235,27 +227,11 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testUpdate3UseCase() {
+    Assumptions.assumeTrue(previousWlsTestSuccessful);
+    previousWlsTestSuccessful = false;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME2);
-
     // run update3 use case
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update3-image")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Update3 create image failed");
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(MII_SAMPLE_WLS_IMAGE_NAME2),
-        String.format("Image %s does not exist", wlsImageNameV2));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(wlsImageNameV2);
-
-    success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update3-main")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Update3 use case failed");
+    update3UseCase("WLS");
   }
 
   /**
@@ -305,11 +281,7 @@ public class ItMiiSample implements LoggedTest {
     Assumptions.assumeTrue(previousJrfTestSuccessful);
     previousJrfTestSuccessful = false;
     // run update1 use case
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update1 -jrf")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "JRF Update1 use case failed");
+    update1UseCase("JRF");
     previousJrfTestSuccessful = true;
   }
 
@@ -325,11 +297,7 @@ public class ItMiiSample implements LoggedTest {
     Assumptions.assumeTrue(previousJrfTestSuccessful);
     previousJrfTestSuccessful = false;
     // run update2 use case
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update2 -jrf")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "JRF Update2 use case failed");
+    update2UseCase("JRF");
     previousJrfTestSuccessful = true;
   }
 
@@ -337,38 +305,81 @@ public class ItMiiSample implements LoggedTest {
    * Test to verify update3 use case. Deploys an updated WebLogic application to the running
    * domain using an updated Docker image.
    */
-  //@Test
+  @Test
   @Order(8)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
   public void testJrfUpdate3UseCase() {
+    Assumptions.assumeTrue(previousJrfTestSuccessful);
+    previousJrfTestSuccessful = false;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME2);
 
     // run update3 use case
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update3-image -jrf")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "JRF Update3 create image failed");
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(MII_SAMPLE_JRF_IMAGE_NAME2),
-        String.format("Image %s does not exist", jrfImageNameV2));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(jrfImageNameV2);
-
-    success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -update3-main -jrf")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "JRF Update3 use case failed");
+    update3UseCase("JRF");
   }
 
+  private void initialUseCase(String domainType) {
+    // create image
+    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -initial-image ", domainType,
+        domainType + " Initial image creation failed");
 
+    // Check image exists using docker images | grep image image.
+    assertTrue(doesImageExist(
+        domainType == "JRF" ? MII_SAMPLE_JRF_IMAGE_NAME1 : MII_SAMPLE_WLS_IMAGE_NAME1),
+        String.format("Image %s does not exist", (domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1)));
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry((domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1));
+
+    // run initial use case
+    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -initial-main ", domainType,
+        domainType + "Initial use case failed");
+
+  }
+
+  private void runCommandAndVerify(String cmd, String domainType, String failedMessage) {
+    ExecResult result = Command.withParams(new CommandParams()
+        .command(cmd + (domainType == "JRF" ? " -jrf" : ""))
+        .env(envMap)
+        .redirect(true)).executeAndReturnResult();
+
+    assertTrue((result == null || result.exitValue() != 0
+            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
+        String.format("%s, %s",
+            failedMessage, (result != null ? "stdout = " + result.stdout()
+                + " stderr = " + result.stderr() : "")));
+  }
+
+  private void update1UseCase(String domainType) {
+    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update1", domainType,
+        domainType + " Update1 use case failed");
+  }
+
+  private void update2UseCase(String domainType) {
+    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update2", domainType,
+        domainType + " Update2 use case failed");
+  }
+
+  private void update3UseCase(String domainType) {
+    // run update3 use case
+    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update3-image", domainType,
+        domainType + " Update3 create image failed");
+
+    // Check image exists using docker images | grep image image.
+    assertTrue(doesImageExist(
+        (domainType == "JRF" ? MII_SAMPLE_JRF_IMAGE_NAME2 : MII_SAMPLE_WLS_IMAGE_NAME2)),
+        String.format("Image %s does not exist",
+            (domainType == "JRF" ? jrfImageNameV2 : wlsImageNameV2)));
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry((domainType == "JRF" ? jrfImageNameV2 : wlsImageNameV2));
+
+    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update3-main", domainType,
+        domainType + " Update3 use case failed");
+  }
 
   /**
-   * Delete images.
+   * Delete DB, uninstall traefik.
    */
   @AfterAll
   public void tearDownAll() {
@@ -389,36 +400,5 @@ public class ItMiiSample implements LoggedTest {
     }
   }
 
-  private void initialUseCase(String domainType) {
-    // create image
-    ExecResult result = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -initial-image "
-            + (domainType == "JRF" ? " -jrf" : ""))
-        .env(envMap)
-        .redirect(true)).executeAndReturnResult();
-    assertTrue((result == null || result.exitValue() != 0
-            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
-        String.format("%s Initial image creation failed, %s",
-            domainType, (result != null ? result.stderr() : "")));
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(
-        domainType == "JRF" ? MII_SAMPLE_JRF_IMAGE_NAME1 : MII_SAMPLE_WLS_IMAGE_NAME1),
-        String.format("Image %s does not exist", (domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1)));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry((domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1));
-
-    // run initial use case
-    result = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -initial-main " + (domainType == "JRF" ? " -jrf" : ""))
-        .env(envMap)
-        .redirect(true)).executeAndReturnResult();
-    assertTrue((result == null || result.exitValue() != 0
-            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
-        String.format("%s Initial use case failed, %s",
-              domainType, (result != null ? result.stderr() : "")));
-
-  }
 
 }
