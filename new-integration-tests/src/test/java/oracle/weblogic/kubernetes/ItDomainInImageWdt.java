@@ -68,7 +68,6 @@ class ItDomainInImageWdt implements LoggedTest {
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String dockerConfigJson = "";
   private String domainUid = "domain1";
-  
   private static Map<String, Object> secretNameMap;
 
   /**
