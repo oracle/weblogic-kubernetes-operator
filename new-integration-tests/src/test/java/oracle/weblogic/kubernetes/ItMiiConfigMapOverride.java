@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,7 +14,6 @@ import java.util.logging.Level;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -66,8 +63,6 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -84,6 +79,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
@@ -257,46 +253,10 @@ class ItMiiConfigMapOverride implements LoggedTest {
             "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
              String.format("createSecret failed for %s", dbSecretName));
 
-    Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUid", domainUid);
-
-    // Add jdbc model file
-    String dsModelFile = MODEL_DIR + "/model.jdbc.yaml";
-    Map<String, String> data = new HashMap<>();
     String configMapName = "dsconfigmap";
-    String cmData = null;
-    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
-        String.format("readString operation failed for %s", dsModelFile));
-    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
-    data.put("model.jdbc.yaml", cmData);
-
-    // Add jms model file
-    final String jmsModelFile = MODEL_DIR + "/model.jms.yaml";
-    cmData = null;
-    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(jmsModelFile)),
-        String.format("readString operation failed for %s", jmsModelFile));
-    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
-    data.put("model.jms.yaml", cmData);
-
-    // Add wldf model file
-    final String wldfModelFile = MODEL_DIR + "/model.wldf.yaml";
-    cmData = null;
-    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(wldfModelFile)),
-        String.format("readString operation failed for %s", wldfModelFile));
-    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
-    data.put("model.wldf.yaml", cmData);
-
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .labels(labels)
-        .name(configMapName)
-        .namespace(domainNamespace);
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(meta);
-
-    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("createConfigMap failed for %s", configMapName));
-    assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
+    createConfigMapAndVerify(
+        configMapName, domainUid, domainNamespace,
+        Arrays.asList("model.jdbc.yaml", "model.jms.yaml", "model.wldf.yaml"));
 
     // create the domain CR with no configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
