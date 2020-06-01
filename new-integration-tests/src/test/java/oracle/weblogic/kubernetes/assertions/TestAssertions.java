@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.assertions.impl.Grafana;
 import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
@@ -472,5 +473,15 @@ public class TestAssertions {
    */
   public static Callable<Boolean> prometheusIsReady(String namespace) {
     return Prometheus.isReady(namespace);
+  }
+
+  /**
+   * Check if Prometheus is running.
+   *
+   * @param namespace in which is prometheus is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> grafanaIsReady(String namespace) {
+    return Grafana.isReady(namespace);
   }
 }

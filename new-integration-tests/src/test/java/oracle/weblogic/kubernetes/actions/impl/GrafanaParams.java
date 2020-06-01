@@ -9,36 +9,25 @@ import java.util.Objects;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
-// All parameters needed to install Prometheus
+// All parameters needed to install Grafana
 
-public class PrometheusParams {
+public class GrafanaParams {
 
   // Adding some of the most commonly used params for now
-  private int nodePortAlertManager;
-  private int nodePortServer;
+  private int nodePort;
   private HelmParams helmParams;
-
-  private static final String ALERTMANAGER_SVC_NODEPORT = "alertmanager.service.nodePort";
-
 
   //params for server
 
-  private static final String SERVER_SVC_NODEPORT = "server.service.nodePort";
+  private static final String SVC_NODEPORT = "service.nodePort";
 
-
-
-  public PrometheusParams nodePortAlertManager(int nodePortAlertManager) {
-    this.nodePortAlertManager = nodePortAlertManager;
-    return this;
-  }
-
-  public PrometheusParams nodePortServer(int nodePortServer) {
-    this.nodePortServer = nodePortServer;
+  public GrafanaParams nodePort(int nodePort) {
+    this.nodePort = nodePort;
     return this;
   }
 
 
-  public PrometheusParams helmParams(HelmParams helmParams) {
+  public GrafanaParams helmParams(HelmParams helmParams) {
     this.helmParams = helmParams;
     return this;
   }
@@ -54,11 +43,8 @@ public class PrometheusParams {
    */
   public Map<String, Object> getValues() {
     Map<String, Object> values = new HashMap<>();
-    if (nodePortAlertManager > 0) {
-      values.put(ALERTMANAGER_SVC_NODEPORT, nodePortAlertManager);
-    }
-    if (nodePortServer > 0) {
-      values.put(SERVER_SVC_NODEPORT, nodePortServer);
+    if (nodePort > 0) {
+      values.put(SVC_NODEPORT, nodePort);
     }
 
     values.values().removeIf(Objects::isNull);

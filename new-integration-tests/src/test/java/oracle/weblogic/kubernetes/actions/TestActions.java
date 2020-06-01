@@ -758,6 +758,29 @@ public class TestActions {
     return Prometheus.uninstall(params);
   }
 
+  // --------------------------- Grafana ---------------------------------
+  /**
+   * Install Grafana.
+   *
+   * @param params grafana parameters for Helm values
+   * @return true if the prometheus is successfully installed, false otherwise.
+   */
+  public static boolean installGrafana(GrafanaParams params) {
+    return Grafana.install(params);
+  }
+
+  /**
+   * Uninstall the Grafana release.
+   *
+   * @param params the parameters to Helm uninstall command, release name and namespace
+   * @return true on success, false otherwise
+   */
+
+  public static boolean uninstallGrafana(HelmParams params) {
+    return Grafana.uninstall(params);
+  }
+
+
   /**
    * Patch the domain resource with a new restartVersion.
    * 

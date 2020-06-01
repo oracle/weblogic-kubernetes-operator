@@ -281,9 +281,26 @@ public class Kubernetes implements LoggedTest {
   }
 
   // ------------------------  deployments -----------------------------------
-  public static boolean createDeployment(String deploymentYaml) {
-    // do something with the command!!!
-    return true;
+  public static boolean createDeployment(V1Deployment deployment) throws ApiException {
+    String namespace = deployment.getMetadata().getNamespace();
+    boolean status = false;
+    try {
+      AppsV1Api apiInstance = new AppsV1Api(apiClient);
+      V1Deployment createdDeployment = apiInstance.createNamespacedDeployment(
+          namespace, // String | namespace in which to create job
+          deployment, // V1Job | body of the V1Job containing job data
+          PRETTY, // String | pretty print output.
+          null, // String | dry run or permanent change
+          null // String | field manager who is making the change
+      );
+      if (createdDeployment != null) {
+        status = true;
+      }
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+    return status;
   }
 
   /**
@@ -446,6 +463,7 @@ public class Kubernetes implements LoggedTest {
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList pods = listPods(namespace, labelSelector);
     for (var pod : pods.getItems()) {
+      logger.info("Check for pod {0}", pod.getMetadata().getName());
       if (podName.equals(pod.getMetadata().getName())) {
         return pod;
       }

@@ -3,26 +3,23 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.google.gson.JsonObject;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.*;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.ActionConstants;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
 
@@ -50,24 +47,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
-import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
-import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
-import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.*;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.*;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -809,6 +789,71 @@ public class CommonTestUtils {
 
     return promHelmParams;
   }
+
+  /**
+   * Install Grafana and wait up to five minutes until the grafana pod is ready.
+   *
+   * @param grafanaReleaseName the grafana release name
+   * @param grafanaNamespace the grafana namespace in which the operator will be installed
+   * @param grafanaValueFile the grafana value.yaml file path
+   * @param grafanaVersion the version of the grafana helm chart
+   * @param grafanaNodePort nodePort value for grafana server
+   * @return the grafana Helm installation parameters
+   */
+  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
+                                                      String grafanaNamespace,
+                                                      String grafanaValueFile,
+                                                      String grafanaVersion,
+                                                      int grafanaNodePort)
+                                                       {
+
+    // Helm install parameters
+    HelmParams grafanaHelmParams = new HelmParams()
+        .releaseName(grafanaReleaseName)
+        .namespace(grafanaNamespace)
+        .chartDir("stable/grafana")
+        .chartValuesFile(grafanaValueFile);
+
+    if (grafanaVersion != null) {
+      grafanaHelmParams.chartVersion(grafanaVersion);
+    }
+
+    // grafana chart values to override
+    GrafanaParams grafanaParams = new GrafanaParams()
+        .helmParams(grafanaHelmParams)
+        .nodePort(grafanaNodePort);
+    //create grafana secret
+    createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    // install grafana
+    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    assertTrue(installGrafana(grafanaParams),
+        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    logger.info("Grafana installed in namespace {0}", grafanaNamespace);
+
+    // list Helm releases matching grafana release name in  namespace
+    logger.info("Checking grafana release {0} status in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+    assertTrue(isHelmReleaseDeployed(grafanaReleaseName, grafanaNamespace),
+        String.format("Grafana release %s is not in deployed status in namespace %s",
+            grafanaReleaseName, grafanaNamespace));
+    logger.info("Grafana release {0} status is deployed in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+
+    // wait for the grafana pod to be ready
+    logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                grafanaNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> grafanaIsReady(grafanaNamespace),
+            "grafanaIsReady failed with ApiException"));
+
+    return grafanaHelmParams;
+  }
+
 
   /*
    * Get the PodCreationTimestamp of a pod in a namespace.
