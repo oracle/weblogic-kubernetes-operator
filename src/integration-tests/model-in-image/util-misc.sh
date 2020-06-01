@@ -98,55 +98,46 @@ function testapp() {
   while [ 1 = 1 ] 
   do
 
-  (
-  set +e
-  set -u
+    domain_uid=${DOMAIN_UID:-sample-domain1}
+    if [ "$1" = "internal" ]; then
+      local cluster_service_name=$(get_service_name $domain_uid-cluster-$2)
+      local admin_service_name=$(get_service_name $domain_uid-admin-server)
+      local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
+      local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
 
-  domain_uid=${DOMAIN_UID:-sample-domain1}
-  if [ "$1" = "internal" ]; then
-    local cluster_service_name=$(get_service_name $domain_uid-cluster-$2)
+    elif [ "$1" = "traefik" ]; then
+      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):30305/myapp_war/index.jsp"
 
-    local admin_service_name=$(get_service_name $domain_uid-admin-server)
+    else
+      echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"
 
-    local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
+    fi
 
-    local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
+    target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).testapp.curl.$1.out
 
-  elif [ "$1" = "traefik" ]; then
-    local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):30305/myapp_war/index.jsp"
+    echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
 
-  else
-    echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"
+    bash -c "$command" > $target_file 2>&1
 
-  fi
+    # use "cat & sed" instead of "grep" as grep exits with an error when it doesn't find anything
 
-  target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).testapp.curl.$1.out
+    local before=$(cat $target_file)
+    local after=$(cat $target_file | sed "s/$3/ADIFFERENTVALUE/g")
 
-  echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
+    if [ "$before" = "$after" ]; then
+      echo
+      echo "@@ Error: '$3' not found in app response for command '$command'. Contents of response file '$target_file':"
+      cat $target_file
 
-  bash -c "$command" > $target_file 2>&1
+      num_tries=$((num_tries + 1))
+      [ $num_tries -gt 5 ] && return 1
+      echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
+      sleep 5
 
-  local result=$(cat $target_file |& grep -c "$3")
-
-  if [ ! "$result" = "1" ]; then
-    echo
-    echo "@@ Error: '$3' not found in app response for command '$command'. Contents of response file '$target_file':"
-    cat $target_file
-    exit 1
-  else
-    echo ".. Success!"
-    exit 0
-  fi
-  )
-
-  [ $? -eq 0 ] && return 0
-
-  num_tries=$((num_tries + 1))
-
-  [ $num_tries -gt 5 ] && return 1
-
-  echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
-  sleep 5
+    else
+      echo ".. Success!"
+      return 0
+    fi
 
   done
 }
