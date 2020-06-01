@@ -45,14 +45,18 @@ function get_sample_host() {
   tr [A-Z_] [a-z-] <<< $1.mii-sample.org
 }
 
-function get_curl_command() {
-  # $1 is service name
+function curl_timeout_parms() {
   local curl_parms="--connect-timeout 5"
   curl_parms+=" --max-time 20"        # max seconds for each try
   curl_parms+=" --retry 5"            # retry up to 5 times
   curl_parms+=" --retry-delay 0"      # disable exponential backoff
   curl_parms+=" --retry-max-time 130" # total seconds before giving up
-  echo "curl -s -S $curl_parms -H 'host: $(get_sample_host $1)'"
+  echo "$curl_parms"
+}
+
+function get_curl_command() {
+  # $1 is service name
+  echo "curl -s -S $(curl_timeout_parms) -H 'host: $(get_sample_host $1)'"
 }
 
 function get_help() {
@@ -95,7 +99,7 @@ function testapp() {
 
     local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 
-    local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S -m 10 http://$cluster_service_name:8001/myapp_war/index.jsp\""
+    local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
 
   elif [ "$1" = "traefik" ]; then
     local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):30305/myapp_war/index.jsp"
@@ -105,14 +109,18 @@ function testapp() {
 
   fi
 
-  echo -n "@@ Info: Searching for '$3' in '$command'."
+  target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).testapp.curl.$1.out
 
-  local result=$(bash -c "$command" |& grep -c "$3")
+  echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
+
+  bash -c "$command" > $target_file 2>&1
+
+  local result=$(cat $target_file |& grep -c "$3")
 
   if [ ! "$result" = "1" ]; then
     echo
-    echo "@@ Error: '$3' not found in app response:"
-    bash -c "$command"
+    echo "@@ Error: '$3' not found in app response for command '$command'. Contents of response file '$target_file':"
+    cat $target_file
     exit 1
   else
     echo ".. Success!"
@@ -176,6 +184,7 @@ function doCommand() {
     return $?
   fi
 
+  # COMMAND_OUTFILE_COUNT is also used by other functions in this file
   COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:=0}
   COMMAND_OUTFILE_COUNT=$((COMMAND_OUTFILE_COUNT + 1))
 
