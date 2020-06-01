@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -89,9 +90,12 @@ public class BuildApplication {
    * Build application.
    *
    * @param application path of the application archive
+   * @param parameters system properties for ant
+   * @param targets ant targets to call
    * @param namespace name of the namespace in which server pods running
    */
-  public static void buildApplication(Path application, String namespace) {
+  public static void buildApplication(Path application, Map<String,String> parameters,
+      String targets, String namespace) {
 
     setImage(namespace);
 
@@ -124,7 +128,7 @@ public class BuildApplication {
 
     try {
       // build application
-      build(pvName, pvcName, namespace, buildScriptConfigMapName);
+      build(parameters, targets, pvName, pvcName, namespace, buildScriptConfigMapName);
     } finally {
       // delete the persistent volume claim and persistent volume
       TestActions.deletePersistentVolumeClaim(pvcName, namespace);
@@ -135,21 +139,40 @@ public class BuildApplication {
   /**
    * Build application using a WebLogic image pod.
    *
+   * @param parameters system properties for ant
+   * @param targets ant targets to call
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
    * @param namespace name of the domain namespace in which the job is created
    * @param buildScriptConfigMapName configmap containing build scripts
    */
-  public static void build(String pvName, String pvcName,
+  public static void build(Map<String, String> parameters,
+      String targets, String pvName, String pvcName,
       String namespace, String buildScriptConfigMapName) {
     logger.info("Preparing to run build job");
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
         .addArgsItem(SCRIPTS_MOUNT_PATH + "/" + BUILD_SCRIPT);
+    if (parameters != null) {
+      StringBuilder params = new StringBuilder();
+      parameters.entrySet().forEach((parameter) -> {
+        params.append("-D").append(parameter.getKey()).append("=").append(parameter.getValue()).append(" ");
+      });
+      jobCreationContainer = jobCreationContainer
+          .addEnvItem(new V1EnvVar().name("sysprops").value(params.toString()));
+    }
+    if (targets != null) {
+      jobCreationContainer = jobCreationContainer
+          .addEnvItem(new V1EnvVar().name("targets").value(targets));
+    }
+
     logger.info("Running a Kubernetes job to build application");
-    assertDoesNotThrow(()
-        -> createBuildJob(pvName, pvcName, buildScriptConfigMapName, namespace, jobCreationContainer),
-        "Build failed");
+    try {
+      createBuildJob(pvName, pvcName, buildScriptConfigMapName, namespace, jobCreationContainer);
+    } catch (ApiException ex) {
+      logger.severe("Building application failed");
+      fail("Halting test since build failed");
+    }
 
   }
 

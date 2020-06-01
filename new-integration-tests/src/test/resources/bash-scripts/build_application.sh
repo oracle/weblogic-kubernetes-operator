@@ -40,4 +40,4 @@ source ${WL_HOME}/server/bin/setWLSEnv.sh
 
 # call ant all to build
 cd /application
-ant all
+ant ${sysprops} {targets}
