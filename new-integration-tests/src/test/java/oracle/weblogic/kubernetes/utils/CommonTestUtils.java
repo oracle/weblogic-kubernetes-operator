@@ -3,14 +3,24 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.lang.reflect.Array;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import com.google.gson.JsonObject;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.*;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
@@ -22,7 +32,9 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 
+import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -30,6 +42,11 @@ import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
@@ -47,8 +64,46 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.*;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.*;
+import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
+import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
+import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.grafanaIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.prometheusIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
@@ -349,7 +404,7 @@ public class CommonTestUtils {
             String.format("podReady failed with ApiException for pod %s in namespace %s",
                podName, domainNamespace)));
   }
-  
+
   /**
    * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
    *
@@ -362,7 +417,7 @@ public class CommonTestUtils {
       String domainUid,
       String domNamespace,
       String podName,
-      String lastCreationTime
+      DateTime lastCreationTime
   ) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -530,29 +585,55 @@ public class CommonTestUtils {
   }
 
   /**
+   * Create secret for OCR registry credentials in the specified namespace.
+   *
+   * @param namespace namespace in which the secret will be created
+   */
+  public static void createOCRRepoSecret(String namespace) {
+
+    logger.info("Creating image pull secret in namespace {0}", namespace);
+    createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+  }
+
+  /**
    * Create a Docker registry secret in the specified namespace.
    *
    * @param namespace the namespace in which the secret will be created
    */
   public static void createDockerRegistrySecret(String namespace) {
+    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
+        REPO_REGISTRY, REPO_SECRET_NAME, namespace);
+  }
 
-    // Create Docker registry secret in the namespace to pull the image from repository
+  /**
+   * Create docker registry secret with given parameters.
+   * @param userName repository user name
+   * @param password repository password
+   * @param email repository email
+   * @param registry registry name
+   * @param secretName name of the secret to create
+   * @param namespace namespace in which to create the secret
+   */
+  public static void createDockerRegistrySecret(String userName, String password,
+      String email, String registry, String secretName, String namespace) {
+
+    // Create registry secret in the namespace to pull the image from repository
     JsonObject dockerConfigJsonObject = createDockerConfigJson(
-        REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL, REPO_REGISTRY);
+        userName, password, email, registry);
     String dockerConfigJson = dockerConfigJsonObject.toString();
 
     // Create the V1Secret configuration
     V1Secret repoSecret = new V1Secret()
         .metadata(new V1ObjectMeta()
-            .name(REPO_SECRET_NAME)
+            .name(secretName)
             .namespace(namespace))
         .type("kubernetes.io/dockerconfigjson")
         .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", secretName));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
-        REPO_SECRET_NAME, namespace));
+        secretName, namespace));
   }
 
   /**
@@ -604,6 +685,7 @@ public class CommonTestUtils {
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param domainUid the domain to which the cluster belongs
    * @param domainNamespace the namespace in which the domain exists
+   * @param manageServerPodNamePrefix managed server pod name prefix
    * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
    * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
    * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
@@ -615,18 +697,17 @@ public class CommonTestUtils {
   public static void scaleAndVerifyCluster(String clusterName,
                                            String domainUid,
                                            String domainNamespace,
+                                           String manageServerPodNamePrefix,
                                            int replicasBeforeScale,
                                            int replicasAfterScale,
                                            String curlCmd,
                                            List<String> expectedServerNames) {
 
-    String manageServerPodNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
-
     // get the original managed server pod creation timestamp before scale
-    List<String> listOfPodCreationTimestamp = new ArrayList<>();
+    List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
       String managedServerPodName = manageServerPodNamePrefix + i;
-      String originalCreationTimestamp =
+      DateTime originalCreationTimestamp =
           assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                   managedServerPodName, domainNamespace));
@@ -804,8 +885,7 @@ public class CommonTestUtils {
                                                       String grafanaNamespace,
                                                       String grafanaValueFile,
                                                       String grafanaVersion,
-                                                      int grafanaNodePort)
-                                                       {
+                                                      int grafanaNodePort) {
 
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
@@ -856,14 +936,118 @@ public class CommonTestUtils {
 
 
   /*
+   * Create a persistent volume and persistent volume claim.
+   *
+   * @param v1pv V1PersistentVolume object to create the persistent volume
+   * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
+   * @param labelSelector String containing the labels the PV is decorated with
+   * @param namespace the namespace in which the persistence volume claim to be created
+   */
+  public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
+                                          V1PersistentVolumeClaim v1pvc,
+                                          String labelSelector,
+                                          String namespace) {
+
+    assertNotNull(v1pv, "v1pv is null");
+    assertNotNull(v1pvc, "v1pvc is null");
+
+    String pvName = v1pv.getMetadata().getName();
+    String pvcName = v1pvc.getMetadata().getName();
+
+    logger.info("Creating persistent volume {0}", pvName);
+    assertTrue(assertDoesNotThrow(() -> createPersistentVolume(v1pv),
+        "Persistent volume creation failed with ApiException "),
+        "PersistentVolume creation failed");
+
+    logger.info("Creating persistent volume claim {0}", pvcName);
+    assertTrue(assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
+        "Persistent volume claim creation failed with ApiException"),
+        "PersistentVolumeClaim creation failed");
+
+    // check the persistent volume and persistent volume claim exist
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for persistent volume {0} exists "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                pvName,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+            String.format("pvExists failed with ApiException when checking pv %s", pvName)));
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for persistent volume claim {0} exists in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                pvcName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
+            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+                pvcName, namespace)));
+  }
+
+  /**
+   * Create ConfigMap from the specified files.
+   * @param configMapName name of the ConfigMap to create
+   * @param files files to be added in ConfigMap
+   * @param namespace the namespace in which the ConfigMap to be created
+   */
+  public static void createConfigMapFromFiles(String configMapName,
+                                              List<Path> files,
+                                              String namespace) {
+
+    // create a ConfigMap of the domain
+    Map<String, String> data = new HashMap<>();
+    for (Path file : files) {
+      data.put(file.getFileName().toString(),
+          assertDoesNotThrow(() -> readString(file), "readString failed with IOException"));
+    }
+
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(new V1ObjectMeta()
+            .name(configMapName)
+            .namespace(namespace));
+
+    assertTrue(assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("createConfigMap failed with ApiException for ConfigMap %s with files %s in namespace %s",
+            configMapName, files, namespace)),
+        String.format("createConfigMap failed while creating ConfigMap %s in namespace %s", configMapName, namespace));
+  }
+
+  /**
+   * Create a job in the specified namespace and wait until it completes.
+   *
+   * @param jobBody V1Job object to create in the specified namespace
+   * @param namespace the namespace in which the job will be created
+   */
+  public static void createJobAndWaitUntilComplete(V1Job jobBody, String namespace) {
+
+    String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
+
+    logger.info("Checking if the job {0} completed in namespace {1}", jobName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
+                jobName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(jobCompleted(jobName, null, namespace));
+  }
+
+  /**
    * Get the PodCreationTimestamp of a pod in a namespace.
-   * 
+   *
    * @param namespace Kubernetes namespace that the domain is hosted
-   * @param podName name of the pod 
+   * @param podName name of the pod
    * @return PodCreationTimestamp of the pod
    */
-  public static String getPodCreationTime(String namespace, String podName) {
-    String podCreationTime =
+  public static DateTime getPodCreationTime(String namespace, String podName) {
+    DateTime podCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
     assertNotNull(podCreationTime, "Got null PodCreationTimestamp");

@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -216,6 +217,27 @@ public class DomainProcessorImpl implements DomainProcessor {
         value.setPopulated(true);
         makeRightDomainPresence(value, true, true, false);
       }
+    }
+  }
+
+  /**
+   * Report on currently suspended fibers. This is the first step toward diagnosing if we need special handling
+   * to kill or kick these fibers.
+   */
+  public void reportSuspendedFibers() {
+    if (LOGGER.isFineEnabled()) {
+      BiConsumer<String, FiberGate> consumer =
+          (namespace, gate) -> {
+            gate.getCurrentFibers().forEach(
+                (key, fiber) -> {
+                  Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
+                    LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
+                        + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
+                  });
+                });
+          };
+      makeRightFiberGates.forEach(consumer);
+      statusFiberGates.forEach(consumer);
     }
   }
 
@@ -578,7 +600,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(Domain::getIntrospectVersion)
           .orElse(null);
   }
-
 
   private Step readExistingServices(DomainPresenceInfo info) {
     return new CallBuilder()
