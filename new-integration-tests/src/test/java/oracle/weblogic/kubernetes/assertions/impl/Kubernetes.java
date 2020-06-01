@@ -596,7 +596,6 @@ public class Kubernetes {
   }
 
   /**
-<<<<<<< HEAD
    * Checks if the promethues pods are running in a given namespace.
    * The method assumes the prometheus pods name to starts with prometheus-server, alertmanager
    * and decorated with label prometheus

@@ -470,18 +470,18 @@ public class TestAssertions {
   }
 
   /**
-<<<<<<< HEAD
    * Check if Prometheus is running.
    *
    * @param namespace in which is prometheus is running
    * @return true if running false otherwise
    */
   public static Callable<Boolean> prometheusIsReady(String namespace) {
+
     return Prometheus.isReady(namespace);
   }
 
   /**
-   * Check if Prometheus is running.
+   * Check if Grafana is running.
    *
    * @param namespace in which is prometheus is running
    * @return true if running false otherwise
