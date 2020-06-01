@@ -1,0 +1,23 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+resources:
+    JDBCSystemResource:
+        TestDataSource:
+            Target: 'cluster-1'
+            JdbcResource:
+                JDBCConnectionPoolParams:
+                    InitialCapacity: 0
+                    MinCapacity: 0
+                    MaxCapacity: 20
+                JDBCDataSourceParams:
+                    GlobalTransactionsProtocol: OnePhaseCommit
+                    RowPrefetchSize: 100
+                    JNDIName: jdbc/TestDataSource
+                JDBCDriverParams:
+                    URL: 'jdbc:oracle:thin:@//xxx.xxx.x.xxx:1521/ORCLCDB'
+                    PasswordEncrypted: 'j2ee'
+                    DriverName: oracle.jdbc.OracleDriver
+                    Properties:
+                        user:
+                            Value: j2ee
+        !TestDataSource2:
