@@ -86,7 +86,7 @@ For a description of model file macro references to secrets and environment vari
       AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
     ```
 
-- A JRF domain type model __must__ contain a `domainInfo.RCUDbInfo` stanza, see [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
+- A JRF domain type model __must__ contain a `domainInfo.RCUDbInfo` stanza; see [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
@@ -98,7 +98,7 @@ During domain home creation, model, and property files are first loaded from the
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
- * Embedding a `.##.` in a filename is optional.
+ * Embedding a `.##.` in a file name is optional.
    * When present, it must be placed just before the `properties` or `yaml` extension in order for it to take precedence over alphabetical precedence.
    * The precedence of file names that include more than one `.##.` is undefined.
    * The number can be any integer greater than or equal to zero.

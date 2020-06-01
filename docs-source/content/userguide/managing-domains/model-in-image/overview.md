@@ -35,11 +35,11 @@ It enables:
 
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 
-For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain, when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
+For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
 #### WebLogic Deploy Tool models
 
-WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. For a discussion of the model format and its integration with Model in Image, see [WebLogic Server image]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#weblogic-server-image" >}}) and [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}). The WDT model format is fully described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
+WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. For a discussion of the model format and its integration with Model in Image, see [WebLogic Server image]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#weblogic-server-image" >}}) and [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}). The WDT model format is fully described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
 #### Runtime behavior
 
@@ -57,7 +57,7 @@ When you deploy a Model in Image domain resource:
 
 #### Runtime updates
 
-Model updates can be applied at runtime by changing the image, secrets, or WDT model ConfigMap after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+Model updates can be applied at runtime by changing the image, secrets, or WDT model ConfigMap after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic Server pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 #### Continuous integration and delivery (CI/CD)
 

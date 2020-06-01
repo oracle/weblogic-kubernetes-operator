@@ -133,7 +133,7 @@ If you have an image in your local repository that you would like to copy to
 a remote repository, then the Docker steps are:
 
 - Use [docker login](https://docs.docker.com/engine/reference/commandline/login/)
-  to login to the target repository's registry. For example: 
+  to log in to the target repository's registry. For example: 
   ```
   docker login some.registry.com -u username -p password
   ```

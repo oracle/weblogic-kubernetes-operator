@@ -22,7 +22,7 @@ This feature is supported only in 3.0.0-RC1.
 
 #### Overview
 
-If you want to make a configuration change to a running Model in Image domain, and you want the change to survive WebLogic pod restarts, then you can modify your existing model using one of the following approaches:
+If you want to make a configuration change to a running Model in Image domain, and you want the change to survive WebLogic Server pod restarts, then you can modify your existing model using one of the following approaches:
 
   - Changing secrets or environment variables that are referenced by macros in your model files.
 
@@ -109,7 +109,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
    Specifically, do not apply runtime updates for:
 
-   * Adding WebLogics servers to a cluster, or removing them
+   * Adding WebLogic Servers to a cluster, or removing them
    * Adding or removing Network Access Points (custom channels) for existing servers
    * Changing any of the following:
      * Dynamic cluster size
@@ -153,7 +153,7 @@ As was mentioned in the [overview](#overview), one way to tell the operator to a
 
 #### Using the WDT Discover Domain and Compare Model Tools
 
-The WebLogic Deploy Tooling [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) generates model files from an existing domain home, and the WebLogic Deploy Tooling [Compare Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/compare.md) compares two domain models and generates the YAML for updating the first domain to the second domain. You can use these tools in combination to help determine the model file contents you would need to supply to update an existing model.
+The WebLogic Deploy Tooling [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) generates model files from an existing domain home, and the WebLogic Deploy Tooling [Compare Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/compare.md) compares two domain models and generates the YAML file for updating the first domain to the second domain. You can use these tools in combination to help determine the model file contents you would need to supply to update an existing model.
 
 For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
 
@@ -186,7 +186,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
   $ diff new.yaml old.yaml
 
   # (5) Compare your old and new yaml using compareDomain to generate
-  #     the YAML update you can use for transforming the old to new.
+  #     the YAML update file you can use for transforming the old to new.
 
   # /u01/wdt/weblogic-deploy/bin/compareModel.sh \
     -oracle_home $ORACLE_HOME \

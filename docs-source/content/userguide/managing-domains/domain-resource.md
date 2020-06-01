@@ -135,7 +135,7 @@ You can use the following environment variables to specify JVM memory and JVM op
   * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 * The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 * Notice that the `NODEMGR_MEM_ARGS` and `USER_MEM_ARGS` environment variables both set `-Djava.security.egd=file:/dev/./urandom` by default. This respectively helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy. 
-* You can use `JAVA_OPTIONS` to disable Fast Application Notifications (FAN), see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
+* You can use `JAVA_OPTIONS` to disable Fast Application Notifications (FAN); see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
 
 This example snippet illustrates how to add some of the above environment variables using the `env` attribute under the `serverPod` configuration in your domain resource YAML file.
 ```

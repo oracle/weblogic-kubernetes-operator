@@ -122,9 +122,9 @@ For example, if you have permission to put the image in a Docker repository that
     - `docker push` the tagged image to the target repository.
   - Before you deploy a domain resource:
     - Modify the domain resource file's `image:` value to match the Docker tag for the image in the repository. 
-    - If the repository requires a login, then also deploy a corresponding Kubernetes docker secret to the same namespace that the domain resource will use, and modify the domain resource file's `imagePullSecrets:` to reference this secret. 
+    - If the repository requires a login, then also deploy a corresponding Kubernetes `docker secret` to the same namespace that the domain resource will use, and modify the domain resource file's `imagePullSecrets:` to reference this secret. 
 
-Alternatively, if you have access to the local Docker image cache on each worker node in the cluster, then you can use a docker command to save the image to a file, copy the image file to each worker node, and use a docker command to load the image file into the node's image cache.
+Alternatively, if you have access to the local Docker image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
 
 For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
@@ -367,7 +367,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
 
      This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
-     __NOTE__: If your Kubernetes cluster nodes do not all have access to the database image in a local docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+     __NOTE__: If your Kubernetes cluster nodes do not all have access to the database image in a local Docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
      **WARNING:** The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
@@ -382,7 +382,7 @@ A JRF domain requires an infrastructure database and also requires initializing 
    $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
-   __NOTE__: If your Kubernetes cluster nodes do not all have access to the fmw infrastructure image in a local docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the fmw infrastructure image to each local docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+   __NOTE__: If your Kubernetes cluster nodes do not all have access to the FMW infrastructure image in a local Docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the FMW infrastructure image to each local Docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
    __NOTE__: If you need to drop the repository, use this command:
 
@@ -546,7 +546,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
     out.println();
     out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");
     out.println();
-    out.println("Welcome to WebLogic server '" + srName + "'!");
+    out.println("Welcome to WebLogic Server '" + srName + "'!");
     out.println();
     out.println(" domain UID  = '" + domainUID +"'");
     out.println(" domain name = '" + domainName +"'");
@@ -888,7 +888,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       webLogicCredentialsSecret:
         name: sample-domain1-weblogic-credentials
 
-      # Whether to include the WebLogic server stdout in the pod's stdout, default is true
+      # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
       includeServerOutInPodLog: true
 
       # Whether to enable overriding your log file location, see also 'logHome'
@@ -898,7 +898,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
       #logHome: /shared/logs/sample-domain1
 
-      # Set which WebLogic servers the Operator will start
+      # Set which WebLogic Servers the Operator will start
       # - "NEVER" will not start any server in the domain
       # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
       # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
@@ -949,7 +949,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
       # Change the `restartVersion` to force the introspector job to rerun
       # and apply any new model configuration, to also force a subsequent
-      # roll of your domain's WebLogic pods.
+      # roll of your domain's WebLogic Server pods.
       restartVersion: '1'
 
       configuration:
@@ -1011,7 +1011,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     webLogicCredentialsSecret:
       name: sample-domain1-weblogic-credentials
 
-    # Whether to include the WebLogic server stdout in the pod's stdout, default is true
+    # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
     includeServerOutInPodLog: true
 
     # Whether to enable overriding your log file location, see also 'logHome'
@@ -1021,7 +1021,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
     #logHome: /shared/logs/sample-domain1
 
-    # Set which WebLogic servers the Operator will start
+    # Set which WebLogic Servers the Operator will start
     # - "NEVER" will not start any server in the domain
     # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
     # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
@@ -1072,7 +1072,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
     # Change the restartVersion to force the introspector job to rerun
     # and apply any new model configuration, to also force a subsequent
-    # roll of your domain's WebLogic pods.
+    # roll of your domain's WebLogic Server pods.
     restartVersion: '1'
 
     configuration:
@@ -1164,14 +1164,14 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
       -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-      pod_count > 0   : Wait until exactly 'pod_count' WebLogic server pods for
+      pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
                         a domain all (a) are ready, (b) have the same
                         'domainRestartVersion' label value as the
                         current domain resource's 'spec.restartVersion, and
                         (c) have the same image as the current domain
                         resource's image.
 
-      pod_count = 0   : Wait until there are no running WebLogic server pods
+      pod_count = 0   : Wait until there are no running WebLogic Server pods
                         for a domain. The default.
 
       -t <timeout>    : Timeout in seconds. Defaults to '600'.
@@ -1185,50 +1185,50 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
   {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
   ```
-  @@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
+  @@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 600 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
   @@ [2020-04-30T13:50:42][seconds=0] Info:   ready='true'
   @@ [2020-04-30T13:50:42][seconds=0] Info:   image='model-in-image:WLS-v1'
   @@ [2020-04-30T13:50:42][seconds=0] Info:   domainRestartVersion='1'
   @@ [2020-04-30T13:50:42][seconds=0] Info:   namespace='sample-domain1-ns'
   @@ [2020-04-30T13:50:42][seconds=0] Info:   domainUID='sample-domain1'
 
-  @@ [2020-04-30T13:50:42][seconds=0] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:50:42][seconds=0] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:50:42][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:50:42][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                                          VERSION  IMAGE  READY  PHASE
   --------------------------------------------  -------  -----  -----  ---------
   'sample-domain1-introspect-domain-job-rkdkg'  ''       ''     ''     'Pending'
 
-  @@ [2020-04-30T13:50:45][seconds=3] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:50:45][seconds=3] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:50:45][seconds=3] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:50:45][seconds=3] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                                          VERSION  IMAGE  READY  PHASE
   --------------------------------------------  -------  -----  -----  ---------
   'sample-domain1-introspect-domain-job-rkdkg'  ''       ''     ''     'Running'
 
 
-  @@ [2020-04-30T13:51:50][seconds=68] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:51:50][seconds=68] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:51:50][seconds=68] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:51:50][seconds=68] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME  VERSION  IMAGE  READY  PHASE
   ----  -------  -----  -----  -----
 
-  @@ [2020-04-30T13:51:59][seconds=77] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:51:59][seconds=77] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:51:59][seconds=77] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:51:59][seconds=77] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                           VERSION  IMAGE                    READY    PHASE
   -----------------------------  -------  -----------------------  -------  ---------
   'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
 
-  @@ [2020-04-30T13:52:02][seconds=80] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:02][seconds=80] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:52:02][seconds=80] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:52:02][seconds=80] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                           VERSION  IMAGE                    READY    PHASE
   -----------------------------  -------  -----------------------  -------  ---------
   'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
 
-  @@ [2020-04-30T13:52:32][seconds=110] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:32][seconds=110] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:52:32][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:52:32][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                              VERSION  IMAGE                    READY    PHASE
   --------------------------------  -------  -----------------------  -------  ---------
@@ -1236,8 +1236,8 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
 
-  @@ [2020-04-30T13:52:34][seconds=112] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:34][seconds=112] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:52:34][seconds=112] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:52:34][seconds=112] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                              VERSION  IMAGE                    READY    PHASE
   --------------------------------  -------  -----------------------  -------  ---------
@@ -1245,8 +1245,8 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
   'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
 
-  @@ [2020-04-30T13:53:14][seconds=152] Info: '3' WebLogic pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:53:14][seconds=152] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+  @@ [2020-04-30T13:53:14][seconds=152] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2020-04-30T13:53:14][seconds=152] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
   NAME                              VERSION  IMAGE                    READY   PHASE
   --------------------------------  -------  -----------------------  ------  ---------
@@ -1288,7 +1288,7 @@ You will see output like the following:
 
    Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
-   Welcome to WebLogic server 'managed-server2'!
+   Welcome to WebLogic Server 'managed-server2'!
 
     domain UID  = 'sample-domain1'
     domain name = 'domain1'
@@ -1512,14 +1512,14 @@ Here are the steps:
 
          -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-         pod_count > 0   : Wait until exactly 'pod_count' WebLogic server pods for
+         pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
                            a domain all (a) are ready, (b) have the same
                            'domainRestartVersion' label value as the
                            current domain resource's 'spec.restartVersion, and
                            (c) have the same image as the current domain
                            resource's image.
 
-         pod_count = 0   : Wait until there are no running WebLogic server pods
+         pod_count = 0   : Wait until there are no running WebLogic Server pods
                            for a domain. The default.
 
          -t <timeout>    : Timeout in seconds. Defaults to '600'.
@@ -1533,15 +1533,15 @@ Here are the steps:
 
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```
-     @@ [2020-04-30T13:53:19][seconds=0] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
+     @@ [2020-04-30T13:53:19][seconds=0] Info: Waiting up to 600 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
      @@ [2020-04-30T13:53:19][seconds=0] Info:   ready='true'
      @@ [2020-04-30T13:53:19][seconds=0] Info:   image='model-in-image:WLS-v1'
      @@ [2020-04-30T13:53:19][seconds=0] Info:   domainRestartVersion='2'
      @@ [2020-04-30T13:53:19][seconds=0] Info:   namespace='sample-domain1-ns'
      @@ [2020-04-30T13:53:19][seconds=0] Info:   domainUID='sample-domain1'
 
-     @@ [2020-04-30T13:53:19][seconds=0] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:53:19][seconds=0] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:53:19][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:53:19][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                                          VERSION  IMAGE                    READY   PHASE
      --------------------------------------------  -------  -----------------------  ------  ---------
@@ -1550,8 +1550,8 @@ Here are the steps:
      'sample-domain1-managed-server1'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:53:20][seconds=1] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:53:20][seconds=1] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:53:20][seconds=1] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:53:20][seconds=1] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                                          VERSION  IMAGE                    READY   PHASE
      --------------------------------------------  -------  -----------------------  ------  ---------
@@ -1560,8 +1560,8 @@ Here are the steps:
      'sample-domain1-managed-server1'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:54:18][seconds=59] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:54:18][seconds=59] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:54:18][seconds=59] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:54:18][seconds=59] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                                          VERSION  IMAGE                    READY   PHASE
      --------------------------------------------  -------  -----------------------  ------  -----------
@@ -1570,8 +1570,8 @@ Here are the steps:
      'sample-domain1-managed-server1'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'              '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:54:19][seconds=60] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:54:19][seconds=60] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:54:19][seconds=60] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:54:19][seconds=60] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
@@ -1579,8 +1579,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:54:31][seconds=72] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:54:31][seconds=72] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:54:31][seconds=72] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:54:31][seconds=72] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1588,24 +1588,24 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
 
-     @@ [2020-04-30T13:54:40][seconds=81] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:54:40][seconds=81] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:54:40][seconds=81] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:54:40][seconds=81] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:54:52][seconds=93] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:54:52][seconds=93] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:54:52][seconds=93] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:54:52][seconds=93] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:54:58][seconds=99] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:54:58][seconds=99] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:54:58][seconds=99] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:54:58][seconds=99] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1613,8 +1613,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
 
-     @@ [2020-04-30T13:55:00][seconds=101] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:55:00][seconds=101] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:55:00][seconds=101] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:55:00][seconds=101] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1622,8 +1622,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
 
-     @@ [2020-04-30T13:55:12][seconds=113] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:55:12][seconds=113] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:55:12][seconds=113] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:55:12][seconds=113] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1631,8 +1631,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
 
-     @@ [2020-04-30T13:55:24][seconds=125] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:55:24][seconds=125] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:55:24][seconds=125] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:55:24][seconds=125] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 
      NAME                              VERSION  IMAGE                    READY    PHASE
@@ -1641,8 +1641,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
 
-     @@ [2020-04-30T13:55:33][seconds=134] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:55:33][seconds=134] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:55:33][seconds=134] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:55:33][seconds=134] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
@@ -1650,8 +1650,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:55:34][seconds=135] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:55:34][seconds=135] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:55:34][seconds=135] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:55:34][seconds=135] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1659,16 +1659,16 @@ Here are the steps:
      'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
 
-     @@ [2020-04-30T13:55:40][seconds=141] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:55:40][seconds=141] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:55:40][seconds=141] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:55:40][seconds=141] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
      'sample-domain1-admin-server'     '2'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:55:44][seconds=145] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:55:44][seconds=145] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:55:44][seconds=145] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:55:44][seconds=145] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1676,8 +1676,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'false'  'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'   'Running'
 
-     @@ [2020-04-30T13:56:25][seconds=186] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:56:25][seconds=186] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:56:25][seconds=186] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:56:25][seconds=186] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
@@ -1685,8 +1685,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:56:26][seconds=187] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:56:26][seconds=187] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:56:26][seconds=187] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:56:26][seconds=187] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1694,16 +1694,16 @@ Here are the steps:
      'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
      'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
 
-     @@ [2020-04-30T13:56:30][seconds=191] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:56:30][seconds=191] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:56:30][seconds=191] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:56:30][seconds=191] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
      'sample-domain1-admin-server'     '2'      'model-in-image:WLS-v1'  'true'  'Running'
      'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'
 
-     @@ [2020-04-30T13:56:34][seconds=195] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:56:34][seconds=195] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:56:34][seconds=195] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:56:34][seconds=195] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY    PHASE
      --------------------------------  -------  -----------------------  -------  ---------
@@ -1711,8 +1711,8 @@ Here are the steps:
      'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'
      'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'false'  'Pending'
 
-     @@ [2020-04-30T13:57:09][seconds=230] Info: '3' WebLogic pods currently match all criteria, expecting '3'.
-     @@ [2020-04-30T13:57:09][seconds=230] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+     @@ [2020-04-30T13:57:09][seconds=230] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+     @@ [2020-04-30T13:57:09][seconds=230] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
      NAME                              VERSION  IMAGE                    READY   PHASE
      --------------------------------  -------  -----------------------  ------  ---------
@@ -1749,7 +1749,7 @@ Here are the steps:
 
     Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
-    Welcome to WebLogic server 'managed-server1'!
+    Welcome to WebLogic Server 'managed-server1'!
 
      domain UID  = 'sample-domain1'
      domain name = 'domain1'
@@ -1858,7 +1858,7 @@ Here are the steps for this use case:
        - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
 
-   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using RCU prefix `FMW2` for this domain, as the first domain is already using `FMW1`.
+   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using the RCU prefix `FMW2` for this domain, because the first domain is already using `FMW1`.
 
    {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
@@ -2108,50 +2108,50 @@ Here are the steps for this use case:
    ```
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
 
-   @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
+   @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
    @@ [2020-05-13T17:06:00][seconds=1] Info:   ready='true'
    @@ [2020-05-13T17:06:00][seconds=1] Info:   image='model-in-image:WLS-v1'
    @@ [2020-05-13T17:06:00][seconds=1] Info:   domainRestartVersion='1'
    @@ [2020-05-13T17:06:00][seconds=1] Info:   namespace='sample-domain1-ns'
    @@ [2020-05-13T17:06:00][seconds=1] Info:   domainUID='sample-domain2'
 
-   @@ [2020-05-13T17:06:00][seconds=1] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:06:00][seconds=1] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:06:00][seconds=1] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:06:00][seconds=1] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                                          VERSION  IMAGE  READY  PHASE      
    --------------------------------------------  -------  -----  -----  ---------  
    'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Running'  
 
-   @@ [2020-05-13T17:07:03][seconds=64] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:07:03][seconds=64] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:07:03][seconds=64] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:03][seconds=64] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                                          VERSION  IMAGE  READY  PHASE        
    --------------------------------------------  -------  -----  -----  -----------  
    'sample-domain2-introspect-domain-job-plssr'  ''       ''     ''     'Succeeded'  
 
-   @@ [2020-05-13T17:07:06][seconds=67] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:07:06][seconds=67] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:07:06][seconds=67] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:06][seconds=67] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME  VERSION  IMAGE  READY  PHASE  
    ----  -------  -----  -----  -----  
 
-   @@ [2020-05-13T17:07:14][seconds=75] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:07:14][seconds=75] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:07:14][seconds=75] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:14][seconds=75] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                           VERSION  IMAGE                    READY    PHASE      
    -----------------------------  -------  -----------------------  -------  ---------  
    'sample-domain2-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
 
-   @@ [2020-05-13T17:07:47][seconds=108] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:07:47][seconds=108] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:07:47][seconds=108] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:47][seconds=108] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
    'sample-domain2-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'  
    'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'  
 
-   @@ [2020-05-13T17:07:49][seconds=110] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:07:49][seconds=110] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:07:49][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:49][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2159,8 +2159,8 @@ Here are the steps for this use case:
    'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
    'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'  
 
-   @@ [2020-05-13T17:07:50][seconds=111] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:07:50][seconds=111] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:07:50][seconds=111] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:07:50][seconds=111] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2168,8 +2168,8 @@ Here are the steps for this use case:
    'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
    'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
 
-   @@ [2020-05-13T17:08:32][seconds=153] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:08:32][seconds=153] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:08:32][seconds=153] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:08:32][seconds=153] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2177,8 +2177,8 @@ Here are the steps for this use case:
    'sample-domain2-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'   'Running'  
    'sample-domain2-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'  
 
-   @@ [2020-05-13T17:08:34][seconds=155] Info: '3' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-13T17:08:34][seconds=155] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-13T17:08:34][seconds=155] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-13T17:08:34][seconds=155] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
@@ -2216,7 +2216,7 @@ Here are the steps for this use case:
 
     Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
-    Welcome to WebLogic server 'managed-server1'!
+    Welcome to WebLogic Server 'managed-server1'!
 
      domain UID  = 'sample-domain2'
      domain name = 'domain2'
@@ -2428,14 +2428,14 @@ Here are the steps for this use case:
 
          -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-         pod_count > 0   : Wait until exactly 'pod_count' WebLogic server pods for
+         pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
                            a domain all (a) are ready, (b) have the same
                            'domainRestartVersion' label value as the
                            current domain resource's 'spec.restartVersion, and
                            (c) have the same image as the current domain
                            resource's image.
 
-         pod_count = 0   : Wait until there are no running WebLogic server pods
+         pod_count = 0   : Wait until there are no running WebLogic Server pods
                            for a domain. The default.
 
          -t <timeout>    : Timeout in seconds. Defaults to '600'.
@@ -2451,15 +2451,15 @@ Here are the steps for this use case:
    ```
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
 
-   @@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic server pods to reach the following criteria:
+   @@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
    @@ [2020-05-14T17:28:47][seconds=1] Info:   ready='true'
    @@ [2020-05-14T17:28:47][seconds=1] Info:   image='model-in-image:WLS-v2'
    @@ [2020-05-14T17:28:47][seconds=1] Info:   domainRestartVersion='1'
    @@ [2020-05-14T17:28:47][seconds=1] Info:   namespace='sample-domain1-ns'
    @@ [2020-05-14T17:28:47][seconds=1] Info:   domainUID='sample-domain1'
 
-   @@ [2020-05-14T17:28:47][seconds=1] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:28:47][seconds=1] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:28:47][seconds=1] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:28:47][seconds=1] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                                          VERSION  IMAGE                    READY   PHASE      
    --------------------------------------------  -------  -----------------------  ------  ---------  
@@ -2468,8 +2468,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'              '2'      'model-in-image:WLS-v1'  'true'  'Running'  
    'sample-domain1-managed-server2'              '2'      'model-in-image:WLS-v1'  'true'  'Running'  
 
-   @@ [2020-05-14T17:29:39][seconds=53] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:29:39][seconds=53] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:29:39][seconds=53] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:39][seconds=53] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
@@ -2477,16 +2477,16 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
 
-   @@ [2020-05-14T17:29:50][seconds=64] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:29:50][seconds=64] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:29:50][seconds=64] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:50][seconds=64] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
    'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
 
-   @@ [2020-05-14T17:29:58][seconds=72] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:29:58][seconds=72] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:29:58][seconds=72] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:58][seconds=72] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2494,8 +2494,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
 
-   @@ [2020-05-14T17:29:59][seconds=73] Info: '0' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:29:59][seconds=73] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:29:59][seconds=73] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:29:59][seconds=73] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2503,8 +2503,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
 
-   @@ [2020-05-14T17:30:30][seconds=104] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:30:30][seconds=104] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:30:30][seconds=104] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:30:30][seconds=104] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
@@ -2512,8 +2512,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
 
-   @@ [2020-05-14T17:31:13][seconds=147] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:31:13][seconds=147] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:31:13][seconds=147] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:13][seconds=147] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2521,16 +2521,16 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '2'      'model-in-image:WLS-v1'  'false'  'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
 
-   @@ [2020-05-14T17:31:15][seconds=149] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:31:15][seconds=149] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:31:15][seconds=149] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:15][seconds=149] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
    'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
 
-   @@ [2020-05-14T17:31:41][seconds=175] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:31:41][seconds=175] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:31:41][seconds=175] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:41][seconds=175] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2538,8 +2538,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
 
-   @@ [2020-05-14T17:31:42][seconds=176] Info: '1' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:31:42][seconds=176] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:31:42][seconds=176] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:31:42][seconds=176] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2547,8 +2547,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'false'  'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'   'Running'  
 
-   @@ [2020-05-14T17:32:21][seconds=215] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:32:21][seconds=215] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:32:21][seconds=215] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:21][seconds=215] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
@@ -2556,8 +2556,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'true'  'Running'  
 
-   @@ [2020-05-14T17:32:31][seconds=225] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:32:31][seconds=225] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:32:31][seconds=225] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:31][seconds=225] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2565,16 +2565,16 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
    'sample-domain1-managed-server2'  '2'      'model-in-image:WLS-v1'  'false'  'Running'  
 
-   @@ [2020-05-14T17:32:40][seconds=234] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:32:40][seconds=234] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:32:40][seconds=234] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:40][seconds=234] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
    'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v2'  'true'  'Running'  
    'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'  'Running'  
 
-   @@ [2020-05-14T17:32:51][seconds=245] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:32:51][seconds=245] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:32:51][seconds=245] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:51][seconds=245] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2582,8 +2582,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
    'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Pending'  
 
-   @@ [2020-05-14T17:32:52][seconds=246] Info: '2' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:32:52][seconds=246] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:32:52][seconds=246] Info: '2' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:32:52][seconds=246] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY    PHASE      
    --------------------------------  -------  -----------------------  -------  ---------  
@@ -2591,8 +2591,8 @@ Here are the steps for this use case:
    'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v2'  'true'   'Running'  
    'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v2'  'false'  'Running'  
 
-   @@ [2020-05-14T17:33:25][seconds=279] Info: '3' WebLogic pods currently match all criteria, expecting '3'.
-   @@ [2020-05-14T17:33:25][seconds=279] Info: Introspector and WebLogic pods with same namespace and domain-uid:
+   @@ [2020-05-14T17:33:25][seconds=279] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+   @@ [2020-05-14T17:33:25][seconds=279] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
    NAME                              VERSION  IMAGE                    READY   PHASE      
    --------------------------------  -------  -----------------------  ------  ---------  
@@ -2632,7 +2632,7 @@ Here are the steps for this use case:
 
     Hello World! This is version 'v2' of the mii-sample JSP web-app.
 
-    Welcome to WebLogic server 'managed-server1'!
+    Welcome to WebLogic Server 'managed-server1'!
 
      domain UID  = 'sample-domain1'
      domain name = 'domain1'

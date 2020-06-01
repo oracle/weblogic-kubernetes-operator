@@ -108,7 +108,7 @@ The following domain resource attributes are specific to Model in Image domains.
 | Domain Resource Attribute                    |  Notes |
 | -------------------------                    |  ------------------ |
 | `domainHomeSourceType`                       |  Required. Set to `FromModel`. |
-| `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic pod every time the pod restarts.|
+| `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic Server pod every time the pod restarts.|
 | `configuration.model.configMap`             | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model ConfigMap](#optional-wdt-model-configmap). |
 | `configuration.secrets`                      | Optional. Set this array if your image or ConfigMap models contain macros that reference custom Kubernetes Secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
@@ -143,9 +143,9 @@ A JRF domain requires an infrastructure database, initializing this database usi
 
 Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
 
-#### JRF domain resource and model YAML settings
+#### JRF domain resource and model YAML file settings
 
-Here are the required domain resource and model YAML settings for Model in Image JRF domains:
+Here are the required domain resource and model YAML file settings for Model in Image JRF domains:
 
 - Set `configuration.model.domainType` to `JRF`.
 
@@ -172,7 +172,7 @@ It is important to save a JRF domain's OPSS wallet password and wallet file so t
 
 When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a secret that is referenced by your domain resource `configuration.opss.walletPasswordSecret` attribute. 
  
-For a domain that has been started by Model in Image, the operator will copy the wallet file from the domain home of a new JRF domain and store it in the domain's introspector domain config map in file `ewallet.p12`. Here is how to export this wallet file from the introspector domain config map:
+For a domain that has been started by Model in Image, the operator will copy the wallet file from the domain home of a new JRF domain and store it in the domain's introspector domain ConfigMap in file `ewallet.p12`. Here is how to export this wallet file from the introspector domain ConfigMap:
 
 - Option 1
   ```
@@ -213,9 +213,9 @@ To reuse the wallet:
 
 #### Instructions for changing a JRF domain's database password
 
-Follow these steps to ensure a JRF domain can continue to access its RCU data after changing its database password.
+Follow these steps to ensure that a JRF domain can continue to access its RCU data after changing its database password.
 
-- Before changing database password, shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `NEVER`.
+- Before changing the database password, shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `NEVER`.
 
 - Update the password in the database.
 

@@ -31,7 +31,7 @@ To check the domain resource status: `kubectl -n MY_NAMESPACE describe domain MY
 If your introspector job failed, then examine the `kubectl describe` of the job and its pod, and also examine its log, if one exists.
 
 {{% notice tip %}}
-To prevent the introspector job from retrying while you are debugging a failure, set the operator's helm `domainPresenceFailureRetryMaxCount` parameter to `0`. For more information, see  [Manage operators -> Use the operator -> Use Helm]({{<relref "/userguide/managing-operators/using-the-operator/using-helm">}}).
+To prevent the introspector job from retrying while you are debugging a failure, set the operator's Helm `domainPresenceFailureRetryMaxCount` parameter to `0`. For more information, see  [Manage operators -> Use the operator -> Use Helm]({{<relref "/userguide/managing-operators/using-the-operator/using-helm">}}).
 {{% /notice %}}
 
 For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`:
@@ -74,14 +74,14 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   ```
 
 {{% notice tip %}}
-When a model file error references a model file in your model config map, then you can correct the error by redeploying the configmap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your domain resource to reference the new image, and then initiating a domain restart or roll.
+If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your domain resource to reference the new image, and then initiating a domain restart or roll.
 {{% /notice %}}
 
 #### Check the WebLogic Server pods
 
-If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` ConfigMap for your domain, and the operator will then run the domain's WebLogic pods.
+If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` ConfigMap for your domain, and the operator will then run the domain's WebLogic Server pods.
 
-If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
+If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
 
 #### Check the operator log
 
@@ -111,6 +111,6 @@ Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
 #### Check the FAQ
 
-Common issues with corresponding FAQ entries include:
-- When a domain resource is deployed and no introspector or WebLogic pods start, plus the operator log contains no mention of the domain, then check to make sure that the domain resource's namespace has been set up to be monitored by an operator. See the [Managing domain namespaces FAQ]({{<relref "/faq/namespace-management">}}).
-- If a `describe` of an introspector job or WebLogic pod reveals image access errors, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+Common issues that have corresponding FAQ entries include:
+- When a domain resource is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the domain resource's namespace has been set up to be monitored by an operator. See the [Managing domain namespaces FAQ]({{<relref "/faq/namespace-management">}}).
+- If a `describe` of an introspector job or WebLogic Server pod reveals image access errors, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
