@@ -527,6 +527,9 @@ function createFiles {
   sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
   sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
   sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
+  if [ "${istioEnabled}" == "true" ]; then
+    sed -i -e "s:%EXPOSE_ISTIO_PREFIX%:istio-:g" ${dcrOutput}
+  fi
 
   buildServerPodResources
   if [ -z "${serverPodResources}" ]; then
