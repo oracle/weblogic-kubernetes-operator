@@ -700,7 +700,7 @@
     <maven-pmd-plugin-version>3.13.0</maven-pmd-plugin-version>
     <maven-release-plugin-version>3.0.0-M1</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.1.1</maven-javadoc-plugin-version>
-    <maven-failsafe-plugin-version>3.0.0-M4</maven-failsafe-plugin-version>
+    <maven-failsafe-plugin-version>3.0.0-M3</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.1.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>3.1.12.2</spotbugs-maven-plugin-version>
