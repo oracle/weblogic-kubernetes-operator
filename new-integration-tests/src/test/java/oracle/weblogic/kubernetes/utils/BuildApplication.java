@@ -210,7 +210,7 @@ public class BuildApplication {
                                 .name("build-job-cm-volume")
                                 .mountPath(SCRIPTS_MOUNT_PATH), // build scripts
                             new V1VolumeMount()
-                                .name(pvName) // location to write domain
+                                .name(pvName)
                                 .mountPath(APPLICATIONS_MOUNT_PATH))))) // application source directory
                     .volumes(Arrays.asList(new V1Volume()
                         .name(pvName)
