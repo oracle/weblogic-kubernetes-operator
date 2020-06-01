@@ -16,9 +16,12 @@ import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
+import org.joda.time.DateTime;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -78,7 +81,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a pod's restartVersion has been updated. 
+   * Check if a pod's restartVersion has been updated.
    *
    * @param podName   name of the pod to check
    * @param domainUid WebLogic domain uid in which the pod belongs
@@ -204,7 +207,7 @@ public class TestAssertions {
    * @param namespace name of the namespace in which the pod restart status to be checked
    * @return true if pods are restarted in a rolling fashion
    */
-  public static boolean verifyRollingRestartOccurred(Map<String, String> pods, int maxUnavailable, String namespace) {
+  public static boolean verifyRollingRestartOccurred(Map<String, DateTime> pods, int maxUnavailable, String namespace) {
     return Pod.verifyRollingRestartOccurred(pods, maxUnavailable, namespace);
   }
 
@@ -317,7 +320,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if the given WebLogic credentials are valid by using the credentials to 
+   * Check if the given WebLogic credentials are valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
    * @param host hostname of the admin server pod
@@ -337,7 +340,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if the given WebLogic credentials are NOT valid by using the credentials to 
+   * Check if the given WebLogic credentials are NOT valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
    * @param host hostname of the admin server pod
@@ -430,7 +433,7 @@ public class TestAssertions {
       String podName,
       String domainUid,
       String namespace,
-      String timestamp
+      DateTime timestamp
   ) throws ApiException {
     return () -> {
       return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
@@ -449,7 +452,7 @@ public class TestAssertions {
   public static boolean podStateNotChanged(String podName,
                                            String domainUid,
                                            String namespace,
-                                           String podOriginalCreationTimestamp) {
+                                           DateTime podOriginalCreationTimestamp) {
     return Domain.podStateNotChanged(podName, domainUid, namespace, podOriginalCreationTimestamp);
   }
 
@@ -464,4 +467,25 @@ public class TestAssertions {
     return Job.jobCompleted(namespace, labelSelectors, jobName);
   }
 
+  /**
+   * Check whether persistent volume with pvName exists.
+   *
+   * @param pvName persistent volume to check
+   * @param labelSelector String containing the labels the PV is decorated with
+   * @return true if the persistent volume exists, false otherwise
+   */
+  public static Callable<Boolean> pvExists(String pvName, String labelSelector) {
+    return PersistentVolume.pvExists(pvName, labelSelector);
+  }
+
+  /**
+   * Check whether persistent volume claims with pvcName exists in the specified namespace.
+   *
+   * @param pvcName persistent volume claim to check
+   * @param namespace the namespace in which the persistent volume claim to be checked
+   * @return true if the persistent volume claim exists in the namespace, false otherwise
+   */
+  public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
+    return PersistentVolumeClaim.pvcExists(pvcName, namespace);
+  }
 }

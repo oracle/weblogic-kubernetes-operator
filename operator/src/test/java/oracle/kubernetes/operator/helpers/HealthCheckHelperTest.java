@@ -69,7 +69,7 @@ public class HealthCheckHelperTest {
   private static final List<String> CLUSTER_READ_UPDATE_RESOURCES =
       Arrays.asList("domains//weblogic.oracle", "domains/status/weblogic.oracle");
 
-  private static final List<String> CREATE_ONLY_RESOURCES =
+  private static final List<String> CREATE_AND_GET_RESOURCES =
       Arrays.asList("pods/exec", "tokenreviews//authentication.k8s.io",
           "selfsubjectrulesreviews//authorization.k8s.io");
 
@@ -88,6 +88,9 @@ public class HealthCheckHelperTest {
 
   private static final List<Operation> READ_UPDATE_OPERATIONS =
       Arrays.asList(get, list, watch, update, patch);
+
+  private static final List<Operation> CREATE_GET_OPERATIONS =
+      Arrays.asList(create, get);
 
   private static final String POD_LOGS = "pods/log";
   private static final KubernetesVersion RULES_REVIEW_VERSION = new KubernetesVersion(1, 8);
@@ -189,7 +192,7 @@ public class HealthCheckHelperTest {
       rules.add(createRule(CRUD_RESOURCES, CRUD_OPERATIONS));
       rules.add(createRule(READ_WATCH_RESOURCES, READ_WATCH_OPERATIONS));
       rules.add(createRule(singletonList(POD_LOGS), READ_ONLY_OPERATIONS));
-      rules.add(createRule(CREATE_ONLY_RESOURCES, singletonList(create)));
+      rules.add(createRule(CREATE_AND_GET_RESOURCES, CREATE_GET_OPERATIONS));
     }
 
     private void addClusterRules(List<V1ResourceRule> rules) {

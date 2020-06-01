@@ -4,13 +4,14 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
@@ -123,11 +124,20 @@ public class TestUtils {
    * @return true if the port is free, false otherwise
    */
   private static boolean isLocalPortFree(int port) {
+    Socket socket = null;
     try {
-      new ServerSocket(port).close();
-      return true;
-    } catch (IOException e) {
+      socket = new Socket(K8S_NODEPORT_HOST, port);
       return false;
+    } catch (IOException ignored) {
+      return true;
+    } finally {
+      if (socket != null) {
+        try {
+          socket.close();
+        } catch (IOException ex) {
+          logger.severe("can not close Socket {0}", ex.getMessage());
+        }
+      }
     }
   }
 }
