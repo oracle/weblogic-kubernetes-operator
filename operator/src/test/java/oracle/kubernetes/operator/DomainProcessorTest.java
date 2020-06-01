@@ -88,14 +88,14 @@ public class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES =
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
 
-  private List<Memento> mementos = new ArrayList<>();
-  private List<LogRecord> logRecords = new ArrayList<>();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private DomainConfigurator domainConfigurator;
-  private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private DomainProcessorImpl processor =
+  private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
 
   private static WlsDomainConfig createDomainConfig() {
     WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
@@ -292,6 +292,21 @@ public class DomainProcessorTest {
           new DomainPresenceInfo(createDomainWithIntrospectVersion("789")), false, false, true);
 
     assertThat(job, notNullValue());
+  }
+
+  @Test
+  public void whenFromModelDomainHasIntrospectVersionDifferentFromOldDomain_dontRunIntrospectionJob() throws Exception {
+    defineServerResources(ADMIN_NAME);
+    defineSituationConfigMap();
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+
+    final Domain newDomain = createDomainWithIntrospectVersion("789");
+    DomainConfiguratorFactory.forDomain(newDomain).withDomainHomeSourceType(DomainSourceType.FromModel);
+    processor.makeRightDomainPresence(
+          new DomainPresenceInfo(newDomain), false, false, true);
+
+    assertThat(job, nullValue());
   }
 
   @SuppressWarnings("SameParameterValue")

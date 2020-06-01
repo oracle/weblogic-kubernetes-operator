@@ -456,6 +456,13 @@ public class Domain {
     return spec.getDomainHomeSourceType();
   }
 
+  /**
+   * Returns true if the operator can be asked to run a new introspection for this domain.
+   */
+  public boolean mayRequestIntrospection() {
+    return getDomainHomeSourceType().mayRequestIntrospection();
+  }
+
   public Model getModel() {
     return spec.getModel();
   }

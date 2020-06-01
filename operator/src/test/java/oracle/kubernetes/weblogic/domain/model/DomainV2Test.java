@@ -970,8 +970,8 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
-    domain1.getSpec().setIntrospectVersionn("123");
-    domain2.getSpec().setIntrospectVersionn("123");
+    domain1.getSpec().setIntrospectVersion("123");
+    domain2.getSpec().setIntrospectVersion("123");
     assertThat(domain1, equalTo(domain2));
   }
 
@@ -981,8 +981,8 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     Domain domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
-    domain1.getSpec().setIntrospectVersionn("123");
-    domain2.getSpec().setIntrospectVersionn("124");
+    domain1.getSpec().setIntrospectVersion("123");
+    domain2.getSpec().setIntrospectVersion("124");
     assertThat(domain1, not(equalTo(domain2)));
   }
 

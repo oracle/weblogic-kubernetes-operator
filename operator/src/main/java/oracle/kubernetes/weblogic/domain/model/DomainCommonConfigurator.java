@@ -218,7 +218,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withIntrospectVersion(String introspectVersion) {
-    getDomainSpec().setIntrospectVersionn(introspectVersion);
+    getDomainSpec().setIntrospectVersion(introspectVersion);
     return this;
   }
 

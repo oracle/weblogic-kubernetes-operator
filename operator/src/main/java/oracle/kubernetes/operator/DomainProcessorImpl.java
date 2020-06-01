@@ -560,8 +560,12 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   void recordIntrospectionRequest(Packet packet, DomainPresenceInfo info) {
-    packet.put(DOMAIN_INTROSPECT_REQUESTED,
-              !Objects.equals(getNewIntrospectVersion(info), getOldIntrospectVersion(info)));
+    packet.put(DOMAIN_INTROSPECT_REQUESTED, isIntrospectionRequested(info));
+  }
+
+  private boolean isIntrospectionRequested(DomainPresenceInfo info) {
+    return info.mayRequestIntrospection()
+           && !Objects.equals(getNewIntrospectVersion(info), getOldIntrospectVersion(info));
   }
 
   private String getNewIntrospectVersion(DomainPresenceInfo info) {

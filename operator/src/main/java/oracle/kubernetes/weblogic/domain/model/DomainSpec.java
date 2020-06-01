@@ -578,13 +578,8 @@ public class DomainSpec extends BaseConfiguration {
     return introspectVersion;
   }
 
-  public void setIntrospectVersionn(String introspectVersion) {
+  public void setIntrospectVersion(String introspectVersion) {
     this.introspectVersion = introspectVersion;
-  }
-
-  public DomainSpec withIntrospectVersion(String introspectVersion) {
-    this.introspectVersion = introspectVersion;
-    return this;
   }
 
   public Configuration getConfiguration() {
