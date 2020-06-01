@@ -58,10 +58,11 @@ public class ItMiiSample implements LoggedTest {
       "../src/integration-tests/model-in-image/run-test.sh";
 
   private static final String OCR_SECRET_NAME = "docker-store";
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
+  private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = REPO_NAME + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
@@ -152,6 +153,7 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
   public void testCheckSampleSource() {
+    previousTestSuccessful = true;
     execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
   }
 
