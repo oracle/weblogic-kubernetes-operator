@@ -13,31 +13,31 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 
-public class DomainConfigTestUtils {
+public class IntrospectorCMTestUtils {
 
   /**
-   * Returns the data portion of the generated domain config map for the test domain.
+   * Returns the data portion of the introspector config map for the test domain.
    * @param testSupport the instance of KubernetesTestSupport holding the data
    */
   @Nonnull
-  public static Map<String, String> getDomainConfigMapData(KubernetesTestSupport testSupport) {
+  public static Map<String, String> getIntrospectorConfigMapData(KubernetesTestSupport testSupport) {
     return testSupport.getResources(KubernetesTestSupport.CONFIG_MAP).stream()
           .map(V1ConfigMap.class::cast)
-          .filter(DomainConfigTestUtils::isDomainConfigMap)
+          .filter(IntrospectorCMTestUtils::isIntrospectorConfigMap)
           .map(V1ConfigMap::getData)
           .findFirst()
           .orElseGet(Collections::emptyMap);
   }
 
-  private static boolean isDomainConfigMap(V1ConfigMap configMap) {
-    return getDomainConfigMapName().equals(getConfigMapName(configMap));
+  private static boolean isIntrospectorConfigMap(V1ConfigMap configMap) {
+    return getIntrospectorConfigMapName().equals(getConfigMapName(configMap));
   }
 
   private static String getConfigMapName(V1ConfigMap configMap) {
     return Optional.ofNullable(configMap.getMetadata()).map(V1ObjectMeta::getName).orElse("");
   }
 
-  static String getDomainConfigMapName() {
-    return ConfigMapHelper.getDomainConfigMapName(UID);
+  static String getIntrospectorConfigMapName() {
+    return ConfigMapHelper.getIntrospectorConfigMapName(UID);
   }
 }

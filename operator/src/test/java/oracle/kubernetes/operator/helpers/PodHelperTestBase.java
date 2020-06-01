@@ -45,9 +45,9 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
-import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -422,24 +422,24 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreatedWithOnRestartDistribution_dontAddDynamicUpdateEnvVar() {
-    configureDomain().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.ON_RESTART);
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
 
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("DYNAMIC_CONFIG_OVERRIDE")));
   }
 
   @Test
   public void whenPodCreatedWithDynamicDistribution_addDynamicUpdateEnvVar() {
-    configureDomain().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.DYNAMIC);
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.DYNAMIC);
 
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("DYNAMIC_CONFIG_OVERRIDE"));
   }
 
   @Test
   public void whenDistributionStrategyModified_dontReplacePod() {
-    configureDomain().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.DYNAMIC);
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.DYNAMIC);
     initializeExistingPod();
 
-    configureDomain().withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.ON_RESTART);
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
     verifyPodNotReplaced();
   }
 

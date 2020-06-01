@@ -14,8 +14,8 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
-import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -184,7 +184,7 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withConfigOverrideSecrets(String... secretNames);
 
   public abstract DomainConfigurator withConfigOverrideDistributionStrategy(
-        ConfigOverrideDistributionStrategy strategy);
+        OverrideDistributionStrategy strategy);
 
   /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the

@@ -19,8 +19,8 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
@@ -1608,20 +1608,20 @@ public class DomainV2Test extends DomainTestBase {
   public void whenNoDistributionStrategySpecified_defaultToDynamic() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
-    assertThat(domain.getConfigOverrideDistributionStrategy(), equalTo(ConfigOverrideDistributionStrategy.DYNAMIC));
+    assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.DYNAMIC));
   }
 
   @Test
   public void whenDistributionStrategySpecified_readIt() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
 
-    assertThat(domain.getConfigOverrideDistributionStrategy(), equalTo(ConfigOverrideDistributionStrategy.ON_RESTART));
+    assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
   }
 
   @Test
   public void whenDistributionStrategyConfigured_returnIt() {
-    configureDomain(domain).withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy.ON_RESTART);
+    configureDomain(domain).withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
 
-    assertThat(domain.getConfigOverrideDistributionStrategy(), equalTo(ConfigOverrideDistributionStrategy.ON_RESTART));
+    assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
   }
 }

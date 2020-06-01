@@ -16,7 +16,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.DomainConfigMapKeys;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -35,6 +35,10 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.joda.time.DateTime;
 
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
+import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
@@ -131,25 +135,8 @@ public class ConfigMapHelper {
    * Returns the standard name for the generated domain config map.
    * @param domainUid the unique ID of the domain
    */
-  public static String getDomainConfigMapName(String domainUid) {
+  public static String getIntrospectorConfigMapName(String domainUid) {
     return domainUid + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
-  }
-
-  /**
-   * Combines the config override and config override secrets into a single string.
-   * @param domain the domain for which the map is defined
-   */
-  public static String createOverridesState(Domain domain) {
-    StringBuilder sb = new StringBuilder();
-    Optional.ofNullable(domain.getConfigOverrides()).ifPresent(sb::append);
-    sb.append('[');
-    sb.append(String.join("|", asNonNullList(domain.getConfigOverrideSecrets())));
-    sb.append(']');
-    return sb.toString();
-  }
-
-  private static List<String> asNonNullList(List<String> secrets) {
-    return Optional.ofNullable(secrets).orElseGet(Collections::emptyList);
   }
 
   abstract static class ConfigMapComparator {
@@ -383,18 +370,18 @@ public class ConfigMapHelper {
    *   DOMAIN_INPUTS_HASH                 a hash of the image used in the domain
    *
    * @param next Next step
-   * @return Step for creating config map containing sit config
+   * @return Step for creating config map containing introspection results
    */
-  public static Step createGeneratedDomainConfigMapStep(Step next) {
-    return new DomainConfigMapStep(next);
+  public static Step createIntrospectorConfigMapStep(Step next) {
+    return new IntrospectionConfigMapStep(next);
   }
 
   /**
    * The first in a chain of steps to create the situation config map from introspection results.
    */
-  static class DomainConfigMapStep extends Step {
+  static class IntrospectionConfigMapStep extends Step {
 
-    DomainConfigMapStep(Step next) {
+    IntrospectionConfigMapStep(Step next) {
       super(next);
     }
 
@@ -440,7 +427,7 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
 
-      wlsDomainConfig = Optional.ofNullable(data.get(DomainConfigMapKeys.TOPOLOGY_YAML))
+      wlsDomainConfig = Optional.ofNullable(data.get(IntrospectorConfigMapKeys.TOPOLOGY_YAML))
             .map(IntrospectionLoader::getDomainTopology)
             .map(DomainTopology::getDomain)
             .orElse(null);
@@ -451,19 +438,19 @@ public class ConfigMapHelper {
             info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
       packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
 
-      copyFileToPacketIfPresent(DomainConfigMapKeys.DOMAINZIP_HASH, DomainConfigMapKeys.DOMAINZIP_HASH);
-      copyFileToPacketIfPresent(DomainConfigMapKeys.SECRETS_MD_5, DomainConfigMapKeys.SECRETS_MD_5);
-      copyToPacketAndFileIfPresent(DomainConfigMapKeys.DOMAIN_RESTART_VERSION, info.getDomain().getRestartVersion());
-      copyToPacketAndFileIfPresent(DomainConfigMapKeys.DOMAIN_INPUTS_HASH, getModelInImageSpecHash());
+      copyFileToPacketIfPresent(DOMAINZIP_HASH, DOMAINZIP_HASH);
+      copyFileToPacketIfPresent(SECRETS_MD_5, SECRETS_MD_5);
+      copyToPacketAndFileIfPresent(DOMAIN_RESTART_VERSION, info.getDomain().getRestartVersion());
+      copyToPacketAndFileIfPresent(DOMAIN_INPUTS_HASH, getModelInImageSpecHash());
     }
 
     private Step createValidationStep() {
       return DomainValidationSteps.createValidateDomainTopologyStep(
-            createDomainConfigMapContext(conflictStep).verifyConfigMap(conflictStep.getNext()));
+            createIntrospectorConfigMapContext(conflictStep).verifyConfigMap(conflictStep.getNext()));
     }
 
-    private DomainConfigMapContext createDomainConfigMapContext(Step conflictStep) {
-      return new DomainConfigMapContext(conflictStep, info.getDomain(), data);
+    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(Step conflictStep) {
+      return new IntrospectorConfigMapContext(conflictStep, info.getDomain(), data);
     }
 
     private String getModelInImageSpecHash() {
@@ -503,28 +490,28 @@ public class ConfigMapHelper {
   }
 
   /**
-   * Creates a step to add entries to the generated domain config map. Uses Packet.getSpi to retrieve
+   * Creates a step to add entries to the introspector config map. Uses Packet.getSpi to retrieve
    * the current domain presence info.
    *
    *
    * @param domain the domain associated with the map
-   * @param additionalEntries a map of entries to add
+   * @param entries a map of entries to add
    * @param next the next step to process after the config map is updated
    * @return the created step
    */
-  public static Step addDomainConfigMapEntriesStep(Domain domain, Map<String, String> additionalEntries, Step next) {
-    return new AddDomainConfigEntriesStep(domain, additionalEntries, next);
+  public static Step addIntrospectorConfigMapEntriesStep(Domain domain, Map<String, String> entries, Step next) {
+    return new AddIntrospectorConfigEntriesStep(domain, entries, next);
   }
 
   /**
    * A step which starts a chain to add entries to the domain config map.
    */
-  static class AddDomainConfigEntriesStep extends Step {
+  static class AddIntrospectorConfigEntriesStep extends Step {
 
     private final Domain domain;
     private final Map<String, String> additionalEntries;
 
-    public AddDomainConfigEntriesStep(Domain domain, Map<String, String> additionalEntries, Step next) {
+    public AddIntrospectorConfigEntriesStep(Domain domain, Map<String, String> additionalEntries, Step next) {
       super(next);
       this.domain = domain;
       this.additionalEntries = new HashMap<>(additionalEntries);
@@ -532,19 +519,22 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      final Step updateStep = new DomainConfigMapContext(this, domain, additionalEntries).verifyConfigMap(getNext());
-      return doNext(updateStep, packet);
+      return doNext(createContext().verifyConfigMap(getNext()), packet);
+    }
+
+    private IntrospectorConfigMapContext createContext() {
+      return new IntrospectorConfigMapContext(this, domain, additionalEntries);
     }
   }
 
-  public static class DomainConfigMapContext extends ConfigMapContext {
+  public static class IntrospectorConfigMapContext extends ConfigMapContext {
     final String domainUid;
 
-    DomainConfigMapContext(
+    IntrospectorConfigMapContext(
           Step conflictStep,
           Domain domain,
           Map<String, String> data) {
-      super(conflictStep, getDomainConfigMapName(domain.getDomainUid()), domain.getNamespace(), data);
+      super(conflictStep, getIntrospectorConfigMapName(domain.getDomainUid()), domain.getNamespace(), data);
 
       this.domainUid = domain.getDomainUid();
     }
@@ -557,22 +547,22 @@ public class ConfigMapHelper {
   }
 
   /**
-   * Factory for a step that deletes the generated domain config map.
+   * Factory for a step that deletes the generated introspector config map.
    *
    * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
    * @param namespace the domain namespace
    * @param next the next step to run after the map is deleted
    * @return the created step
    */
-  public static Step deleteGeneratedDomainConfigMapStep(String domainUid, String namespace, Step next) {
-    return new DeleteGeneratedDomainConfigMapStep(domainUid, namespace, next);
+  public static Step deleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
+    return new DeleteIntrospectorConfigMapStep(domainUid, namespace, next);
   }
 
-  private static class DeleteGeneratedDomainConfigMapStep extends Step {
+  private static class DeleteIntrospectorConfigMapStep extends Step {
     private final String domainUid;
     private final String namespace;
 
-    DeleteGeneratedDomainConfigMapStep(String domainUid, String namespace, Step next) {
+    DeleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
       super(next);
       this.domainUid = domainUid;
       this.namespace = namespace;
@@ -580,29 +570,27 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(deleteDomainConfigMap(getNext()), packet);
+      return doNext(deleteIntrospectorConfigMap(getNext()), packet);
     }
 
     String getConfigMapDeletedMessageKey() {
-      return "Generated domain config map "
-          + getDomainConfigMapName(this.domainUid)
-          + " deleted";
+      return String.format("Introspector config map %s deleted", getIntrospectorConfigMapName(this.domainUid));
     }
 
     protected void logConfigMapDeleted() {
       LOGGER.fine(getConfigMapDeletedMessageKey());
     }
 
-    private Step deleteDomainConfigMap(Step next) {
+    private Step deleteIntrospectorConfigMap(Step next) {
       logConfigMapDeleted();
-      String configMapName = getDomainConfigMapName(this.domainUid);
+      String configMapName = getIntrospectorConfigMapName(this.domainUid);
       return new CallBuilder()
           .deleteConfigMapAsync(configMapName, namespace, new V1DeleteOptions(), new DefaultResponseStep<>(next));
     }
   }
 
   /**
-   * Reads the generated domain config map for the specified domain, populating the following packet entries:
+   * Reads the introspector config map for the specified domain, populating the following packet entries:
    *   DOMAIN_TOPOLOGY                    the parsed topology
    *   DOMAIN_HASH                        a hash of the topology
    *   SECRETS_HASH                       a hash of the override secrets
@@ -613,24 +601,24 @@ public class ConfigMapHelper {
    * @param domainUid the unique domain ID
    * @return a step to do the processing.
    */
-  public static Step readExistingDomainConfigMap(String ns, String domainUid) {
-    String domainConfigMapName = getDomainConfigMapName(domainUid);
-    return new CallBuilder().readConfigMapAsync(domainConfigMapName, ns, new ReadDomainConfigMapStep());
+  public static Step readExistingIntrospectorConfigMap(String ns, String domainUid) {
+    String configMapName = getIntrospectorConfigMapName(domainUid);
+    return new CallBuilder().readConfigMapAsync(configMapName, ns, new ReadIntrospectorConfigMapStep());
   }
 
-  private static class ReadDomainConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
+  private static class ReadIntrospectorConfigMapStep extends DefaultResponseStep<V1ConfigMap> {
 
-    ReadDomainConfigMapStep() {
+    ReadIntrospectorConfigMapStep() {
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
       V1ConfigMap result = callResponse.getResult();
-      copyMapEntryToPacket(result, packet, DomainConfigMapKeys.SECRETS_MD_5);
-      copyMapEntryToPacket(result, packet, DomainConfigMapKeys.DOMAINZIP_HASH);
-      copyMapEntryToPacket(result, packet, DomainConfigMapKeys.DOMAIN_RESTART_VERSION);
-      copyMapEntryToPacket(result, packet, DomainConfigMapKeys.DOMAIN_INPUTS_HASH);
-      copyMapEntryToPacket(result, packet, DomainConfigMapKeys.CONFIGURATION_OVERRIDES);
+      copyMapEntryToPacket(result, packet, SECRETS_MD_5);
+      copyMapEntryToPacket(result, packet, DOMAINZIP_HASH);
+      copyMapEntryToPacket(result, packet, DOMAIN_RESTART_VERSION);
+      copyMapEntryToPacket(result, packet, DOMAIN_INPUTS_HASH);
+      copyMapEntryToPacket(result, packet, IntrospectorConfigMapKeys.CONFIGURATION_OVERRIDES);
       
       DomainTopology domainTopology =
             Optional.ofNullable(result)
@@ -648,7 +636,7 @@ public class ConfigMapHelper {
     }
 
     private String getTopologyYaml(Map<String, String> data) {
-      return data.get(DomainConfigMapKeys.TOPOLOGY_YAML);
+      return data.get(IntrospectorConfigMapKeys.TOPOLOGY_YAML);
     }
 
     private void recordTopology(Packet packet, DomainPresenceInfo info, DomainTopology domainTopology) {

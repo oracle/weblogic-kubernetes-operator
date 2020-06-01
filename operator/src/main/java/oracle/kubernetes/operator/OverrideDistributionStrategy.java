@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.operator;
 
-public enum ConfigOverrideDistributionStrategy {
+public enum OverrideDistributionStrategy {
   DYNAMIC, ON_RESTART;
 
-  public static final ConfigOverrideDistributionStrategy DEFAULT = DYNAMIC;
+  public static final OverrideDistributionStrategy DEFAULT = DYNAMIC;
 }

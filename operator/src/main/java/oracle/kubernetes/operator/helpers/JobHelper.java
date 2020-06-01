@@ -13,7 +13,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.kubernetes.operator.DomainConfigMapKeys;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -92,8 +92,8 @@ public class JobHelper {
     if (info.getDomain().getDomainHomeSourceType() == FromModel) {
 
       final String currentPodRestartVersion = info.getDomain().getRestartVersion();
-      final String configMapRestartVersion = (String) packet.get(DomainConfigMapKeys.DOMAIN_RESTART_VERSION);
-      final String configMapSpecHash = (String) packet.get(DomainConfigMapKeys.DOMAIN_INPUTS_HASH);
+      final String configMapRestartVersion = (String) packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
+      final String configMapSpecHash = (String) packet.get(IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH);
       final String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
           .getSpec().getImage()));
 
@@ -344,7 +344,7 @@ public class JobHelper {
               context.createNewJob(
                     readDomainIntrospectorPodLogStep(
                           deleteDomainIntrospectorJobStep(
-                                ConfigMapHelper.createGeneratedDomainConfigMapStep(getNext())))),
+                                ConfigMapHelper.createIntrospectorConfigMapStep(getNext())))),
               packet);
       }
 

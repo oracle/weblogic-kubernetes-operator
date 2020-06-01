@@ -1095,6 +1095,14 @@ window.onload = function() {
     "Configuration": {
       "type": "object",
       "properties": {
+        "overrideDistributionStrategy": {
+          "description": "The strategy for how configuration overrides are distributed to WebLogic servers following introspection. Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. Defaults to DYNAMIC.",
+          "type": "string",
+          "enum": [
+            "DYNAMIC",
+            "ON_RESTART"
+          ]
+        },
         "opss": {
           "description": "Configuration for OPSS security.",
           "$ref": "#/definitions/Opss"
@@ -1102,14 +1110,6 @@ window.onload = function() {
         "model": {
           "description": "Model in image model files and properties.",
           "$ref": "#/definitions/Model"
-        },
-        "distributionStrategy": {
-          "description": "The strategy for handling changes to the secrets or overridesConfigMap fields. Legal values are DYNAMIC and ON_RESTART.",
-          "type": "string",
-          "enum": [
-            "DYNAMIC",
-            "ON_RESTART"
-          ]
         },
         "secrets": {
           "description": "A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified it overrides the value of spec.configOverrideSecrets.",

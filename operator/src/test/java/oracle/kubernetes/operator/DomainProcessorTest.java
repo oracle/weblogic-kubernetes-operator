@@ -315,11 +315,11 @@ public class DomainProcessorTest {
   private V1ConfigMap createGenerateDomainMap() throws JsonProcessingException {
     return new V1ConfigMap()
           .metadata(createGeneratedDomainMapMeta())
-          .data(new HashMap<>(Map.of(DomainConfigMapKeys.TOPOLOGY_YAML, defineTopology())));
+          .data(new HashMap<>(Map.of(IntrospectorConfigMapKeys.TOPOLOGY_YAML, defineTopology())));
   }
 
   private V1ObjectMeta createGeneratedDomainMapMeta() {
-    return new V1ObjectMeta().namespace(NS).name(ConfigMapHelper.getDomainConfigMapName(UID));
+    return new V1ObjectMeta().namespace(NS).name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
   }
 
   private String defineTopology() throws JsonProcessingException {

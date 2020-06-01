@@ -20,11 +20,11 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -650,10 +650,10 @@ public class DomainSpec extends BaseConfiguration {
    * Returns the strategy used for distributing changed config overrides.
    * @return the set or computed strategy
    */
-  public ConfigOverrideDistributionStrategy getConfigOverrideDistributionStrategy() {
+  public OverrideDistributionStrategy getOverrideDistributionStrategy() {
     return Optional.ofNullable(configuration)
-          .map(Configuration::getDistributionStrategy)
-          .orElse(ConfigOverrideDistributionStrategy.DEFAULT);
+          .map(Configuration::getOverrideDistributionStrategy)
+          .orElse(OverrideDistributionStrategy.DEFAULT);
   }
 
   Model getModel() {

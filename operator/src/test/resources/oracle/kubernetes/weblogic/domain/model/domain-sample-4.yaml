@@ -60,7 +60,7 @@ spec:
     secrets: [overrides-secret-1, overrides-secret-2]
 
     # strategy for handling changes to configuration overrides
-    distributionStrategy: ON_RESTART
+    overrideDistributionStrategy: ON_RESTART
 
   # Restart version
   restartVersion: "1"

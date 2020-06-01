@@ -29,6 +29,16 @@ spec:
                 type: object
                 description: Models and overrides affecting the WebLogic domain configuration.
                 properties:
+                  overrideDistributionStrategy:
+                    type: string
+                    description: The strategy for how configuration overrides are
+                      distributed to WebLogic servers following introspection. Configuration
+                      overrides are generated during introspection from secrets, the
+                      overrideConfigMap field, and WebLogic domain topology. Legal
+                      values are DYNAMIC and ON_RESTART. Defaults to DYNAMIC.
+                    enum:
+                    - DYNAMIC
+                    - ON_RESTART
                   opss:
                     type: object
                     description: Configuration for OPSS security.
@@ -58,16 +68,6 @@ spec:
                       configMap:
                         type: string
                         description: WDT config map name.
-                  distributionStrategy:
-                    type: string
-                    description: The strategy for how configuration overrides are
-                      distributed to WebLogic servers following introspection. Configuration
-                      overrides are generated during introspection from secrets, the
-                      overrideConfigMap field, and WebLogic domain topology. Legal
-                      values are DYNAMIC and ON_RESTART.
-                    enum:
-                    - DYNAMIC
-                    - ON_RESTART
                   secrets:
                     type: array
                     description: A list of names of the secrets for WebLogic configuration

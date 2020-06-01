@@ -14,8 +14,8 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
-import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -138,8 +138,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withConfigOverrideDistributionStrategy(ConfigOverrideDistributionStrategy strategy) {
-    getOrCreateConfiguration().setDistributionStrategy(strategy);
+  public DomainConfigurator withConfigOverrideDistributionStrategy(OverrideDistributionStrategy strategy) {
+    getOrCreateConfiguration().setOverrideDistributionStrategy(strategy);
     return this;
   }
 

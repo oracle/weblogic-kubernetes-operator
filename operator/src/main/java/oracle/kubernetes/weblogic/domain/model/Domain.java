@@ -26,10 +26,10 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
@@ -507,8 +507,8 @@ public class Domain {
    * Returns the strategy for applying changes to configuration overrides.
    * @return the selected strategy
    */
-  public ConfigOverrideDistributionStrategy getConfigOverrideDistributionStrategy() {
-    return spec.getConfigOverrideDistributionStrategy();
+  public OverrideDistributionStrategy getOverrideDistributionStrategy() {
+    return spec.getOverrideDistributionStrategy();
   }
 
   /**
@@ -516,7 +516,7 @@ public class Domain {
    * @return the selected strategy
    */
   public boolean distributeOverridesDynamically() {
-    return spec.getConfigOverrideDistributionStrategy() == ConfigOverrideDistributionStrategy.DYNAMIC;
+    return spec.getOverrideDistributionStrategy() == OverrideDistributionStrategy.DYNAMIC;
   }
 
   /**

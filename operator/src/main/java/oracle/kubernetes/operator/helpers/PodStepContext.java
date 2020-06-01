@@ -33,9 +33,9 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.kubernetes.operator.DomainConfigMapKeys;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -84,9 +84,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     this.conflictStep = conflictStep;
     info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    miiModelSecretsHash = (String)packet.get(DomainConfigMapKeys.SECRETS_MD_5);
-    miiDomainZipHash = (String)packet.get(DomainConfigMapKeys.DOMAINZIP_HASH);
-    domainRestartVersion = (String)packet.get(DomainConfigMapKeys.DOMAIN_RESTART_VERSION);
+    miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
+    miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
+    domainRestartVersion = (String)packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 

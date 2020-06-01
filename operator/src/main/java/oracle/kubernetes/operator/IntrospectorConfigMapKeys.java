@@ -4,9 +4,9 @@
 package oracle.kubernetes.operator;
 
 /**
- * Keys in the generated domain config map.
+ * Keys in the generated introspector config map.
  */
-public interface DomainConfigMapKeys {
+public interface IntrospectorConfigMapKeys {
 
   /** The topology generated from the WebLogic domain. */
   String TOPOLOGY_YAML = "topology.yaml";

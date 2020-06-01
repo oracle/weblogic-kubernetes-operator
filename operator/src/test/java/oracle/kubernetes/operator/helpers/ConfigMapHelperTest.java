@@ -185,26 +185,26 @@ public class ConfigMapHelperTest {
     testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS));
 
     assertThat(logRecords, containsInfo(CM_REPLACED));
-    assertThat(getDomainConfigKeys(), containsInAnyOrder(COMBINED_SCRIPT_NAMES));
+    assertThat(getScriptConfigKeys(), containsInAnyOrder(COMBINED_SCRIPT_NAMES));
   }
 
-  private Collection<String> getDomainConfigKeys() {
-    return Optional.ofNullable(getDomainConfigMap())
+  private Collection<String> getScriptConfigKeys() {
+    return Optional.ofNullable(getScriptConfigMap())
           .map(V1ConfigMap::getData)
           .map(Map::keySet)
           .orElseGet(Collections::emptySet);
   }
 
-  private V1ConfigMap getDomainConfigMap() {
+  private V1ConfigMap getScriptConfigMap() {
     final List<V1ConfigMap> configMaps = testSupport.getResources(CONFIG_MAP);
-    return configMaps.stream().filter(this::isDomainConfigMap).findFirst().orElse(null);
+    return configMaps.stream().filter(this::isScriptConfigMap).findFirst().orElse(null);
   }
 
-  private boolean isDomainConfigMap(@Nonnull V1ConfigMap map) {
-    return Optional.ofNullable(map.getMetadata()).map(this::isDomainMetaData).orElse(false);
+  private boolean isScriptConfigMap(@Nonnull V1ConfigMap map) {
+    return Optional.ofNullable(map.getMetadata()).map(this::isScriptConfigMapMetaData).orElse(false);
   }
 
-  private boolean isDomainMetaData(V1ObjectMeta meta) {
+  private boolean isScriptConfigMapMetaData(V1ObjectMeta meta) {
     return SCRIPT_CONFIG_MAP_NAME.equals(meta.getName()) && DOMAIN_NS.equals(meta.getNamespace());
   }
 
@@ -215,7 +215,7 @@ public class ConfigMapHelperTest {
     testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(OPERATOR_NS, DOMAIN_NS));
 
     assertThat(logRecords, containsInfo(CM_REPLACED));
-    assertThat(getDomainConfigKeys(), hasItem(ADDITIONAL_NAME));
+    assertThat(getScriptConfigKeys(), hasItem(ADDITIONAL_NAME));
   }
 
   // An implementation of the comparator that tests only the keys in the maps

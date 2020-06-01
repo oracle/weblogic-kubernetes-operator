@@ -50,7 +50,7 @@ class PodDefaults {
   }
 
   private static V1Volume createSitConfigVolume(String domainUid) {
-    return createVolume(getSitConfigMapVolumeName(domainUid), ConfigMapHelper.getDomainConfigMapName(domainUid));
+    return createVolume(getSitConfigMapVolumeName(domainUid), ConfigMapHelper.getIntrospectorConfigMapName(domainUid));
   }
 
   private static String getSitConfigMapVolumeName(String domainUid) {
@@ -58,7 +58,7 @@ class PodDefaults {
   }
 
   private static V1Volume createWdtConfigMapVolume(String domainUid) {
-    return createVolume(getWdtConfigMapVolumeName(domainUid), ConfigMapHelper.getDomainConfigMapName(domainUid));
+    return createVolume(getWdtConfigMapVolumeName(domainUid), ConfigMapHelper.getIntrospectorConfigMapName(domainUid));
   }
 
   private static String getWdtConfigMapVolumeName(String domainUid) {

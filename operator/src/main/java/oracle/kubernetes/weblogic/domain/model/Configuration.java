@@ -6,7 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.ConfigOverrideDistributionStrategy;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -35,8 +35,8 @@ public class Configuration {
   @Description(
       "The strategy for how configuration overrides are distributed to WebLogic servers following introspection. "
       + "Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, "
-      + "and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART.")
-  private ConfigOverrideDistributionStrategy distributionStrategy;
+      + "and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. Defaults to DYNAMIC.")
+  private OverrideDistributionStrategy overrideDistributionStrategy;
 
   public Model getModel() {
     return model;
@@ -78,12 +78,12 @@ public class Configuration {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
   }
 
-  public void setDistributionStrategy(ConfigOverrideDistributionStrategy distributionStrategy) {
-    this.distributionStrategy = distributionStrategy;
+  public void setOverrideDistributionStrategy(OverrideDistributionStrategy overrideDistributionStrategy) {
+    this.overrideDistributionStrategy = overrideDistributionStrategy;
   }
 
-  public ConfigOverrideDistributionStrategy getDistributionStrategy() {
-    return distributionStrategy;
+  public OverrideDistributionStrategy getOverrideDistributionStrategy() {
+    return overrideDistributionStrategy;
   }
 
   @Override
@@ -93,7 +93,7 @@ public class Configuration {
             .append("model", model)
             .append("opss", opss)
             .append("secrets", secrets)
-            .append("distributionStrategy", distributionStrategy)
+            .append("distributionStrategy", overrideDistributionStrategy)
             .append("overridesConfigMap", overridesConfigMap)
             .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
 
@@ -106,7 +106,7 @@ public class Configuration {
           .append(model)
           .append(opss)
           .append(secrets)
-          .append(distributionStrategy)
+          .append(overrideDistributionStrategy)
           .append(overridesConfigMap)
           .append(introspectorJobActiveDeadlineSeconds);
 
@@ -127,7 +127,7 @@ public class Configuration {
             .append(model, rhs.model)
             .append(opss, rhs.opss)
             .append(secrets, rhs.secrets)
-            .append(distributionStrategy, rhs.distributionStrategy)
+            .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
 

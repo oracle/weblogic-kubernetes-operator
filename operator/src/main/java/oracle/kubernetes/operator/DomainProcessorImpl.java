@@ -675,7 +675,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     return Step.chain(
           createDomainUpInitialStep(info),
-          ConfigMapHelper.readExistingDomainConfigMap(info.getNamespace(), info.getDomainUid()),
+          ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
           DomainStatusUpdater.createProgressingStep(INSPECTING_DOMAIN_PROGRESS_REASON,true, null),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }
