@@ -95,7 +95,7 @@ An element representing a cluster in the domain configuration.
 | `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Configuration for OPSS security. |
-| `overrideDistributionStrategy` | string | The strategy for how configuration overrides are distributed to WebLogic servers following introspection. Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. Defaults to DYNAMIC. |
+| `overrideDistributionStrategy` | string | The strategy for how updated configuration overrides are distributed to already running WebLogic servers following introspection.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. Defaults to DYNAMIC. |
 | `overridesConfigMap` | string | The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides. |
 | `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified it overrides the value of spec.configOverrideSecrets. |
 

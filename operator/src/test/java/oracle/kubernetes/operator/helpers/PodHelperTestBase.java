@@ -138,7 +138,7 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_PERIOD = 35;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
-  private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
+  private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
 
   final TerminalStep terminalStep = new TerminalStep();
@@ -350,7 +350,7 @@ public abstract class PodHelperTestBase {
             writableVolumeMount(
                 SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
+            readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts")));
   }
 
   @Test
@@ -363,7 +363,7 @@ public abstract class PodHelperTestBase {
             writableVolumeMount(
                 SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts"),
+            readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts"),
             readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
                 RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
   }

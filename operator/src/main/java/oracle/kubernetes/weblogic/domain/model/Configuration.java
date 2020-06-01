@@ -33,9 +33,10 @@ public class Configuration {
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
-      "The strategy for how configuration overrides are distributed to WebLogic servers following introspection. "
-      + "Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, "
-      + "and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. Defaults to DYNAMIC.")
+      "The strategy for how updated configuration overrides are distributed to already running WebLogic servers "
+      + "following introspection.  Configuration overrides are generated during introspection from secrets, "
+      + "the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC and ON_RESTART. "
+      + "Defaults to DYNAMIC.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   public Model getModel() {
