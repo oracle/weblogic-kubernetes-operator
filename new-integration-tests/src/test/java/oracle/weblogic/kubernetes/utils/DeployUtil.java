@@ -84,7 +84,7 @@ public class DeployUtil {
    * @param archivePath local path of the application archive
    * @param namespace name of the namespace in which WebLogic server pods running
    */
-  public static void deployApplication(String host, String port, String userName,
+  public static void deployUsingWlst(String host, String port, String userName,
       String password, String targets, Path archivePath, String namespace) {
 
     setImage(namespace);

@@ -350,7 +350,7 @@ public class ItDomainInPV implements LoggedTest {
     //deploy application
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     logger.info("Deploying webapp to domain {0}", archivePath);
-    DeployUtil.deployApplication(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
         wlstDomainNamespace);
 
@@ -547,7 +547,7 @@ public class ItDomainInPV implements LoggedTest {
     //deploy application
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     logger.info("Deploying webapp to domain {0}", archivePath);
-    DeployUtil.deployApplication(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
         wdtDomainNamespace);
 
