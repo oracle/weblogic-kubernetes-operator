@@ -611,7 +611,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
             newPolicyRule()
                 .addApiGroupsItem("")
                 .resources(singletonList("pods/exec"))
-                .verbs(singletonList("create")))
+                .verbs(asList("get", "create")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("batch")

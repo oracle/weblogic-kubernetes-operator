@@ -65,7 +65,7 @@ cp /operator/logstash.conf /logs/logstash.conf
 # the logstash container/pod.
 
 # Container memory optimizaton flags
-HEAP="-XX:+UnlockExperimentalVMOptions -XX:MaxRAMFraction=1 -XshowSettings:vm"
+HEAP="-XshowSettings:vm"
 
 # Start operator
 java $HEAP $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
