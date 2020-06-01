@@ -31,7 +31,7 @@ rules:
   verbs: ["get", "list"]
 - apiGroups: [""]
   resources: ["pods/exec"]
-  verbs: ["create"]
+  verbs: ["get", "create"]
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
