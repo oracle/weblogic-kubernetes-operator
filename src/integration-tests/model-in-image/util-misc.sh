@@ -47,7 +47,12 @@ function get_sample_host() {
 
 function get_curl_command() {
   # $1 is service name
-  echo "curl -s -S -m 10 -H 'host: $(get_sample_host $1)'"
+  local curl_parms="--connect-timeout 5"
+  curl_parms+=" --max-time 20"        # max seconds for each try
+  curl_parms+=" --retry 5"            # retry up to 5 times
+  curl_parms+=" --retry-delay 0"      # disable exponential backoff
+  curl_parms+=" --retry-max-time 130" # total seconds before giving up
+  echo "curl -s -S $curl_parms -H 'host: $(get_sample_host $1)'"
 }
 
 function get_help() {
