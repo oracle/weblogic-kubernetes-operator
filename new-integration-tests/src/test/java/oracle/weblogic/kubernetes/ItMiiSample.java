@@ -57,31 +57,24 @@ public class ItMiiSample implements LoggedTest {
   private static final String MII_SAMPLES_SCRIPT =
       "../src/integration-tests/model-in-image/run-test.sh";
 
-  private static String DOMAIN_TYPE = "WLS";
-  private static String OCR_SECRET_NAME = "docker-store";
-  private static String MII_SAMPLE_WLS_IMAGE_NAME1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  private static String MII_SAMPLE_WLS_IMAGE_NAME2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  private static String MII_SAMPLE_WLS_IMAGE_TAG_V1 = "WLS-v1";
-  private static String MII_SAMPLE_WLS_IMAGE_TAG_V2 = "WLS-v2";
-  private static String wlsImageNameV1 = MII_SAMPLE_WLS_IMAGE_NAME1 + ":" + MII_SAMPLE_WLS_IMAGE_TAG_V1;
-  private static String wlsImageNameV2 = MII_SAMPLE_WLS_IMAGE_NAME2 + ":" + MII_SAMPLE_WLS_IMAGE_TAG_V2;
-
-  private static String MII_SAMPLE_JRF_IMAGE_NAME1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  private static String MII_SAMPLE_JRF_IMAGE_NAME2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
-  private static String MII_SAMPLE_JRF_IMAGE_TAG_V1 = "JRF-v1";
-  private static String MII_SAMPLE_JRF_IMAGE_TAG_V2 = "JRF-v2";
-  private static String jrfImageNameV1 = MII_SAMPLE_JRF_IMAGE_NAME1 + ":" + MII_SAMPLE_JRF_IMAGE_TAG_V1;
-  private static String jrfImageNameV2 = MII_SAMPLE_JRF_IMAGE_NAME2 + ":" + MII_SAMPLE_JRF_IMAGE_TAG_V2;
-  private static String SUCCESS_SEARCH_STRING = "Finished without errors";
+  private static final String OCR_SECRET_NAME = "docker-store";
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
+  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = REPO_NAME + "mii-" + getDateAndTimeStamp();
+  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = REPO_NAME + "mii-" + getDateAndTimeStamp();
+  private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String jrfDomainNamespace = null;
   private static String traefikNamespace = null;
   private static String dbNamespace = null;
   private static Map<String, String> envMap = null;
-  private boolean previousWlsTestSuccessful = false;
-  private boolean previousJrfTestSuccessful = false;
+  private static boolean previousTestSuccessful = true;
+
+  private enum DomainType { 
+    JRF, 
+    WLS 
+  }
 
   /**
    * Install Operator.
@@ -100,7 +93,7 @@ public class ItMiiSample implements LoggedTest {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    logger.info("Creating unique namespace for Treafik");
+    logger.info("Creating unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
 
@@ -108,28 +101,20 @@ public class ItMiiSample implements LoggedTest {
     assertNotNull(namespaces.get(3), "Namespace list is null");
     dbNamespace = namespaces.get(3);
 
-    logger.info("Creating unique namespace for JRF Domain");
-    assertNotNull(namespaces.get(4), "Namespace list is null");
-    jrfDomainNamespace = namespaces.get(4);
-
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace, jrfDomainNamespace);
+    // TBD if this fails, then 'BeforeAll' fails but the test still passes!
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // env variables to override default values in sample scripts
     envMap = new HashMap<String, String>();
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
-    envMap.put("WDT_DOMAIN_TYPE", "WLS");
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME1);
     envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
     envMap.put("DB_NAMESPACE", dbNamespace);
     envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret
-
-
-    logger.info("Env. variables to the script {0}", envMap);
 
     // kind cluster uses openjdk which is not supported by image tool
     String witJavaHome = System.getenv("WIT_JAVA_HOME");
@@ -137,12 +122,12 @@ public class ItMiiSample implements LoggedTest {
       envMap.put("JAVA_HOME", witJavaHome);
     }
 
-    // install traefik and create ingress using the mii sample script
-    boolean success = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -traefik")
-        .env(envMap)
-        .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Traefik deployment is not successful");
+    logger.info("Env. variables to the script {0}", envMap);
+
+    // install traefik using the mii sample script
+    execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
+
+    logger.info("Setting up docker secrets");
 
     // Create the repo secret to pull the image
     assertDoesNotThrow(() -> createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
@@ -151,11 +136,12 @@ public class ItMiiSample implements LoggedTest {
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         REPO_SECRET_NAME, domainNamespace);
 
-    assertDoesNotThrow(() -> createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
-        REPO_REGISTRY, REPO_SECRET_NAME, jrfDomainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
+    // create ocr docker registry secret to pull the db images
+    assertDoesNotThrow(() -> createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace),
+        String.format("createSecret failed for %s", OCR_SECRET_NAME));
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        REPO_SECRET_NAME, jrfDomainNamespace);
+        OCR_SECRET_NAME, dbNamespace);
   }
 
   /**
@@ -163,14 +149,10 @@ public class ItMiiSample implements LoggedTest {
    * checked into the mii sample git location.
    */
   @Test
+  @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
   public void testCheckSampleSource() {
-
-    boolean success = Command.withParams(new CommandParams()
-                    .command(MII_SAMPLES_SCRIPT + " -check-sample")
-                    .env(envMap)
-                    .redirect(true)).executeAndVerify(SUCCESS_SEARCH_STRING);
-    assertTrue(success, "Sample source doesn't match with the generated source");
+    execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
   }
 
   /**
@@ -182,9 +164,8 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   public void testInitialUseCase() {
-    previousWlsTestSuccessful = false;
-    initialUseCase("WLS");
-    previousWlsTestSuccessful = true;
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
+    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
   }
 
   /**
@@ -195,11 +176,7 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   public void testUpdate1UseCase() {
-    Assumptions.assumeTrue(previousWlsTestSuccessful);
-    previousWlsTestSuccessful = false;
-    // run update1 use case
-    update1UseCase("WLS");
-    previousWlsTestSuccessful = true;
+    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
   }
 
   /**
@@ -211,11 +188,7 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   public void testUpdate2UseCase() {
-    Assumptions.assumeTrue(previousWlsTestSuccessful);
-    previousWlsTestSuccessful = false;
-    // run update2 use case
-    update2UseCase("WLS");
-    previousWlsTestSuccessful = true;
+    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
   }
 
   /**
@@ -227,11 +200,8 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testUpdate3UseCase() {
-    Assumptions.assumeTrue(previousWlsTestSuccessful);
-    previousWlsTestSuccessful = false;
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME2);
-    // run update3 use case
-    update3UseCase("WLS");
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
+    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
   }
 
   /**
@@ -243,30 +213,13 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
-    previousJrfTestSuccessful = false;
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME1);
-    envMap.put("DOMAIN_NAMESPACE", jrfDomainNamespace);
-    envMap.put("WDT_DOMAIN_TYPE", "JRF");
-
-    // create ocr docker registry secret to pull the db images
-    createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
-    logger.info("Docker registry secret {0} created in namespace {1}",
-        OCR_SECRET_NAME, dbNamespace);
-
-    // create db and rcu
-    ExecResult result = Command.withParams(new CommandParams()
-        .command(MII_SAMPLES_SCRIPT + " -db -rcu")
-        .env(envMap)
-        .redirect(true)).executeAndReturnResult();
-    assertTrue((result == null || result.exitValue() != 0
-            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
-        String.format("DB/RCU creation failed, {%s}",
-            (result != null ? result.stderr() : "")));
-
-    initialUseCase("JRF");
-
-    previousJrfTestSuccessful = true;
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
+    execTestScriptAndAssertSuccess(
+        DomainType.JRF, 
+        "-initial-image,-check-image-and-push,-initial-main",
+        "Initial use case failed"
+    );
   }
 
 
@@ -278,11 +231,7 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   public void testJrfUpdate1UseCase() {
-    Assumptions.assumeTrue(previousJrfTestSuccessful);
-    previousJrfTestSuccessful = false;
-    // run update1 use case
-    update1UseCase("JRF");
-    previousJrfTestSuccessful = true;
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
   }
 
   /**
@@ -294,11 +243,7 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   public void testJrfUpdate2UseCase() {
-    Assumptions.assumeTrue(previousJrfTestSuccessful);
-    previousJrfTestSuccessful = false;
-    // run update2 use case
-    update2UseCase("JRF");
-    previousJrfTestSuccessful = true;
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
   }
 
   /**
@@ -310,80 +255,19 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
   public void testJrfUpdate3UseCase() {
-    Assumptions.assumeTrue(previousJrfTestSuccessful);
-    previousJrfTestSuccessful = false;
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME2);
-
-    // run update3 use case
-    update3UseCase("JRF");
-  }
-
-  private void initialUseCase(String domainType) {
-    // create image
-    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -initial-image ", domainType,
-        domainType + " Initial image creation failed");
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(
-        domainType == "JRF" ? MII_SAMPLE_JRF_IMAGE_NAME1 : MII_SAMPLE_WLS_IMAGE_NAME1),
-        String.format("Image %s does not exist", (domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1)));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry((domainType == "JRF" ? jrfImageNameV1 : wlsImageNameV1));
-
-    // run initial use case
-    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -initial-main ", domainType,
-        domainType + "Initial use case failed");
-
-  }
-
-  private void runCommandAndVerify(String cmd, String domainType, String failedMessage) {
-    ExecResult result = Command.withParams(new CommandParams()
-        .command(cmd + (domainType == "JRF" ? " -jrf" : ""))
-        .env(envMap)
-        .redirect(true)).executeAndReturnResult();
-
-    assertTrue((result == null || result.exitValue() != 0
-            || (result.stdout() != null && !result.stdout().contains(SUCCESS_SEARCH_STRING))),
-        String.format("%s, %s",
-            failedMessage, (result != null ? "stdout = " + result.stdout()
-                + " stderr = " + result.stderr() : "")));
-  }
-
-  private void update1UseCase(String domainType) {
-    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update1", domainType,
-        domainType + " Update1 use case failed");
-  }
-
-  private void update2UseCase(String domainType) {
-    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update2", domainType,
-        domainType + " Update2 use case failed");
-  }
-
-  private void update3UseCase(String domainType) {
-    // run update3 use case
-    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update3-image", domainType,
-        domainType + " Update3 create image failed");
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(
-        (domainType == "JRF" ? MII_SAMPLE_JRF_IMAGE_NAME2 : MII_SAMPLE_WLS_IMAGE_NAME2)),
-        String.format("Image %s does not exist",
-            (domainType == "JRF" ? jrfImageNameV2 : wlsImageNameV2)));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry((domainType == "JRF" ? jrfImageNameV2 : wlsImageNameV2));
-
-    runCommandAndVerify(MII_SAMPLES_SCRIPT + " -update3-main", domainType,
-        domainType + " Update3 use case failed");
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
+    execTestScriptAndAssertSuccess(
+        DomainType.JRF,
+        "-update3-image,-check-image-and-push,-update3-main", 
+        "Update3 use case failed"
+    );
   }
 
   /**
-   * Delete DB, uninstall traefik.
+   * Delete images.
    */
   @AfterAll
   public void tearDownAll() {
-
     // db cleanup or deletion
     if (envMap != null) {
       Command.withParams(new CommandParams()
@@ -392,7 +276,7 @@ public class ItMiiSample implements LoggedTest {
           .redirect(true)).execute();
     }
 
-    //uninstall traefik
+    // uninstall traefik
     if (traefikNamespace != null) {
       Command.withParams(new CommandParams()
           .command("helm uninstall traefik-operator -n " + traefikNamespace)
@@ -400,5 +284,81 @@ public class ItMiiSample implements LoggedTest {
     }
   }
 
+  private static void assertImageExistsAndPushIfNeeded() {
+    String imageName = envMap.get("MODEL_IMAGE_NAME");
+    String imageVer = "notset";
+    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
+      imageVer = "WLS-v1"; 
+    }
+    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) { 
+      imageVer = "WLS-v2"; 
+    }
+    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) { 
+      imageVer = "JRF-v1"; 
+    }
+    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) { 
+      imageVer = "JRF-v2"; 
+    }
+    String image = imageName + ":" + imageVer;
 
+    // Check image exists using docker images | grep image image.
+    assertTrue(doesImageExist(imageName), 
+               String.format("Image %s does not exist", image));
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(image);
+  }
+
+  private static void execTestScriptAndAssertSuccess(
+      String args,
+      String errString 
+  ) {
+    // WLS is the the test script's default
+    execTestScriptAndAssertSuccess(DomainType.WLS, args, errString);
+  }
+
+  private static void execTestScriptAndAssertSuccess(
+      DomainType domainType,
+      String args,
+      String errString 
+  ) {
+    for (String arg : args.split(",")) {
+      Assumptions.assumeTrue(previousTestSuccessful);
+      previousTestSuccessful = false;
+
+      if (arg.equals("-check-image-and-push")) {
+        assertImageExistsAndPushIfNeeded();
+
+      } else {
+        String command = MII_SAMPLES_SCRIPT 
+                         + " "
+                         + arg
+                         + (domainType == DomainType.JRF ? " -jrf " : "");
+
+        ExecResult result = Command.withParams(
+                              new CommandParams()
+                                .command(command)
+                                .env(envMap)
+                                .redirect(true)
+                            ).executeAndReturnResult();
+
+        boolean success = 
+               result != null 
+            && result.exitValue() == 0
+            && result.stdout() != null
+            && result.stdout().contains(SUCCESS_SEARCH_STRING);
+
+        String outStr = errString;
+        outStr += ", domainType=" + domainType + "\n";
+        outStr += ", command=\n{\n" + command + "\n}\n";
+        outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+        outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+        assertTrue(success, outStr);
+
+      }
+
+      previousTestSuccessful = true;
+    }
+  }
 }
