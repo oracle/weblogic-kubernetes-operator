@@ -764,7 +764,55 @@ public class TestActions {
     return Kubernetes.getPodRestartVersion(namespace, labelSelector, podName);
   }
 
+  /**
+   * Patch domain to shutdown a WebLogic server by changing the value of
+   * server's serverStartPolicy property to NEVER.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to shutdown
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean shutdownManagedServerUsingServerStartPolicy(String domainUid,
+                                                                    String namespace,
+                                                                    String serverName) throws ApiException {
+    return Pod.shutdownManagedServerUsingServerStartPolicy(domainUid,namespace, serverName);
+  }
 
+  /**
+   * Patch domain to start a WebLogic server by changing the value of
+   * server's serverStartPolicy property to IF_NEEDED.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to start
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean startManagedServerUsingServerStartPolicy(String domainUid,
+                                                                 String namespace,
+                                                                 String serverName) throws ApiException {
+    return Pod.startManagedServerUsingServerStartPolicy(domainUid,namespace, serverName);
+  }
+
+  /**
+   * Patch domain to restart a WebLogic server by changing its serverStartPolicy properties.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to start
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean restartManagedServerUsingServerStartPolicy(String domainUid,
+                                                                   String namespace,
+                                                                   String serverName) throws ApiException {
+    boolean serverStopped = shutdownManagedServerUsingServerStartPolicy(domainUid, namespace, serverName);
+    boolean serverStarted = startManagedServerUsingServerStartPolicy(domainUid, namespace, serverName);
+
+    return serverStopped && serverStarted;
+  }
   // ------------------------ where does this go  -------------------------
 
   /**
