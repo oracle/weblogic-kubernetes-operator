@@ -3,13 +3,15 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.joda.time.DateTime;
 
-public class Pod {
+public class Pod implements LoggedTest {
 
   /**
    * Delete Kubernetes Pod.
@@ -72,5 +74,68 @@ public class Pod {
    */
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     return Kubernetes.getPod(namespace, labelSelector, podName);
+  }
+
+  /**
+   * Patch domain to shutdown a WebLogic  server by changing the value of
+   * its serverStartPolicy property to NEVER.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to shutdown
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean shutdownManagedServerUsingServerStartPolicy(String domainUid,
+                                                                    String namespace,
+                                                                    String serverName) throws ApiException {
+    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName,"NEVER");
+  }
+
+  /**
+   * Patch domain to start a WebLogic server by changing the value of
+   * its serverStartPolicy property to IF_NEEDED.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to start
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean startManagedServerUsingServerStartPolicy(String domainUid,
+                                                                 String namespace,
+                                                                 String serverName) throws ApiException {
+    return patchDomainUsingServerStartPolicy(domainUid, namespace, serverName,"IF_NEEDED");
+  }
+
+  /**
+   * Patch domain to change the serverStartPolicy property of a WebLogic server.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server
+   * @param policy value for serverStartPolicy property
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean patchDomainUsingServerStartPolicy(String domainUid,
+                                                          String namespace,
+                                                          String serverName,
+                                                          String policy) throws ApiException {
+    final String patchFormat = "application/json-patch+json";
+    StringBuffer patchData = new StringBuffer("[{");
+    patchData.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/managedServers\",")
+        .append(" \"value\":[{\"serverName\":\"")
+        .append(serverName)
+        .append("\",\"serverStartPolicy\": \"")
+        .append(policy)
+        .append("\"}]}]");
+    logger.info("Patch data to change serverStartPolicy is: {0}", patchData);
+
+    // call Kubernetes API GenericKubernetesApi.patch to patch the domain
+    V1Patch patch = new V1Patch(new String(patchData));
+
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
   }
 }
