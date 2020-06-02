@@ -4,14 +4,18 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Domain {
@@ -172,4 +176,63 @@ public class Domain {
     return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
+  /**
+   * Scale the cluster of the domain in the specified namespace.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param operatorServiceAccount the service account for operator
+   * @return true if patch domain custom resource succeeds, false otherwise
+   */
+  public static boolean scaleClusterWithRestApi(String domainUid,
+                                                String clusterName,
+                                                int numOfServers,
+                                                int externalRestHttpsPort,
+                                                String opNamespace,
+                                                String operatorServiceAccount) {
+
+    String secretName = Secret.getSecretFromServiceAccount(opNamespace, operatorServiceAccount);
+    logger.info("Got secret {0} in operator namespace {1}", secretName, opNamespace);
+
+    String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
+    logger.info("Got the encoded token for secret {0} in operator namespace {1}: {2}",
+        secretName, opNamespace, secretToken);
+
+    String decodedToken = new String(Base64.getDecoder().decode(secretToken));
+    logger.info("Got the decoded token for secret {0} in operator namespace {1}: {2}",
+        secretName, opNamespace, decodedToken);
+
+    // build the curl command to scale the cluster
+    String command = new StringBuffer()
+        .append("curl --noproxy '*' -v -k ")
+        .append("-H \"Authorization:Bearer ")
+        .append(decodedToken)
+        .append("\" ")
+        .append("-H Accept:application/json ")
+        .append("-H Content-Type:application/json ")
+        .append("-H X-Requested-By:MyClient ")
+        .append("-d '{\"managedServerCount\": ")
+        .append(numOfServers)
+        .append("}' ")
+        .append("-X POST https://")
+        .append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(externalRestHttpsPort)
+        .append("/operator/latest/domains/")
+        .append(domainUid)
+        .append("/clusters/")
+        .append(clusterName)
+        .append("/scale").toString();
+
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(command)
+        .saveResults(true)
+        .redirect(true);
+
+    return Command.withParams(params).execute();
+  }
 }

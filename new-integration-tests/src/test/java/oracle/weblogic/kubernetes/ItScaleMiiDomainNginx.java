@@ -75,9 +75,12 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int replicaCount = 2;
 
+  private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String serviceAccountName = null;
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
+  private static int externalRestHttpsPort = getNextFreePort(31001, 31201);
 
   private String curlCmd = null;
 
@@ -94,7 +97,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    String opNamespace = namespaces.get(0);
+    opNamespace = namespaces.get(0);
 
     // get a unique domain namespace
     logger.info("Get a unique namespace for WebLogic domain");
@@ -106,8 +109,11 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     String nginxNamespace = namespaces.get(2);
 
-    // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    // set the service account name for the operator
+    serviceAccountName = opNamespace + "-sa";
+
+    // install and verify operator with REST API
+    installAndVerifyOperator(opNamespace, serviceAccountName,true, externalRestHttpsPort, domainNamespace);
 
     // get a free node port for NGINX
     nodeportshttp = getNextFreePort(30305, 30405);
@@ -148,8 +154,8 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   }
 
   @Test
-  @DisplayName("Verify scale each cluster of the domain in domain namespace")
-  public void testScaleClusters() {
+  @DisplayName("Verify scale each cluster of the domain in domain namespace by patching domain resource")
+  public void testScaleClustersByPatchingDomainResource() {
 
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
 
@@ -170,11 +176,38 @@ class ItScaleMiiDomainNginx implements LoggedTest {
           domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
           replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
 
-      // then scale cluster-1 and cluster-2 to 0 server
+      // then scale cluster-1 and cluster-2 to 2 servers
       managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
           domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
-          numberOfServers, 0, curlCmd, managedServersBeforeScale);
+          numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
+    }
+  }
+
+  @Test
+  @DisplayName("Verify scale each cluster of the domain in domain namespace by calling REST API")
+  public void testScaleClustersWithRestApi() {
+
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+
+      String clusterName = CLUSTER_NAME_PREFIX + i;
+      int numberOfServers;
+      // scale cluster-1 to 1 server and cluster-2 to 3 servers
+      if (i == 1) {
+        numberOfServers = 1;
+      } else {
+        numberOfServers = 3;
+      }
+
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers);
+      curlCmd = generateCurlCmd(clusterName);
+      List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
+      scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, managedServersBeforeScale);
+
+      // then scale cluster-1 and cluster-2 to 2 servers
+      managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
+      scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, managedServersBeforeScale);
     }
   }
 
@@ -334,5 +367,21 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     }
 
     return managedServerNames;
+  }
+
+  /**
+   * Scale a cluster using REST API.
+   *
+   * @param clusterName cluster name to scale
+   * @param numberOfServers number of servers to scale to
+   * @param managedServersBeforeScale list of managed servers in the cluster before scale
+   */
+  private void scaleClusterAndVerifyWithRestApi(String clusterName,
+                                                int numberOfServers,
+                                                List<String> managedServersBeforeScale) {
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
+        domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
+        replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, serviceAccountName,
+        curlCmd, managedServersBeforeScale);
   }
 }

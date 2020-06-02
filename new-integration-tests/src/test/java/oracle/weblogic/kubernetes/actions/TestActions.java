@@ -207,6 +207,27 @@ public class TestActions {
     return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
   }
 
+  /**
+   * Scale the cluster of the domain in the specified namespace.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param operatorServiceAccount the service account for operator
+   * @return true if patch domain custom resource succeeds, false otherwise
+   */
+  public static boolean scaleClusterWithRestApi(String domainUid,
+                                                String clusterName,
+                                                int numOfServers,
+                                                int externalRestHttpsPort,
+                                                String opNamespace,
+                                                String operatorServiceAccount) {
+    return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
+        externalRestHttpsPort, opNamespace, operatorServiceAccount);
+  }
+
   // ------------------------   Ingress Controller ----------------------
 
   /**
