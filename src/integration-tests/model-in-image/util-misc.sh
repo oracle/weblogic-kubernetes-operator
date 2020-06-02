@@ -48,8 +48,10 @@ function get_sample_host() {
 function curl_timeout_parms() {
   local curl_parms="--connect-timeout 5"
   curl_parms+=" --max-time 20"        # max seconds for each try
-  curl_parms+=" --retry 5"            # retry up to 5 times
-  curl_parms+=" --retry-delay 0"      # disable exponential backoff
+  # don't bother retrying - we will retry externally because
+  #                         connection refusals don't retry
+  # curl_parms+=" --retry 5"            # retry up to 5 times
+  # curl_parms+=" --retry-delay 0"      # disable exponential backoff
   curl_parms+=" --retry-max-time 130" # total seconds before giving up
   echo "$curl_parms"
 }
@@ -87,6 +89,15 @@ function get_help() {
 # For example, 'testapp internal "Hello World!"'.
 
 function testapp() {
+
+  # note: we retry 5 times in case services, etc need more time to come up
+  #       curl's internal retry doesn't actually retry if there's a 'connect failure'
+
+  local num_tries=0
+
+  while [ 1 = 1 ] 
+  do
+
   (
   set +e
   set -u
@@ -127,6 +138,17 @@ function testapp() {
     exit 0
   fi
   )
+
+  [ $? -eq 0 ] && return 0
+
+  num_tries=$((num_tries + 1))
+
+  [ $num_tries -gt 5 ] && return 1
+
+  echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
+  sleep 5
+
+  done
 }
 
 
