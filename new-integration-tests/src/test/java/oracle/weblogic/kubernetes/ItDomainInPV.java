@@ -53,12 +53,14 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.WLSTUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -80,6 +82,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -109,6 +112,7 @@ public class ItDomainInPV implements LoggedTest {
   private static String opNamespace = null;
   private static String wlstDomainNamespace = null;
   private static String wdtDomainNamespace = null;
+  private static String introDomainNamespace = null;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
@@ -129,7 +133,7 @@ public class ItDomainInPV implements LoggedTest {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -140,6 +144,9 @@ public class ItDomainInPV implements LoggedTest {
     logger.info("Assign a unique namespace for WDT WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     wdtDomainNamespace = namespaces.get(2);
+    logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
+    assertNotNull(namespaces.get(3), "Namespace is null");
+    introDomainNamespace = namespaces.get(3);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
@@ -461,6 +468,183 @@ public class ItDomainInPV implements LoggedTest {
       return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
+  }
+
+  /**
+   * Create a WebLogic domain using WLST in a persistent volume.
+   * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
+   * Verify domain pods runs in ready state and services are created.
+   * Verify login to WebLogic console is successful.
+   */
+  @Test
+  @DisplayName("Create WebLogic domain in PV using WLST script")
+  public void testDomainIntrospectVersionNotRolling() {
+
+    final String domainUid = "introspect-domain-nr";
+    final String clusterName = "intro-cluster";
+    final String adminServerName = "intro-admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String managedServerNameBase = "intro-ms-";
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    final int replicaCount = 2;
+    final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
+
+    final String pvName = domainUid + "-pv"; // name of the persistent volume
+    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    if (isUseSecret) {
+      createOCRRepoSecret(introDomainNamespace);
+    }
+
+    // create WebLogic domain credential secret
+    createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create persistent volume and persistent volume claim for domain
+    // these resources should be labeled with domainUid for cleanup after testing
+    createPV(pvName, domainUid);
+    createPVC(pvName, pvcName, domainUid, introDomainNamespace);
+
+    // create a temporary WebLogic domain property file
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+        File.createTempFile("domain", "properties"),
+        "Failed to create domain properties file");
+    Properties p = new Properties();
+    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_name", domainUid);
+    p.setProperty("cluster_name", clusterName);
+    p.setProperty("admin_server_name", adminServerName);
+    p.setProperty("managed_server_port", "8001");
+    p.setProperty("admin_server_port", "7001");
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
+    p.setProperty("number_of_ms", "4");
+    p.setProperty("managed_server_name_base", managedServerNameBase);
+    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("production_mode_enabled", "true");
+    assertDoesNotThrow(() ->
+        p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file"),
+        "Failed to write domain properties file");
+
+    // WLST script for creating domain
+    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+
+    // create configmap and domain on persistent volume using the WLST script and property file
+    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
+        pvName, pvcName, introDomainNamespace);
+
+    // create a domain custom resource configuration object
+    logger.info("Creating domain custom resource");
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(introDomainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .image(image)
+            .imagePullPolicy("IfNotPresent")
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(OCR_SECRET_NAME))
+                : null)
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(introDomainNamespace))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/logs/" + domainUid)
+            .dataHome("")
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer() //admin server
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("T3Channel")
+                        .nodePort(t3ChannelPort))))
+            .addClustersItem(new Cluster() //cluster
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING")));
+
+    // verify the domain custom resource is created
+    createDomainAndVerify(domain, introDomainNamespace);
+
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, introDomainNamespace);
+
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+
+    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "change-server-count.py");
+
+    WLSTUtils.executeWLSTScript(ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        "t3://" + K8S_NODEPORT_HOST + ":" + t3ChannelPort, configScript, introDomainNamespace);
+
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, introDomainNamespace));
+    logger.info(dump(domain1));
+
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/serverPod/resources/limits/cpu\", ")
+        .append("\"value\": \"")
+        .append("")
+        .append("\"}, {")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/serverPod/resources/requests/cpu\", ")
+        .append("\"value\": \"")
+        .append("")
+        .append("\"}]");
   }
 
   /**
