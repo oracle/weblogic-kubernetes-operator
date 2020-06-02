@@ -319,15 +319,18 @@ public class DomainStatusTest {
 
   @Test
   public void whenSetServerIncludesServerWithoutStateAndHasExistingState_preserveIt() {
-    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1"));
-    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1"));
-    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("3").withState("state1"));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1")
+        .withHealth(new ServerHealth().withOverallHealth("ok")));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1")
+        .withHealth(new ServerHealth().withOverallHealth("ok")));
+    domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("3").withState("state1")
+        .withHealth(new ServerHealth().withOverallHealth("ok")));
 
     domainStatus.setServers(Arrays.asList(
-          new ServerStatus().withClusterName("1").withServerName("1").withState("state1"),
-          new ServerStatus().withClusterName("1").withServerName("2").withState("state1"),
-          new ServerStatus().withClusterName("1").withServerName("3")
-    ));
+        new ServerStatus().withClusterName("1").withServerName("1").withState("state1"),
+        new ServerStatus().withClusterName("1").withServerName("2").withState("state1"),
+        new ServerStatus().withClusterName("1").withServerName("3")
+        ));
 
     assertThat(getServer("1", "3").getState(), equalTo("state1"));
   }
