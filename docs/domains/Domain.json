@@ -367,7 +367,7 @@
           "type": "string"
         },
         "introspectVersion": {
-          "description": "If present, every time this value is updated, the operator will start introspect domain job",
+          "description": "If present, every time this value is updated, the operator will start introspect domain job. This field is ignored when the domainHomeSourceType source type is FromModel.",
           "type": "string"
         },
         "dataHome": {

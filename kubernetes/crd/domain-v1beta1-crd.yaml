@@ -10655,7 +10655,8 @@ spec:
             introspectVersion:
               type: string
               description: If present, every time this value is updated, the operator
-                will start introspect domain job
+                will start introspect domain job. This field is ignored when the domainHomeSourceType
+                source type is FromModel.
             dataHome:
               type: string
               description: 'An optional, in-pod location for data storage of default
