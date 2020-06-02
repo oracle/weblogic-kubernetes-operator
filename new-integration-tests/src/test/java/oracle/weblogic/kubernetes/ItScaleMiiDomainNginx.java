@@ -177,6 +177,8 @@ class ItScaleMiiDomainNginx implements LoggedTest {
           replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
 
       // then scale cluster-1 and cluster-2 to 2 servers
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
       managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
           domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
@@ -199,15 +201,17 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         numberOfServers = 3;
       }
 
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers);
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+          clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
       curlCmd = generateCurlCmd(clusterName);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
-      scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, managedServersBeforeScale);
+      scaleClusterAndVerifyWithRestApi(clusterName, replicaCount, numberOfServers, managedServersBeforeScale);
 
       // then scale cluster-1 and cluster-2 to 2 servers
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
       managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
-      scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, managedServersBeforeScale);
+      scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, replicaCount, managedServersBeforeScale);
     }
   }
 
@@ -373,15 +377,17 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    * Scale a cluster using REST API.
    *
    * @param clusterName cluster name to scale
-   * @param numberOfServers number of servers to scale to
+   * @param replicasBeforeScale number of servers in cluster before scaling
+   * @param replicasAfterScale number of serverss in cluster after scaling
    * @param managedServersBeforeScale list of managed servers in the cluster before scale
    */
   private void scaleClusterAndVerifyWithRestApi(String clusterName,
-                                                int numberOfServers,
+                                                int replicasBeforeScale,
+                                                int replicasAfterScale,
                                                 List<String> managedServersBeforeScale) {
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
         domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
-        replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, serviceAccountName,
+        replicasBeforeScale, replicasAfterScale, true, externalRestHttpsPort, opNamespace, serviceAccountName,
         curlCmd, managedServersBeforeScale);
   }
 }
