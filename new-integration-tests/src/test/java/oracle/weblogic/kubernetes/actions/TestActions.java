@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
@@ -166,7 +167,7 @@ public class TestActions {
   public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
-  
+
   /**
    * Delete a Domain Custom Resource.
    *
@@ -406,6 +407,16 @@ public class TestActions {
    */
   public static boolean deleteSecret(String name, String namespace) {
     return Secret.delete(name, namespace);
+  }
+
+  /**
+   * List secrets in the Kubernetes cluster.
+   *
+   * @param namespace Namespace in which to query
+   * @return V1SecretList of secrets in the Kubernetes cluster
+   */
+  public static V1SecretList listSecrets(String namespace) {
+    return Secret.listSecrets(namespace);
   }
 
   // -------------------------- config map ---------------------------------
