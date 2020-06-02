@@ -664,7 +664,7 @@ class TopologyGenerator(Generator):
         rtn.append(server)
     return rtn
 
-  def addServer(self, server):
+  def addServer(self, server, is_server_template=False):
     name=self.name(server)
     self.writeln("- name: " + name)
     if server.isListenPortEnabled():
@@ -676,7 +676,7 @@ class TopologyGenerator(Generator):
       if self.env.getDomain().isAdministrationPortEnabled():
         self.writeln("  adminPort: " + str(self.env.getDomain().getAdministrationPort()))
     self.addSSL(server)
-    self.addNetworkAccessPoints(server)
+    self.addNetworkAccessPoints(server, is_server_template)
 
   def addSSL(self, server):
     ssl = getSSLOrNone(server)
@@ -697,7 +697,7 @@ class TopologyGenerator(Generator):
     self.undent()
 
   def addServerTemplate(self, serverTemplate):
-    self.addServer(serverTemplate)
+    self.addServer(serverTemplate, is_server_template=True)
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
 
   def addDynamicClusters(self):
@@ -745,18 +745,22 @@ class TopologyGenerator(Generator):
         self.addServer(server)
     self.undent()
 
-  def addNetworkAccessPoints(self, server):
+  def addNetworkAccessPoints(self, server, is_server_template=False):
     """
     Add network access points for server or server template
     :param server:  server or server template
     """
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     naps = server.getNetworkAccessPoints()
-    if len(naps) == 0:
-      return
-    self.writeln("  networkAccessPoints:")
-    self.indent()
-    for nap in naps:
-      self.addNetworkAccessPoint(nap)
+    added_nap = False
+    if len(naps) != 0:
+      added_nap = True
+      self.writeln("  networkAccessPoints:")
+      self.indent()
+      for nap in naps:
+        self.addNetworkAccessPoint(nap)
+
+    self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
     self.undent()
 
   def addNetworkAccessPoint(self, nap):
@@ -765,6 +769,33 @@ class TopologyGenerator(Generator):
     self.writeln("    protocol: " + self.quote(nap.getProtocol()))
     self.writeln("    listenPort: " + str(nap.getListenPort()))
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
+
+  def addIstioNetworkAccessPoints(self, server, is_server_template, added_nap):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled:
+      if not added_nap:
+        self.writeln("  networkAccessPoints:")
+        self.indent()
+
+      istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+      self.addIstioNetworkAccessPoint("istio-probe", "http", istio_readiness_port, 0)
+      self.addIstioNetworkAccessPoint("istio-ldap", "ldap", server.getListenPort(), 0)
+      self.addIstioNetworkAccessPoint("istio-t3", "t3", server.getListenPort(), 0)
+      ssl = getSSLOrNone(server)
+      if ssl is not None and ssl.isEnabled():
+        ssl_listen_port = ssl.getListenPort()
+        self.addIstioNetworkAccessPoint("istio-https", "http", ssl_listen_port, 0)
+
+      if is_server_template:
+        istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
+        self.addIstioNetworkAccessPoint("istio-http", "http", istio_envoy_port, 0)
+        self.addIstioNetworkAccessPoint("istio-cluster", "CLUSTER-BROADCAST", server.getListenPort(), 0)
+
+  def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
+    self.writeln("  - name: " + name)
+    self.writeln("    protocol: " + protocol)
+    self.writeln("    listenPort: " + str(listen_port))
+    self.writeln("    publicPort: " + str(public_port))
 
   def booleanToString(self, bool):
     if bool == 0:
@@ -1084,7 +1115,8 @@ class SitConfigGenerator(Generator):
         break
 
     if found:
-      return replace_action, "replace"
+      trace("SEVERE","Found NetWorkAccessPoints with prefix istio-, remove any NetworkAccessPoints with prefix istio- and apply the domain resource YAML again ")
+      sys.exit(1)
     else:
       return add_action, "add"
 
