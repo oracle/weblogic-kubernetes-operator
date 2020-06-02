@@ -22,16 +22,20 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1NodeAffinity;
 import io.kubernetes.client.openapi.models.V1NodeSelector;
+import io.kubernetes.client.openapi.models.V1NodeSelectorTerm;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodAffinity;
+import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PreferredSchedulingTerm;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -307,12 +311,18 @@ class ServerPod extends KubernetesResource {
   }
 
   private void copyValues(V1NodeAffinity to, V1NodeAffinity from) {
-    if (to.getPreferredDuringSchedulingIgnoredDuringExecution() == null) {
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(from.getPreferredDuringSchedulingIgnoredDuringExecution());
-    } else if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      from.getPreferredDuringSchedulingIgnoredDuringExecution()
-          .forEach(to::addPreferredDuringSchedulingIgnoredDuringExecutionItem);
+    if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+      List<V1PreferredSchedulingTerm> preferredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
+      if (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+        preferredDuringSchedulingIgnoredDuringExecution =
+            Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
+                from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution);
     }
+
     if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
       to.setRequiredDuringSchedulingIgnoredDuringExecution(from.getRequiredDuringSchedulingIgnoredDuringExecution());
     } else if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
@@ -321,41 +331,69 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private void copyValues(V1NodeSelector to,V1NodeSelector from) {
-    if (to.getNodeSelectorTerms() == null) {
-      to.setNodeSelectorTerms(from.getNodeSelectorTerms());
-    } else if (from.getNodeSelectorTerms() != null) {
-      from.getNodeSelectorTerms().forEach(to::addNodeSelectorTermsItem);
+  private void copyValues(V1NodeSelector to, V1NodeSelector from) {
+    if (from.getNodeSelectorTerms() != null) {
+      List<V1NodeSelectorTerm> nodeSelectorTerms = new ArrayList<>();
+      if (to.getNodeSelectorTerms() != null) {
+        nodeSelectorTerms =
+            Stream.concat(to.getNodeSelectorTerms().stream(),
+                from.getNodeSelectorTerms().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setNodeSelectorTerms(nodeSelectorTerms);
     }
   }
 
   private void copyValues(V1PodAffinity to, V1PodAffinity from) {
-    if (to.getPreferredDuringSchedulingIgnoredDuringExecution() == null) {
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(from.getPreferredDuringSchedulingIgnoredDuringExecution());
-    } else if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      from.getPreferredDuringSchedulingIgnoredDuringExecution()
-          .forEach(to::addPreferredDuringSchedulingIgnoredDuringExecutionItem);
+    if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+      List<V1WeightedPodAffinityTerm> preferredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
+      if (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+        preferredDuringSchedulingIgnoredDuringExecution =
+            Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
+                from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution);
     }
-    if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
-      to.setRequiredDuringSchedulingIgnoredDuringExecution(from.getRequiredDuringSchedulingIgnoredDuringExecution());
-    } else if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-      from.getRequiredDuringSchedulingIgnoredDuringExecution()
-          .forEach(to::addRequiredDuringSchedulingIgnoredDuringExecutionItem);
+
+    if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
+      List<V1PodAffinityTerm> requiredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
+      if (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
+        requiredDuringSchedulingIgnoredDuringExecution =
+            Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
+                from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setRequiredDuringSchedulingIgnoredDuringExecution(requiredDuringSchedulingIgnoredDuringExecution);
     }
   }
 
   private void copyValues(V1PodAntiAffinity to, V1PodAntiAffinity from) {
-    if (to.getPreferredDuringSchedulingIgnoredDuringExecution() == null) {
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(from.getPreferredDuringSchedulingIgnoredDuringExecution());
-    } else if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      from.getPreferredDuringSchedulingIgnoredDuringExecution()
-          .forEach(to::addPreferredDuringSchedulingIgnoredDuringExecutionItem);
+    if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+      List<V1WeightedPodAffinityTerm> preferredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
+      if (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+        preferredDuringSchedulingIgnoredDuringExecution =
+            Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
+                from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution);
     }
-    if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
-      to.setRequiredDuringSchedulingIgnoredDuringExecution(from.getRequiredDuringSchedulingIgnoredDuringExecution());
-    } else if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-      from.getRequiredDuringSchedulingIgnoredDuringExecution()
-          .forEach(to::addRequiredDuringSchedulingIgnoredDuringExecutionItem);
+
+    if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
+      List<V1PodAffinityTerm> requiredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
+      if (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
+        requiredDuringSchedulingIgnoredDuringExecution =
+            Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
+                from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
+                .distinct()
+                .collect(Collectors.toList());
+      }
+      to.setRequiredDuringSchedulingIgnoredDuringExecution(requiredDuringSchedulingIgnoredDuringExecution);
     }
   }
 
