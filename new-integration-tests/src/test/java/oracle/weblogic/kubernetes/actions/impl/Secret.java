@@ -46,7 +46,7 @@ public class Secret {
     String secretName = "";
     List<V1Secret> v1Secrets = new ArrayList<>();
 
-    V1SecretList secretList = Kubernetes.listSecrets(namespace);
+    V1SecretList secretList = listSecrets(namespace);
     if (secretList != null) {
       v1Secrets = secretList.getItems();
     }
@@ -74,13 +74,13 @@ public class Secret {
 
     List<V1Secret> v1Secrets = new ArrayList<>();
 
-    V1SecretList secretList = Kubernetes.listSecrets(namespace);
+    V1SecretList secretList = listSecrets(namespace);
     if (secretList != null) {
       v1Secrets = secretList.getItems();
     }
 
     for (V1Secret v1Secret : v1Secrets) {
-      if (v1Secret.getMetadata() != null) {
+      if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
         if (v1Secret.getMetadata().getName().equals(secretName)) {
           if (v1Secret.getData() != null) {
             byte[] encodedToken = v1Secret.getData().get("token");
@@ -90,6 +90,16 @@ public class Secret {
       }
     }
 
-    return null;
+    return "";
+  }
+
+  /**
+   * List secrets in the Kubernetes cluster.
+   *
+   * @param namespace Namespace in which to query
+   * @return V1SecretList of secrets in the Kubernetes cluster
+   */
+  public static V1SecretList listSecrets(String namespace) {
+    return Kubernetes.listSecrets(namespace);
   }
 }

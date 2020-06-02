@@ -49,12 +49,16 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.DeployUtil;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +76,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
@@ -84,17 +89,24 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -109,6 +121,10 @@ public class ItDomainInPV implements LoggedTest {
   private static String opNamespace = null;
   private static String wlstDomainNamespace = null;
   private static String wdtDomainNamespace = null;
+
+  private static String nginxNamespace = null;
+  private static int nodeportshttp;
+  private static HelmParams nginxHelmParams = null;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
@@ -129,7 +145,7 @@ public class ItDomainInPV implements LoggedTest {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -138,11 +154,22 @@ public class ItDomainInPV implements LoggedTest {
     assertNotNull(namespaces.get(1), "Namespace is null");
     wlstDomainNamespace = namespaces.get(1);
     logger.info("Assign a unique namespace for WDT WebLogic domain");
-    assertNotNull(namespaces.get(1), "Namespace is null");
+    assertNotNull(namespaces.get(2), "Namespace is null");
     wdtDomainNamespace = namespaces.get(2);
+    logger.info("Assign a unique namespace for NGINX");
+    assertNotNull(namespaces.get(3), "Namespace is null");
+    nginxNamespace = namespaces.get(3);
+
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
+
+    // get a free node port for NGINX
+    nodeportshttp = getNextFreePort(30305, 30405);
+    int nodeportshttps = getNextFreePort(30443, 30543);
+
+    // install and verify NGINX
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -168,6 +195,7 @@ public class ItDomainInPV implements LoggedTest {
     final String adminServerName = "wlst-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "wlst-ms-";
+    final int managedServerPort = 8001;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
@@ -198,7 +226,7 @@ public class ItDomainInPV implements LoggedTest {
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("managed_server_port", "8001");
+    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
     p.setProperty("admin_server_port", "7001");
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
@@ -306,6 +334,47 @@ public class ItDomainInPV implements LoggedTest {
       return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
+
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(wlstDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
+    //create ingress controller
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(clusterName, managedServerPort);
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, wlstDomainNamespace);
+    createIngressForDomainAndVerify(domainUid, wlstDomainNamespace, clusterNameMsPortMap);
+
+    //deploy application
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    logger.info("Deploying webapp to domain {0}", archivePath);
+    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
+        wlstDomainNamespace);
+
+    //access application from admin server
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+    //access application in managed servers through NGINX load balancer
+    logger.info("Accessing the sample app through NGINX load balancer");
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServers.add(domainUid + "-" + managedServerNameBase + i);
+    }
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
+        .as("Verify NGINX can access the test web app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .isTrue();
+
   }
 
   /**
@@ -323,6 +392,7 @@ public class ItDomainInPV implements LoggedTest {
     final String adminServerName = "wdt-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "wdt-ms-";
+    final int managedServerPort = 8001;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort(31000, 32767);  // the port range has to be between 30,000 to 32,767
@@ -461,6 +531,62 @@ public class ItDomainInPV implements LoggedTest {
       return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
+
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(wdtDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
+    //create ingress controller
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(clusterName, managedServerPort);
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, wdtDomainNamespace);
+    createIngressForDomainAndVerify(domainUid, wdtDomainNamespace, clusterNameMsPortMap);
+
+    //deploy application
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    logger.info("Deploying webapp to domain {0}", archivePath);
+    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
+        wdtDomainNamespace);
+
+    //access application from admin server
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+    //access application in managed servers through NGINX load balancer
+    logger.info("Accessing the sample app through NGINX load balancer");
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServers.add(domainUid + "-" + managedServerNameBase + i);
+    }
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
+        .as("Verify NGINX can access the test web app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .isTrue();
+  }
+
+  /**
+   * Uninstall Nginx.
+   * The cleanup framework does not uninstall Nginx release.
+   * Do it here for now.
+   */
+  @AfterAll
+  public void tearDownAll() {
+    // uninstall NGINX release
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
   }
 
   /**

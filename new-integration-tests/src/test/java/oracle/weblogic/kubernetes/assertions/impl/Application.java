@@ -6,8 +6,6 @@ package oracle.weblogic.kubernetes.assertions.impl;
 import java.io.IOException;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -21,42 +19,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 
 public class Application {
   private static final LoggingFacade logger = LoggingFactory.getLogger(Application.class);
-
-  /**
-   * Check if an application is accessible inside a WebLogic server pod.
-   * 
-   * @param namespace Kubernetes namespace where the WebLogic server pod is running
-   * @param podName name of the WebLogic server pod
-   * @param port internal port of the managed server running in the pod
-   * @param appPath path to access the application
-   * @param expectedResponse expected response from the app
-   * @return true if the command succeeds 
-   */
-  public static boolean appAccessibleInPodKubectl(
-      String namespace, 
-      String podName,
-      String port,
-      String appPath, 
-      String expectedResponse
-  ) {
-
-    // calling "kubectl exec" command to access the app inside a pod
-    String cmd = String.format(
-         "kubectl -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
-         namespace,
-         podName,
-         podName,
-         port,
-         appPath);
-
-    CommandParams params = Command
-        .defaultCommandParams()
-        .command(cmd)
-        .saveResults(true)
-        .redirect(false)
-        .verbose(false);
-    return Command.withParams(params).executeAndVerify(expectedResponse);
-  }
 
   /**
    * Check if an application is accessible inside a WebLogic server pod using

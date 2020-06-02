@@ -208,7 +208,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    *
    * @return health
    */
-  private ServerHealth getHealth() {
+  ServerHealth getHealth() {
     return health;
   }
 
