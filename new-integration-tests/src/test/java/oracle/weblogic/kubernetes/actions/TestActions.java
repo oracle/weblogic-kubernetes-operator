@@ -4,6 +4,10 @@
 package oracle.weblogic.kubernetes.actions;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 
@@ -22,17 +26,15 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.*;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
-import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
-import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.*;
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.*;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.FileUtils.*;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -548,6 +550,48 @@ public class TestActions {
         AppBuilder
             .withParams(params)
             .build();
+  }
+
+  /**
+   * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
+   * to create an image with the application for a model-in-image use case.
+   *
+   * @param srcFile full path to ear or war application file to archive
+   * @return true if the operation succeeds
+   */
+  public static boolean archiveApp(
+    String srcFile) {
+
+    String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
+    String fileExtension = srcFile.substring(srcFile.lastIndexOf(".") + 1, srcFile.length());
+    try {
+      String appDir = ARCHIVE_DIR + "/wlsdeploy/applications";
+      cleanupDirectory(appDir);
+      checkDirectory(appDir);
+      logger.info("copy {0]} to {1} ", srcFile, appDir);
+      Files.copy(Paths.get(srcFile), Paths.get(appDir,
+          appName + "."
+              + fileExtension),
+          StandardCopyOption.REPLACE_EXISTING);
+
+    } catch (IOException ioe) {
+      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      return false;
+    }
+
+    String cmd = String.format(
+        "cd %s ; zip %s.zip wlsdeploy/applications/%s.%s ",
+        ARCHIVE_DIR,
+        appName,
+        appName,
+        fileExtension
+        );
+
+    return Command.withParams(
+        defaultCommandParams()
+            .command(cmd)
+            .redirect(false))
+        .execute();
   }
 
   // ------------------------ Docker --------------------------------------

@@ -12,13 +12,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
@@ -67,6 +63,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.apache.commons.io.FileUtils;
@@ -80,19 +77,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.*;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.*;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
@@ -102,16 +88,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.*;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyPrometheus;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.*;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -130,7 +110,6 @@ class ItMonitoringExporter implements LoggedTest {
 
 
   // domain constants
-  private static final String domainUid = "domain1";
   private static final int NUMBER_OF_CLUSTERS = 2;
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
@@ -138,8 +117,8 @@ class ItMonitoringExporter implements LoggedTest {
 
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
-  private String domain1Uid = "domain1";
-  private String domain2Uid = "domain2";
+  private static String domain1Uid = "monexp-domain1";
+  private static String domain2Uid = "monexp-domain2";
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static List<String> ingressHostList = null;
@@ -157,6 +136,18 @@ class ItMonitoringExporter implements LoggedTest {
   private static V1Deployment webhookDepl = null;
   private static V1Service coordinatorService = null;
   private static V1Deployment coordinatorDepl = null;
+  // constants for creating domain image using model in image
+  private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
+  private static final String MONEXP_IMAGE_NAME = "mii-image";
+
+  // constants for web service
+  private static final String MONEXP_APP_NAME = "monexp-app";
+  private static final String MONEXP_APP_WAR_NAME = "monexp-war";
+  private static String clusterName = "cluster-1";
+  private static String adminServerPodName = domain1Uid + "-admin-server";
+  private static String managedServerPrefix = domain1Uid + "-managed-server";
+  private static int managedServerPort = 8001;
+  private static int nodeportserver;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -212,14 +203,27 @@ class ItMonitoringExporter implements LoggedTest {
     //install monitoring exporter
     installMonitoringExporter();
 
+    // create and verify WebLogic domain image using model in image with model files
+    String imageName = createAndVerifyDomainImage();
+
+    // create and verify one cluster domain
+    logger.info("Create domain and verify that it's running");
+    createAndVerifyDomain(imageName, domain1Uid);
+
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    // create ingress for the domain
+    logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(clusterName, managedServerPort);
+    ingressHostList =
+        createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap);
 
   }
 
   @Test
-  @DisplayName("Install Prometheus, Grafana , Webhook, Coordinator and verify it running")
-  public void testCreatePrometheusGrafanaWebhookCoordinator() throws Exception {
+  @DisplayName("Install Prometheus, Grafana , Webhook, Coordinator and verify WebLogic metrics")
+  public void testCheckMetrics() throws Exception {
 
     createPvAndPvc("prometheus");
     createPvAndPvc("alertmanager");
@@ -249,7 +253,7 @@ class ItMonitoringExporter implements LoggedTest {
             + domain2Uid
             + ";cluster-1");
     int nodeportalertmanserver = getNextFreePort(30400, 30600);
-    int nodeportserver = getNextFreePort(32400, 32600);
+    nodeportserver = getNextFreePort(32400, 32600);
 
     promHelmParams = installAndVerifyPrometheus("prometheus",
          monitoringNS,
@@ -269,11 +273,18 @@ class ItMonitoringExporter implements LoggedTest {
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
-        "app=webhook"), "Failed to start webhook");
+        "app=webhook", REPO_SECRET_NAME), "Failed to start webhook");
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterSrcDir + "/config_coordinator",
         "coordinator",
         domain1Namespace,
-        "app=coordinator"), "Failed to start coordinator");
+        "app=coordinator", "coordsecret"), "Failed to start coordinator");
+
+    //verify access to Monitoring Exporter
+    verifyMonExpAppAccessThroughNginx();
+    //verify metrics via prometheus
+    String testappPrometheusSearchKey =
+        "weblogic_servlet_invocation_total_count%7Bapp%3D%22wlsexporter%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(testappPrometheusSearchKey, "wlsexporter");
   }
 
 
@@ -374,125 +385,6 @@ class ItMonitoringExporter implements LoggedTest {
     assertTrue(success, "PersistentVolumeClaim creation failed for " + nameSuffix);
   }
 
-  private void createDomaininImageWdt(String domainNamespace, String domainUid, int repCount) {
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = repCount;
-
-    // Create the repo secret to pull the image
-    createDockerRegistrySecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create the domain CR
-    createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
-        replicaCount);
-
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
-
-
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-  }
-
-  private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
-                                    String repoSecretName, int replicaCount) {
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("Image")
-            .image(WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS"))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-        domainUid, domNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-        + "for %s in namespace %s", domainUid, domNamespace));
-  }
-
   /**
    * A utility method to sed files.
    *
@@ -520,18 +412,19 @@ class ItMonitoringExporter implements LoggedTest {
   public static boolean installAndVerifyPodFromCustomImage(String dockerFileDir,
                                                 String baseImageName,
                                                 String namespace,
-                                                String labelSelector) throws ApiException {
+                                                String labelSelector,
+                                                String secretName) throws ApiException {
     //build webhook image
     String imagePullPolicy = "IfNotPresent";
     if (!REPO_NAME.isEmpty()) {
       imagePullPolicy = "Always";
     }
-    String image = createPushImage(dockerFileDir,baseImageName, namespace);
+    String image = createPushImage(dockerFileDir,baseImageName, namespace, secretName);
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
-      createWebHook(image, imagePullPolicy, namespace);
+      createWebHook(image, imagePullPolicy, namespace, REPO_SECRET_NAME);
     } else if (baseImageName.contains("coordinator")) {
-      createCoordinator(image, imagePullPolicy, namespace);
+      createCoordinator(image, imagePullPolicy, namespace, "coordsecret");
     } else {
       throw new ApiException("Custom image creation for " + baseImageName + "is not supported");
     }
@@ -556,8 +449,9 @@ class ItMonitoringExporter implements LoggedTest {
    * @param image full image name for deployment
    * @param imagePullPolicy policy for image
    * @param namespace webhook namespace
+   * @param secretName webhook image secret name
    */
-  private static void createWebHook(String image, String imagePullPolicy, String namespace) throws ApiException {
+  private static void createWebHook(String image, String imagePullPolicy, String namespace, String secretName) throws ApiException {
     Map labels = new HashMap<String, String>();
     labels.put("app", "webhook");
     webhookDepl = new V1Deployment()
@@ -580,7 +474,7 @@ class ItMonitoringExporter implements LoggedTest {
                             .name("webhook")))
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name("ocir-secret"))))));
+                            .name(secretName))))));
 
     logger.info("Create deployment for webhook in namespace {0}",
         namespace);
@@ -659,13 +553,14 @@ class ItMonitoringExporter implements LoggedTest {
   }
 
   /**
-   * Create Webhook deployment and service.
+   * Create Coordinator deployment and service.
    *
    * @param image full image name for deployment
    * @param imagePullPolicy policy for image
-   * @param namespace webhook namespace
+   * @param namespace coordinator namespace
+   * @param secretName coordinator secret name
    */
-  private static void createCoordinator(String image, String imagePullPolicy, String namespace) throws ApiException {
+  private static void createCoordinator(String image, String imagePullPolicy, String namespace, String secretName) throws ApiException {
     Map labels = new HashMap<String, String>();
     labels.put("app", "coordinator");
     coordinatorDepl = new V1Deployment()
@@ -693,7 +588,7 @@ class ItMonitoringExporter implements LoggedTest {
                         .containerPort(8999)))))
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name("ocir-secret"))))));
+                            .name(secretName))))));
 
     logger.info("Create deployment for coordinator in namespace {0}",
         namespace);
@@ -762,11 +657,12 @@ class ItMonitoringExporter implements LoggedTest {
    *
    * @param dockerFileDir directory where dockerfile is located
    * @param baseImageName base image name
-   * @param namespace webhook namespace
+   * @param namespace image namespace
+   * @param secretName docker secretname for image
    * @return image name
    */
   public static String createPushImage(String dockerFileDir, String baseImageName,
-                                                    String namespace) throws ApiException {
+                                                    String namespace, String secretName) throws ApiException {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
@@ -784,7 +680,8 @@ class ItMonitoringExporter implements LoggedTest {
     }
 
     //create registry docker secret
-    createDockerRegistrySecret(namespace);
+    createDockerRegistrySecret(REPO_USERNAME, REPO_PASSWORD, REPO_EMAIL,
+        REPO_REGISTRY, secretName, namespace);
     return image;
   }
 
@@ -842,7 +739,8 @@ class ItMonitoringExporter implements LoggedTest {
         .withParams(new CommandParams()
             .command(command))
         .execute(),"Failed to build monitoring exporter webapp");
-    command = String.format("%s  %s/exporter/rest_webapp.yml", monitoringExporterBuildFile, RESOURCE_DIR);
+    String appDest = monitoringExporterAppDir;
+    command = String.format("cd %s && %s  %s/exporter/rest_webapp.yml", appDest, monitoringExporterBuildFile, RESOURCE_DIR);
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command(command))
@@ -855,5 +753,214 @@ class ItMonitoringExporter implements LoggedTest {
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringTemp.toFile()));
     Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "promCreateTempValueFile");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()));
+  }
+
+  private static String createAndVerifyDomainImage() {
+    // create image with model files
+    logger.info("Create image with model file and verify");
+    String appPath = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
+    String miiImage =
+        createMiiImageAndVerify(MONEXP_IMAGE_NAME, MONEXP_MODEL_FILE, appPath);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(miiImage);
+
+    // create docker registry secret to pull the image from registry
+    logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
+    assertDoesNotThrow(() -> createDockerRegistrySecret(domain1Namespace),
+        String.format("create Docker Registry Secret failed for %s", REPO_SECRET_NAME));
+
+    return miiImage;
+  }
+
+  private static void createAndVerifyDomain(String miiImage, String domainUid) {
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domain1Namespace,
+        "weblogic", "welcome1"),
+        String.format("create secret for admin credentials failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, domain1Namespace,
+        "weblogicenc", "weblogicenc"),
+        String.format("create encryption secret failed for %s", encryptionSecretName));
+
+    // create domain and verify
+    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, domain1Namespace, miiImage);
+    createDomainCrAndVerify(adminSecretName, REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid);
+
+    // check that admin server pod exists in the domain namespace
+    logger.info("Checking that admin server pod {0} exists in namespace {1}",
+        adminServerPodName, domain1Namespace);
+    checkPodExists(adminServerPodName, domainUid, domain1Namespace);
+
+    // check that admin server pod is ready
+    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
+        adminServerPodName, domain1Namespace);
+    checkPodReady(adminServerPodName, domainUid, domain1Namespace);
+
+    // check that admin service exists in the domain namespace
+    logger.info("Checking that admin service {0} exists in namespace {1}",
+        adminServerPodName, domain1Namespace);
+    checkServiceExists(adminServerPodName, domain1Namespace);
+
+    // check for managed server pods existence in the domain namespace
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+
+      // check that the managed server pod exists
+      logger.info("Checking that managed server pod {0} exists in namespace {1}",
+          managedServerPodName, domain1Namespace);
+      checkPodExists(managedServerPodName, domainUid, domain1Namespace);
+
+      // check that the managed server pod is ready
+      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
+          managedServerPodName, domain1Namespace);
+      checkPodReady(managedServerPodName, domainUid, domain1Namespace);
+
+      // check that the managed server service exists in the domain namespace
+      logger.info("Checking that managed server service {0} exists in namespace {1}",
+          managedServerPodName, domain1Namespace);
+      checkServiceExists(managedServerPodName, domain1Namespace);
+    }
+  }
+
+  private static void createDomainCrAndVerify(String adminSecretName,
+                                              String repoSecretName,
+                                              String encryptionSecretName,
+                                              String miiImage,
+                                              String domainUid) {
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domain1Namespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domain1Namespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create domain using model in image
+    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, domain1Namespace, miiImage);
+    createDomainAndVerify(domain, domain1Namespace);
+  }
+
+  /**
+   * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
+   */
+  private void verifyMonExpAppAccessThroughNginx() {
+
+    List<String> managedServerNames = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
+    }
+
+    // check that NGINX can access the sample apps from all managed servers in the domain
+    String curlCmd =
+        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/wls-exporter",
+            ingressHostList.get(0), K8S_NODEPORT_HOST, nodeportshttp);
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
+        .as("Verify NGINX can access the sample app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
+        .isTrue();
+  }
+
+  /**
+   * Check metrics using Prometheus.
+   *
+   * @param searchKey   - metric query expression
+   * @param expectedVal - expected metrics to search
+   * @throws Exception if command to check metrics fails
+   */
+  private static void checkMetricsViaPrometheus(String searchKey, String expectedVal)
+      throws Exception {
+
+    // url
+    String curlCmd =
+        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/api/v1/query?query=%s",
+            K8S_NODEPORT_HOST, nodeportserver, searchKey);
+
+    logger.info("Executing Curl cmd {0}", curlCmd);
+    logger.info("Checking searchKey: {0}", searchKey);
+    logger.info(" expected Value {0} ", expectedVal);
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Check prometheus metric {0} against expected {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                searchKey,
+                expectedVal,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> searchForKey(curlCmd, expectedVal),
+            String.format("Check prometheus metric %s against expected %s",
+                searchKey, expectedVal)));
+  }
+
+  /**
+   * Check output of the command against expected output.
+   *
+   * @param cmd Kubernetes namespace where the WebLogic server pod is running
+   * @param searchKey expected response from the command
+   * @return true if the command succeeds
+   */
+  public static boolean execCommandCheckResponse (String cmd, String searchKey)
+  {
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(cmd)
+        .saveResults(true)
+        .redirect(false)
+        .verbose(false);
+    return Command.withParams(params).executeAndVerify(searchKey);
+  }
+
+  /**
+   * Check if a Kubernetes pod exists in any state in the given namespace.
+   *
+   * @param cmd   name of the pod to check for
+   * @param searchKey UID of WebLogic domain in which the pod exists
+   * @return true if the output matches searchKey otherwise false
+   */
+  private static Callable<Boolean> searchForKey(String cmd, String searchKey) {
+    return () -> {
+      return execCommandCheckResponse(cmd, searchKey);
+    };
   }
 }

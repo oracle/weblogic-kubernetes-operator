@@ -66,21 +66,22 @@ public class AppBuilder {
       logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
-    
+
     // make sure that we always have an app name
     if (params.appName() == null) {
       params.appName(params.srcDirList().get(0));
     }
 
-    // build the app archive 
-    String jarPath = String.format("%s.ear", params.appName());
-    boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
+    // build the app archive
+     String jarPath = String.format("%s.ear", params.appName());
+     boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
     
     // build a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());
     boolean zipBuilt = buildZipArchive(zipPath, ARCHIVE_DIR);
 
     return jarBuilt && zipBuilt;
+
   }
 
   /**
@@ -118,6 +119,30 @@ public class AppBuilder {
         "cd %s ; zip %s wlsdeploy/applications/%s.ear ", 
         srcDir, 
         zipPath,  
+        params.appName());
+
+    return Command.withParams(
+        defaultCommandParams()
+            .command(cmd)
+            .redirect(false))
+        .execute();
+  }
+
+  /**
+   * Build a zip archive that includes an ear or war file in the srcDir.
+   *
+   * @param zipPath zip file path for the resulting archive
+   * @param srcDir source directory
+   */
+  public boolean zipArchive(
+      String zipPath,
+      String srcDir
+  ) {
+
+    String cmd = String.format(
+        "cd %s ; zip %s wlsdeploy/applications/%s.ear ",
+        srcDir,
+        zipPath,
         params.appName());
 
     return Command.withParams(
