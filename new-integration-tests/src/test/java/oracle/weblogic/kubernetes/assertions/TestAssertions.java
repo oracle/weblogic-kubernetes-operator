@@ -302,27 +302,6 @@ public class TestAssertions {
   }
 
   /**
-   * Check if an application is accessible inside a WebLogic server pod using
-   * "kubectl exec" command.
-   *
-   * @param namespace Kubernetes namespace where the WebLogic server pod is running
-   * @param podName name of the WebLogic server pod
-   * @param port internal port of the managed server running in the pod
-   * @param appPath path to access the application
-   * @param expectedResponse the expected response from the application
-   * @return true if the command succeeds
-   */
-  public static boolean appAccessibleInPodKubectl(
-      String namespace,
-      String podName,
-      String port,
-      String appPath,
-      String expectedResponse
-  ) {
-    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
-  }
-
-  /**
    * Check if the given WebLogic credentials are valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
