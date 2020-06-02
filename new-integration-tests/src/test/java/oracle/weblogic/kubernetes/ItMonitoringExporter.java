@@ -492,12 +492,6 @@ class ItMonitoringExporter implements LoggedTest {
                                     String secretName) throws ApiException {
     Map labels = new HashMap<String, String>();
     labels.put("app", "webhook");
-    V1Deployment deployment = new V1Deployment();
-    deployment
-            .apiVersion("apps/v1")
-            .kind("Deployment")
-            .metadata(deploymentMetadata)
-            .spec(deploymentSpec);
 
     webhookDepl = new V1Deployment()
         .apiVersion("apps/v1")
