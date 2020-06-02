@@ -117,7 +117,10 @@ function testapp() {
 
     echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
 
+    (
+    set +e
     bash -c "$command" > $target_file 2>&1
+    )
 
     # use "cat & sed" instead of "grep" as grep exits with an error when it doesn't find anything
 
