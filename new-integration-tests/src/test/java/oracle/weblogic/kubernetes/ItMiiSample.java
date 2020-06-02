@@ -23,7 +23,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
@@ -219,6 +222,11 @@ public class ItMiiSample implements LoggedTest {
     // run JRF use cases irrespective of WLS use cases fail/pass
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
+    String dbImageName = (KIND_REPO != null
+        ? KIND_REPO + DB_IMAGE_TAG.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
+    envMap.put("DB_IMAGE_NAME", dbImageName);
+    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
+
     execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
     execTestScriptAndAssertSuccess(
         DomainType.JRF, 
