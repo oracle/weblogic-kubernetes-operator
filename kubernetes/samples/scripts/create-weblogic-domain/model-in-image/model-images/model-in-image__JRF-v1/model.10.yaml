@@ -18,16 +18,16 @@ topology:
     Server:
         'admin-server':
             ListenPort: 7001
-        'managed-server1-c1-':
+        'managed-server1-c1':
             Cluster: 'cluster-1'
             ListenPort: 8001
-        'managed-server2-c1-':
+        'managed-server2-c1':
             Cluster: 'cluster-1'
             ListenPort: 8001
-        'managed-server3-c1-':
+        'managed-server3-c1':
             Cluster: 'cluster-1'
             ListenPort: 8001
-        'managed-server4-c1-':
+        'managed-server4-c1':
             Cluster: 'cluster-1'
             ListenPort: 8001
            
