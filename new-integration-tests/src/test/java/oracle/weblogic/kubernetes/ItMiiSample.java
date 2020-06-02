@@ -219,14 +219,13 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
-    // run JRF use cases irrespective of WLS use cases fail/pass
-    previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_TAG.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
+        ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
     envMap.put("DB_IMAGE_NAME", dbImageName);
     envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
-
+    // run JRF use cases irrespective of WLS use cases fail/pass
+    previousTestSuccessful = true;
     execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
     execTestScriptAndAssertSuccess(
         DomainType.JRF, 
