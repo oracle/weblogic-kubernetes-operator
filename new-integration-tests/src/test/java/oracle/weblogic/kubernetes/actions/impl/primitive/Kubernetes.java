@@ -2066,12 +2066,8 @@ public class Kubernetes implements LoggedTest {
       // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading thread to finish any last remaining output
-      if (out != null) {
-        // need to time out here, otherwise the command can take almost one minute to return.
-        // yet to see if we'll need a different timeout value for different environments.
-        out.join(1200);
-      }
+      // wait for reading thread to finish any remaining output
+      out.join();
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
