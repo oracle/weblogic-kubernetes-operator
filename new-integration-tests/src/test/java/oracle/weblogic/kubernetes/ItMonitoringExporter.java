@@ -349,10 +349,11 @@ class ItMonitoringExporter implements LoggedTest {
             .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(pvHostPath.toString())))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName("pv-test" + nameSuffix)
-            .withNamespace(monitoringNS)
-            .build());
+        .metadata(new V1ObjectMeta()
+            .name("pv-test" + nameSuffix)
+            .namespace(monitoringNS)
+            .putLabelsItem("weblogic.domainUid", domain1Uid));
+
 
     V1PersistentVolume finalV1pv = v1pv;
     boolean success = assertDoesNotThrow(
@@ -370,10 +371,10 @@ class ItMonitoringExporter implements LoggedTest {
             .volumeName("pv-test" + nameSuffix)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("10Gi"))))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName("pvc-" + nameSuffix)
-            .withNamespace(monitoringNS)
-            .build());
+        .metadata(new V1ObjectMeta()
+            .name("pvc-" + nameSuffix)
+            .namespace(monitoringNS)
+            .putLabelsItem("weblogic.domainUid", domain1Uid));
 
 
     V1PersistentVolumeClaim finalV1pvc = v1pvc;
@@ -614,9 +615,10 @@ class ItMonitoringExporter implements LoggedTest {
 
     logger.info("Create service for coordinator in namespace {0}",
         namespace);
-    assertDoesNotThrow(() -> Kubernetes.createService(coordinatorService),
+    boolean success = assertDoesNotThrow(() -> Kubernetes.createService(coordinatorService),
         String.format("Create service failed with ApiException for coordinator in namespace %s",
             namespace));
+    assertTrue(success, "Coordinator service creation failed");
   }
 
   /**
@@ -893,11 +895,15 @@ class ItMonitoringExporter implements LoggedTest {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/wls-exporter",
-            ingressHostList.get(0), K8S_NODEPORT_HOST, nodeportshttp);
+        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
+            ingressHostList.get(0),
+                ADMIN_USERNAME_DEFAULT,
+                ADMIN_PASSWORD_DEFAULT,
+                K8S_NODEPORT_HOST,
+                nodeportshttp);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
-        .as("Verify NGINX can access the sample app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the sample app from one or more of the managed servers")
+        .as("Verify NGINX can access the monitoring exporter metrics from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the monitoring exporter metrics from one or more of the managed servers")
         .isTrue();
   }
 
