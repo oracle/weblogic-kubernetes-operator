@@ -25,6 +25,8 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -219,11 +221,15 @@ public class ItMiiSample implements LoggedTest {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     String dbImageName = (KIND_REPO != null
         ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
+    String jrfBaseImageName = (KIND_REPO != null
+        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     envMap.put("DB_IMAGE_NAME", dbImageName);
     envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
+    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName + ":" + JRF_BASE_IMAGE_TAG);
+
     // run JRF use cases irrespective of WLS use cases fail/pass
     previousTestSuccessful = true;
     execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
