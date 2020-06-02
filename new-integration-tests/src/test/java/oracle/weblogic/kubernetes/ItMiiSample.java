@@ -150,10 +150,10 @@ public class ItMiiSample implements LoggedTest {
    * checked into the mii sample git location.
    */
   @Test
+  @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
   public void testCheckSampleSource() {
-    previousTestSuccessful = true;
     execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
   }
 
@@ -162,10 +162,11 @@ public class ItMiiSample implements LoggedTest {
    * and create secrets, domain resource and verifies the domain is up and running.
    */
   @Test
-  @Order(1)
+  @Order(2)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   public void testInitialUseCase() {
+    previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
     execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
   }
@@ -174,7 +175,7 @@ public class ItMiiSample implements LoggedTest {
    * Test to verify update1 use case works. Add data source to initial domain via configmap.
    */
   @Test
-  @Order(2)
+  @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   public void testUpdate1UseCase() {
@@ -186,7 +187,7 @@ public class ItMiiSample implements LoggedTest {
    * WebLogic domain but with different domain UID and verifies the domain is up and running.
    */
   @Test
-  @Order(3)
+  @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   public void testUpdate2UseCase() {
@@ -198,7 +199,7 @@ public class ItMiiSample implements LoggedTest {
    * domain using an updated Docker image.
    */
   @Test
-  @Order(4)
+  @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testUpdate3UseCase() {
@@ -211,7 +212,7 @@ public class ItMiiSample implements LoggedTest {
    * and create secrets, domain resource and verifies the domain is up and running.
    */
   @Test
-  @Order(5)
+  @Order(6)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
@@ -231,7 +232,7 @@ public class ItMiiSample implements LoggedTest {
    * Test to verify update1 use case works. Add data source to initial domain via configmap.
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   public void testJrfUpdate1UseCase() {
@@ -243,7 +244,7 @@ public class ItMiiSample implements LoggedTest {
    * WebLogic domain but with different domain UID and verifies the domain is up and running.
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   public void testJrfUpdate2UseCase() {
@@ -255,7 +256,7 @@ public class ItMiiSample implements LoggedTest {
    * domain using an updated Docker image.
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
   public void testJrfUpdate3UseCase() {
