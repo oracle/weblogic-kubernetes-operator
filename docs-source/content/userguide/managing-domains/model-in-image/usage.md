@@ -31,7 +31,10 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 Model in Image requires creating a Docker image that has WebLogic Server and WDT installed, plus optionally, your model and application files.
 
-You can start with a WebLogic Server 12.2.1.3 or later pre-built base image obtained from [Docker Hub](https://github.com/oracle/docker-images/tree/master/OracleWebLogic) or similar, manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}) (this is useful if you want your base images to include additional patches), or build a base image using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). For an example of the first approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
+First, obtain a base image:
+
+- You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+- Or you can manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch). 
 
 After you have a base image, Model in Image requires layering the following directory structure for its (optional) WDT model artifacts and (required) WDT binaries:
 
@@ -124,15 +127,15 @@ The following domain resource attributes are specific to Model in Image domains.
 
 ### Always use external state
 
-Regardless of the domain home source type, we recommend that you always keep
-state outside the Docker image. This includes JDBC stores for leasing tables, JMS and transaction stores,
-EJB timers, JMS queues, and so on. This ensures that data will not be lost when
-a container is destroyed.
+Regardless of the domain home source type, we recommend that you always keep state outside the Docker image. This includes cluster database leasing tables, JMS and transaction stores, EJB timers, and so on. This ensures that data will not be lost when a container is destroyed.
 
-We recommend that state be kept in a database to take advantage of built-in
-database server high availability features, and the fact that disaster recovery of sites across all
-but the shortest distances, almost always requires using a single database
-server to consolidate and replicate data (DataGuard).
+We recommend that state be kept in a database to take advantage of built-in database server high availability features, and the fact that disaster recovery of sites across all but the shortest distances, almost always requires using a single database server to consolidate and replicate data (DataGuard).
+
+For more information see:
+- [Tuning JDBC Stores](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/perfm/storetune.html#GUID-F868624F-2898-4330-AF96-FC0EAB3CFE0A) in _Tuning Performance of Oracle WebLogic Server_.
+- [Using a JDBC Store](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/fusion-middleware/weblogic-server/12.2.1.4/perfm&id=STORE-GUID-328FD4C1-91C4-4901-B1C4-97B9D93B2ECE) in _Administering the WebLogic Persistent Store_.
+- [High Availability Best Practices](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad/best_practice.html#GUID-FB97F9A2-E6FA-4C51-B74E-A2A5DDB43B8C) in _Administering JMS Resources for Oracle WebLogic Server_.
+- [Leasing](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad&id=CLUST-GUID-8F7348E2-7C45-4A6B-A72C-D1FB51A8E83F) in _Administering Clusters for Oracle WebLogic Server_.
 
 ### Requirements for JRF domain types
 
