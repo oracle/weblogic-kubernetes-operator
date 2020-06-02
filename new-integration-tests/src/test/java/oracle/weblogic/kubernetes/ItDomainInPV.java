@@ -149,7 +149,7 @@ public class ItDomainInPV implements LoggedTest {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(5) List<String> namespaces) {
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -168,7 +168,7 @@ public class ItDomainInPV implements LoggedTest {
     nginxNamespace = namespaces.get(4);
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
+    installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace, introDomainNamespace);
 
     // get a free node port for NGINX
     nodeportshttp = getNextFreePort(30305, 30405);
