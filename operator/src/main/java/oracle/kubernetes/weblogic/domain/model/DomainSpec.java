@@ -203,7 +203,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "If the domain is running, the operator will restart its introspector job when this value is changed."
-      + "This field is ignored when the domainHomeSourceType source type is FromModel.")
+      + "This field is ignored when the domainHomeSourceType is FromModel. "
+      + "See also overridesConfigurationStrategy.")
   private String introspectVersion;
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")

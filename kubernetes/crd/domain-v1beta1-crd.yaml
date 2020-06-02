@@ -10656,7 +10656,7 @@ spec:
               type: string
               description: If the domain is running, the operator will restart its
                 introspector job when this value is changed.This field is ignored
-                when the domainHomeSourceType source type is FromModel.
+                when the domainHomeSourceType is FromModel. See also overridesConfigurationStrategy.
             dataHome:
               type: string
               description: 'An optional, in-pod location for data storage of default
