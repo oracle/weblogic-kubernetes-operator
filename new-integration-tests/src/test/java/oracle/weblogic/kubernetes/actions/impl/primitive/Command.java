@@ -28,6 +28,8 @@ public class Command {
 
   /**
    * Set up a command with given parameters.
+   * 
+   * @param params instance of {@link CommandParams} that contains parameters to run a command
    * @return a command instance 
    */
   public static Command withParams(CommandParams params) {

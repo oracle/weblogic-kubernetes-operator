@@ -117,6 +117,7 @@ public class TestActions {
    *
    * @param domain Domain custom resource model object
    * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
       throws ApiException {
@@ -198,6 +199,7 @@ public class TestActions {
    * Scale the cluster of the domain in the specified namespace .
    *
    * @param domainUid domainUid of the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param clusterName cluster in the domain to be scaled
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
