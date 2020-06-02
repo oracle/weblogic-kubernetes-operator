@@ -142,7 +142,6 @@ public class TestAssertions {
    * @param containerName name of the container inside the pod where the image is used
    * @param image name of the image that was used to patch the domain resource
    * @return true if the pod is patched correctly
-   * @throws ApiException if Kubernetes client API call fails
    */
   public static Callable<Boolean> podImagePatched(
       String domainUid,
@@ -150,7 +149,7 @@ public class TestAssertions {
       String podName,
       String containerName,
       String image
-  ) throws ApiException {
+  ) {
     return () -> {
       return Kubernetes.podImagePatched(namespace, domainUid, podName, containerName, image);
     };
@@ -431,14 +430,13 @@ public class TestAssertions {
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
    * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
-   * @throws ApiException when query fails
    */
   public static Callable<Boolean> isPodRestarted(
       String podName,
       String domainUid,
       String namespace,
       DateTime timestamp
-  ) throws ApiException {
+  ) {
     return () -> {
       return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
     };

@@ -76,10 +76,9 @@ public class Pod {
    * @param maxUnavailable number of pods that can concurrently restart at the same time
    * @param namespace name of the namespace in which the pod restart status to be checked
    * @return true if given pod is restarted
-   * @throws Exception when more than maxUnavailable pods are restarting concurrently or cluster query fails
    */
   private static Callable<Boolean> podRestarted(String podName, Map<String, DateTime> pods, int maxUnavailable,
-      String namespace) throws Exception {
+      String namespace) {
     return () -> {
       int terminatingPods = 0;
       boolean podRestartStatus = false;
