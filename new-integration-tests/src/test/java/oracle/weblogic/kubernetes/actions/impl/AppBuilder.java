@@ -73,8 +73,8 @@ public class AppBuilder {
     }
 
     // build the app archive
-     String jarPath = String.format("%s.ear", params.appName());
-     boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
+    String jarPath = String.format("%s.ear", params.appName());
+    boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
     
     // build a zip file that can be passed to WIT
     String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());

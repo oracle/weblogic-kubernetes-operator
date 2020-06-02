@@ -666,7 +666,7 @@ public class Kubernetes {
     return status;
   }
 
-  /*
+  /**
    * List persistent volumes in the Kubernetes cluster based on the label.
    *
    * @param labels String containing the labels the PV is decorated with

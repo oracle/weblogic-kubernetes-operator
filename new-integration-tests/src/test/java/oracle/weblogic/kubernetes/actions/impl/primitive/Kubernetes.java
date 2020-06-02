@@ -280,6 +280,14 @@ public class Kubernetes implements LoggedTest {
   }
 
   // ------------------------  deployments -----------------------------------
+
+  /**
+   * Create a deployment.
+   *
+   * @param deployment V1Deployment object containing deployment configuration data
+   * @return true if creation was successful
+   * @throws ApiException when delete fails
+   */
   public static boolean createDeployment(V1Deployment deployment) throws ApiException {
     String namespace = deployment.getMetadata().getNamespace();
     boolean status = false;

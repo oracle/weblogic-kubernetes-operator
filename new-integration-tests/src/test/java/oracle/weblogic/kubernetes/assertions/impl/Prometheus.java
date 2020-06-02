@@ -3,11 +3,7 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
-import java.util.HashMap;
 import java.util.concurrent.Callable;
-
-import io.kubernetes.client.openapi.ApiException;
-
 
 public class Prometheus {
 

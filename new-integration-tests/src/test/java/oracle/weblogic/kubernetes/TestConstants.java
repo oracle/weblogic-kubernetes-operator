@@ -101,7 +101,8 @@ public interface TestConstants {
   public static final String WDT_BASIC_APP_NAME = "sample-app";
 
   //monitoring constants
-  public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_VERSION"))
+  public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv(
+      "MONITORING_EXPORTER_VERSION"))
       .orElse("1.1.2");
   public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
       .orElse("11.1.5");

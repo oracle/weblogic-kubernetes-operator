@@ -12,9 +12,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
@@ -29,7 +34,6 @@ import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
@@ -63,9 +67,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -77,20 +79,47 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.*;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.*;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_EMAIL;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+//import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
+//import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.*;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.*;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyGrafana;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -196,10 +225,6 @@ class ItMonitoringExporter implements LoggedTest {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
     //install monitoring exporter
     installMonitoringExporter();
 
@@ -209,6 +234,10 @@ class ItMonitoringExporter implements LoggedTest {
     // create and verify one cluster domain
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(imageName, domain1Uid);
+
+    // get a free node port for NGINX
+    nodeportshttp = getNextFreePort(30305, 30405);
+    int nodeportshttps = getNextFreePort(30443, 30543);
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
@@ -258,16 +287,16 @@ class ItMonitoringExporter implements LoggedTest {
     promHelmParams = installAndVerifyPrometheus("prometheus",
          monitoringNS,
         targetPromFile.toString(),
-         null,
+         PROMETHEUS_CHART_VERSION,
          nodeportserver,
          nodeportalertmanserver);
     logger.info("Prometheus is running");
 
     int nodeportgrafana = getNextFreePort(31000, 31200);
-    grafanaHelmParams = CommonTestUtils.installAndVerifyGrafana("grafana",
+    grafanaHelmParams = installAndVerifyGrafana("grafana",
         monitoringNS,
         monitoringExporterEndToEndDir + "/grafana/values.yaml",
-        null,
+        GRAFANA_CHART_VERSION,
         nodeportgrafana);
     logger.info("Grafana is running");
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
@@ -354,7 +383,7 @@ class ItMonitoringExporter implements LoggedTest {
             .namespace(monitoringNS)
             .putLabelsItem("weblogic.domainUid", domain1Uid));
 
-
+    /*
     V1PersistentVolume finalV1pv = v1pv;
     boolean success = assertDoesNotThrow(
         () -> createPersistentVolume(finalV1pv),
@@ -362,6 +391,8 @@ class ItMonitoringExporter implements LoggedTest {
             + "look at the above console log messages for failure reason in ApiException responsebody"
     );
     assertTrue(success, "PersistentVolume creation failed");
+
+     */
 
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
@@ -375,8 +406,9 @@ class ItMonitoringExporter implements LoggedTest {
             .name("pvc-" + nameSuffix)
             .namespace(monitoringNS)
             .putLabelsItem("weblogic.domainUid", domain1Uid));
+    createPVPVCAndVerify(v1pv,v1pvc, "weblogic.domainUid=" + domain1Uid, monitoringNS);
 
-
+    /*
     V1PersistentVolumeClaim finalV1pvc = v1pvc;
     success = assertDoesNotThrow(
         () -> createPersistentVolumeClaim(finalV1pvc),
@@ -384,6 +416,8 @@ class ItMonitoringExporter implements LoggedTest {
             + "look at the above console log messages for failure reason in ApiException response body"
     );
     assertTrue(success, "PersistentVolumeClaim creation failed for " + nameSuffix);
+
+    */
   }
 
   /**
@@ -452,10 +486,22 @@ class ItMonitoringExporter implements LoggedTest {
    * @param namespace webhook namespace
    * @param secretName webhook image secret name
    */
-  private static void createWebHook(String image, String imagePullPolicy, String namespace, String secretName) throws ApiException {
+  private static void createWebHook(String image,
+                                    String imagePullPolicy,
+                                    String namespace,
+                                    String secretName) throws ApiException {
     Map labels = new HashMap<String, String>();
     labels.put("app", "webhook");
+    V1Deployment deployment = new V1Deployment();
+    deployment
+            .apiVersion("apps/v1")
+            .kind("Deployment")
+            .metadata(deploymentMetadata)
+            .spec(deploymentSpec);
+
     webhookDepl = new V1Deployment()
+        .apiVersion("apps/v1")
+        .kind("Deployment")
         .metadata(new V1ObjectMeta()
             .name("webhook")
             .namespace(namespace)
@@ -561,10 +607,15 @@ class ItMonitoringExporter implements LoggedTest {
    * @param namespace coordinator namespace
    * @param secretName coordinator secret name
    */
-  private static void createCoordinator(String image, String imagePullPolicy, String namespace, String secretName) throws ApiException {
+  private static void createCoordinator(String image,
+                                        String imagePullPolicy,
+                                        String namespace,
+                                        String secretName) throws ApiException {
     Map labels = new HashMap<String, String>();
     labels.put("app", "coordinator");
     coordinatorDepl = new V1Deployment()
+        .apiVersion("apps/v1")
+        .kind("Deployment")
         .metadata(new V1ObjectMeta()
             .name("coordinator")
             .namespace(namespace)
@@ -742,7 +793,10 @@ class ItMonitoringExporter implements LoggedTest {
             .command(command))
         .execute(),"Failed to build monitoring exporter webapp");
     String appDest = monitoringExporterAppDir;
-    command = String.format("cd %s && %s  %s/exporter/rest_webapp.yml", appDest, monitoringExporterBuildFile, RESOURCE_DIR);
+    command = String.format("cd %s && %s  %s/exporter/rest_webapp.yml",
+            appDest,
+            monitoringExporterBuildFile,
+            RESOURCE_DIR);
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command(command))
@@ -946,8 +1000,7 @@ class ItMonitoringExporter implements LoggedTest {
    * @param searchKey expected response from the command
    * @return true if the command succeeds
    */
-  public static boolean execCommandCheckResponse (String cmd, String searchKey)
-  {
+  public static boolean execCommandCheckResponse(String cmd, String searchKey) {
     CommandParams params = Command
         .defaultCommandParams()
         .command(cmd)

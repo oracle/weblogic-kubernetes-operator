@@ -4,10 +4,6 @@
 package oracle.weblogic.kubernetes.actions;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 
@@ -25,16 +21,44 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
-import oracle.weblogic.kubernetes.actions.impl.*;
-import oracle.weblogic.kubernetes.actions.impl.primitive.*;
+import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
+import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
+import oracle.weblogic.kubernetes.actions.impl.Domain;
+import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.Grafana;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.Job;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
+import oracle.weblogic.kubernetes.actions.impl.Nginx;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
+import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
+import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
+import oracle.weblogic.kubernetes.actions.impl.Pod;
+import oracle.weblogic.kubernetes.actions.impl.Prometheus;
+import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
+import oracle.weblogic.kubernetes.actions.impl.Secret;
+import oracle.weblogic.kubernetes.actions.impl.Service;
+import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
-import static oracle.weblogic.kubernetes.actions.ActionConstants.*;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-import static oracle.weblogic.kubernetes.utils.FileUtils.*;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -560,7 +584,7 @@ public class TestActions {
    * @return true if the operation succeeds
    */
   public static boolean archiveApp(
-    String srcFile) {
+      String srcFile) {
 
     String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
     String fileExtension = srcFile.substring(srcFile.lastIndexOf(".") + 1, srcFile.length());
@@ -569,10 +593,10 @@ public class TestActions {
       cleanupDirectory(appDir);
       checkDirectory(appDir);
       logger.info("copy {0]} to {1} ", srcFile, appDir);
-      Files.copy(Paths.get(srcFile), Paths.get(appDir,
+      java.nio.file.Files.copy(java.nio.file.Paths.get(srcFile), java.nio.file.Paths.get(appDir,
           appName + "."
               + fileExtension),
-          StandardCopyOption.REPLACE_EXISTING);
+          java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
     } catch (IOException ioe) {
       logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
@@ -587,7 +611,7 @@ public class TestActions {
         fileExtension
         );
 
-    return Command.withParams(
+    return oracle.weblogic.kubernetes.actions.impl.primitive.Command.withParams(
         defaultCommandParams()
             .command(cmd)
             .redirect(false))
@@ -878,7 +902,7 @@ public class TestActions {
    */
 
   public static boolean uninstallPrometheus(HelmParams params) {
-    return Prometheus.uninstall(params);
+    return uninstall(params);
   }
 
   // --------------------------- Grafana ---------------------------------
