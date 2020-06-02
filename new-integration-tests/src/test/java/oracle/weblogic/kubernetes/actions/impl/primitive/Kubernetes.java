@@ -2064,9 +2064,7 @@ public class Kubernetes implements LoggedTest {
       proc.waitFor();
 
       // wait for reading thread to finish any remaining output
-      if (out != null) {
-        out.join();
-      }
+      out.join();
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());
