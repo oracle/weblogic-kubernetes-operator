@@ -71,6 +71,7 @@ public class FileUtils {
    * Remove the contents of the given directory.
    *
    * @param dir the directory to be cleaned up
+   * @throws IOException if the operation fails
    */
   public static void cleanupDirectory(String dir) throws IOException {
     File file = new File(dir);
