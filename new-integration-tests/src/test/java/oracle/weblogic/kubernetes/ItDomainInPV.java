@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -92,6 +93,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -140,6 +142,7 @@ public class ItDomainInPV implements LoggedTest {
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
+  static HashMap<String, String> labels = new HashMap<>();
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -669,6 +672,7 @@ public class ItDomainInPV implements LoggedTest {
         .metadata(new V1ObjectMeta()
             .name(domainUid)
             .namespace(introDomainNamespace))
+
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
@@ -749,27 +753,41 @@ public class ItDomainInPV implements LoggedTest {
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
-    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "change-server-count.py");
-
-    WLSTUtils.executeWLSTScript(ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        "t3://" + K8S_NODEPORT_HOST + ":" + t3ChannelPort, configScript, introDomainNamespace);
-
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, introDomainNamespace));
     logger.info(dump(domain1));
 
+    String t3url = "t3://" + K8S_NODEPORT_HOST + ":" + t3ChannelPort;
+
+    // create a temporary WebLogic WLST property file
+    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+        "Creating WLST properties file failed");
+    Properties p1 = new Properties();
+    p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p1.setProperty("t3url", t3url);
+
+    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+        "Failed to write the WLST properties to file");
+
+    // change the server count of the cluster
+    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "change-server-count.py");
+    WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
-        .append("\"path\": \"/spec/serverPod/resources/limits/cpu\", ")
+        .append("\"path\": \"/spec/introspectVersion\", ")
         .append("\"value\": \"")
-        .append("")
-        .append("\"}, {")
-        .append("\"op\": \"add\", ")
-        .append("\"path\": \"/spec/serverPod/resources/requests/cpu\", ")
-        .append("\"value\": \"")
-        .append("")
+        .append("2.0")
         .append("\"}]");
+
+    logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, introDomainNamespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
   /**

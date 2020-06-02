@@ -3,12 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -55,7 +52,7 @@ public class WLSTUtils {
   private static boolean isUseSecret;
   private static final String MOUNT_POINT = "/scripts/";
   private static String wlstScriptFileName;
-  private static final String WLST_PROPERTIES = "wlst.properties";
+  private static String wlstPropertiesFile;
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
@@ -65,36 +62,24 @@ public class WLSTUtils {
   /**
    * Execute WLST script.
    *
-   * @param username username for admin server
-   * @param password password for admin server
-   * @param t3url t3 url of the admin server
+
    * @param wlstScript WLST script path
+   * @param domainProperties domain property file
    * @param namespace namespace in which to run the job
    */
-  public static void executeWLSTScript(String username,
-      String password, String t3url, Path wlstScript, String namespace) {
+  public static void executeWLSTScript(Path wlstScript, Path domainProperties, String namespace) {
 
     setImage(namespace);
 
-    //setImage(namespace);
     wlstScriptFileName = wlstScript.getFileName().toString();
+    wlstPropertiesFile = domainProperties.getFileName().toString();
 
-    // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-    Properties p = new Properties();
-    p.setProperty("admin_username", username);
-    p.setProperty("admin_password", password);
-    p.setProperty("t3url", t3url);
-    p.setProperty("wlst_script_path", MOUNT_POINT + wlstScriptFileName);
-
-    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
 
     logger.info("Creating a config map to hold wlst script files");
     String wlstScriptConfigMapName = "wlst-scripts-cm";
 
-    CommonTestUtils.createConfigMapFromFiles(wlstScriptConfigMapName, Arrays.asList(wlstScript), namespace);
+    CommonTestUtils.createConfigMapFromFiles(wlstScriptConfigMapName,
+        Arrays.asList(wlstScript, domainProperties), namespace);
 
     // deploy application with deploy scripts and domain properties on persistent volume
     invokeWLST(namespace, wlstScriptConfigMapName);
@@ -115,7 +100,7 @@ public class WLSTUtils {
         .addArgsItem(MOUNT_POINT + "/" + wlstScriptFileName) //wlst deploy py script
         .addArgsItem("-skipWLSModuleScanning")
         .addArgsItem("-loadProperties")
-        .addArgsItem(MOUNT_POINT + "/" + WLST_PROPERTIES); //domain property file
+        .addArgsItem(MOUNT_POINT + "/" + wlstPropertiesFile); //domain property file
 
     logger.info("Running a Kubernetes job to execute WLST script");
     assertDoesNotThrow(()
