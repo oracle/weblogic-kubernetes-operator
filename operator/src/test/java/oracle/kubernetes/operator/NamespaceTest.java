@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.util.function.Function.identity;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static org.hamcrest.Matchers.not;
@@ -48,7 +49,7 @@ public class NamespaceTest {
     mementos.add(StaticStubSupport.preserve(Main.class, "namespaceStatuses"));
     mementos.add(StaticStubSupport.preserve(Main.class, "isNamespaceStopping"));
     mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
-
+    mementos.add(TuningParametersStub.install(120));
     AtomicBoolean stopping = new AtomicBoolean(true);
     JobWatcher.defineFactory(r -> createDaemonThread(), tuning, ns -> stopping);
   }
@@ -102,5 +103,24 @@ public class NamespaceTest {
   private Map<String, AtomicBoolean> createNamespaceFlags() {
     return currentNamespaces.stream()
         .collect(Collectors.toMap(identity(), a -> new AtomicBoolean()));
+  }
+
+  abstract static class TuningParametersStub implements TuningParameters {
+
+    int domainPresenceRecheckIntervalSeconds;
+
+    public static Memento install(int newValue) throws NoSuchFieldException {
+      return StaticStubSupport.install(
+        TuningParametersImpl.class, "INSTANCE", createStrictStub(TuningParametersStub.class, newValue));
+    }
+
+    TuningParametersStub(int domainPresenceRecheckIntervalSeconds) {
+      this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
+    }
+
+    @Override
+    public MainTuning getMainTuning() {
+      return new MainTuning(2, 2, domainPresenceRecheckIntervalSeconds, 2, 2, 2, 2L, 2L);
+    }
   }
 }
