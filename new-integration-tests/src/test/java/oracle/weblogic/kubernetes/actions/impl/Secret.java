@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 public class Secret {
@@ -29,5 +30,15 @@ public class Secret {
    */
   public static boolean delete(String name, String namespace) {
     return Kubernetes.deleteSecret(name, namespace);
+  }
+
+  /**
+   * List secrets in the Kubernetes cluster.
+   *
+   * @param namespace Namespace in which to query
+   * @return V1SecretList of secrets in the Kubernetes cluster
+   */
+  public static V1SecretList listSecrets(String namespace) {
+    return Kubernetes.listSecrets(namespace);
   }
 }
