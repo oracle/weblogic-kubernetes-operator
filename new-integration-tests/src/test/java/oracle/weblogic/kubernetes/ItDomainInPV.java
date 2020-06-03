@@ -672,7 +672,6 @@ public class ItDomainInPV implements LoggedTest {
         .metadata(new V1ObjectMeta()
             .name(domainUid)
             .namespace(introDomainNamespace))
-
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
@@ -779,15 +778,14 @@ public class ItDomainInPV implements LoggedTest {
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/introspectVersion\", ")
-        .append("\"value\": 2")
-        .append("}]");
+        .append("\"value\": \"2")
+        .append("\"}]");
     logger.info("Patch String \n{0}", patchStr);
 
-    logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
+    logger.info("Adding introspectVersion for domain {0} in namespace {1} using patch string: {2}",
         domainUid, introDomainNamespace, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
-
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
