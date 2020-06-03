@@ -314,6 +314,9 @@ public class DomainStatus {
   private ServerStatus adjust(ServerStatus server) {
     if (server.getState() == null) {
       ServerStatus oldServer = getMatchingServer(server);
+      if ((oldServer != null) && (oldServer.getHealth() == null)) {
+        return server;
+      }
       server.setState(oldServer == null ? SHUTDOWN_STATE : oldServer.getState());
     }
     return server;
