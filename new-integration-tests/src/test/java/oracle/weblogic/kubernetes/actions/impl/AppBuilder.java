@@ -68,10 +68,12 @@ public class AppBuilder {
       logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
+
     // make sure that we always have an app name
     if (params.appName() == null) {
       params.appName(params.srcDirList().get(0));
     }
+    
     // build the app archive
     String jarPath = String.format("%s.ear", params.appName());
     boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
