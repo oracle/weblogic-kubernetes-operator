@@ -124,7 +124,7 @@ public abstract class PodHelperTestBase {
   static final String NS = "namespace";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
-  private static final String DOMAIN_NAME = "domain1";
+  protected static final String DOMAIN_NAME = "domain1";
   protected static final String UID = "uid1";
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
