@@ -10,9 +10,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
+import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
+import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -906,6 +912,91 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
   }
 
+  @Test
+  public void whenClusterHasAffinityWithVariables_createManagedPodWithSubstitutions() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAffinity(
+            new V1Affinity().podAntiAffinity(
+                new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+                    Collections.singletonList(new V1WeightedPodAffinityTerm().weight(100).podAffinityTerm(
+                        new V1PodAffinityTerm().labelSelector(
+                            new V1LabelSelector().matchExpressions(
+                                Collections.singletonList(new V1LabelSelectorRequirement()
+                                    .key("weblogic.clusterName")
+                                    .operator("In")
+                                    .addValuesItem("$(CLUSTER_NAME)"))))
+                            .topologyKey("kubernetes.io/hostname"))))));
+
+    V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
+        new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+            Collections.singletonList(new V1WeightedPodAffinityTerm().weight(100).podAffinityTerm(
+                new V1PodAffinityTerm().labelSelector(
+                    new V1LabelSelector().matchExpressions(
+                        Collections.singletonList(new V1LabelSelectorRequirement()
+                            .key("weblogic.clusterName")
+                            .operator("In")
+                            .addValuesItem(CLUSTER_NAME))))
+                    .topologyKey("kubernetes.io/hostname")))));
+
+    assertThat(
+        getCreatedPod().getSpec().getAffinity(),
+        is(expectedValue));
+  }
+
+  @Test
+  public void whenDomainAndClusterBothHaveAffinityWithVariables_createManagedPodWithSubstitutions() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .withAffinity(
+            new V1Affinity().podAntiAffinity(
+                new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+                    Collections.singletonList(new V1WeightedPodAffinityTerm().weight(100).podAffinityTerm(
+                        new V1PodAffinityTerm().labelSelector(
+                            new V1LabelSelector().matchExpressions(
+                                Collections.singletonList(new V1LabelSelectorRequirement()
+                                    .key("weblogic.domainUID")
+                                    .operator("In")
+                                    .addValuesItem("$(DOMAIN_UID)"))))
+                            .topologyKey("kubernetes.io/hostname"))))))
+        .configureCluster(CLUSTER_NAME)
+        .withAffinity(
+            new V1Affinity().podAntiAffinity(
+                new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+                    Collections.singletonList(new V1WeightedPodAffinityTerm().weight(100).podAffinityTerm(
+                        new V1PodAffinityTerm().labelSelector(
+                            new V1LabelSelector().matchExpressions(
+                                Collections.singletonList(new V1LabelSelectorRequirement()
+                                    .key("weblogic.clusterName")
+                                    .operator("In")
+                                    .addValuesItem("$(CLUSTER_NAME)"))))
+                            .topologyKey("kubernetes.io/hostname"))))));
+
+    V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
+        new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
+            Arrays.asList(
+                new V1WeightedPodAffinityTerm().weight(100).podAffinityTerm(
+                    new V1PodAffinityTerm().labelSelector(
+                        new V1LabelSelector().matchExpressions(
+                            Collections.singletonList(new V1LabelSelectorRequirement()
+                                .key("weblogic.clusterName")
+                                .operator("In")
+                                .addValuesItem(CLUSTER_NAME))))
+                        .topologyKey("kubernetes.io/hostname")),
+                new V1WeightedPodAffinityTerm().weight(100).podAffinityTerm(
+                  new V1PodAffinityTerm().labelSelector(
+                    new V1LabelSelector().matchExpressions(
+                        Collections.singletonList(new V1LabelSelectorRequirement()
+                            .key("weblogic.domainUID")
+                            .operator("In")
+                            .addValuesItem(UID))))
+                    .topologyKey("kubernetes.io/hostname")))));
+
+    assertThat(
+        getCreatedPod().getSpec().getAffinity(),
+        is(expectedValue));
+  }
 
   @Override
   void setServerPort(int port) {
