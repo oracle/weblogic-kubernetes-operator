@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
@@ -116,6 +117,7 @@ public class TestActions {
    *
    * @param domain Domain custom resource model object
    * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
       throws ApiException {
@@ -166,7 +168,7 @@ public class TestActions {
   public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
-  
+
   /**
    * Delete a Domain Custom Resource.
    *
@@ -197,6 +199,7 @@ public class TestActions {
    * Scale the cluster of the domain in the specified namespace .
    *
    * @param domainUid domainUid of the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param clusterName cluster in the domain to be scaled
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
@@ -406,6 +409,16 @@ public class TestActions {
    */
   public static boolean deleteSecret(String name, String namespace) {
     return Secret.delete(name, namespace);
+  }
+
+  /**
+   * List secrets in the Kubernetes cluster.
+   *
+   * @param namespace Namespace in which to query
+   * @return V1SecretList of secrets in the Kubernetes cluster
+   */
+  public static V1SecretList listSecrets(String namespace) {
+    return Secret.listSecrets(namespace);
   }
 
   // -------------------------- config map ---------------------------------
