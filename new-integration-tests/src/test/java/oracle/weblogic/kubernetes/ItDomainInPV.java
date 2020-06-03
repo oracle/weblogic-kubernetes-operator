@@ -780,7 +780,8 @@ public class ItDomainInPV implements LoggedTest {
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/introspectVersion\", ")
         .append("\"value\": 2")
-        .append("\"}]");
+        .append("}]");
+    logger.info("Patch String \n{0}", patchStr);
 
     logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
         domainUid, introDomainNamespace, patchStr.toString());
