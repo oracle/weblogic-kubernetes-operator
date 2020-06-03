@@ -758,20 +758,17 @@ public class ItDomainInPV implements LoggedTest {
             domainUid, introDomainNamespace));
     logger.info(dump(domain1));
 
-    String t3url = "t3://" + K8S_NODEPORT_HOST + ":" + t3ChannelPort;
-
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p1 = new Properties();
+
     p1.setProperty("admin_host", K8S_NODEPORT_HOST);
     p1.setProperty("admin_port", Integer.toString(t3ChannelPort));
     p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-
-    p1.setProperty("t3url", t3url);
-
-    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+    
+    assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
     // change the server count of the cluster
