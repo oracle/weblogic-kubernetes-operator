@@ -69,6 +69,8 @@ public class Installer {
 
   /**
    * Set up the installer with given parameters.
+   * 
+   * @param params instance of {@link InstallParams} that contains parameters to download and install a tool
    * @return an installer instance 
    */
   public static Installer withParams(InstallParams params) {

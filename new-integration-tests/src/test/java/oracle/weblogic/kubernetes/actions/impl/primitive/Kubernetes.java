@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
@@ -61,6 +62,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicaSetList;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleBindingList;
 import io.kubernetes.client.openapi.models.V1RoleList;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -2089,12 +2092,8 @@ public class Kubernetes implements LoggedTest {
       // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading thread to finish any last remaining output
-      if (out != null) {
-        // need to time out here, otherwise the command can take almost one minute to return.
-        // yet to see if we'll need a different timeout value for different environments.
-        out.join(1200);
-      }
+      // wait for reading thread to finish any remaining output
+      out.join();
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());

@@ -10,6 +10,8 @@ public interface ActionConstants {
   // Work directory for the integration test suite
   public static final String WORK_DIR
       = System.getProperty("java.io.tmpdir") + "/it-results";
+  // Integration tests directory
+  public static final String ITTESTS_DIR = System.getProperty("user.dir");
   // Directory for resources
   public static final String RESOURCE_DIR
       = System.getProperty("user.dir") + "/src/test/resources";
