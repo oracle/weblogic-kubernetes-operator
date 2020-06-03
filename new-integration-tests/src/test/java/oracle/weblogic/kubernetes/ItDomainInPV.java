@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -55,6 +56,7 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
@@ -62,6 +64,7 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.WLSTUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -107,6 +110,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
@@ -795,12 +799,28 @@ public class ItDomainInPV implements LoggedTest {
     String introspectPodName = domainUid + "-" + "introspect-domain-job";
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    try {
+      TimeUnit.MINUTES.sleep(2);
+    } catch (InterruptedException ex) {
+      //
+    }
     Domain patchedDomain = assertDoesNotThrow(
         () -> TestActions.getDomainCustomResource(domainUid, introDomainNamespace));
     assertEquals(6, patchedDomain.getStatus().getClusters().get(0).getMaximumReplicas(),
         "Cluster maximumReplicas is not equal to 6");
     assertEquals(2, patchedDomain.getStatus().getClusters().get(0).getMinimumReplicas(),
         "Cluster minimumReplicas is not equal to 2");
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    }
+
 
     p1.setProperty("test_name", "change_admin_port");
     p1.setProperty("new_admin_port", Integer.toString(7005));
@@ -821,6 +841,12 @@ public class ItDomainInPV implements LoggedTest {
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    TestAssertions.verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+    try {
+      TimeUnit.MINUTES.sleep(2);
+    } catch (InterruptedException ex) {
+      //
+    }
 
     patchedDomain = assertDoesNotThrow(
         () -> TestActions.getDomainCustomResource(domainUid, introDomainNamespace));
