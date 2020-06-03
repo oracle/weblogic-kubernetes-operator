@@ -113,11 +113,13 @@ function testapp() {
 
     fi
 
-    target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).testapp.curl.$1.out
+    target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0}).$(timestamp).testapp.curl.$1.out
 
     echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
 
+    set +e
     bash -c "$command" > $target_file 2>&1
+    set -e
 
     # use "cat & sed" instead of "grep" as grep exits with an error when it doesn't find anything
 
@@ -198,7 +200,7 @@ function doCommand() {
   fi
 
   # COMMAND_OUTFILE_COUNT is also used by other functions in this file
-  COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:=0}
+  COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:-0}
   COMMAND_OUTFILE_COUNT=$((COMMAND_OUTFILE_COUNT + 1))
 
   mkdir -p $WORKDIR/test-out
