@@ -779,8 +779,7 @@ public class ItDomainInPV implements LoggedTest {
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/introspectVersion\", ")
-        .append("\"value\": \"")
-        .append("2.0")
+        .append("\"value\": 2")
         .append("\"}]");
 
     logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
