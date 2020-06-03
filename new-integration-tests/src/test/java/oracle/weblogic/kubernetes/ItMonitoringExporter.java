@@ -77,6 +77,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Paths.get;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -122,6 +124,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -362,12 +365,14 @@ class ItMonitoringExporter implements LoggedTest {
    */
   private void createPvAndPvc(String nameSuffix) throws IOException {
     logger.info("creating persistent volume and persistent volume claim");
-
-    Path pvHostPath = Files.createDirectories(Paths.get(
-        PV_ROOT, this.getClass().getSimpleName(), "test" + nameSuffix));
+    // create persistent volume and persistent volume claims
+    Path pvHostPath = assertDoesNotThrow(
+        () -> createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), "monexp" + "-persistentVolume")),
+            "createDirectories failed with IOException");
     logger.info("Creating PV directory {0}", pvHostPath);
-    FileUtils.deleteDirectory(pvHostPath.toFile());
-    Files.createDirectories(pvHostPath);
+    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
+
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
@@ -383,17 +388,6 @@ class ItMonitoringExporter implements LoggedTest {
             .namespace(monitoringNS)
             .putLabelsItem("weblogic.domainUid", domain1Uid));
 
-    /*
-    V1PersistentVolume finalV1pv = v1pv;
-    boolean success = assertDoesNotThrow(
-        () -> createPersistentVolume(finalV1pv),
-        "Persistent volume creation failed, "
-            + "look at the above console log messages for failure reason in ApiException responsebody"
-    );
-    assertTrue(success, "PersistentVolume creation failed");
-
-     */
-
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
@@ -407,17 +401,6 @@ class ItMonitoringExporter implements LoggedTest {
             .namespace(monitoringNS)
             .putLabelsItem("weblogic.domainUid", domain1Uid));
     createPVPVCAndVerify(v1pv,v1pvc, "weblogic.domainUid=" + domain1Uid, monitoringNS);
-
-    /*
-    V1PersistentVolumeClaim finalV1pvc = v1pvc;
-    success = assertDoesNotThrow(
-        () -> createPersistentVolumeClaim(finalV1pvc),
-        "Persistent volume claim creation failed for " + nameSuffix
-            + "look at the above console log messages for failure reason in ApiException response body"
-    );
-    assertTrue(success, "PersistentVolumeClaim creation failed for " + nameSuffix);
-
-    */
   }
 
   /**
@@ -578,9 +561,9 @@ class ItMonitoringExporter implements LoggedTest {
           serviceName, namespace);
     }
     try {
-      if (webhookDepl != null) {
-        deploymentName = webhookDepl.getMetadata().getName();
-        namespace = webhookDepl.getMetadata().getNamespace();
+      if (deployment != null) {
+        deploymentName = deployment.getMetadata().getName();
+        namespace = deployment.getMetadata().getNamespace();
         Kubernetes.deleteDeployment(namespace, deploymentName);
       }
     } catch (Exception ex) {
@@ -801,16 +784,18 @@ class ItMonitoringExporter implements LoggedTest {
   }
 
   private static void uninstallMonitoringExporter() {
-    logger.info("create a staging location for monitoring exporter github");
+    logger.info("delete temp dir for monitoring exporter github");
     Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringTemp.toFile()));
+    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringApp.toFile()));
     Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "promCreateTempValueFile");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()));
   }
 
   private static String createAndVerifyDomainImage() {
     // create image with model files
-    logger.info("Create image with model file and verify");
+    logger.info("Create image with model file with monitoring exporter app and verify");
     String appPath = String.format("%s/wls-exporter.war", monitoringExporterAppDir);
     String miiImage =
         createMiiImageAndVerify(MONEXP_IMAGE_NAME, MONEXP_MODEL_FILE, appPath);
@@ -993,7 +978,7 @@ class ItMonitoringExporter implements LoggedTest {
   /**
    * Check output of the command against expected output.
    *
-   * @param cmd Kubernetes namespace where the WebLogic server pod is running
+   * @param cmd command
    * @param searchKey expected response from the command
    * @return true if the command succeeds
    */
@@ -1008,10 +993,10 @@ class ItMonitoringExporter implements LoggedTest {
   }
 
   /**
-   * Check if a Kubernetes pod exists in any state in the given namespace.
+   * Check if executed command contains expected output.
    *
-   * @param cmd   name of the pod to check for
-   * @param searchKey UID of WebLogic domain in which the pod exists
+   * @param cmd   command to execute
+   * @param searchKey expected output
    * @return true if the output matches searchKey otherwise false
    */
   private static Callable<Boolean> searchForKey(String cmd, String searchKey) {
