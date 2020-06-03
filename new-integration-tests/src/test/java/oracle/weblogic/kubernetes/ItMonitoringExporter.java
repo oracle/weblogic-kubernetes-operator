@@ -731,7 +731,7 @@ class ItMonitoringExporter implements LoggedTest {
         REPO_REGISTRY, secretName, namespace);
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(image);
-    
+
     return image;
   }
 
