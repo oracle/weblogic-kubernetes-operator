@@ -270,25 +270,15 @@ class ServerPod extends KubernetesResource {
 
   private void copyValues(V1Capabilities to, V1Capabilities from) {
     if (from.getAdd() != null) {
-      List<String> allAddCapabilities = new ArrayList<>();
-      if (to.getAdd() != null) {
-        allAddCapabilities =
-            Stream.concat(to.getAdd().stream(), from.getAdd().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setAdd(allAddCapabilities);
+      Stream<String> stream = (to.getAdd() != null)
+          ? Stream.concat(to.getAdd().stream(), from.getAdd().stream()) : from.getAdd().stream();
+      to.setAdd(stream.distinct().collect(Collectors.toList()));
     }
 
     if (from.getDrop() != null) {
-      List<String> allDropCapabilities = new ArrayList<>();
-      if (to.getDrop() != null) {
-        allDropCapabilities =
-            Stream.concat(to.getDrop().stream(), from.getDrop().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setDrop(allDropCapabilities);
+      Stream<String> stream = (to.getDrop() != null)
+          ? Stream.concat(to.getDrop().stream(), from.getDrop().stream()) : from.getDrop().stream();
+      to.setDrop(stream.distinct().collect(Collectors.toList()));
     }
   }
 
@@ -312,15 +302,11 @@ class ServerPod extends KubernetesResource {
 
   private void copyValues(V1NodeAffinity to, V1NodeAffinity from) {
     if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      List<V1PreferredSchedulingTerm> preferredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
-      if (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-        preferredDuringSchedulingIgnoredDuringExecution =
-            Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
-                from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution);
+      Stream<V1PreferredSchedulingTerm> stream = (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null)
+          ? Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
+          from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
+          : from.getPreferredDuringSchedulingIgnoredDuringExecution().stream();
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
     }
 
     if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
@@ -333,67 +319,47 @@ class ServerPod extends KubernetesResource {
 
   private void copyValues(V1NodeSelector to, V1NodeSelector from) {
     if (from.getNodeSelectorTerms() != null) {
-      List<V1NodeSelectorTerm> nodeSelectorTerms = new ArrayList<>();
-      if (to.getNodeSelectorTerms() != null) {
-        nodeSelectorTerms =
-            Stream.concat(to.getNodeSelectorTerms().stream(),
-                from.getNodeSelectorTerms().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setNodeSelectorTerms(nodeSelectorTerms);
+      Stream<V1NodeSelectorTerm> stream = (to.getNodeSelectorTerms() != null)
+          ? Stream.concat(to.getNodeSelectorTerms().stream(),
+          from.getNodeSelectorTerms().stream())
+          : from.getNodeSelectorTerms().stream();
+      to.setNodeSelectorTerms(stream.distinct().collect(Collectors.toList()));
     }
   }
 
   private void copyValues(V1PodAffinity to, V1PodAffinity from) {
     if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      List<V1WeightedPodAffinityTerm> preferredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
-      if (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-        preferredDuringSchedulingIgnoredDuringExecution =
-            Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
-                from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution);
+      Stream<V1WeightedPodAffinityTerm> stream = (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null)
+          ? Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
+          from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
+          : from.getPreferredDuringSchedulingIgnoredDuringExecution().stream();
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
     }
 
     if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-      List<V1PodAffinityTerm> requiredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
-      if (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-        requiredDuringSchedulingIgnoredDuringExecution =
-            Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
-                from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setRequiredDuringSchedulingIgnoredDuringExecution(requiredDuringSchedulingIgnoredDuringExecution);
+      Stream<V1PodAffinityTerm> stream = (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null)
+          ? Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
+          from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
+          : from.getRequiredDuringSchedulingIgnoredDuringExecution().stream();
+      to.setRequiredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
     }
   }
 
   private void copyValues(V1PodAntiAffinity to, V1PodAntiAffinity from) {
     if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-      List<V1WeightedPodAffinityTerm> preferredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
-      if (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-        preferredDuringSchedulingIgnoredDuringExecution =
-            Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
-                from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setPreferredDuringSchedulingIgnoredDuringExecution(preferredDuringSchedulingIgnoredDuringExecution);
+      Stream<V1WeightedPodAffinityTerm> stream = (to.getPreferredDuringSchedulingIgnoredDuringExecution() != null)
+          ? Stream.concat(to.getPreferredDuringSchedulingIgnoredDuringExecution().stream(),
+          from.getPreferredDuringSchedulingIgnoredDuringExecution().stream())
+          : from.getPreferredDuringSchedulingIgnoredDuringExecution().stream();
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
     }
 
     if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-      List<V1PodAffinityTerm> requiredDuringSchedulingIgnoredDuringExecution = new ArrayList<>();
-      if (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
-        requiredDuringSchedulingIgnoredDuringExecution =
-            Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
-                from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
-                .distinct()
-                .collect(Collectors.toList());
-      }
-      to.setRequiredDuringSchedulingIgnoredDuringExecution(requiredDuringSchedulingIgnoredDuringExecution);
+      Stream<V1PodAffinityTerm> stream = (to.getRequiredDuringSchedulingIgnoredDuringExecution() != null)
+          ? Stream.concat(to.getRequiredDuringSchedulingIgnoredDuringExecution().stream(),
+          from.getRequiredDuringSchedulingIgnoredDuringExecution().stream())
+          : from.getRequiredDuringSchedulingIgnoredDuringExecution().stream();
+      to.setRequiredDuringSchedulingIgnoredDuringExecution(stream.distinct().collect(Collectors.toList()));
     }
   }
 
