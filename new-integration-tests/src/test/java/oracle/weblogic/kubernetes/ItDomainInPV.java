@@ -767,7 +767,8 @@ public class ItDomainInPV implements LoggedTest {
     p1.setProperty("admin_port", Integer.toString(t3ChannelPort));
     p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    
+    p1.setProperty("cluster_name", clusterName);
+
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 

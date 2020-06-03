@@ -13,6 +13,7 @@ def change_server_count():
     cmo.setMinDynamicClusterSize(2)
     save()
     activate()
+    disconnect()
   except NameError, e:
     print('Apparently properties not set.')
     print('Please check the property: ', sys.exc_info()[0], sys.exc_info()[1])
