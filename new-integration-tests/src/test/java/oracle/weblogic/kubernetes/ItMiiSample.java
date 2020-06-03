@@ -289,6 +289,7 @@ public class ItMiiSample implements LoggedTest {
   public void tearDownAll() {
     // db cleanup or deletion
     if (envMap != null) {
+      logger.info("Running samples DB cleanup");
       Command.withParams(new CommandParams()
           .command(MII_SAMPLES_SCRIPT + " -precleandb")
           .env(envMap)
@@ -297,6 +298,7 @@ public class ItMiiSample implements LoggedTest {
 
     // uninstall traefik
     if (traefikNamespace != null) {
+      logger.info("Uninstall traefik");
       Command.withParams(new CommandParams()
           .command("helm uninstall traefik-operator -n " + traefikNamespace)
           .redirect(true)).execute();
