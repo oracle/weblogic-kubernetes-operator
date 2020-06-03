@@ -465,7 +465,7 @@ public class TestAssertions {
   /**
    * Check if Grafana is running.
    *
-   * @param namespace in which is prometheus is running
+   * @param namespace in which is grafana is running
    * @return true if running false otherwise
    */
   public static Callable<Boolean> grafanaIsReady(String namespace) {

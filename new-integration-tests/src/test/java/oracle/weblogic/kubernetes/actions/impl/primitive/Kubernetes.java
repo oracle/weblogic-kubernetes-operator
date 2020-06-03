@@ -298,7 +298,7 @@ public class Kubernetes implements LoggedTest {
       AppsV1Api apiInstance = new AppsV1Api(apiClient);
       V1Deployment createdDeployment = apiInstance.createNamespacedDeployment(
           namespace, // String | namespace in which to create job
-          deployment, // V1Job | body of the V1Job containing job data
+          deployment, // V1Deployment | body of the V1Deployment containing deployment data
           PRETTY, // String | pretty print output.
           null, // String | dry run or permanent change
           null // String | field manager who is making the change

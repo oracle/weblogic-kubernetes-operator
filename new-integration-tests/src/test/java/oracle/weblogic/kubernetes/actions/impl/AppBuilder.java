@@ -73,7 +73,7 @@ public class AppBuilder {
     if (params.appName() == null) {
       params.appName(params.srcDirList().get(0));
     }
-    
+
     // build the app archive
     String jarPath = String.format("%s.ear", params.appName());
     boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
