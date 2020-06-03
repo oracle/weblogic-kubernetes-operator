@@ -268,6 +268,16 @@ public class IntegrationTestWatcher implements
   @Override
   public void testFailed(ExtensionContext context, Throwable cause) {
     printHeader(String.format("Test FAILED %s()", methodName), "!");
+    if (System.getenv("SLEEP_SECONDS_AFTER_FAILURE") != null) {
+      int sleepSecs = Integer.parseInt(System.getenv("SLEEP_SECONDS_AFTER_FAILURE"));
+      logger.info("Sleeping for " + sleepSecs + " seconds to keep the env. for debugging");
+      try {
+        Thread.sleep(sleepSecs * 1000);
+      } catch (InterruptedException ie) {
+        logger.info("Exception in testFailed sleep {0}", ie);
+      }
+    }
+
   }
 
   /**
