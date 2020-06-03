@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -50,6 +51,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -98,6 +100,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -768,12 +771,13 @@ public class ItDomainInPV implements LoggedTest {
     p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p1.setProperty("cluster_name", clusterName);
+    p1.setProperty("test_name", "change_server_count");
 
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
     // change the server count of the cluster
-    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "change-server-count.py");
+    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
     StringBuffer patchStr = new StringBuffer("[{")
@@ -790,6 +794,46 @@ public class ItDomainInPV implements LoggedTest {
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
     String introspectPodName = domainUid + "-" + "introspect-domain-job";
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+    Domain patchedDomain = assertDoesNotThrow(
+        () -> TestActions.getDomainCustomResource(domainUid, introDomainNamespace));
+    assertEquals(6, patchedDomain.getStatus().getClusters().get(0).getMaximumReplicas(),
+        "Cluster maximumReplicas is not equal to 6");
+    assertEquals(2, patchedDomain.getStatus().getClusters().get(0).getMinimumReplicas(),
+        "Cluster minimumReplicas is not equal to 2");
+
+    p1.setProperty("test_name", "change_admin_port");
+    p1.setProperty("new_admin_port", Integer.toString(7005));
+    assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+        "Failed to write the WLST properties to file");
+
+    patchStr = new StringBuffer("[{")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/introspectVersion\", ")
+        .append("\"value\": \"3")
+        .append("\"}]");
+    logger.info("Patch String \n{0}", patchStr);
+
+    logger.info("Adding introspectVersion for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, introDomainNamespace, patchStr.toString());
+
+    patch = new V1Patch(new String(patchStr));
+    patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+
+    patchedDomain = assertDoesNotThrow(
+        () -> TestActions.getDomainCustomResource(domainUid, introDomainNamespace));
+    assertEquals(6, patchedDomain.getStatus().getClusters().get(0).getMaximumReplicas(),
+        "Cluster maximumReplicas is not equal to 6");
+    assertEquals(2, patchedDomain.getStatus().getClusters().get(0).getMinimumReplicas(),
+        "Cluster minimumReplicas is not equal to 2");
+
+    try {
+      TimeUnit.MINUTES.sleep(5);
+    } catch (InterruptedException ex) {
+      //
+    }
   }
 
   /**
