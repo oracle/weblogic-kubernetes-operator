@@ -37,13 +37,13 @@ public class Secret {
   }
 
   /**
-   * Get a secret which name starts with the specfied string in the specified namespace.
+   * Get a secret from a service account in the specified namespace.
    * @param namespace namespace in which to get the secret
    * @param serviceAccountName the service account name which the secret is associated with
    * @return secret name
    */
   public static String getSecretFromServiceAccount(String namespace, String serviceAccountName) {
-    String secretName = "";
+
     List<V1Secret> v1Secrets = new ArrayList<>();
 
     V1SecretList secretList = listSecrets(namespace);
@@ -52,15 +52,14 @@ public class Secret {
     }
 
     for (V1Secret v1Secret : v1Secrets) {
-      if (v1Secret.getMetadata() != null) {
-        secretName = v1Secret.getMetadata().getName();
-        if (secretName != null && secretName.startsWith(serviceAccountName)) {
-          return secretName;
+      if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
+        if (v1Secret.getMetadata().getName().startsWith(serviceAccountName)) {
+          return v1Secret.getMetadata().getName();
         }
       }
     }
 
-    return secretName;
+    return "";
   }
 
   /**

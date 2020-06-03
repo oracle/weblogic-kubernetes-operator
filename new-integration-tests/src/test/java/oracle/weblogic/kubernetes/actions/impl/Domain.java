@@ -178,24 +178,24 @@ public class Domain {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace.
+   * Scale the cluster of the domain in the specified namespace with REST API.
    *
    * @param domainUid domainUid of the domain to be scaled
    * @param clusterName name of the WebLogic cluster to be scaled in the domain
    * @param numOfServers number of servers to be scaled to
    * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
    * @param opNamespace namespace of WebLogic operator
-   * @param operatorServiceAccount the service account for operator
-   * @return true if patch domain custom resource succeeds, false otherwise
+   * @param opServiceAccount the service account for operator
+   * @return true if REST call succeeds, false otherwise
    */
   public static boolean scaleClusterWithRestApi(String domainUid,
                                                 String clusterName,
                                                 int numOfServers,
                                                 int externalRestHttpsPort,
                                                 String opNamespace,
-                                                String operatorServiceAccount) {
+                                                String opServiceAccount) {
 
-    String secretName = Secret.getSecretFromServiceAccount(opNamespace, operatorServiceAccount);
+    String secretName = Secret.getSecretFromServiceAccount(opNamespace, opServiceAccount);
     logger.info("Got secret {0} in operator namespace {1}", secretName, opNamespace);
 
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);

@@ -134,21 +134,21 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyOperator(String opNamespace,
                                                     String... domainNamespace) {
 
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa",false, 0, domainNamespace);
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, domainNamespace);
   }
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
    *
    * @param opNamespace the operator namespace in which the operator will be installed
-   * @param serviceAccountName the service account name for operator
+   * @param opServiceAccount the service account name for operator
    * @param withRestAPI whether to use REST API
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
   public static HelmParams installAndVerifyOperator(String opNamespace,
-                                                    String serviceAccountName,
+                                                    String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
                                                     String... domainNamespace) {
@@ -158,8 +158,8 @@ public class CommonTestUtils {
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
         .metadata(new V1ObjectMeta()
             .namespace(opNamespace)
-            .name(serviceAccountName))));
-    logger.info("Created service account: {0}", serviceAccountName);
+            .name(opServiceAccount))));
+    logger.info("Created service account: {0}", opServiceAccount);
 
     // get operator image name
     String operatorImage = getOperatorImageName();
@@ -186,11 +186,12 @@ public class CommonTestUtils {
         .image(operatorImage)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(serviceAccountName);
+        .serviceAccount(opServiceAccount);
 
     if (withRestAPI) {
       // create externalRestIdentitySecret
-      createExternalRestIdentitySecret(opNamespace, DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
+      assertTrue(createExternalRestIdentitySecret(opNamespace, DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME),
+          "failed to create external REST identity secret");
       opParams
           .externalRestEnabled(true)
           .externalRestHttpsPort(externalRestHttpsPort)
@@ -1107,11 +1108,11 @@ public class CommonTestUtils {
   /**
    * Create an external REST Identity secret in the specified namespace.
    *
-   * @param opNamespace the operator namespace in which the secret to be created
+   * @param namespace the namespace in which the secret to be created
    * @param secretName name of the secret to be created
-   * @return name of the secret
+   * @return true if the command to create secret succeeds, false otherwise
    */
-  private static String createExternalRestIdentitySecret(String opNamespace, String secretName) {
+  private static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
 
     String command = new StringBuffer()
         .append(GEN_EXTERNAL_REST_IDENTITY_FILE)
@@ -1119,7 +1120,7 @@ public class CommonTestUtils {
         .append(K8S_NODEPORT_HOST)
         .append(",DNS:localhost,IP:127.0.0.1\"")
         .append(" -n ")
-        .append(opNamespace)
+        .append(namespace)
         .append(" -s ")
         .append(secretName).toString();
 
@@ -1129,8 +1130,6 @@ public class CommonTestUtils {
         .saveResults(true)
         .redirect(true);
 
-    Command.withParams(params).execute();
-    return secretName;
-
+    return Command.withParams(params).execute();
   }
 }
