@@ -205,8 +205,9 @@ public class TestActions {
    * @return true if patching is successful, otherwise false
    * @throws ApiException when patching fails
    */
-  public static boolean patchDomainWithIntrospectVersion(String domainUid, String namespace) throws ApiException {
-    return Domain.patchDomainWithIntrospectVersion(domainUid, namespace);
+  public static boolean patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) throws ApiException {
+    return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
   }
 
   /**

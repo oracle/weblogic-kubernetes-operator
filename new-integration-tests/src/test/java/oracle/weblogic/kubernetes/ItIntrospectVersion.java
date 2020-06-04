@@ -98,7 +98,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainWithIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -541,9 +541,8 @@ public class ItIntrospectVersion implements LoggedTest {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    assertTrue(
-        assertDoesNotThrow(() ->
-            patchDomainWithIntrospectVersion(domainUid, introDomainNamespace),
+    assertTrue(assertDoesNotThrow(() ->
+            patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace),
             "Patch domain with new IntrospectVersion threw ApiException"),
         "Failed to patch domain with new IntrospectVersion");
 

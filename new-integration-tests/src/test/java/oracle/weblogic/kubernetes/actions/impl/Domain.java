@@ -135,7 +135,8 @@ public class Domain {
    * @return true if patching is successful, otherwise false
    * @throws ApiException when patching fails
    */
-  public static boolean patchDomainWithIntrospectVersion(String domainUid, String namespace) throws ApiException {
+  public static boolean patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) throws ApiException {
 
     StringBuffer patchStr;
     oracle.weblogic.domain.Domain res = getDomainCustomResource(domainUid, namespace);
