@@ -52,7 +52,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -94,12 +93,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainWithIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -376,26 +375,26 @@ public class ItIntrospectVersion implements LoggedTest {
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
     // patch the domain to increase the replicas of the cluster
-    StringBuffer patchStr = new StringBuffer("[{")
-        .append("\"op\": \"replace\", ")
-        .append("\"path\": \"/spec/clusters/0/replicas\", ")
-        .append("\"value\": \"3")
-        .append("\"}]");
+    String patchStr =
+          "["
+            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
+            + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+        + "]";
 
     logger.info("Patch String \n{0}", patchStr);
     logger.info("Updating replicas in cluster {0} using patch string: {1}",
-        clusterName, patchStr.toString());
+        clusterName, patchStr);
 
     // patch the domain
-    V1Patch patch = new V1Patch(new String(patchStr));
+    V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to update /spec/clusters/0/replicas to 3");
 
-    // patch the domain with introspectVersion
-    assertTrue(assertDoesNotThrow(()
-        -> patchDomainWithIntrospectVersion(domainUid, introDomainNamespace),
-        "Patching domain with introspectVersion threw ApiException"),
-        "Patching domain with introspectVersion is not successful");
+    //    // patch the domain with introspectVersion
+    //    assertTrue(assertDoesNotThrow(()
+    //        -> patchDomainWithIntrospectVersion(domainUid, introDomainNamespace),
+    //        "Patching domain with introspectVersion threw ApiException"),
+    //        "Patching domain with introspectVersion is not successful");
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
@@ -412,7 +411,7 @@ public class ItIntrospectVersion implements LoggedTest {
         }
       })
         .until((Callable<Boolean>) () -> {
-          Domain res = TestActions.getDomainCustomResource(domainUid, introDomainNamespace);
+          Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
           return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
         }
         );
