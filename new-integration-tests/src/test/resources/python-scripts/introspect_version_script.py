@@ -1,6 +1,8 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+import sys, traceback
+
 def change_server_count():
   try:
     connect_to_adminserver()
@@ -26,9 +28,10 @@ def change_server_count():
 def change_admin_port():
   try:
     connect_to_adminserver()
+    admin_server_name = get_admin_server_name()
     edit()
     startEdit()
-    cd('/Servers/' + get_admin_server_name())
+    cd('/Servers/' + admin_server_name)
     cmo.setListenPort(new_admin_port)
     save()
     activate()
@@ -38,7 +41,7 @@ def change_admin_port():
     print('Please check the property: ', sys.exc_info()[0], sys.exc_info()[1])
     exit(exitcode=1)
   except:
-    print 'Deployment failed'
+    print 'Changing admin port failed'
     print dumpStack()
     apply(traceback.print_exception, sys.exc_info())
     exit(exitcode=1)
@@ -62,7 +65,9 @@ def get_admin_server_name():
   connect_to_adminserver()
   serverRuntime()
   cd('/')
-  return cmo.getName()
+  admin_server_name = cmo.getName()
+  serverConfig()
+  return admin_server_name
 
 if __name__== "main":
   if(test_name == 'change_server_count'):
