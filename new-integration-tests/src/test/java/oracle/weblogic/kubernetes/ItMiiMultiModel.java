@@ -160,7 +160,7 @@ class ItMiiMultiModel implements LoggedTest {
 
     logger.info("Create an image with two model files");
     miiImageMultiModel = createMiiImageAndVerify(
-        String.format("%s-%s", "mii-basic-image", "test-multi-model-image"),
+        "mii-test-multi-model-image",
         Arrays.asList(
             MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE, 
             MODEL_DIR + "/" + modelFileName2, 
