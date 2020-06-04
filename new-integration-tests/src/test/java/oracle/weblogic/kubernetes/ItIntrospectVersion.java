@@ -96,7 +96,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainWithIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
@@ -552,16 +551,16 @@ public class ItIntrospectVersion implements LoggedTest {
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
 
     logger.info("Getting port for default channel");
-    int adminServerPort = assertDoesNotThrow(()
-        -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+    int adminServerNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
     // verify the admin port is changed to newAdminPort
-    assertEquals(newAdminPort, adminServerPort,
+    assertEquals(newAdminPort, adminServerNodePort,
         "Updated admin server port is not equal to expected value");
 
     //access application from admin server to validate the new port
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + adminServerPort + "/testwebapp/index.jsp";
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + adminServerNodePort + "/testwebapp/index.jsp";
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
