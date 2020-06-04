@@ -61,10 +61,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -92,7 +89,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -118,7 +114,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests to create domain in persistent volume using WLST and WDT.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
 public class ItDomainInPV implements LoggedTest {
@@ -190,7 +185,6 @@ public class ItDomainInPV implements LoggedTest {
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful.
    */
-  @Order(1)
   @Test
   @DisplayName("Create WebLogic domain in PV using WLST script")
   public void testDomainInPvUsingWlst() {
@@ -380,8 +374,6 @@ public class ItDomainInPV implements LoggedTest {
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
 
-    assertTrue(shutdownDomain(domainUid, wlstDomainNamespace), "Failed to shutdown domain");
-
   }
 
   /**
@@ -390,7 +382,6 @@ public class ItDomainInPV implements LoggedTest {
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful.
    */
-  @Order(2)
   @Test
   @DisplayName("Create WebLogic domain in PV using WDT")
   public void testDomainInPvUsingWdt() {
@@ -579,8 +570,6 @@ public class ItDomainInPV implements LoggedTest {
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
-
-    assertTrue(shutdownDomain(domainUid, wdtDomainNamespace), "Failed to shutdown domain");
   }
 
   /**

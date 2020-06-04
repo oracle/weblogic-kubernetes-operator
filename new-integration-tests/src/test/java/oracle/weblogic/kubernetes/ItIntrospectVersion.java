@@ -57,7 +57,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
-import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionEvaluationListener;
@@ -99,6 +98,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainWithIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -115,6 +115,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
@@ -128,7 +129,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests to create domain in persistent volume using WLST and WDT.
+ * Tests related to introspectVersion attribute.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the introspectVersion runs the introspector")
@@ -194,12 +195,13 @@ public class ItIntrospectVersion implements LoggedTest {
 
 
   /**
-   * Test domain status updated when introspector run triggered by introSpectVersion.
-   * Test Creates a domain in pv using WLST.
-   * Updates the cluster configuration, cluster size using online WLST.
+   * Test domain status gets updated when introspectVersion attribute is added under domain.spec.
+   * Test Creates a domain in persistent volume using WLST.
+   * Updates the cluster configuration; cluster size using online WLST.
    * Patches the domain custom resource with introSpectVersion.
    * Verifies the introspector runs and cluster maximum and minimum replicas are updated
    * under domain status.
+   * Verifies that the new pod comes up and sample application deployment works.
    */
   @Order(1)
   @Test
@@ -257,7 +259,7 @@ public class ItIntrospectVersion implements LoggedTest {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(() ->
-        p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file"),
+        p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
         "Failed to write domain properties file");
 
     // WLST script for creating domain
@@ -374,27 +376,17 @@ public class ItIntrospectVersion implements LoggedTest {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    // patch the domain to increase the replicas of the cluster
+    // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String patchStr =
           "["
             + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
             + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
 
-    logger.info("Patch String \n{0}", patchStr);
-    logger.info("Updating replicas in cluster {0} using patch string: {1}",
-        clusterName, patchStr);
-
-    // patch the domain
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to update /spec/clusters/0/replicas to 3");
-
-    //    // patch the domain with introspectVersion
-    //    assertTrue(assertDoesNotThrow(()
-    //        -> patchDomainWithIntrospectVersion(domainUid, introDomainNamespace),
-    //        "Patching domain with introspectVersion threw ApiException"),
-    //        "Patching domain with introspectVersion is not successful");
+        "Failed to patch domain");
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
@@ -402,7 +394,7 @@ public class ItIntrospectVersion implements LoggedTest {
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
-    //verify the maximum and minimum cluster size is updated to expected values
+    //verify the maximum cluster size is updated to expected value
     withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
         @Override
         public void conditionEvaluated(EvaluatedCondition condition) {
@@ -416,13 +408,9 @@ public class ItIntrospectVersion implements LoggedTest {
         }
         );
 
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
-
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, introDomainNamespace);
-
-    replicaCount = 3;
+    // verify the 3rd server pod comes up
+    checkPodReady(managedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
+    checkServiceExists(managedServerPodNamePrefix + 3, introDomainNamespace);
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -431,7 +419,7 @@ public class ItIntrospectVersion implements LoggedTest {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    // verify managed server services created
+    // verify managed server services are created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
@@ -445,22 +433,23 @@ public class ItIntrospectVersion implements LoggedTest {
           domainUid, introDomainNamespace, pods.get(i));
     }
 
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
-
     //create ingress controller
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
     createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
 
+    // deploy application and verify all servers functions normally
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
     //deploy application
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     logger.info("Deploying webapp to domain {0}", archivePath);
-    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
         introDomainNamespace);
 
@@ -497,6 +486,7 @@ public class ItIntrospectVersion implements LoggedTest {
    * Updates the admin server listen port using online WLST.
    * Patches the domain custom resource with introSpectVersion.
    * Verifies the introspector runs and pods are rolled in rolling fashion.
+   * Verifies the new admin port of the admin server in services
    */
   @Order(2)
   @Test
@@ -509,7 +499,7 @@ public class ItIntrospectVersion implements LoggedTest {
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 2;
+    final int replicaCount = 3;
     final int newAdminPort = 7005;
 
     // get the pod creation time stamps
@@ -546,6 +536,11 @@ public class ItIntrospectVersion implements LoggedTest {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
+    assertTrue(
+        assertDoesNotThrow(() ->
+            patchDomainWithIntrospectVersion(domainUid, introDomainNamespace),
+            "Patch domain with new IntrospectVersion threw ApiException"),
+        "Failed to patch domain with new IntrospectVersion");
 
     //verify the introspector pod is created and runs
     String introspectPodName = domainUid + "-" + "introspect-domain-job";
@@ -561,8 +556,16 @@ public class ItIntrospectVersion implements LoggedTest {
         -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
+    // verify the admin port is changed to newAdminPort
     assertEquals(newAdminPort, adminServerPort,
         "Updated admin server port is not equal to expected value");
+
+    //access application from admin server to validate the new port
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + adminServerPort + "/testwebapp/index.jsp";
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
 
   }
 
