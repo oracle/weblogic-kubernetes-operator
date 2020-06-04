@@ -31,3 +31,8 @@ appDeployments:
       SourcePath: "wlsdeploy/applications/wls-exporter.war"
       ModuleType: war
       Target: 'cluster-1'
+    myear:
+      SourcePath: "wlsdeploy/applications/sessmigr-app.ear"
+      ModuleType: ear
+      Target: 'cluster-1'
+

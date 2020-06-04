@@ -4,6 +4,9 @@
 package oracle.weblogic.kubernetes.actions;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +47,7 @@ import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -593,42 +597,13 @@ public class TestActions {
    * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
    * to create an image with the application for a model-in-image use case.
    *
-   * @param srcFile full path to ear or war application file to archive
+   * @param params the parameters for creating a model-in-image Docker image
    * @return true if the operation succeeds
    */
-  public static boolean archiveApp(
-      String srcFile) {
-
-    String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
-    String fileExtension = srcFile.substring(srcFile.lastIndexOf(".") + 1, srcFile.length());
-    try {
-      String appDir = ARCHIVE_DIR + "/wlsdeploy/applications";
-      cleanupDirectory(appDir);
-      checkDirectory(appDir);
-      logger.info("copy {0]} to {1} ", srcFile, appDir);
-      java.nio.file.Files.copy(java.nio.file.Paths.get(srcFile), java.nio.file.Paths.get(appDir,
-          appName + "."
-              + fileExtension),
-          java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
-    } catch (IOException ioe) {
-      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
-      return false;
-    }
-
-    String cmd = String.format(
-        "cd %s ; zip %s.zip wlsdeploy/applications/%s.%s ",
-        ARCHIVE_DIR,
-        appName,
-        appName,
-        fileExtension
-        );
-
-    return oracle.weblogic.kubernetes.actions.impl.primitive.Command.withParams(
-        defaultCommandParams()
-            .command(cmd)
-            .redirect(false))
-        .execute();
+  public static boolean archiveApp(AppParams params) {
+    return AppBuilder
+            .withParams(params)
+            .archiveApp();
   }
 
   // ------------------------ Docker --------------------------------------

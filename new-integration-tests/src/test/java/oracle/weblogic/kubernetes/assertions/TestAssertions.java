@@ -457,7 +457,7 @@ public class TestAssertions {
    * @param namespace in which is prometheus is running
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> prometheusIsReady(String namespace) {
+  public static Callable<Boolean> isPrometheusReady(String namespace) {
 
     return Prometheus.isReady(namespace);
   }
@@ -468,7 +468,7 @@ public class TestAssertions {
    * @param namespace in which is grafana is running
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> grafanaIsReady(String namespace) {
+  public static Callable<Boolean> isGrafanaReady(String namespace) {
     return Grafana.isReady(namespace);
   }
 

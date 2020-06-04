@@ -90,17 +90,17 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.grafanaIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.prometheusIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
@@ -575,26 +575,43 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
-    List<String> archiveList = null;
+    List<String> archiveList = new ArrayList<String>();
 
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
+      List<String> archiveAppDirList = new ArrayList<String>();
+      List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
+
       for (String appSrcDir : appSrcDirList) {
-        String appName = appSrcDir;
         if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
-          //archive provided ear or war file
-          assertTrue(archiveApp(appName));
-          appName = appName.substring(appName.lastIndexOf("/") + 1, appName.lastIndexOf("."));
-        } else {
-          // build an application archive using what is in resources/apps/APP_NAME
-          assertTrue(buildAppArchive(defaultAppParams()
-                  .srcDirList(appSrcDirList)),
-              String.format("Failed to create app archive for %s", appName));
+          //remove from build
+          buildAppDirList.remove(appSrcDir);
+          archiveAppDirList.add(appSrcDir);
         }
+      }
+      //archive provided ear or war file
+      String appName = appSrcDirList.get(0).substring(appSrcDirList.get(0).lastIndexOf("/") + 1,
+              appSrcDirList.get(0).lastIndexOf("."));
+      if (archiveAppDirList.size() != 0 && archiveAppDirList.get(0) != null) {
+        assertTrue(archiveApp(defaultAppParams()
+                .srcDirList(archiveAppDirList)));
+
         // build the archive list
-        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-        archiveList = Collections.singletonList(zipFile);
+        String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+        archiveList.add(zipAppFile);
+
+      }
+      if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
+        // build an application archive using what is in resources/apps/APP_NAME
+        assertTrue(buildAppArchive(defaultAppParams()
+                        .srcDirList(buildAppDirList)),
+                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+
+        // build the archive list
+        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+        archiveList.add(zipFile);
       }
     }
+
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -917,7 +934,7 @@ public class CommonTestUtils {
                 promNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> prometheusIsReady(promNamespace),
+        .until(assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
             "prometheusIsReady failed with ApiException"));
 
     return promHelmParams;
@@ -980,7 +997,7 @@ public class CommonTestUtils {
                 grafanaNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> grafanaIsReady(grafanaNamespace),
+        .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
             "grafanaIsReady failed with ApiException"));
 
     return grafanaHelmParams;
