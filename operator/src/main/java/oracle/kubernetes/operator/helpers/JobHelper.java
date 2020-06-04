@@ -446,11 +446,14 @@ public class JobHelper {
             }
           }
         }
+        if (jobConditionsReason.size() == 0) {
+          jobConditionsReason.add(DomainStatusPatch.ERR_INTROSPECTOR);
+        }
         //Introspector job is incomplete, update domain status and terminate processing
         return doNext(
             DomainStatusUpdater.createFailedStep(
-                String.join(System.lineSeparator(), jobConditionsReason),
-                String.join(System.lineSeparator(), severeStatuses),
+              onSeparateLines(jobConditionsReason),
+              onSeparateLines(severeStatuses),
                 null),
             packet);
       }
