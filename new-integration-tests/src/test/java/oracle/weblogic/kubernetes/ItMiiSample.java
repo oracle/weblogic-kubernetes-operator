@@ -108,7 +108,6 @@ public class ItMiiSample implements LoggedTest {
     dbNamespace = namespaces.get(3);
 
     // install and verify operator
-    // TBD if this fails, then 'BeforeAll' fails but the test still passes!
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // env variables to override default values in sample scripts
@@ -163,39 +162,39 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify MII sample initial use case. Build image required for the initial use case
+   * Test to verify MII sample WLS initial use case. Build image required for the initial use case
    * and create secrets, domain resource and verifies the domain is up and running.
    */
   @Test
   @Order(2)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
-  public void testInitialUseCase() {
+  public void testWlsInitialUseCase() {
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
     execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
   }
 
   /**
-   * Test to verify update1 use case works. Add data source to initial domain via configmap.
+   * Test to verify WLS update1 use case works. Add data source to initial domain via configmap.
    */
   @Test
   @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
-  public void testUpdate1UseCase() {
+  public void testWlsUpdate1UseCase() {
     execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
   }
 
   /**
-   * Test to verify update2 use case. Deploys a second domain with the same image as initial
+   * Test to verify WLS update2 use case. Deploys a second domain with the same image as initial
    * WebLogic domain but with different domain UID and verifies the domain is up and running.
    */
   @Test
   @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
-  public void testUpdate2UseCase() {
+  public void testWlsUpdate2UseCase() {
     execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
   }
 
@@ -207,7 +206,7 @@ public class ItMiiSample implements LoggedTest {
   @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
-  public void testUpdate3UseCase() {
+  public void testWlsUpdate3UseCase() {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
     execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
   }
@@ -243,7 +242,7 @@ public class ItMiiSample implements LoggedTest {
 
 
   /**
-   * Test to verify update1 use case works. Add data source to initial domain via configmap.
+   * Test to verify JRF update1 use case works. Add data source to initial domain via configmap.
    */
   @Test
   @Order(7)
@@ -254,7 +253,7 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify update2 use case. Deploys a second domain with the same image as initial
+   * Test to verify JRF update2 use case. Deploys a second domain with the same image as initial
    * WebLogic domain but with different domain UID and verifies the domain is up and running.
    */
   @Test
@@ -266,7 +265,7 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify update3 use case. Deploys an updated WebLogic application to the running
+   * Test to verify JRF update3 use case. Deploys an updated WebLogic application to the running
    * domain using an updated Docker image.
    */
   @Test
@@ -283,7 +282,7 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Delete images.
+   * Delete DB deployment and Uninstall traefik.
    */
   @AfterAll
   public void tearDownAll() {
