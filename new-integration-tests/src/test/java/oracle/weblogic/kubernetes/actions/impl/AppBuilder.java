@@ -37,6 +37,8 @@ public class AppBuilder {
 
   /**
    * Set up the AppBuilder with given parameters.
+   * 
+   * @param params instance of {@link AppParams} that contains parameters to build an application archive
    * @return the AppBuilder instance 
    */
   public static AppBuilder withParams(AppParams params) {
