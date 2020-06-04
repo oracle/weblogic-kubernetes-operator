@@ -1115,19 +1115,25 @@ public class CommonTestUtils {
    */
   private static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
 
-    String command = new StringBuffer()
-        .append(GEN_EXTERNAL_REST_IDENTITY_FILE)
-        .append(" -a \"DNS:")
-        .append(K8S_NODEPORT_HOST)
+    StringBuffer command = new StringBuffer()
+        .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
+
+    if (Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
+      command.append(" -a \"IP:");
+    } else {
+      command.append(" -a \"DNS:");
+    }
+
+    command.append(K8S_NODEPORT_HOST)
         .append(",DNS:localhost,IP:127.0.0.1\"")
         .append(" -n ")
         .append(namespace)
         .append(" -s ")
-        .append(secretName).toString();
+        .append(secretName);
 
     CommandParams params = Command
         .defaultCommandParams()
-        .command(command)
+        .command(command.toString())
         .saveResults(true)
         .redirect(true);
 
