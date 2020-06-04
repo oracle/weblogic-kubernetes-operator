@@ -19,6 +19,7 @@ import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -100,6 +101,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainWithIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -373,6 +375,22 @@ public class ItIntrospectVersion implements LoggedTest {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
+    // patch the domain to increase the replicas of the cluster
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"replace\", ")
+        .append("\"path\": \"/spec/clusters[0]/replicas\", ")
+        .append("\"value\": \"3")
+        .append("\"}]");
+
+    logger.info("Patch String \n{0}", patchStr);
+    logger.info("Updating replicas in cluster {0} using patch string: {1}",
+        clusterName, patchStr.toString());
+
+    // patch the domain
+    V1Patch patch = new V1Patch(new String(patchStr));
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to update /spec/clusters[0]/replicas to 3");
+
     // patch the domain with introspectVersion
     assertTrue(assertDoesNotThrow(()
         -> patchDomainWithIntrospectVersion(domainUid, introDomainNamespace),
@@ -405,7 +423,7 @@ public class ItIntrospectVersion implements LoggedTest {
       podStateNotChanged(managedServerPodNamePrefix + i,
           domainUid, introDomainNamespace, pods.get(i));
     }
-    
+
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
 
