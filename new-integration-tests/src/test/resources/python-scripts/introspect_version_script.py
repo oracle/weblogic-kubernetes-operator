@@ -9,9 +9,8 @@ def change_server_count():
     edit()
     startEdit()
     cd('/Clusters/' + cluster_name + '/DynamicServers/' + cluster_name)
-    cmo.setDynamicClusterSize(6)
-    cmo.setMaxDynamicClusterSize(6)
-    cmo.setMinDynamicClusterSize(2)
+    cmo.setDynamicClusterSize(max_cluster_size)
+    cmo.setMaxDynamicClusterSize(max_cluster_size)
     save()
     activate()
     disconnect()
@@ -20,7 +19,7 @@ def change_server_count():
     print('Please check the property: ', sys.exc_info()[0], sys.exc_info()[1])    
     exit(exitcode=1)
   except:
-    print 'Deployment failed'
+    print 'Updating cluster size failed'
     print dumpStack()
     apply(traceback.print_exception, sys.exc_info())
     exit(exitcode=1)
@@ -56,7 +55,7 @@ def connect_to_adminserver():
     print('Please check the property: ', sys.exc_info()[0], sys.exc_info()[1])
     exit(exitcode=1)
   except:
-    print 'Deployment failed'
+    print 'Connecting to admin server failed'
     print dumpStack()
     apply(traceback.print_exception, sys.exc_info())
     exit(exitcode=1)

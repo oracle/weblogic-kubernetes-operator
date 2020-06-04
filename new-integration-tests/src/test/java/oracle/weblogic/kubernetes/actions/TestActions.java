@@ -196,6 +196,20 @@ public class TestActions {
   }
 
   /**
+   * Patch a running domain with introspectVersion.
+   * If the introspectVersion doesn't exist it will add the value as 2,
+   * otherwise the value is updated by 1.
+   *
+   * @param domainUid UID of the domain to patch with introspectVersion
+   * @param namespace namespace in which the domain resource exists
+   * @return true if patching is successful, otherwise false
+   * @throws ApiException when patching fails
+   */
+  public static boolean patchDomainWithIntrospectVersion(String domainUid, String namespace) throws ApiException {
+    return Domain.patchDomainWithIntrospectVersion(domainUid, namespace);
+  }
+
+  /**
    * Scale the cluster of the domain in the specified namespace .
    *
    * @param domainUid domainUid of the domain to be scaled
