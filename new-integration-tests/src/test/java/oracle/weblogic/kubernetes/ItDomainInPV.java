@@ -56,12 +56,10 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import oracle.weblogic.kubernetes.utils.WLSTUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -105,6 +103,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -118,6 +117,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -154,7 +154,6 @@ public class ItDomainInPV implements LoggedTest {
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
-  static HashMap<String, String> labels = new HashMap<>();
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -599,8 +598,8 @@ public class ItDomainInPV implements LoggedTest {
 
   /**
    * Test domain status updated when introspector run triggered by introSpectVersion.
-   * Test Creates a domain in pv using WLST
-   * Updates the cluster configuration; cluster size using online WLST.
+   * Test Creates a domain in pv using WLST.
+   * Updates the cluster configuration, cluster size using online WLST.
    * Patches the domain custom resource with introSpectVersion.
    * Verifies the introspector runs and cluster maximum and minimum replicas are updated
    * under domain status.
@@ -759,7 +758,7 @@ public class ItDomainInPV implements LoggedTest {
 
     // change the server count of the cluster by running online WLST
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
     // construct a patch string to update introspectVersion
     StringBuffer patchStr = new StringBuffer("[{")
@@ -849,7 +848,7 @@ public class ItDomainInPV implements LoggedTest {
 
     // changet the admin server port to a different value to force pod restart
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
@@ -871,7 +870,7 @@ public class ItDomainInPV implements LoggedTest {
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
     //verify the pods are restarted
-    TestAssertions.verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+    verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
 
   }
 
