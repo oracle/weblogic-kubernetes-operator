@@ -37,12 +37,12 @@ public class Secret {
   }
 
   /**
-   * Get a secret from a service account in the specified namespace.
+   * Get a secret of a service account in the specified namespace.
    * @param namespace namespace in which to get the secret
    * @param serviceAccountName the service account name which the secret is associated with
    * @return secret name
    */
-  public static String getSecretFromServiceAccount(String namespace, String serviceAccountName) {
+  public static String getSecretOfServiceAccount(String namespace, String serviceAccountName) {
 
     List<V1Secret> v1Secrets = new ArrayList<>();
 

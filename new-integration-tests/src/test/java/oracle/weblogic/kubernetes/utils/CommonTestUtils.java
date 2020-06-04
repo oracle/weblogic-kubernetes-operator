@@ -779,8 +779,9 @@ public class CommonTestUtils {
         replicasAfterScale, false, 0, "", "", curlCmd, expectedServerNames);
   }
 
-  /** Scale the WebLogic cluster to specified number of servers.
-   *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
+  /**
+   * Scale the WebLogic cluster to specified number of servers.
+   * Verify the sample app can be accessed through NGINX if curlCmd is not null.
    *
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param domainUid the domain to which the cluster belongs

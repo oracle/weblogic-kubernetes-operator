@@ -195,16 +195,30 @@ public class Domain {
                                                 String opNamespace,
                                                 String opServiceAccount) {
 
-    String secretName = Secret.getSecretFromServiceAccount(opNamespace, opServiceAccount);
-    logger.info("Got secret {0} in operator namespace {1}", secretName, opNamespace);
+    logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+    String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
+    if (secretName.isEmpty()) {
+      logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+      return false;
+    }
+    logger.info("Got secret {0} of service account {1} in namespace {2}",
+        secretName, opServiceAccount, opNamespace);
 
+    logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
+        + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
-    logger.info("Got the encoded token for secret {0} in operator namespace {1}: {2}",
-        secretName, opNamespace, secretToken);
+    if (secretToken.isEmpty()) {
+      logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
+          secretName, opServiceAccount, opNamespace);
+      return false;
+    }
+    logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, secretToken);
 
+    // decode the secret encoded token
     String decodedToken = new String(Base64.getDecoder().decode(secretToken));
-    logger.info("Got the decoded token for secret {0} in operator namespace {1}: {2}",
-        secretName, opNamespace, decodedToken);
+    logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+        secretName, opServiceAccount, opNamespace, decodedToken);
 
     // build the curl command to scale the cluster
     String command = new StringBuffer()
