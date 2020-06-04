@@ -830,7 +830,7 @@ public class ItDomainInPV implements LoggedTest {
 
     logger.info("Getting node port for default channel");
     int adminServerPort = assertDoesNotThrow(()
-        -> getServiceNodePort(wdtDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
     // create a temporary WebLogic WLST property file
