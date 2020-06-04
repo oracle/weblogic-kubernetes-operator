@@ -827,6 +827,10 @@ public class ItDomainInPV implements LoggedTest {
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
+    // change the admin port server port
+    configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
+    WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+
     patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/introspectVersion\", ")
@@ -854,12 +858,6 @@ public class ItDomainInPV implements LoggedTest {
         "Cluster maximumReplicas is not equal to 6");
     assertEquals(2, patchedDomain.getStatus().getClusters().get(0).getMinimumReplicas(),
         "Cluster minimumReplicas is not equal to 2");
-
-    try {
-      TimeUnit.MINUTES.sleep(5);
-    } catch (InterruptedException ex) {
-      //
-    }
   }
 
   /**

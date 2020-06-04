@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -76,7 +77,8 @@ public class WLSTUtils {
 
 
     logger.info("Creating a config map to hold wlst script files");
-    String wlstScriptConfigMapName = "wlst-scripts-cm";
+    String uniqueName = Namespace.uniqueName();
+    String wlstScriptConfigMapName = "wlst-scripts-cm" + uniqueName;
 
     CommonTestUtils.createConfigMapFromFiles(wlstScriptConfigMapName,
         Arrays.asList(wlstScript, domainProperties), namespace);
