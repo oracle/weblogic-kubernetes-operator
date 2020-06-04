@@ -52,8 +52,6 @@ public class WLSTUtils {
   private static String image;
   private static boolean isUseSecret;
   private static final String MOUNT_POINT = "/scripts/";
-  private static String wlstScriptFileName;
-  private static String wlstPropertiesFile;
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
@@ -63,37 +61,26 @@ public class WLSTUtils {
   /**
    * Execute WLST script.
    *
-
+   *
    * @param wlstScript WLST script path
-   * @param domainProperties domain property file
+   * @param domainProperties domain property file path
    * @param namespace namespace in which to run the job
    */
   public static void executeWLSTScript(Path wlstScript, Path domainProperties, String namespace) {
 
     setImage(namespace);
 
-    wlstScriptFileName = wlstScript.getFileName().toString();
-    wlstPropertiesFile = domainProperties.getFileName().toString();
-
+    String wlstScriptFileName = wlstScript.getFileName().toString();
+    String wlstPropertiesFile = domainProperties.getFileName().toString();
 
     logger.info("Creating a config map to hold wlst script files");
     String uniqueName = Namespace.uniqueName();
-    String wlstScriptConfigMapName = "wlst-scripts-cm" + uniqueName;
+    String wlstScriptConfigMapName = "wlst-scripts-cm-" + uniqueName;
+    String wlstJobName = "wlst-job-" + uniqueName;
 
     CommonTestUtils.createConfigMapFromFiles(wlstScriptConfigMapName,
         Arrays.asList(wlstScript, domainProperties), namespace);
 
-    // deploy application with deploy scripts and domain properties on persistent volume
-    invokeWLST(namespace, wlstScriptConfigMapName);
-  }
-
-  /**
-   * Execute WLST script by creating a job.
-   *
-   * @param namespace namespace in which to create job
-   * @param wlstScriptConfigMapName configmap containing WLST script
-   */
-  private static void invokeWLST(String namespace, String wlstScriptConfigMapName) {
     logger.info("Preparing to run WLST job");
     // create a V1Container with specific scripts and properties for creating domain
     V1Container jobCreationContainer = new V1Container()
@@ -106,26 +93,27 @@ public class WLSTUtils {
 
     logger.info("Running a Kubernetes job to execute WLST script");
     assertDoesNotThrow(()
-        -> createWLSTJob(wlstScriptConfigMapName, namespace, jobCreationContainer),
+        -> createWLSTJob(wlstJobName, wlstScriptConfigMapName, namespace, jobCreationContainer),
         "WLST execution failed");
   }
 
   /**
    * Create a job to execute WLST script.
    *
+   * @param uniqueName a unique job name
    * @param wlstScriptConfigMapName configmap holding wlst script file
    * @param namespace name of the namespace in which the job is created
    * @param jobContainer V1Container with job commands to execute WLST script
    * @throws ApiException when Kubernetes cluster query fails
    */
-  private static void createWLSTJob(String wlstScriptConfigMapName, String namespace,
+  public static void createWLSTJob(String uniqueName, String wlstScriptConfigMapName, String namespace,
       V1Container jobContainer) throws ApiException {
     logger.info("Running Kubernetes job to execute WLST script");
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(namespace + "-wlst-job")
+                .name(uniqueName)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
