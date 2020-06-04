@@ -596,21 +596,6 @@ public class ItDomainInPV implements LoggedTest {
         .isTrue();
   }
 
-  /**
-   * Uninstall Nginx.
-   * The cleanup framework does not uninstall Nginx release.
-   * Do it here for now.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
-  }
 
   /**
    * Test domain status updated when introspector run triggered by introSpectVersion.
@@ -625,11 +610,11 @@ public class ItDomainInPV implements LoggedTest {
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDomainIntrospectVersionNotRolling() {
 
-    final String domainUid = "introspect-domain-nr";
-    final String clusterName = "intro-cluster";
-    final String adminServerName = "intro-admin-server";
+    final String domainUid = "mydomain";
+    final String clusterName = "mycluster";
+    final String adminServerName = "my-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "intro-ms-";
+    final String managedServerNameBase = "my-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
@@ -763,14 +748,12 @@ public class ItDomainInPV implements LoggedTest {
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
     Properties p1 = new Properties();
-
     p1.setProperty("admin_host", K8S_NODEPORT_HOST);
     p1.setProperty("admin_port", Integer.toString(t3ChannelPort));
     p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p1.setProperty("cluster_name", clusterName);
     p1.setProperty("test_name", "change_server_count");
-
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
@@ -825,33 +808,14 @@ public class ItDomainInPV implements LoggedTest {
   @DisplayName("Test introSpectVersion rolling server pods when admin server port is changed")
   public void testDomainIntrospectVersionRolling() {
 
-    final String domainUid = "introspect-domain-nr";
-    final String clusterName = "intro-cluster";
-    final String adminServerName = "intro-admin-server";
+    final String domainUid = "mydomain";
+    final String clusterName = "mycluster";
+    final String adminServerName = "my-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "intro-ms-";
+    final String managedServerNameBase = "my-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int newAdminPort = getNextFreePort(30000, 32767);
-
-    logger.info("change the cluster size and verify the introspector runs and updates the domain status");
-    // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-    Properties p1 = new Properties();
-
-    p1.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p1.setProperty("admin_port", Integer.toString(newAdminPort));
-    p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p1.setProperty("cluster_name", clusterName);
-    p1.setProperty("test_name", "change_server_count");
-
-    assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
-
-    //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    final int newAdminPort = 7005;
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -864,13 +828,26 @@ public class ItDomainInPV implements LoggedTest {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    // changet the admin server port to a different value to force pod restart
-    p1.setProperty("test_name", "change_admin_port");
-    p1.setProperty("new_admin_port", Integer.toString(7005));
-    assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+    logger.info("Getting node port for default channel");
+    int adminServerPort = assertDoesNotThrow(()
+        -> getServiceNodePort(wdtDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    // create a temporary WebLogic WLST property file
+    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+        "Creating WLST properties file failed");
+    Properties p = new Properties();
+    p.setProperty("admin_host", K8S_NODEPORT_HOST);
+    p.setProperty("admin_port", Integer.toString(adminServerPort));
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("cluster_name", clusterName);
+    p.setProperty("new_admin_port", Integer.toString(newAdminPort));
+    p.setProperty("test_name", "change_admin_port");
+    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
-    // change the admin port server port
+    // changet the admin server port to a different value to force pod restart
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
@@ -887,6 +864,9 @@ public class ItDomainInPV implements LoggedTest {
     // patch the domain with a new introspectVersion version
     V1Patch patch = new V1Patch(new String(patchStr));
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    //verify the introspector pod is created and runs
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
@@ -1202,6 +1182,23 @@ public class ItDomainInPV implements LoggedTest {
   private void createOCRRepoSecret(String namespace) {
     CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
         OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+  }
+
+
+  /**
+   * Uninstall Nginx.
+   * The cleanup framework does not uninstall Nginx release.
+   * Do it here for now.
+   */
+  @AfterAll
+  public void tearDownAll() {
+    // uninstall NGINX release
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams))
+          .as("Test uninstallNginx returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
   }
 
 }
