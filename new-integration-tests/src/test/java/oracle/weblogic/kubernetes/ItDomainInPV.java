@@ -159,7 +159,7 @@ public class ItDomainInPV implements LoggedTest {
     logger.info("Assign a unique namespace for NGINX");
     assertNotNull(namespaces.get(3), "Namespace is null");
     nginxNamespace = namespaces.get(3);
-    
+
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
