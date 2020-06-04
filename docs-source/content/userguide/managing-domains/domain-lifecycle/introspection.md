@@ -34,7 +34,7 @@ and the type of configuration change.
 * **Domain in PV:**
 For a domain home on PV, it is often possible to avoid a full restart when making a dynamic change.
     * Configuration changes that will not restart any servers:
-      * Adding a cluster, server or dynamic server
+      * Adding a cluster, server, or dynamic server
       * Changing a dynamic property such as a server's connection timeout property
     * Configuration changes that may shut down or restart some servers:  
       * Removing a cluster, server, dynamic server, or network access point
