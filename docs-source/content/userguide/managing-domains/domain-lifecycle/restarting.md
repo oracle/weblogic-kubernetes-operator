@@ -35,7 +35,6 @@ For detailed information on how to restart servers in a Oracle WebLogic Server i
 This document describes what actions you need to take to properly restart your servers for a number of common scenarios:
 
 * Modifying the WebLogic configuration
-* Changing the custom domain configuration overrides (also called situational configuration) for Domain in PV and Domain in Image domains
 * Changing the model files for Model in Image domains
 * Changing the WebLogic Server credentials (the user name and password)
 * Changing properties on the domain resource that affect server pods (such as `image`, `volumes`, and `env`)
@@ -80,15 +79,6 @@ is dynamic and does not require a restart.
     * Other non-dynamic WebLogic configuration changes require either a manually initiated rolling restart or a full domain restart, depending on the nature of the change.
       For example, a rolling restart is applicable when changing a WebLogic Server `stuck thread timer interval` property. See [Restart all the servers in the domain]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restart-all-the-servers-in-the-domain" >}}).
 
-
-#### Changing the custom domain configuration overrides
-
-Any change to domain configuration overrides requires a full domain restart.  This includes:
-
-  * Changing the domain resource's `configuration.overridesConfigMap` to point to a different configuration map
-  * Changing the domain resource's `configuration.secrets` to point to a different list of secrets
-  * Changing the contents of the configuration map referenced by `configuration.overridesConfigMap`
-  * Changing the contents to any of the secrets referenced by `configuration.secrets`
 
 #### Changing the WebLogic Server credentials
 
