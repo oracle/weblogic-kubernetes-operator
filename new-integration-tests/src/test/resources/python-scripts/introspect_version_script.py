@@ -32,7 +32,7 @@ def change_admin_port():
     edit()
     startEdit()
     cd('/Servers/' + admin_server_name)
-    cmo.setListenPort(new_admin_port)
+    cmo.setListenPort(int(new_admin_port))
     save()
     activate()
     disconnect()

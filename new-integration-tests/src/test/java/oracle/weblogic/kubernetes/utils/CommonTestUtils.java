@@ -522,7 +522,7 @@ public class CommonTestUtils {
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
-   
+
     return createMiiImageAndVerify(
         miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType);
   }
@@ -980,17 +980,17 @@ public class CommonTestUtils {
       String domainUid,
       String namespace,
       List<String> modelFiles) {
-    
+
     assertNotNull(configMapName, "ConfigMap name cannot be null");
-    
+
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
-   
+
     assertNotNull(configMapName, "ConfigMap name cannot be null");
 
     logger.info("Create ConfigMap {0} that contains model files {1}",
         configMapName, modelFiles);
-   
+
     Map<String, String> data = new HashMap<>();
 
     for (String modelFile : modelFiles) {
@@ -1009,7 +1009,7 @@ public class CommonTestUtils {
         String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
         String.format("Failed to create ConfigMap %s", configMapName));
   }
-  
+
   /**
    * Read the content of a model file as a String and add it to a map.
    */
@@ -1019,7 +1019,7 @@ public class CommonTestUtils {
 
     String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
         String.format("Failed to read model file %s", dsModelFile));
-    assertNotNull(cmData, 
+    assertNotNull(cmData,
         String.format("Failed to read model file %s", dsModelFile));
 
     data.put(modelFileName, cmData);

@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -63,14 +63,15 @@ import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import oracle.weblogic.kubernetes.utils.WLSTUtils;
 import org.apache.commons.io.FileUtils;
+import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.EvaluatedCondition;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -93,7 +94,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
-import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -760,11 +760,7 @@ public class ItDomainInPV implements LoggedTest {
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, introDomainNamespace));
-    logger.info(dump(domain1));
-
+    logger.info("change the cluster size and verify the introspector runs and updates the domain status");
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
         "Creating WLST properties file failed");
@@ -784,6 +780,7 @@ public class ItDomainInPV implements LoggedTest {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
+    // construct a patch string
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/introspectVersion\", ")
@@ -794,23 +791,30 @@ public class ItDomainInPV implements LoggedTest {
     logger.info("Adding introspectVersion for domain {0} in namespace {1} using patch string: {2}",
         domainUid, introDomainNamespace, patchStr.toString());
 
+    // patch the custom resource
     V1Patch patch = new V1Patch(new String(patchStr));
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+
+    //verify the introspector pod is created and runs
     String introspectPodName = domainUid + "-" + "introspect-domain-job";
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
-    try {
-      TimeUnit.MINUTES.sleep(2);
-    } catch (InterruptedException ex) {
-      //
-    }
-    Domain patchedDomain = assertDoesNotThrow(
-        () -> TestActions.getDomainCustomResource(domainUid, introDomainNamespace));
-    assertEquals(6, patchedDomain.getStatus().getClusters().get(0).getMaximumReplicas(),
-        "Cluster maximumReplicas is not equal to 6");
-    assertEquals(2, patchedDomain.getStatus().getClusters().get(0).getMinimumReplicas(),
-        "Cluster minimumReplicas is not equal to 2");
 
+    //verify the maximum and minimum cluster size is updated to expected values
+    withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
+        @Override
+        public void conditionEvaluated(EvaluatedCondition condition) {
+          logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be 6", clusterName);
+        }
+      })
+        .until((Callable<Boolean>) () -> {
+          Domain res = TestActions.getDomainCustomResource(domainUid, introDomainNamespace);
+          return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 6)
+              && (res.getStatus().getClusters().get(0).getMinimumReplicas() == 2);
+        }
+        );
+
+    // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
     DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
@@ -822,6 +826,7 @@ public class ItDomainInPV implements LoggedTest {
     }
 
 
+    // changet the admin server port to a different value to force pod restart
     p1.setProperty("test_name", "change_admin_port");
     p1.setProperty("new_admin_port", Integer.toString(7005));
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
@@ -841,23 +846,15 @@ public class ItDomainInPV implements LoggedTest {
     logger.info("Adding introspectVersion for domain {0} in namespace {1} using patch string: {2}",
         domainUid, introDomainNamespace, patchStr.toString());
 
+    // patch the domain with a new introspectVersion version
     patch = new V1Patch(new String(patchStr));
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
-    TestAssertions.verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
-    try {
-      TimeUnit.MINUTES.sleep(2);
-    } catch (InterruptedException ex) {
-      //
-    }
 
-    patchedDomain = assertDoesNotThrow(
-        () -> TestActions.getDomainCustomResource(domainUid, introDomainNamespace));
-    assertEquals(6, patchedDomain.getStatus().getClusters().get(0).getMaximumReplicas(),
-        "Cluster maximumReplicas is not equal to 6");
-    assertEquals(2, patchedDomain.getStatus().getClusters().get(0).getMinimumReplicas(),
-        "Cluster minimumReplicas is not equal to 2");
+    //verify the pods are restarted
+    TestAssertions.verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+
   }
 
   /**
