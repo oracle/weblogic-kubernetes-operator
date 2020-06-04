@@ -1,5 +1,5 @@
 ---
-title: "Rerunning Introspection"
+title: "Rerunning introspection"
 date: 2020-06-04T08:14:51-05:00
 draft: true
 weight: 5
@@ -13,12 +13,13 @@ This document describes _how and when_ to rerun the introspector job in the Orac
 
 In order to manage a domain, the operator needs to know its definition in WebLogic Server. It does this by running an _introspector job_
 on the domain definition when the domain is first deployed in the operator. If the configuration is modified, the operator must rerun
-the _introspector job_. The exact behavior will depend on the model chosen, and the detected change. Often the running
-domain can be updated without restarting any servers. Currently, this is not supported for Model in Image.
+the introspector job. The exact behavior will depend on the model chosen, and the detected change. Often the running
+domain can be updated without restarting any servers. Currently, this is not supported for 
+the Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
 #### Common re-introspection scenarios
 
-This document describes what actions allow avoiding the restart of servers in a number of common scenarios:
+This document describes what actions allow avoiding the restart of servers in a number of common re-introspection scenarios:
 
 * Modifying the WebLogic configuration
 * Changing the custom domain configuration overrides (also called situational configuration) for Domain in PV and Domain in Image domains
@@ -33,8 +34,8 @@ and the type of configuration change.
 * **Domain in PV:**
 For a domain home on PV, it is often possible to avoid a full restart when making a dynamic change.
     * Configuration changes that will not restart any servers:
-      * Adding a cluster, server or dynamic server.
-      * Changing a dynamic property such as a server's connection timeout property.
+      * Adding a cluster, server or dynamic server
+      * Changing a dynamic property such as a server's connection timeout property
     * Configuration changes that may shut down or restart some servers:  
       * Removing a cluster, server, dynamic server, or network access point
       * Changing a cluster, server, dynamic server, or network access point name
