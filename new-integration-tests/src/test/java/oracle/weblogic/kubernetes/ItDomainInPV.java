@@ -101,6 +101,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
@@ -397,6 +398,8 @@ public class ItDomainInPV implements LoggedTest {
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
 
+    assertTrue(shutdownDomain(domainUid, wlstDomainNamespace), "Failed to shutdown domain");
+
   }
 
   /**
@@ -594,6 +597,8 @@ public class ItDomainInPV implements LoggedTest {
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
+
+    assertTrue(shutdownDomain(domainUid, wdtDomainNamespace), "Failed to shutdown domain");
   }
 
 
@@ -615,6 +620,7 @@ public class ItDomainInPV implements LoggedTest {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "ms-";
+    final int managedServerPort = 8001;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
@@ -645,7 +651,7 @@ public class ItDomainInPV implements LoggedTest {
     p.setProperty("domain_name", domainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("managed_server_port", "8001");
+    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
     p.setProperty("admin_server_port", "7001");
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
@@ -795,6 +801,52 @@ public class ItDomainInPV implements LoggedTest {
               && (res.getStatus().getClusters().get(0).getMinimumReplicas() == 2);
         }
         );
+
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
+    //create ingress controller
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(clusterName, managedServerPort);
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
+    createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
+
+    //deploy application
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    logger.info("Deploying webapp to domain {0}", archivePath);
+    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
+        introDomainNamespace);
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    //access application from admin server
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+    //access application in managed servers through NGINX load balancer
+    logger.info("Accessing the sample app through NGINX load balancer");
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServers.add(domainUid + "-" + managedServerNameBase + i);
+    }
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
+        .as("Verify NGINX can access the test web app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .isTrue();
+
   }
 
   /**
