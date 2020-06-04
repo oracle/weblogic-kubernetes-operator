@@ -48,11 +48,14 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
 
+/**
+ * A utility class for WLST.
+ */
 public class WLSTUtils {
 
   private static String image;
   private static boolean isUseSecret;
-  private static final String MOUNT_POINT = "/scripts/";
+  private static final String MOUNT_POINT = "/scripts";
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
@@ -62,7 +65,7 @@ public class WLSTUtils {
   /**
    * Execute WLST script.
    *
-   * @param wlstScript WLST script path
+   * @param wlstScript WLST script file path
    * @param domainProperties domain property file path
    * @param namespace namespace in which to run the job
    */
@@ -73,7 +76,7 @@ public class WLSTUtils {
     String wlstScriptFileName = wlstScript.getFileName().toString();
     String wlstPropertiesFile = domainProperties.getFileName().toString();
 
-    logger.info("Creating a config map to hold wlst script files");
+    logger.info("Creating a config map to hold WLST script files");
     String uniqueName = Namespace.uniqueName();
     String wlstScriptConfigMapName = "wlst-scripts-cm-" + uniqueName;
     String wlstJobName = "wlst-job-" + uniqueName;
@@ -86,22 +89,21 @@ public class WLSTUtils {
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
         .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
-        .addArgsItem(MOUNT_POINT + "/" + wlstScriptFileName) //wlst deploy py script
+        .addArgsItem(MOUNT_POINT + "/" + wlstScriptFileName) //WLST py script
         .addArgsItem("-skipWLSModuleScanning")
         .addArgsItem("-loadProperties")
-        .addArgsItem(MOUNT_POINT + "/" + wlstPropertiesFile); //domain property file
+        .addArgsItem(MOUNT_POINT + "/" + wlstPropertiesFile); //WLST property file
 
-    logger.info("Running a Kubernetes job to execute WLST script");
     assertDoesNotThrow(()
         -> createWLSTJob(wlstJobName, wlstScriptConfigMapName, namespace, jobCreationContainer),
-        "WLST execution failed");
+        "Online WLST execution failed");
   }
 
   /**
    * Create a job to execute WLST script.
    *
    * @param uniqueName a unique job name
-   * @param wlstScriptConfigMapName configmap holding wlst script file
+   * @param wlstScriptConfigMapName configmap holding WLST script file
    * @param namespace name of the namespace in which the job is created
    * @param jobContainer V1Container with job commands to execute WLST script
    * @throws ApiException when Kubernetes cluster query fails
@@ -126,12 +128,12 @@ public class WLSTUtils {
                         .imagePullPolicy("IfNotPresent")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
-                                .name("wlst-job-cm-volume") // wlst script volume
+                                .name("wlst-job-cm-volume") // WLST script volume
                                 .mountPath(MOUNT_POINT))))) // mounted under /sctipts inside pod
                     .volumes(Arrays.asList(new V1Volume()
-                        .name("wlst-job-cm-volume") // deployment scripts volume
+                        .name("wlst-job-cm-volume") // WLST scripts volume
                         .configMap(new V1ConfigMapVolumeSource()
-                            .name(wlstScriptConfigMapName)))) //config map containing wlst script
+                            .name(wlstScriptConfigMapName)))) //config map containing WLST script
                     .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))

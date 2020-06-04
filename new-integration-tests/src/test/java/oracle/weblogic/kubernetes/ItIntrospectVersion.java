@@ -96,6 +96,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainWithIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
@@ -198,7 +199,7 @@ public class ItIntrospectVersion implements LoggedTest {
    * Test Creates a domain in persistent volume using WLST.
    * Updates the cluster configuration; cluster size using online WLST.
    * Patches the domain custom resource with introSpectVersion.
-   * Verifies the introspector runs and cluster maximum and minimum replicas are updated
+   * Verifies the introspector runs and the cluster maximum replica is updated
    * under domain status.
    * Verifies that the new pod comes up and sample application deployment works.
    */
@@ -411,14 +412,14 @@ public class ItIntrospectVersion implements LoggedTest {
     checkPodReady(managedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
     checkServiceExists(managedServerPodNamePrefix + 3, introDomainNamespace);
 
-    // verify managed server pods are ready
+    // verify existing managed server pods are not affected
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    // verify managed server services are created
+    // verify existing managed server services are not affected
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
@@ -481,11 +482,13 @@ public class ItIntrospectVersion implements LoggedTest {
   }
 
   /**
-   * Test server pods are rolled and updated when introspector run triggered by introSpectVersion.
+   * Test server pods are rolling restarted and updated when domain is patched
+   * with introSpectVersion when non dynamic changes are made.
    * Updates the admin server listen port using online WLST.
    * Patches the domain custom resource with introSpectVersion.
-   * Verifies the introspector runs and pods are rolled in rolling fashion.
-   * Verifies the new admin port of the admin server in services
+   * Verifies the introspector runs and pods are rolled in a rolling fashion.
+   * Verifies the new admin port of the admin server in services.
+   * Verifies accessing sample application in admin server works.
    */
   @Order(2)
   @Test
@@ -494,10 +497,13 @@ public class ItIntrospectVersion implements LoggedTest {
 
     final String domainUid = "mydomain";
     final String clusterName = "mycluster";
+
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
+
     final String managedServerNameBase = "ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+
     final int replicaCount = 3;
     final int newAdminPort = 7005;
 
@@ -550,14 +556,16 @@ public class ItIntrospectVersion implements LoggedTest {
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
 
-    logger.info("Getting port for default channel");
+    // verify the admin port is changed to newAdminPort
+    assertEquals(newAdminPort, assertDoesNotThrow(()
+        -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server port failed"),
+        "Updated admin server port is not equal to expected value");
+
+    logger.info("Getting node port for default channel");
     int adminServerNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
-
-    // verify the admin port is changed to newAdminPort
-    assertEquals(newAdminPort, adminServerNodePort,
-        "Updated admin server port is not equal to expected value");
 
     //access application from admin server to validate the new port
     String url = "http://" + K8S_NODEPORT_HOST + ":" + adminServerNodePort + "/testwebapp/index.jsp";
