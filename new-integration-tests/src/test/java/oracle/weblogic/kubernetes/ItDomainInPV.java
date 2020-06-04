@@ -829,8 +829,8 @@ public class ItDomainInPV implements LoggedTest {
     }
 
     logger.info("Getting node port for default channel");
-    int adminServerPort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+    int adminServerT3Port = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
         "Getting admin server node port failed");
 
     // create a temporary WebLogic WLST property file
@@ -838,7 +838,7 @@ public class ItDomainInPV implements LoggedTest {
         "Creating WLST properties file failed");
     Properties p = new Properties();
     p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerPort));
+    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
     p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
     p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("cluster_name", clusterName);
