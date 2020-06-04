@@ -611,9 +611,9 @@ public class ItDomainInPV implements LoggedTest {
 
     final String domainUid = "mydomain";
     final String clusterName = "mycluster";
-    final String adminServerName = "my-admin-server";
+    final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "my-ms-";
+    final String managedServerNameBase = "ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
@@ -809,9 +809,9 @@ public class ItDomainInPV implements LoggedTest {
 
     final String domainUid = "mydomain";
     final String clusterName = "mycluster";
-    final String adminServerName = "my-admin-server";
+    final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "my-ms-";
+    final String managedServerNameBase = "ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int newAdminPort = 7005;
