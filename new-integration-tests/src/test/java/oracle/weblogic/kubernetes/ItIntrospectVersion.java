@@ -378,7 +378,7 @@ public class ItIntrospectVersion implements LoggedTest {
     // patch the domain to increase the replicas of the cluster
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"replace\", ")
-        .append("\"path\": \"/spec/clusters[0]/replicas\", ")
+        .append("\"path\": \"/spec/clusters/0/replicas\", ")
         .append("\"value\": \"3")
         .append("\"}]");
 
@@ -389,7 +389,7 @@ public class ItIntrospectVersion implements LoggedTest {
     // patch the domain
     V1Patch patch = new V1Patch(new String(patchStr));
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to update /spec/clusters[0]/replicas to 3");
+        "Failed to update /spec/clusters/0/replicas to 3");
 
     // patch the domain with introspectVersion
     assertTrue(assertDoesNotThrow(()
@@ -417,13 +417,6 @@ public class ItIntrospectVersion implements LoggedTest {
         }
         );
 
-    // verify existing pods are not restarted
-    podStateNotChanged(adminServerPodName, domainUid, introDomainNamespace, adminPodCreationTime);
-    for (int i = 1; i <= replicaCount; i++) {
-      podStateNotChanged(managedServerPodNamePrefix + i,
-          domainUid, introDomainNamespace, pods.get(i));
-    }
-
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
 
@@ -444,6 +437,13 @@ public class ItIntrospectVersion implements LoggedTest {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+    }
+
+    // verify existing pods are not restarted
+    podStateNotChanged(adminServerPodName, domainUid, introDomainNamespace, adminPodCreationTime);
+    for (int i = 1; i <= replicaCount; i++) {
+      podStateNotChanged(managedServerPodNamePrefix + i,
+          domainUid, introDomainNamespace, pods.get(i));
     }
 
     logger.info("Getting node port for T3 channel");
