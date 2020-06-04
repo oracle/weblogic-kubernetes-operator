@@ -70,7 +70,10 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -127,6 +130,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests to create domain in persistent volume using WLST and WDT.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
 public class ItDomainInPV implements LoggedTest {
@@ -203,6 +207,7 @@ public class ItDomainInPV implements LoggedTest {
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful.
    */
+  @Order(1)
   @Test
   @DisplayName("Create WebLogic domain in PV using WLST script")
   public void testDomainInPvUsingWlst() {
@@ -400,6 +405,7 @@ public class ItDomainInPV implements LoggedTest {
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful.
    */
+  @Order(2)
   @Test
   @DisplayName("Create WebLogic domain in PV using WDT")
   public void testDomainInPvUsingWdt() {
@@ -607,13 +613,16 @@ public class ItDomainInPV implements LoggedTest {
   }
 
   /**
-   * Create a WebLogic domain using WLST in a persistent volume.
-   * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
-   * Verify domain pods runs in ready state and services are created.
-   * Verify login to WebLogic console is successful.
+   * Test domain status updated when introspector run triggered by introSpectVersion.
+   * Test Creates a domain in pv using WLST
+   * Updates the cluster configuration; cluster size using online WLST.
+   * Patches the domain custom resource with introSpectVersion.
+   * Verifies the introspector runs and cluster maximum and minimum replicas are updated
+   * under domain status.
    */
+  @Order(3)
   @Test
-  @DisplayName("Create WebLogic domain in PV using WLST script")
+  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDomainIntrospectVersionNotRolling() {
 
     final String domainUid = "introspect-domain-nr";
@@ -749,17 +758,6 @@ public class ItDomainInPV implements LoggedTest {
       checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
     }
 
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
     logger.info("change the cluster size and verify the introspector runs and updates the domain status");
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
@@ -776,11 +774,11 @@ public class ItDomainInPV implements LoggedTest {
     assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
         "Failed to write the WLST properties to file");
 
-    // change the server count of the cluster
+    // change the server count of the cluster by running online WLST
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    // construct a patch string
+    // construct a patch string to update introspectVersion
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/introspectVersion\", ")
@@ -796,6 +794,7 @@ public class ItDomainInPV implements LoggedTest {
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
 
     //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, run and deleted");
     String introspectPodName = domainUid + "-" + "introspect-domain-job";
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
@@ -813,6 +812,46 @@ public class ItDomainInPV implements LoggedTest {
               && (res.getStatus().getClusters().get(0).getMinimumReplicas() == 2);
         }
         );
+  }
+
+  /**
+   * Test server pods are rolled and updated when introspector run triggered by introSpectVersion.
+   * Updates the admin server listen port using online WLST.
+   * Patches the domain custom resource with introSpectVersion.
+   * Verifies the introspector runs and pods are rolled in rolling fashion.
+   */
+  @Order(4)
+  @Test
+  @DisplayName("Test introSpectVersion rolling server pods when admin server port is changed")
+  public void testDomainIntrospectVersionRolling() {
+
+    final String domainUid = "introspect-domain-nr";
+    final String clusterName = "intro-cluster";
+    final String adminServerName = "intro-admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String managedServerNameBase = "intro-ms-";
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    final int replicaCount = 2;
+    final int newAdminPort = getNextFreePort(30000, 32767);
+
+    logger.info("change the cluster size and verify the introspector runs and updates the domain status");
+    // create a temporary WebLogic WLST property file
+    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
+        "Creating WLST properties file failed");
+    Properties p1 = new Properties();
+
+    p1.setProperty("admin_host", K8S_NODEPORT_HOST);
+    p1.setProperty("admin_port", Integer.toString(newAdminPort));
+    p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p1.setProperty("cluster_name", clusterName);
+    p1.setProperty("test_name", "change_server_count");
+
+    assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
+        "Failed to write the WLST properties to file");
+
+    //verify the introspector pod is created and runs
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -825,7 +864,6 @@ public class ItDomainInPV implements LoggedTest {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-
     // changet the admin server port to a different value to force pod restart
     p1.setProperty("test_name", "change_admin_port");
     p1.setProperty("new_admin_port", Integer.toString(7005));
@@ -833,10 +871,10 @@ public class ItDomainInPV implements LoggedTest {
         "Failed to write the WLST properties to file");
 
     // change the admin port server port
-    configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
+    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     WLSTUtils.executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    patchStr = new StringBuffer("[{")
+    StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
         .append("\"path\": \"/spec/introspectVersion\", ")
         .append("\"value\": \"3")
@@ -847,7 +885,7 @@ public class ItDomainInPV implements LoggedTest {
         domainUid, introDomainNamespace, patchStr.toString());
 
     // patch the domain with a new introspectVersion version
-    patch = new V1Patch(new String(patchStr));
+    V1Patch patch = new V1Patch(new String(patchStr));
     patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
