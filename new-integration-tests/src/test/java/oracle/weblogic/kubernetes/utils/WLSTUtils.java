@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -61,7 +62,6 @@ public class WLSTUtils {
   /**
    * Execute WLST script.
    *
-   *
    * @param wlstScript WLST script path
    * @param domainProperties domain property file path
    * @param namespace namespace in which to run the job
@@ -78,11 +78,11 @@ public class WLSTUtils {
     String wlstScriptConfigMapName = "wlst-scripts-cm-" + uniqueName;
     String wlstJobName = "wlst-job-" + uniqueName;
 
-    CommonTestUtils.createConfigMapFromFiles(wlstScriptConfigMapName,
+    createConfigMapFromFiles(wlstScriptConfigMapName,
         Arrays.asList(wlstScript, domainProperties), namespace);
 
     logger.info("Preparing to run WLST job");
-    // create a V1Container with specific scripts and properties for creating domain
+    // create a V1Container with specific scripts and properties for running WLST script
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
         .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
