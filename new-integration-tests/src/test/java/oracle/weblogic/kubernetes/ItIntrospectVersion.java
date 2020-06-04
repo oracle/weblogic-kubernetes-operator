@@ -486,7 +486,7 @@ public class ItIntrospectVersion implements LoggedTest {
    * with introSpectVersion when non dynamic changes are made.
    * Updates the admin server listen port using online WLST.
    * Patches the domain custom resource with introSpectVersion.
-   * Verifies the introspector runs and pods are rolled in a rolling fashion.
+   * Verifies the introspector runs and pods are restated in a rolling fashion.
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
