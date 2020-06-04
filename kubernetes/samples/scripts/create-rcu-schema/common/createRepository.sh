@@ -24,9 +24,9 @@ do
 done
 
 if [ $counter -gt ${max} ]; then
- echo "Error output from 'java utils.dbping ORACLE_THIN \"sys as sysdba\" SYSPASSWORD ${connectString}':"
+ echo "Error output from 'java utils.dbping ORACLE_THIN \"sys as sysdba\" SYSPASSWORD ${connectString}' from '$(pwd)/dbping.err':"
  cat dbping.err
- echo "[ERROR] Oracle DB Service is not ready after [${max}] iterations ...
+ echo "[ERROR] Oracle DB Service is not ready after [${max}] iterations ..."
  exit -1
 else
  java utils.dbping ORACLE_THIN "sys as sysdba" ${sysPassword} ${connectString}

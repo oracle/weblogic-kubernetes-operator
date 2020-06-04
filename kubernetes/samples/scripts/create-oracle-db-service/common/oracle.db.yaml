@@ -59,8 +59,10 @@ spec:
           limits:
             cpu: "2"
             memory: "6Gi"
+            ephemeral-storage: "8Gi"
           requests:
             cpu: 500m
+            ephemeral-storage: "6Gi"
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
@@ -69,4 +71,4 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       imagePullSecrets:
-           - name: docker-store
+           - name: docker-secret
