@@ -32,9 +32,9 @@ readDomain(domain_path)
 
 
 cd('/Servers/' + admin_server_name)
-delete('ext-T3Channel', 'NetworkAccessPoint')
-create('ext-T3Channel', 'NetworkAccessPoint')
-cd('/Servers/%s/NetworkAccessPoints/ext-T3Channel' % admin_server_name)
+delete('T3Channel', 'NetworkAccessPoint')
+create('T3Channel', 'NetworkAccessPoint')
+cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
 set('PublicAddress', toDNS1123Legal(domain_uid + '-' + admin_server_name))
 set('ListenAddress', '127.0.0.1')
 set('ListenPort', t3_channel_port)
