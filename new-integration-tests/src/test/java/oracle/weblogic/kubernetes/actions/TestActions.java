@@ -482,6 +482,18 @@ public class TestActions {
   }
 
   /**
+   * Get port of a namespaced service given the channel name.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the port
+   * @return node port if service and channel is found, otherwise -1
+   */
+  public static int getServicePort(String namespace, String serviceName, String channelName) {
+    return Service.getServicePort(namespace, serviceName, channelName);
+  }
+
+  /**
    * Get namespaced service object.
    *
    * @param namespace name of the namespace in which to get the service

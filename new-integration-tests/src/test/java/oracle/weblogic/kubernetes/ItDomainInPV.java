@@ -98,6 +98,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
@@ -871,6 +872,14 @@ public class ItDomainInPV implements LoggedTest {
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+
+    logger.info("Getting port for default channel");
+    int adminServerPort = assertDoesNotThrow(()
+        -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    assertEquals(newAdminPort, adminServerPort,
+        "Updated admin server port is not equal to expected value");
 
   }
 

@@ -1534,6 +1534,27 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Get port of a namespaced service given the channel name.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the port
+   * @return node port if service and channel is found, otherwise -1
+   */
+  public static int getServicePort(String namespace, String serviceName, String channelName) {
+    V1Service service = getNamespacedService(namespace, serviceName);
+    if (service != null) {
+      V1ServicePort port = service.getSpec().getPorts().stream().filter(
+          v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
+          .findAny().orElse(null);
+      if (port != null) {
+        return port.getPort();
+      }
+    }
+    return -1;
+  }
+
+  /**
    * List services in a given namespace.
    *
    * @param namespace name of the namespace
