@@ -599,6 +599,28 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Replace a existing namespace with configuration changes.
+   *
+   * @param ns V1Namespace object
+   * @throws ApiException when replacing namespace fails
+   */
+  public static void replaceNamespace(V1Namespace ns) throws ApiException {
+
+    try {
+      coreV1Api.replaceNamespace(
+          ns.getMetadata().getName(), // name of the namespace
+          ns, // V1Namespace object body
+          PRETTY, // pretty print the output
+          null, // dry run or changes need to be permanent
+          null // field manager
+      );
+    } catch (ApiException ex) {
+      logger.severe(ex.getResponseBody());
+      throw ex;
+    }
+  }
+
+  /**
    * List namespaces in the Kubernetes cluster.
    * @return List of all Namespace names in the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails

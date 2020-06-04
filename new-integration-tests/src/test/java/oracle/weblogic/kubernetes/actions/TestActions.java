@@ -297,6 +297,18 @@ public class TestActions {
   }
 
   /**
+   * Add labels to a namespace.
+   *
+   * @param name name of the namespace
+   * @param labels map of labels to add to the namespace
+   * @throws ApiException when adding labels to namespace fails
+   */
+  public static void addLabelsToNamespace(String name, Map<String, String> labels)
+      throws ApiException {
+    Namespace.addLabelsToNamespace(name, labels);
+  }
+
+  /**
    * Create a namespace with unique name.
    *
    * @return true on success, false otherwise
