@@ -166,8 +166,11 @@ public class WLSTUtils {
           fail("WLST execute job failed");
         }
       }
+      List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
+      if (!pods.isEmpty()) {
+        logger.info(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+      }
     }
-
   }
 
   /**
