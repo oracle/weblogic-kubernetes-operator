@@ -61,7 +61,7 @@ if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
   $WORKDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-rcu-access \
     -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
-    -l rcu_prefix=FMW1 \
+    -l rcu_prefix=FMW${CUSTOM_DOMAIN_NAME} \
     -l rcu_schema_password=Oradoc_db1 \
     -l rcu_db_conn_string=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
   echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"

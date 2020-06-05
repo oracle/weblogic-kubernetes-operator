@@ -29,6 +29,14 @@ set -o pipefail
 SCRIPTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source $SCRIPTDIR/env-init.sh
 
+# curl timeout args:
+
+curl_parms="--connect-timeout 5"
+curl_parms+=" --max-time 120"       # max seconds for each try
+curl_parms+=" --retry 3"            # retry up to 3 times
+curl_parms+=" --retry-delay 0"      # disable exponential backoff 
+curl_parms+=" --retry-max-time 400" # total seconds before giving up
+
 dry_run=false
 [ "${1:-}" = "-dry" ] && dry_run=true
 
@@ -58,7 +66,8 @@ download_zip() {
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
     echo "@@ Info: The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
     local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
-    curl -m 30 -fL $LOCATION -o $tempfile
+    echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $tempfile' to find location of latest version."
+    curl $curl_parms -fL $LOCATION -o $tempfile
     LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
     rm -f $tempfile
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
@@ -67,10 +76,11 @@ download_zip() {
 
   if [ ! "$dry_run" = "true" ]; then
     rm -f $ZIPFILE
-    curl -m 30 -fL $LOCATION -o $ZIPFILE
+    echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $ZIPFILE'"
+    curl $curl_parms -fL $LOCATION -o $ZIPFILE
   else
     echo "dryrun:rm -f $ZIPFILE"
-    echo "dryrun:curl -m 30 -fL $LOCATION -o $ZIPFILE"
+    echo "dryrun:curl $curl_parms -fL $LOCATION -o $ZIPFILE"
   fi
 }
 
@@ -82,6 +92,11 @@ if [ "$dry_run" = "true" ]; then
   echo "dryrun:set -eux"
   echo "dryrun:"
 fi
+
+echo "@@ Info: Proxy settings:"
+set +e
+env | grep -i _proxy=
+set -e
 
 download_zip weblogic-deploy.zip $WDT_INSTALLER_URL DOWNLOAD_WDT
 download_zip imagetool.zip $WIT_INSTALLER_URL DOWNLOAD_WIT

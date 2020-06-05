@@ -91,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 // to run kubectl.
 public class Kubernetes implements LoggedTest {
 
-  private static String PRETTY = "false";
+  private static String PRETTY = "true";
   private static Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static String RESOURCE_VERSION = "";
   private static Integer TIMEOUT_SECONDS = 5;
