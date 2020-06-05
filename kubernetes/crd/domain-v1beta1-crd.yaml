@@ -38,7 +38,7 @@ spec:
                     distributed to already running WebLogic servers following introspection
                     when the domainHomeSourceType is PersistentVolume or Image.  Configuration
                     overrides are generated during introspection from secrets, the
-                    overrideConfigMap field, and WebLogic domain topology.Legal values
+                    overrideConfigMap field, and WebLogic domain topology. Legal values
                     are DYNAMIC (the default) and ON_RESTART.
                   enum:
                   - DYNAMIC
@@ -10655,7 +10655,7 @@ spec:
             introspectVersion:
               type: string
               description: If the domain is running, the operator will restart its
-                introspector job when this value is changed.This field is ignored
+                introspector job when this value is changed. This field is ignored
                 when the domainHomeSourceType is FromModel. See also overridesConfigurationStrategy.
             dataHome:
               type: string
