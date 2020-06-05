@@ -16,7 +16,6 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -164,7 +163,6 @@ public class DomainUpPlanTest {
 
   @Test
   public void whenAdminPodCreated_hasListenPort() throws NoSuchFieldException {
-    mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain");
