@@ -227,6 +227,7 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     envMap.put("DB_IMAGE_NAME", dbImageName);
     envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
+    envMap.put("DB_NODE_PORT", "none");
     envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
     envMap.put("BASE_IMAGE_TAG", JRF_BASE_IMAGE_TAG);
 
