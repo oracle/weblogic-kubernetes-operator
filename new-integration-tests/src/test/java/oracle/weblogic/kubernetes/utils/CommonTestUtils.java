@@ -560,13 +560,85 @@ public class CommonTestUtils {
                                                 String baseImageName,
                                                 String baseImageTag,
                                                 String domainType) {
+    return createImageAndVerify(
+        miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
+        baseImageTag, domainType, true);
+  }
 
+  /**
+   * Create an image with modelfile, application archive and property file. If the property file
+   * is needed to be updated with a property that has been created by the framework
+   * @param imageNameBase - base image name used in local or to construct image name in reposiroty
+   * @param wdtModelFile - model file used to build the image
+   * @param appName - application to be added to the image
+   * @param modelPropFile - property file to be used with the model file above
+   * @param altModelDir - directory where the property file is found if not in the default MODEL_DIR
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String imageNameBase,
+                                             String wdtModelFile,
+                                             String appName,
+                                             String modelPropFile,
+                                             String altModelDir) {
+
+    final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final List<String> appSrcDirList = Collections.singletonList(appName);
+    final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
+
+    return createImageAndVerify(
+        imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+        WLS_BASE_IMAGE_TAG, WLS, false);
+  }
+
+  /**
+   * Create an image from the wdt model, application archives and property file.
+   * @param imageNameBase - base image name used in local or to construct image name in reposiroty
+   * @param wdtModelFile - model file used to build the image
+   * @param appName - application to be added to the image
+   * @param modelPropFile - property file to be used with the model file above
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String imageNameBase,
+                                            String wdtModelFile,
+                                            String appName,
+                                            String modelPropFile) {
+
+    final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final List<String> appSrcDirList = Collections.singletonList(appName);
+    final List<String> modelPropList = Collections.singletonList(MODEL_DIR + "/" + modelPropFile);
+
+    return createImageAndVerify(
+        imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+        WLS_BASE_IMAGE_TAG, WLS, false);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain or domain home in image using multiple WDT model
+   * files and application ear files.
+   * @param imageNameBase - the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelList - list of WDT model files used to build the Docker image
+   * @param appSrcDirList - list of the sample application source directories used to build sample app ear files
+   * @param modelPropList - the WebLogic base image name to be used while creating mii image
+   * @param baseImageName - the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag - the WebLogic base image tag to be used while creating mii image
+   * @param domainType - the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @param modelType - create a model image only or domain in image. set to true for MII
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String imageNameBase,
+                                               List<String> wdtModelList,
+                                               List<String> appSrcDirList,
+                                               List<String> modelPropList,
+                                               String baseImageName,
+                                               String baseImageTag,
+                                               String domainType,
+                                               boolean modelType) {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + miiImageNameBase;
+    final String imageName = REPO_NAME + imageNameBase;
     final String image = imageName + ":" + imageTag;
     List<String> archiveList = null;
 
@@ -606,8 +678,9 @@ public class CommonTestUtils {
             .modelImageName(imageName)
             .modelImageTag(imageTag)
             .modelFiles(wdtModelList)
+            .modelVariableFiles(modelPropList)
             .modelArchiveFiles(archiveList)
-            .wdtModelOnly(true)
+            .wdtModelOnly(modelType)
             .wdtVersion(WDT_VERSION)
             .env(env)
             .redirect(true));

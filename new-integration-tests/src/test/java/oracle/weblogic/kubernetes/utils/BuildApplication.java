@@ -268,7 +268,7 @@ public class BuildApplication {
             .storageClassName("weblogic-build-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("2Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
+            .persistentVolumeReclaimPolicy("Retain")
             .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(hostPath.toString())))
