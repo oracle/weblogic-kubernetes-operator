@@ -130,6 +130,48 @@ public class Domain {
   }
 
   /**
+   * Patch a running domain with introspectVersion.
+   * If the introspectVersion doesn't exist it will add the value as 2,
+   * otherwise the value is updated by 1.
+   *
+   * @param domainUid UID of the domain to patch with introspectVersion
+   * @param namespace namespace in which the domain resource exists
+   * @return true if patching is successful, otherwise false
+   * @throws ApiException when patching fails
+   */
+  public static boolean patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) throws ApiException {
+
+    StringBuffer patchStr;
+    oracle.weblogic.domain.Domain res = getDomainCustomResource(domainUid, namespace);
+    // construct the patch string
+    if (res.getSpec().getIntrospectVersion() == null) {
+      patchStr = new StringBuffer("[{")
+          .append("\"op\": \"add\", ")
+          .append("\"path\": \"/spec/introspectVersion\", ")
+          .append("\"value\": \"2")
+          .append("\"}]");
+    } else {
+      int introspectVersion = Integer.parseInt(res.getSpec().getIntrospectVersion()) + 1;
+      patchStr = new StringBuffer("[{")
+          .append("\"op\": \"replace\", ")
+          .append("\"path\": \"/spec/introspectVersion\", ")
+          .append("\"value\": \"")
+          .append(introspectVersion)
+          .append("\"}]");
+    }
+
+    logger.info("Patch String \n{0}", patchStr);
+    logger.info("Adding/updating introspectVersion in domain {0} in namespace {1} using patch string: {2}",
+        domainUid, namespace, patchStr.toString());
+
+    // patch the domain
+    V1Patch patch = new V1Patch(new String(patchStr));
+    return patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+
+  }
+
+  /**
    * Scale the cluster of the domain in the specified namespace.
    *
    * @param domainUid domainUid of the domain to be scaled
