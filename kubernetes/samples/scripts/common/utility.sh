@@ -529,6 +529,8 @@ function createFiles {
   sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
   if [ "${istioEnabled}" == "true" ]; then
     sed -i -e "s:%EXPOSE_ISTIO_PREFIX%:istio-:g" ${dcrOutput}
+  else
+    sed -i -e "s:%EXPOSE_ISTIO_PREFIX%::g" ${dcrOutput}
   fi
 
   buildServerPodResources
