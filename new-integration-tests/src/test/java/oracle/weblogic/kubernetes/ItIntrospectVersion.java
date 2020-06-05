@@ -492,7 +492,7 @@ public class ItIntrospectVersion implements LoggedTest {
    */
   @Order(2)
   @Test
-  @DisplayName("Test introSpectVersion rolling server pods when admin server port is changed")
+  @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
   public void testDomainIntrospectVersionRolling() {
 
     final String domainUid = "mydomain";
