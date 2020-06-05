@@ -17,12 +17,12 @@ This feature is supported only in 3.0.0-RC1.
  - [Frequently asked questions](#frequently-asked-questions)
  - [Supported and unsupported updates](#supported-and-unsupported-updates)
  - [Changing a domain resource `restartVersion`](#changing-a-domain-resource-restartversion)
- - [Using the WDT Discover Domain Tool](#using-the-wdt-discover-domain-tool)
+ - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools)
  - [Example of adding a data source](#example-of-adding-a-data-source)
 
 #### Overview
 
-If you want to make a configuration change to a running Model in Image domain, and you want the change to survive WebLogic pod restarts, then you can modify your existing model using one of the following approaches:
+If you want to make a configuration change to a running Model in Image domain, and you want the change to survive WebLogic Server pod restarts, then you can modify your existing model using one of the following approaches:
 
   - Changing secrets or environment variables that are referenced by macros in your model files.
 
@@ -38,7 +38,7 @@ After the changes are in place, you can tell the operator to apply the changes a
 
  - If you specify multiple model files in your image or WDT ConfigMap, the order in which they're loaded and merged is determined as described in [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
- - You can use the WDT Discover Domain Tool to help generate your model file updates. See [Using the WDT Discover Domain Tool](#using-the-wdt-discover-domain-tool).
+ - You can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates. See [Using the WDT Discover Domain and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
  - For simple ways to change `restartVersion`, see [Changing a domain resource `restartVersion`](#changing-a-domain-resource-restartversion).
 
@@ -71,7 +71,7 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
 
  - You can change or add environment variables that your model macros reference (macros that use the `@@ENV:myenvvar@@` syntax).
 
- - You can remove a named MBean or resource by specifying a model file with an exclamation point (`!`) just before the bean or resource name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
+ - You can remove a named MBean, application deployment, or resource by specifying a model file with an exclamation point (`!`) just before its name. For example, if you have a data source named `mynewdatasource` defined in your model, it can be removed by specifying a small model file that loads after the model file that defines the data source, where the small model file looks like this:
 
    ```
    resources:
@@ -101,18 +101,16 @@ No. Custom configuration overrides, which are WebLogic configuration overrides s
  - You cannot change the domain name at runtime.
 
  - The following types of runtime update configuration are _not_ supported in this release of Model in Image. If you need to make these kinds of updates, shut down your domain entirely before making the change:
-   * Domain topology (cluster members)
-   * Network channel listen address, port, and enabled configuration
+   * Domain topology of an existing WebLogic cluster (cluster members)
+   * Network channel listen address, port, and enabled configuration of an existing cluster or server
    * Server and domain log locations
    * Node Manager related configuration
    * Changing any existing MBean name
 
    Specifically, do not apply runtime updates for:
 
-   * Adding or removing:
-     * Servers
-     * Clusters
-     * Network Access Points (custom channels)
+   * Adding WebLogic Servers to a cluster, or removing them
+   * Adding or removing Network Access Points (custom channels) for existing servers
    * Changing any of the following:
      * Dynamic cluster size
      * Default, SSL, and Admin channel `Enabled`, listen address, and port
@@ -153,9 +151,9 @@ As was mentioned in the [overview](#overview), one way to tell the operator to a
    fi
    ```
 
-#### Using the WDT Discover Domain Tool
+#### Using the WDT Discover Domain and Compare Model Tools
 
-The WebLogic Deploy Tooling [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) generates model files from an existing domain home. You can use this tool to help determine the model file contents you would need to supply to update an existing model.
+The WebLogic Deploy Tooling [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) generates model files from an existing domain home, and its [Compare Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/compare.md) compares two domain models and generates the YAML file for updating the first domain to the second domain. You can use these tools in combination to help determine the model file contents you would need to supply to update an existing model.
 
 For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
 
@@ -173,7 +171,7 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
 
   # (2) Now make some WebLogic config changes using the console or WLST.
 
-  # (3) Run discover for your existing domain home.
+  # (3) Run discover for your changed domain home.
 
   $ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
@@ -183,12 +181,27 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
     -model_file new.yaml \
     -variable_file new.properties
 
-  # (4) Compare your old and new yaml to see what changed.
+  # (4) Compare your old and new yaml using diff
 
   $ diff new.yaml old.yaml
+
+  # (5) Compare your old and new yaml using compareDomain to generate
+  #     the YAML update file you can use for transforming the old to new.
+
+  # /u01/wdt/weblogic-deploy/bin/compareModel.sh \
+    -oracle_home $ORACLE_HOME \
+    -output_dir /tmp \
+    -variable_file old.properties \
+    old.yaml \
+    new.yaml
+
+  # (6) The compareDomain will generate these files:
+  #      /tmp/diffed_model.json
+  #      /tmp/diffed_model.yaml, and
+  #      /tmp/compare_model_stdout
   ```
 
-> **Note**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above commands.
+> **Note**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the above `discoverDomain.sh` commands.
 
 #### Example of adding a data source
 

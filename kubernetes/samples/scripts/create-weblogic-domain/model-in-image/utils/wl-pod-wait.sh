@@ -34,14 +34,14 @@ function usage() {
 
     -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-    pod_count > 0   : Wait until exactly 'pod_count' WebLogic server pods for
+    pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
                       a domain all (a) are ready, (b) have the same 
                       'domainRestartVersion' label value as the
                       current domain resource's 'spec.restartVersion, and
                       (c) have the same image as the current domain
                       resource's image.
 
-    pod_count = 0   : Wait until there are no running WebLogic server pods
+    pod_count = 0   : Wait until there are no running WebLogic Server pods
                       for a domain. The default.
 
     -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_def'.
@@ -268,7 +268,7 @@ while [ 1 -eq 1 ]; do
         -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
         | wc -l ) 
 
-    lead_string="Waiting up to $timeout_secs there to be no (0) WebLogic server pods that match the following criteria:"
+    lead_string="Waiting up to $timeout_secs there to be no (0) WebLogic Server pods that match the following criteria:"
     criteria="namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
 
   else
@@ -284,7 +284,7 @@ while [ 1 -eq 1 ]; do
         | grep "$regex" | wc -l )
     set -e
 
-    lead_string="Waiting up to $timeout_secs seconds for exactly '$expected' WebLogic server pods to reach the following criteria:"
+    lead_string="Waiting up to $timeout_secs seconds for exactly '$expected' WebLogic Server pods to reach the following criteria:"
     criteria="ready='true' image='$currentImage' domainRestartVersion='$currentRV' namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
 
   fi
@@ -336,8 +336,8 @@ while [ 1 -eq 1 ]; do
         reported=1
       fi
 
-      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: '$cur_pods' WebLogic pods currently match all criteria, expecting '$expected'."
-      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Introspector and WebLogic pods with same namespace and domain-uid:"
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: '$cur_pods' WebLogic Server pods currently match all criteria, expecting '$expected'."
+      echo "@@ [$(timestamp)][seconds=$SECONDS] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:"
       echo
 
       # print results as a table
