@@ -14,9 +14,11 @@ To run the test.
    ./run-test.sh -precleanup -oper -traefik -all
 
    JRF mode:
-   ./run-test.sh -precleanup -precleandb -jrf -db -rcu -all
+   ./run-test.sh -precleanup -oper -traefik -precleandb -jrf -db -rcu -all
 
 NOTES:
+
+- The order of the parameters doesn't matter.
 
 - To customize the location of output, etc, 
   see the customizable env vars described by

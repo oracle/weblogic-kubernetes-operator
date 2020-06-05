@@ -115,6 +115,9 @@ DOMAIN_RESOURCE_FILENAME ::: Domain resource filename
   resource yaml file in WORKDIR. Relative to WORKDIR. Defaults to 
   'domain-resources/mii-DOMAIN_UID.yaml'
 
+INTROSPECTOR_DEADLINE_SECONDS ::: Introspector timeout for JRF runs
+  Defaults to 300.
+
 DB_NAMESPACE ::: Namespace for Oracle DB
 
 ?DB_NODEPORT ::: Nodeport for Oracle DB

@@ -55,6 +55,8 @@ ARCHIVE_SOURCEDIR=${ARCHIVE_SOURCEDIR:-archives/archive-v1}
 
 INCLUDE_MODEL_CONFIGMAP=${INCLUDE_MODEL_CONFIGMAP:-false}
 
+INTROSPECTOR_DEADLINE_SECONDS=${INTROSPECTOR_DEADLINE_SECONDS:-300}
+
 echo "@@"
 echo "@@ ######################################################################"
 [ $# -eq 0 ] && echo "@@ Info: Running '$(basename "$0")'"
