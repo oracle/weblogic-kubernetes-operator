@@ -202,7 +202,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 3.0.0
    */
   @Description(
-      "If the domain is running, the operator will restart its introspector job when this value is changed."
+      "If the domain is running, the operator will restart its introspector job when this value is changed. "
       + "This field is ignored when the domainHomeSourceType is FromModel. "
       + "See also overridesConfigurationStrategy.")
   private String introspectVersion;
