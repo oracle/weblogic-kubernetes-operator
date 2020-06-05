@@ -175,16 +175,6 @@ One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogi
     </item>
     
     <item>
-      <title>Demo</title>
-      <link>/weblogic-kubernetes-operator/userguide/introduction/demo/</link>
-      <pubDate>Sat, 23 Feb 2019 20:51:59 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/userguide/introduction/demo/</guid>
-      <description>This video provides a demonstration of the WebLogic Server Kubernetes Operator.
-   This video provides a demonstration of the WebLogic Server Kubernetes Operator.</description>
-    </item>
-    
-    <item>
       <title>Domain resource</title>
       <link>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</link>
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>

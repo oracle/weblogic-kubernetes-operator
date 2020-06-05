@@ -22,16 +22,6 @@ You can have one or more operators in your Kubernetes cluster that manage one or
     </item>
     
     <item>
-      <title>Demo</title>
-      <link>/weblogic-kubernetes-operator/userguide/introduction/demo/</link>
-      <pubDate>Sat, 23 Feb 2019 20:51:59 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/userguide/introduction/demo/</guid>
-      <description>This video provides a demonstration of the WebLogic Server Kubernetes Operator.
-   This video provides a demonstration of the WebLogic Server Kubernetes Operator.</description>
-    </item>
-    
-    <item>
       <title>Architecture</title>
       <link>/weblogic-kubernetes-operator/userguide/introduction/architecture/</link>
       <pubDate>Sat, 23 Feb 2019 20:51:45 -0500</pubDate>
