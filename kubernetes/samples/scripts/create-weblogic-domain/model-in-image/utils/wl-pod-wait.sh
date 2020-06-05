@@ -268,7 +268,7 @@ while [ 1 -eq 1 ]; do
         -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
         | wc -l ) 
 
-    lead_string="Waiting up to $timeout_secs there to be no (0) WebLogic Server pods that match the following criteria:"
+    lead_string="Waiting up to $timeout_secs seconds for there to be no (0) WebLogic Server pods that match the following criteria:"
     criteria="namespace='$DOMAIN_NAMESPACE' domainUID='$DOMAIN_UID'"
 
   else
