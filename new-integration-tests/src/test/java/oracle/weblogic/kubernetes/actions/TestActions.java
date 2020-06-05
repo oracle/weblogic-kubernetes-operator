@@ -16,7 +16,9 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
@@ -44,7 +46,9 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -113,6 +117,7 @@ public class TestActions {
    *
    * @param domain Domain custom resource model object
    * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
       throws ApiException {
@@ -149,7 +154,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean shutdown(String domainUid, String namespace) {
+  public static boolean shutdownDomain(String domainUid, String namespace) {
     return Domain.shutdown(domainUid, namespace);
   }
 
@@ -160,7 +165,7 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restart(String domainUid, String namespace) {
+  public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
 
@@ -194,6 +199,7 @@ public class TestActions {
    * Scale the cluster of the domain in the specified namespace .
    *
    * @param domainUid domainUid of the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param clusterName cluster in the domain to be scaled
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
@@ -405,6 +411,16 @@ public class TestActions {
     return Secret.delete(name, namespace);
   }
 
+  /**
+   * List secrets in the Kubernetes cluster.
+   *
+   * @param namespace Namespace in which to query
+   * @return V1SecretList of secrets in the Kubernetes cluster
+   */
+  public static V1SecretList listSecrets(String namespace) {
+    return Secret.listSecrets(namespace);
+  }
+
   // -------------------------- config map ---------------------------------
 
   /**
@@ -585,7 +601,11 @@ public class TestActions {
    * @return true if successful
    */
   public static boolean dockerPush(String image) {
-    return Docker.push(image);
+    boolean result = Docker.push(image);
+    if (result) {
+      ImageBuilders.registerPushedImage(image);
+    }
+    return result;
   }
 
   /**
@@ -678,6 +698,18 @@ public class TestActions {
     return Job.createNamespacedJob(jobBody);
   }
 
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    return Job.getJob(jobName, namespace);
+  }
+
   // ----------------------   pod  ---------------------------------
 
   /**
@@ -689,7 +721,7 @@ public class TestActions {
    * @return creationTimestamp from metadata section of the Pod
    * @throws ApiException if Kubernetes client API call fails
    **/
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
@@ -718,7 +750,19 @@ public class TestActions {
   public static String getPodLog(String podName, String namespace) throws ApiException {
     return Pod.getPodLog(podName, namespace);
   }
-  
+
+  /**
+   * List Kubernetes pods in a namespace.
+   *
+   * @param namespace name of namespace
+   * @param labelSelectors with which pods are decorated
+   * @return V1PodList list of pods
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
+    return Pod.listPods(namespace, labelSelectors);
+  }
+
   /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
@@ -733,7 +777,55 @@ public class TestActions {
     return Kubernetes.getPodRestartVersion(namespace, labelSelector, podName);
   }
 
+  /**
+   * Patch domain to shutdown a WebLogic server by changing the value of
+   * server's serverStartPolicy property to NEVER.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to shutdown
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean shutdownManagedServerUsingServerStartPolicy(String domainUid,
+                                                                    String namespace,
+                                                                    String serverName) throws ApiException {
+    return Pod.shutdownManagedServerUsingServerStartPolicy(domainUid,namespace, serverName);
+  }
 
+  /**
+   * Patch domain to start a WebLogic server by changing the value of
+   * server's serverStartPolicy property to IF_NEEDED.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to start
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean startManagedServerUsingServerStartPolicy(String domainUid,
+                                                                 String namespace,
+                                                                 String serverName) throws ApiException {
+    return Pod.startManagedServerUsingServerStartPolicy(domainUid,namespace, serverName);
+  }
+
+  /**
+   * Patch domain to restart a WebLogic server by changing its serverStartPolicy properties.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of the namespace
+   * @param serverName name of the WebLogic server to start
+   * @return true if patching domain operation succeeds or false if the operation fails
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static boolean restartManagedServerUsingServerStartPolicy(String domainUid,
+                                                                   String namespace,
+                                                                   String serverName) throws ApiException {
+    boolean serverStopped = shutdownManagedServerUsingServerStartPolicy(domainUid, namespace, serverName);
+    boolean serverStarted = startManagedServerUsingServerStartPolicy(domainUid, namespace, serverName);
+
+    return serverStopped && serverStarted;
+  }
   // ------------------------ where does this go  -------------------------
 
   /**
@@ -754,7 +846,7 @@ public class TestActions {
 
   /**
    * Patch the domain resource with a new restartVersion.
-   * 
+   *
    * @param domainResourceName name of the domain resource
    * @param namespace Kubernetes namespace that the domain is hosted
    * @return restartVersion new restartVersion of the domain resource

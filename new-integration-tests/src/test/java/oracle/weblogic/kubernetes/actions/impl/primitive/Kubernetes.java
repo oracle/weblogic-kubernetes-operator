@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
@@ -61,6 +62,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicaSetList;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleBindingList;
 import io.kubernetes.client.openapi.models.V1RoleList;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -76,8 +79,7 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -459,16 +461,15 @@ public class Kubernetes implements LoggedTest {
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName  name of the pod
-   * @return creationTimestamp from metadata section of the Pod
+   * @return creationTimestamp DateTime from metadata of the Pod
    * @throws ApiException if Kubernetes client API call fail
    */
-  public static String getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
-    DateTimeFormatter dtf = DateTimeFormat.forPattern("HHmmss");
 
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null && pod.getMetadata() != null) {
-      return dtf.print(pod.getMetadata().getCreationTimestamp());
+      return pod.getMetadata().getCreationTimestamp();
     } else {
       logger.info("Pod doesn't exist or pod metadata is null");
       return null;
@@ -777,7 +778,9 @@ public class Kubernetes implements LoggedTest {
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           json, // JSON schema of the Resource to create
-          null // pretty print output
+          null, // pretty print output
+          null, // dry run
+          null // field manager
       );
     } catch (ApiException apex) {
       logger.severe(apex.getResponseBody());
@@ -1635,6 +1638,26 @@ public class Kubernetes implements LoggedTest {
     return list;
   }
 
+  /**
+   * Get V1Job object if any exists in the namespace with given job name.
+   *
+   * @param jobName name of the job
+   * @param namespace name of the namespace in which to get the job object
+   * @return V1Job object if any exists otherwise null
+   * @throws ApiException when Kubernetes cluster query fails
+   */
+  public static V1Job getJob(String jobName, String namespace) throws ApiException {
+    V1JobList listJobs = listJobs(namespace);
+    for (V1Job job : listJobs.getItems()) {
+      if (job != null && job.getMetadata() != null) {
+        if (job.getMetadata().getName().equals(jobName)) {
+          return job;
+        }
+      }
+    }
+    return null;
+  }
+
   // --------------------------- replica sets ---------------------------
 
 
@@ -2043,12 +2066,8 @@ public class Kubernetes implements LoggedTest {
       // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading thread to finish any last remaining output
-      if (out != null) {
-        // need to time out here, otherwise the command can take almost one minute to return.
-        // yet to see if we'll need a different timeout value for different environments.
-        out.join(1200);
-      }
+      // wait for reading thread to finish any remaining output
+      out.join();
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());

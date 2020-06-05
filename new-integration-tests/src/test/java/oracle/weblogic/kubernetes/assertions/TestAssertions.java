@@ -16,9 +16,12 @@ import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
 import oracle.weblogic.kubernetes.assertions.impl.Operator;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
+import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
+import org.joda.time.DateTime;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -70,6 +73,7 @@ public class TestAssertions {
    * namespace.
    *
    * @param domainUid ID of the domain
+   * @param domainVersion version of the domain resource definition
    * @param namespace in which the domain custom resource object exists
    * @return true if domain object exists
    */
@@ -78,13 +82,14 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a pod's restartVersion has been updated. 
+   * Check if a pod's restartVersion has been updated.
    *
    * @param podName   name of the pod to check
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace in which the pod is running
    * @param expectedRestartVersion restartVersion that is expected
    * @return true if the pod's restartVersion has been updated
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean podRestartVersionUpdated(
       String podName,
@@ -134,6 +139,7 @@ public class TestAssertions {
    * @param domainUid ID of the domain resource
    * @param namespace Kubernetes namespace in which the domain custom resource object exists
    * @param podName name of the WebLogic server pod
+   * @param containerName name of the container inside the pod where the image is used
    * @param image name of the image that was used to patch the domain resource
    * @return true if the pod is patched correctly
    */
@@ -143,7 +149,7 @@ public class TestAssertions {
       String podName,
       String containerName,
       String image
-  ) throws ApiException {
+  ) {
     return () -> {
       return Kubernetes.podImagePatched(namespace, domainUid, podName, containerName, image);
     };
@@ -204,7 +210,7 @@ public class TestAssertions {
    * @param namespace name of the namespace in which the pod restart status to be checked
    * @return true if pods are restarted in a rolling fashion
    */
-  public static boolean verifyRollingRestartOccurred(Map<String, String> pods, int maxUnavailable, String namespace) {
+  public static boolean verifyRollingRestartOccurred(Map<String, DateTime> pods, int maxUnavailable, String namespace) {
     return Pod.verifyRollingRestartOccurred(pods, maxUnavailable, namespace);
   }
 
@@ -296,28 +302,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if an application is accessible inside a WebLogic server pod using
-   * "kubectl exec" command.
-   *
-   * @param namespace Kubernetes namespace where the WebLogic server pod is running
-   * @param podName name of the WebLogic server pod
-   * @param port internal port of the managed server running in the pod
-   * @param appPath path to access the application
-   * @param expectedResponse the expected response from the application
-   * @return true if the command succeeds
-   */
-  public static boolean appAccessibleInPodKubectl(
-      String namespace,
-      String podName,
-      String port,
-      String appPath,
-      String expectedResponse
-  ) {
-    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
-  }
-
-  /**
-   * Check if the given WebLogic credentials are valid by using the credentials to 
+   * Check if the given WebLogic credentials are valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
    * @param host hostname of the admin server pod
@@ -337,7 +322,7 @@ public class TestAssertions {
   }
 
   /**
-   * Check if the given WebLogic credentials are NOT valid by using the credentials to 
+   * Check if the given WebLogic credentials are NOT valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
    * @param host hostname of the admin server pod
@@ -424,14 +409,13 @@ public class TestAssertions {
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
    * @return true if the pod new timestamp is not equal to initial PodCreationTimestamp otherwise false
-   * @throws ApiException when query fails
    */
   public static Callable<Boolean> isPodRestarted(
       String podName,
       String domainUid,
       String namespace,
-      String timestamp
-  ) throws ApiException {
+      DateTime timestamp
+  ) {
     return () -> {
       return Kubernetes.isPodRestarted(podName,domainUid,namespace,timestamp);
     };
@@ -439,28 +423,51 @@ public class TestAssertions {
 
   /**
    * Verify the pod state is not changed.
+   *
    * @param podName the name of the pod to check
-   * @param domainUid the domain in which the pod exists
-   * @param domainNamespace the domain namespace in which the domain exists
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
    * @param podOriginalCreationTimestamp the pod original creation timestamp
    * @return true if the pod state is not changed, false otherwise
    */
   public static boolean podStateNotChanged(String podName,
                                            String domainUid,
-                                           String domainNamespace,
-                                           String podOriginalCreationTimestamp) {
-    return Domain.podStateNotChanged(podName, domainUid, domainNamespace, podOriginalCreationTimestamp);
+                                           String namespace,
+                                           DateTime podOriginalCreationTimestamp) {
+    return Domain.podStateNotChanged(podName, domainUid, namespace, podOriginalCreationTimestamp);
   }
 
   /**
    * Check if a job completed running.
    *
-   * @param namespace name of the namespace in which the job running
    * @param jobName name of the job to check for its completion status
+   * @param labelSelectors label selectors used to get the right pod object
+   * @param namespace name of the namespace in which the job running
    * @return true if completed false otherwise
    */
   public static Callable<Boolean> jobCompleted(String jobName, String labelSelectors, String namespace) {
     return Job.jobCompleted(namespace, labelSelectors, jobName);
   }
 
+  /**
+   * Check whether persistent volume with pvName exists.
+   *
+   * @param pvName persistent volume to check
+   * @param labelSelector String containing the labels the PV is decorated with
+   * @return true if the persistent volume exists, false otherwise
+   */
+  public static Callable<Boolean> pvExists(String pvName, String labelSelector) {
+    return PersistentVolume.pvExists(pvName, labelSelector);
+  }
+
+  /**
+   * Check whether persistent volume claims with pvcName exists in the specified namespace.
+   *
+   * @param pvcName persistent volume claim to check
+   * @param namespace the namespace in which the persistent volume claim to be checked
+   * @return true if the persistent volume claim exists in the namespace, false otherwise
+   */
+  public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
+    return PersistentVolumeClaim.pvcExists(pvcName, namespace);
+  }
 }

@@ -78,7 +78,6 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static String domainNamespace = null;
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
-  private static List<String> ingressHostList = null;
 
   private String curlCmd = null;
 
@@ -126,7 +125,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
       clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
     }
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    ingressHostList = createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
+    createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
   }
 
   @Test
@@ -167,13 +166,15 @@ class ItScaleMiiDomainNginx implements LoggedTest {
           clusterName, domainUid, domainNamespace, numberOfServers);
       curlCmd = generateCurlCmd(clusterName);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, replicaCount, numberOfServers,
-          curlCmd, managedServersBeforeScale);
+      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
+          domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
+          replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
 
       // then scale cluster-1 and cluster-2 to 0 server
       managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, numberOfServers, 0,
-          curlCmd, managedServersBeforeScale);
+      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
+          domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
+          numberOfServers, 0, curlCmd, managedServersBeforeScale);
     }
   }
 
@@ -314,6 +315,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    * @return curl command string
    */
   private String generateCurlCmd(String clusterName) {
+
     return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
   }
