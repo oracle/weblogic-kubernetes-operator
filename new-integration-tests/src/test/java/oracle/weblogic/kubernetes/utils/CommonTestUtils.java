@@ -27,6 +27,8 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
@@ -35,8 +37,11 @@ import org.joda.time.DateTime;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
@@ -82,6 +87,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -128,14 +134,32 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyOperator(String opNamespace,
                                                     String... domainNamespace) {
 
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    String... domainNamespace) {
+
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
-    String serviceAccountName = opNamespace + "-sa";
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
         .metadata(new V1ObjectMeta()
             .namespace(opNamespace)
-            .name(serviceAccountName))));
-    logger.info("Created service account: {0}", serviceAccountName);
+            .name(opServiceAccount))));
+    logger.info("Created service account: {0}", opServiceAccount);
 
     // get operator image name
     String operatorImage = getOperatorImageName();
@@ -162,7 +186,17 @@ public class CommonTestUtils {
         .image(operatorImage)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(serviceAccountName);
+        .serviceAccount(opServiceAccount);
+
+    if (withRestAPI) {
+      // create externalRestIdentitySecret
+      assertTrue(createExternalRestIdentitySecret(opNamespace, DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME),
+          "failed to create external REST identity secret");
+      opParams
+          .externalRestEnabled(true)
+          .externalRestHttpsPort(externalRestHttpsPort)
+          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
+    }
 
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
@@ -741,6 +775,43 @@ public class CommonTestUtils {
                                            String curlCmd,
                                            List<String> expectedServerNames) {
 
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, manageServerPodNamePrefix, replicasBeforeScale,
+        replicasAfterScale, false, 0, "", "", curlCmd, expectedServerNames);
+  }
+
+  /**
+   * Scale the WebLogic cluster to specified number of servers.
+   * Verify the sample app can be accessed through NGINX if curlCmd is not null.
+   *
+   * @param clusterName the WebLogic cluster name in the domain to be scaled
+   * @param domainUid the domain to which the cluster belongs
+   * @param domainNamespace the namespace in which the domain exists
+   * @param manageServerPodNamePrefix managed server pod name prefix
+   * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
+   * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
+   * @param withRestApi whether to use REST API to scale the cluster
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace the namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
+   *                in the cluster, if curlCmd is null, the method will not verify the accessibility of the sample app
+   *                through ingress controller
+   * @param expectedServerNames list of managed servers in the cluster before scale, if curlCmd is null,
+   *                            set expectedServerNames to null too
+   */
+  public static void scaleAndVerifyCluster(String clusterName,
+                                           String domainUid,
+                                           String domainNamespace,
+                                           String manageServerPodNamePrefix,
+                                           int replicasBeforeScale,
+                                           int replicasAfterScale,
+                                           boolean withRestApi,
+                                           int externalRestHttpsPort,
+                                           String opNamespace,
+                                           String opServiceAccount,
+                                           String curlCmd,
+                                           List<String> expectedServerNames) {
+
     // get the original managed server pod creation timestamp before scale
     List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
@@ -755,12 +826,22 @@ public class CommonTestUtils {
     // scale the cluster in the domain
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
         clusterName, domainUid, domainNamespace, replicasAfterScale);
-    assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
-        .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
-            clusterName, domainUid, domainNamespace)
-        .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
-            clusterName, domainUid, domainNamespace)
-        .isTrue();
+    if (withRestApi) {
+      assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
+          replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
+          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with REST API succeeds",
+              clusterName, domainUid, domainNamespace)
+          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with REST API failed",
+              clusterName, domainUid, domainNamespace)
+          .isTrue();
+    } else {
+      assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
+          .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
+              clusterName, domainUid, domainNamespace)
+          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
+              clusterName, domainUid, domainNamespace)
+          .isTrue();
+    }
 
     if (replicasBeforeScale <= replicasAfterScale) {
 
@@ -1023,5 +1104,39 @@ public class CommonTestUtils {
         String.format("Failed to read model file %s", dsModelFile));
 
     data.put(modelFileName, cmData);
+  }
+
+  /**
+   * Create an external REST Identity secret in the specified namespace.
+   *
+   * @param namespace the namespace in which the secret to be created
+   * @param secretName name of the secret to be created
+   * @return true if the command to create secret succeeds, false otherwise
+   */
+  private static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
+
+    StringBuffer command = new StringBuffer()
+        .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
+
+    if (Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
+      command.append(" -a \"IP:");
+    } else {
+      command.append(" -a \"DNS:");
+    }
+
+    command.append(K8S_NODEPORT_HOST)
+        .append(",DNS:localhost,IP:127.0.0.1\"")
+        .append(" -n ")
+        .append(namespace)
+        .append(" -s ")
+        .append(secretName);
+
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(command.toString())
+        .saveResults(true)
+        .redirect(true);
+
+    return Command.withParams(params).execute();
   }
 }
