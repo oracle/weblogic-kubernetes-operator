@@ -399,11 +399,12 @@ class TopologyGenerator(Generator):
   def getSSLOrNone(self,server):
     try:
       # this can throw if SSL mbean not there
-      ret = server.getSSL()
+      ssl = server.getSSL()
       # this can throw if SSL mbean is there but enabled is false 
       ssl.getListenPort()
       # this can throw if SSL mbean is there but enabled is false
-      ssl.isListenPortEnabled()
+      ssl.isEnabled()
+      ret = ssl
     except:
       trace("Ignoring getSSL() exception, this is expected.")
       ret = None
@@ -469,7 +470,7 @@ class TopologyGenerator(Generator):
       sslListenPort = ssl.getListenPort()
     sslListenPortEnabled = None
     if ssl is not None:
-      sslListenPortEnabled = ssl.isListenPortEnabled()
+      sslListenPortEnabled = ssl.isEnabled()
     return {
              LISTEN_PORT: server.getListenPort(),
              LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
