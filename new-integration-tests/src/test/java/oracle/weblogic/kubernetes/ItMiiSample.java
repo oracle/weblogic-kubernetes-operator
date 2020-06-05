@@ -162,8 +162,13 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify MII sample WLS initial use case. Build image required for the initial use case
-   * and create secrets, domain resource and verifies the domain is up and running.
+   * Test to verify MII sample WLS initial use case. 
+   * Builds image required for the initial use case, creates secrets, and
+   * creates domain resource.
+   * Verifies all WebLogic Server pods are ready, are at the expected 
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * (response includes "Hello World!").
    */
   @Test
   @Order(2)
@@ -176,7 +181,14 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify WLS update1 use case works. Add data source to initial domain via configmap.
+   * Test to verify WLS update1 use case. 
+   * Adds a data source to initial domain via a configmap and updates the 
+   * domain resource restartVersion.
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected 
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * and detects the new datasource (response includes
+   * "mynewdatasource").
    */
   @Test
   @Order(3)
@@ -187,8 +199,14 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify WLS update2 use case. Deploys a second domain with the same image as initial
-   * WebLogic domain but with different domain UID and verifies the domain is up and running.
+   * Test to verify WLS update2 use case.
+   * Deploys a second domain 'domain2' with a different domain UID,
+   * different secrets, and different datasource config map,
+   * but that is otherwise the same as the update1 domain.
+   * Verifies all WebLogic Server pods are ready, have the expected
+   * restartVersion, and have the expected image.
+   * For each domain, verifies the sample application is running
+   * (response includes "domain1" or "domain2" depending on domain).
    */
   @Test
   @Order(4)
@@ -199,8 +217,14 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify update3 use case. Deploys an updated WebLogic application to the running
-   * domain using an updated Docker image.
+   * Test to verify update3 use case.
+   * Deploys an updated WebLogic application to the running
+   * domain from update1 using an updated Docker image,
+   * and updates the domain resource restartVersion.
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected 
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * and is at the new version (response includes "v2").
    */
   @Test
   @Order(5)
@@ -212,8 +236,13 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify MII sample JRF initial use case. Build image required for the initial use case
-   * and create secrets, domain resource and verifies the domain is up and running.
+   * Test to verify MII sample JRF initial use case.
+   * Deploys a database and initializes it for RCU, 
+   * uses an FMW infra base image instead of WLS 
+   * base image, and uses a WDT model that's 
+   * specialized for JRF, but is otherwise similar to
+   * the WLS initial use case.
+   * @see #testWlsInitialUseCase for more...
    */
   @Test
   @Order(6)
@@ -243,7 +272,8 @@ public class ItMiiSample implements LoggedTest {
 
 
   /**
-   * Test to verify JRF update1 use case works. Add data source to initial domain via configmap.
+   * Test to verify JRF update1 use case.
+   * @see #testWlsUpdate1UseCase for more...
    */
   @Test
   @Order(7)
@@ -254,8 +284,8 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify JRF update2 use case. Deploys a second domain with the same image as initial
-   * WebLogic domain but with different domain UID and verifies the domain is up and running.
+   * Test to verify JRF update2 use case.
+   * @see #testWlsUpdate2UseCase for more...
    */
   @Test
   @Order(8)
@@ -266,8 +296,8 @@ public class ItMiiSample implements LoggedTest {
   }
 
   /**
-   * Test to verify JRF update3 use case. Deploys an updated WebLogic application to the running
-   * domain using an updated Docker image.
+   * Test to verify JRF update3 use case.
+   * @see #testWlsUpdate3UseCase for more...
    */
   @Test
   @Order(9)
