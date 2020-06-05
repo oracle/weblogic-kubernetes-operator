@@ -9,10 +9,13 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -434,7 +437,25 @@ public class JobHelper {
       V1Job domainIntrospectorJob =
             (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (isNotComplete(domainIntrospectorJob)) {
-        return onFailure(packet, callResponse);
+        List<String> jobConditionsReason = new ArrayList<>();
+        if (domainIntrospectorJob != null) {
+          V1JobStatus status = domainIntrospectorJob.getStatus();
+          if (status != null && status.getConditions() != null) {
+            for (V1JobCondition cond : status.getConditions()) {
+              jobConditionsReason.add(cond.getReason());
+            }
+          }
+        }
+        if (jobConditionsReason.size() == 0) {
+          jobConditionsReason.add(DomainStatusPatch.ERR_INTROSPECTOR);
+        }
+        //Introspector job is incomplete, update domain status and terminate processing
+        return doNext(
+            DomainStatusUpdater.createFailedStep(
+              onSeparateLines(jobConditionsReason),
+              onSeparateLines(severeStatuses),
+                null),
+            packet);
       }
 
       return doNext(packet);
