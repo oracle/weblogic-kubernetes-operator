@@ -156,7 +156,6 @@ public class DomainUpPlanTest {
 
   @Test
   public void whenAdminPodCreated_hasListenPort() throws NoSuchFieldException {
-    mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain");
