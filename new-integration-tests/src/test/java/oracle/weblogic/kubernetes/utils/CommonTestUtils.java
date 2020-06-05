@@ -588,12 +588,13 @@ public class CommonTestUtils {
           archiveAppDirList.add(appSrcDir);
         }
       }
-      //archive provided ear or war file
-      String appName = appSrcDirList.get(0).substring(appSrcDirList.get(0).lastIndexOf("/") + 1,
-              appSrcDirList.get(0).lastIndexOf("."));
+
       if (archiveAppDirList.size() != 0 && archiveAppDirList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
                 .srcDirList(archiveAppDirList)));
+        //archive provided ear or war file
+        String appName = archiveAppDirList.get(0).substring(archiveAppDirList.get(0).lastIndexOf("/") + 1,
+                appSrcDirList.get(0).lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
