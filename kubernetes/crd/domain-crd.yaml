@@ -36,7 +36,7 @@ spec:
                       when the domainHomeSourceType is PersistentVolume or Image.  Configuration
                       overrides are generated during introspection from secrets, the
                       overrideConfigMap field, and WebLogic domain topology. Legal
-                      values are DYNAMIC (the default) and ON_RESTART.
+                      values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.
                     enum:
                     - DYNAMIC
                     - ON_RESTART

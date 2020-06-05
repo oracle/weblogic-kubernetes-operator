@@ -36,7 +36,7 @@ public class Configuration {
       "Determines how updated configuration overrides are distributed to already running WebLogic servers "
       + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
       + "are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. "
-      + "Legal values are DYNAMIC (the default) and ON_RESTART.")
+      + "Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   public Model getModel() {
