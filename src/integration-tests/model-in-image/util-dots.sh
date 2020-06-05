@@ -13,7 +13,7 @@
 # It stops printing dots when any of the following are true:
 #   - printdots_end is called
 #   - the process that called printdots_start is no longer around
-#   - more than 120 seconds has passed
+#   - more than 360 seconds has passed
 #
 # Usage example:
 #    source ./util_dots.sh
@@ -41,7 +41,7 @@ printdots_inner() {
     [ "$start_pids" = "$end_pids" ] || break
 
     # if too much time has passed, then exit
-    [ $((SECONDS-begin_sec)) -lt 180 ] || break
+    [ $((SECONDS-begin_sec)) -lt 360 ] || break
 
     # if parent deleted our temp file, then exit
     [ -f "$dotsfile" ] || break

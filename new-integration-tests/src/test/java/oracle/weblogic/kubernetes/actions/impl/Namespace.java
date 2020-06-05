@@ -4,11 +4,15 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1NamespaceList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 public class Namespace {
   public static Random random = new Random(System.currentTimeMillis());
@@ -71,5 +75,30 @@ public class Namespace {
 
   public static boolean exists(String name) throws ApiException {
     return Kubernetes.listNamespaces().contains(name);
+  }
+
+  /**
+   * Add labels to a namespace.
+   *
+   * @param name name of the namespace
+   * @param labels map of labels to add to the namespace
+   * @throws ApiException when adding labels to namespace fails
+   */
+  public static void addLabelsToNamespace(String name, Map<String, String> labels)
+      throws ApiException {
+    boolean found = false;
+    V1NamespaceList namespaces = Kubernetes.listNamespacesAsObjects();
+    if (!namespaces.getItems().isEmpty()) {
+      for (var ns : namespaces.getItems()) {
+        if (name.equals(ns.getMetadata().getName())) {
+          ns.metadata(ns.getMetadata().labels(labels));
+          Kubernetes.replaceNamespace(ns);
+          found = true;
+        }
+      }
+    }
+    if (!found) {
+      logger.severe("Namespace {0} not found or failed to add labels", name);
+    }
   }
 }
