@@ -17,6 +17,7 @@ the prerequisite for upper stack products like Oracle SOA Suite."
 * [Creating an FMW Infrastructure domain](#creating-an-fmw-infrastructure-domain)
 * [Patching the FMW Infrastructure image](#patching-the-fmw-infrastructure-image)
 * [Additional considerations for Coherence](#additional-considerations-for-coherence)
+* [Additional considerations for Model in Image](#additional-considerations-for-model-in-image)
 
 
 Starting with the 2.2.0 release, the operator supports FMW Infrastructure domains, that is,
@@ -32,8 +33,8 @@ listed here, FMW Infrastructure domains work in the same way as WebLogic Server 
 The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
-FMW Infrastructure domains are supported using both Domain in PV
-and Domain in Image [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
+FMW Infrastructure domains are supported using the Domain in PV,
+Domain in Image, or Model in Image [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 If you plan to experiment with upper stack products (which are not officially supported
 by the operator yet), we strongly recommend using the domain on a persistent
 volume approach.
@@ -442,3 +443,7 @@ that can not be applied dynamically.
 If you are running a domain which contains Coherence, please refer to
 [Coherence requirements]({{< relref "/faq/coherence-requirements.md" >}})
 for more information.
+
+#### Additional considerations for Model in Image
+
+If you are using Model in Image, then see the [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}), which demonstrates a JRF model and its RCU schema setup, and see [Model in Image requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).

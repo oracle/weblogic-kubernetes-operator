@@ -35,7 +35,7 @@ spec:
   webLogicCredentialsSecret: 
     name: sample-domain1-weblogic-credentials
 
-  # Whether to include the WebLogic server stdout in the pod's stdout, default is true
+  # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
   includeServerOutInPodLog: true
 
   # Whether to enable overriding your log file location, see also 'logHome'
@@ -45,7 +45,7 @@ spec:
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/sample-domain1
   
-  # Set which WebLogic servers the Operator will start
+  # Set which WebLogic Servers the Operator will start
   # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
@@ -96,7 +96,7 @@ spec:
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
-  # roll of your domain's WebLogic pods.
+  # roll of your domain's WebLogic Server pods.
   restartVersion: '1'
 
   configuration:

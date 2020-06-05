@@ -188,6 +188,18 @@ This value is ignored if `dedicated` is set to `true`. Then, the operator will m
 
 For more information about managing `domainNamespaces`, see [Managing domain namespaces]({{< relref "/faq/namespace-management.md" >}}).
 
+##### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
+
+Specify the number of introspector job retries for a domain resource and the interval in seconds between these retries. 
+
+Defaults to 5 retries and 10 seconds between each retry.
+
+Example:
+```
+domainPresenceFailureRetryMaxCount: 10
+domainPresenceFailureRetrySeconds: 30
+```
+
 #### Elastic Stack integration
 
 ##### `elkIntegrationEnabled`
