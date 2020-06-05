@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class Prometheus {
@@ -13,8 +15,13 @@ public class Prometheus {
    * @return true if found and running otherwise false
    */
   public static Callable<Boolean> isReady(String namespace) {
+    Map<String,String> labelMapPromSvc = new HashMap<>();
+    labelMapPromSvc.put("component", "server");
+    Map<String,String> labelMapAlertMgr = new HashMap<>();
+    labelMapAlertMgr.put("component", "alertmanager");
     return () -> {
-      return Kubernetes.arePrometheusPodsReady(namespace);
+      return (Kubernetes.isPodReady(namespace, labelMapAlertMgr, "prometheus-alertmanager")
+              && Kubernetes.isPodReady(namespace, labelMapPromSvc, "prometheus-server"));
     };
   }
 }

@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -122,29 +123,33 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod is ready in a given namespace.
-   *
-   * @param namespace in which to check if the pod is ready
-   * @param domainUid the label the pod is decorated with
-   * @param podName name of the pod to check for
-   * @return true if the pod is in the ready condition, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
+
+   Checks if a pod is ready in a given namespace.
+   @param namespace in which to check if the pod is ready
+   @param labels map of labels as key value pairs
+   @param podName name of the pod to check for
+   @return true if the pod is in the ready condition, false otherwise
+   @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean isPodReady(String namespace, Map<String, String> labels, String podName) throws ApiException {
     boolean status = false;
     String labelSelector = null;
-    if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    if (labels != null && !labels.isEmpty()) {
+      StringBuilder str = new StringBuilder();
+      for (Map.Entry<String, String> entry : labels.entrySet()) {
+        str.append(entry.getKey()).append("=").append(entry.getValue()).append(",");
+      }
+      //concat last ','
+      labelSelector = str.toString().substring(0, str.toString().length() - 1);
     }
-
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
 
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
+              .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+              .findAny()
+              .orElse(null);
 
       if (v1PodReadyCondition != null) {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
@@ -156,6 +161,24 @@ public class Kubernetes {
       logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);
     }
     return status;
+  }
+
+  /**
+   * Checks if a pod is ready in a given namespace.
+   *
+   * @param namespace in which to check if the pod is ready
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if the pod is in the ready condition, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
+
+    Map<String,String> labelMap = new HashMap<>();
+    if (domainUid != null) {
+      labelMap.put("weblogic.domainUID", domainUid);
+    }
+    return isPodReady(namespace, labelMap, podName);
   }
 
   /**
@@ -301,8 +324,8 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isNginxPodReady(String namespace) throws ApiException {
-
-    return isPodReady(namespace, null, "nginx-ingress-controller");
+    String labelSelector = null;
+    return isPodReady(namespace, labelSelector, "nginx-ingress-controller");
   }
 
   /**
@@ -593,77 +616,6 @@ public class Kubernetes {
     logger.info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
         podName, newCreationTime, timestamp);
     return false;
-  }
-
-  /**
-   * Checks if the promethues pods are running in a given namespace.
-   * The method assumes the prometheus pods name to starts with prometheus-server, alertmanager
-   * and decorated with label prometheus
-   * @param namespace in which to check for the pod existence
-   * @return true if pods are exist and running otherwise false
-   * @throws ApiException when there is error in querying the cluster
-   */
-  public static boolean arePrometheusPodsReady(String namespace) throws ApiException {
-    boolean status = false;
-
-    V1Pod pod = getPod(namespace, "component=alertmanager", "prometheus-alertmanager");
-    if (pod != null) {
-      // get the podCondition with the 'Ready' type field
-      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
-
-      if (v1PodReadyCondition != null) {
-        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
-      }
-    } else {
-      logger.info("Prometheus-alertmanager pods don't exist");
-    }
-
-    pod = getPod(namespace, "component=server", "prometheus-server");
-    if (pod != null) {
-      // get the podCondition with the 'Ready' type field
-      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
-
-      if (v1PodReadyCondition != null) {
-        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
-      }
-    } else {
-      logger.info("Prometheus-server pods don't exist");
-    }
-    return status;
-  }
-
-  /**
-   * Checks if the grafana pod is running in a given namespace.
-   * The method assumes the grafana pod name to starts with grafana
-   * and decorated with label grafana
-   * @param namespace in which to check for the pod existence
-   * @return true if pods are exist and running otherwise false
-   * @throws ApiException when there is error in querying the cluster
-   */
-  public static boolean isGrafanaPodReady(String namespace) throws ApiException {
-    boolean status = false;
-
-    V1Pod pod = getPod(namespace, "app.kubernetes.io/name=grafana", "grafana");
-    if (pod != null) {
-      // get the podCondition with the 'Ready' type field
-      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
-
-      if (v1PodReadyCondition != null) {
-        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
-      }
-    } else {
-      logger.info("Grafana pod doesn't exist");
-    }
-    return status;
   }
 
   /**

@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class Grafana {
@@ -14,7 +16,9 @@ public class Grafana {
    */
   public static Callable<Boolean> isReady(String namespace) {
     return () -> {
-      return Kubernetes.isGrafanaPodReady(namespace);
+      Map<String,String> labelMap = new HashMap<>();
+      labelMap.put("app.kubernetes.io/name", "grafana");
+      return Kubernetes.isPodReady(namespace, labelMap, "grafana");
     };
   }
 }
