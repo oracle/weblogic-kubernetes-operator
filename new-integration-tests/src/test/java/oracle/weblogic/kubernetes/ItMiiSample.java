@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -57,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItMiiSample implements LoggedTest {
 
-  private static final String MII_SAMPLES_WORK_DIR = WORK_DIR
+  private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
       + "/model-in-image-sample-work-dir";
   private static final String MII_SAMPLES_SCRIPT =
       "../src/integration-tests/model-in-image/run-test.sh";

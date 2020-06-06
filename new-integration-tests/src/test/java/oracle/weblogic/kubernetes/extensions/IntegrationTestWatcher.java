@@ -258,6 +258,9 @@ public class IntegrationTestWatcher implements
   @Override
   public void testSuccessful(ExtensionContext context) {
     printHeader(String.format("Test PASSED %s()", methodName), "+");
+    if (System.getenv("COLLECT_LOGS_ON_SUCCESS") != null) {
+      collectLogs(context, "test-success");
+    }
   }
 
   /**
