@@ -117,9 +117,6 @@ public class ItMiiSample implements LoggedTest {
     envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
     envMap.put("IMAGE_PULL_SECRET_NAME", REPO_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret
 
     // kind cluster uses openjdk which is not supported by image tool
     String witJavaHome = System.getenv("WIT_JAVA_HOME");
@@ -253,12 +250,17 @@ public class ItMiiSample implements LoggedTest {
         ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : DB_IMAGE_NAME);
     String jrfBaseImageName = (KIND_REPO != null
         ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1) : JRF_BASE_IMAGE_NAME);
+
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
     envMap.put("DB_IMAGE_NAME", dbImageName);
     envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
     envMap.put("DB_NODE_PORT", "none");
     envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
     envMap.put("BASE_IMAGE_TAG", JRF_BASE_IMAGE_TAG);
+    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
+    envMap.put("DB_NAMESPACE", dbNamespace);
+    envMap.put("DB_IMAGE_PULL_SECRET", OCR_SECRET_NAME); //ocr secret
+    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
 
     // run JRF use cases irrespective of WLS use cases fail/pass
     previousTestSuccessful = true;
