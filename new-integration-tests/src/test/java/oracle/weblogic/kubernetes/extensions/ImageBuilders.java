@@ -22,6 +22,10 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_DOMAINTYPE;
@@ -164,14 +168,13 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           //   3. docker tag with the KIND_REPO value
           //   4. docker push this new image name
           //   5. use this image name to create the domain resource
-          String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-          assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
-          assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
+          Collection<String> images = new ArrayList<>();
+          images.add(WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG);
+          images.add(JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
+          images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
 
-          String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
-          assertTrue(dockerTag(image, kindRepoImage),
-              String.format("docker tag failed for images %s, %s", image, kindRepoImage));
-          assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
+          assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
+          pullImageFromOcrAndPushToKind(images);
         }
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
@@ -203,19 +206,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   public void close() {
     logger.info("Cleanup images after all test suites are run");
 
-    // delete mii basic image
-    if (miiBasicImage != null) {
-      deleteImage(miiBasicImage);
-    }
-
-    // delete wdt domain-in-image basic image
-    if (wdtBasicImage != null) {
-      deleteImage(wdtBasicImage);
-    }
-
-    // delete operator image
-    if (operatorImage != null) {
-      deleteImage(operatorImage);
+    // delete all the images from local repo
+    for (String image : pushedImages) {
+      deleteImage(image);
     }
 
     // delete images from OCIR, if necessary
@@ -341,6 +334,16 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             .redirect(true));
     }
     return imageCreation;
+  }
+
+  private void pullImageFromOcrAndPushToKind(Collection<String> imagesList) {
+    for (String image : imagesList) {
+      assertTrue(dockerPull(image), String.format("docker pull failed for image %s", image));
+      String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
+      assertTrue(dockerTag(image, kindRepoImage),
+          String.format("docker tag failed for images %s, %s", image, kindRepoImage));
+      assertTrue(dockerPush(kindRepoImage), String.format("docker push failed for image %s", kindRepoImage));
+    }
   }
 
 }

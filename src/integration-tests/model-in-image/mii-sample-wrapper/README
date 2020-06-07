@@ -54,6 +54,12 @@ MODEL_IMAGE_NAME ::: Model image name.
   domain resource 'spec.image' setting. 
   Defaults to 'model-in-image'.
 
+IMAGE_PULL_SECRET_NAME ::: Image pull secret name.
+  If set, uncomments domain resource image pull secret stanza and sets
+  the secret to the specified value.
+  If not set or empty string, defaults the domain resource 
+  to a commented out image pull stanza with 'regsecret'
+
 MODEL_IMAGE_TAG ::: Model image tag.
   Defaults to 'WDT_DOMAIN_TYPE-v1'. See MODEL_IMAGE_NAME for more info.
 
@@ -108,6 +114,9 @@ DOMAIN_RESOURCE_FILENAME ::: Domain resource filename
   Used by './stage-domain-resource.sh' as a target for generating a domain
   resource yaml file in WORKDIR. Relative to WORKDIR. Defaults to 
   'domain-resources/mii-DOMAIN_UID.yaml'
+
+INTROSPECTOR_DEADLINE_SECONDS ::: Introspector timeout for JRF runs
+  Defaults to 300.
 
 DB_NAMESPACE ::: Namespace for Oracle DB
 
