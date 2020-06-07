@@ -542,6 +542,26 @@ public class Kubernetes implements LoggedTest {
     copy.copyDirectoryFromPod(pod, srcPath, destination);
   }
 
+  /**
+   * Copy a file to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the file
+   * @param destPath destination location of the file
+   * @throws ApiException if Kubernetes API client call fails
+   * @throws IOException if copy fails
+   */
+  public static void copyFileToPod(String namespace,
+                                   String pod,
+                                   String container,
+                                   Path srcPath,
+                                   Path destPath)
+      throws ApiException, IOException {
+    Copy copy = new Copy(apiClient);
+    copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
+  }
+
   // --------------------------- namespaces -----------------------------------
   /**
    * Create a Kubernetes namespace.
@@ -1764,6 +1784,28 @@ public class Kubernetes implements LoggedTest {
   // --------------------------- Role-based access control (RBAC)   ---------------------------
 
   /**
+   * Create a cluster role.
+   * @param clusterRole V1ClusterRole object containing cluster role configuration data
+   * @return true if creation is successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+    try {
+      V1ClusterRole cr = rbacAuthApi.createClusterRole(
+          clusterRole, // cluster role configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
    * Create a Cluster Role Binding.
    *
    * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration data
@@ -1775,6 +1817,31 @@ public class Kubernetes implements LoggedTest {
     try {
       V1ClusterRoleBinding crb = rbacAuthApi.createClusterRoleBinding(
           clusterRoleBinding, // role binding configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Create a role binding in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param roleBinding V1RoleBinding object containing role binding configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createNamespacedRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
+    try {
+      V1RoleBinding crb = rbacAuthApi.createNamespacedRoleBinding(
+          namespace, // namespace where this role binding is created
+          roleBinding, // role binding configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
           null // fieldManager is a name associated with the actor

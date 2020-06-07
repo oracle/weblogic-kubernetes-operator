@@ -558,7 +558,7 @@ public class CommonTestUtils {
     final List<String> appSrcDirList = Collections.singletonList(appName);
 
     return createMiiImageAndVerify(
-        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType);
+        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType, true);
   }
 
   /**
@@ -573,7 +573,7 @@ public class CommonTestUtils {
                                                 List<String> wdtModelList,
                                                 List<String> appSrcDirList) {
     return createMiiImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS, true);
 
   }
 
@@ -589,11 +589,12 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
-                                                List<String> wdtModelList,
-                                                List<String> appSrcDirList,
-                                                String baseImageName,
-                                                String baseImageTag,
-                                                String domainType) {
+                                               List<String> wdtModelList,
+                                               List<String> appSrcDirList,
+                                               String baseImageName,
+                                               String baseImageTag,
+                                               String domainType,
+                                               boolean oneArchiveContainsMultiApps) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -602,19 +603,36 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
-    List<String> archiveList = null;
 
-    if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
-      final String appName = appSrcDirList.get(0);
+    List<String> archiveList = new ArrayList<>();
+    if (oneArchiveContainsMultiApps) {
+      if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
+        final String appName = appSrcDirList.get(0);
 
-      // build an application archive using what is in resources/apps/APP_NAME
-      assertTrue(buildAppArchive(defaultAppParams()
-          .srcDirList(appSrcDirList)),
-          String.format("Failed to create app archive for %s", appName));
+        // build an application archive using what is in resources/apps/APP_NAME
+        assertTrue(buildAppArchive(defaultAppParams()
+                .srcDirList(appSrcDirList)),
+            String.format("Failed to create app archive for %s", appName));
 
-      // build the archive list
-      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-      archiveList = Collections.singletonList(zipFile);
+        // build the archive list
+        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+        archiveList = Collections.singletonList(zipFile);
+      }
+    } else {
+      // one archive contains one app
+      for (String appName : appSrcDirList) {
+        // build an application archive using what is in resources/apps/APP_NAME
+        logger.info("DEBUG: building app archive for {0}", appName);
+        assertTrue(buildAppArchive(defaultAppParams()
+                .srcDirList(Collections.singletonList(appName))
+                .appName(appName)),
+            String.format("Failed to create app archive for %s", appName));
+
+        // build the archive list
+        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+        logger.info("DEBUG: application zip file: {0}", zipFile);
+        archiveList.add(zipFile);
+      }
     }
 
     // Set additional environment variables for WIT

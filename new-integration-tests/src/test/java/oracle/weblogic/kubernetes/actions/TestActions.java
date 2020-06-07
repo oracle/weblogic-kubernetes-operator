@@ -10,6 +10,7 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -17,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -24,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
@@ -580,16 +583,38 @@ public class TestActions {
   // ----------------------- Role-based access control (RBAC)   ---------------------------
 
   /**
+   * Create a Cluster Role.
+   *
+   * @param clusterRole V1ClusterRole object containing cluster role configuration data
+   * @return true if creation is successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+    return ClusterRole.create(clusterRole);
+  }
+
+  /**
    * Create a Cluster Role Binding.
    *
-   * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
-   *     data
+   * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
       throws ApiException {
     return ClusterRoleBinding.create(clusterRoleBinding);
+  }
+
+  /**
+   * Create a role binding in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param roleBinding V1RoleBinding object containing role binding configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
+    return Kubernetes.createNamespacedRoleBinding(namespace, roleBinding);
   }
 
   /**
@@ -600,6 +625,17 @@ public class TestActions {
    */
   public static boolean deleteClusterRoleBinding(String name) {
     return ClusterRoleBinding.delete(name);
+  }
+
+  /**
+   * Delete a cluster role.
+   *
+   * @param name the name of cluster role to delete
+   * @return true if deletion succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean deleteClusterRole(String name) throws ApiException {
+    return ClusterRole.delete(name);
   }
 
   // ----------------------- Helm -----------------------------------
