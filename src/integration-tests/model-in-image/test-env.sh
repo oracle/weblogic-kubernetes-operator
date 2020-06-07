@@ -42,3 +42,11 @@ export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 export DOMAIN_UID1="${DOMAIN_UID1:-sample-domain1}"
 export DOMAIN_UID2="${DOMAIN_UID2:-sample-domain2}"
 export DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
+
+# default max time to let introspector run for JRF runs
+export INTROSPECTOR_DEADLINE_SECONDS=${INTROSPECTOR_DEADLINE_SECONDS:-600}
+
+# default max amount of time to wait for all of a domain's pods to start
+# NOTE: this _includes_ waiting for the introspector job and so should
+#       be higher than INTROSPECTOR_DEADLINE_SECONDS
+export POD_WAIT_TIMEOUT_SECS=${POD_WAIT_TIMEOUT_SECS:-900}

@@ -119,4 +119,10 @@ public interface TestConstants {
   public static final String RBAC_API_VERSION = "rbac.authorization.k8s.io/v1";
   public static final String RBAC_API_GROUP = "rbac.authorization.k8s.io";
 
+  // JRF constants
+  public static final String JRF_BASE_IMAGE_NAME = OCR_REGISTRY + "/middleware/fmw-infrastructure";
+  public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";
+  public static final String DB_IMAGE_NAME = OCR_REGISTRY + "/database/enterprise";
+  public static final String DB_IMAGE_TAG = "12.2.0.1-slim";
+
 }

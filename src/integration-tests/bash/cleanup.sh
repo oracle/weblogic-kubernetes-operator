@@ -659,9 +659,9 @@ deleteByTypeAndLabel
 #   g_arg3 - keywords in deletable artifacts
 #
 
-g_arg1="all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress"
+g_arg1="all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress,deployments"
 g_arg2="crd,pv,ns,clusterroles,clusterrolebindings"
-g_arg3="logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns"
+g_arg3="logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu"
 
 #
 # Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort
