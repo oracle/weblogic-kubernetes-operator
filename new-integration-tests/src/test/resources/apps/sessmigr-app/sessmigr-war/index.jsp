@@ -63,6 +63,4 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
           out.println("<secondary>NA</secondary>");
           out.println("<countattribute>00</countattribute>");
      }
-
-     out.println("==== buffer size after is: " + out.getRemaining());
 %>
