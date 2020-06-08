@@ -34,8 +34,6 @@ public interface ActionConstants {
   public static final String RJRF = "RestrictedJRF";
   public static final String WLS_BASE_IMAGE_NAME
       = TestConstants.OCR_REGISTRY + "/middleware/weblogic";
-  public static final String JRF_BASE_IMAGE_NAME
-      = TestConstants.OCR_REGISTRY + "/middleware/fmw-infrastructure";
   public static final String WLS_BASE_IMAGE_TAG = "12.2.1.4";
 
   public static final String DEFAULT_MODEL_IMAGE_NAME = "test-mii-image";

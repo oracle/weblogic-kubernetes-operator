@@ -113,4 +113,33 @@ public class Command {
       return false;
     }
   }
+
+  /**
+   * Execute a command and return ExecResult.
+   *
+   * @return ExecResult
+   */
+  public ExecResult executeAndReturnResult() {
+    if (params.verbose()) {
+      logger.info("Executing command {0}", params.command());
+    }
+    ExecResult result = null;
+    try {
+      result = ExecCommand.exec(
+          params.command(),
+          params.redirect(),
+          params.env());
+      if (params.saveResults()) {
+        params.stdout(result.stdout());
+        params.stderr(result.stderr());
+      }
+
+    } catch (IOException | InterruptedException ie) {
+      logger.severe("The command execution failed", ie);
+    }
+    return result;
+  }
+
+
+
 }
