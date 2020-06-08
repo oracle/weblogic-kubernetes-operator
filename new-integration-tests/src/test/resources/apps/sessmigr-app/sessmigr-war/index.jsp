@@ -35,7 +35,6 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
 %>
 <%
      if (session != null) {
-          out.clearBuffer();
           if (request.getParameter("invalidate") != null) {
                session.invalidate();
                out.println("Your session is invalidated");

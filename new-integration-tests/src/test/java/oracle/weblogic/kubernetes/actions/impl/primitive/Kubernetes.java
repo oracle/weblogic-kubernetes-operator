@@ -138,7 +138,7 @@ public class Kubernetes implements LoggedTest {
       System.out.println("----- isDebugging: " + apiClient.isDebugging());
       apiClient.setDebugging(true);
       apiClient.setConnectTimeout(0);
-      apiClient.setReadTimeout(0);
+      apiClient.setReadTimeout(30 * 1000);
       //apiClient.setWriteTimeout(30 * 1000);
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
