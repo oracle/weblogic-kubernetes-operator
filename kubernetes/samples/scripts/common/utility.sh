@@ -445,7 +445,10 @@ function createFiles {
     sed -i -e "s:%RCU_CREDENTIALS_SECRET_NAME%:${rcuCredentialsSecret}:g" ${createJobOutput}
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
     sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
-    sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
+
+    if [ "${istioEnabled}" != "true" ]; then
+      sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
+    fi
     # entries for Istio
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
@@ -512,10 +515,17 @@ function createFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+
+  if [ "${istioEnabled}" == "true" ]; then
+      exposeAdminT3ChannelPrefix="${disabledPrefix}"
+      exposeAnyChannelPrefix="${disabledPrefix}"
+      exposeAdminNodePortPrefix="${disabledPrefix}"
+  fi
+
+  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
@@ -527,11 +537,6 @@ function createFiles {
   sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}
   sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${dcrOutput}
   sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${dcrOutput}
-  if [ "${istioEnabled}" == "true" ]; then
-    sed -i -e "s:%EXPOSE_ISTIO_PREFIX%:istio-:g" ${dcrOutput}
-  else
-    sed -i -e "s:%EXPOSE_ISTIO_PREFIX%::g" ${dcrOutput}
-  fi
 
   buildServerPodResources
   if [ -z "${serverPodResources}" ]; then
