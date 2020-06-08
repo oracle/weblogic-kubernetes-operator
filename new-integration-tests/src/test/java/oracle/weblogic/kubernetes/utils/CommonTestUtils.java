@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -1251,6 +1254,22 @@ public class CommonTestUtils {
     assertTrue(assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
         String.format("Failed to create ConfigMap %s", configMapName));
+  }
+
+  /**
+   * A utility method to sed files.
+   *
+   * @throws java.io.IOException when copying files from source location to staging area fails
+   */
+  public static void replaceStringInFile(String filePath, String oldValue, String newValue)
+          throws IOException {
+    Path src = Paths.get(filePath);
+    logger.info("Copying {0}", src.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(src), charset);
+    content = content.replaceAll(oldValue, newValue);
+    logger.info("to {0}", src.toString());
+    Files.write(src, content.getBytes(charset));
   }
 
   /**

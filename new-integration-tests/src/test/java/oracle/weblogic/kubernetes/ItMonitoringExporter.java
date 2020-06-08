@@ -4,8 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -122,6 +120,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyG
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyPrometheus;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
@@ -425,22 +424,6 @@ class ItMonitoringExporter implements LoggedTest {
             .namespace(monitoringNS)
             .putLabelsItem("weblogic.domainUid", domain1Uid));
     createPVPVCAndVerify(v1pv,v1pvc, "weblogic.domainUid=" + domain1Uid, monitoringNS);
-  }
-
-  /**
-   * A utility method to sed files.
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void replaceStringInFile(String filePath, String oldValue, String newValue)
-      throws IOException {
-    Path src = Paths.get(filePath);
-    logger.info("Copying {0}", src.toString());
-    Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll(oldValue, newValue);
-    logger.info("to {0}", src.toString());
-    Files.write(src, content.getBytes(charset));
   }
 
   /**
