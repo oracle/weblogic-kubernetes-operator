@@ -289,7 +289,7 @@ public class Kubernetes implements LoggedTest {
    *
    * @param deployment V1Deployment object containing deployment configuration data
    * @return true if creation was successful
-   * @throws ApiException when delete fails
+   * @throws ApiException when create fails
    */
   public static boolean createDeployment(V1Deployment deployment) throws ApiException {
     String namespace = deployment.getMetadata().getNamespace();
@@ -473,7 +473,6 @@ public class Kubernetes implements LoggedTest {
   public static V1Pod getPod(String namespace, String labelSelector, String podName) throws ApiException {
     V1PodList pods = listPods(namespace, labelSelector);
     for (var pod : pods.getItems()) {
-      logger.info("Check for pod {0}", pod.getMetadata().getName());
       if (podName.equals(pod.getMetadata().getName())) {
         return pod;
       }

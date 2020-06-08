@@ -458,7 +458,6 @@ public class TestAssertions {
    * @return true if running false otherwise
    */
   public static Callable<Boolean> isPrometheusReady(String namespace) {
-
     return Prometheus.isReady(namespace);
   }
 

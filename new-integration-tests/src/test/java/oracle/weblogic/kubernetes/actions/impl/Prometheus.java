@@ -8,7 +8,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 public class Prometheus {
   /**
-   * install helm chart.
+   * install Prometheus.
    * @param params the helm parameters like namespace, release name, repo url or chart dir,
    *               chart name and chart values to override
    * @return true on success, false otherwise
@@ -18,7 +18,7 @@ public class Prometheus {
   }
 
   /**
-   * Uninstall a helm release.
+   * Uninstall a Prometheus release.
    * @param params the parameters to helm uninstall command, release name and namespace
    * @return true on success, false otherwise
    */

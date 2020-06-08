@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -135,12 +136,11 @@ public class Kubernetes {
     boolean status = false;
     String labelSelector = null;
     if (labels != null && !labels.isEmpty()) {
-      StringBuilder str = new StringBuilder();
-      for (Map.Entry<String, String> entry : labels.entrySet()) {
-        str.append(entry.getKey()).append("=").append(entry.getValue()).append(",");
-      }
-      //concat last ','
-      labelSelector = str.toString().substring(0, str.toString().length() - 1);
+      labelSelector = labels.entrySet()
+              .stream()
+              .map(e -> e.getKey() + "="
+              + e.getValue())
+              .collect(Collectors.joining(","));
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
