@@ -35,10 +35,10 @@ cd('/Servers/' + admin_server_name)
 delete('T3Channel', 'NetworkAccessPoint')
 create('istio-T3Channel', 'NetworkAccessPoint')
 cd('/Servers/%s/NetworkAccessPoints/istio-T3Channel' % admin_server_name)
-set('PublicPort', t3_channel_port)
 set('PublicAddress', toDNS1123Legal(domain_uid + '-' + admin_server_name))
 set('ListenAddress', '127.0.0.1')
 set('ListenPort', t3_channel_port)
+set('Protocol', 't3')
 
 print("Done updating Admin Server's configuration");
 
