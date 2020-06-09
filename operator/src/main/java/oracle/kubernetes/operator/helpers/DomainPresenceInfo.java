@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,6 +87,10 @@ public class DomainPresenceInfo {
       }
     }
     return false;
+  }
+
+  public boolean mayRequestIntrospection() {
+    return Optional.ofNullable(getDomain()).map(Domain::mayRequestIntrospection).orElse(true);
   }
 
   public void setServerService(String serverName, V1Service service) {
@@ -535,6 +540,10 @@ public class DomainPresenceInfo {
       this.clusterName = clusterName;
       this.serverSpec = serverSpec;
       this.isServiceOnly = isServiceOnly;
+    }
+
+    public String getName() {
+      return this.serverConfig.getName();
     }
 
     public String getServerName() {
