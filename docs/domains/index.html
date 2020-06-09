@@ -1095,6 +1095,14 @@ window.onload = function() {
     "Configuration": {
       "type": "object",
       "properties": {
+        "overrideDistributionStrategy": {
+          "description": "Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC (the default) and ON_RESTART.",
+          "type": "string",
+          "enum": [
+            "DYNAMIC",
+            "ON_RESTART"
+          ]
+        },
         "opss": {
           "description": "Configuration for OPSS security.",
           "$ref": "#/definitions/Opss"
@@ -1279,7 +1287,7 @@ window.onload = function() {
           "type": "string"
         },
         "introspectVersion": {
-          "description": "If present, every time this value is updated, the operator will start introspect domain job",
+          "description": "If the domain is running, the operator will restart its introspector job when this value is changed. This field is ignored when the domainHomeSourceType is FromModel. See also overridesConfigurationStrategy.",
           "type": "string"
         },
         "dataHome": {

@@ -47,6 +47,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -77,8 +78,8 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
@@ -137,7 +138,7 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_PERIOD = 35;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
-  private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
+  private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
 
   final TerminalStep terminalStep = new TerminalStep();
@@ -148,9 +149,9 @@ public abstract class PodHelperTestBase {
   protected List<LogRecord> logRecords = new ArrayList<>();
   RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private Method getDomainSpec;
-  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private String serverName;
-  private int listenPort;
+  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
+  private final String serverName;
+  private final int listenPort;
   private WlsDomainConfig domainTopology;
   protected final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   protected final V1SecurityContext containerSecurityContext = createSecurityContext(222L);
@@ -342,19 +343,19 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
-    configurator.withDomainHomeSourceType(DomainSourceType.Image.toString());
+    configurator.withDomainHomeSourceType(DomainSourceType.Image);
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
             writableVolumeMount(
                 SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
+            readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts")));
   }
 
   @Test
   public void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
-    configurator.withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configurator.withDomainHomeSourceType(DomainSourceType.FromModel)
         .withRuntimeEncryptionSecret("my-runtime-encryption-secret");
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
@@ -362,7 +363,7 @@ public abstract class PodHelperTestBase {
             writableVolumeMount(
                 SIT_CONFIG_MAP_VOLUME, "/weblogic-operator/introspector"),
             readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts"),
+            readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts"),
             readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
                 RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
   }
@@ -417,6 +418,29 @@ public abstract class PodHelperTestBase {
     final Integer adminPort = 9002;
     domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_PORT_SECURE", "true"));
+  }
+
+  @Test
+  public void whenPodCreatedWithOnRestartDistribution_dontAddDynamicUpdateEnvVar() {
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
+
+    assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("DYNAMIC_CONFIG_OVERRIDE")));
+  }
+
+  @Test
+  public void whenPodCreatedWithDynamicDistribution_addDynamicUpdateEnvVar() {
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.DYNAMIC);
+
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("DYNAMIC_CONFIG_OVERRIDE"));
+  }
+
+  @Test
+  public void whenDistributionStrategyModified_dontReplacePod() {
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.DYNAMIC);
+    initializeExistingPod();
+
+    configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
+    verifyPodNotReplaced();
   }
 
   @Test
@@ -489,6 +513,7 @@ public abstract class PodHelperTestBase {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
+  // todo set property to indicate dynamic/on_restart copying
   protected abstract void verifyPodReplaced();
 
   protected void verifyPodNotReplaced() {
@@ -606,7 +631,7 @@ public abstract class PodHelperTestBase {
   public void createdPod_hasConfigMapVolume() {
     V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CONFIGMAP_VOLUME_NAME);
 
-    assertThat(credentialsVolume.getConfigMap().getName(), equalTo(DOMAIN_CONFIG_MAP_NAME));
+    assertThat(credentialsVolume.getConfigMap().getName(), equalTo(SCRIPT_CONFIG_MAP_NAME));
     assertThat(credentialsVolume.getConfigMap().getDefaultMode(), equalTo(READ_AND_EXECUTE_MODE));
   }
 
@@ -1343,8 +1368,6 @@ public abstract class PodHelperTestBase {
     containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
     containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
   }
-
-  // todo test that changing a label or annotation does not change the hash
 
   interface PodMutator {
     void mutate(V1Pod pod);
