@@ -157,7 +157,7 @@ public class AppBuilder {
       cleanupDirectory(appDir);
       checkDirectory(appDir);
       for (String appSrcFile : srcFiles) {
-        if(appSrcFile.length() > 0) {
+        if (appSrcFile.length() > 0) {
           logger.info("copy {0]} to {1} ", appSrcFile, appDir);
           String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
           Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
