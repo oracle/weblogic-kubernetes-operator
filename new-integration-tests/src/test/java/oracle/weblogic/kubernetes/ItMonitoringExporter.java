@@ -8,12 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +64,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -142,11 +140,7 @@ class ItMonitoringExporter implements LoggedTest {
 
 
   // domain constants
-  private static final int NUMBER_OF_CLUSTERS = 2;
-  private static final String CLUSTER_NAME_PREFIX = "cluster-";
-  private static final int MANAGED_SERVER_PORT = 8001;
   private static final int replicaCount = 2;
-
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain1Uid = "monexp-domain1";
@@ -155,7 +149,6 @@ class ItMonitoringExporter implements LoggedTest {
   private static int nodeportshttp = 0;
   private static List<String> ingressHostList = null;
 
-  private String curlCmd = null;
   private static String monitoringNS = null;
   private static String webhookNS = null;
   private static ConditionFactory withStandardRetryPolicy = null;
@@ -170,12 +163,9 @@ class ItMonitoringExporter implements LoggedTest {
   private static V1Deployment coordinatorDepl = null;
   // constants for creating domain image using model in image
   private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
-  private static final String MONEXP_IMAGE_NAME = "mii-image";
+  private static final String MONEXP_IMAGE_NAME = "miimonexp-image";
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
 
-  // constants for web service
-  private static final String MONEXP_APP_NAME = "monexp-app";
-  private static final String MONEXP_APP_WAR_NAME = "monexp-war";
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domain1Uid + "-admin-server";
   private static String managedServerPrefix = domain1Uid + "-managed-server";
@@ -268,6 +258,22 @@ class ItMonitoringExporter implements LoggedTest {
   @DisplayName("Install Prometheus, Grafana , Webhook, Coordinator and verify WebLogic metrics")
   public void testCheckMetrics() throws Exception {
 
+    installPrometheusGrafana();
+    installWebhookCoordinator();
+
+    //verify access to Monitoring Exporter
+    verifyMonExpAppAccessThroughNginx();
+    //verify metrics via prometheus
+    String testappPrometheusSearchKey =
+        "weblogic_servlet_invocation_total_count%7Bapp%3D%22wlsexporter%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(testappPrometheusSearchKey, "wlsexporter");
+  }
+
+  /**
+   * Install Prometheus, Grafana using helm chart, and verify that pods are running.
+   * @throws ApiException when creating helm charts or pods fails
+   */
+  private void installPrometheusGrafana() throws IOException, ApiException {
     createPvAndPvc("prometheus");
     createPvAndPvc("alertmanager");
     createPvAndPvc("grafana");
@@ -282,13 +288,12 @@ class ItMonitoringExporter implements LoggedTest {
     Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
     Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
     Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING);
+    String newValue = String.format("regex: %s;%s;%s", domain1Namespace,domain1Uid,clusterName);
 
     replaceStringInFile(targetPromFile.toString(),
         "regex: default;domain1;cluster-1",
-        "regex: " + domain1Namespace
-        + ";"
-        + domain1Uid
-        + ";cluster-1");
+        newValue);
+
     replaceStringInFile(targetPromFile.toString(),
         "regex: default;domain2;cluster-1",
         "regex: " + domain2Namespace
@@ -313,6 +318,13 @@ class ItMonitoringExporter implements LoggedTest {
         GRAFANA_CHART_VERSION,
         nodeportgrafana);
     logger.info("Grafana is running");
+  }
+
+  /**
+   * Create a Webhook, Coordinator images, install and verify that pods are running.
+   * @throws ApiException when creating images or pods fails
+   */
+  private void installWebhookCoordinator() throws ApiException {
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
@@ -321,13 +333,6 @@ class ItMonitoringExporter implements LoggedTest {
         "coordinator",
         domain1Namespace,
         "app=coordinator", "coordsecret"), "Failed to start coordinator");
-
-    //verify access to Monitoring Exporter
-    verifyMonExpAppAccessThroughNginx();
-    //verify metrics via prometheus
-    String testappPrometheusSearchKey =
-        "weblogic_servlet_invocation_total_count%7Bapp%3D%22wlsexporter%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(testappPrometheusSearchKey, "wlsexporter");
   }
 
   @AfterAll
@@ -703,9 +708,7 @@ class ItMonitoringExporter implements LoggedTest {
   public static String createPushImage(String dockerFileDir, String baseImageName,
                                                     String namespace, String secretName) throws ApiException {
     // create unique image name with date
-    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    Date date = new Date();
-    final String imageTag = dateFormat.format(date) + "-" + System.currentTimeMillis();
+    final String imageTag = TestUtils.getDateAndTimeStamp();
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + baseImageName;
 
