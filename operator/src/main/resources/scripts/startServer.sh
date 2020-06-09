@@ -116,8 +116,20 @@ function waitUntilShutdown() {
 #   Copied $tgt_dir files are stripped of their $fil_prefix
 #   Any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
 #
+# This method is called during boot, see 'copySitCfgWhileRunning' in 'livenessProbe.sh'
+# for the similar method that is periodically called while the server is running.
 
-function copySitCfg() {
+function copySitCfgWhileBooting() {
+  # Helper fn to copy sit cfg xml files to the WL server's domain home.
+  #   - params $1/$2/$3 == 'src_dir tgt_dir fil_prefix'
+  #   - $src_dir files are assumed to start with $fil_prefix and end with .xml
+  #   - copied $tgt_dir files are stripped of their $fil_prefix
+  #   - any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
+  #
+  # This method is called before the server boots, see
+  # 'copySitCfgWhileRunning' in 'livenessProbe.sh' for a similar method that
+  # is called periodically while the server is running. 
+
   src_dir=${1?}
   tgt_dir=${2?}
   fil_prefix=${3?}
@@ -340,10 +352,10 @@ createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 
 
 

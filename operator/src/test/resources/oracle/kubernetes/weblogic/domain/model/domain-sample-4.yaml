@@ -59,6 +59,9 @@ spec:
     # configured wls configuration overrides secret names
     secrets: [overrides-secret-1, overrides-secret-2]
 
+    # strategy for handling changes to configuration overrides
+    overrideDistributionStrategy: ON_RESTART
+
   # Restart version
   restartVersion: "1"
 
