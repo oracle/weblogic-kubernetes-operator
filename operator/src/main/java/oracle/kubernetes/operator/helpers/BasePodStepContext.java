@@ -16,10 +16,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 public abstract class BasePodStepContext extends StepContextBase {
   final <T> T updateForDeepSubstitution(V1PodSpec podSpec, T target) {
     return getContainer(podSpec)
-        .map(
-            c -> {
-              return doDeepSubstitution(augmentSubVars(deepSubVars(c.getEnv())), target);
-            })
+        .map(c -> doDeepSubstitution(augmentSubVars(deepSubVars(c.getEnv())), target))
         .orElse(target);
   }
 

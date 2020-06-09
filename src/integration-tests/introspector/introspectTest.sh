@@ -263,13 +263,13 @@ function toDNS1123Legal {
 #
 
 function deployDomainConfigMap() {
-  trace "Info: Deploying 'weblogic-domain-cm'."
+  trace "Info: Deploying 'weblogic-script-cm'."
 
-  kubectl -n $NAMESPACE delete cm weblogic-domain-cm \
+  kubectl -n $NAMESPACE delete cm weblogic-script-cm \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
 
-  createConfigMapFromDir weblogic-domain-cm ${SOURCEPATH}/operator/src/main/resources/scripts
+  createConfigMapFromDir weblogic-script-cm ${SOURCEPATH}/operator/src/main/resources/scripts
 }
 
 #############################################################################
