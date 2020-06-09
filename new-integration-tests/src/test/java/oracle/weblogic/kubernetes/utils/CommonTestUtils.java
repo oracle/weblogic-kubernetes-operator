@@ -615,22 +615,22 @@ public class CommonTestUtils {
     List<String> archiveList = new ArrayList<String>();
 
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
-      List<String> archiveAppDirList = new ArrayList<String>();
+      List<String> archiveAppsList = new ArrayList<String>();
       List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
 
       for (String appSrcDir : appSrcDirList) {
         if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
           //remove from build
           buildAppDirList.remove(appSrcDir);
-          archiveAppDirList.add(appSrcDir);
+          archiveAppsList.add(appSrcDir);
         }
       }
 
-      if (archiveAppDirList.size() != 0 && archiveAppDirList.get(0) != null) {
+      if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
-                .srcDirList(archiveAppDirList)));
+                .srcDirList(archiveAppsList)));
         //archive provided ear or war file
-        String appName = archiveAppDirList.get(0).substring(archiveAppDirList.get(0).lastIndexOf("/") + 1,
+        String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
                 appSrcDirList.get(0).lastIndexOf("."));
 
         // build the archive list

@@ -152,15 +152,17 @@ public class AppBuilder {
     List<String> srcFiles  = params.srcDirList();
     String srcFile = srcFiles.get(0);
     String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
-    String fileName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.length());
     try {
       String appDir = ARCHIVE_DIR + "/wlsdeploy/applications";
       cleanupDirectory(appDir);
       checkDirectory(appDir);
       for (String appSrcFile : srcFiles) {
-        logger.info("copy {0]} to {1} ", appSrcFile, appDir);
-        Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
-                StandardCopyOption.REPLACE_EXISTING);
+        if(appSrcFile.length() > 0) {
+          logger.info("copy {0]} to {1} ", appSrcFile, appDir);
+          String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
+          Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
+                  StandardCopyOption.REPLACE_EXISTING);
+        }
       }
     } catch (IOException ioe) {
       logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
