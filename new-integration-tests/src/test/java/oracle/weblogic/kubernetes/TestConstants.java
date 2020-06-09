@@ -106,4 +106,16 @@ public interface TestConstants {
   public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
   public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
 
+  // REST API
+  public static final String PROJECT_ROOT = System.getProperty("user.dir");
+  public static final String GEN_EXTERNAL_REST_IDENTITY_FILE =
+      PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
+  public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
+
+  // JRF constants
+  public static final String JRF_BASE_IMAGE_NAME = OCR_REGISTRY + "/middleware/fmw-infrastructure";
+  public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";
+  public static final String DB_IMAGE_NAME = OCR_REGISTRY + "/database/enterprise";
+  public static final String DB_IMAGE_TAG = "12.2.0.1-slim";
+
 }

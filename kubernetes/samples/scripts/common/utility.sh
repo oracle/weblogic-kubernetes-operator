@@ -625,7 +625,7 @@ function checkPodDelete(){
   exit -2 
  fi
 
- echo "Checking Status for Pod [$pod] in namesapce [${ns}]"
+ echo "Checking Status for Pod [$pod] in namespace [${ns}]"
  max=10
  count=1
  while [ $count -le $max ] ; do
@@ -686,7 +686,7 @@ function checkPodState(){
  kubectl -n ${ns} get po ${pname}
 }
 
-# Checks if a pod is available in a given namesapce 
+# Checks if a pod is available in a given namespace 
 function checkPod(){
 
  max=20
@@ -720,4 +720,22 @@ function checkPod(){
   echo "[ERROR] Could not find Pod [$pod] after 120s";
   exit 1
  fi
+}
+
+# Checks if a service is available in a given namespace 
+function checkService(){
+ svc=$1
+ ns=$2
+ startSecs=$SECONDS
+ maxWaitSecs=20
+ while [ -z "`kubectl get service -n ${ns} | grep -w ${svc}`" ]; do
+   if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
+     echo "Service [$svc] not found after $((SECONDS - startSecs)) seconds, retrying ..."
+     sleep 5
+   else
+     echo "[Error] Could not find Service [$svc] after $((SECONDS - startSecs)) seconds"
+     exit 1
+   fi
+ done
+ echo "Service [$svc] found"
 }

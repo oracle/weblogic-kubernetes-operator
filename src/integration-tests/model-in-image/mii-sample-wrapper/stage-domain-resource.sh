@@ -11,7 +11,7 @@
 # Optional environment variables (see ./README for details):
 #
 #   WORKDIR, CUSTOM_DOMAIN_NAME, DOMAIN_UID, DOMAIN_NAMESPACE
-#   MODEL_IMAGE_NAME, MODEL_IMAGE_TAG
+#   MODEL_IMAGE_NAME, MODEL_IMAGE_TAG, IMAGE_PULL_SECRET_NAME
 #   WDT_DOMAIN_TYPE
 #   INCLUDE_MODEL_CONFIGMAP
 #   DOMAIN_RESOURCE_FILENAME, DOMAIN_RESOURCE_TEMPLATE
@@ -27,11 +27,13 @@ for var in DOMAIN_UID \
            DOMAIN_NAMESPACE \
            CUSTOM_DOMAIN_NAME \
            WDT_DOMAIN_TYPE \
+           IMAGE_PULL_SECRET_NAME \
            MODEL_IMAGE_NAME \
            MODEL_IMAGE_TAG \
            INCLUDE_MODEL_CONFIGMAP \
            DOMAIN_RESOURCE_FILENAME \
-           DOMAIN_RESOURCE_TEMPLATE
+           DOMAIN_RESOURCE_TEMPLATE \
+           INTROSPECTOR_DEADLINE_SECONDS
 do
   echo "@@ Info: ${var}=${!var}"
 done
@@ -44,12 +46,21 @@ echo "@@"
 
 cp "$SCRIPTDIR/$DOMAIN_RESOURCE_TEMPLATE" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 
+if [ ! -z "${IMAGE_PULL_SECRET_NAME}" ]; then
+  sed -i -e "s;\#\(imagePullSecrets:\);\1;"        "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+  sed -i -e "s;\#\(-.*IMAGE_PULL_SECRET_NAME\);\1;" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
+fi
+
+IMAGE_PULL_SECRET_NAME="${IMAGE_PULL_SECRET_NAME:-regsecret}"
+
 for template_var in WDT_DOMAIN_TYPE \
                     CUSTOM_DOMAIN_NAME \
                     DOMAIN_UID \
                     DOMAIN_NAMESPACE \
+                    IMAGE_PULL_SECRET_NAME \
                     MODEL_IMAGE_NAME \
-                    MODEL_IMAGE_TAG
+                    MODEL_IMAGE_TAG \
+                    INTROSPECTOR_DEADLINE_SECONDS
 do
   sed -i -e "s;@@${template_var}@@;${!template_var};" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 done

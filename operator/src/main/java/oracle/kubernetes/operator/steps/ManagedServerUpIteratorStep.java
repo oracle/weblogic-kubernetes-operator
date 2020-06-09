@@ -28,6 +28,16 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
+/**
+ * A step which will bring up the specified managed servers in parallel.
+ * Adds to packet:
+ *    SERVERS_TO_ROLL    a collection of servers to be rolled, updated in parallel by the server-up steps.
+ * and for each server:
+ *    SERVER_NAME        the name of the server to bring up
+ *    CLUSTER_NAME       the name of the cluster of which it is a member, if any
+ *    ENVVARS            the associated environment variables
+ *    SERVER_SCAN        the configuration for the server
+ */
 public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -46,18 +56,18 @@ public class ManagedServerUpIteratorStep extends Step {
   // "serverScan"
   // "clusterScan"
   // "envVars"
-  private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
+  private static Step bringManagedServerUp(ServerStartupInfo ssi) {
     return ssi.isServiceOnly()
         ? ServiceHelper.createForServerStep(
-            true, new ServerDownStep(ssi.getServerName(), true, next))
-        : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(next));
+            true, new ServerDownStep(ssi.getServerName(), true, null))
+        : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(null));
   }
 
   @Override
   protected String getDetail() {
     List<String> serversToStart = new ArrayList<>();
     for (ServerStartupInfo ssi : startupInfos) {
-      serversToStart.add(ssi.serverConfig.getName());
+      serversToStart.add(ssi.getName());
     }
     return String.join(",", serversToStart);
   }
@@ -90,6 +100,28 @@ public class ManagedServerUpIteratorStep extends Step {
         packet);
   }
 
+
+  private String getDomainUid(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class).getDomain().getDomainUid();
+  }
+
+  private List<String> getServerNames(Collection<ServerStartupInfo> startupInfos) {
+    return startupInfos.stream().map(ServerStartupInfo::getName).collect(Collectors.toList());
+  }
+
+  private StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
+    return new StepAndPacket(bringManagedServerUp(ssi), createPacketForServer(packet, ssi));
+  }
+
+  private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
+    Packet p = packet.clone();
+    p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
+    p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
+    p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
+    p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
+    return p;
+  }
+
   private Map<String, StartClusteredServersStepFactory> getStartClusteredServersStepFactories(
       Collection<ServerStartupInfo> startupInfos,
       Packet packet,
@@ -106,29 +138,8 @@ public class ManagedServerUpIteratorStep extends Step {
     return factories;
   }
 
-  private String getDomainUid(Packet packet) {
-    return packet.getSpi(DomainPresenceInfo.class).getDomain().getDomainUid();
-  }
-
-  private List<String> getServerNames(Collection<ServerStartupInfo> startupInfos) {
-    return startupInfos.stream().map(ServerStartupInfo::getServerName).collect(Collectors.toList());
-  }
-
   private boolean isServerInCluster(ServerStartupInfo ssi) {
     return ssi.getClusterName() != null;
-  }
-
-  private StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
-    return new StepAndPacket(bringManagedServerUp(ssi, null), createPacketForServer(packet, ssi));
-  }
-
-  private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
-    Packet p = packet.clone();
-    p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
-    p.put(ProcessingConstants.SERVER_NAME, ssi.getServerName());
-    p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
-    p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
-    return p;
   }
 
   static class StartManagedServersStep extends Step {
