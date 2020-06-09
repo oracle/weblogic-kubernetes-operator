@@ -3,27 +3,16 @@
 
 package oracle.weblogic.kubernetes;
 
-//import java.io.File;
-//import java.io.FileOutputStream;
-//import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-//import java.util.Collections;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-//import java.util.Properties;
 
-import io.kubernetes.client.openapi.models.V1ClusterRole;
-import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PolicyRule;
-import io.kubernetes.client.openapi.models.V1RoleBinding;
-import io.kubernetes.client.openapi.models.V1RoleRef;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1Subject;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -37,38 +26,27 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-//import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.RBAC_API_GROUP;
-import static oracle.weblogic.kubernetes.TestConstants.RBAC_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.RBAC_CLUSTER_ROLE;
-import static oracle.weblogic.kubernetes.TestConstants.RBAC_CLUSTER_ROLE_BINDING;
-import static oracle.weblogic.kubernetes.TestConstants.RBAC_ROLE_BINDING;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.createClusterRole;
-import static oracle.weblogic.kubernetes.actions.TestActions.createClusterRoleBinding;
-import static oracle.weblogic.kubernetes.actions.TestActions.createRoleBinding;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_BINDING_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRole;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBinding;
-import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -82,9 +60,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-//import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -108,21 +84,21 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int replicaCount = 2;
-
-  // rbac constants
-  private static final String CLUSTER_ROLE_NAME = "weblogic-domain-cluster-role";
-  private static final String CLUSTER_ROLE_BINDING_NAME = "domain-cluster-rolebinding";
+  private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
+  private static final String WLDF_OPENSESSION_APP = "opensessionapp";
+  private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
+  private static final String DOMAIN_HOME = "/u01/domains/domain1";
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String opServiceAccount = null;
-  private static String adminServerPodName = null;
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
   private static int t3ChannelPort = 0;
 
   private String curlCmd = null;
+  private String curlCmdForWLDFScript = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -180,7 +156,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
   }
 
-  //@Test
+  @Test
   @DisplayName("Verify scale each cluster of the domain by patching domain resource")
   public void testScaleClustersByPatchingDomainResource() {
 
@@ -197,7 +173,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers);
-      curlCmd = generateCurlCmd(clusterName);
+      curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
       scaleClusterAndVerifyByPatchingDomainResource(clusterName, replicaCount, numberOfServers,
           managedServersBeforeScale);
@@ -211,7 +187,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     }
   }
 
-  //@Test
+  @Test
   @DisplayName("Verify scale each cluster of the domain by calling REST API")
   public void testScaleClustersWithRestApi() {
 
@@ -228,7 +204,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
           clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-      curlCmd = generateCurlCmd(clusterName);
+      curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
       scaleClusterAndVerifyWithRestApi(clusterName, replicaCount, numberOfServers, managedServersBeforeScale);
 
@@ -241,106 +217,34 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   }
 
   @Test
-  @DisplayName("Verify scale each cluster of the domain by calling REST API")
+  @DisplayName("Verify scale each cluster of the domain by using WLDF policy")
   public void testScaleClustersWithWLDF() {
-    // create custer role, cluster role binding and role binding used by WLDF action script
-    createClusterRoleAndClusterRoleBindings(domainNamespace, opNamespace);
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
 
-    // copy scalingAction.sh to Admin Server pod
-    assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null, true,
-        "/bin/sh", "-c", "mkdir -p /u01/domains/domain1/bin/scripts"), "execCommand failed");
+      String clusterName = CLUSTER_NAME_PREFIX + i;
 
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, adminServerPodName, null,
-        Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
-        Paths.get("/u01/domains/domain1/bin/scripts/scalingAction.sh")),
-        "copyFileToPod failed with Exception");
+      // scale up the cluster by 1 server
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+          clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
+      curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
+      curlCmdForWLDFScript = generateCurlCmd(clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
+      List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
 
-    assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null,
-        true,
-        "/bin/sh", "-c", "chmod +x /u01/domains/domain1/bin/scripts/scalingAction.sh"),
-        "execCommand failed");
+      scaleClusterAndVerifyWithWLDF(clusterName, replicaCount, replicaCount + 1,
+          managedServersBeforeScale, "scaleUp");
 
-    // copy wldf.py and callscript.sh to Admin Server pod
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, adminServerPodName, null,
-        Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
-        Paths.get("/u01/oracle/wldf.py")),
-        "copyFileToPod failed with Exception");
-
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, adminServerPodName, null,
-        Paths.get(RESOURCE_DIR, "python-scripts", "callpyscript.sh"),
-        Paths.get("/u01/oracle/callpyscript.sh")),
-        "copyFileToPod failed with Exception");
-
-    assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null,
-        true,
-        "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh"), "execCommand failed");
-
-    String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/wldf.py ")
-        .append(ADMIN_USERNAME_DEFAULT)
-        .append(" ")
-        .append(ADMIN_PASSWORD_DEFAULT)
-        .append(" t3://")
-        .append(adminServerPodName)
-        .append(":7001 ")
-        .append("scaleUp ")
-        .append(domainUid)
-        .append(" cluster-1 ")
-        .append(domainNamespace)
-        .append(" ")
-        .append(opNamespace)
-        .append(" ")
-        .append("myear").toString();
-
-    assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null,
-        true, "/bin/sh", "-c", command), "execCommand failed");
-
-    /*
-    assertDoesNotThrow(() -> execCommand(domainNamespace, "domain1-admin-server", "weblogic-server",
-        true, "/bin/sh", "-c", "echo testing-in-domain1-admin-server"), "execCommand failed");
-
-    assertDoesNotThrow(() -> execCommand(domainNamespace, "domain1-admin-server", "weblogic-server",
-        true, "/bin/sh", "-c", "echo $KUBERNETES_SERVICE_HOST"), "execCommand failed");
-
-    assertDoesNotThrow(() -> execCommand(domainNamespace, "domain1-admin-server", "weblogic-server",
-        true, "/bin/sh", "-c", "echo $KUBERNETES_SERVICE_PORT"), "execCommand failed");
-
-    assertDoesNotThrow(() -> execCommand(domainNamespace, "domain1-admin-server", "weblogic-server",
-        true, "/bin/sh", "-c", "echo $INTERNAL_OPERATOR_CERT"), "execCommand failed");
-
-    assertDoesNotThrow(() -> execCommand(domainNamespace, "domain1-admin-server", "weblogic-server",
-        true, "/bin/sh", "-c", "echo $DOMAIN_HOME"), "execCommand failed");
-    */
-    // create a temporary WebLogic WLST property file
-    /*
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-
-    Properties p = new Properties();
-    p.setProperty("username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("password", ADMIN_PASSWORD_DEFAULT);
-    //p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    //p.setProperty("admin_port", Integer.toString(t3ChannelPort));
-    //p.setProperty("aurl", "t3://domain1-admin-server:7001");
-    p.setProperty("aurl", "t3://" + K8S_NODEPORT_HOST + ":" + t3ChannelPort);
-    p.setProperty("scaleaAction", "scaleUp");
-    p.setProperty("domainUid", domainUid);
-    p.setProperty("clusterName", "cluster-1");
-    p.setProperty("domainNamespace", domainNamespace);
-    p.setProperty("opNamespace", opNamespace);
-    p.setProperty("domain_home", "/u01/domains/domain1");
-    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
-
-    Path wldfScript = Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py");
-    executeWLSTScript(wldfScript, wlstPropertiesFile.toPath(), domainNamespace);
-    */
+      // scale down the cluster by 1 server
+      managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount + 1);
+      scaleClusterAndVerifyWithWLDF(clusterName, replicaCount + 1, replicaCount,
+          managedServersBeforeScale, "scaleDown");
+    }
   }
 
   /**
    * TODO: remove this after Sankar's PR is merged
    * The cleanup framework does not uninstall NGINX release. Do it here for now.
    */
-  //@AfterAll
+  @AfterAll
   public void tearDownAll() {
     // uninstall NGINX release
 
@@ -351,8 +255,8 @@ class ItScaleMiiDomainNginx implements LoggedTest {
           .isTrue();
     }
 
-    deleteClusterRoleBinding(CLUSTER_ROLE_BINDING_NAME);
-    assertThat(assertDoesNotThrow(() -> deleteClusterRole(CLUSTER_ROLE_NAME),
+    deleteClusterRoleBinding(WLDF_CLUSTER_ROLE_BINDING_NAME);
+    assertThat(assertDoesNotThrow(() -> deleteClusterRole(WLDF_CLUSTER_ROLE_NAME),
         "deleteClusterRole failed with ApiException"))
         .as("Test delete cluster role returns true")
         .withFailMessage("deleteClusterRole() did not return true")
@@ -365,20 +269,16 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static void createMiiDomainWithMultiClusters() {
 
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     // create image with model files
     logger.info("Creating image with model file and verify");
-    String miiImage = createMiiImageAndVerify(MII_IMAGE_NAME, WDT_MODEL_FILE, MII_BASIC_APP_NAME);
-
-    /*
     List<String> appSrcDirList = new ArrayList<>();
     appSrcDirList.add(MII_BASIC_APP_NAME);
-    appSrcDirList.add("opensessionapp");
+    appSrcDirList.add(WLDF_OPENSESSION_APP);
     String miiImage =
         createMiiImageAndVerify(MII_IMAGE_NAME, Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE),
             appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
-    */
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -496,10 +396,10 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    * @param clusterName WebLogic cluster name which is the backend of the ingress
    * @return curl command string
    */
-  private String generateCurlCmd(String clusterName) {
+  private String generateCurlCmd(String clusterName, String appContextRoot) {
 
-    return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
   }
 
   /**
@@ -533,7 +433,28 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
         domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
         replicasBeforeScale, replicasAfterScale, true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        curlCmd, managedServersBeforeScale);
+        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+  }
+
+  /**
+   * Scale a cluster using WLDF policy.
+   *
+   * @param clusterName               cluster name to scale
+   * @param replicasBeforeScale       number of servers in cluster before scaling
+   * @param replicasAfterScale        number of servers in cluster after scaling
+   * @param managedServersBeforeScale list of managed servers in the cluster before scale
+   * @param scalingAction scale action, accepted value: scaleUp or scaleDown
+   */
+  private void scaleClusterAndVerifyWithWLDF(String clusterName,
+                                             int replicasBeforeScale,
+                                             int replicasAfterScale,
+                                             List<String> managedServersBeforeScale,
+                                             String scalingAction) {
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
+        domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
+        replicasBeforeScale, replicasAfterScale, false, 0, opNamespace, opServiceAccount,
+        true, DOMAIN_HOME, scalingAction, 1,
+        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
   }
 
   /**
@@ -553,72 +474,4 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         replicasBeforeScale, replicasAfterScale, curlCmd, managedServersBeforeScale);
   }
 
-  /**
-   * Create cluster role, cluster role binding and role binding used by WLDF script action.
-   *
-   * @param domainNamespace namespace where WebLogic domain exists
-   * @param opNamespace namespace where WebLogic operator exists
-   */
-  private void createClusterRoleAndClusterRoleBindings(String domainNamespace,
-                                                       String opNamespace) {
-
-    // create cluster role
-    V1ClusterRole v1ClusterRole = new V1ClusterRole()
-        .kind(RBAC_CLUSTER_ROLE)
-        .apiVersion(RBAC_API_VERSION)
-        .metadata(new V1ObjectMeta()
-          .name(CLUSTER_ROLE_NAME))
-        .addRulesItem(new V1PolicyRule()
-          .addApiGroupsItem("weblogic.oracle")
-          .addResourcesItem("domains")
-          .addVerbsItem("get")
-          .addVerbsItem("list")
-          .addVerbsItem("update"))
-        .addRulesItem(new V1PolicyRule()
-          .addApiGroupsItem("apiextensions.k8s.io")
-          .addResourcesItem("customresourcedefinitions")
-          .addVerbsItem("get")
-          .addVerbsItem("list"));
-
-    assertDoesNotThrow(() -> createClusterRole(v1ClusterRole), "createClusterRole failed with ApiException");
-
-    // create cluster role binding
-    V1ClusterRoleBinding v1ClusterRoleBinding = new V1ClusterRoleBinding()
-        .kind(RBAC_CLUSTER_ROLE_BINDING)
-        .apiVersion(RBAC_API_VERSION)
-        .metadata(new V1ObjectMeta()
-          .name(CLUSTER_ROLE_BINDING_NAME))
-        .addSubjectsItem(new V1Subject()
-          .kind("ServiceAccount")
-          .name("default")
-          .namespace(domainNamespace)
-          .apiGroup(""))
-        .roleRef(new V1RoleRef()
-          .kind(RBAC_CLUSTER_ROLE)
-          .name(CLUSTER_ROLE_NAME)
-          .apiGroup(RBAC_API_GROUP));
-
-    assertDoesNotThrow(() -> createClusterRoleBinding(v1ClusterRoleBinding),
-        "createClusterRoleBinding failed with ApiException");
-
-    // create domain operator role binding
-    V1RoleBinding v1RoleBinding = new V1RoleBinding()
-        .kind(RBAC_ROLE_BINDING)
-        .apiVersion(RBAC_API_VERSION)
-        .metadata(new V1ObjectMeta()
-            .name("weblogic-domain-operator-rolebinding")
-            .namespace(opNamespace))
-        .addSubjectsItem(new V1Subject()
-            .kind("ServiceAccount")
-            .name("default")
-            .namespace(domainNamespace)
-            .apiGroup(""))
-        .roleRef(new V1RoleRef()
-            .kind(RBAC_CLUSTER_ROLE)
-            .name("cluster-admin")
-            .apiGroup(RBAC_API_GROUP));
-
-    assertDoesNotThrow(() -> createRoleBinding(opNamespace, v1RoleBinding),
-        "createRoleBinding failed with ApiException");
-  }
 }

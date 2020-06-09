@@ -112,13 +112,6 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // RBAC
-  public static final String RBAC_CLUSTER_ROLE = "ClusterRole";
-  public static final String RBAC_CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
-  public static final String RBAC_ROLE_BINDING = "RoleBinding";
-  public static final String RBAC_API_VERSION = "rbac.authorization.k8s.io/v1";
-  public static final String RBAC_API_GROUP = "rbac.authorization.k8s.io";
-
   // JRF constants
   public static final String JRF_BASE_IMAGE_NAME = OCR_REGISTRY + "/middleware/fmw-infrastructure";
   public static final String JRF_BASE_IMAGE_TAG = "12.2.1.4";

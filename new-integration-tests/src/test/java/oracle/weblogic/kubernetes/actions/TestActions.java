@@ -249,6 +249,39 @@ public class TestActions {
         externalRestHttpsPort, opNamespace, opServiceAccount);
   }
 
+  /**
+   * Scale the cluster of the domain in the specified namespace with WLDF.
+   *
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param domainUid domainUid of the domain to be scaled
+   * @param domainNamespace domain namespace in which the domain exists
+   * @param domainHomeLocation domain home location of the domain
+   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
+   * @param scalingSize number of servers to be scaled up or down
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount service account of operator
+   * @param myWebAppName web app name deployed to the domain used in the WLDF policy expression
+   * @param curlCommand curl command to call the web app deployed to the domain
+   * @return true if the scale
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws IOException if an I/O error occurs
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static boolean scaleClusterWithWLDF(String clusterName,
+                                             String domainUid,
+                                             String domainNamespace,
+                                             String domainHomeLocation,
+                                             String scalingAction,
+                                             int scalingSize,
+                                             String opNamespace,
+                                             String opServiceAccount,
+                                             String myWebAppName,
+                                             String curlCommand)
+      throws ApiException, IOException, InterruptedException {
+    return Domain.scaleClusterWithWLDF(clusterName, domainUid, domainNamespace, domainHomeLocation, scalingAction,
+        scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
+  }
+
   // ------------------------   Ingress Controller ----------------------
 
   /**
@@ -590,7 +623,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
-    return ClusterRole.create(clusterRole);
+    return ClusterRole.createClusterRole(clusterRole);
   }
 
   /**
@@ -602,7 +635,7 @@ public class TestActions {
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
       throws ApiException {
-    return ClusterRoleBinding.create(clusterRoleBinding);
+    return ClusterRoleBinding.createClusterRoleBinding(clusterRoleBinding);
   }
 
   /**
@@ -624,7 +657,7 @@ public class TestActions {
    * @return true if successful, false otherwise
    */
   public static boolean deleteClusterRoleBinding(String name) {
-    return ClusterRoleBinding.delete(name);
+    return ClusterRoleBinding.deleteClusterRoleBinding(name);
   }
 
   /**
@@ -635,7 +668,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean deleteClusterRole(String name) throws ApiException {
-    return ClusterRole.delete(name);
+    return ClusterRole.deleteClusterRole(name);
   }
 
   // ----------------------- Helm -----------------------------------

@@ -1880,13 +1880,13 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List cluster role bindings.
+   * List role bindings in all namespaces.
    *
    * @param labelSelector labels to narrow the list
    * @return V1RoleBindingList list of {@link V1RoleBinding} objects
    * @throws ApiException when listing fails
    */
-  public static V1RoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+  public static V1RoleBindingList listRoleBindingForAllNamespaces(String labelSelector) throws ApiException {
     V1RoleBindingList roleBindings;
     try {
       roleBindings = rbacAuthApi.listRoleBindingForAllNamespaces(
@@ -1905,6 +1905,34 @@ public class Kubernetes implements LoggedTest {
       throw apex;
     }
     return roleBindings;
+  }
+
+  /**
+   * List cluster role bindings.
+   *
+   * @param labelSelector labels to narrow the list
+   * @return V1ClusterRoleBindingList list of {@link V1CLusterRoleBinding} objects
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1ClusterRoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+    V1ClusterRoleBindingList clusterRoleBindingList;
+    try {
+      clusterRoleBindingList = rbacAuthApi.listClusterRoleBinding(
+          PRETTY, // String | If true, then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+    return clusterRoleBindingList;
   }
 
   /**

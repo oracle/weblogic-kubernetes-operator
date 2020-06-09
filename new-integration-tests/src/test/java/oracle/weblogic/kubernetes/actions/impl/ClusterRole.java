@@ -16,7 +16,7 @@ public class ClusterRole {
    * @return true if creation is successful, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean create(V1ClusterRole clusterRole) throws ApiException {
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
     return Kubernetes.createClusterRole(clusterRole);
   }
 
@@ -27,7 +27,8 @@ public class ClusterRole {
    * @return true if deletion is successful, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean delete(String name) throws ApiException {
+  public static boolean deleteClusterRole(String name) throws ApiException {
     return Kubernetes.deleteClusterRole(name);
   }
+
 }

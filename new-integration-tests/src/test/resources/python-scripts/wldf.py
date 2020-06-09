@@ -1,6 +1,5 @@
-import sys, traceback
+
 from java.util import Properties
-from java.io import File
 import sys, socket
 import os
 import time as systime
@@ -19,7 +18,9 @@ domainUid=sys.argv[5]
 clusterName=sys.argv[6]
 domainNamespace=sys.argv[7]
 opNamespace=sys.argv[8]
-myAppName=sys.argv[9]
+operator_service_account=sys.argv[9]
+scaling_size=sys.argv[10]
+myAppName=sys.argv[11]
 
 wldfname = 'Scaling' + clusterName
 connect(adminUsername,adminPassword,adminUrl)
@@ -52,9 +53,14 @@ props = Properties()
 props.setProperty("INTERNAL_OPERATOR_CERT",  operator_cert_data);
 scriptAct.setEnvironment(props)
 
-params=['--action=' + scaleaAction, '--domain_uid=' + domainUid, '--cluster_name=' + clusterName, '--wls_domain_namespace=' + domainNamespace, '--operator_namespace=' + opNamespace]
-k8s_master_url='--kubernetes_master=%s' %(k8s_master)
-params.append(k8s_master_url)
+params=['--action=%s' %scaleaAction]
+params.append('--domain_uid=%s' %domainUid)
+params.append('--cluster_name=%s' %clusterName)
+params.append('--wls_domain_namespace=%s' %domainNamespace)
+params.append('--operator_namespace=%s' %opNamespace)
+params.append('--operator_service_account=%s' %operator_service_account)
+params.append('--scaling_size=%s' %scaling_size)
+params.append('--kubernetes_master=%s' %k8s_master)
 scriptAct.setParameters(params)
 
 wh1 = wn1.createWatch('myScalePolicy')

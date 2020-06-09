@@ -88,6 +88,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -794,7 +795,8 @@ public class CommonTestUtils {
                                            List<String> expectedServerNames) {
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, manageServerPodNamePrefix, replicasBeforeScale,
-        replicasAfterScale, false, 0, "", "", curlCmd, expectedServerNames);
+        replicasAfterScale, false, 0, "", "",
+        false, "", "", 0, "", "", curlCmd, expectedServerNames);
   }
 
   /**
@@ -811,6 +813,12 @@ public class CommonTestUtils {
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opNamespace the namespace of WebLogic operator
    * @param opServiceAccount the service account for operator
+   * @param withWLDF whether to use WLDF to scale cluster
+   * @param domainHomeLocation the domain home location of the domain
+   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
+   * @param scalingSize the number of servers to scale up or scale down
+   * @param myWebAppName the web app name deployed to the domain
+   * @param curlCmdForWLDFApp the curl command to call the web app for WLDF script
    * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
    *                in the cluster, if curlCmd is null, the method will not verify the accessibility of the sample app
    *                through ingress controller
@@ -827,6 +835,12 @@ public class CommonTestUtils {
                                            int externalRestHttpsPort,
                                            String opNamespace,
                                            String opServiceAccount,
+                                           boolean withWLDF,
+                                           String domainHomeLocation,
+                                           String scalingAction,
+                                           int scalingSize,
+                                           String myWebAppName,
+                                           String curlCmdForWLDFApp,
                                            String curlCmd,
                                            List<String> expectedServerNames) {
 
@@ -850,6 +864,15 @@ public class CommonTestUtils {
           .as("Verify scaling cluster {0} of domain {1} in namespace {2} with REST API succeeds",
               clusterName, domainUid, domainNamespace)
           .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with REST API failed",
+              clusterName, domainUid, domainNamespace)
+          .isTrue();
+    } else if (withWLDF) {
+      assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
+          domainHomeLocation, scalingAction, scalingSize, opNamespace, opServiceAccount, myWebAppName,
+          curlCmdForWLDFApp)))
+          .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
+              clusterName, domainUid, domainNamespace)
+          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
               clusterName, domainUid, domainNamespace)
           .isTrue();
     } else {
