@@ -41,6 +41,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -103,6 +105,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -198,6 +201,9 @@ public class ItIntrospectVersion implements LoggedTest {
       logger.info("Using image {0}", kindRepoImage);
       image = kindRepoImage;
       isUseSecret = false;
+    } else {
+      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+      createOCRRepoSecret(introDomainNamespace);
     }
 
   }
@@ -233,11 +239,6 @@ public class ItIntrospectVersion implements LoggedTest {
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
-
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
-      createOCRRepoSecret(introDomainNamespace);
-    }
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
@@ -845,9 +846,21 @@ public class ItIntrospectVersion implements LoggedTest {
    *
    * @param namespace name of the namespace in which to create secret
    */
-  private void createOCRRepoSecret(String namespace) {
-    CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+  private static void createOCRRepoSecret(String namespace) {
+    boolean secretExists = false;
+    V1SecretList listSecrets = listSecrets(namespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+    }
   }
 
 
