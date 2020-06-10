@@ -102,12 +102,13 @@ public class BuildApplication {
 
     // Copy the application source directory to PV_ROOT/applications/<application_directory_name>
     // This location is mounted in the build pod under /application
-    Path targetPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
+    Path applicationPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
+    Path buildPath = Paths.get(applicationPath + "-build");
     logger.info("Copy the application {0} to staging area {1}",
-        application, targetPath);
+        application, buildPath);
     assertDoesNotThrow(() -> {
-      Files.createDirectories(targetPath);
-      copyFolder(application.toFile(), targetPath.toFile());
+      Files.createDirectories(buildPath);
+      copyFolder(application.toFile(), buildPath.toFile());
     });
 
     // bash script to build application
@@ -125,12 +126,16 @@ public class BuildApplication {
     String pvName = namespace + "-build-pv";
     String pvcName = namespace + "-build-pvc";
 
-    assertDoesNotThrow(() -> createPV(targetPath, pvName), "Failed to create PV");
+    assertDoesNotThrow(() -> createPV(buildPath, pvName), "Failed to create PV");
     createPVC(pvName, pvcName, namespace);
 
     try {
       // build application
       build(parameters, targets, pvName, pvcName, namespace, buildScriptConfigMapName);
+      // copy the archives before it gets deleted
+      assertDoesNotThrow(() -> {
+        copyFolder(buildPath.toFile(), applicationPath.toFile());
+      });
     } finally {
       // delete the persistent volume claim and persistent volume
       TestActions.deletePersistentVolumeClaim(pvcName, namespace);
@@ -283,7 +288,7 @@ public class BuildApplication {
             .storageClassName("weblogic-build-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("2Gi"))
-            .persistentVolumeReclaimPolicy("Retain")
+            .persistentVolumeReclaimPolicy("Recycle")
             .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(hostPath.toString())))
