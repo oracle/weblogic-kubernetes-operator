@@ -863,7 +863,8 @@ public class Main {
     @Override
     protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return isNotAuthorizedOrForbidden(callResponse)
-          ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+          ? doNext(createDomainCrdAndStartNamespaces(targetNamespaces), packet) : 
+            super.onFailureNoRetry(packet, callResponse);
     }
 
     @Override
@@ -879,10 +880,14 @@ public class Main {
           namespacesToStart.remove(ns);
         }
       }
-      Step strategy = Step.chain(CrdHelper.createDomainCrdStep(version,
-              new StartNamespacesStep(namespacesToStart, false)),
+      Step strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
               new CreateNamespaceWatcherStep(intialResourceVersion));
       return doNext(strategy, packet);
+    }
+    
+    private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart) {
+      return CrdHelper.createDomainCrdStep(version,
+                new StartNamespacesStep(namespacesToStart, false));
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
