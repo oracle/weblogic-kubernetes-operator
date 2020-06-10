@@ -102,7 +102,7 @@ public class WLSTUtils {
   /**
    * Create a job to execute WLST script.
    *
-   * @param uniqueName a unique job name
+   * @param wlstJobName a unique job name
    * @param wlstScriptConfigMapName configmap holding WLST script file
    * @param namespace name of the namespace in which the job is created
    * @param jobContainer V1Container with job commands to execute WLST script
