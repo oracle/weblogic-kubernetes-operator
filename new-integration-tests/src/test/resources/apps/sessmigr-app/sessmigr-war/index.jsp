@@ -59,6 +59,8 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
                        "<countattribute>" + session.getAttribute("count") + "</countattribute>");
           }
      } else {
+          out.println("<sessioncreatetime>NA</sessioncreatetime>");
+          out.println("<sessionid>NA</sessionid>");
           out.println("<primary>NA</primary>");
           out.println("<secondary>NA</secondary>");
           out.println("<countattribute>00</countattribute>");
