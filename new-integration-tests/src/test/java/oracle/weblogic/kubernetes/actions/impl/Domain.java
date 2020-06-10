@@ -42,13 +42,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_RO
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_ROLE_BINDING_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRole.createClusterRole;
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding.createClusterRoleBinding;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespacedRoleBinding;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 
 public class Domain {
 
@@ -428,6 +428,7 @@ public class Domain {
       return false;
     }
 
+    logger.info("Creating WLDF policy rule and action");
     String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/wldf.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
@@ -469,14 +470,16 @@ public class Domain {
   /**
    * Create cluster role, cluster role binding and role binding used by WLDF script action.
    *
-   * @param domainNamespace namespace where WebLogic domain exists
-   * @param opNamespace namespace where WebLogic operator exists
+   * @param domainNamespace WebLogic domain namespace
+   * @param opNamespace WebLogic operator namespace
    */
   private static boolean createRbacApiObjectsForWLDFScript(String domainNamespace, String opNamespace)
       throws ApiException {
 
     // create cluster role
     if (!clusterRoleExists(WLDF_CLUSTER_ROLE_NAME)) {
+      logger.info("Creating cluster role {0}", WLDF_CLUSTER_ROLE_NAME);
+
       V1ClusterRole v1ClusterRole = new V1ClusterRole()
           .kind(RBAC_CLUSTER_ROLE)
           .apiVersion(RBAC_API_VERSION)
@@ -501,6 +504,8 @@ public class Domain {
 
     // create cluster role binding
     if (!clusterRoleBindingExists(WLDF_CLUSTER_ROLE_BINDING_NAME)) {
+      logger.info("Creating cluster role binding {0}", WLDF_CLUSTER_ROLE_BINDING_NAME);
+
       V1ClusterRoleBinding v1ClusterRoleBinding = new V1ClusterRoleBinding()
           .kind(RBAC_CLUSTER_ROLE_BINDING)
           .apiVersion(RBAC_API_VERSION)
@@ -523,6 +528,8 @@ public class Domain {
 
     // create domain operator role binding
     if (!roleBindingExists(WLDF_ROLE_BINDING_NAME, opNamespace)) {
+      logger.info("Creating role binding {0} in namespace {1}", WLDF_ROLE_BINDING_NAME, opNamespace);
+
       V1RoleBinding v1RoleBinding = new V1RoleBinding()
           .kind(RBAC_ROLE_BINDING)
           .apiVersion(RBAC_API_VERSION)
