@@ -623,7 +623,6 @@ public class CommonTestUtils {
       // one archive contains one app
       for (String appName : appSrcDirList) {
         // build an application archive using what is in resources/apps/APP_NAME
-        logger.info("DEBUG: building app archive for {0}", appName);
         assertTrue(buildAppArchive(defaultAppParams()
                 .srcDirList(Collections.singletonList(appName))
                 .appName(appName)),
@@ -631,7 +630,6 @@ public class CommonTestUtils {
 
         // build the archive list
         String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-        logger.info("DEBUG: application zip file: {0}", zipFile);
         archiveList.add(zipFile);
       }
     }
@@ -818,7 +816,7 @@ public class CommonTestUtils {
    * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
    * @param scalingSize the number of servers to scale up or scale down
    * @param myWebAppName the web app name deployed to the domain
-   * @param curlCmdForWLDFApp the curl command to call the web app for WLDF script
+   * @param curlCmdForWLDFApp the curl command to call the web app used in the WLDF script
    * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
    *                in the cluster, if curlCmd is null, the method will not verify the accessibility of the sample app
    *                through ingress controller
@@ -867,12 +865,13 @@ public class CommonTestUtils {
               clusterName, domainUid, domainNamespace)
           .isTrue();
     } else if (withWLDF) {
+      // scale the cluster using WLDF policy
       assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
           domainHomeLocation, scalingAction, scalingSize, opNamespace, opServiceAccount, myWebAppName,
           curlCmdForWLDFApp)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
+          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with WLDF policy succeeds",
               clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
+          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with WLDF policy failed",
               clusterName, domainUid, domainNamespace)
           .isTrue();
     } else {

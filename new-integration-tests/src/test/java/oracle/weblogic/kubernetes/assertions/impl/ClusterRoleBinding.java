@@ -14,12 +14,12 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listC
 public class ClusterRoleBinding {
 
   /**
-   * Check whether the given cluster role binding exists.
+   * Check whether the specified cluster role binding exists.
    *
    * @param name the name of cluster role binding to check
    * @return true if the cluster role binding exists, false otherwise
    */
-  public static boolean clusterRoleBindingExist(String name) throws ApiException {
+  public static boolean clusterRoleBindingExists(String name) throws ApiException {
     V1ClusterRoleBindingList clusterRoleBindingList = listClusterRoleBindings("");
     List<V1ClusterRoleBinding> clusterRoleBindings = clusterRoleBindingList.getItems();
 

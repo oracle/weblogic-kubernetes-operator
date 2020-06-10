@@ -21,7 +21,7 @@ public class RoleBinding {
    * @return true if the role binding exists, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean roleBindingExist(String name, String namespace) throws ApiException {
+  public static boolean roleBindingExists(String name, String namespace) throws ApiException {
     V1RoleBindingList roleBindingList = listNamespacedRoleBinding(namespace);
     List<V1RoleBinding> roleBindings = roleBindingList.getItems();
 

@@ -14,13 +14,14 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listC
 public class ClusterRole {
 
   /**
-   * Check whether the cluster role exists.
+   * Check whether the specified cluster role exists.
    *
    * @param name name of the cluster role to check
    * @return true if the cluster role exists, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean clusterRoleExist(String name) throws ApiException {
+  public static boolean clusterRoleExists(String name) throws ApiException {
+
     V1ClusterRoleList clusterRoleList = listClusterRoles("");
     List<V1ClusterRole> clusterRoles = clusterRoleList.getItems();
     for (V1ClusterRole clusterRole : clusterRoles) {
@@ -33,5 +34,4 @@ public class ClusterRole {
 
     return false;
   }
-
 }

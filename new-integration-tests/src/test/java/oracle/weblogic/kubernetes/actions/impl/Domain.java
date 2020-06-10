@@ -44,9 +44,9 @@ import static oracle.weblogic.kubernetes.actions.impl.ClusterRole.createClusterR
 import static oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding.createClusterRoleBinding;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespacedRoleBinding;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
-import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExist;
-import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExist;
-import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExist;
+import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
+import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
+import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 
@@ -337,8 +337,8 @@ public class Domain {
    * @param opNamespace namespace of WebLogic operator
    * @param opServiceAccount service account of operator
    * @param myWebAppName web app name deployed to the domain used in the WLDF policy expression
-   * @param curlCommand curl command to call the web app deployed to the domain
-   * @return true if the scale
+   * @param curlCommand curl command to call the web app used in the WLDF policy expression
+   * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    * @throws IOException if an I/O error occurs
    * @throws InterruptedException if any thread has interrupted the current thread
@@ -356,6 +356,7 @@ public class Domain {
       throws ApiException, IOException, InterruptedException {
 
     // create RBAC API objects for WLDF script
+    logger.info("Creating RBAC API objects for WLDF script");
     if (!createRbacApiObjectsForWLDFScript(domainNamespace, opNamespace)) {
       return false;
     }
@@ -368,31 +369,54 @@ public class Domain {
       logger.info("The admin pod {0} does not exist in namespace {1}!", adminServerPodName, domainNamespace);
       return false;
     }
+
+    // create $DOMAIN_HOME/bin/scripts directory on admin server pod
+    logger.info("Creating directory {0}/bin/scripts on admin server pod", domainHomeLocation);
     ExecResult result = exec(adminPod, null, true,
         "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
     if (result.exitValue() != 0) {
       return false;
     }
 
-    copyFileToPod(domainNamespace, adminServerPodName, null,
-        Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
-        Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
+    logger.info("Copying scalingAction.sh to admin server pod");
+    try {
+      copyFileToPod(domainNamespace, adminServerPodName, null,
+          Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
+          Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
+    } catch (ApiException apex) {
+      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
+      return false;
+    } catch (IOException ioex) {
+      logger.severe("Got IOException while copying file to admin pod {0}", ioex.getStackTrace());
+      return false;
+    }
 
+    logger.info("Adding execute mode for scalingAction.sh");
     result = exec(adminPod, null, true,
         "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh");
     if (result.exitValue() != 0) {
       return false;
     }
 
-    // copy wldf.py and callscript.sh to Admin Server pod
-    copyFileToPod(domainNamespace, adminServerPodName, null,
-        Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
-        Paths.get("/u01/oracle/wldf.py"));
+    // copy wldf.py and callpyscript.sh to Admin Server pod
+    logger.info("Copying wldf.py and callpyscript.sh to admin server pod");
+    try {
+      copyFileToPod(domainNamespace, adminServerPodName, null,
+          Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
+          Paths.get("/u01/oracle/wldf.py"));
 
-    copyFileToPod(domainNamespace, adminServerPodName, null,
-        Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-        Paths.get("/u01/oracle/callpyscript.sh"));
+      copyFileToPod(domainNamespace, adminServerPodName, null,
+          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+          Paths.get("/u01/oracle/callpyscript.sh"));
+    } catch (ApiException apex) {
+      logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
+      return false;
+    } catch (IOException ioex) {
+      logger.severe("Got IOException while copying file to admin pod {0}", ioex.getStackTrace());
+      return false;
+    }
 
+    logger.info("Adding execute mode for callpyscript.sh");
     result = exec(adminPod, null, true,
         "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
     if (result.exitValue() != 0) {
@@ -452,7 +476,7 @@ public class Domain {
       throws ApiException {
 
     // create cluster role
-    if (!clusterRoleExist(WLDF_CLUSTER_ROLE_NAME)) {
+    if (!clusterRoleExists(WLDF_CLUSTER_ROLE_NAME)) {
       V1ClusterRole v1ClusterRole = new V1ClusterRole()
           .kind(RBAC_CLUSTER_ROLE)
           .apiVersion(RBAC_API_VERSION)
@@ -476,7 +500,7 @@ public class Domain {
     }
 
     // create cluster role binding
-    if (!clusterRoleBindingExist(WLDF_CLUSTER_ROLE_BINDING_NAME)) {
+    if (!clusterRoleBindingExists(WLDF_CLUSTER_ROLE_BINDING_NAME)) {
       V1ClusterRoleBinding v1ClusterRoleBinding = new V1ClusterRoleBinding()
           .kind(RBAC_CLUSTER_ROLE_BINDING)
           .apiVersion(RBAC_API_VERSION)
@@ -498,7 +522,7 @@ public class Domain {
     }
 
     // create domain operator role binding
-    if (!roleBindingExist(WLDF_ROLE_BINDING_NAME, opNamespace)) {
+    if (!roleBindingExists(WLDF_ROLE_BINDING_NAME, opNamespace)) {
       V1RoleBinding v1RoleBinding = new V1RoleBinding()
           .kind(RBAC_ROLE_BINDING)
           .apiVersion(RBAC_API_VERSION)

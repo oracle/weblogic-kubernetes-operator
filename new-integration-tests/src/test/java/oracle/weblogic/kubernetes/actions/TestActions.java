@@ -250,7 +250,7 @@ public class TestActions {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace with WLDF.
+   * Scale the cluster of the domain in the specified namespace with WLDF policy.
    *
    * @param clusterName name of the WebLogic cluster to be scaled in the domain
    * @param domainUid domainUid of the domain to be scaled
@@ -261,8 +261,8 @@ public class TestActions {
    * @param opNamespace namespace of WebLogic operator
    * @param opServiceAccount service account of operator
    * @param myWebAppName web app name deployed to the domain used in the WLDF policy expression
-   * @param curlCommand curl command to call the web app deployed to the domain
-   * @return true if the scale
+   * @param curlCommand curl command to call the web app used in the WLDF policy expression
+   * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    * @throws IOException if an I/O error occurs
    * @throws InterruptedException if any thread has interrupted the current thread
@@ -616,7 +616,7 @@ public class TestActions {
   // ----------------------- Role-based access control (RBAC)   ---------------------------
 
   /**
-   * Create a Cluster Role.
+   * Create a cluster role.
    *
    * @param clusterRole V1ClusterRole object containing cluster role configuration data
    * @return true if creation is successful, false otherwise
@@ -627,10 +627,10 @@ public class TestActions {
   }
 
   /**
-   * Create a Cluster Role Binding.
+   * Create a cluster role binding.
    *
-   * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration data
-   * @return true if successful
+   * @param clusterRoleBinding V1ClusterRoleBinding object containing cluster role binding configuration data
+   * @return true if creation is successful, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
@@ -651,10 +651,10 @@ public class TestActions {
   }
 
   /**
-   * Delete Cluster Role Binding.
+   * Delete cluster role binding.
    *
    * @param name name of cluster role binding
-   * @return true if successful, false otherwise
+   * @return true if deletion is successful, false otherwise
    */
   public static boolean deleteClusterRoleBinding(String name) {
     return ClusterRoleBinding.deleteClusterRoleBinding(name);
