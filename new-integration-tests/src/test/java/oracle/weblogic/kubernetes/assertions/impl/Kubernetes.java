@@ -4,11 +4,13 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import io.kubernetes.client.Copy;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -650,5 +652,25 @@ public class Kubernetes {
     }
 
     return v1PersistentVolumeClaimList;
+  }
+
+  /**
+   * Copy a file to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the file
+   * @param destPath destination location of the file
+   * @throws ApiException if Kubernetes API client call fails
+   * @throws IOException if copy fails
+   */
+  public static void copyFileToPod(String namespace,
+                                   String pod,
+                                   String container,
+                                   Path srcPath,
+                                   Path destPath)
+      throws ApiException, IOException {
+    Copy copy = new Copy(apiClient);
+    copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 }

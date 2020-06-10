@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
+import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
@@ -113,5 +115,23 @@ public class FileUtils {
     if (!dest.toFile().isDirectory()) {
       Files.copy(source, dest, REPLACE_EXISTING);
     }
+  }
+
+  /**
+   * Copy a file to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the file
+   * @param destPath destination location of the file
+   * @throws ApiException if Kubernetes API client call fails
+   * @throws IOException if copy fails
+   */
+  public static void copyFileToPod(String namespace,
+                                   String pod,
+                                   String container,
+                                   Path srcPath,
+                                   Path destPath) throws ApiException, IOException {
+    Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 }

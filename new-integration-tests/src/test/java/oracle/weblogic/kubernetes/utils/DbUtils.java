@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +34,6 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import org.awaitility.core.ConditionFactory;
-//import io.kubernetes.client.openapi.models.V1PodList;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -45,6 +47,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ORACLE_DB_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ORACLE_DB_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -57,8 +61,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class DbUtils {
 
-  private static final String dbBaseImageName = ORACLE_DB_BASE_IMAGE_NAME + ":" + ORACLE_DB_BASE_IMAGE_TAG;
-  private static final String fmwBaseImageName = FMW_BASE_IMAGE_NAME + ":" + FMW_BASE_IMAGE_TAG;
+  private static final String DBBASEIMAGENAME = ORACLE_DB_BASE_IMAGE_NAME + ":" + ORACLE_DB_BASE_IMAGE_TAG;
+  private static final String FMWBASEIMAGENAME = FMW_BASE_IMAGE_NAME + ":" + FMW_BASE_IMAGE_TAG;
+  private static final String CREATE_REPOSITORY_SCRIPT = "createRepository.sh";
+  private static final String PASSWORD_FILE = "pwd.txt";
+  private static final String RCUTYPE = "fmw";
+  private static final String RCUPODNAME = "rcu";
+  private static final String SYSPASSWORD = "Oradoc_db1";
+
+
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
 
@@ -91,7 +102,7 @@ public class DbUtils {
       imagePullPolicy = "Always";
     }
 
-    startOracleDB(dbBaseImageName, imagePullPolicy, dbPort, dbNamespace);
+    startOracleDB(DBBASEIMAGENAME, imagePullPolicy, dbPort, dbNamespace);
     createRcuSchema(rcuSchemaPrefix, imagePullPolicy, dbUrl, dbNamespace);
 
   }
@@ -123,7 +134,7 @@ public class DbUtils {
         .apiVersion("apps/v1")
         .kind("Deployment")
         .metadata(new V1ObjectMeta()
-            .name("oracle.db")
+            .name("oracledb")
             .namespace(dbNamespace)
             .labels(labels))
         .spec(new V1DeploymentSpec()
@@ -147,7 +158,7 @@ public class DbUtils {
                             .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
                             .image(dbBaseImageName)
                             .imagePullPolicy(imagePullPolicy)
-                            .name("oracle-db")
+                            .name("oracledb")
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
                                 .containerPort(1521)
@@ -181,14 +192,14 @@ public class DbUtils {
         .apiVersion("v1")
         .kind("Service")
         .metadata(new V1ObjectMeta()
-            .name("oracle-db")
+            .name("oracledb")
             .namespace(dbNamespace)
             .labels(labels))
         .spec(new V1ServiceSpec()
             .ports(Arrays.asList(
                 new V1ServicePort()
                     .name("tns")
-                    .port(8080)
+                    .port(1521)
                     .protocol("TCP")
                     .targetPort(new IntOrString(1521))
                     .nodePort(dbPort)))
@@ -227,7 +238,7 @@ public class DbUtils {
   }
 
   /**
-   * Create a RCU where createRepository script runs.
+   * Create a RCU schema in the namespace.
    *
    * @param rcuPrefix prefix of RCU schema
    * @param imagePullPolicy image pull policy
@@ -239,24 +250,25 @@ public class DbUtils {
       throws ApiException {
 
     logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
-    assertDoesNotThrow(() -> createRcuPod(rcuPrefix, imagePullPolicy, dbUrl, dbNamespace),
+    assertDoesNotThrow(() -> createRcuPod(/*rcuPrefix, */imagePullPolicy, dbUrl, dbNamespace),
         String.format("Create RCU pod failed with ApiException for rcuPrefix: %s, imagePullPolicy: %s, "
                 + "dbUrl: %s in namespace: %s", rcuPrefix, imagePullPolicy, dbUrl, dbNamespace));
 
-    //createRepository();
-
+    assertTrue(assertDoesNotThrow(
+        () -> createRcuRepository(dbNamespace, dbUrl, rcuPrefix),
+        String.format("createRcuRepository failed for dbNamespace: %s, dbUrl: %s, rcuPrefix: %s",
+            dbNamespace, dbUrl, rcuPrefix)));
   }
 
   /**
    * Create a RCU where createRepository script runs.
    *
-   * @param rcuPrefix prefix of RCU schema
    * @param imagePullPolicy image pull policy
    * @param dbUrl URL of DB
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static V1Pod createRcuPod(String rcuPrefix, String imagePullPolicy, String dbUrl, String dbNamespace)
+  public static V1Pod createRcuPod(/*String rcuPrefix, */String imagePullPolicy, String dbUrl, String dbNamespace)
       throws ApiException {
 
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
@@ -266,19 +278,19 @@ public class DbUtils {
 
     Map labels = new HashMap<String, String>();
     labels.put("ruc", "rcu");
-    final String podName = "rcu";
+
     V1Pod podBody = new V1Pod()
         .apiVersion("v1")
         .kind("Pod")
         .metadata(new V1ObjectMeta()
-            .name(podName)
+            .name(RCUPODNAME)
             .namespace(dbNamespace)
             .labels(labels))
         .spec(new V1PodSpec()
             .containers(Arrays.asList(
                 new V1Container()
                     .name("rcu")
-                    .image(fmwBaseImageName)
+                    .image(FMWBASEIMAGENAME)
                     .imagePullPolicy(imagePullPolicy)
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
@@ -291,13 +303,43 @@ public class DbUtils {
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
                 + "(elapsed time {2} , remaining time {3}",
-                podName,
+                RCUPODNAME,
                 dbNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(podReady(podName, null, dbNamespace));
+        .until(podReady(RCUPODNAME, null, dbNamespace));
 
     return pvPod;
+  }
+
+  private static boolean createRcuRepository(String dbNamespace, String dbUrl,
+                                         String rcuSchemaPrefix)
+      throws ApiException, IOException {
+
+    // copy the script and helper files to the RCU pod
+    Path createRepositoryScript = Paths.get(RESOURCE_DIR, "bash-scripts", CREATE_REPOSITORY_SCRIPT);
+    Path passwordFile = Paths.get(RESOURCE_DIR, "helper-files", PASSWORD_FILE);
+    Path podCreateRepositoryScript = Paths.get("/u01/oracle", CREATE_REPOSITORY_SCRIPT);
+    Path podPasswordFile = Paths.get("/u01/oracle", PASSWORD_FILE);
+
+    logger.info("source file is: {0}, target file is: {1}", createRepositoryScript, podCreateRepositoryScript);
+    FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, createRepositoryScript, podCreateRepositoryScript);
+    logger.info("source file is: {0}, target file is: {1}", passwordFile, podPasswordFile);
+    FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, passwordFile, podPasswordFile);
+
+    String createRepository = "/u01/oracle/createRepository.sh";
+    logger.info("Running the createRepository command: {0},  dbUrl: {1}, rcuSchemaPrefix: {2}, RCU type: {3}, "
+        + "SYSPASSWORD: {4} ", createRepository, dbUrl, rcuSchemaPrefix, RCUTYPE, SYSPASSWORD);
+    ExecResult execResult = assertDoesNotThrow(
+        () -> execCommand(dbNamespace, RCUPODNAME,
+            null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
+            RCUTYPE, SYSPASSWORD));
+    logger.info("Inside RCU pod command createRepository return value: {0}", execResult.exitValue());
+    if (execResult.exitValue() != 0) {
+      logger.info("Inside RCU pod command createRepository return error {0}", execResult.stderr());
+      return false;
+    }
+    return true;
   }
 
 

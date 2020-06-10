@@ -3,14 +3,14 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.Arrays;
+//import java.util.Arrays;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.DbUtils;
-import oracle.weblogic.kubernetes.utils.LoggingUtil;
+//import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-//import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_TAG;
 //import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -37,15 +37,14 @@ public class ItJrfDomainInPV implements LoggedTest {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
-  private static String wlstDomainNamespace = null;
+  private static String jrfDomainNamespace = null;
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainpv";
-  private static final String ORACLEDBURLPREFIX = "oracle-db.";
+  private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
 
 
-  private static String dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
-  //private static int suffixCount = 0;
+  private static String dbUrl = null;
   private static int dbPort = getNextFreePort(30000, 32767);
 
   private static String image = FMW_BASE_IMAGE_NAME + ":" + FMW_BASE_IMAGE_TAG;
@@ -73,24 +72,31 @@ public class ItJrfDomainInPV implements LoggedTest {
     logger.info("Assign a unique namespace for DB and RCU");
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
+    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
-    /*logger.info("Assign a unique namespace for DB and RCU");
+    /*
+    TODO temporarily being commented out. Will be needed when JRF domain is added
+    logger.info("Assign a unique namespace for DB and RCU");
     assertNotNull(namespaces.get(1), "Namespace is null");
     opNamespace = namespaces.get(1);
 
-    logger.info("Assign a unique namespace for WLST WebLogic domain");
+    logger.info("Assign a unique namespace for JRF domain");
     assertNotNull(namespaces.get(2), "Namespace is null");
-    wlstDomainNamespace = namespaces.get(2);*/
+    jrfDomainNamespace = namespaces.get(2);
 
+    //TODO in the final version when JRF domain is added setupDBandRCUschema should be here
     //start DB and create RCU schema
-    /*
-    logger.info("Start DB and create RCU schema for JRF domain");
+    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2}, "
+        + "dbUrl: {3}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(RCUSCHEMAPREFIX, dbNamespace,
         dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl));
 
+
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, wlstDomainNamespace);
+     installAndVerifyOperator(opNamespace, jrftDomainNamespace);
+
+     */
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -100,7 +106,7 @@ public class ItJrfDomainInPV implements LoggedTest {
       isUseSecret = false;
     }
 
-     */
+
   }
 
   /**
@@ -112,12 +118,14 @@ public class ItJrfDomainInPV implements LoggedTest {
   @Test
   @DisplayName("Create JRF domain in PV using WLST script")
   public void testDomainInPvUsingWlst() {
-    logger.info("Start DB and create RCU schema for JRF domain");
+
+    //TODO temporarily being here.  Will be moved to BeforeAll when JRF domain is added
+    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2}, "
+        + "dbUrl: {3}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(RCUSCHEMAPREFIX, dbNamespace,
         dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl));
-
-    LoggingUtil.generateLog(this, Arrays.asList(dbNamespace));
+    //LoggingUtil.generateLog(this, Arrays.asList(dbNamespace));
   }
 
 
