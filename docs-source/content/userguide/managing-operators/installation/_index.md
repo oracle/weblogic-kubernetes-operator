@@ -90,12 +90,12 @@ To upgrade the operator to a newer version, use the `helm upgrade` command:
 
 ```
 $ helm upgrade \
- --reuse-values \
---set image=oracle/weblogic-kubernetes-operator:3.0.0-rc1 \
---namespace weblogic-operator-namespace \
---wait \
-weblogic-operator \
-kubernetes/charts/weblogic-operator
+  --reuse-values \
+  --set image=oracle/weblogic-kubernetes-operator:3.0.0-rc1 \
+  --namespace weblogic-operator-namespace \
+  --wait \
+  weblogic-operator \
+  kubernetes/charts/weblogic-operator
 ```
 
 
