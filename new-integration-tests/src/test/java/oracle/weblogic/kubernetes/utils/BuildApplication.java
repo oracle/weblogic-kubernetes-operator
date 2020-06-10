@@ -41,6 +41,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -117,14 +118,15 @@ public class BuildApplication {
     logger.info("Creating a config map to hold build scripts");
     List<Path> buildScriptFiles = new ArrayList<>();
     buildScriptFiles.add(buildScript);
-    String buildScriptConfigMapName = "build-scripts-cm";
+    String uniqueName = Namespace.uniqueName();
+    String buildScriptConfigMapName = "build-scripts-cm-" + uniqueName;
     assertDoesNotThrow(
         () -> createConfigMapFromFiles(buildScriptConfigMapName, buildScriptFiles, namespace),
         "Create configmap for build applications failed");
 
     // create the persistent volume to make the application archive accessible to pod
-    String pvName = namespace + "-build-pv";
-    String pvcName = namespace + "-build-pvc";
+    String pvName = namespace + "-build-pv-" + uniqueName;
+    String pvcName = namespace + "-build-pvc" + uniqueName;
 
     assertDoesNotThrow(() -> createPV(buildPath, pvName), "Failed to create PV");
     createPVC(pvName, pvcName, namespace);
@@ -197,11 +199,13 @@ public class BuildApplication {
       String pvcName, String buildScriptConfigMapName, String namespace, V1Container jobContainer)
       throws ApiException {
     logger.info("Running Kubernetes job to build application");
+    String uniqueName = Namespace.uniqueName();
+    String name = namespace + "-build-job-" + uniqueName;
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(namespace + "-build-job")
+                .name(name)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
