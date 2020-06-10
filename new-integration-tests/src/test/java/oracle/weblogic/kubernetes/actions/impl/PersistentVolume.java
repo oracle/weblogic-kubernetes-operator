@@ -3,11 +3,25 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import org.awaitility.core.ConditionFactory;
+
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class PersistentVolume {
+
+  private static final ConditionFactory withStandardRetryPolicy =
+      with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
 
   /**
    * Create a Kubernetes Persistent Volume.
@@ -28,6 +42,17 @@ public class PersistentVolume {
    * @return true if successful
    */
   public static boolean delete(String name) {
-    return Kubernetes.deletePv(name);
+    Kubernetes.deletePv(name);
+        // check the persistent volume and persistent volume claim exist
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for persistent volume {0} to be deleted "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                name,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> pvNotExists(name, null),
+            String.format("pvNotExists failed with ApiException when checking pv %s", name)));
+    return true;
   }
 }

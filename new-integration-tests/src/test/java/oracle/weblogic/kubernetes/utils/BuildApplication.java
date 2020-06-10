@@ -207,7 +207,7 @@ public class BuildApplication {
                         .image(image)
                         .addCommandItem("/bin/sh")
                         .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
+                        .addArgsItem("chown -R 1000:1000 " + APPLICATIONS_MOUNT_PATH)
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name(pvName)
@@ -283,7 +283,7 @@ public class BuildApplication {
             .storageClassName("weblogic-build-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("2Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
+            .persistentVolumeReclaimPolicy("Retain")
             .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(hostPath.toString())))

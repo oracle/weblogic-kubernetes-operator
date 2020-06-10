@@ -32,6 +32,6 @@ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.or
         </javac>
         <delete dir="${distdir}" quiet="true" />
         <mkdir dir="${distdir}"/>
-        <jar destfile="${dist}/${app}.war" basedir="${builddir}" />
+        <jar destfile="${distdir}/${app}.war" basedir="${builddir}" />
     </target>
 </project>
