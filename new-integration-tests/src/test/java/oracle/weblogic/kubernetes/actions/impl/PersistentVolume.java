@@ -3,14 +3,13 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import org.awaitility.core.ConditionFactory;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
@@ -43,7 +42,7 @@ public class PersistentVolume {
    */
   public static boolean delete(String name) {
     Kubernetes.deletePv(name);
-        // check the persistent volume and persistent volume claim exist
+    // check the persistent volume and persistent volume claim not exist
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for persistent volume {0} to be deleted "

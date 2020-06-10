@@ -3,14 +3,13 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import org.awaitility.core.ConditionFactory;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcNotExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
