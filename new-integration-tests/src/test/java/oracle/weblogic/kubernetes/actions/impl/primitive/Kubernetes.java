@@ -130,11 +130,11 @@ public class Kubernetes implements LoggedTest {
     try {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
       apiClient = Configuration.getDefaultApiClient();
-      // Set connection and read timeout to 5 minutes to forces the internal HTTP client 
+      // Set connection and read timeout to 15 minutes to forces the internal HTTP client 
       // to keep a long running connection with the server to fix SSL connection closed issue
-      apiClient.setConnectTimeout(300 * 1000);
-      apiClient.setReadTimeout(300 * 1000);
-      apiClient.setWriteTimeout(300 * 1000);
+      apiClient.setConnectTimeout(900 * 1000);
+      apiClient.setReadTimeout(900 * 1000);
+      apiClient.setWriteTimeout(900 * 1000);
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
