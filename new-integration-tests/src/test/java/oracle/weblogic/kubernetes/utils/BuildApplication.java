@@ -146,7 +146,7 @@ public class BuildApplication {
    * @param namespace name of the domain namespace in which the job is created
    * @param buildScriptConfigMapName configmap containing build scripts
    */
-  public static void build(Map<String, String> parameters,
+  private static void build(Map<String, String> parameters,
       String targets, String pvName, String pvcName,
       String namespace, String buildScriptConfigMapName) {
     logger.info("Preparing to run build job");

@@ -56,6 +56,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
@@ -84,6 +85,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
@@ -154,6 +156,9 @@ public class ItIntrospectVersion implements LoggedTest {
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
 
+  private static final Path CLUSTERVIEW_APP_PATH = Paths.get(PV_ROOT,
+      "applications", "clusterview", "dist", "clusterview.war");
+
   /**
    * Assigns unique namespaces for operator and domains.
    * Pull WebLogic image if running tests in Kind cluster.
@@ -191,6 +196,10 @@ public class ItIntrospectVersion implements LoggedTest {
       image = kindRepoImage;
       isUseSecret = false;
     }
+
+    // build the clusterview application
+    BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null, introDomainNamespace);
+
   }
 
 
@@ -465,10 +474,17 @@ public class ItIntrospectVersion implements LoggedTest {
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
 
+
+    //deploy clusterview application
+    logger.info("Deploying webapp to domain {0}", CLUSTERVIEW_APP_PATH);
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, CLUSTERVIEW_APP_PATH,
+        introDomainNamespace);
+
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
+        + "-H 'host: %s' http://%s:%s/clusterview/clusterview.jsp",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
