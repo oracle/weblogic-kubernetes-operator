@@ -108,7 +108,7 @@ public class DeployUtil {
 
     logger.info("Creating a config map to hold deployment files");
     String uniqueName = Namespace.uniqueName();
-    String deployScriptConfigMapName = "deploy-scripts-cm-" + uniqueName;
+    String deployScriptConfigMapName = "wlst-deploy-scripts-cm-" + uniqueName;
 
     Map<String, String> data = new HashMap<>();
     Map<String, byte[]> binaryData = new HashMap<>();

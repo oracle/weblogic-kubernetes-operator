@@ -66,7 +66,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-import static oracle.weblogic.kubernetes.utils.TestUtils.copyFolder;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -101,7 +101,7 @@ public class BuildApplication {
 
     setImage(namespace);
 
-    // Copy the application source directory to PV_ROOT/applications/<application_directory_name>
+    // Copy the application source directory to PV_ROOT/applications/<application_directory_name>-build
     // This location is mounted in the build pod under /application
     Path applicationPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
     Path buildPath = Paths.get(applicationPath + "-build");
@@ -109,7 +109,7 @@ public class BuildApplication {
         application, buildPath);
     assertDoesNotThrow(() -> {
       Files.createDirectories(buildPath);
-      copyFolder(application.toFile(), buildPath.toFile());
+      copyFolder(application.toString(), buildPath.toString());
     });
 
     // bash script to build application
@@ -126,7 +126,7 @@ public class BuildApplication {
 
     // create the persistent volume to make the application archive accessible to pod
     String pvName = namespace + "-build-pv-" + uniqueName;
-    String pvcName = namespace + "-build-pvc" + uniqueName;
+    String pvcName = namespace + "-build-pvc-" + uniqueName;
 
     assertDoesNotThrow(() -> createPV(buildPath, pvName), "Failed to create PV");
     createPVC(pvName, pvcName, namespace);
@@ -136,12 +136,17 @@ public class BuildApplication {
       build(parameters, targets, pvName, pvcName, namespace, buildScriptConfigMapName);
       // copy the archives before it gets deleted
       assertDoesNotThrow(() -> {
-        copyFolder(buildPath.toFile(), applicationPath.toFile());
+        copyFolder(buildPath.toString(), applicationPath.toString());
       });
     } finally {
       // delete the persistent volume claim and persistent volume
       TestActions.deletePersistentVolumeClaim(pvcName, namespace);
       TestActions.deletePersistentVolume(pvName);
+      try {
+        FileUtils.cleanupDirectory(buildPath.toString());
+      } catch (IOException ex) {
+        //no op
+      }
     }
   }
 
@@ -292,7 +297,7 @@ public class BuildApplication {
             .storageClassName("weblogic-build-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("2Gi"))
-            .persistentVolumeReclaimPolicy("Recycle")
+            .persistentVolumeReclaimPolicy("Retain")
             .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(hostPath.toString())))

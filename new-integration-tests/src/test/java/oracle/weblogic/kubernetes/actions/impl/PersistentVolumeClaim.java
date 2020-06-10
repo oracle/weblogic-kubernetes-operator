@@ -10,10 +10,7 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcNotExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class PersistentVolumeClaim {
 
@@ -42,18 +39,6 @@ public class PersistentVolumeClaim {
    * @return true if successful, false otherwise
    */
   public static boolean delete(String name, String namespace) {
-    Kubernetes.deletePvc(name, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume claim {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                name,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvcNotExists(name, namespace),
-            String.format("pvcNotExists failed with ApiException when checking pvc %s in namespace %s",
-                name, namespace)));
-    return true;
+    return Kubernetes.deletePvc(name, namespace);
   }
 }

@@ -3,11 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -118,29 +115,6 @@ public class TestUtils {
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     return dateFormat.format(date) + "-" + System.currentTimeMillis();
-  }
-
-  /**
-   * Copy a source folder to a destination folder.
-   *
-   * @param sourceDir source directory to copy
-   * @param destinationDir destination directory to copy to
-   * @throws IOException when copy fails
-   */
-  public static void copyFolder(File sourceDir, File destinationDir) throws IOException {
-    if (sourceDir.isDirectory()) {
-      if (!destinationDir.exists()) {
-        destinationDir.mkdir();
-      }
-      String[] files = sourceDir.list();
-      for (String file : files) {
-        File srcFile = new File(sourceDir, file);
-        File destFile = new File(destinationDir, file);
-        copyFolder(srcFile, destFile);
-      }
-    } else {
-      Files.copy(sourceDir.toPath(), destinationDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
-    }
   }
 
   /**
