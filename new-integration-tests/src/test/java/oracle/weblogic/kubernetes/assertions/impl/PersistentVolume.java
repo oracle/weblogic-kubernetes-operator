@@ -43,30 +43,4 @@ public class PersistentVolume {
     };
   }
 
-  /**
-   * Check whether persistent volume with pvName not exists.
-   *
-   * @param pvName persistent volume to check
-   * @param labelSelector String containing the labels the PV is decorated with
-   * @return true if the persistent volume not exists, false otherwise
-   */
-  public static Callable<Boolean> pvNotExists(String pvName, String labelSelector) {
-    return () -> {
-      List<V1PersistentVolume> v1PersistentVolumes = new ArrayList<>();
-      V1PersistentVolumeList v1PersistentVolumeList = Kubernetes.listPersistentVolumes(labelSelector);
-      if (v1PersistentVolumeList != null) {
-        v1PersistentVolumes = v1PersistentVolumeList.getItems();
-      }
-      for (V1PersistentVolume v1PersistentVolume : v1PersistentVolumes) {
-        if (v1PersistentVolume.getMetadata() != null) {
-          if (v1PersistentVolume.getMetadata().getName() != null) {
-            if (v1PersistentVolume.getMetadata().getName().equals(pvName)) {
-              return false;
-            }
-          }
-        }
-      }
-      return true;
-    };
-  }
 }

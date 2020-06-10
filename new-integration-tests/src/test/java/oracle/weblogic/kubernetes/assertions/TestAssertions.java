@@ -461,17 +461,6 @@ public class TestAssertions {
   }
 
   /**
-   * Check whether persistent volume with pvName not exists.
-   *
-   * @param pvName persistent volume to check
-   * @param labelSelector String containing the labels the PV is decorated with
-   * @return true if the persistent volume not exists, false otherwise
-   */
-  public static Callable<Boolean> pvNotExists(String pvName, String labelSelector) {
-    return PersistentVolume.pvNotExists(pvName, labelSelector);
-  }
-
-  /**
    * Check whether persistent volume claims with pvcName exists in the specified namespace.
    *
    * @param pvcName persistent volume claim to check
@@ -480,17 +469,6 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
     return PersistentVolumeClaim.pvcExists(pvcName, namespace);
-  }
-
-  /**
-   * Check whether persistent volume claims with pvcName not exists in the specified namespace.
-   *
-   * @param pvcName persistent volume claim to check
-   * @param namespace the namespace in which the persistent volume claim to be checked
-   * @return true if the persistent volume claim not exists in the namespace, false otherwise
-   */
-  public static Callable<Boolean> pvcNotExists(String pvcName, String namespace) {
-    return PersistentVolumeClaim.pvcNotExists(pvcName, namespace);
   }
 
 }

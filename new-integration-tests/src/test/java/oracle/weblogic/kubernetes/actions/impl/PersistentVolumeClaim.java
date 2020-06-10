@@ -6,18 +6,8 @@ package oracle.weblogic.kubernetes.actions.impl;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
-import org.awaitility.core.ConditionFactory;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.awaitility.Awaitility.with;
 
 public class PersistentVolumeClaim {
-
-  private static final ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Create a Kubernetes Persistent Volume Claim.

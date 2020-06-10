@@ -42,31 +42,5 @@ public class PersistentVolumeClaim {
       return false;
     };
   }
-
-  /**
-   * Check whether persistent volume claims with pvcName not exists in the specified namespace.
-   *
-   * @param pvcName persistent volume claim to check
-   * @param namespace the namespace in which the persistent volume claim to be checked
-   * @return true if the persistent volume claim exists in the namespace, false otherwise
-   */
-  public static Callable<Boolean> pvcNotExists(String pvcName, String namespace) {
-    return () -> {
-      List<V1PersistentVolumeClaim> v1PersistentVolumeClaims = new ArrayList<>();
-      V1PersistentVolumeClaimList v1PersistentVolumeClaimList = Kubernetes.listPersistentVolumeClaims(namespace);
-      if (v1PersistentVolumeClaimList != null) {
-        v1PersistentVolumeClaims = v1PersistentVolumeClaimList.getItems();
-      }
-      for (V1PersistentVolumeClaim v1PersistentVolumeClaim : v1PersistentVolumeClaims) {
-        if (v1PersistentVolumeClaim.getMetadata() != null) {
-          if (v1PersistentVolumeClaim.getMetadata().getName() != null) {
-            if (v1PersistentVolumeClaim.getMetadata().getName().equals(pvcName)) {
-              return true;
-            }
-          }
-        }
-      }
-      return false;
-    };
-  }
+  
 }
