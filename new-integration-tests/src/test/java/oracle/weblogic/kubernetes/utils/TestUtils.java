@@ -143,7 +143,7 @@ public class TestUtils {
         logger.info("The server {0} can see other cluster members", key);
       } else {
         logger.info("The server {0} is not bound in JNDI server "
-            + "or cannot see other cluster members", key);
+            + "or is generating an unexpected curl response", key);
       }
     });
 
