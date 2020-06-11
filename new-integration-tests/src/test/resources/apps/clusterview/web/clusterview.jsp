@@ -38,9 +38,9 @@
     // bind the server name in the local JNDI tree
     try {
       ctx.lookup(serverRuntime.getName());
-    } catch (NameNotFoundException nnfex) {      
-      ctx.bind(serverRuntime.getName(), serverRuntime.getName());
       out.println("ServerName:" + serverRuntime.getName());
+    } catch (NameNotFoundException nnfex) {      
+      ctx.bind(serverRuntime.getName(), serverRuntime.getName());      
     }
     // lookup JNDI for other clustered servers bound in tree
     try {
