@@ -14,6 +14,7 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -102,12 +103,18 @@ abstract class Watcher<T> {
   private void doWatch() {
     setIsDraining(false);
 
-    while (!isDraining()) {
-      if (isStopping()) {
-        setIsDraining(true);
-      } else {
-        watchForEvents();
+    LoggingContext.context(new LoggingContext().namespace(getNamespace()));
+
+    try {
+      while (!isDraining()) {
+        if (isStopping()) {
+          setIsDraining(true);
+        } else {
+          watchForEvents();
+        }
       }
+    } finally {
+      LoggingContext.remove();
     }
   }
 
@@ -182,6 +189,13 @@ abstract class Watcher<T> {
    * @throws ApiException if there is an API error.
    */
   public abstract WatchI<T> initiateWatch(WatchBuilder watchBuilder) throws ApiException;
+
+  /**
+   * Gets the Kubernetes namespace associated with the watcher.
+   *
+   * @return String object or null if the watcher is not namespaced
+   */
+  public abstract String getNamespace();
 
   private boolean isError(Watch.Response<T> item) {
     return item.type.equalsIgnoreCase("ERROR");

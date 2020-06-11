@@ -50,6 +50,7 @@ import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -561,11 +562,17 @@ public class Main {
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
       Collection<StepAndPacket> startDetails = new ArrayList<>();
-      for (String ns : targetNamespaces) {
-        startDetails.add(
-            new StepAndPacket(
-                action(ns),
-                packet.clone()));
+      LoggingContext oldContext = LoggingContext.context();
+      try {
+        for (String ns : targetNamespaces) {
+          LoggingContext.context(new LoggingContext().namespace(ns));
+          startDetails.add(
+              new StepAndPacket(
+                  action(ns),
+                  packet.clone()));
+        }
+      } finally {
+        LoggingContext.context(oldContext);
       }
       return doForkJoin(getNext(), packet, startDetails);
     }
@@ -636,6 +643,10 @@ public class Main {
       // the health check helper.
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
           ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
+      packet.getComponents().put(
+          LoggingContext.LOGGING_CONTEXT_KEY,
+          Component.createFor(
+              new LoggingContext().namespace(ns != null ? ns : operatorNamespace)));
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;

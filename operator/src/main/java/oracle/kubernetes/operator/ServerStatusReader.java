@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -167,6 +168,8 @@ public class ServerStatusReader {
             String state = null;
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
+            String namespace = pod.getMetadata().getNamespace();
+            LoggingContext.context(new LoggingContext().namespace(namespace));
             try {
               KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
               kubernetesExec.setStdin(stdin);

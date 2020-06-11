@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -179,15 +180,20 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     // If this is the first event after the fiber resumes, it indicates that we did not receive
     // a callback within the timeout. So cancel the call and prepare to try again.
-    private void handleTimeout(AsyncFiber fiber, CancellableCall cc) {
+    private void handleTimeout(RequestParams requestParams, AsyncFiber fiber, CancellableCall cc) {
       if (firstTimeResumed()) {
         try {
           cc.cancel();
         } finally {
-          if (LOGGER.isFinerEnabled()) {
-            logTimeout();
+          LoggingContext.context(new LoggingContext().namespace(requestParams.namespace));
+          try {
+            if (LOGGER.isFinerEnabled()) {
+              logTimeout();
+            }
+            addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
+          } finally {
+            LoggingContext.remove();
           }
-          addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
           fiber.resume(packet);
         }
       }
@@ -237,7 +243,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         (fiber) -> {
           try {
             CancellableCall cc = processing.createCall(fiber);
-            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(fiber, cc));
+            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(requestParams, fiber, cc));
           } catch (ApiException t) {
             logAsyncFailure(t, t.getResponseBody());
             processing.resumeAfterThrowable(fiber);
@@ -416,14 +422,24 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     @Override
     public void onFailure(
-          ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-      processing.onFailure(fiber, ae, statusCode, responseHeaders);
+        ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+      LoggingContext.context(new LoggingContext().namespace(requestParams.namespace));
+      try {
+        processing.onFailure(fiber, ae, statusCode, responseHeaders);
+      } finally {
+        LoggingContext.remove();
+      }
     }
 
     @Override
     public void onSuccess(
         T result, int statusCode, Map<String, List<String>> responseHeaders) {
-      processing.onSuccess(fiber, result, statusCode, responseHeaders);
+      LoggingContext.context(new LoggingContext().namespace(requestParams.namespace));
+      try {
+        processing.onSuccess(fiber, result, statusCode, responseHeaders);
+      } finally {
+        LoggingContext.remove();
+      }
     }
   }
 }

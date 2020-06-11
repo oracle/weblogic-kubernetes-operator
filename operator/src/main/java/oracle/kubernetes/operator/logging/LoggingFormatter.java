@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.swagger.annotations.ApiModel;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 
@@ -32,6 +33,7 @@ public class LoggingFormatter extends Formatter {
   private static final String THREAD = "thread";
   private static final String FIBER = "fiber";
   private static final String DOMAIN_UID = "domainUID";
+  private static final String DOMAIN_NAMESPACE = "namespace";
   private static final String SOURCE_CLASS = "class";
   private static final String SOURCE_METHOD = "method";
   private static final String TIME_IN_MILLIS = "timeInMillis";
@@ -112,6 +114,7 @@ public class LoggingFormatter extends Formatter {
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
     map.put(FIBER, fiber != null ? fiber.toString() : "");
+    map.put(DOMAIN_NAMESPACE, getNamespace(fiber));
     map.put(DOMAIN_UID, getDomainUid(fiber));
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
@@ -145,7 +148,9 @@ public class LoggingFormatter extends Formatter {
   }
 
   /**
-   * Get the domain UID currently being used by the step executing for the Fiber.
+   * Get the domain UID associated with the current log message.
+   * Check the fiber that is currently being used to execute the step that initiates the log.
+   * If there is no fiber associated with this log, check the ThreadLocal.
    *
    * @param fiber The current Fiber
    * @return the domain UID or empty string
@@ -155,9 +160,38 @@ public class LoggingFormatter extends Formatter {
     Packet packet = fiber == null ? null : fiber.getPacket();
     if (packet != null) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return info == null ? "" : info.getDomainUid();
-    } else {
-      return "";
-    }
+      if (info != null) {
+        return info.getDomainUid() == null ? "" : info.getDomainUid();
+      }
+    } 
+    LoggingContext context = LoggingContext.context();
+    return context == null || context.domainUid() == null ? "" : context.domainUid();
+  }
+  
+  /**
+   * Get the namespace associated with the current log message.
+   * Check the fiber that is currently being used to execute the step that initiate the log.
+   * If there is no fiber associated with this log, check the ThreadLocal.
+   *
+   * @param fiber The current Fiber
+   * @return the namespace or empty string
+   */
+  private String getNamespace(Fiber fiber) {
+
+    Packet packet = fiber == null ? null : fiber.getPacket();
+    if (packet != null) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      if (info != null) {
+        return info.getNamespace() == null ? "" : info.getNamespace();
+      } 
+      LoggingContext context = packet.getSpi(LoggingContext.class);
+      if (context != null) {
+        return context.namespace() == null ? "" : context.namespace();
+      }
+    } 
+    
+    LoggingContext context = LoggingContext.context();
+    return context == null || context.namespace() == null ? "" : context.namespace();
+
   }
 }

@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
@@ -231,8 +232,23 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getCurrentFibers().forEach(
                 (key, fiber) -> {
                   Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                    LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
-                        + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
+                  
+                    // find out the domainUID 
+                    Packet packet = fiber == null ? null : fiber.getPacket();
+                    String domainUid = null;
+                    if (packet != null) {
+                      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+                      if (info != null) {
+                        domainUid = info.getDomainUid();
+                      }
+                    }
+                    LoggingContext.context(new LoggingContext().namespace(namespace).domainUid(domainUid));
+                    try {
+                      LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
+                          + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
+                    } finally {
+                      LoggingContext.remove();
+                    }
                   });
                 });
           };
