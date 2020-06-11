@@ -5,18 +5,11 @@ package oracle.weblogic.kubernetes.applications.clusterview;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
-import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
@@ -86,23 +79,9 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("<!DOCTYPE html>");
       out.println("<html>");
       out.println("<head>");
-      out.println("<title>Servlet ClusterViewServlet</title>");
+      out.println("<title>ClusterViewServlet</title>");
       out.println("</head>");
       out.println("<body>");
-      out.println("<h1>Servlet ClusterViewServlet at " + request.getContextPath() + "</h1>");
-
-      // print all mbeans and its attributes in the server runtime
-      out.println("Querying server: " + localMBeanServer.toString());
-      Set<ObjectInstance> mbeans = localMBeanServer.queryMBeans(null, null);
-      for (ObjectInstance mbeanInstance : mbeans) {
-        out.println("<br>ObjectName: " + mbeanInstance.getObjectName() + "<br>");
-        MBeanInfo mBeanInfo = localMBeanServer.getMBeanInfo(mbeanInstance.getObjectName());
-        MBeanAttributeInfo[] attributes = mBeanInfo.getAttributes();
-        for (MBeanAttributeInfo attribute : attributes) {
-          out.println("<br>Type: " + attribute.getType() + "<br>");
-          out.println("<br>Name: " + attribute.getName() + "<br>");
-        }
-      }
 
       ClusterRuntimeMBean clusterRuntime = serverRuntime.getClusterRuntime();
       //if the server is part of a cluster get its cluster details
@@ -114,19 +93,18 @@ public class ClusterViewServlet extends HttpServlet {
         out.println("ServerName:" + serverRuntime.getName());
 
         // lookup JNDI for other clustered servers bound in tree
-        try {
-          for (String serverName : serverNames) {
-            if (ctx.lookup(serverName) != null) {
+        for (String serverName : serverNames) {
+          try {
+            if (ctx.lookup(serverName).equals(serverName)) {
               out.println("Bound:" + serverName);
             }
+          } catch (NamingException nnfex) {
+            out.println(nnfex.getMessage());
           }
-        } catch (NameNotFoundException nnfex) {
-          out.println(nnfex.getMessage());
         }
       }
-    } catch (NamingException | InstanceNotFoundException
-        | IntrospectionException | ReflectionException  ex) {
-      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+      out.println("</body>");
+      out.println("</html>");
     }
   }
 
