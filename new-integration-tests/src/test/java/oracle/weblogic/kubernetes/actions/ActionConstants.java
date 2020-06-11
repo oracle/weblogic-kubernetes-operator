@@ -65,4 +65,7 @@ public interface ActionConstants {
   public static final String RBAC_ROLE_BINDING = "RoleBinding";
   public static final String RBAC_API_VERSION = "rbac.authorization.k8s.io/v1";
   public static final String RBAC_API_GROUP = "rbac.authorization.k8s.io";
+
+  public static final String MONITORING_EXPORTER_DOWNLOAD_URL 
+      = "https://github.com/oracle/weblogic-monitoring-exporter.git";
 }

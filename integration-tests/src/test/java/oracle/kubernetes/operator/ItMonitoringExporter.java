@@ -86,7 +86,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static String currentDateTime;
   private static final String monitoringNS = "monitortestns";
   private static boolean installPromGrafanaWebHookMySqlCoord = false;
-
+  
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
