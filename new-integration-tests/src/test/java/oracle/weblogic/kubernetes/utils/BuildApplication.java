@@ -276,6 +276,8 @@ public class BuildApplication {
 
   private static void createPVC(String pvName, String pvcName, String namespace) {
     logger.info("creating persistent volume claim");
+    HashMap<String, String> label = new HashMap<String, String>();
+    label.put("weblogic.domainUid", "ittests");
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
@@ -286,7 +288,8 @@ public class BuildApplication {
                 .putRequestsItem("storage", Quantity.fromString("2Gi"))))
         .metadata(new V1ObjectMeta()
             .name(pvcName)
-            .namespace(namespace));
+            .namespace(namespace)
+            .labels(label));
 
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
