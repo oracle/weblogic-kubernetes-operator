@@ -78,9 +78,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItCrossDomainTransaction implements LoggedTest {
 
-  private static final String WDT_MODEL_FILE = "model-crossdomaintransaction.yaml";
+  private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
+  private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
+
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
-  private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain12.properties";
+  private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
   private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
   private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
   private static final String WDT_APP_NAME = "txpropagate";
@@ -136,20 +138,16 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
   private static void updatePropertyFile() {
     //create a temporary directory to copy and update the properties file
-    Path targetPath = Paths.get(PROPS_TEMP_DIR);
-    Path source1Path = Paths.get(MODEL_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS);
-    Path source2Path = Paths.get(MODEL_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS);
+    Path target = Paths.get(PROPS_TEMP_DIR);
+    Path source1 = Paths.get(MODEL_DIR, WDT_MODEL_DOMAIN1_PROPS);
+    Path source2 = Paths.get(MODEL_DIR, WDT_MODEL_DOMAIN2_PROPS);
     logger.info("Copy the properties file to the above area so that we can add namespace property");
     assertDoesNotThrow(() -> {
-      Files.createDirectories(targetPath);
-      Files.copy(source1Path, targetPath, StandardCopyOption.REPLACE_EXISTING);
-      Files.copy(source2Path, targetPath, StandardCopyOption.REPLACE_EXISTING);
+      Files.createDirectories(target);
+      Files.copy(source1, target.resolve(source1.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+      Files.copy(source2, target.resolve(source2.getFileName()), StandardCopyOption.REPLACE_EXISTING);
     });
-    /*
-    checkDirectory(PROPS_TEMP_DIR);
-    copy(MODEL_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR);
-    copy(MODEL_DIR + "/" + WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR);
-    */
+
     assertDoesNotThrow(() -> {
       addNamespaceToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
       String.format("Failed to update %s with namespace %s",
@@ -189,24 +187,39 @@ public class ItCrossDomainTransaction implements LoggedTest {
     //build application archive
     Path application = Paths.get(RESOURCE_DIR, "apps", "txpropagate");
     BuildApplication.buildApplication(application, null, "build", domain1Namespace);
+
+    // create admin credential secret for domain1
+    logger.info("Create admin credential secret for domain1");
+    String domain1AdminSecretName = domainUid1 + "-weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        domain1AdminSecretName, domain1Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid1));
+
+    // create admin credential secret for domain2
+    logger.info("Create admin credential secret for domain2");
+    String domain2AdminSecretName = domainUid2 + "-weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        domain2AdminSecretName, domain2Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
+
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
-        WDT_IMAGE_NAME1, WDT_MODEL_FILE, WDT_APP_NAME,WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR);
+        WDT_IMAGE_NAME1, WDT_MODEL_FILE_DOMAIN1, WDT_APP_NAME, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain1Image);
 
     logger.info("Creating image with model file and verify");
     String domain2Image = createImageAndVerify(
-        WDT_IMAGE_NAME2, WDT_MODEL_FILE, WDT_APP_NAME, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR);
+        WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, WDT_APP_NAME, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain2Image);
 
     //create domain1
-    createDomain(domainUid1, domain1Namespace);
+    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName);
     //create domain2
-    createDomain(domainUid2, domain2Namespace);
+    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName);
 
   }
 
@@ -227,7 +240,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
     logger.info("Deleted Domain Custom Resource " + domainUid2 + " from " + domain2Namespace);
   }
 
-  private void createDomain(String domainUid, String domainNamespace) {
+  private void createDomain(String domainUid, String domainNamespace, String adminSecretName) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -235,11 +248,6 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create the domain CR
     createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,

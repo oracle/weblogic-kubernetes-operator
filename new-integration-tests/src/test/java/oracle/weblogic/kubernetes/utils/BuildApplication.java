@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+//import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,12 +37,14 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import org.awaitility.core.ConditionFactory;
 
+import static java.nio.file.Files.copy;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -52,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
@@ -65,6 +68,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -101,11 +107,15 @@ public class BuildApplication {
 
     // Copy the application source directory to PV_ROOT/applications/<application_directory_name>
     // This location is mounted in the build pod under /application
-    Path targetPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
+    String appName = application.getFileName().toString();
+    Path targetPath = Paths.get(PV_ROOT, "applications", appName);
     logger.info("Copy the application to staging area");
+    logger.info("staging area is $s", targetPath.toString());
     assertDoesNotThrow(() -> {
-      Files.createDirectories(targetPath);
-      Files.copy(application, targetPath, StandardCopyOption.REPLACE_EXISTING);
+      //Files.createDirectories(targetPath);
+      checkDirectory(targetPath.toString());
+      //Files.copyFolder(application, targetPath, StandardCopyOption.REPLACE_EXISTING);
+      copyFolder(application, targetPath);
     });
 
     // bash script to build application
@@ -129,6 +139,15 @@ public class BuildApplication {
     try {
       // build application
       build(parameters, targets, pvName, pvcName, namespace, buildScriptConfigMapName);
+      String earFile = String.format("%s.ear", appName);
+      Path destDir = Paths.get(ARCHIVE_DIR, "wlsdeploy/applications", earFile);
+      Path srcDir = Paths.get(targetPath.toString(), "builddir", earFile);
+      assertDoesNotThrow(() -> {
+        cleanupDirectory(ARCHIVE_DIR + "wlsdeploy/applications");
+        checkDirectory(ARCHIVE_DIR + "wlsdeploy/applications");
+        copy(srcDir, destDir);
+      });
+
     } finally {
       // delete the persistent volume claim and persistent volume
       TestActions.deletePersistentVolumeClaim(pvcName, namespace);
@@ -201,6 +220,19 @@ public class BuildApplication {
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
+                    .initContainers(Arrays.asList(new V1Container()
+                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                        .image(image)
+                        .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
+                        .addArgsItem("chown -R 1000:1000 /application")
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name(pvName)
+                                .mountPath(APPLICATIONS_MOUNT_PATH)))
+                        .securityContext(new V1SecurityContext()
+                            .runAsGroup(0L)
+                            .runAsUser(0L))))
                     .containers(Arrays.asList(jobContainer
                         .name("build-application-container")
                         .image(image)

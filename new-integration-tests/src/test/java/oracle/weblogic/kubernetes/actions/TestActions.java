@@ -640,6 +640,20 @@ public class TestActions {
             .build();
   }
 
+  /**
+   * Create an application archive that can be used by WebLogic Image Tool
+   * to create an image with the application for a model-in-image use case.
+   *
+   * @param params the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean buildArchiveZip(AppParams params, String zipPath, String srcDir) {
+    return
+        AppBuilder
+            .withParams(params)
+            .buildZipArchive(zipPath, srcDir);
+  }
+
   // ------------------------ Docker --------------------------------------
 
   /**

@@ -36,6 +36,7 @@
 	<!-- Following application needs to be built one after the another -->
 	<target name="build">
 		<delete dir="${builddir}" quiet="true" />
+		<sleep seconds="2"/>
 		<mkdir dir="${builddir}" />
 		<delete dir="${tempdir}" quiet="true" />
 		<mkdir dir="${tempdir}" />

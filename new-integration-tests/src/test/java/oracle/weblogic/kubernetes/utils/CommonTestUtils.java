@@ -60,6 +60,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -67,7 +68,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+//import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.buildArchiveZip;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -596,13 +598,14 @@ public class CommonTestUtils {
                                                 String domainType) {
     return createImageAndVerify(
         miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
-        baseImageTag, domainType, true);
+        baseImageTag, domainType, true, null);
   }
 
   /**
    * Create an image with modelfile, application archive and property file. If the property file
-   * is needed to be updated with a property that has been created by the framework
-   * @param imageNameBase - base image name used in local or to construct image name in reposiroty
+   * is needed to be updated with a property that has been created by the framework, it is copied
+   * onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
+   * @param imageNameBase - base image name used in local or to construct image name in repository
    * @param wdtModelFile - model file used to build the image
    * @param appName - application to be added to the image
    * @param modelPropFile - property file to be used with the model file above
@@ -613,20 +616,23 @@ public class CommonTestUtils {
                                              String wdtModelFile,
                                              String appName,
                                              String modelPropFile,
-                                             String altModelDir) {
+                                             String altModelDir,
+                                             String domainHome) {
 
     final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
+    logger.info("BR: modelPropList is {0}", modelPropList);
     return createImageAndVerify(
         imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, false);
+        WLS_BASE_IMAGE_TAG, WLS, false, domainHome);
   }
 
   /**
-   * Create an image from the wdt model, application archives and property file.
-   * @param imageNameBase - base image name used in local or to construct image name in reposiroty
+   * Create an image from the wdt model, application archives and property file. Call this method
+   * to create a domain home in image.
+   * @param imageNameBase - base image name used in local or to construct image name in repository
    * @param wdtModelFile - model file used to build the image
    * @param appName - application to be added to the image
    * @param modelPropFile - property file to be used with the model file above
@@ -635,7 +641,8 @@ public class CommonTestUtils {
   public static String createImageAndVerify(String imageNameBase,
                                             String wdtModelFile,
                                             String appName,
-                                            String modelPropFile) {
+                                            String modelPropFile,
+                                            String domainHome) {
 
     final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
@@ -643,7 +650,7 @@ public class CommonTestUtils {
 
     return createImageAndVerify(
         imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-        WLS_BASE_IMAGE_TAG, WLS, false);
+        WLS_BASE_IMAGE_TAG, WLS, false, domainHome);
   }
 
   /**
@@ -666,7 +673,8 @@ public class CommonTestUtils {
                                                String baseImageName,
                                                String baseImageTag,
                                                String domainType,
-                                               boolean modelType) {
+                                               boolean modelType,
+                                               String domainHome) {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
@@ -680,13 +688,21 @@ public class CommonTestUtils {
       final String appName = appSrcDirList.get(0);
 
       // build an application archive using what is in resources/apps/APP_NAME
+      //comment out temporarily
+      /*
       assertTrue(buildAppArchive(defaultAppParams()
           .srcDirList(appSrcDirList)),
           String.format("Failed to create app archive for %s", appName));
 
-      // build the archive list
-      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-      archiveList = Collections.singletonList(zipFile);
+       */
+
+      // build the archive zip file
+      String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+      archiveList = Collections.singletonList(zipPath);
+
+      assertTrue(buildArchiveZip(defaultAppParams()
+              .srcDirList(appSrcDirList), zipPath, ARCHIVE_DIR),
+          String.format("Failed to create zip archive for %s", appName));
     }
 
     // Set additional environment variables for WIT
@@ -704,20 +720,40 @@ public class CommonTestUtils {
 
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
-    boolean result = createImage(
-        new WitParams()
-            .baseImageName(baseImageName)
-            .baseImageTag(baseImageTag)
-            .domainType(domainType)
-            .modelImageName(imageName)
-            .modelImageTag(imageTag)
-            .modelFiles(wdtModelList)
-            .modelVariableFiles(modelPropList)
-            .modelArchiveFiles(archiveList)
-            .wdtModelOnly(modelType)
-            .wdtVersion(WDT_VERSION)
-            .env(env)
-            .redirect(true));
+    boolean result = false;
+    if (!modelType) {  //create a domain home in image image
+      result = createImage(
+          new WitParams()
+              .baseImageName(baseImageName)
+              .baseImageTag(baseImageTag)
+              .domainType(domainType)
+              .modelImageName(imageName)
+              .modelImageTag(imageTag)
+              .modelFiles(wdtModelList)
+              .modelVariableFiles(modelPropList)
+              .modelArchiveFiles(archiveList)
+              .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
+              .wdtModelOnly(modelType)
+              .wdtOperation("CREATE")
+              .wdtVersion(WDT_VERSION)
+              .env(env)
+              .redirect(true));
+    } else {
+      result = createImage(
+          new WitParams()
+              .baseImageName(baseImageName)
+              .baseImageTag(baseImageTag)
+              .domainType(domainType)
+              .modelImageName(imageName)
+              .modelImageTag(imageTag)
+              .modelFiles(wdtModelList)
+              .modelVariableFiles(modelPropList)
+              .modelArchiveFiles(archiveList)
+              .wdtModelOnly(modelType)
+              .wdtVersion(WDT_VERSION)
+              .env(env)
+              .redirect(true));
+    }
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
