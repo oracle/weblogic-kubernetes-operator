@@ -28,6 +28,8 @@ import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
+import oracle.weblogic.kubernetes.actions.impl.Grafana;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Job;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Nginx;
@@ -37,6 +39,8 @@ import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.actions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.actions.impl.Pod;
+import oracle.weblogic.kubernetes.actions.impl.Prometheus;
+import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
@@ -50,6 +54,7 @@ import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
+import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -640,6 +645,19 @@ public class TestActions {
             .build();
   }
 
+  /**
+   * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
+   * to create an image with the application for a model-in-image use case.
+   *
+   * @param params the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean archiveApp(AppParams params) {
+    return AppBuilder
+            .withParams(params)
+            .archiveApp();
+  }
+
   // ------------------------ Docker --------------------------------------
 
   /**
@@ -903,6 +921,52 @@ public class TestActions {
                                           String username, String password, String target) {
     return true;
   }
+
+  // --------------------------- Prometheus ---------------------------------
+
+  /**
+   * Install Prometheus.
+   *
+   * @param params prometheus parameters for Helm values
+   * @return true if the prometheus is successfully installed, false otherwise.
+   */
+  public static boolean installPrometheus(PrometheusParams params) {
+    return Prometheus.install(params);
+  }
+
+  /**
+   * Uninstall the Prometheus release.
+   *
+   * @param params the parameters to Helm uninstall command, release name and namespace
+   * @return true on success, false otherwise
+   */
+
+  public static boolean uninstallPrometheus(HelmParams params) {
+    return uninstall(params);
+  }
+
+  // --------------------------- Grafana ---------------------------------
+  /**
+   * Install Grafana.
+   *
+   * @param params grafana parameters for Helm values
+   * @return true if the prometheus is successfully installed, false otherwise.
+   */
+  public static boolean installGrafana(GrafanaParams params) {
+    return Grafana.install(params);
+  }
+
+  /**
+   * Uninstall the Grafana release.
+   *
+   * @param params the parameters to Helm uninstall command, release name and namespace
+   * @return true on success, false otherwise
+   */
+
+  public static boolean uninstallGrafana(HelmParams params) {
+    return Grafana.uninstall(params);
+  }
+
 
   /**
    * Patch the domain resource with a new restartVersion.
