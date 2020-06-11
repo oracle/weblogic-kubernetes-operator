@@ -485,7 +485,7 @@ public class ItIntrospectVersion implements LoggedTest {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/clusterview.jsp",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount + 1; i++) {
@@ -593,7 +593,7 @@ public class ItIntrospectVersion implements LoggedTest {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/clusterview.jsp",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
