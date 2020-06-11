@@ -52,7 +52,6 @@
 %>
 
 <%
-  Context ctx = null;
   out.println("<html><body><pre>");
   out.println("ServerName:" + serverRuntime.getName());
 
@@ -65,14 +64,16 @@
     out.println("Members:" + String.join(",", serverNames));
 
     // lookup JNDI for other clustered servers bound in tree
-    try {
-      for (String serverName : serverNames) {
-        if (ctx.lookup(serverName) != null) {
+    for (String serverName : serverNames) {
+      try {
+        if (ctx.lookup(serverName).equals(serverName)) {
           out.println("Bound:" + serverName);
         }
+      } catch (NameNotFoundException nnfex) {
+        out.println(nnfex.getMessage());
       }
-    } catch (NameNotFoundException nnfex) {
-      out.println(nnfex.getMessage());
     }
   }
+  
+  out.println("</pre></body></html>");  
 %>

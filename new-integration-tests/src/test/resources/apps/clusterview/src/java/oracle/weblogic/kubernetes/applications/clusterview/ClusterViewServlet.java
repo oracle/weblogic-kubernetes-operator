@@ -82,7 +82,9 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("<title>ClusterViewServlet</title>");
       out.println("</head>");
       out.println("<body>");
+      out.println("<pre>");
 
+      out.println("ServerName:" + serverRuntime.getName());
       ClusterRuntimeMBean clusterRuntime = serverRuntime.getClusterRuntime();
       //if the server is part of a cluster get its cluster details
       if (clusterRuntime != null) {
@@ -90,19 +92,19 @@ public class ClusterViewServlet extends HttpServlet {
         out.println("Alive:" + clusterRuntime.getAliveServerCount());
         out.println("Health:" + clusterRuntime.getHealthState().getState());
         out.println("Members:" + String.join(",", serverNames));
-        out.println("ServerName:" + serverRuntime.getName());
-
         // lookup JNDI for other clustered servers bound in tree
         for (String serverName : serverNames) {
           try {
             if (ctx.lookup(serverName).equals(serverName)) {
               out.println("Bound:" + serverName);
             }
-          } catch (NamingException nnfex) {
+          } catch (NameNotFoundException nnfex) {
             out.println(nnfex.getMessage());
           }
         }
       }
+
+      out.println("</pre>");
       out.println("</body>");
       out.println("</html>");
     }
