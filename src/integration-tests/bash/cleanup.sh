@@ -369,6 +369,10 @@ function deleteNamespaces {
   done
 }
 
+function deleteNamespacesIT {
+  kubectl delete ns $(kubectl get ns | awk '/ns-/{print $1}')
+}
+
 # Delete everything individually by name, one by one, in order of type, that matches given label $LABEL_SELECTOR
 # The order is determined by NAMESPACED_TYPES NOT_NAMESPACED_TYPES below...
 function deleteByTypeAndLabel {
@@ -684,6 +688,8 @@ genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -friendlyDelete
 
 genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -forceDelete
 SUCCESS="$?"
+
+deleteNamespacesIT
 
 #
 # Phase 4: Delete pv host directories.
