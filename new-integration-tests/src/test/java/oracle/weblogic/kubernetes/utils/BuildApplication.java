@@ -61,7 +61,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
+import static org.apache.commons.io.FileUtils.copyDirectory;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -103,7 +104,9 @@ public class BuildApplication {
     logger.info("Copy the application {0} to PV hostpath {1}", application, targetPath);
     assertDoesNotThrow(() -> {
       Files.createDirectories(targetPath);
-      copyFolder(application.toString(), targetPath.toString());
+      deleteDirectory(targetPath.toFile());
+      Files.createDirectories(targetPath);
+      copyDirectory(application.toFile(), targetPath.toFile());
       Files.copy(BUILD_SCRIPT_SOURCE_PATH, targetPath.resolve(BUILD_SCRIPT_SOURCE_PATH.getFileName()));
     });
 
@@ -334,5 +337,4 @@ public class BuildApplication {
     }
     logger.info("Using image {0}", image);
   }
-
 }
