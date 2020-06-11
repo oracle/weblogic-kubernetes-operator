@@ -112,12 +112,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ItIstioDomainInPV implements LoggedTest {
 
   private static String opNamespace = null;
-  private static String istioDomainNamespace = null;
+  private static String domainNamespace = null;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
   private static boolean isUseSecret = true;
 
   private final String wlSecretName = "weblogic-credentials";
+  private final String domainUid = "istio-div";
+  private final String clusterName = "mycluster";
+  private final String adminServerName = "admin-server";
+  private final String adminServerPodName = domainUid + "-" + adminServerName;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -142,10 +146,10 @@ public class ItIstioDomainInPV implements LoggedTest {
 
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
-    istioDomainNamespace = namespaces.get(1);
+    domainNamespace = namespaces.get(1);
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, istioDomainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -160,17 +164,14 @@ public class ItIstioDomainInPV implements LoggedTest {
    * Create a WebLogic domain using WLST in a persistent volume.
    * Add istio Configuration 
    * Label domain namespace and operator namespace with istio-injection=enabled 
+   * Deploy istio gateways and virtualservices
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful thru ISTIO ingress Port.
    */
   @Test
-  @DisplayName("Create WebLogic domain in PV using WLST script and Istio")
+  @DisplayName("Create WebLogic domain in PV with Istio")
   public void testIstioDomainInPvUsingWlst() {
 
-    final String domainUid = "wlstdomain-inpv";
-    final String clusterName = "cluster-wlstdomain-inpv";
-    final String adminServerName = "wlst-admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "wlst-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
@@ -181,23 +182,23 @@ public class ItIstioDomainInPV implements LoggedTest {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     if (isUseSecret) {
-      createOCRRepoSecret(istioDomainNamespace);
+      createOCRRepoSecret(domainNamespace);
     }
 
     // Label the operator/domain namespace with istio-injection=enabled
     boolean k8res = labelNamespace(opNamespace);
-    assertTrue(k8res, "Could not label the Operator Namespace");
-    k8res = labelNamespace(istioDomainNamespace);
-    assertTrue(k8res, "Could not label the WebLogic domain Namespace");
+    assertTrue(k8res, "Could not label the Operator namespace");
+    k8res = labelNamespace(domainNamespace);
+    assertTrue(k8res, "Could not label the WebLogic domain namespace");
 
     // create WebLogic domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, istioDomainNamespace,
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
     createPV(pvName, domainUid);
-    createPVC(pvName, pvcName, domainUid, istioDomainNamespace);
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -228,7 +229,7 @@ public class ItIstioDomainInPV implements LoggedTest {
 
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, istioDomainNamespace);
+        pvName, pvcName, domainNamespace);
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -237,7 +238,7 @@ public class ItIstioDomainInPV implements LoggedTest {
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
-            .namespace(istioDomainNamespace))
+            .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
@@ -250,7 +251,7 @@ public class ItIstioDomainInPV implements LoggedTest {
                 : null)
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
-                .namespace(istioDomainNamespace))
+                .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs/" + domainUid)
@@ -290,33 +291,39 @@ public class ItIstioDomainInPV implements LoggedTest {
                     .readinessPort(8888))));
 
     // verify the domain custom resource is created
-    createDomainAndVerify(domain, istioDomainNamespace);
+    createDomainAndVerify(domain, domainNamespace);
 
     // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, istioDomainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // verify the admin server service created
-    checkServiceExists(adminServerPodName, istioDomainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, istioDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, istioDomainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, istioDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, istioDomainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
     }
 
-    boolean deployRes = deployIstioGatewayAndVirtualservice();
+    boolean deployRes = deployHttpIstioGatewayAndVirtualservice();
     assertTrue(deployRes, "Could not deploy Istio Gateway/Virtual Service");
 
-    int istioIngressPort = getIstioIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    int istioIngressPort = getIstioHttpIngressPort();
+    logger.info("Istio http ingress Port is {0}", istioIngressPort);
+
+    try {
+      Thread.sleep(2 * 1000);
+    } catch (InterruptedException ie) {
+      //
+    }
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
@@ -362,19 +369,23 @@ public class ItIstioDomainInPV implements LoggedTest {
 
   /*
    * TODO: move to CommonTestUtils
-   * Deploy the Istio Gateway and Istio Virtualservice.
+   * Deploy the http Istio Gateway and Istio Virtualservice.
    * @returns true if deployment is success otherwise false
    **/
-  private boolean deployIstioGatewayAndVirtualservice() {
 
-    String input = RESOURCE_DIR + "/istio/istio-gateway-template.service.yaml";
-    String output = RESOURCE_DIR + "/istio/istio-gateway-service.yaml";
-    updateFileWithStringReplacement(input, output, "NAMESPACE_TO_BE_REPLACED", istioDomainNamespace); 
+  private boolean deployHttpIstioGatewayAndVirtualservice() {
+
+    String input = RESOURCE_DIR + "/istio/istio-http-template.service.yaml";
+    String output = RESOURCE_DIR + "/istio/istio-http-service.yaml";
+    String clusterService = domainUid + "-cluster-" + clusterName + ".svc.cluster.local";
+    updateFileWithStringReplacement(input, output, "NAMESPACE", domainNamespace); 
+    updateFileWithStringReplacement(output, output, "ADMIN_SERVICE", adminServerPodName); 
+    updateFileWithStringReplacement(output, output, "CLUSTER_SERVICE", clusterService); 
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
     deployIstioGateway.append(RESOURCE_DIR)
-        .append("/istio/istio-gateway-service.yaml");
+        .append("/istio/istio-http-service.yaml");
     logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
     try {
       result = exec(new String(deployIstioGateway), true);
@@ -383,7 +394,7 @@ public class ItIstioDomainInPV implements LoggedTest {
       return false;
     }
     logger.info("deployIstioGateway: kubectl returned {0}", result.toString());
-    if (result.stdout().contains("istio-gateway created")) {
+    if (result.stdout().contains("istio-http-gateway created")) {
       return true;
     } else {
       return false;
@@ -392,21 +403,54 @@ public class ItIstioDomainInPV implements LoggedTest {
 
   /*
    * TODO: move to CommonTestUtils
-   * @returns ingress port for istio-ingressgateway
+   * Deploy the tcp Istio Gateway and Istio Virtualservice.
+   * @returns true if deployment is success otherwise false
    **/
-  private int getIstioIngressPort() {
+
+  private boolean deployTcpIstioGatewayAndVirtualservice() {
+
+    String input = RESOURCE_DIR + "/istio/istio-tcp-template.service.yaml";
+    String output = RESOURCE_DIR + "/istio/istio-tcp-service.yaml";
+    String adminService = adminServerPodName + ".svc.cluster.local";
+    updateFileWithStringReplacement(input, output, "NAMESPACE", domainNamespace); 
+    updateFileWithStringReplacement(output, output, "ADMIN_SERVICE", adminService); 
     ExecResult result = null;
-    StringBuffer getIngressPort = null;
-    getIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
-    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
-    logger.info("getIngressPort: kubectl command {0}", new String(getIngressPort));
+    StringBuffer deployIstioGateway = null;
+    deployIstioGateway = new StringBuffer("kubectl apply -f ");
+    deployIstioGateway.append(RESOURCE_DIR)
+        .append("/istio/istio-tcp-service.yaml");
+    logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
     try {
-      result = exec(new String(getIngressPort), true);
+      result = exec(new String(deployIstioGateway), true);
     } catch (Exception ex) {
-      logger.info("Exception in getIngressPort() {0}", ex);
+      logger.info("Exception in deployIstioGateway() {0}", ex);
+      return false;
+    }
+    logger.info("deployIstioGateway: kubectl returned {0}", result.toString());
+    if (result.stdout().contains("istio-tcp-gateway created")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /*
+   * TODO: move to CommonTestUtils
+   * @returns tcp ingress port for istio-ingressgateway
+   **/
+  private int getIstioTcpIngressPort() {
+    ExecResult result = null;
+    StringBuffer getTcpIngressPort = null;
+    getTcpIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
+    getTcpIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"tcp\")].nodePort}'");
+    logger.info("getTcpIngressPort: kubectl command {0}", new String(getTcpIngressPort));
+    try {
+      result = exec(new String(getTcpIngressPort), true);
+    } catch (Exception ex) {
+      logger.info("Exception in getTcpIngressPort() {0}", ex);
       return 0;
     }
-    logger.info("getIngressPort: kubectl returned {0}", result.toString());
+    logger.info("getTcpIngressPort: kubectl returned {0}", result.toString());
     if (result.stdout() == null) {
       return 0;
     } else {
@@ -416,9 +460,33 @@ public class ItIstioDomainInPV implements LoggedTest {
 
   /*
    * TODO: move to CommonTestUtils
-   * @returns secure ingress port for istio-ingressgateway
+   * @returns http ingress port for istio-ingressgateway
    **/
-  private int getIstioSecureIngressPort() {
+  private int getIstioHttpIngressPort() {
+    ExecResult result = null;
+    StringBuffer getHttpIngressPort = null;
+    getHttpIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
+    getHttpIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
+    logger.info("getHttpIngressPort: kubectl command {0}", new String(getHttpIngressPort));
+    try {
+      result = exec(new String(getHttpIngressPort), true);
+    } catch (Exception ex) {
+      logger.info("Exception in getHttpIngressPort() {0}", ex);
+      return 0;
+    }
+    logger.info("getHttpIngressPort: kubectl returned {0}", result.toString());
+    if (result.stdout() == null) {
+      return 0;
+    } else {
+      return new Integer(result.stdout());
+    }
+  }
+
+  /*
+   * TODO: move to CommonTestUtils
+   * @returns secure https ingress port for istio-ingressgateway
+   **/
+  private int getSecureIstioIngressPort() {
     ExecResult result = null;
     StringBuffer getSecureIngressPort = null;
     getSecureIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
