@@ -21,6 +21,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,6 +37,40 @@ import weblogic.management.runtime.ServerRuntimeMBean;
  */
 public class ClusterViewServlet extends HttpServlet {
 
+  Context ctx = null;
+  MBeanServer localMBeanServer;
+  ServerRuntimeMBean serverRuntime;
+
+  @Override
+  public void init(ServletConfig config) throws ServletException {
+    try {
+      ctx = new InitialContext();
+      localMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
+      // get ServerRuntimeMBean
+      ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
+      RuntimeServiceMBean runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler
+          .newProxyInstance(localMBeanServer, runtimeserviceObjectName);
+      serverRuntime = runtimeService.getServerRuntime();
+      try {
+        ctx.lookup(serverRuntime.getName());
+      } catch (NameNotFoundException nnfe) {
+        ctx.bind(serverRuntime.getName(), serverRuntime.getName());
+      }
+    } catch (NamingException | MalformedObjectNameException ex) {
+      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+    }
+  }
+
+  @Override
+  public void destroy() {
+    try {
+      ctx.unbind(serverRuntime.getName());
+      ctx.close();
+    } catch (NamingException ex) {
+      Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
+    }
+  }
+
   /**
    * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
    *
@@ -47,7 +82,6 @@ public class ClusterViewServlet extends HttpServlet {
   protected void processRequest(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     response.setContentType("text/html;charset=UTF-8");
-    Context ctx = null;
     try (PrintWriter out = response.getWriter()) {
       out.println("<!DOCTYPE html>");
       out.println("<html>");
@@ -56,8 +90,6 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("</head>");
       out.println("<body>");
       out.println("<h1>Servlet ClusterViewServlet at " + request.getContextPath() + "</h1>");
-      ctx = new InitialContext();
-      MBeanServer localMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
 
       // print all mbeans and its attributes in the server runtime
       out.println("Querying server: " + localMBeanServer.toString());
@@ -72,13 +104,6 @@ public class ClusterViewServlet extends HttpServlet {
         }
       }
 
-      // get ServerRuntimeMBean
-      ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
-      out.println("<br>ObjectName: " + runtimeserviceObjectName.getCanonicalName() + "<br>");
-      RuntimeServiceMBean runtimeService = (RuntimeServiceMBean) MBeanServerInvocationHandler
-          .newProxyInstance(localMBeanServer, runtimeserviceObjectName);
-      ServerRuntimeMBean serverRuntime = runtimeService.getServerRuntime();
-
       ClusterRuntimeMBean clusterRuntime = serverRuntime.getClusterRuntime();
       //if the server is part of a cluster get its cluster details
       if (clusterRuntime != null) {
@@ -86,14 +111,8 @@ public class ClusterViewServlet extends HttpServlet {
         out.println("Alive:" + clusterRuntime.getAliveServerCount());
         out.println("Health:" + clusterRuntime.getHealthState().getState());
         out.println("Members:" + String.join(",", serverNames));
+        out.println("ServerName:" + serverRuntime.getName());
 
-        // bind the server name in the local JNDI tree
-        try {
-          ctx.lookup(serverRuntime.getName());
-        } catch (NameNotFoundException nnfex) {
-          out.println("Binding server: " + serverRuntime.getName() + " : in JNDI tree");
-          ctx.bind(serverRuntime.getName(), serverRuntime.getName());
-        }
         // lookup JNDI for other clustered servers bound in tree
         try {
           for (String serverName : serverNames) {
@@ -105,20 +124,13 @@ public class ClusterViewServlet extends HttpServlet {
           out.println(nnfex.getMessage());
         }
       }
-    } catch (NamingException | InstanceNotFoundException | IntrospectionException
-        | ReflectionException | MalformedObjectNameException ex) {
+    } catch (NamingException | InstanceNotFoundException
+        | IntrospectionException | ReflectionException  ex) {
       Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
-    } finally {
-      if (ctx != null) {
-        try {
-          ctx.close();
-        } catch (NamingException ex) {
-          Logger.getLogger(ClusterViewServlet.class.getName()).log(Level.SEVERE, null, ex);
-        }
-      }
     }
   }
 
+  // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
   /**
    * Handles the HTTP <code>GET</code> method.
    *

@@ -590,6 +590,20 @@ public class ItIntrospectVersion implements LoggedTest {
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
 
+    //access application in managed servers through NGINX load balancer
+    logger.info("Accessing the sample app through NGINX load balancer");
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/clusterview/clusterview.jsp",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServers.add(managedServerNameBase + i);
+    }
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+        .as("Verify NGINX can access the test web app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .isTrue();
+
   }
 
   /**
