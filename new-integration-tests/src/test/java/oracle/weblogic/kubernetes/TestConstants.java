@@ -100,6 +100,14 @@ public interface TestConstants {
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
 
+  //monitoring constants
+  public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv(
+      "MONITORING_EXPORTER_VERSION"))
+      .orElse("1.1.2");
+  public static final String PROMETHEUS_CHART_VERSION = Optional.ofNullable(System.getenv("PROMETHEUS_CHART_VERSION"))
+      .orElse("11.1.5");
+  public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
+      .orElse("5.0.20");
   // credentials
   public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
   public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
