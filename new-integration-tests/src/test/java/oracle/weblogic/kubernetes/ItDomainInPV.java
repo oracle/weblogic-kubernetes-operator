@@ -131,7 +131,14 @@ public class ItDomainInPV implements LoggedTest {
   private static String wdtDomainNamespace = null;
   private final String wlstDomainUid = "wlstdomain-inpv";
   private final String wlstManagedServerNameBase = "wlst-ms-";
-
+  private final String wdtDomainUid = "wdtdomain-inpv";
+  private final String wdtManagedServerNameBase = "wdt-ms-";
+  private final String wdtAdminServerName = "wdt-admin-server";
+  private final String wdtAdminServerPodName = wdtDomainUid + "-" + wdtAdminServerName;
+  private final String wdtClusterName = "cluster-wdtdomain-inpv";
+  private final int managedServerPort = 8001;
+  private static int wdtT3ChannelPort;
+  private final int wdtReplicaCount = 2;
   private static String nginxNamespace = null;
   private static int nodeportshttp;
   private static HelmParams nginxHelmParams = null;
@@ -174,13 +181,6 @@ public class ItDomainInPV implements LoggedTest {
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
-
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
@@ -188,6 +188,9 @@ public class ItDomainInPV implements LoggedTest {
       image = kindRepoImage;
       isUseSecret = false;
     }
+
+    wdtT3ChannelPort = getNextFreePort(31000, 32767);  // the port range has to be between 30,000 to 32,767
+
   }
 
   /**
@@ -197,14 +200,12 @@ public class ItDomainInPV implements LoggedTest {
    * Verify login to WebLogic console is successful.
    */
   @Test
-  @Order(1)
   @DisplayName("Create WebLogic domain in PV using WLST script")
   public void testDomainInPvUsingWlst() {
 
     final String clusterName = "cluster-wlstdomain-inpv";
     final String adminServerName = "wlst-admin-server";
     final String adminServerPodName = wlstDomainUid + "-" + adminServerName;
-    final int managedServerPort = 8001;
     String managedServerPodNamePrefix = wlstDomainUid + "-" + wlstManagedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
@@ -344,46 +345,6 @@ public class ItDomainInPV implements LoggedTest {
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(wlstDomainNamespace, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
-
-    //create ingress controller
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-    logger.info("Creating ingress for domain {0} in namespace {1}", wlstDomainUid, wlstDomainNamespace);
-    createIngressForDomainAndVerify(wlstDomainUid, wlstDomainNamespace, clusterNameMsPortMap);
-
-    //deploy application
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
-    logger.info("Deploying webapp to domain {0}", archivePath);
-    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
-        wlstDomainNamespace);
-
-    //access application from admin server
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the sample app through NGINX load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
-        wlstDomainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServers.add(wlstDomainUid + "-" + wlstManagedServerNameBase + i);
-    }
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
-        .isTrue();
-
   }
 
   /**
@@ -393,22 +354,13 @@ public class ItDomainInPV implements LoggedTest {
    * Verify login to WebLogic console is successful.
    */
   @Test
+  @Order(1)
   @DisplayName("Create WebLogic domain in PV using WDT")
   public void testDomainInPvUsingWdt() {
 
-    final String domainUid = "wdtdomain-inpv";
-    final String clusterName = "cluster-wdtdomain-inpv";
-    final String adminServerName = "wdt-admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "wdt-ms-";
-    final int managedServerPort = 8001;
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(31000, 32767);  // the port range has to be between 30,000 to 32,767
-
-
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    String managedServerPodNamePrefix = wdtDomainUid + "-" + wdtManagedServerNameBase;
+    final String pvName = wdtDomainUid + "-pv"; // name of the persistent volume
+    final String pvcName = wdtDomainUid + "-pvc"; // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     if (isUseSecret) {
@@ -421,8 +373,8 @@ public class ItDomainInPV implements LoggedTest {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, domainUid);
-    createPVC(pvName, pvcName, domainUid, wdtDomainNamespace);
+    createPV(pvName, wdtDomainUid);
+    createPVC(pvName, pvcName, wdtDomainUid, wdtDomainNamespace);
 
     // create a temporary WebLogic domain property file as a input for WDT model file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -431,15 +383,15 @@ public class ItDomainInPV implements LoggedTest {
     Properties p = new Properties();
     p.setProperty("adminUsername", ADMIN_USERNAME_DEFAULT);
     p.setProperty("adminPassword", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("domainName", domainUid);
-    p.setProperty("adminServerName", adminServerName);
+    p.setProperty("domainName", wdtDomainUid);
+    p.setProperty("adminServerName", wdtAdminServerName);
     p.setProperty("productionModeEnabled", "true");
-    p.setProperty("clusterName", clusterName);
+    p.setProperty("clusterName", wdtClusterName);
     p.setProperty("configuredManagedServerCount", "4");
-    p.setProperty("managedServerNameBase", managedServerNameBase);
-    p.setProperty("t3ChannelPort", Integer.toString(t3ChannelPort));
+    p.setProperty("managedServerNameBase", wdtManagedServerNameBase);
+    p.setProperty("t3ChannelPort", Integer.toString(wdtT3ChannelPort));
     p.setProperty("t3PublicAddress", K8S_NODEPORT_HOST);
-    p.setProperty("managedServerPort", "8001");
+    p.setProperty("managedServerPort", Integer.toString(managedServerPort));
     assertDoesNotThrow(() ->
         p.store(new FileOutputStream(domainPropertiesFile), "WDT properties file"),
         "Failed to write domain properties file");
@@ -451,7 +403,7 @@ public class ItDomainInPV implements LoggedTest {
 
     // create configmap and domain on persistent volume using WDT
     createDomainOnPVUsingWdt(wdtScript, wdtModelFile, domainPropertiesFile.toPath(),
-        domainUid, pvName, pvcName, wdtDomainNamespace);
+        wdtDomainUid, pvName, pvcName, wdtDomainNamespace);
 
     // create the domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -459,11 +411,11 @@ public class ItDomainInPV implements LoggedTest {
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta() //metadata
-            .name(domainUid)
+            .name(wdtDomainUid)
             .namespace(wdtDomainNamespace))
         .spec(new DomainSpec() //spec
-            .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainUid(wdtDomainUid)
+            .domainHome("/shared/domains/" + wdtDomainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(image)
             .imagePullPolicy("IfNotPresent")
@@ -476,7 +428,7 @@ public class ItDomainInPV implements LoggedTest {
                 .namespace(wdtDomainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/logs/" + wdtDomainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod
@@ -501,38 +453,109 @@ public class ItDomainInPV implements LoggedTest {
                         .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
+                        .nodePort(wdtT3ChannelPort))))
             .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
+                .clusterName(wdtClusterName)
+                .replicas(wdtReplicaCount)
                 .serverStartState("RUNNING")));
 
     // verify the domain custom resource is created
     createDomainAndVerify(domain, wdtDomainNamespace);
 
     // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, wdtDomainNamespace);
+    checkPodReady(wdtAdminServerPodName, wdtDomainUid, wdtDomainNamespace);
 
     // verify the admin server service created
-    checkServiceExists(adminServerPodName, wdtDomainNamespace);
+    checkServiceExists(wdtAdminServerPodName, wdtDomainNamespace);
 
     // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= wdtReplicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, wdtDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, wdtDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, wdtDomainUid, wdtDomainNamespace);
     }
 
     // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= wdtReplicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, wdtDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, wdtDomainNamespace);
     }
+  }
 
+  /**
+   * Deploy an application using admin t3 channel port, target to both cluster and admin server.
+   */
+  @Test
+  @Order(2)
+  @DisplayName("Deploy an application using t3 channel port")
+  public void testDeployAppUsingT3ChannelPort() {
+
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        wdtDomainNamespace, wdtAdminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, wdtT3ChannelPort, "admin server t3channelport is not valid");
+
+    //deploy application using t3 channel port
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    logger.info("Deploying webapp {0} to domain using t3 channelport", archivePath);
+    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, wdtClusterName + "," + wdtAdminServerName, archivePath,
+        wdtDomainNamespace);
+
+  }
+
+  /**
+   * Verify the application can be accessed using load balancer port and the requests are
+   * load balanced among all the servers.
+   */
+  @Test
+  @Order(3)
+  @DisplayName("Access the application using LB port")
+  public void testAccessAppUsingLBPort() {
+
+    // get a free node port for NGINX
+    int nodeportshttp = getNextFreePort(30305, 30405);
+    int nodeportshttps = getNextFreePort(30443, 30543);
+
+    // install and verify NGINX
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+
+    //create ingress controller
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(wdtClusterName, managedServerPort);
+
+    logger.info("Creating ingress for domain {0} in namespace {1}", wdtDomainUid, wdtDomainNamespace);
+    createIngressForDomainAndVerify(wdtDomainUid, wdtDomainNamespace, clusterNameMsPortMap);
+
+    //access application in managed servers through NGINX load balancer
+    logger.info("Accessing the sample app through NGINX load balancer");
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+            + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
+        wdtDomainUid + "." + wdtClusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= wdtReplicaCount; i++) {
+      managedServers.add(wdtDomainUid + "-" + wdtManagedServerNameBase + i);
+    }
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
+        .as("Verify NGINX can access the test web app from all managed servers in the domain")
+        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .isTrue();
+  }
+
+  /**
+   * Verify console can be accessed using the default channel node port and access
+   * the application which is deployed to admin server using default node port.
+   */
+  @Test
+  @Order(4)
+  @DisplayName("Access the console and application using default channel node port")
+  public void testDefaultChannelNodePort() {
     logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(wdtDomainNamespace, adminServerPodName + "-external", "default"),
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        wdtDomainNamespace, wdtAdminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
@@ -541,58 +564,22 @@ public class ItDomainInPV implements LoggedTest {
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(wdtDomainNamespace, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
-
-    //create ingress controller
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, wdtDomainNamespace);
-    createIngressForDomainAndVerify(domainUid, wdtDomainNamespace, clusterNameMsPortMap);
-
-    //deploy application
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
-    logger.info("Deploying webapp to domain {0}", archivePath);
-    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
-        wdtDomainNamespace);
-
     //access application from admin server
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
-
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the sample app through NGINX load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServers.add(domainUid + "-" + managedServerNameBase + i);
-    }
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
-        .isTrue();
-
   }
-
 
   /**
    * Verify liveness probe by killing managed server process 3 times to kick
    * pod container auto-restart.
    */
   @Test
-  @Order(2)
   @DisplayName("Test liveness probe of Pod")
   public void testLivenessProbe() {
-    String serverName = wlstDomainUid + "-" + wlstManagedServerNameBase + "1";
+    String serverName = wdtDomainUid + "-" + wdtManagedServerNameBase + "1";
 
     // create file to kill server process
     File killServerScript = assertDoesNotThrow(() ->
@@ -602,33 +589,35 @@ public class ItDomainInPV implements LoggedTest {
 
     // copy script to pod
     String destLocation = "/tmp/killserver.sh";
-    assertDoesNotThrow(() -> copyFileToPod(wlstDomainNamespace, serverName, "weblogic-server",
+    assertDoesNotThrow(() -> copyFileToPod(wdtDomainNamespace, serverName, "weblogic-server",
         killServerScript.toPath(), Paths.get(destLocation)),
         String.format("Failed to copy file %s to pod %s in namespace %s",
-            killServerScript, serverName, wlstDomainNamespace));
-    logger.info("File copied to Pod {0} in namespace {1}", serverName, wlstDomainNamespace);
+            killServerScript, serverName, wdtDomainNamespace));
+    logger.info("File copied to Pod {0} in namespace {1}", serverName, wdtDomainNamespace);
 
     // get the restart count of the container in pod before liveness probe restarts
     final int beforeRestartCount =
-        assertDoesNotThrow(() -> getContainerRestartCount(wlstDomainNamespace, null, serverName, null),
+        assertDoesNotThrow(() -> getContainerRestartCount(wdtDomainNamespace, null, serverName, null),
             String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-                serverName, wlstDomainNamespace));
+                serverName, wdtDomainNamespace));
 
-    /* First, kill the mgd server process in the container three times to cause the node manager to
-     * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
-     * initiates a container restart.
-     */
-    ExecResult execResult = assertDoesNotThrow(() -> execCommand(wlstDomainNamespace, serverName, null,
+    // change file permissions
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(wdtDomainNamespace, serverName, null,
         true, "/bin/sh", "-c", "chmod +x " + destLocation),
         String.format("Failed to change permissions for file %s in pod %s", destLocation, serverName));
     assertTrue(execResult.exitValue() == 0,
         String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
             execResult.stderr(), execResult.stdout()));
+
+    /* First, kill the mgd server process in the container three times to cause the node manager to
+     * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
+     * initiates a container restart.
+     */
     for (int i = 0; i < 3; i++) {
-      execResult = assertDoesNotThrow(() -> execCommand(wlstDomainNamespace, serverName, null,
+      execResult = assertDoesNotThrow(() -> execCommand(wdtDomainNamespace, serverName, null,
           true, "/bin/sh", "-c", destLocation + " " + serverName),
           String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
-              serverName, wlstDomainNamespace));
+              serverName, wdtDomainNamespace));
       logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
           execResult.exitValue(), execResult.stdout(), execResult.stderr());
 
@@ -639,16 +628,16 @@ public class ItDomainInPV implements LoggedTest {
       }
     }
     // check pod is ready
-    checkPodReady(serverName, wlstDomainUid, wlstDomainNamespace);
+    checkPodReady(serverName, wdtDomainUid, wdtDomainNamespace);
 
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
-            getContainerRestartCount(wlstDomainNamespace, null, serverName, null),
+            getContainerRestartCount(wdtDomainNamespace, null, serverName, null),
         String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-            serverName, wlstDomainNamespace));
+            serverName, wdtDomainNamespace));
     assertTrue(afterRestartCount - beforeRestartCount == 1,
         String.format("Liveness probe did not start the container in pod {0} in namespace {1}",
-            serverName, wlstDomainNamespace));
+            serverName, wdtDomainNamespace));
 
   }
 
