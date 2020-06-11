@@ -57,7 +57,6 @@ public class ClusterViewServlet extends HttpServlet {
       out.println("<body>");
       out.println("<h1>Servlet ClusterViewServlet at " + request.getContextPath() + "</h1>");
       ctx = new InitialContext();
-      //MBeanServer domainMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/domainRuntime");
       MBeanServer localMBeanServer = (MBeanServer) ctx.lookup("java:comp/env/jmx/runtime");
 
       // print all mbeans and its attributes in the server runtime
@@ -120,7 +119,6 @@ public class ClusterViewServlet extends HttpServlet {
     }
   }
 
-  // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
   /**
    * Handles the HTTP <code>GET</code> method.
    *
