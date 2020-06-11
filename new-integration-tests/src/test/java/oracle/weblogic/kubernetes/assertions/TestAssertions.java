@@ -470,5 +470,4 @@ public class TestAssertions {
   public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
     return PersistentVolumeClaim.pvcExists(pvcName, namespace);
   }
-
 }

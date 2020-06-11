@@ -67,6 +67,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -143,7 +144,7 @@ public class BuildApplication {
       TestActions.deletePersistentVolumeClaim(pvcName, namespace);
       TestActions.deletePersistentVolume(pvName);
       try {
-        FileUtils.cleanupDirectory(buildPath.toString());
+        deleteDirectory(buildPath.toFile());
       } catch (IOException ex) {
         //no op
       }

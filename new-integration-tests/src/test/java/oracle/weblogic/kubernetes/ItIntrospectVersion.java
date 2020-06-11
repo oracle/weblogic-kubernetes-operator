@@ -121,8 +121,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTim
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -488,10 +488,10 @@ public class ItIntrospectVersion implements LoggedTest {
         + "-H 'host: %s' http://%s:%s/clusterview/clusterview.jsp",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServers.add(domainUid + "-" + managedServerNameBase + i);
+    for (int i = 1; i <= replicaCount + 1; i++) {
+      managedServers.add(managedServerNameBase + i);
     }
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
