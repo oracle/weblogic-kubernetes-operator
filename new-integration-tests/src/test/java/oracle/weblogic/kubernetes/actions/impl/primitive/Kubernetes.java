@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1Ingress;
 import io.kubernetes.client.openapi.models.ExtensionsV1beta1IngressList;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
@@ -61,6 +62,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicaSetList;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1RoleBindingList;
 import io.kubernetes.client.openapi.models.V1RoleList;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -88,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 // to run kubectl.
 public class Kubernetes implements LoggedTest {
 
-  private static String PRETTY = "false";
+  private static String PRETTY = "true";
   private static Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static String RESOURCE_VERSION = "";
   private static Integer TIMEOUT_SECONDS = 5;
@@ -593,6 +596,28 @@ public class Kubernetes implements LoggedTest {
     }
 
     return true;
+  }
+
+  /**
+   * Replace a existing namespace with configuration changes.
+   *
+   * @param ns V1Namespace object
+   * @throws ApiException when replacing namespace fails
+   */
+  public static void replaceNamespace(V1Namespace ns) throws ApiException {
+
+    try {
+      coreV1Api.replaceNamespace(
+          ns.getMetadata().getName(), // name of the namespace
+          ns, // V1Namespace object body
+          PRETTY, // pretty print the output
+          null, // dry run or changes need to be permanent
+          null // field manager
+      );
+    } catch (ApiException ex) {
+      logger.severe(ex.getResponseBody());
+      throw ex;
+    }
   }
 
   /**
@@ -1531,6 +1556,27 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Get port of a namespaced service given the channel name.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the port
+   * @return node port if service and channel is found, otherwise -1
+   */
+  public static int getServicePort(String namespace, String serviceName, String channelName) {
+    V1Service service = getNamespacedService(namespace, serviceName);
+    if (service != null) {
+      V1ServicePort port = service.getSpec().getPorts().stream().filter(
+          v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
+          .findAny().orElse(null);
+      if (port != null) {
+        return port.getPort();
+      }
+    }
+    return -1;
+  }
+
+  /**
    * List services in a given namespace.
    *
    * @param namespace name of the namespace
@@ -2063,12 +2109,8 @@ public class Kubernetes implements LoggedTest {
       // wait for the process, which represents the executing command, to terminate
       proc.waitFor();
 
-      // wait for reading thread to finish any last remaining output
-      if (out != null) {
-        // need to time out here, otherwise the command can take almost one minute to return.
-        // yet to see if we'll need a different timeout value for different environments.
-        out.join(1200);
-      }
+      // wait for reading thread to finish any remaining output
+      out.join();
 
       // Read data from process's stdout
       String stdout = readExecCmdData(copyOut.getInputStream());

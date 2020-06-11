@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -23,6 +24,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -184,7 +186,6 @@ public class DomainSpec extends BaseConfiguration {
           + " on a persistent volume.")
   private Boolean domainHomeInImage;
 
-  @EnumClass(value = DomainSourceType.class)
   @Description(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
           + " Image indicates that the domain home file system is contained in the Docker image"
@@ -193,7 +194,7 @@ public class DomainSpec extends BaseConfiguration {
           + " and managed by the operator based on a WDT domain model."
           + " If this field is specified it overrides the value of domainHomeInImage. If both fields are"
           + " unspecified then domainHomeSourceType defaults to Image.")
-  private String domainHomeSourceType;
+  private DomainSourceType domainHomeSourceType;
 
   /**
    * Tells the operator to start the introspect domain job.
@@ -201,7 +202,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 3.0.0
    */
   @Description(
-      "If present, every time this value is updated, the operator will start introspect domain job")
+      "If the domain is running, the operator will restart its introspector job when this value is changed. "
+      + "This field is ignored when the domainHomeSourceType is FromModel. "
+      + "See also overridesConfigurationStrategy.")
   private String introspectVersion;
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")
@@ -324,7 +327,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return domain home
    */
   String getDomainHome() {
-    return domainHome;
+    return Optional.ofNullable(domainHome).orElse(getDomainHomeSourceType().getDefaultDomainHome(getDomainUid()));
   }
 
   /**
@@ -526,19 +529,19 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME);
   }
 
-  public DomainSpec withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
+  public void setHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
     this.httpAccessLogInLogHome = httpAccessLogInLogHome;
-    return this;
   }
 
   /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
+   * Defaults to true.
    *
    * @return true or false
    * @since 2.0
    */
-  Boolean isDomainHomeInImage() {
-    return domainHomeInImage;
+  boolean isDomainHomeInImage() {
+    return Optional.ofNullable(domainHomeInImage).orElse(true);
   }
 
   /**
@@ -555,30 +558,30 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public String getDomainHomeSourceType() {
-    return domainHomeSourceType;
+  @Nonnull DomainSourceType getDomainHomeSourceType() {
+    return Optional.ofNullable(domainHomeSourceType).orElse(inferDomainSourceType());
   }
 
-  public void setDomainHomeSourceType(String domainHomeSourceType) {
-    this.domainHomeSourceType = domainHomeSourceType;
+  private DomainSourceType inferDomainSourceType() {
+    if (getModel() != null) {
+      return DomainSourceType.FromModel;
+    } else if (isDomainHomeInImage()) {
+      return DomainSourceType.Image;
+    } else {
+      return DomainSourceType.PersistentVolume;
+    }
   }
 
-  public DomainSpec withDomainHomeSourceType(String domainHomeSourceType) {
+  public void setDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
-    return this;
   }
 
   public String getIntrospectVersion() {
     return introspectVersion;
   }
 
-  public void setIntrospectVersionn(String introspectVersion) {
+  public void setIntrospectVersion(String introspectVersion) {
     this.introspectVersion = introspectVersion;
-  }
-
-  public DomainSpec withIntrospectVersion(String introspectVersion) {
-    this.introspectVersion = introspectVersion;
-    return this;
   }
 
   public Configuration getConfiguration() {
@@ -587,11 +590,6 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
-  }
-
-  public DomainSpec withConfiguration(Configuration configuration) {
-    this.configuration = configuration;
-    return this;
   }
 
   /**
@@ -628,11 +626,7 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   String getConfigOverrides() {
-    return configOverrides;
-  }
-
-  void setConfigOverrides(@Nullable String overrides) {
-    this.configOverrides = overrides;
+    return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(configOverrides);
   }
 
   public DomainSpec withConfigOverrides(@Nullable String overrides) {
@@ -647,6 +641,20 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
     this.configOverrideSecrets = overridesSecretNames;
+  }
+
+  /**
+   * Returns the strategy used for distributing changed config overrides.
+   * @return the set or computed strategy
+   */
+  public OverrideDistributionStrategy getOverrideDistributionStrategy() {
+    return Optional.ofNullable(configuration)
+          .map(Configuration::getOverrideDistributionStrategy)
+          .orElse(OverrideDistributionStrategy.DEFAULT);
+  }
+
+  Model getModel() {
+    return Optional.ofNullable(configuration).map(Configuration::getModel).orElse(null);
   }
 
   /**

@@ -13,8 +13,9 @@ This feature is supported only in 3.0.0-RC1.
 #### Content
 
  - [Introduction](#introduction)
- - [Runtime behavior overview](#runtime-behavior-overview)
- - [Runtime updates overview](#runtime-updates-overview)
+ - [WebLogic Deploy Tool models](#weblogic-deploy-tool-models)
+ - [Runtime behavior](#runtime-behavior)
+ - [Runtime updates](#runtime-updates)
  - [Continuous integration and delivery (CI/CD)](#continuous-integration-and-delivery-cicd)
  - [References](#references)
 
@@ -34,12 +35,13 @@ It enables:
 
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 
-WDT models are a convenient and simple alternative to WebLogic WLST configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file.  The WDT model format is described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
+For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
-For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain, when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Prerequisites for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#prerequisites-for-jrf-domain-types" >}}).
+#### WebLogic Deploy Tool models
 
+WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. For a discussion of the model format and its integration with Model in Image, see [WebLogic Server image]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#weblogic-server-image" >}}) and [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}). The WDT model format is fully described in the open source, [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) GitHub project.
 
-#### Runtime behavior overview
+#### Runtime behavior
 
 When you deploy a Model in Image domain resource:
 
@@ -47,30 +49,19 @@ When you deploy a Model in Image domain resource:
     - Merges your WDT artifacts.
     - Runs WDT tooling to generate a domain home.
     - Packages the domain home and passes it to the operator.
+
   - After the introspector job completes:
     - The operator creates a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm` and puts the packaged domain home in it.
     - The operator subsequently boots your domain's WebLogic Server pods.
     - The pods will obtain their domain home from the ConfigMap.
 
-#### Runtime updates overview
+#### Runtime updates
 
-Model updates can be applied at runtime by changing the image, secrets, or WDT model ConfigMap after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+Model updates can be applied at runtime by changing the image, secrets, or WDT model ConfigMap after initial deployment. If the image name changes, or the domain resource `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic Server pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 #### Continuous integration and delivery (CI/CD)
 
 To understand how Model in Image works with CI/CD, see [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
-
-#### Always use external state
-
-Regardless of the domain home source type, we recommend that you always keep
-state outside the Docker image. This includes JDBC stores for leasing tables, JMS and transaction stores,
-EJB timers, JMS queues, and so on. This ensures that data will not be lost when
-a container is destroyed.
-
-We recommend that state be kept in a database to take advantage of built-in
-database server high availability features, and the fact that disaster recovery of sites across all
-but the shortest distances, almost always requires using a single database
-server to consolidate and replicate data (DataGuard).
 
 #### References
 

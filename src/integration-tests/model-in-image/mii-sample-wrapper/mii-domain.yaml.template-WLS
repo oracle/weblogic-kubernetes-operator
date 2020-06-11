@@ -28,14 +28,14 @@ spec:
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name: regsecret
+  #- name: @@IMAGE_PULL_SECRET_NAME@@
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
   webLogicCredentialsSecret: 
     name: @@DOMAIN_UID@@-weblogic-credentials
 
-  # Whether to include the WebLogic server stdout in the pod's stdout, default is true
+  # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
   includeServerOutInPodLog: true
 
   # Whether to enable overriding your log file location, see also 'logHome'
@@ -45,7 +45,7 @@ spec:
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/@@DOMAIN_UID@@
   
-  # Set which WebLogic servers the Operator will start
+  # Set which WebLogic Servers the Operator will start
   # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
@@ -92,11 +92,26 @@ spec:
   clusters:
   - clusterName: cluster-1
     serverStartState: "RUNNING"
+    serverPod:
+      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
+      # already members of the same cluster.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "weblogic.clusterName"
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: "kubernetes.io/hostname"
     replicas: 2
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
-  # roll of your domain's WebLogic pods.
+  # roll of your domain's WebLogic Server pods.
   restartVersion: '1'
 
   configuration:

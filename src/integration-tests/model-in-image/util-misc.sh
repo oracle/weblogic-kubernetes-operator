@@ -35,7 +35,9 @@ function get_service_yaml() {
 }
 
 function get_kube_address() {
-  kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
+  # kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
+  # This is the heuristic used by the integration test framework:
+  echo ${K8S_NODEPORT_HOST:-$(hostname)}
 }
 
 function get_sample_host() {
@@ -43,9 +45,20 @@ function get_sample_host() {
   tr [A-Z_] [a-z-] <<< $1.mii-sample.org
 }
 
+function curl_timeout_parms() {
+  local curl_parms="--connect-timeout 5"
+  curl_parms+=" --max-time 20"        # max seconds for each try
+  # don't bother retrying - we will retry externally because
+  #                         connection refusals don't retry
+  # curl_parms+=" --retry 5"            # retry up to 5 times
+  # curl_parms+=" --retry-delay 0"      # disable exponential backoff
+  curl_parms+=" --retry-max-time 130" # total seconds before giving up
+  echo "$curl_parms"
+}
+
 function get_curl_command() {
   # $1 is service name
-  echo "curl -s -S -m 10 -H 'host: $(get_sample_host $1)'"
+  echo "curl -s -S $(curl_timeout_parms) -H 'host: $(get_sample_host $1)'"
 }
 
 function get_help() {
@@ -76,42 +89,59 @@ function get_help() {
 # For example, 'testapp internal "Hello World!"'.
 
 function testapp() {
-  (
-  set +e
-  set -u
 
-  domain_uid=${DOMAIN_UID:-sample-domain1}
-  if [ "$1" = "internal" ]; then
-    local cluster_service_name=$(get_service_name $domain_uid-cluster-$2)
+  # note: we retry 5 times in case services, etc need more time to come up
+  #       curl's internal retry doesn't actually retry if there's a 'connect failure'
 
-    local admin_service_name=$(get_service_name $domain_uid-admin-server)
+  local num_tries=0
 
-    local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
+  while [ 1 = 1 ] 
+  do
 
-    local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S -m 10 http://$cluster_service_name:8001/myapp_war/index.jsp\""
+    domain_uid=${DOMAIN_UID:-sample-domain1}
+    if [ "$1" = "internal" ]; then
+      local cluster_service_name=$(get_service_name $domain_uid-cluster-$2)
+      local admin_service_name=$(get_service_name $domain_uid-admin-server)
+      local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
+      local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
 
-  elif [ "$1" = "traefik" ]; then
-    local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):30305/myapp_war/index.jsp"
+    elif [ "$1" = "traefik" ]; then
+      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):30305/myapp_war/index.jsp"
 
-  else
-    echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"
+    else
+      echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"
 
-  fi
+    fi
 
-  echo -n "@@ Info: Searching for '$3' in '$command'."
+    target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0}).$(timestamp).testapp.curl.$1.out
 
-  local result=$(bash -c "$command" |& grep -c "$3")
+    echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
 
-  if [ ! "$result" = "1" ]; then
-    echo
-    echo "@@ Error: '$3' not found in app response:"
-    bash -c "$command"
-    exit 1
-  else
-    echo ".. Success!"
-    exit 0
-  fi
-  )
+    set +e
+    bash -c "$command" > $target_file 2>&1
+    set -e
+
+    # use "cat & sed" instead of "grep" as grep exits with an error when it doesn't find anything
+
+    local before=$(cat $target_file)
+    local after=$(cat $target_file | sed "s/$3/ADIFFERENTVALUE/g")
+
+    if [ "$before" = "$after" ]; then
+      echo
+      echo "@@ Error: '$3' not found in app response for command '$command'. Contents of response file '$target_file':"
+      cat $target_file
+
+      num_tries=$((num_tries + 1))
+      [ $num_tries -gt 5 ] && return 1
+      echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
+      sleep 5
+
+    else
+      echo ".. Success!"
+      return 0
+    fi
+
+  done
 }
 
 
@@ -169,7 +199,8 @@ function doCommand() {
     return $?
   fi
 
-  COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:=0}
+  # COMMAND_OUTFILE_COUNT is also used by other functions in this file
+  COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:-0}
   COMMAND_OUTFILE_COUNT=$((COMMAND_OUTFILE_COUNT + 1))
 
   mkdir -p $WORKDIR/test-out

@@ -36,6 +36,8 @@ to `false` as shown in the following example:
     env:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false -Doracle.jdbc.fanEnabled=false"
+    - name: WLSDEPLOY_PROPERTIES
+      value: "-Doracle.jdbc.fanEnabled=false"
 ```
 
 2) Configure the data source connection pool properties.  
