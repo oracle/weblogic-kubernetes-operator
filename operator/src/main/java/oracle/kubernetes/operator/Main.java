@@ -195,6 +195,9 @@ public class Main {
           new NamespaceRulesReviewStep());
       if (!isDedicated()) {
         strategy = Step.chain(strategy, readExistingNamespaces(targetNamespaces));
+      } else {
+        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(version,
+                new StartNamespacesStep(targetNamespaces, false)));
       }
       runSteps(
           strategy,
