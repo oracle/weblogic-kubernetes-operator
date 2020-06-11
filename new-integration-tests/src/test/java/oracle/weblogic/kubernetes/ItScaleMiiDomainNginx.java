@@ -214,8 +214,11 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     }
   }
 
+  /**
+   * Scale each cluster in the domain using WLDF policy.
+   */
   @Test
-  @DisplayName("Verify scale each cluster of the domain by using WLDF policy")
+  @DisplayName("Verify scale each cluster of the domain using WLDF policy")
   public void testScaleClustersWithWLDF() {
     for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
 
