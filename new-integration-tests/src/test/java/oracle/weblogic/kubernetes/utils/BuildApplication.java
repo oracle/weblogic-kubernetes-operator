@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -251,6 +252,8 @@ public class BuildApplication {
 
   private static void createPV(Path hostPath, String pvName) throws IOException {
     logger.info("creating persistent volume");
+    HashMap<String, String> label = new HashMap<String, String>();
+    label.put("weblogic.domainUid", "ittests");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -263,7 +266,9 @@ public class BuildApplication {
             .hostPath(new V1HostPathVolumeSource()
                 .path(hostPath.toString())))
         .metadata(new V1ObjectMeta()
-            .name(pvName));
+            .name(pvName)
+            .labels(label));
+
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
