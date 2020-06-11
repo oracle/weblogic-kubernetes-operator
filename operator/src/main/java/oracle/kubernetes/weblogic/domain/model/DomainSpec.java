@@ -577,7 +577,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public String getIntrospectVersion() {
-    return introspectVersion;
+    return Optional.ofNullable(introspectVersion).orElse("");
   }
 
   public void setIntrospectVersion(String introspectVersion) {
