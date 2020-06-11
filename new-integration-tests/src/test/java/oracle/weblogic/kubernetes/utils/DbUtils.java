@@ -37,16 +37,12 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ORACLE_DB_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ORACLE_DB_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -61,8 +57,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class DbUtils {
 
-  private static final String DBBASEIMAGENAME = ORACLE_DB_BASE_IMAGE_NAME + ":" + ORACLE_DB_BASE_IMAGE_TAG;
-  private static final String FMWBASEIMAGENAME = FMW_BASE_IMAGE_NAME + ":" + FMW_BASE_IMAGE_TAG;
+  //private static final String DBBASEIMAGENAME = ORACLE_DB_BASE_IMAGE_NAME + ":" + ORACLE_DB_BASE_IMAGE_TAG;
+  //private static final String FMWBASEIMAGENAME = FMW_BASE_IMAGE_NAME + ":" + FMW_BASE_IMAGE_TAG;
   private static final String CREATE_REPOSITORY_SCRIPT = "createRepository.sh";
   private static final String PASSWORD_FILE = "pwd.txt";
   private static final String RCUTYPE = "fmw";
@@ -88,22 +84,25 @@ public class DbUtils {
    * @throws Exception if any error occurs when setting up RCU database
    */
 
-  public static void setupDBandRCUschema(String rcuSchemaPrefix, String dbNamespace,
+  public static void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix, String dbNamespace,
       int dbPort, String dbUrl) throws ApiException {
 
 
-    //TODO different secret name?
     CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
         OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
 
     //TODO for Kind cluter?
     String imagePullPolicy = "IfNotPresent";
-    if (!REPO_NAME.isEmpty()) {
+    if (KIND_REPO != null) {
       imagePullPolicy = "Always";
     }
 
-    startOracleDB(DBBASEIMAGENAME, imagePullPolicy, dbPort, dbNamespace);
-    createRcuSchema(rcuSchemaPrefix, imagePullPolicy, dbUrl, dbNamespace);
+    logger.info("Start Oracle DB with dbImage: {0}, imagePullPolicy: {1}, dbPort: {2}, "
+        + "dbNamespace: {3}", dbImage, imagePullPolicy, dbPort, dbNamespace);
+    startOracleDB(dbImage, imagePullPolicy, dbPort, dbNamespace);
+    logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, imagePullPolicy: {2}, "
+        + "dbUrl: {3}, dbNamespace: {4}", fmwImage, rcuSchemaPrefix, imagePullPolicy, dbUrl, dbNamespace);
+    createRcuSchema(fmwImage, rcuSchemaPrefix, imagePullPolicy, dbUrl, dbNamespace);
 
   }
 
@@ -120,7 +119,7 @@ public class DbUtils {
 
     Map labels = new HashMap<String, String>();
     labels.put("app", "database");
-    //labels.put(" version", "12.1.0.2");
+
     Map limits = new HashMap<String, String>();
     limits.put("cpu", "2");
     limits.put("memory", "10Gi");
@@ -246,13 +245,13 @@ public class DbUtils {
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static void createRcuSchema(String rcuPrefix, String imagePullPolicy, String dbUrl, String dbNamespace)
-      throws ApiException {
+  public static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String imagePullPolicy,
+      String dbUrl, String dbNamespace) throws ApiException {
 
     logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
-    assertDoesNotThrow(() -> createRcuPod(/*rcuPrefix, */imagePullPolicy, dbUrl, dbNamespace),
-        String.format("Create RCU pod failed with ApiException for rcuPrefix: %s, imagePullPolicy: %s, "
-                + "dbUrl: %s in namespace: %s", rcuPrefix, imagePullPolicy, dbUrl, dbNamespace));
+    assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, imagePullPolicy, dbUrl, dbNamespace),
+        String.format("Create RCU pod failed with ApiException for image: %s, rcuPrefix: %s, imagePullPolicy: %s, "
+                + "dbUrl: %s in namespace: %s", fmwBaseImageName, rcuPrefix, imagePullPolicy, dbUrl, dbNamespace));
 
     assertTrue(assertDoesNotThrow(
         () -> createRcuRepository(dbNamespace, dbUrl, rcuPrefix),
@@ -268,7 +267,7 @@ public class DbUtils {
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static V1Pod createRcuPod(/*String rcuPrefix, */String imagePullPolicy, String dbUrl, String dbNamespace)
+  public static V1Pod createRcuPod(String fmwBaseImageName, String imagePullPolicy, String dbUrl, String dbNamespace)
       throws ApiException {
 
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
@@ -290,7 +289,7 @@ public class DbUtils {
             .containers(Arrays.asList(
                 new V1Container()
                     .name("rcu")
-                    .image(FMWBASEIMAGENAME)
+                    .image(fmwBaseImageName)
                     .imagePullPolicy(imagePullPolicy)
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
