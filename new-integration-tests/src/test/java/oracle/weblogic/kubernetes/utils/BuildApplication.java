@@ -77,6 +77,7 @@ public class BuildApplication {
   private static final String APPLICATIONS_MOUNT_PATH = "/application";
   private static final String SCRIPTS_MOUNT_PATH = "/buildScripts";
   private static final String BUILD_SCRIPT = "build_application.sh";
+  private static final Path BUILD_SCRIPT_SOURCE_PATH = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
@@ -89,7 +90,7 @@ public class BuildApplication {
    * @param application path of the application source folder
    * @param parameters system properties for ant
    * @param targets ant targets to call
-   * @param namespace name of the namespace in which server pods running
+   * @param namespace name of the namespace to use for pvc
    */
   public static void buildApplication(Path application, Map<String, String> parameters,
       String targets, String namespace) {
@@ -98,13 +99,12 @@ public class BuildApplication {
 
     // Copy the application source directory to PV_ROOT/applications/<application_directory_name>
     // This location is mounted in the build pod under /application
-    Path applicationPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
-    logger.info("Copy the application {0} to PV hostpath {1}", application, applicationPath);
+    Path targetPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
+    logger.info("Copy the application {0} to PV hostpath {1}", application, targetPath);
     assertDoesNotThrow(() -> {
-      Files.createDirectories(applicationPath);
-      copyFolder(application.toString(), applicationPath.toString());
-      Path buildScript = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
-      Files.copy(buildScript, applicationPath.resolve(buildScript.getFileName()));
+      Files.createDirectories(targetPath);
+      copyFolder(application.toString(), targetPath.toString());
+      Files.copy(BUILD_SCRIPT_SOURCE_PATH, targetPath.resolve(BUILD_SCRIPT_SOURCE_PATH.getFileName()));
     });
 
     // create the persistent volume to make the application archive accessible to pod
@@ -112,7 +112,7 @@ public class BuildApplication {
     String pvName = namespace + "-build-pv-" + uniqueName;
     String pvcName = namespace + "-build-pvc-" + uniqueName;
 
-    assertDoesNotThrow(() -> createPV(applicationPath, pvName), "Failed to create PV");
+    assertDoesNotThrow(() -> createPV(targetPath, pvName), "Failed to create PV");
     createPVC(pvName, pvcName, namespace);
 
     // build application
@@ -127,15 +127,16 @@ public class BuildApplication {
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
    * @param namespace name of the domain namespace in which the job is created
-   * @param buildScriptConfigMapName configmap containing build scripts
    */
-  private static void build(Map<String, String> parameters,
-      String targets, String pvName, String pvcName,
-      String namespace) {
+  private static void build(Map<String, String> parameters, String targets,
+      String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run build job");
+
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
         .addArgsItem(APPLICATIONS_MOUNT_PATH + "/" + BUILD_SCRIPT);
+
+    // add ant properties to env
     if (parameters != null) {
       StringBuilder params = new StringBuilder();
       parameters.entrySet().forEach((parameter) -> {
@@ -144,6 +145,8 @@ public class BuildApplication {
       jobCreationContainer = jobCreationContainer
           .addEnvItem(new V1EnvVar().name("sysprops").value(params.toString()));
     }
+
+    // add targets in env
     if (targets != null) {
       jobCreationContainer = jobCreationContainer
           .addEnvItem(new V1EnvVar().name("targets").value(targets));
@@ -252,8 +255,9 @@ public class BuildApplication {
 
   private static void createPV(Path hostPath, String pvName) throws IOException {
     logger.info("creating persistent volume");
+    // a dummy label is added so that cleanup can delete all pvs
     HashMap<String, String> label = new HashMap<String, String>();
-    label.put("weblogic.domainUid", "ittests");
+    label.put("weblogic.domainUid", "buildjobs");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -276,8 +280,9 @@ public class BuildApplication {
 
   private static void createPVC(String pvName, String pvcName, String namespace) {
     logger.info("creating persistent volume claim");
+    // a dummy label is added so that cleanup can delete all pvs
     HashMap<String, String> label = new HashMap<String, String>();
-    label.put("weblogic.domainUid", "ittests");
+    label.put("weblogic.domainUid", "buildjobs");
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()

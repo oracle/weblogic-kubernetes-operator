@@ -93,7 +93,7 @@ public class TestUtils {
    * Call the curl command and check the managed servers can see each other.
    *
    * @param curlCmd curl command to call the clusterview app
-   * @param managedServerNames managed server names that should be see other
+   * @param managedServerNames managed server names part of the cluster
    * @param maxIterations max iterations to call the curl command
    * @return true if the managed servers can see each other, false otherwise
    */

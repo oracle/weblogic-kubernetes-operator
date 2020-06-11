@@ -477,13 +477,14 @@ public class ItIntrospectVersion implements LoggedTest {
 
 
     //deploy clusterview application
-    logger.info("Deploying webapp to domain {0}", CLUSTERVIEW_APP_PATH);
+    logger.info("Deploying clusterview app {0} to cluster {1}",
+        CLUSTERVIEW_APP_PATH, clusterName);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, CLUSTERVIEW_APP_PATH,
         introDomainNamespace);
 
     //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the sample app through NGINX load balancer");
+    logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
@@ -492,8 +493,8 @@ public class ItIntrospectVersion implements LoggedTest {
       managedServers.add(managedServerNameBase + i);
     }
     assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .as("Verify all managed servers can see each other")
+        .withFailMessage("managed servers cannot see other")
         .isTrue();
 
   }
@@ -591,7 +592,7 @@ public class ItIntrospectVersion implements LoggedTest {
             .statusCode(), "Status code not equals to 200");
 
     //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the sample app through NGINX load balancer");
+    logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
@@ -600,8 +601,8 @@ public class ItIntrospectVersion implements LoggedTest {
       managedServers.add(managedServerNameBase + i);
     }
     assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+        .as("Verify all managed servers can see each other")
+        .withFailMessage("managed servers cannot see other")
         .isTrue();
 
   }
