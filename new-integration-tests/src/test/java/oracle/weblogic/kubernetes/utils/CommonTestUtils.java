@@ -569,7 +569,7 @@ public class CommonTestUtils {
     final List<String> appSrcDirList = Collections.singletonList(appName);
 
     return createMiiImageAndVerify(
-        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType);
+        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType, true);
   }
 
   /**
@@ -584,7 +584,7 @@ public class CommonTestUtils {
                                                 List<String> wdtModelList,
                                                 List<String> appSrcDirList) {
     return createMiiImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS, true);
 
   }
 
@@ -597,6 +597,7 @@ public class CommonTestUtils {
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
    * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @param oneArchiveContainsMultiApps whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
@@ -604,7 +605,8 @@ public class CommonTestUtils {
                                                List<String> appSrcDirList,
                                                String baseImageName,
                                                String baseImageTag,
-                                               String domainType) {
+                                               String domainType,
+                                               boolean oneArchiveContainsMultiApps) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -614,10 +616,10 @@ public class CommonTestUtils {
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
 
-    List<String> archiveList = new ArrayList<String>();
+    List<String> archiveList = new ArrayList<>();
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
-      List<String> archiveAppsList = new ArrayList<String>();
-      List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
+      List<String> archiveAppsList = new ArrayList<>();
+      List<String> buildAppDirList = new ArrayList<>(appSrcDirList);
 
       for (String appSrcDir : appSrcDirList) {
         if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
@@ -629,28 +631,40 @@ public class CommonTestUtils {
 
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
-                .srcDirList(archiveAppsList)));
+            .srcDirList(archiveAppsList)));
         //archive provided ear or war file
         String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
-                appSrcDirList.get(0).lastIndexOf("."));
+            appSrcDirList.get(0).lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
         archiveList.add(zipAppFile);
 
       }
+
       if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
         // build an application archive using what is in resources/apps/APP_NAME
-        assertTrue(buildAppArchive(defaultAppParams()
-                        .srcDirList(buildAppDirList)),
-                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
-
-        // build the archive list
-        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
-        archiveList.add(zipFile);
+        String zipFile = "";
+        if (oneArchiveContainsMultiApps) {
+          assertTrue(buildAppArchive(defaultAppParams()
+                  .srcDirList(buildAppDirList)),
+              String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+          zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+          // build the archive list
+          archiveList.add(zipFile);
+        } else {
+          for (String appName : buildAppDirList) {
+            assertTrue(buildAppArchive(defaultAppParams()
+                    .srcDirList(Collections.singletonList(appName))
+                    .appName(appName)),
+                String.format("Failed to create app archive for %s", appName));
+            zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+            // build the archive list
+            archiveList.add(zipFile);
+          }
+        }
       }
     }
-
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
