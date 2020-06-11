@@ -98,8 +98,8 @@ public class ClusterViewServlet extends HttpServlet {
             if (ctx.lookup(serverName).equals(serverName)) {
               out.println("Bound:" + serverName);
             }
-          } catch (NameNotFoundException nnfex) {
-            out.println(nnfex.getMessage());
+          } catch (NamingException nex) {
+            out.println(nex.getMessage());
           }
         }
       }
