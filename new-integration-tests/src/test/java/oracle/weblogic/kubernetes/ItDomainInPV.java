@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,13 +56,17 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -85,20 +90,21 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -114,6 +120,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests to create domain in persistent volume using WLST and WDT.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
 public class ItDomainInPV implements LoggedTest {
@@ -121,6 +128,8 @@ public class ItDomainInPV implements LoggedTest {
   private static String opNamespace = null;
   private static String wlstDomainNamespace = null;
   private static String wdtDomainNamespace = null;
+  private final String wlstDomainUid = "wlstdomain-inpv";
+  private final String wlstManagedServerNameBase = "wlst-ms-";
 
   private static String nginxNamespace = null;
   private static int nodeportshttp;
@@ -169,7 +178,7 @@ public class ItDomainInPV implements LoggedTest {
     int nodeportshttps = getNextFreePort(30443, 30543);
 
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    // nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
@@ -187,21 +196,20 @@ public class ItDomainInPV implements LoggedTest {
    * Verify login to WebLogic console is successful.
    */
   @Test
+  @Order(1)
   @DisplayName("Create WebLogic domain in PV using WLST script")
   public void testDomainInPvUsingWlst() {
 
-    final String domainUid = "wlstdomain-inpv";
     final String clusterName = "cluster-wlstdomain-inpv";
     final String adminServerName = "wlst-admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-    final String managedServerNameBase = "wlst-ms-";
+    final String adminServerPodName = wlstDomainUid + "-" + adminServerName;
     final int managedServerPort = 8001;
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    String managedServerPodNamePrefix = wlstDomainUid + "-" + wlstManagedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = wlstDomainUid + "-pv"; // name of the persistent volume
+    final String pvcName = wlstDomainUid + "-pvc"; // name of the persistent volume claim
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     if (isUseSecret) {
@@ -214,8 +222,8 @@ public class ItDomainInPV implements LoggedTest {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, domainUid);
-    createPVC(pvName, pvcName, domainUid, wlstDomainNamespace);
+    createPV(pvName, wlstDomainUid);
+    createPVC(pvName, pvcName, wlstDomainUid, wlstDomainNamespace);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
@@ -223,7 +231,7 @@ public class ItDomainInPV implements LoggedTest {
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
-    p.setProperty("domain_name", domainUid);
+    p.setProperty("domain_name", wlstDomainUid);
     p.setProperty("cluster_name", clusterName);
     p.setProperty("admin_server_name", adminServerName);
     p.setProperty("managed_server_port", Integer.toString(managedServerPort));
@@ -233,7 +241,7 @@ public class ItDomainInPV implements LoggedTest {
     p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "4");
-    p.setProperty("managed_server_name_base", managedServerNameBase);
+    p.setProperty("managed_server_name_base", wlstManagedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(() ->
@@ -253,11 +261,11 @@ public class ItDomainInPV implements LoggedTest {
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
-            .name(domainUid)
+            .name(wlstDomainUid)
             .namespace(wlstDomainNamespace))
         .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainUid(wlstDomainUid)
+            .domainHome("/shared/domains/" + wlstDomainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(image)
             .imagePullPolicy("IfNotPresent")
@@ -270,7 +278,7 @@ public class ItDomainInPV implements LoggedTest {
                 .namespace(wlstDomainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + domainUid)
+            .logHome("/shared/logs/" + wlstDomainUid)
             .dataHome("")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() //serverpod
@@ -305,7 +313,7 @@ public class ItDomainInPV implements LoggedTest {
     createDomainAndVerify(domain, wlstDomainNamespace);
 
     // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, wlstDomainNamespace);
+    checkPodReady(adminServerPodName, wlstDomainUid, wlstDomainNamespace);
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, wlstDomainNamespace);
@@ -314,7 +322,7 @@ public class ItDomainInPV implements LoggedTest {
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
           managedServerPodNamePrefix + i, wlstDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, wlstDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, wlstDomainUid, wlstDomainNamespace);
     }
 
     // verify managed server services created
@@ -344,8 +352,8 @@ public class ItDomainInPV implements LoggedTest {
     //create ingress controller
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, wlstDomainNamespace);
-    createIngressForDomainAndVerify(domainUid, wlstDomainNamespace, clusterNameMsPortMap);
+    logger.info("Creating ingress for domain {0} in namespace {1}", wlstDomainUid, wlstDomainNamespace);
+    createIngressForDomainAndVerify(wlstDomainUid, wlstDomainNamespace, clusterNameMsPortMap);
 
     //deploy application
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
@@ -365,16 +373,15 @@ public class ItDomainInPV implements LoggedTest {
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
         + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+        wlstDomainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
-      managedServers.add(domainUid + "-" + managedServerNameBase + i);
+      managedServers.add(wlstDomainUid + "-" + wlstManagedServerNameBase + i);
     }
     assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
-
   }
 
   /**
@@ -571,6 +578,76 @@ public class ItDomainInPV implements LoggedTest {
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
+
+  }
+
+
+  /**
+   * Verify liveness probe by killing managed server process 3 times to kick
+   * pod container auto-restart.
+   */
+  @Test
+  @Order(2)
+  @DisplayName("Test liveness probe of Pod")
+  public void testLivenessProbe() {
+    String serverName = wlstDomainUid + "-" + wlstManagedServerNameBase + "1";
+
+    // create file to kill server process
+    File killServerScript = assertDoesNotThrow(() ->
+            createScriptToKillServer(),
+        "Failed to create script to kill server");
+    logger.info("File/script created to kill server {0}", killServerScript);
+
+    // copy script to pod
+    String destLocation = "/tmp/killserver.sh";
+    assertDoesNotThrow(() -> copyFileToPod(wlstDomainNamespace, serverName, "weblogic-server",
+        killServerScript.toPath(), Paths.get(destLocation)),
+        String.format("Failed to copy file %s to pod %s in namespace %s",
+            killServerScript, serverName, wlstDomainNamespace));
+    logger.info("File copied to Pod {0} in namespace {1}", serverName, wlstDomainNamespace);
+
+    // get the restart count of the container in pod before liveness probe restarts
+    final int beforeRestartCount =
+        assertDoesNotThrow(() -> getContainerRestartCount(wlstDomainNamespace, null, serverName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                serverName, wlstDomainNamespace));
+
+    /* First, kill the mgd server process in the container three times to cause the node manager to
+     * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
+     * initiates a container restart.
+     */
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(wlstDomainNamespace, serverName, null,
+        true, "/bin/sh", "-c", "chmod +x " + destLocation),
+        String.format("Failed to change permissions for file %s in pod %s", destLocation, serverName));
+    assertTrue(execResult.exitValue() == 0,
+        String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
+            execResult.stderr(), execResult.stdout()));
+    for (int i = 0; i < 3; i++) {
+      execResult = assertDoesNotThrow(() -> execCommand(wlstDomainNamespace, serverName, null,
+          true, "/bin/sh", "-c", destLocation + " " + serverName),
+          String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
+              serverName, wlstDomainNamespace));
+      logger.info("Command executed, exit value {0}, stdout {1}, stderr {2}",
+          execResult.exitValue(), execResult.stdout(), execResult.stderr());
+
+      try {
+        Thread.sleep(2 * 1000);
+      } catch (InterruptedException ie) {
+        // ignore
+      }
+    }
+    // check pod is ready
+    checkPodReady(serverName, wlstDomainUid, wlstDomainNamespace);
+
+    // get the restart count of the container in pod after liveness probe restarts
+    int afterRestartCount = assertDoesNotThrow(() ->
+            getContainerRestartCount(wlstDomainNamespace, null, serverName, null),
+        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            serverName, wlstDomainNamespace));
+    assertTrue(afterRestartCount - beforeRestartCount == 1,
+        String.format("Liveness probe did not start the container in pod {0} in namespace {1}",
+            serverName, wlstDomainNamespace));
+
   }
 
   /**
@@ -588,6 +665,7 @@ public class ItDomainInPV implements LoggedTest {
           .isTrue();
     }
   }
+
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following.
@@ -898,4 +976,15 @@ public class ItDomainInPV implements LoggedTest {
         OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
 
+  private File createScriptToKillServer() throws IOException {
+    File killServerScript = File.createTempFile("killserver", ".sh");
+    //deletes the file when VM terminates
+    killServerScript.deleteOnExit();
+    FileWriter fw = new FileWriter(killServerScript);
+    fw.write("#!/bin/bash\n");
+    fw.write("kill -9 `jps | grep Server | awk '{print $1}'`");
+    fw.close();
+    killServerScript.setExecutable(true, false);
+    return killServerScript;
+  }
 }
