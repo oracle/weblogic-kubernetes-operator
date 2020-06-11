@@ -2138,7 +2138,6 @@ public class Kubernetes implements LoggedTest {
 
     // Execute command using Kubernetes API
     KubernetesExec kubernetesExec = createKubernetesExec(pod, containerName);
-    logger.info("Executing the command {0}", command);
     final Process proc = kubernetesExec.exec(command);
 
     final CopyingOutputStream copyOut =
