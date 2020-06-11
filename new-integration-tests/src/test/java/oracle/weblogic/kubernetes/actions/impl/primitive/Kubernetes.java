@@ -283,9 +283,34 @@ public class Kubernetes implements LoggedTest {
   }
 
   // ------------------------  deployments -----------------------------------
-  public static boolean createDeployment(String deploymentYaml) {
-    // do something with the command!!!
-    return true;
+
+  /**
+   * Create a deployment.
+   *
+   * @param deployment V1Deployment object containing deployment configuration data
+   * @return true if creation was successful
+   * @throws ApiException when create fails
+   */
+  public static boolean createDeployment(V1Deployment deployment) throws ApiException {
+    String namespace = deployment.getMetadata().getNamespace();
+    boolean status = false;
+    try {
+      AppsV1Api apiInstance = new AppsV1Api(apiClient);
+      V1Deployment createdDeployment = apiInstance.createNamespacedDeployment(
+          namespace, // String | namespace in which to create job
+          deployment, // V1Deployment | body of the V1Deployment containing deployment data
+          PRETTY, // String | pretty print output.
+          null, // String | dry run or permanent change
+          null // String | field manager who is making the change
+      );
+      if (createdDeployment != null) {
+        status = true;
+      }
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+    return status;
   }
 
   /**
