@@ -407,7 +407,7 @@ checkDomainSecretMD5()
 
   generateDomainSecretMD5File "$cur_md5_file" || return 1
 
-  diff -B "$cur_md5_file" "$orig_md5_file" > ${cur_md5_file}.diff 2>&1
+  diff -wB "$cur_md5_file" "$orig_md5_file" > ${cur_md5_file}.diff 2>&1
 
   if [ ! "$?" = "0" ]; then
     trace SEVERE "Domain secret mismatch. The domain secret in 'DOMAIN_HOME/security/SerializedSystemIni.dat' where DOMAIN_HOME='$DOMAIN_HOME' does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret. See 'Domain Secret Mismatch' in the operator FAQ (https://oracle.github.io/weblogic-kubernetes-operator/faq/domain-secret-mismatch/). MD5 checksum diff:"

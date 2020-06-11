@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
@@ -116,6 +117,7 @@ public class TestActions {
    *
    * @param domain Domain custom resource model object
    * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
       throws ApiException {
@@ -166,7 +168,7 @@ public class TestActions {
   public static boolean restartDomain(String domainUid, String namespace) {
     return Domain.restart(domainUid, namespace);
   }
-  
+
   /**
    * Delete a Domain Custom Resource.
    *
@@ -194,9 +196,25 @@ public class TestActions {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace .
+   * Patch a running domain with introspectVersion.
+   * If the introspectVersion doesn't exist it will add the value as 2,
+   * otherwise the value is updated by 1.
+   *
+   * @param domainUid UID of the domain to patch with introspectVersion
+   * @param namespace namespace in which the domain resource exists
+   * @return true if patching is successful, otherwise false
+   * @throws ApiException when patching fails
+   */
+  public static boolean patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) throws ApiException {
+    return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace by patching the domain resource.
    *
    * @param domainUid domainUid of the domain to be scaled
+   * @param namespace name of Kubernetes namespace that the domain belongs to
    * @param clusterName cluster in the domain to be scaled
    * @param numOfServers number of servers to be scaled to.
    * @return true on success, false otherwise
@@ -205,6 +223,27 @@ public class TestActions {
   public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
       throws ApiException {
     return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace using REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @return true if REST call succeeds, false otherwise
+   */
+  public static boolean scaleClusterWithRestApi(String domainUid,
+                                                String clusterName,
+                                                int numOfServers,
+                                                int externalRestHttpsPort,
+                                                String opNamespace,
+                                                String opServiceAccount) {
+    return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
+        externalRestHttpsPort, opNamespace, opServiceAccount);
   }
 
   // ------------------------   Ingress Controller ----------------------
@@ -277,6 +316,18 @@ public class TestActions {
    */
   public static boolean createNamespace(String name) throws ApiException {
     return new Namespace().name(name).create();
+  }
+
+  /**
+   * Add labels to a namespace.
+   *
+   * @param name name of the namespace
+   * @param labels map of labels to add to the namespace
+   * @throws ApiException when adding labels to namespace fails
+   */
+  public static void addLabelsToNamespace(String name, Map<String, String> labels)
+      throws ApiException {
+    Namespace.addLabelsToNamespace(name, labels);
   }
 
   /**
@@ -408,6 +459,16 @@ public class TestActions {
     return Secret.delete(name, namespace);
   }
 
+  /**
+   * List secrets in the Kubernetes cluster.
+   *
+   * @param namespace Namespace in which to query
+   * @return V1SecretList of secrets in the Kubernetes cluster
+   */
+  public static V1SecretList listSecrets(String namespace) {
+    return Secret.listSecrets(namespace);
+  }
+
   // -------------------------- config map ---------------------------------
 
   /**
@@ -466,6 +527,18 @@ public class TestActions {
    */
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
     return Service.getServiceNodePort(namespace, serviceName, channelName);
+  }
+
+  /**
+   * Get port of a namespaced service given the channel name.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the port
+   * @return node port if service and channel is found, otherwise -1
+   */
+  public static int getServicePort(String namespace, String serviceName, String channelName) {
+    return Service.getServicePort(namespace, serviceName, channelName);
   }
 
   /**

@@ -160,7 +160,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtDomainType();
   }
 
-  protected String getDomainHomeSourceType() {
+  protected DomainSourceType getDomainHomeSourceType() {
     return getDomain().getDomainHomeSourceType();
   }
 
@@ -321,7 +321,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private boolean isSourceWdt() {
-    return DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType());
+    return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
   private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
@@ -441,7 +441,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   private V1ConfigMapVolumeSource getConfigMapVolumeSource() {
     return new V1ConfigMapVolumeSource()
-          .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
+          .name(KubernetesConstants.SCRIPT_CONFIG_MAP_NAME)
           .defaultMode(ALL_READ_AND_EXECUTE);
   }
 

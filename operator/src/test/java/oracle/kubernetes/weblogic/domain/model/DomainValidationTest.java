@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +21,8 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -264,7 +265,7 @@ public class DomainValidationTest {
   @Test
   public void whenConfigOverrideCmExistsTypeImage_dontReportError() {
     resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
-    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType("Image");
+    configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType(Image);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -275,7 +276,7 @@ public class DomainValidationTest {
     resourceLookup.defineResource("wdt-cm-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-model")
         .withRuntimeEncryptionSecret("wdt-cm-secret")
-        .withDomainHomeSourceType("FromModel");
+        .withDomainHomeSourceType(FromModel);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("Configuration overridesConfigMap", 
@@ -289,7 +290,7 @@ public class DomainValidationTest {
     configureDomain(domain)
         .withRuntimeEncryptionSecret("wdt-cm-secret-model1")
         .withModelConfigMap("wdt-cm")
-        .withDomainHomeSourceType(DomainSourceType.FromModel.toString());
+        .withDomainHomeSourceType(FromModel);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -299,7 +300,7 @@ public class DomainValidationTest {
     resourceLookup.defineResource("wdt-cm-secret-model2", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model2")
         .withModelConfigMap("wdt-configmap")
-        .withDomainHomeSourceType(DomainSourceType.FromModel.toString());
+        .withDomainHomeSourceType(FromModel);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("ConfigMap", "wdt-configmap", "spec.configuration.model.configMap", 
@@ -308,7 +309,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWdtConfigMapSpecifiedButDoesNotExist_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+    configureDomain(domain).withDomainHomeSourceType(Image)
         .withModelConfigMap("wdt-configmap");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -316,7 +317,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+    configureDomain(domain).withDomainHomeSourceType(Image)
         .withRuntimeEncryptionSecret("runtime-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -324,14 +325,14 @@ public class DomainValidationTest {
 
   @Test
   public void whenRuntimeEncryptionSecretUnspecified_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString());
+    configureDomain(domain).withDomainHomeSourceType(Image);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_fromModel_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -340,7 +341,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenRuntimeEncryptionSecretExists_fromModel_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-good-secret");
     resourceLookup.defineResource("runtime-good-secret", KubernetesResourceType.Secret, NS);
 
@@ -349,7 +350,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenRuntimeEncryptionSecretUnspecified_fromModel_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString());
+    configureDomain(domain).withDomainHomeSourceType(FromModel);
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("spec.configuration.model.runtimeEncryptionSecret", 
@@ -358,7 +359,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletPasswordSecretSpecifiedButDoesNotExist_fromModel_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-missing");
 
@@ -370,7 +371,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletFileSecretSpecifiedButDoesNotExist_Image_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletFileSecret("wallet-file-secret-missing");
 
@@ -383,7 +384,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletPasswordSecretExists_fromModel_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
@@ -394,7 +395,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletFileSecretExists_fromModel_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletFileSecret("wallet-file-secret-good");
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
@@ -405,7 +406,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withDomainType("JRF");
     resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
@@ -417,7 +418,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.FromModel.toString())
+    configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withDomainType("JRF")
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
@@ -430,7 +431,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletPasswordSecretUnspecified_Image_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+    configureDomain(domain).withDomainHomeSourceType(Image)
         .withOpssWalletFileSecret("wallet-file-secret");
 
     resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
@@ -440,7 +441,7 @@ public class DomainValidationTest {
 
   @Test
   public void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
-    configureDomain(domain).withDomainHomeSourceType(DomainSourceType.Image.toString())
+    configureDomain(domain).withDomainHomeSourceType(Image)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withDomainType("WLS")
         .withOpssWalletFileSecret("wallet-file-secret");
