@@ -194,160 +194,6 @@ public class ItDomainInPV implements LoggedTest {
   }
 
   /**
-   * Create a WebLogic domain using WLST in a persistent volume.
-   * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
-   * Verify domain pods runs in ready state and services are created.
-   * Verify login to WebLogic console is successful.
-   */
-  @Test
-  @DisplayName("Create WebLogic domain in PV using WLST script")
-  public void testDomainInPvUsingWlst() {
-
-    final String clusterName = "cluster-wlstdomain-inpv";
-    final String adminServerName = "wlst-admin-server";
-    final String adminServerPodName = wlstDomainUid + "-" + adminServerName;
-    String managedServerPodNamePrefix = wlstDomainUid + "-" + wlstManagedServerNameBase;
-    final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
-
-    final String pvName = wlstDomainUid + "-pv"; // name of the persistent volume
-    final String pvcName = wlstDomainUid + "-pvc"; // name of the persistent volume claim
-
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
-      createOCRRepoSecret(wlstDomainNamespace);
-    }
-
-    // create WebLogic domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create persistent volume and persistent volume claim for domain
-    // these resources should be labeled with domainUid for cleanup after testing
-    createPV(pvName, wlstDomainUid);
-    createPVC(pvName, pvcName, wlstDomainUid, wlstDomainNamespace);
-
-    // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(() ->
-        File.createTempFile("domain", "properties"),
-        "Failed to create domain properties file");
-    Properties p = new Properties();
-    p.setProperty("domain_path", "/shared/domains");
-    p.setProperty("domain_name", wlstDomainUid);
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("admin_server_name", adminServerName);
-    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
-    p.setProperty("admin_server_port", "7001");
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
-    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
-    p.setProperty("number_of_ms", "4");
-    p.setProperty("managed_server_name_base", wlstManagedServerNameBase);
-    p.setProperty("domain_logs", "/shared/logs");
-    p.setProperty("production_mode_enabled", "true");
-    assertDoesNotThrow(() ->
-        p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file"),
-        "Failed to write domain properties file");
-
-    // WLST script for creating domain
-    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
-
-    // create configmap and domain on persistent volume using the WLST script and property file
-    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, wlstDomainNamespace);
-
-    // create a domain custom resource configuration object
-    logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(wlstDomainUid)
-            .namespace(wlstDomainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(wlstDomainUid)
-            .domainHome("/shared/domains/" + wlstDomainUid)  // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
-            .image(image)
-            .imagePullPolicy("IfNotPresent")
-            .imagePullSecrets(isUseSecret ? Arrays.asList(
-                new V1LocalObjectReference()
-                    .name(OCR_SECRET_NAME))
-                : null)
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(wlSecretName)
-                .namespace(wlstDomainNamespace))
-            .includeServerOutInPodLog(true)
-            .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs/" + wlstDomainUid)
-            .dataHome("")
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod() //serverpod
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addVolumesItem(new V1Volume()
-                    .name(pvName)
-                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                        .claimName(pvcName)))
-                .addVolumeMountsItem(new V1VolumeMount()
-                    .mountPath("/shared")
-                    .name(pvName)))
-            .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING")));
-
-    // verify the domain custom resource is created
-    createDomainAndVerify(domain, wlstDomainNamespace);
-
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, wlstDomainUid, wlstDomainNamespace);
-
-    // verify the admin server service created
-    checkServiceExists(adminServerPodName, wlstDomainNamespace);
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, wlstDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, wlstDomainUid, wlstDomainNamespace);
-    }
-
-    // verify managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, wlstDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, wlstDomainNamespace);
-    }
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(wlstDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
-  }
-
-  /**
    * Create a WebLogic domain using WDT in a persistent volume.
    * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
    * Verify domain pods runs in ready state and services are created.
@@ -640,6 +486,161 @@ public class ItDomainInPV implements LoggedTest {
             serverName, wdtDomainNamespace));
 
   }
+
+  /**
+   * Create a WebLogic domain using WLST in a persistent volume.
+   * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
+   * Verify domain pods runs in ready state and services are created.
+   * Verify login to WebLogic console is successful.
+   */
+  @Test
+  @DisplayName("Create WebLogic domain in PV using WLST script")
+  public void testDomainInPvUsingWlst() {
+
+    final String clusterName = "cluster-wlstdomain-inpv";
+    final String adminServerName = "wlst-admin-server";
+    final String adminServerPodName = wlstDomainUid + "-" + adminServerName;
+    String managedServerPodNamePrefix = wlstDomainUid + "-" + wlstManagedServerNameBase;
+    final int replicaCount = 2;
+    final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
+
+    final String pvName = wlstDomainUid + "-pv"; // name of the persistent volume
+    final String pvcName = wlstDomainUid + "-pvc"; // name of the persistent volume claim
+
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    if (isUseSecret) {
+      createOCRRepoSecret(wlstDomainNamespace);
+    }
+
+    // create WebLogic domain credential secret
+    createSecretWithUsernamePassword(wlSecretName, wlstDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create persistent volume and persistent volume claim for domain
+    // these resources should be labeled with domainUid for cleanup after testing
+    createPV(pvName, wlstDomainUid);
+    createPVC(pvName, pvcName, wlstDomainUid, wlstDomainNamespace);
+
+    // create a temporary WebLogic domain property file
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+            File.createTempFile("domain", "properties"),
+        "Failed to create domain properties file");
+    Properties p = new Properties();
+    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_name", wlstDomainUid);
+    p.setProperty("cluster_name", clusterName);
+    p.setProperty("admin_server_name", adminServerName);
+    p.setProperty("managed_server_port", Integer.toString(managedServerPort));
+    p.setProperty("admin_server_port", "7001");
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
+    p.setProperty("number_of_ms", "4");
+    p.setProperty("managed_server_name_base", wlstManagedServerNameBase);
+    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("production_mode_enabled", "true");
+    assertDoesNotThrow(() ->
+            p.store(new FileOutputStream(domainPropertiesFile), "wlst properties file"),
+        "Failed to write domain properties file");
+
+    // WLST script for creating domain
+    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+
+    // create configmap and domain on persistent volume using the WLST script and property file
+    createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
+        pvName, pvcName, wlstDomainNamespace);
+
+    // create a domain custom resource configuration object
+    logger.info("Creating domain custom resource");
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(wlstDomainUid)
+            .namespace(wlstDomainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(wlstDomainUid)
+            .domainHome("/shared/domains/" + wlstDomainUid)  // point to domain home in pv
+            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .image(image)
+            .imagePullPolicy("IfNotPresent")
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
+                new V1LocalObjectReference()
+                    .name(OCR_SECRET_NAME))
+                : null)
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(wlstDomainNamespace))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/logs/" + wlstDomainUid)
+            .dataHome("")
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer() //admin server
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("T3Channel")
+                        .nodePort(t3ChannelPort))))
+            .addClustersItem(new Cluster() //cluster
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING")));
+
+    // verify the domain custom resource is created
+    createDomainAndVerify(domain, wlstDomainNamespace);
+
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, wlstDomainUid, wlstDomainNamespace);
+
+    // verify the admin server service created
+    checkServiceExists(adminServerPodName, wlstDomainNamespace);
+
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, wlstDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, wlstDomainUid, wlstDomainNamespace);
+    }
+
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, wlstDomainNamespace);
+      checkServiceExists(managedServerPodNamePrefix + i, wlstDomainNamespace);
+    }
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        wlstDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+
+  }
+
 
   /**
    * Uninstall Nginx.
