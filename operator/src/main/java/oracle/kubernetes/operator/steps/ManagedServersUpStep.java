@@ -125,6 +125,9 @@ public class ManagedServersUpStep extends Step {
   private void addClusteredServersToFactory(@Nonnull ServersUpStepFactory factory, Set<String> clusteredServers,
       @Nonnull WlsClusterConfig wlsClusterConfig) {
     factory.logIfInvalidReplicaCount(wlsClusterConfig);
+    // We depend on 'getServerConfigs()' returning an ascending 'numero-lexi'
+    // sorted list so that a cluster's "lowest named" servers have precedence
+    // when the  cluster's replica  count is lower than  the WL cluster size.
     wlsClusterConfig.getServerConfigs()
         .forEach(wlsServerConfig -> {
           factory.addServerIfNeeded(wlsServerConfig, wlsClusterConfig);
