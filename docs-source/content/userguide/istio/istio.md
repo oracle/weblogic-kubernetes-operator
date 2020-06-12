@@ -249,3 +249,38 @@ as shown in the image above.
 
 You can learn more about [distrubting tracing in Istio](https://istio.io/docs/tasks/telemetry/distributed-tracing/)
 in their documentation.
+
+#### Internal WebLogic Domain Changes to support Istio
+
+When deploying a domain with Istio sidecare injection enabled.  WebLogic Operator automatically add the following network
+channels via configuration overrides.
+
+https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+
+For non SSL traffic:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|http-probe|From configuration istio readinessPort|http|N|
+|tcp-t3|server listening port|t3|Y|
+|http-default|server listening port|http|Y|
+|tcp-snmp|server listening port|snmp|Y|
+|tcp-cbt|server listening port|CLUSTER-BROADCAST|N|
+|tcp-iiop|server listening port|http|N|
+
+For SSL traffic, if SSL is enabled on the server:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|tcp-t3s|server SSL listening port|t3s|Y|
+|https-ssl|server SSL listening port|https|Y|
+|tcp-iiops|server SSL listening port|iiops|N|
+|tcp-ldaps|server SSL listening port|ldaps|N|
+|tcp-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
+
+If WebLogic Administration Port is enabled:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|htps-admin|WebLogic Administration Port|https|Y|
+
