@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 
+import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -28,6 +29,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
@@ -431,8 +433,7 @@ public class Domain {
   }
 
   boolean isLogHomeEnabled() {
-    return Optional.ofNullable(spec.isLogHomeEnabled())
-        .orElse(DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType()));
+    return Optional.ofNullable(spec.isLogHomeEnabled()).orElse(getDomainHomeSourceType().hasLogHomeByDefault());
   }
 
   public String getDataHome() {
@@ -448,26 +449,26 @@ public class Domain {
   }
 
   /**
-   * Get domain home source type.
+   * Returns a description of how the domain is defined.
    * @return source type
    */
-  public String getDomainHomeSourceType() {
-    return Optional.ofNullable(spec.getDomainHomeSourceType()).orElseGet(
-        () -> getModel() != null ? DomainSourceType.FromModel.toString()
-            : (Optional.ofNullable(spec.isDomainHomeInImage())
-            .orElse(true) ? DomainSourceType.Image.toString() : DomainSourceType.PersistentVolume.toString()));
+  public DomainSourceType getDomainHomeSourceType() {
+    return spec.getDomainHomeSourceType();
+  }
+
+  /**
+   * Returns true if the operator can be asked to run a new introspection for this domain.
+   */
+  public boolean mayRequestIntrospection() {
+    return getDomainHomeSourceType().mayRequestIntrospection();
   }
 
   public Model getModel() {
-    return Optional.ofNullable(spec.getConfiguration()).map(Configuration::getModel).orElse(null);
+    return spec.getModel();
   }
 
   public boolean isHttpAccessLogInLogHome() {
     return spec.getHttpAccessLogInLogHome();
-  }
-
-  boolean isDomainHomeInImage() {
-    return spec.isDomainHomeInImage();
   }
 
   public boolean isIstioEnabled() {
@@ -478,28 +479,13 @@ public class Domain {
     return spec.getIstioReadinessPort();
   }
 
-  public boolean isDomainSourceFromModel(String type) {
-    return DomainSourceType.FromModel.toString().equals(type);
-  }
-
   /**
-   * Returns the domain home.
-   *
-   * <p>Defaults to either /u01/oracle/user_projects/domains or /shared/domains/domainUID
+   * Returns the domain home. May be null, but will not be an empty string.
    *
    * @return domain home
    */
   public String getDomainHome() {
-    if (spec.getDomainHome() != null) {
-      return spec.getDomainHome();
-    }
-    if (DomainSourceType.Image.toString().equals(getDomainHomeSourceType())) {
-      return "/u01/oracle/user_projects/domains";
-    } else if (DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType())) {
-      return "/shared/domains/" + getDomainUid();
-    } else { // FromModel
-      return "/u01/domains/" + getDomainUid();
-    }
+    return Strings.emptyToNull(spec.getDomainHome());
   }
 
   public boolean isShuttingDown() {
@@ -521,8 +507,23 @@ public class Domain {
    * @return name of the config map
    */
   public String getConfigOverrides() {
-    return Optional.ofNullable(spec.getConfiguration())
-        .map(Configuration::getOverridesConfigMap).orElse(spec.getConfigOverrides());
+    return spec.getConfigOverrides();
+  }
+
+  /**
+   * Returns the strategy for applying changes to configuration overrides.
+   * @return the selected strategy
+   */
+  public OverrideDistributionStrategy getOverrideDistributionStrategy() {
+    return spec.getOverrideDistributionStrategy();
+  }
+
+  /**
+   * Returns the strategy for applying changes to configuration overrides.
+   * @return the selected strategy
+   */
+  public boolean distributeOverridesDynamically() {
+    return spec.getOverrideDistributionStrategy() == OverrideDistributionStrategy.DYNAMIC;
   }
 
   /**
@@ -686,7 +687,7 @@ public class Domain {
     }
 
     private void addIllegalSitConfigForMii() {
-      if (isDomainSourceFromModel(getDomainHomeSourceType())
+      if (getDomainHomeSourceType() == DomainSourceType.FromModel
           && getConfigOverrides() != null) {
         failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
       }
@@ -748,7 +749,7 @@ public class Domain {
       verifySecretExists(resourceLookup, getOpssWalletPasswordSecret(), SecretType.OpssWalletPassword);
       verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OpssWalletFile);
 
-      if (isDomainSourceFromModel(getDomainHomeSourceType())) {
+      if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
         if (getRuntimeEncryptionSecret() == null) {
           failures.add(DomainValidationMessages.missingRequiredSecret(
               "spec.configuration.model.runtimeEncryptionSecret"));
@@ -792,7 +793,7 @@ public class Domain {
 
     @SuppressWarnings("SameParameterValue")
     private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
-      if (isDomainSourceFromModel(getDomainHomeSourceType())
+      if (getDomainHomeSourceType() == DomainSourceType.FromModel
           && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
       }

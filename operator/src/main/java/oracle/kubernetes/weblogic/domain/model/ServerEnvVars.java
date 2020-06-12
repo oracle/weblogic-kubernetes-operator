@@ -40,6 +40,12 @@ public class ServerEnvVars {
   /** The secure port on which the admin server is listening. */
   public static final String ADMIN_PORT_SECURE = "ADMIN_PORT_SECURE";
 
+  /**
+   * If defined, WebLogic Server sets a secure protocol(https/t3s) in the "AdminURL" property in NM startup.properties.
+   * WebLogic Node Manager then sets the ADMIN_URL env variable before starting the managed server.
+   */
+  public static final String ADMIN_SERVER_PORT_SECURE = "ADMIN_SERVER_PORT_SECURE";
+
   /** The location for the logs. */
   public static final String LOG_HOME = "LOG_HOME";
 
@@ -52,6 +58,9 @@ public class ServerEnvVars {
   /** 'true' or 'false' to indicate whether the server HTTP access log should be include in the
    *  directory specified by LOG_HOME. */
   public static final String ACCESS_LOG_IN_LOG_HOME = "ACCESS_LOG_IN_LOG_HOME";
+
+  /** If present, pod scripts will watch for changes to override configurations and move them into place. */
+  public static final String DYNAMIC_CONFIG_OVERRIDE = "DYNAMIC_CONFIG_OVERRIDE";
 
   private static final List<String> RESERVED_NAMES = Arrays.asList(
         DOMAIN_UID, DOMAIN_NAME, DOMAIN_HOME, NODEMGR_HOME, SERVER_NAME, SERVICE_NAME,

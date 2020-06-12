@@ -5,9 +5,9 @@
 #  This script show the model in image merged model of the running domain in clear text
 #
 DOMAIN_NAMESPACE=sample-domain1-ns
-DOMAIN_UID=domain1
-PASSWORD=weblogic
-IMAGE=model-in-image:v1
+DOMAIN_UID=sample-domain1
+PASSWORD=my_runtime_password
+IMAGE=model-in-image:JRF-v1
 IMAGEPULLPOLICY=IfNotPresent
 IMAGEPULLSECRETSTAG=''
 IMGPS=''

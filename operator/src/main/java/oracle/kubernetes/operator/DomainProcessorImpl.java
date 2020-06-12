@@ -582,8 +582,12 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   void recordIntrospectionRequest(Packet packet, DomainPresenceInfo info) {
-    packet.put(DOMAIN_INTROSPECT_REQUESTED,
-              !Objects.equals(getNewIntrospectVersion(info), getOldIntrospectVersion(info)));
+    packet.put(DOMAIN_INTROSPECT_REQUESTED, isIntrospectionRequested(info));
+  }
+
+  private boolean isIntrospectionRequested(DomainPresenceInfo info) {
+    return info.mayRequestIntrospection()
+           && !Objects.equals(getNewIntrospectVersion(info), getOldIntrospectVersion(info));
   }
 
   private String getNewIntrospectVersion(DomainPresenceInfo info) {
@@ -696,7 +700,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     return Step.chain(
           createDomainUpInitialStep(info),
-          ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUid()),
+          ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
           DomainStatusUpdater.createProgressingStep(INSPECTING_DOMAIN_PROGRESS_REASON,true, null),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }

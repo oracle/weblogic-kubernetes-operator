@@ -17,7 +17,7 @@ usage: ./start-db-service.sh -p <nodeport> -i <image> -s <pullsecret> -n <namesp
  -i  Oracle DB Image (optional)
     (default: container-registry.oracle.com/database/enterprise:12.2.0.1-slim)
   -p DB Service NodePort (optional)
-    (default: 30011)
+    (default: 30011, set to 'none' to deploy service without a NodePort)
   -s DB Image PullSecret (optional)
     (default: docker-store)
   -n Configurable Kubernetes NameSpace for Oracle DB Service (optional)"

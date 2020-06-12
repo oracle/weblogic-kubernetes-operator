@@ -10,9 +10,8 @@ import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
-import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.ALL_READ_AND_EXECUTE;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
@@ -34,7 +33,7 @@ class PodDefaults {
   }
 
   private static V1Volume createScriptsVolume() {
-    return createVolume(SCRIPTS_VOLUME, DOMAIN_CONFIG_MAP_NAME);
+    return createVolume(SCRIPTS_VOLUME, SCRIPT_CONFIG_MAP_NAME);
   }
 
   private static V1Volume createVolume(String volumeName, String configMapName) {
@@ -51,19 +50,15 @@ class PodDefaults {
   }
 
   private static V1Volume createSitConfigVolume(String domainUid) {
-    return createVolume(getSitConfigMapVolumeName(domainUid), getConfigMapName(domainUid));
+    return createVolume(getSitConfigMapVolumeName(domainUid), ConfigMapHelper.getIntrospectorConfigMapName(domainUid));
   }
 
   private static String getSitConfigMapVolumeName(String domainUid) {
     return SIT_CONFIG_MAP_VOLUME;
   }
 
-  private static String getConfigMapName(String domainUid) {
-    return domainUid + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
-  }
-
   private static V1Volume createWdtConfigMapVolume(String domainUid) {
-    return createVolume(getWdtConfigMapVolumeName(domainUid), getConfigMapName(domainUid));
+    return createVolume(getWdtConfigMapVolumeName(domainUid), ConfigMapHelper.getIntrospectorConfigMapName(domainUid));
   }
 
   private static String getWdtConfigMapVolumeName(String domainUid) {

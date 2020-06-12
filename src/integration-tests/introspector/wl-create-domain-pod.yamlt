@@ -45,7 +45,7 @@ spec:
     - name: weblogic-credentials-volume
       mountPath: /weblogic-operator/secrets
       readOnly: true
-    - name: weblogic-domain-cm-volume
+    - name: weblogic-script-cm-volume
       mountPath: /weblogic-operator/scripts
       readOnly: true
     - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
@@ -65,10 +65,10 @@ spec:
     secret:
       defaultMode: 420
       secretName:  ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
-  - name: weblogic-domain-cm-volume
+  - name: weblogic-script-cm-volume
     configMap:
       defaultMode: 365
-      name: weblogic-domain-cm
+      name: weblogic-script-cm
   - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
     configMap:
       defaultMode: 365

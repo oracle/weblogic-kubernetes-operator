@@ -11,6 +11,7 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
+import oracle.weblogic.kubernetes.assertions.impl.Grafana;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
 import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
@@ -19,6 +20,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
+import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
@@ -450,6 +452,26 @@ public class TestAssertions {
   }
 
   /**
+   * Check if Prometheus is running.
+   *
+   * @param namespace in which is prometheus is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> isPrometheusReady(String namespace) {
+    return Prometheus.isReady(namespace);
+  }
+
+  /**
+   * Check if Grafana is running.
+   *
+   * @param namespace in which is grafana is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> isGrafanaReady(String namespace) {
+    return Grafana.isReady(namespace);
+  }
+
+  /*
    * Check whether persistent volume with pvName exists.
    *
    * @param pvName persistent volume to check
