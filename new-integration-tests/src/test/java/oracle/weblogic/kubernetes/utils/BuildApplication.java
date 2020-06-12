@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -16,8 +14,6 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
@@ -37,10 +33,11 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -55,7 +52,6 @@ import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
@@ -65,6 +61,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static org.apache.commons.io.FileUtils.copyDirectory;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -80,6 +78,7 @@ public class BuildApplication {
   private static final String APPLICATIONS_MOUNT_PATH = "/application";
   private static final String SCRIPTS_MOUNT_PATH = "/buildScripts";
   private static final String BUILD_SCRIPT = "build_application.sh";
+  private static final Path BUILD_SCRIPT_SOURCE_PATH = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
@@ -89,12 +88,12 @@ public class BuildApplication {
   /**
    * Build application.
    *
-   * @param application path of the application archive
+   * @param application path of the application source folder
    * @param parameters system properties for ant
    * @param targets ant targets to call
-   * @param namespace name of the namespace in which server pods running
+   * @param namespace name of the namespace to use for pvc
    */
-  public static void buildApplication(Path application, Map<String,String> parameters,
+  public static void buildApplication(Path application, Map<String, String> parameters,
       String targets, String namespace) {
 
     setImage(namespace);
@@ -102,38 +101,25 @@ public class BuildApplication {
     // Copy the application source directory to PV_ROOT/applications/<application_directory_name>
     // This location is mounted in the build pod under /application
     Path targetPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
-    logger.info("Copy the application to staging area");
+    logger.info("Copy the application {0} to PV hostpath {1}", application, targetPath);
     assertDoesNotThrow(() -> {
       Files.createDirectories(targetPath);
-      Files.copy(application, targetPath, StandardCopyOption.REPLACE_EXISTING);
+      deleteDirectory(targetPath.toFile());
+      Files.createDirectories(targetPath);
+      copyDirectory(application.toFile(), targetPath.toFile());
+      Files.copy(BUILD_SCRIPT_SOURCE_PATH, targetPath.resolve(BUILD_SCRIPT_SOURCE_PATH.getFileName()));
     });
 
-    // bash script to build application
-    Path buildScript = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
-
-    logger.info("Creating a config map to hold build scripts");
-    List<Path> buildScriptFiles = new ArrayList<>();
-    buildScriptFiles.add(buildScript);
-    String buildScriptConfigMapName = "build-scripts-cm";
-    assertDoesNotThrow(
-        () -> createConfigMapFromFiles(buildScriptConfigMapName, buildScriptFiles, namespace),
-        "Create configmap for build applications failed");
-
     // create the persistent volume to make the application archive accessible to pod
-    String pvName = namespace + "-build-pv";
-    String pvcName = namespace + "-build-pvc";
+    String uniqueName = Namespace.uniqueName();
+    String pvName = namespace + "-build-pv-" + uniqueName;
+    String pvcName = namespace + "-build-pvc-" + uniqueName;
 
     assertDoesNotThrow(() -> createPV(targetPath, pvName), "Failed to create PV");
     createPVC(pvName, pvcName, namespace);
 
-    try {
-      // build application
-      build(parameters, targets, pvName, pvcName, namespace, buildScriptConfigMapName);
-    } finally {
-      // delete the persistent volume claim and persistent volume
-      TestActions.deletePersistentVolumeClaim(pvcName, namespace);
-      TestActions.deletePersistentVolume(pvName);
-    }
+    // build application
+    build(parameters, targets, pvName, pvcName, namespace);
   }
 
   /**
@@ -144,15 +130,16 @@ public class BuildApplication {
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
    * @param namespace name of the domain namespace in which the job is created
-   * @param buildScriptConfigMapName configmap containing build scripts
    */
-  public static void build(Map<String, String> parameters,
-      String targets, String pvName, String pvcName,
-      String namespace, String buildScriptConfigMapName) {
+  private static void build(Map<String, String> parameters, String targets,
+      String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run build job");
+
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
-        .addArgsItem(SCRIPTS_MOUNT_PATH + "/" + BUILD_SCRIPT);
+        .addArgsItem(APPLICATIONS_MOUNT_PATH + "/" + BUILD_SCRIPT);
+
+    // add ant properties to env
     if (parameters != null) {
       StringBuilder params = new StringBuilder();
       parameters.entrySet().forEach((parameter) -> {
@@ -161,6 +148,8 @@ public class BuildApplication {
       jobCreationContainer = jobCreationContainer
           .addEnvItem(new V1EnvVar().name("sysprops").value(params.toString()));
     }
+
+    // add targets in env
     if (targets != null) {
       jobCreationContainer = jobCreationContainer
           .addEnvItem(new V1EnvVar().name("targets").value(targets));
@@ -168,7 +157,7 @@ public class BuildApplication {
 
     logger.info("Running a Kubernetes job to build application");
     try {
-      createBuildJob(pvName, pvcName, buildScriptConfigMapName, namespace, jobCreationContainer);
+      createBuildJob(pvName, pvcName, namespace, jobCreationContainer);
     } catch (ApiException ex) {
       logger.severe("Building application failed");
       fail("Halting test since build failed");
@@ -187,19 +176,34 @@ public class BuildApplication {
    * @throws ApiException when Kubernetes cluster query fails
    */
   private static void createBuildJob(String pvName,
-      String pvcName, String buildScriptConfigMapName, String namespace, V1Container jobContainer)
+      String pvcName, String namespace, V1Container jobContainer)
       throws ApiException {
     logger.info("Running Kubernetes job to build application");
+    String uniqueName = Namespace.uniqueName();
+    String name = namespace + "-build-job-" + uniqueName;
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(namespace + "-build-job")
+                .name(name)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
+                    .initContainers(Arrays.asList(new V1Container()
+                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                        .image(image)
+                        .addCommandItem("/bin/sh")
+                        .addArgsItem("-c")
+                        .addArgsItem("chown -R 1000:1000 " + APPLICATIONS_MOUNT_PATH)
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name(pvName)
+                                .mountPath(APPLICATIONS_MOUNT_PATH)))
+                        .securityContext(new V1SecurityContext()
+                            .runAsGroup(0L)
+                            .runAsUser(0L))))
                     .restartPolicy("Never")
                     .containers(Arrays.asList(jobContainer
                         .name("build-application-container")
@@ -207,20 +211,13 @@ public class BuildApplication {
                         .imagePullPolicy("IfNotPresent")
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
-                                .name("build-job-cm-volume")
-                                .mountPath(SCRIPTS_MOUNT_PATH), // build scripts
-                            new V1VolumeMount()
                                 .name(pvName)
                                 .mountPath(APPLICATIONS_MOUNT_PATH))))) // application source directory
                     .volumes(Arrays.asList(new V1Volume()
                         .name(pvName)
                         .persistentVolumeClaim(
                             new V1PersistentVolumeClaimVolumeSource()
-                                .claimName(pvcName)),
-                        new V1Volume()
-                            .name("build-job-cm-volume")
-                            .configMap(new V1ConfigMapVolumeSource()
-                                .name(buildScriptConfigMapName))))
+                                .claimName(pvcName))))
                     .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
                             .name(OCR_SECRET_NAME))
@@ -261,6 +258,9 @@ public class BuildApplication {
 
   private static void createPV(Path hostPath, String pvName) throws IOException {
     logger.info("creating persistent volume");
+    // a dummy label is added so that cleanup can delete all pvs
+    HashMap<String, String> label = new HashMap<String, String>();
+    label.put("weblogic.domainUid", "buildjobs");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -273,7 +273,9 @@ public class BuildApplication {
             .hostPath(new V1HostPathVolumeSource()
                 .path(hostPath.toString())))
         .metadata(new V1ObjectMeta()
-            .name(pvName));
+            .name(pvName)
+            .labels(label));
+
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
@@ -281,6 +283,9 @@ public class BuildApplication {
 
   private static void createPVC(String pvName, String pvcName, String namespace) {
     logger.info("creating persistent volume claim");
+    // a dummy label is added so that cleanup can delete all pvs
+    HashMap<String, String> label = new HashMap<String, String>();
+    label.put("weblogic.domainUid", "buildjobs");
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
@@ -291,33 +296,12 @@ public class BuildApplication {
                 .putRequestsItem("storage", Quantity.fromString("2Gi"))))
         .metadata(new V1ObjectMeta()
             .name(pvcName)
-            .namespace(namespace));
+            .namespace(namespace)
+            .labels(label));
 
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
-  }
-
-  private static void createConfigMapFromFiles(String configMapName, List<Path> files, String namespace)
-      throws ApiException, IOException {
-    logger.info("Creating configmap {0}", configMapName);
-
-    // add domain creation scripts and properties files to the configmap
-    Map<String, String> data = new HashMap<>();
-    for (Path file : files) {
-      data.put(file.getFileName().toString(), Files.readString(file));
-    }
-
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .name(configMapName)
-        .namespace(namespace);
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(meta);
-
-    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Failed to create configmap %s with files", configMapName));
-    assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
   }
 
   /**
@@ -353,5 +337,4 @@ public class BuildApplication {
     }
     logger.info("Using image {0}", image);
   }
-
 }
