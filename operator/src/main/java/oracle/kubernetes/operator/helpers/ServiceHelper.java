@@ -415,9 +415,9 @@ public class ServiceHelper {
       getNetworkAccessPoints(serverConfig).forEach(this::addNapServicePort);
       boolean istioEnabled = this.getDomain().isIstioEnabled();
       if (istioEnabled) {
-        addServicePortIfNeeded("istio-default", serverConfig.getListenPort());
-        addServicePortIfNeeded("istio-default-secure", serverConfig.getSslListenPort());
-        addServicePortIfNeeded("istio-default-admin", serverConfig.getAdminPort());
+        addServicePortIfNeeded("http-default", serverConfig.getListenPort());
+        addServicePortIfNeeded("https-ssl", serverConfig.getSslListenPort());
+        addServicePortIfNeeded("https-admin", serverConfig.getAdminPort());
       } else {
         addServicePortIfNeeded("default", serverConfig.getListenPort());
         addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());

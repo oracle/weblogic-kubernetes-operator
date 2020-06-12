@@ -196,8 +196,16 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String getIstioNapNameIfEnabled(String name) {
     boolean istioEnabled = this.getDomain().isIstioEnabled();
-    if (istioEnabled && name != null && ! name.startsWith("istio-")) {
-      name = "istio-" + name;
+    if (istioEnabled) {
+      if ("default".equals(name)) {
+        name = "http-default";
+      }
+      if ("default-secure".equals(name)) {
+        name = "https-ssl";
+      }
+      if ("default-admin".equals(name)) {
+        name = "https-admin";
+      }
     }
     return name;
   }
