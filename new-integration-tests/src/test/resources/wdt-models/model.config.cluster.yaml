@@ -1,0 +1,16 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+topology:
+    Cluster:
+        'ConfigCluster':
+    Server:
+        'config-server1':
+            Cluster: 'ConfigCluster'
+            ListenPort: '8001'
+        'config-server2':
+            Cluster: 'ConfigCluster'
+            ListenPort: '8001'
+        'config-server3':
+            Cluster: 'ConfigCluster'
+            ListenPort: '8001'
