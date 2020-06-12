@@ -58,7 +58,9 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -78,6 +80,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
@@ -100,6 +103,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -330,6 +334,29 @@ public class ItIstioDomainInPV implements LoggedTest {
       return adminNodePortAccessible(istioIngressPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
+
+
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    ExecResult result = null;
+    result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
+        String.valueOf(istioIngressPort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        clusterName, archivePath);
+    assertNotNull(result, "Application deployment failed");
+    logger.info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Application deployed successfully");
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    logger.info("Application Access URL {0}", url);
+
+    try {
+      Thread.sleep(5 * 1000);
+    } catch (InterruptedException ie) {
+      //    
+    }
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
   }
 
   /**
@@ -377,7 +404,7 @@ public class ItIstioDomainInPV implements LoggedTest {
 
     String input = RESOURCE_DIR + "/istio/istio-http-template.service.yaml";
     String output = RESOURCE_DIR + "/istio/istio-http-service.yaml";
-    String clusterService = domainUid + "-cluster-" + clusterName + ".svc.cluster.local";
+    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
     updateFileWithStringReplacement(input, output, "NAMESPACE", domainNamespace); 
     updateFileWithStringReplacement(output, output, "ADMIN_SERVICE", adminServerPodName); 
     updateFileWithStringReplacement(output, output, "CLUSTER_SERVICE", clusterService); 

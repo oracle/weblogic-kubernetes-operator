@@ -30,6 +30,8 @@ spec:
     - match:
         - uri:
             prefix: /console
+        - uri:
+            prefix: /management
         - port: 7001
       route:
         - destination:
@@ -40,7 +42,7 @@ spec:
     - match:
         - uri:
             prefix: /testwebapp
-        - port: 7001
+        - port: 8001
       route:
         - destination:
             host: CLUSTER_SERVICE

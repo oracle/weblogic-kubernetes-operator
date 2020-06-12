@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +18,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -31,7 +31,9 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -43,9 +45,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
@@ -59,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,7 +77,7 @@ class ItIstioDomainInImage implements LoggedTest {
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String dockerConfigJson = "";
-  private String domainUid = "istio-dii";
+  private String domainUid = "istio-dii-wdt";
   private String clusterName = "cluster-1"; // do not modify 
   private String adminServerName = "admin-server"; // do not modify
   private final String adminServerPodName = domainUid + "-" + adminServerName;
@@ -107,11 +112,14 @@ class ItIstioDomainInImage implements LoggedTest {
 
   /**
    * Create a domain in domain-home-in-image model.
-   * Add istio Configuration 
-   * Label domain namespace and operator namespace with istio-injection=enabled 
+   * Add istio Configuration with default readinessPort and envoyPort
+   * Do not add any AdminService under AdminServer configuration
+   * Label domain namespace with istio-injection=enabled 
    * Deploy istio gateways and virtualservices 
    * Verify domain pods runs in ready state and services are created.
-   * Verify login to WebLogic console is successful thru ISTIO ingress Port.
+   * Login to WebLogic console is successful thru istio http ingress port.
+   * Deploy a web application thru istio http ingress port using REST api  
+   * Access web application thru istio http ingress port using curl
    */
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
@@ -124,10 +132,8 @@ class ItIstioDomainInImage implements LoggedTest {
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
 
-    // Label the operator/domain namespace with istio-injection=enabled
-    boolean k8res = labelNamespace(opNamespace);
-    assertTrue(k8res, "Could not label the Operator namespace");
-    k8res = labelNamespace(domainNamespace);
+    // Label the domain namespace with istio-injection=enabled
+    boolean k8res = labelNamespace(domainNamespace);
     assertTrue(k8res, "Could not label the WebLogic domain namespace");
 
     // create secret for admin credentials
@@ -192,17 +198,33 @@ class ItIstioDomainInImage implements LoggedTest {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    try {
-      Thread.sleep(2 * 1000);
-    } catch (InterruptedException ie) {
-      //
-    }
-
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
       return adminNodePortAccessible(istioIngressPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
+
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    ExecResult result = null;
+    result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
+        String.valueOf(istioIngressPort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        clusterName, archivePath);
+    assertNotNull(result, "Application deployment failed");
+    logger.info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Application deployed successfully");
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    logger.info("Application Access URL {0}", url);
+
+    try {
+      Thread.sleep(5 * 1000);
+    } catch (InterruptedException ie) {
+      //    
+    }
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
   }
 
   /**
@@ -249,7 +271,7 @@ class ItIstioDomainInImage implements LoggedTest {
   private boolean deployHttpIstioGatewayAndVirtualservice() {
     String input = RESOURCE_DIR + "/istio/istio-http-template.service.yaml";
     String output = RESOURCE_DIR + "/istio/istio-http-service.yaml";
-    String clusterService = domainUid + "-cluster-" + clusterName + ".svc.cluster.local";
+    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
     updateFileWithStringReplacement(input, output, "NAMESPACE", domainNamespace); 
     updateFileWithStringReplacement(output, output, "ADMIN_SERVICE", adminServerPodName); 
     updateFileWithStringReplacement(output, output, "CLUSTER_SERVICE", clusterService); 
@@ -403,7 +425,9 @@ class ItIstioDomainInImage implements LoggedTest {
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount) {
-    // create the domain CR
+    // In case of istio no need to create any AdminService in AdminServer configuration. 
+    // If you create a channel with name "default", the managedserver pods does not come up.  
+    // The managed server comes up if the channelName is set to "istio-default"
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
@@ -429,11 +453,7 @@ class ItIstioDomainInImage implements LoggedTest {
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
                     .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("istio-default")
-                                            .nodePort(0))))
+                            .serverStartState("RUNNING"))
                     .addClustersItem(new Cluster()
                             .clusterName(clusterName)
                             .replicas(replicaCount)
