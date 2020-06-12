@@ -82,6 +82,7 @@ public class RestBackendImpl implements RestBackend {
    * @param accessToken is the access token of the Kubernetes service account of the client calling
    *     the WebLogic operator REST api.
    * @param targetNamespaces a list of Kubernetes namepaces that contain domains that the WebLogic
+   *     operator manages.
    */
   RestBackendImpl(String principal, String accessToken, Collection<String> targetNamespaces) {
     LOGGER.entering(principal, targetNamespaces);
