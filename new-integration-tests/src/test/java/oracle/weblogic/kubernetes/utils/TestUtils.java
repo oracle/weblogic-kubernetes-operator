@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -82,6 +83,67 @@ public class TestUtils {
         logger.info("The sample app can be accessed from the server {0}", key);
       } else {
         logger.info("FAILURE: The sample app can not be accessed from the server {0}", key);
+      }
+    });
+
+    return false;
+  }
+
+  /**
+   * Call the curl command and check the managed servers can see each other.
+   *
+   * @param curlCmd curl command to call the clusterview app
+   * @param managedServerNames managed server names part of the cluster
+   * @param maxIterations max iterations to call the curl command
+   * @return true if the managed servers can see each other, false otherwise
+   */
+  public static boolean verifyClusterMemberCommunication(
+      String curlCmd,
+      List<String> managedServerNames,
+      int maxIterations) {
+
+    // first map all server names with false
+    HashMap<String, Boolean> managedServers = new HashMap<>();
+    managedServerNames.forEach(managedServerName
+        -> managedServers.put(managedServerName, false)
+    );
+
+    logger.info("Calling clusterview at most {0} times using command: {1}", maxIterations, curlCmd);
+
+    // check the response contains managed server name
+    ExecResult result = null;
+    for (int i = 0; i < maxIterations; i++) {
+      if (managedServers.containsValue(false)) {
+        try {
+          TimeUnit.MILLISECONDS.sleep(100);
+          result = ExecCommand.exec(curlCmd, true);
+          String response = result.stdout().trim();
+          for (var entry : managedServers.entrySet()) {
+            if (response.contains("ServerName:" + entry.getKey())) {
+              boolean bound = true;
+              for (String managedServerName : managedServerNames) {
+                bound = bound && response.contains("Bound:" + managedServerName);
+              }
+              if (bound) {
+                managedServers.put(entry.getKey(), true);
+              }
+            }
+          }
+        } catch (IOException | InterruptedException e) {
+          logger.info(e.toString());
+          return false;
+        }
+      } else {
+        return true;
+      }
+    }
+    // after the max iterations, if hit here, one or more servers cannot see other
+    managedServers.forEach((key, value) -> {
+      if (value) {
+        logger.info("The server {0} can see other cluster members", key);
+      } else {
+        logger.info("The server {0} is not bound in JNDI server "
+            + "or is generating an unexpected curl response", key);
       }
     });
 
