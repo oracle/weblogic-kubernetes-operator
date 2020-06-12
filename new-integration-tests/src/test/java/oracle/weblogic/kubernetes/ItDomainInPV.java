@@ -446,7 +446,7 @@ public class ItDomainInPV implements LoggedTest {
         assertDoesNotThrow(() -> getContainerRestartCount(wdtDomainNamespace, null, serverName, null),
             String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
                 serverName, wdtDomainNamespace));
-
+    logger.info("Restart count before liveness probe {0}", beforeRestartCount);
     // change file permissions
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(wdtDomainNamespace, serverName, null,
         true, "/bin/sh", "-c", "chmod +x " + destLocation),
@@ -454,7 +454,7 @@ public class ItDomainInPV implements LoggedTest {
     assertTrue(execResult.exitValue() == 0,
         String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
             execResult.stderr(), execResult.stdout()));
-
+    logger.info("File permissions changed inside pod");
     /* First, kill the mgd server process in the container three times to cause the node manager to
      * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
      * initiates a container restart.
