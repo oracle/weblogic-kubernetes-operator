@@ -20,7 +20,6 @@ The current support for Istio has these limitations:
 
 * It is tested with Istio 1.2.2 and later (up to 1.5), however it is tested with both single and
   multicluster installations of Istio.
-* Support is provided only for domains with a single dynamic cluster.
 
 #### Using the operator with Istio support
 
@@ -95,24 +94,24 @@ Istio enforces a number of requirements on pods.  When you enable Istio support 
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
 * On the Administration Server:
-    * A network channel called `istio-probe` with listen address `127.0.0.1:8888` (or
+    * A network channel called `http-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting).
-    * A network channel called `istio-t3` with listen address `127.0.0.1` and the port
+    * A network channel called `tcp-t3` with listen address `127.0.0.1` and the port
       you specified as the admin port.
-    * A channel called `istio-ldap` with listen address `127.0.0.1` and the port
+    * A channel called `tcp-ldap` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the LDAP protocol enabled.
-    * The introspector job does not create any configuration network channel for external access.  You can create a channel called `istio-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your WebLogic domain configuration.
+    * The introspector job does not create any configuration network channel for external access.  You can create a channel called `tcp-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your WebLogic domain configuration.
 * In the server template that is used to create Managed Servers in clusters:
-    * A channel called `istio-probe` with listen address `127.0.0.1:8888` (or
+    * A channel called `http-probe` with listen address `127.0.0.1:8888` (or
       the port you specified in the `readinessPort` setting) and the public address
       set to the Kubernetes Service for the Managed Server.
-    * A channel called `istio-t3` with listen address `127.0.0.1` and the port
+    * A channel called `tcp-t3` with listen address `127.0.0.1` and the port
       you specified as the admin port and the public address
       set to the Kubernetes Service for the Managed Server.
-    * A channel called `istio-cluster` with listen address `127.0.0.1` and the port
+    * A channel called `tcp-cluster` with listen address `127.0.0.1` and the port
       you specified as the admin port, with only the CLUSTER_BROADCAST protocol enabled,
       and the public address set to the Kubernetes Service for the Managed Server.
-    * A channel called `istio-http` with listen address `127.0.0.1:31111` and the
+    * A channel called `http-envoy` with listen address `127.0.0.1:31111` and the
       public address set to the Kubernetes Service for the Managed Server. Note that `31111`
       is the Istio proxy (envoy) port.  You can set it according to your environment or omit it, to use the default (31111)
 
@@ -210,6 +209,10 @@ using HTTP on port 80, and a virtual service that will route all of
 those requests to the cluster service for `cluster-1` in `domain1` in
 the namespace `domain1`.
 
+Once the gateway and virtual service has been setup, you can access it through your ingress host and port, 
+refer to the section `Determining the ingress IP and ports` in [Istio Getting Started](https://istio.io/latest/docs/setup/getting-started/)
+
+
 For more information about providing ingress using Istio, refer to the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
 
 #### Traffic management
@@ -222,10 +225,7 @@ traffic management.  The image below shows an example with traffic
 flowing:
 
 * In from the Istio gateway on the left.
-* To a domain called `bobbys-front-end`.
-* To a non-WebLogic application, in this case a Helidon microservice
-  called `bobbys-helidon-stock-application`.
-* To a second domain called `bobs-bookstore`.
+* To a domain called `domain1`.
 
 In this example you can see how the traffic flows to the cluster services and
 then to the individual Managed Servers.
@@ -249,3 +249,38 @@ as shown in the image above.
 
 You can learn more about [distrubting tracing in Istio](https://istio.io/docs/tasks/telemetry/distributed-tracing/)
 in their documentation.
+
+#### Internal WebLogic Domain Changes to support Istio
+
+When deploying a domain with Istio sidecare injection enabled.  WebLogic Operator automatically add the following network
+channels via configuration overrides.
+
+https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+
+For non SSL traffic:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|http-probe|From configuration istio readinessPort|http|N|
+|tcp-t3|server listening port|t3|Y|
+|http-default|server listening port|http|Y|
+|tcp-snmp|server listening port|snmp|Y|
+|tcp-cbt|server listening port|CLUSTER-BROADCAST|N|
+|tcp-iiop|server listening port|http|N|
+
+For SSL traffic, if SSL is enabled on the server:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|tcp-t3s|server SSL listening port|t3s|Y|
+|https-ssl|server SSL listening port|https|Y|
+|tcp-iiops|server SSL listening port|iiops|N|
+|tcp-ldaps|server SSL listening port|ldaps|N|
+|tcp-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
+
+If WebLogic Administration Port is enabled:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|htps-admin|WebLogic Administration Port|https|Y|
+

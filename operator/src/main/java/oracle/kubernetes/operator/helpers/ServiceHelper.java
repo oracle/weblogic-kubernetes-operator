@@ -447,11 +447,6 @@ public class ServiceHelper {
     abstract void addServicePortIfNeeded(String portName, Integer port);
 
     V1ServicePort createServicePort(String portName, Integer port) {
-      StringBuffer sb = new StringBuffer();
-      StackTraceElement[] stes = Thread.currentThread().getStackTrace();
-      for (StackTraceElement ste : stes) {
-        sb.append(ste.toString()).append("\r\n");
-      }
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
@@ -885,6 +880,19 @@ public class ServiceHelper {
 
     void addServicePortIfNeeded(String channelName, Integer internalPort) {
       Channel channel = getChannel(channelName);
+
+      if (channel == null && getDomain().isIstioEnabled()) {
+        if (channelName != null) {
+          String[] tokens = channelName.split("-");
+          if (tokens.length > 0) {
+            if ("http".equals(tokens[0]) || "https".equals(tokens[0]) || "tcp".equals(tokens[0])
+                  || "tls".equals(tokens[0])) {
+              int index = channelName.indexOf('-');
+              channel = getChannel(channelName.substring(index + 1));
+            }
+          }
+        }
+      }
       if (channel == null || internalPort == null) {
         return;
       }

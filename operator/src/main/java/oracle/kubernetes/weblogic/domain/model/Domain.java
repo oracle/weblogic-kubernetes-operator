@@ -617,6 +617,7 @@ public class Domain {
       addIllegalSitConfigForMii();
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
+      verifyIstioExposingDefaultChannel();
 
       return failures;
     }
@@ -698,6 +699,18 @@ public class Domain {
       if (getDomainHomeSourceType() == DomainSourceType.FromModel
           && getConfigOverrides() != null) {
         failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
+      }
+    }
+
+    private void verifyIstioExposingDefaultChannel() {
+      if (spec.isIstioEnabled()) {
+        spec.getAdminServer().getAdminService().getChannels().forEach(this::checkForDefaultNameExposed);
+      }
+    }
+
+    private void checkForDefaultNameExposed(Channel channel) {
+      if (channel.getChannelName().contains("-default")) {
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio());
       }
     }
 
