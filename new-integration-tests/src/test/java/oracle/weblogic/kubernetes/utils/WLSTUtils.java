@@ -102,20 +102,20 @@ public class WLSTUtils {
   /**
    * Create a job to execute WLST script.
    *
-   * @param uniqueName a unique job name
+   * @param wlstJobName a unique job name
    * @param wlstScriptConfigMapName configmap holding WLST script file
    * @param namespace name of the namespace in which the job is created
    * @param jobContainer V1Container with job commands to execute WLST script
    * @throws ApiException when Kubernetes cluster query fails
    */
-  public static void createWLSTJob(String uniqueName, String wlstScriptConfigMapName, String namespace,
+  public static void createWLSTJob(String wlstJobName, String wlstScriptConfigMapName, String namespace,
       V1Container jobContainer) throws ApiException {
     logger.info("Running Kubernetes job to execute WLST script");
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(uniqueName)
+                .name(wlstJobName)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once

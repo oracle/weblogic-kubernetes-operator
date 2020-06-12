@@ -89,7 +89,7 @@ public class CleanupUtil {
         withStandardRetryPolicy
             .conditionEvaluationListener(
                 condition -> logger.info("Waiting for artifacts to be deleted in namespace {0}, "
-                    + "(elapsed time {1} , remaining time {2}",
+                        + "(elapsed time {1} , remaining time {2}",
                     namespace,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
@@ -99,7 +99,7 @@ public class CleanupUtil {
         withStandardRetryPolicy
             .conditionEvaluationListener(
                 condition -> logger.info("Waiting for namespace to be deleted {0}, "
-                    + "(elapsed time {1} , remaining time {2}",
+                        + "(elapsed time {1} , remaining time {2}",
                     namespace,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
@@ -471,25 +471,22 @@ public class CleanupUtil {
     // Delete pvc
     List<V1PersistentVolume> pvs = new ArrayList<V1PersistentVolume>();
 
-    for (var item : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
-      String label = Optional.ofNullable(item)
-          .map(pvc -> pvc.getMetadata())
-          .map(metadata -> metadata.getLabels())
-          .map(labels -> labels.get("weblogic.domainUid")).get();
-      if (null == label) {
-        continue;
+    for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
+      String label = null;
+      if (pvc.getMetadata().getLabels() != null) {
+        label = pvc.getMetadata().getLabels().get("weblogic.domainUid");
       }
       // get a list of pvs used by the pvcs in this namespace
       try {
-        List<V1PersistentVolume> items = Kubernetes.listPersistentVolumes(
-            String.format("weblogic.domainUid = %s", label)).getItems();
-        pvs.addAll(items);
+        if (null != label) {
+          List<V1PersistentVolume> items = Kubernetes.listPersistentVolumes(
+              String.format("weblogic.domainUid = %s", label)).getItems();
+          pvs.addAll(items);
+        }
         // delete the pvc
-        Kubernetes.deletePvc(item.getMetadata().getName(), namespace);
+        Kubernetes.deletePvc(pvc.getMetadata().getName(), namespace);
       } catch (ApiException ex) {
         logger.warning(ex.getResponseBody());
-      } catch (Exception ex) {
-        logger.warning("Failed to delete persistent volume claims");
       }
     }
 

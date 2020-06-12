@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -70,8 +71,8 @@ public class DeployUtil {
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
 
   /**
    * Deploy application.
@@ -85,7 +86,7 @@ public class DeployUtil {
    * @param namespace name of the namespace in which WebLogic server pods running
    */
   public static void deployUsingWlst(String host, String port, String userName,
-      String password, String targets, Path archivePath, String namespace) {
+                                     String password, String targets, Path archivePath, String namespace) {
 
     setImage(namespace);
 
@@ -106,7 +107,8 @@ public class DeployUtil {
     Path deployScript = Paths.get(RESOURCE_DIR, "python-scripts", DEPLOY_SCRIPT);
 
     logger.info("Creating a config map to hold deployment files");
-    String deployScriptConfigMapName = "create-deploy-scripts-cm";
+    String uniqueName = Namespace.uniqueName();
+    String deployScriptConfigMapName = "wlst-deploy-scripts-cm-" + uniqueName;
 
     Map<String, String> data = new HashMap<>();
     Map<String, byte[]> binaryData = new HashMap<>();
@@ -164,13 +166,15 @@ public class DeployUtil {
    * @throws ApiException when Kubernetes cluster query fails
    */
   private static void createDeployJob(String deployScriptConfigMap, String namespace,
-      V1Container jobContainer) throws ApiException {
+                                      V1Container jobContainer) throws ApiException {
     logger.info("Running Kubernetes job to deploy application");
+    String uniqueName = Namespace.uniqueName();
+    String name = "wlst-deploy-job-" + uniqueName;
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(namespace + "-deploy-job")
+                .name(name)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
@@ -202,7 +206,7 @@ public class DeployUtil {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                + "(elapsed time {2} ms, remaining time {3} ms)",
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
