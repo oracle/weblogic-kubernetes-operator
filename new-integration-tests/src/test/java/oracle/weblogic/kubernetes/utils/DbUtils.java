@@ -344,10 +344,10 @@ public class DbUtils {
           RCUTYPE, SYSPASSWORD);
 
     } catch (SSLProtocolException e) {
-      /* for api 8.0.2 it looks that there is a bug on the web socket code or a timing bug
+      /* TODO For api 8.0.2 it looks that there is a bug on the web socket code or a timing bug
       where it doesn't properly handle closing a socket that has already been closed by the other
       side. Sometimes when RCU creation is completed java.net.ssl.SSLProtocolException is thrown
-       */
+      Ignore it for now */
       return true;
     } catch (InterruptedException e) {
       return false;
