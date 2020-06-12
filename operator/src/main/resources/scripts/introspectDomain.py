@@ -750,7 +750,6 @@ class TopologyGenerator(Generator):
     Add network access points for server or server template
     :param server:  server or server template
     """
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     naps = server.getNetworkAccessPoints()
     added_nap = False
     if len(naps) != 0:
@@ -784,7 +783,11 @@ class TopologyGenerator(Generator):
       ssl = getSSLOrNone(server)
       if ssl is not None and ssl.isEnabled():
         ssl_listen_port = ssl.getListenPort()
-        self.addIstioNetworkAccessPoint("https-ssl", "http", ssl_listen_port, 0)
+        self.addIstioNetworkAccessPoint("https-ssl", "https", ssl_listen_port, 0)
+
+      # admin port
+      if server.isAdministrationPortEnabled():
+        self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
 
       if is_server_template:
         istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
@@ -1177,6 +1180,11 @@ class SitConfigGenerator(Generator):
       ssl_listen_port = ssl.getListenPort()
       self._writeIstioNAP(name='https-ssl', type=type, action=action, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='https', http_enabled="true")
+
+    if server.isAdministrationPortEnabled():
+      action, type = self._getNapConfigOverrideAction(server, "https-admin")
+      self._writeIstioNAP(name='https-admin', type=type, action=action, listen_address=listen_address,
+                          listen_port=server.getAdministrationPort(), protocol='https', http_enabled="true")
 
 
   def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
