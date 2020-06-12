@@ -96,7 +96,7 @@ public class Kubernetes implements LoggedTest {
   private static String RESOURCE_VERSION = "";
   private static Integer TIMEOUT_SECONDS = 5;
   private static String DOMAIN_GROUP = "weblogic.oracle";
-  private static String DOMAIN_VERSION = "v7";
+  private static String DOMAIN_VERSION = "v6";
   private static String DOMAIN_PLURAL = "domains";
   private static String FOREGROUND = "Foreground";
   private static String BACKGROUND = "Background";
