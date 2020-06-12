@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import javax.net.ssl.SSLProtocolException;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
@@ -73,7 +74,7 @@ public class DbUtils {
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
+          .atMost(15, MINUTES).await();
   /**
    * Start DB instance, create Oracle rcu pod and load database schema in the specified namespace.
    *
@@ -329,15 +330,31 @@ public class DbUtils {
     String createRepository = "/u01/oracle/createRepository.sh";
     logger.info("Running the createRepository command: {0},  dbUrl: {1}, rcuSchemaPrefix: {2}, RCU type: {3}, "
         + "SYSPASSWORD: {4} ", createRepository, dbUrl, rcuSchemaPrefix, RCUTYPE, SYSPASSWORD);
-    ExecResult execResult = assertDoesNotThrow(
+    /*ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(dbNamespace, RCUPODNAME,
             null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
             RCUTYPE, SYSPASSWORD));
     logger.info("Inside RCU pod command createRepository return value: {0}", execResult.exitValue());
     if (execResult.exitValue() != 0) {
       logger.info("Inside RCU pod command createRepository return error {0}", execResult.stderr());
+      return false;*/
+    try {
+      execCommand(dbNamespace, RCUPODNAME,
+          null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
+          RCUTYPE, SYSPASSWORD);
+
+    } catch (SSLProtocolException e) {
+      /* for api 8.0.2 it looks that there is a bug on the web socket code or a timing bug
+      where it doesn't properly handle closing a socket that has already been closed by the other
+      side. Sometimes when RCU creation is completed java.net.ssl.SSLProtocolException is thrown
+       */
+      return true;
+    } catch (InterruptedException e) {
+      return false;
+    } catch (ApiException e) {
       return false;
     }
+
     return true;
   }
 
