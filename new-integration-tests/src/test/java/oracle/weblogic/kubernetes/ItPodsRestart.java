@@ -150,19 +150,19 @@ class ItPodsRestart implements LoggedTest {
     }
 
     // add the new server pod compute resources limits: cpu: 1, requests: cpu: 0.5
-    String cpuLimit = "1";
-    String cpuRequest = "0.5";
+    int  cpuLimit = 1;
+    double cpuRequest = 0.5;
 
     // verify if cpu limit was set then the new value should be different than the original value
     if (limits.get("cpu") != null) {
-      assertNotEquals(limits.get("cpu").getNumber().toString(), cpuLimit,
+      assertNotEquals(limits.get("cpu").getNumber().intValue(), cpuLimit,
           String.format("server pod compute resources cpu limit is already set to %s, set cpu limit to "
               + "a different value", cpuLimit));
     }
 
     // verify if cpu request was set then the new value should be different than the original value
     if (requests.get("cpu") != null) {
-      assertNotEquals(requests.get("cpu").getNumber().toString(), cpuRequest,
+      assertNotEquals(requests.get("cpu").getNumber().doubleValue(), cpuRequest,
           String.format("server pod compute resources cpu request is already set to %s, set cpu request to "
               + "a different value", cpuRequest));
     }
@@ -201,9 +201,9 @@ class ItPodsRestart implements LoggedTest {
     // verify the server pod resources limits got updated
     logger.info("Checking that the server pod resources cpu limit was updated correctly");
     assertNotNull(limits.get("cpu"), domain1 + "/spec/serverPod/resources/limits/cpu is null");
-    assertEquals(limits.get("cpu").getNumber().toString(), cpuLimit,
+    assertEquals(limits.get("cpu").getNumber().intValue(), cpuLimit,
         String.format("server pod compute resource limits were not updated correctly, set cpu limit to %s, got %s",
-            cpuLimit, limits.get("cpu").getNumber().toString()));
+            cpuLimit, limits.get("cpu").getNumber().intValue()));
 
     // get new server pod compute resources requests
     requests = domain1.getSpec().getServerPod().getResources().getRequests();
@@ -216,9 +216,9 @@ class ItPodsRestart implements LoggedTest {
     // verify the server pod resources requests got updated
     logger.info("Checking that the server pod resources cpu request is updated correctly");
     assertNotNull(requests.get("cpu"), domain1 + "/spec/serverPod/resources/requests/cpu is null");
-    assertEquals(requests.get("cpu").getNumber().toString(), cpuRequest,
+    assertEquals(requests.get("cpu").getNumber().doubleValue(), cpuRequest,
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
-            cpuRequest, requests.get("cpu").getNumber().toString()));
+            cpuRequest, requests.get("cpu").getNumber().doubleValue()));
   }
 
   /**
@@ -333,7 +333,7 @@ class ItPodsRestart implements LoggedTest {
    * @param cpuRequest cpu request to be added to domain spec serverPod resources requests
    * @return true if patching domain custom resource is successful, false otherwise
    */
-  private boolean addServerPodResources(String cpuLimit, String cpuRequest) {
+  private boolean addServerPodResources(int cpuLimit, double cpuRequest) {
     // construct the patch string for adding server pod resources
     StringBuffer patchStr = new StringBuffer("[{")
         .append("\"op\": \"add\", ")
