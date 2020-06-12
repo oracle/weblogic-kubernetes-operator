@@ -146,20 +146,21 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             logger.info("docker login");
             assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
           }
+        }
+        // push the image
+        if (!REPO_NAME.isEmpty()) {
+          logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
+          assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
 
-          // push the image
-          if (!REPO_NAME.isEmpty()) {
-            logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
-            assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
-
+          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
             logger.info("docker push mii basic image {0} to registry", miiBasicImage);
             assertTrue(dockerPush(miiBasicImage), String.format("docker push failed for image %s", miiBasicImage));
 
             logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
             assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
-
           }
         }
+
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
           // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
