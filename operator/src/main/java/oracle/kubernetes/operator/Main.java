@@ -883,8 +883,13 @@ public class Main {
           namespacesToStart.remove(ns);
         }
       }
-      Step strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
+      Step strategy = null;
+      if (!namespacesToStart.isEmpty()) {
+        strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
               new CreateNamespaceWatcherStep(intialResourceVersion));
+      } else {
+        strategy = new CreateNamespaceWatcherStep(intialResourceVersion);
+      }
       return doNext(strategy, packet);
     }
     
