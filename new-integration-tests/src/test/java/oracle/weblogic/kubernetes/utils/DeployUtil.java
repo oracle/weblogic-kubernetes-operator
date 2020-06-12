@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -106,7 +107,8 @@ public class DeployUtil {
     Path deployScript = Paths.get(RESOURCE_DIR, "python-scripts", DEPLOY_SCRIPT);
 
     logger.info("Creating a config map to hold deployment files");
-    String deployScriptConfigMapName = "create-deploy-scripts-cm";
+    String uniqueName = Namespace.uniqueName();
+    String deployScriptConfigMapName = "wlst-deploy-scripts-cm-" + uniqueName;
 
     Map<String, String> data = new HashMap<>();
     Map<String, byte[]> binaryData = new HashMap<>();
@@ -166,11 +168,13 @@ public class DeployUtil {
   private static void createDeployJob(String deployScriptConfigMap, String namespace,
       V1Container jobContainer) throws ApiException {
     logger.info("Running Kubernetes job to deploy application");
+    String uniqueName = Namespace.uniqueName();
+    String name = "wlst-deploy-job-" + uniqueName;
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(namespace + "-deploy-job")
+                .name(name)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
