@@ -763,6 +763,16 @@ class TopologyGenerator(Generator):
     self.undent()
 
   def addNetworkAccessPoint(self, nap):
+
+    # TODO do we want to change the name here if istio is enabled?
+    #  t3, admin, snmp, ldap, cluster-broadcast, iiop, http
+    #  t3s, iiops, cluster-broadcast-secure, https
+    #  This list will go to the operator and it will create the port in the container and service
+    #  We should only care about protocol categories http/https, tcp/tls
+    #  Note: if we change the name here then the domain yaml adminServices.channel needs to match (otherwise server won't
+    #  come up) BUT why user want to
+    #  create nodeport anyway??
+
     name=self.name(nap)
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap.getProtocol()))
@@ -1108,20 +1118,9 @@ class SitConfigGenerator(Generator):
         self.writeln("</d:network-access-point>")
 
   def _getNapConfigOverrideAction(self, svr, testname):
-    found = False
-    add_action = 'f:combine-mode="add"'
     replace_action = 'f:combine-mode="replace"'
-
-    for nap in svr.getNetworkAccessPoints():
-      if nap.getName() == testname:
-        found = True
-        break
-
-    if found:
-      trace("SEVERE","Found NetWorkAccessPoints with prefix istio-, remove any NetworkAccessPoints with prefix istio- and apply the domain resource YAML again ")
-      sys.exit(1)
-    else:
-      return add_action, "add"
+    add_action = 'f:combine-mode="add"'
+    return add_action, "add"
 
   def _writeIstioNAP(self, name, type, action, listen_address, listen_port, protocol, http_enabled="true"):
 
