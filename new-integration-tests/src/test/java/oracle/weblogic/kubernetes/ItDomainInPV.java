@@ -61,6 +61,7 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -147,6 +148,7 @@ public class ItDomainInPV implements LoggedTest {
   private static boolean isUseSecret = true;
 
   private final String wlSecretName = "weblogic-credentials";
+  private boolean previousTestSuccessful = false;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -203,7 +205,7 @@ public class ItDomainInPV implements LoggedTest {
   @Order(1)
   @DisplayName("Create WebLogic domain in PV using WDT")
   public void testDomainInPvUsingWdt() {
-
+    previousTestSuccessful = false;
     String managedServerPodNamePrefix = wdtDomainUid + "-" + wdtManagedServerNameBase;
     final String pvName = wdtDomainUid + "-pv"; // name of the persistent volume
     final String pvcName = wdtDomainUid + "-pvc"; // name of the persistent volume claim
@@ -327,6 +329,7 @@ public class ItDomainInPV implements LoggedTest {
           managedServerPodNamePrefix + i, wdtDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, wdtDomainNamespace);
     }
+    previousTestSuccessful = true;
   }
 
   /**
@@ -336,7 +339,8 @@ public class ItDomainInPV implements LoggedTest {
   @Order(2)
   @DisplayName("Deploy an application using t3 channel port")
   public void testDeployAppUsingT3ChannelPort() {
-
+    Assumptions.assumeTrue(previousTestSuccessful);
+    previousTestSuccessful = false;
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         wdtDomainNamespace, wdtAdminServerPodName + "-external", "t3channel"),
@@ -350,6 +354,7 @@ public class ItDomainInPV implements LoggedTest {
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, wdtClusterName + "," + wdtAdminServerName, archivePath,
         wdtDomainNamespace);
 
+    previousTestSuccessful = true;
   }
 
   /**
@@ -360,7 +365,8 @@ public class ItDomainInPV implements LoggedTest {
   @Order(3)
   @DisplayName("Access the application using LB port")
   public void testAccessAppUsingLBPort() {
-
+    Assumptions.assumeTrue(previousTestSuccessful);
+    previousTestSuccessful = false;
     // get a free node port for NGINX
     int nodeportshttp = getNextFreePort(30305, 30405);
     int nodeportshttps = getNextFreePort(30443, 30543);
@@ -389,6 +395,7 @@ public class ItDomainInPV implements LoggedTest {
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
+    previousTestSuccessful = true;
   }
 
   /**
@@ -399,6 +406,8 @@ public class ItDomainInPV implements LoggedTest {
   @Order(4)
   @DisplayName("Access the console and application using default channel node port")
   public void testDefaultChannelNodePort() {
+    Assumptions.assumeTrue(previousTestSuccessful);
+    previousTestSuccessful = false;
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         wdtDomainNamespace, wdtAdminServerPodName + "-external", "default"),
@@ -416,6 +425,7 @@ public class ItDomainInPV implements LoggedTest {
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
+    previousTestSuccessful = true;
   }
 
   /**
@@ -432,6 +442,8 @@ public class ItDomainInPV implements LoggedTest {
             createScriptToKillServer(),
         "Failed to create script to kill server");
     logger.info("File/script created to kill server {0}", killServerScript);
+
+    checkPodReady(serverName, wdtDomainUid, wdtDomainNamespace);
 
     // copy script to pod
     String destLocation = "/u01/killserver.sh";
