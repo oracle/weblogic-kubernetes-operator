@@ -132,9 +132,11 @@ public class LoggingUtil {
           String pvName = pv.getMetadata().getName();
           String pvcName = pvc.getMetadata().getName();
           try {
-            copyFromPV(namespace, pvcName, pvName,
-                Files.createDirectories(
-                    Paths.get(resultDir, pvcName, pvName)));
+            if (pv.getMetadata().getDeletionTimestamp() == null) {
+              copyFromPV(namespace, pvcName, pvName,
+                  Files.createDirectories(
+                      Paths.get(resultDir, pvcName, pvName)));
+            }
           } catch (ApiException ex) {
             logger.warning(ex.getResponseBody());
           } catch (IOException ex) {
