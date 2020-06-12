@@ -97,6 +97,6 @@
 			</fileset>
 		</copy>
 		<echo message="building ${app}" />
-		<jar destfile="${builddir}/${app}.ear" basedir="${tempdir}" />
+		<jar destfile="${app}.ear" basedir="${tempdir}" />
 	</target>
 </project>

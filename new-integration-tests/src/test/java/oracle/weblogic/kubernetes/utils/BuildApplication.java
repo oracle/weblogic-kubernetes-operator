@@ -44,7 +44,6 @@ import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import org.awaitility.core.ConditionFactory;
 
-import static java.nio.file.Files.copy;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
@@ -54,7 +53,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
@@ -69,7 +67,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
-import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -110,7 +107,7 @@ public class BuildApplication {
     String appName = application.getFileName().toString();
     Path targetPath = Paths.get(PV_ROOT, "applications", appName);
     logger.info("Copy the application to staging area");
-    logger.info("staging area is $s", targetPath.toString());
+    logger.info("staging area is ${0}", targetPath.toString());
     assertDoesNotThrow(() -> {
       //Files.createDirectories(targetPath);
       checkDirectory(targetPath.toString());
@@ -139,15 +136,6 @@ public class BuildApplication {
     try {
       // build application
       build(parameters, targets, pvName, pvcName, namespace, buildScriptConfigMapName);
-      String earFile = String.format("%s.ear", appName);
-      Path destDir = Paths.get(ARCHIVE_DIR, "wlsdeploy/applications", earFile);
-      Path srcDir = Paths.get(targetPath.toString(), "builddir", earFile);
-      assertDoesNotThrow(() -> {
-        cleanupDirectory(ARCHIVE_DIR + "wlsdeploy/applications");
-        checkDirectory(ARCHIVE_DIR + "wlsdeploy/applications");
-        copy(srcDir, destDir);
-      });
-
     } finally {
       // delete the persistent volume claim and persistent volume
       TestActions.deletePersistentVolumeClaim(pvcName, namespace);

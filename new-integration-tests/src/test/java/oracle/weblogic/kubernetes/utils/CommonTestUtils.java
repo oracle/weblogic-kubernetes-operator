@@ -632,7 +632,6 @@ public class CommonTestUtils {
     final List<String> appSrcDirList = Collections.singletonList(appName);
     final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
 
-    logger.info("BR: modelPropList is {0}", modelPropList);
     return createImageAndVerify(
         imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
         WLS_BASE_IMAGE_TAG, WLS, false, domainHome);
@@ -693,7 +692,6 @@ public class CommonTestUtils {
     final String image = imageName + ":" + imageTag;
     List<String> archiveList = new ArrayList<String>();
 
-    logger.info("BR: app source dir list is {0}", appSrcDirList);
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
       List<String> archiveAppsList = new ArrayList<String>();
       List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);

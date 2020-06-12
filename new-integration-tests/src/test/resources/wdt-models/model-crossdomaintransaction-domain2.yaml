@@ -2,8 +2,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 domainInfo:
-  AdminUserName: '@@SECRET:__domain2-weblogic-credentials__:username@@'
-  AdminPassword: '@@SECRET:__domain2-weblogic-credentials__:password@@'
+  AdminUserName: '@@PROP:ADMIN_USERNAME@@'
+  AdminPassword: '@@PROP:ADMIN_PASSWORD@@'
   ServerStartMode: 'prod'
 
 topology:

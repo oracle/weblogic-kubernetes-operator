@@ -49,14 +49,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+//import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
@@ -202,24 +202,29 @@ public class ItCrossDomainTransaction implements LoggedTest {
         domain2AdminSecretName, domain2Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
 
+    //createImageVerify expects the location of the ear file
+    String appSource = PV_ROOT + "/applications/" + WDT_APP_NAME + "/" + WDT_APP_NAME + ".ear";
+
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
-        WDT_IMAGE_NAME1, WDT_MODEL_FILE_DOMAIN1, WDT_APP_NAME, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
+        WDT_IMAGE_NAME1, WDT_MODEL_FILE_DOMAIN1, appSource, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain1Image);
 
     logger.info("Creating image with model file and verify");
+    //String domain2Image = createImageAndVerify(
+    //    WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, WDT_APP_NAME, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
     String domain2Image = createImageAndVerify(
-        WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, WDT_APP_NAME, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
+        WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, appSource, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain2Image);
 
     //create domain1
-    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName);
+    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
     //create domain2
-    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName);
+    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
 
   }
 
@@ -230,6 +235,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
+    /*
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domain1Namespace),
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domain1Namespace);
@@ -238,9 +244,11 @@ public class ItCrossDomainTransaction implements LoggedTest {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid2, domain2Namespace),
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid2 + " from " + domain2Namespace);
+     */
   }
 
-  private void createDomain(String domainUid, String domainNamespace, String adminSecretName) {
+  private void createDomain(String domainUid, String domainNamespace, String adminSecretName,
+                            String domainImage) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -251,7 +259,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
     // create the domain CR
     createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
-        replicaCount);
+        replicaCount, domainImage);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -315,7 +323,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
-                                    String repoSecretName, int replicaCount) {
+                                    String repoSecretName, int replicaCount, String domainImage) {
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -326,7 +334,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("Image")
-            .image(REPO_NAME + domainUid + "-wdt-image" + ":" + WDT_BASIC_IMAGE_TAG)
+            .image(REPO_NAME + domainImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
