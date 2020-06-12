@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -14,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,6 +30,9 @@ class FileGroupReader {
 
   private final String pathToGroup;
 
+  @SuppressWarnings("FieldMayBeFinal") // keep non-final for unit test
+  private static Function<URI, Path> uriToPath = Paths::get;
+  
   /**
    * Creates a reader for a specific file location.
    *
@@ -59,7 +62,7 @@ class FileGroupReader {
 
   private static String readContents(Path path) {
     try {
-      return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+      return Files.readString(path);
     } catch (IOException io) {
       LOGGER.warning(MessageKeys.EXCEPTION, io);
       return "";
@@ -97,7 +100,7 @@ class FileGroupReader {
     Path getScriptsDir();
   }
 
-  class FileScriptPath implements ScriptPath {
+  static class FileScriptPath implements ScriptPath {
     private final URI uri;
 
     FileScriptPath(URI uri) {
@@ -106,7 +109,7 @@ class FileGroupReader {
 
     @Override
     public Path getScriptsDir() {
-      return Paths.get(uri);
+      return uriToPath.apply(uri);
     }
 
     @Override
@@ -115,7 +118,7 @@ class FileGroupReader {
   }
 
   class JarScriptPath implements ScriptPath {
-    private FileSystem fileSystem;
+    private final FileSystem fileSystem;
 
     JarScriptPath(URI uri) throws IOException {
       fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
