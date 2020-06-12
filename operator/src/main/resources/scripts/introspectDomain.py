@@ -801,25 +801,25 @@ class TopologyGenerator(Generator):
         self.writeln("  networkAccessPoints:")
         self.indent()
 
+      # istio probe is not exposed
       # istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
       # # self.addIstioNetworkAccessPoint("http-probe", "http", istio_readiness_port, 0)
 
       self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("tcp-t3", "t3", server.getListenPort(), 0)
+      self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
       # No need to to http default, PodStepContext already handle it
-      # self.addIstioNetworkAccessPoint("http-default", "t3", server.getListenPort(), 0)
+      self.addIstioNetworkAccessPoint("http-default", "t3", server.getListenPort(), 0)
       self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
       self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
 
       ssl = getSSLOrNone(server)
       if ssl is not None and ssl.isEnabled():
         ssl_listen_port = ssl.getListenPort()
-        self.addIstioNetworkAccessPoint("https-ssl", "https", ssl_listen_port, 0)
+        self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
         self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tls-t3s", "t3s", ssl_listen_port, 0)
+        self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
         self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
 
-      # admin port
       if server.isAdministrationPortEnabled():
         self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
 
@@ -1186,14 +1186,15 @@ class SitConfigGenerator(Generator):
       return
 
     admin_server_port = server.getListenPort()
-
+    # readiness probe
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
+    # Generate NAP for each protocols
     self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='ldap')
 
-    self._writeIstioNAP(name='tcp-t3', server=server, listen_address=listen_address,
+    self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='t3')
 
     self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
@@ -1211,13 +1212,13 @@ class SitConfigGenerator(Generator):
     ssl = getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = ssl.getListenPort()
-      self._writeIstioNAP(name='https-ssl', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
       self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tls-t3s', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='t3s')
 
       self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
@@ -1241,10 +1242,10 @@ class SitConfigGenerator(Generator):
 
     listen_port = template.getListenPort()
     self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+                        listen_port=istio_readiness_port, protocol='http')
 
-    self._writeIstioNAP(name='tcp-t3', server=template, listen_address=listen_address,
-                        listen_port=listen_port, protocol='t3')
+    self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='t3', http_enabled='false')
 
     self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
                         listen_port=listen_port, protocol='http')
@@ -1267,14 +1268,14 @@ class SitConfigGenerator(Generator):
     ssl = getSSLOrNone(template)
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = ssl.getListenPort()
-      self._writeIstioNAP(name='https-ssl', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='https', http_enabled="true")
+      self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='https')
 
       self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tls-t3s', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='t3s')
+      self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
 
       self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
