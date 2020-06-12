@@ -880,6 +880,7 @@ public class Main {
       Set<String> namespacesToStart = new TreeSet<>(targetNamespaces);
       for (String ns : targetNamespaces) {
         if (!nsList.contains(ns)) {
+          LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
           namespacesToStart.remove(ns);
         }
       }
@@ -888,7 +889,8 @@ public class Main {
         strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
               new CreateNamespaceWatcherStep(intialResourceVersion));
       } else {
-        strategy = new CreateNamespaceWatcherStep(intialResourceVersion);
+        strategy = CrdHelper.createDomainCrdStep(version,
+              new CreateNamespaceWatcherStep(intialResourceVersion));
       }
       return doNext(strategy, packet);
     }
