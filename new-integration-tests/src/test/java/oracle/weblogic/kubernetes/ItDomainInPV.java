@@ -434,7 +434,7 @@ public class ItDomainInPV implements LoggedTest {
     logger.info("File/script created to kill server {0}", killServerScript);
 
     // copy script to pod
-    String destLocation = "/tmp/killserver.sh";
+    String destLocation = "/u01/killserver.sh";
     assertDoesNotThrow(() -> copyFileToPod(wdtDomainNamespace, serverName, "weblogic-server",
         killServerScript.toPath(), Paths.get(destLocation)),
         String.format("Failed to copy file %s to pod %s in namespace %s",
