@@ -704,15 +704,13 @@ public class Domain {
 
     private void verifyIstioExposingDefaultChannel() {
       if (spec.isIstioEnabled()) {
-        List<Channel> channels = Optional.ofNullable(spec.getAdminServer().getAdminService().getChannels()).get();
-        if (channels != null) {
-          for (Channel channel : channels) {
-            if (channel.getChannelName().contains("-default")) {
-              failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio());
-              break;
-            }
-          }
-        }
+        spec.getAdminServer().getAdminService().getChannels().forEach(this::checkForDefaultNameExposed);
+      }
+    }
+
+    private void checkForDefaultNameExposed(Channel channel) {
+      if (channel.getChannelName().contains("-default")) {
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio());
       }
     }
 
