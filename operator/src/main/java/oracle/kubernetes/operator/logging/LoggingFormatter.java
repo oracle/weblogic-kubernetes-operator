@@ -184,14 +184,15 @@ public class LoggingFormatter extends Formatter {
       if (info != null) {
         return info.getNamespace() == null ? "" : info.getNamespace();
       } 
+      // check LoggingContext component
       LoggingContext context = packet.getSpi(LoggingContext.class);
       if (context != null) {
         return context.namespace() == null ? "" : context.namespace();
       }
     } 
-    
-    LoggingContext context = LoggingContext.context();
-    return context == null || context.namespace() == null ? "" : context.namespace();
+    // check ThreadLocal 
+    LoggingContext threadContext = LoggingContext.context();
+    return threadContext == null || threadContext.namespace() == null ? "" : threadContext.namespace();
 
   }
 }
