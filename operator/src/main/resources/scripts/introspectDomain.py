@@ -815,9 +815,9 @@ class TopologyGenerator(Generator):
       if ssl is not None and ssl.isEnabled():
         ssl_listen_port = ssl.getListenPort()
         self.addIstioNetworkAccessPoint("https-ssl", "https", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tcp-ldaps", "ldaps", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tcp-t3s", "t3s", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tcp-iiops", "iiops", ssl_listen_port, 0)
+        self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
+        self.addIstioNetworkAccessPoint("tls-t3s", "t3s", ssl_listen_port, 0)
+        self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
 
       # admin port
       if server.isAdministrationPortEnabled():
@@ -1214,16 +1214,16 @@ class SitConfigGenerator(Generator):
       self._writeIstioNAP(name='https-ssl', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
-      self._writeIstioNAP(name='tcp-ldaps', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tcp-t3s', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-t3s', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='t3s')
 
-      self._writeIstioNAP(name='tcp-cbts', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
 
-      self._writeIstioNAP(name='tcp-iiops', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='iiops')
 
     if server.isAdministrationPortEnabled():
@@ -1259,10 +1259,10 @@ class SitConfigGenerator(Generator):
                         listen_port=listen_port, protocol='iiop')
 
 
-    istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
-
-    self._writeIstioNAP(name='http-envoy', server=template, listen_address=listen_address,
-                        listen_port=istio_envoy_port, protocol='http', http_enabled="true")
+    # istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
+    #
+    # self._writeIstioNAP(name='http-envoy', server=template, listen_address=listen_address,
+    #                     listen_port=istio_envoy_port, protocol='http', http_enabled="true")
 
     ssl = getSSLOrNone(template)
     if ssl is not None and ssl.isEnabled():
@@ -1270,16 +1270,16 @@ class SitConfigGenerator(Generator):
       self._writeIstioNAP(name='https-ssl', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
-      self._writeIstioNAP(name='tcp-ldaps', server=template, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tcp-t3s', server=template, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-t3s', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='t3s')
 
-      self._writeIstioNAP(name='tcp-cbts', server=template, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
 
-      self._writeIstioNAP(name='tcp-iiops', server=template, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='iiops')
 
   def getLogOrNone(self,server):
