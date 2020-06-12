@@ -86,12 +86,13 @@ $ helm install weblogic-operator weblogic-operator/weblogic-operator
 
 #### Upgrade the operator
 
-To upgrade the operator to a newer version, use the `helm upgrade` command:
+To upgrade the operator, use the `helm upgrade` command. When upgrading the operator,
+the `helm upgrade` command requires that you supply a new Helm chart and image. For example:
 
 ```
 $ helm upgrade \
   --reuse-values \
-  --set image=oracle/weblogic-kubernetes-operator:3.0.0-rc1 \
+  --set image=oracle/weblogic-kubernetes-operator:x.x.x \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \
