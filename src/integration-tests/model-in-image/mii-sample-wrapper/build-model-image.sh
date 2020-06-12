@@ -29,7 +29,7 @@
 #    MODEL_DIR:
 #      Location relative to WORKDIR of the model .zip, .properties,
 #      and .yaml files that will be copied to the model image.  Default is:
-#        'model-images/$(basename $MODEL_IMAGE_NAME)__$MODEL_IMAGE_TAG'.
+#        'model-images/model-in-image__$MODEL_IMAGE_TAG'.
 #
 #    ARCHIVE_SOURCEDIR:
 #      Location of archive source for MODEL_DIR/archive.zip relative to WORKDIR

@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
@@ -34,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -57,7 +59,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
-import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -75,19 +76,17 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
-  private String miiModelSecretsHash;
-  private String miiDomainZipHash;
-  private String domainRestartVersion;
-  private String domainImageName;
+  private final String miiModelSecretsHash;
+  private final String miiDomainZipHash;
+  private final String domainRestartVersion;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    miiModelSecretsHash = (String)packet.get(ProcessingConstants.SECRETS_HASH);
-    miiDomainZipHash = (String)packet.get(ProcessingConstants.DOMAIN_HASH);
-    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
-    domainImageName = (String)packet.get(ProcessingConstants.DOMAIN_INPUTS_HASH);
+    miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
+    miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
+    domainRestartVersion = (String)packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
@@ -129,11 +128,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology.getName();
   }
 
-  private String getDomainResourceName() {
-    return info.getDomain().getMetadata().getName();
-  }
-
-  private String getDomainHomeSourceType() {
+  private DomainSourceType getDomainHomeSourceType() {
     return getDomain().getDomainHomeSourceType();
   }
 
@@ -411,6 +406,15 @@ public abstract class PodStepContext extends BasePodStepContext {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
+  @Override
+  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
+    String clusterName = getClusterName();
+    if (clusterName != null) {
+      vars.put("CLUSTER_NAME", clusterName);
+    }
+    return vars;
+  }
+
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
     // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
@@ -421,77 +425,58 @@ public abstract class PodStepContext extends BasePodStepContext {
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
 
-    updateForStartupMode(pod);
-    updateForShutdown(pod);
+    setTerminationGracePeriod(pod);
+    getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
+
     return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 
-  @Override
-  protected Map<String, String> augmentSubVars(Map<String, String> vars) {
-    String clusterName = getClusterName();
-    if (clusterName != null) {
-      vars.put("CLUSTER_NAME", clusterName);
-    }
-    return vars;
+  private void setTerminationGracePeriod(V1Pod pod) {
+    Objects.requireNonNull(pod.getSpec()).terminationGracePeriodSeconds(getTerminationGracePeriodSeconds());
   }
 
-  private void updateForStartupMode(V1Pod pod) {
-    ServerSpec serverSpec = getServerSpec();
-    if (serverSpec != null) {
-      String desiredState = serverSpec.getDesiredState();
-      if (!WebLogicConstants.RUNNING_STATE.equals(desiredState)) {
-        getContainer(pod)
-            .ifPresent(
-                c -> {
-                  List<V1EnvVar> env = c.getEnv();
-                  addDefaultEnvVarIfMissing(env, "STARTUP_MODE", desiredState);
-                });
-      }
-    }
+  private long getTerminationGracePeriodSeconds() {
+    return getShutdownSpec().getTimeoutSeconds() + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME;
   }
 
-  /**
-   * Inserts into the pod the environment variables and other configuration related to shutdown
-   * behavior.
-   *
-   * @param pod The pod
-   */
-  private void updateForShutdown(V1Pod pod) {
-    String shutdownType;
-    Long timeout;
-    boolean ignoreSessions;
+  private void updateEnv(List<V1EnvVar> env) {
+    updateEnvForShutdown(env);
+    updateEnvForStartupMode(env);
+    defineConfigOverride(env);
+  }
 
-    ServerSpec serverSpec = getServerSpec();
-    if (serverSpec != null) {
-      Shutdown shutdown = serverSpec.getShutdown();
-      shutdownType = shutdown.getShutdownType();
-      timeout = shutdown.getTimeoutSeconds();
-      ignoreSessions = shutdown.getIgnoreSessions();
-    } else {
-      shutdownType = GRACEFUL_SHUTDOWNTYPE;
-      timeout = Shutdown.DEFAULT_TIMEOUT;
-      ignoreSessions = Shutdown.DEFAULT_IGNORESESSIONS;
+  private void updateEnvForShutdown(List<V1EnvVar> env) {
+    if (scan != null) {
+      Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
+      addOrReplaceEnvVar(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
+      addOrReplaceEnvVar(env, "LOCAL_ADMIN_PROTOCOL", localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
     }
 
-    getContainer(pod)
-        .ifPresent(
-            c -> {
-              List<V1EnvVar> env = c.getEnv();
-              if (scan != null) {
-                Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
-                addOrReplaceEnvVar(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
-                addOrReplaceEnvVar(
-                    env,
-                    "LOCAL_ADMIN_PROTOCOL",
-                    localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
-              }
-              addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdownType);
-              addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(timeout));
-              addDefaultEnvVarIfMissing(
-                  env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(ignoreSessions));
-            });
+    Shutdown shutdown = getShutdownSpec();
+    addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
+    addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
+    addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
+  }
 
-    pod.getSpec().terminationGracePeriodSeconds(timeout + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME);
+  private Shutdown getShutdownSpec() {
+    return Optional.ofNullable(getServerSpec()).map(ServerSpec::getShutdown).orElse(new Shutdown());
+  }
+
+  private void updateEnvForStartupMode(List<V1EnvVar> env) {
+    Optional.ofNullable(getServerSpec())
+          .map(ServerSpec::getDesiredState)
+          .filter(this::isNotRunning)
+          .ifPresent(s -> addDefaultEnvVarIfMissing(env, "STARTUP_MODE", s));
+  }
+
+  private boolean isNotRunning(String desiredState) {
+    return !WebLogicConstants.RUNNING_STATE.equals(desiredState);
+  }
+
+  private void defineConfigOverride(List<V1EnvVar> env) {
+    if (distributeOverridesDynamically()) {
+      addDefaultEnvVarIfMissing(env, ServerEnvVars.DYNAMIC_CONFIG_OVERRIDE, "true");
+    }
   }
 
   // Creates a pod model containing elements which are not patchable.
@@ -557,7 +542,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
     volumes.addAll(getServerSpec().getAdditionalVolumes());
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       volumes.add(createRuntimeEncryptionSecretVolume());
     }
 
@@ -600,7 +585,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
-    if (DomainSourceType.FromModel.toString().equals(getDomainHomeSourceType())) {
+    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
     }
     return mounts;
@@ -625,16 +610,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
     addEnvVar(vars, ServerEnvVars.ADMIN_PORT, getAsPort().toString());
-    if (isLocalAdminProtocolChannelSecure()) {
-      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
-    }
-    if (isAdminServerProtocolChannelSecure()) {
-      // The following env variable determines whether to set a secure protocol(https/t3s) in the "AdminURL" property
-      // in NM startup.properties.
-      // WebLogic Node Manager then sets the ADMIN_URL env variable(based on the "AdminURL") before starting
-      // the managed server
-      addEnvVar(vars, "ADMIN_SERVER_PORT_SECURE", "true");
-    }
+    addEnvVarIfTrue(isLocalAdminProtocolChannelSecure(), vars, "ADMIN_PORT_SECURE");
+    addEnvVarIfTrue(isAdminServerProtocolChannelSecure(), vars, ServerEnvVars.ADMIN_SERVER_PORT_SECURE);
     addEnvVar(vars, ServerEnvVars.SERVER_NAME, getServerName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, NODEMGR_HOME);
@@ -642,17 +619,16 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
-    String dataHome = getDataHome();
-    if (dataHome != null && !dataHome.isEmpty()) {
-      addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
-    }
-    if (mockWls()) {
-      addEnvVar(vars, "MOCK_WLS", "true");
-    }
+    Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
+    addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
   }
 
   private String getDomainHome() {
     return getDomain().getDomainHome();
+  }
+
+  private boolean distributeOverridesDynamically() {
+    return getDomain().distributeOverridesDynamically();
   }
 
   private V1Lifecycle createLifecycle() {
@@ -812,7 +788,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       } else if (!canUseCurrentPod(currentPod)) {
         LOGGER.info(
             MessageKeys.CYCLING_POD,
-            currentPod.getMetadata().getName(),
+            Objects.requireNonNull(currentPod.getMetadata()).getName(),
             getReasonToRecycle(currentPod));
         return doNext(replaceCurrentPod(getNext()), packet);
       } else if (mustPatchPod(currentPod)) {

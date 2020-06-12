@@ -10,6 +10,8 @@ public interface ActionConstants {
   // Work directory for the integration test suite
   public static final String WORK_DIR
       = System.getProperty("java.io.tmpdir") + "/it-results";
+  // Integration tests directory
+  public static final String ITTESTS_DIR = System.getProperty("user.dir");
   // Directory for resources
   public static final String RESOURCE_DIR
       = System.getProperty("user.dir") + "/src/test/resources";
@@ -32,13 +34,7 @@ public interface ActionConstants {
   public static final String RJRF = "RestrictedJRF";
   public static final String WLS_BASE_IMAGE_NAME
       = TestConstants.OCR_REGISTRY + "/middleware/weblogic";
-  public static final String FMW_BASE_IMAGE_NAME
-      = TestConstants.OCR_REGISTRY + "/middleware/fmw-infrastructure";
   public static final String WLS_BASE_IMAGE_TAG = "12.2.1.4";
-  public static final String FMW_BASE_IMAGE_TAG = "12.2.1.4";
-  public static final String ORACLE_DB_BASE_IMAGE_NAME
-      = TestConstants.OCR_REGISTRY + "/database/enterprise";
-  public static final String ORACLE_DB_BASE_IMAGE_TAG = "12.2.0.1-slim";
 
   public static final String DEFAULT_MODEL_IMAGE_NAME = "test-mii-image";
   public static final String DEFAULT_MODEL_IMAGE_TAG  = "v1";
@@ -59,5 +55,6 @@ public interface ActionConstants {
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";
   public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_FILE_NAME;
-
+  public static final String MONITORING_EXPORTER_DOWNLOAD_URL 
+      = "https://github.com/oracle/weblogic-monitoring-exporter.git";
 }

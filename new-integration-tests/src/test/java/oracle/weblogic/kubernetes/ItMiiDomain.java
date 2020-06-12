@@ -81,7 +81,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPodKubectl;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
@@ -332,32 +331,24 @@ class ItMiiDomain implements LoggedTest {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
     
-    // The verification of application's availability during patching is turned off
-    // because it fails intermittently right now. It can be enabled using the following system property.
-    // We'll remove the property and enable it all the time once the product problem (tracked
-    // by owls-81575) is fixed.
-    final String enableAppAvailbilityCheck = 
-        System.getProperty("weblogic.operator.enableAppAvailabilityCheck", "false");
     Thread accountingThread = null;
     List<Integer> appAvailability = new ArrayList<Integer>();
     
-    if (enableAppAvailbilityCheck.equalsIgnoreCase("true")) {
-      logger.info("Start a thread to keep track of the application's availability");
-      // start a new thread to collect the availability data of the application while the
-      // main thread performs patching operation, and checking of the results.
-      accountingThread =
-          new Thread(
-              () -> {
-                collectAppAvaiability(
-                    domainNamespace,
-                    appAvailability,
-                    managedServerPrefix,
-                    replicaCount,
-                    "8001",
-                    "sample-war/index.jsp");
-              });
-      accountingThread.start();
-    }
+    logger.info("Start a thread to keep track of the application's availability");
+    // start a new thread to collect the availability data of the application while the
+    // main thread performs patching operation, and checking of the results.
+    accountingThread =
+        new Thread(
+            () -> {
+              collectAppAvaiability(
+                  domainNamespace,
+                  appAvailability,
+                  managedServerPrefix,
+                  replicaCount,
+                  "8001",
+                  "sample-war/index.jsp");
+            });
+    accountingThread.start();
    
     try {
       logger.info("Check that V1 application is still running");
@@ -1054,13 +1045,10 @@ class ItMiiDomain implements LoggedTest {
  
     // Access the pod periodically to check application's availability across the duration
     // of patching the domain with newer version of the application.
-    // Note: we use the "kubectl exec" command in this method only. This is to avoid
-    // problems when two threads accessing the same pod at the same time via Kubernetes
-    // Java client.
     while (!v2AppAvailable)  {
       v2AppAvailable = true;
       for (int i = 1; i <= replicaCount; i++) {
-        v2AppAvailable = v2AppAvailable && appAccessibleInPodKubectl(
+        v2AppAvailable = v2AppAvailable && appAccessibleInPod(
                             namespace,
                             managedServerPrefix + i, 
                             internalPort, 
@@ -1070,7 +1058,7 @@ class ItMiiDomain implements LoggedTest {
 
       int count = 0;
       for (int i = 1; i <= replicaCount; i++) {
-        if (appAccessibleInPodKubectl(
+        if (appAccessibleInPod(
             namespace,
             managedServerPrefix + i, 
             internalPort, 
@@ -1081,14 +1069,10 @@ class ItMiiDomain implements LoggedTest {
       }
       appAvailability.add(count);
       
-      // the following log messages are temporarily here for debugging purposes.
-      // This part of the code is disabled by default right now, and can be enabled by
-      // -Dweblogic.operator.enableAppAvailabilityCheck=true.
-      // TODO remove these log messages when this verification is fully enabled.
       if (count == 0) {
         logger.info("XXXXXXXXXXX: application not available XXXXXXXX");
       } else {
-        logger.info("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
+        logger.fine("YYYYYYYYYYY: application available YYYYYYYY count = " + count);   
       }
       try {
         TimeUnit.MILLISECONDS.sleep(200);

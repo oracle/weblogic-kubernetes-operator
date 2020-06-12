@@ -10,7 +10,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.DbUtils;
-//import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -18,25 +17,15 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
-import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.FMW_BASE_IMAGE_TAG;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ORACLE_DB_BASE_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ORACLE_DB_BASE_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 /**
  * Tests to create domain in persistent volume using WLST and WDT.
@@ -57,8 +46,8 @@ public class ItJrfDomainInPV implements LoggedTest {
   private static String dbUrl = null;
   private static int dbPort = getNextFreePort(30000, 32767);
 
-  private static String fmwImage = FMW_BASE_IMAGE_NAME + ":" + FMW_BASE_IMAGE_TAG;
-  private static String dbImage = ORACLE_DB_BASE_IMAGE_NAME + ":" + ORACLE_DB_BASE_IMAGE_TAG;
+  private static String fmwImage = JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG;
+  private static String dbImage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
 
   private static boolean isUseSecret = true;
 
@@ -111,30 +100,13 @@ public class ItJrfDomainInPV implements LoggedTest {
      */
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    if (KIND_REPO != null) {
-
-      assertTrue(dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD), "docker login failed");
-      assertTrue(dockerPull(dbImage), String.format("docker pull failed for image %s", dbImage));
-      assertTrue(dockerPull(fmwImage), String.format("docker pull failed for image %s", fmwImage));
-
-      String kindRepoFmwImage = KIND_REPO + fmwImage.substring(OCR_REGISTRY.length() + 1);
-      assertTrue(dockerTag(fmwImage, kindRepoFmwImage),
-              String.format("docker tag failed for images: %s, %s", fmwImage, kindRepoFmwImage));
-      assertTrue(dockerPush(kindRepoFmwImage), String.format("docker push failed for kind image: %s",
-          kindRepoFmwImage));
-
-      String kindRepoDbImage = KIND_REPO + dbImage.substring(OCR_REGISTRY.length() + 1);
-      assertTrue(dockerTag(dbImage, kindRepoDbImage),
-              String.format("docker tag failed for images %s, %s", dbImage, kindRepoDbImage));
-      assertTrue(dockerPush(kindRepoFmwImage), String.format("docker push failed for image: %s", kindRepoDbImage));
-
-      fmwImage = kindRepoFmwImage;
-      logger.info("Using FMW image {0}", kindRepoFmwImage);
-      dbImage = kindRepoDbImage;
-      logger.info("Using DB image {0}", dbImage);
-      isUseSecret = false;
-    }
-
+    dbImage = (KIND_REPO != null
+        ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1)
+        + ":" + DB_IMAGE_TAG : DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
+    fmwImage = (KIND_REPO != null
+        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1)
+        + ":" + JRF_BASE_IMAGE_TAG : JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
+    logger.info("For ItJrfDomainInPV using DB image: {0}, FMW image {1}", dbImage, fmwImage);
 
   }
 
@@ -154,7 +126,6 @@ public class ItJrfDomainInPV implements LoggedTest {
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
         dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl));
-    //LoggingUtil.generateLog(this, Arrays.asList(dbNamespace));
   }
 
 

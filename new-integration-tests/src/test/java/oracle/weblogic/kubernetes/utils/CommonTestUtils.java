@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,8 +28,12 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import org.awaitility.core.ConditionFactory;
@@ -35,8 +42,11 @@ import org.joda.time.DateTime;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
@@ -62,6 +72,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
@@ -78,16 +89,21 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -128,14 +144,32 @@ public class CommonTestUtils {
   public static HelmParams installAndVerifyOperator(String opNamespace,
                                                     String... domainNamespace) {
 
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, domainNamespace);
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    String... domainNamespace) {
+
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
-    String serviceAccountName = opNamespace + "-sa";
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
         .metadata(new V1ObjectMeta()
             .namespace(opNamespace)
-            .name(serviceAccountName))));
-    logger.info("Created service account: {0}", serviceAccountName);
+            .name(opServiceAccount))));
+    logger.info("Created service account: {0}", opServiceAccount);
 
     // get operator image name
     String operatorImage = getOperatorImageName();
@@ -162,7 +196,17 @@ public class CommonTestUtils {
         .image(operatorImage)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(serviceAccountName);
+        .serviceAccount(opServiceAccount);
+
+    if (withRestAPI) {
+      // create externalRestIdentitySecret
+      assertTrue(createExternalRestIdentitySecret(opNamespace, DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME),
+          "failed to create external REST identity secret");
+      opParams
+          .externalRestEnabled(true)
+          .externalRestHttpsPort(externalRestHttpsPort)
+          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
+    }
 
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
@@ -522,7 +566,7 @@ public class CommonTestUtils {
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
-   
+
     return createMiiImageAndVerify(
         miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType);
   }
@@ -555,11 +599,11 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
-                                                List<String> wdtModelList,
-                                                List<String> appSrcDirList,
-                                                String baseImageName,
-                                                String baseImageTag,
-                                                String domainType) {
+                                               List<String> wdtModelList,
+                                               List<String> appSrcDirList,
+                                               String baseImageName,
+                                               String baseImageTag,
+                                               String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -568,20 +612,44 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
-    List<String> archiveList = null;
+    List<String> archiveList = new ArrayList<String>();
 
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
-      final String appName = appSrcDirList.get(0);
+      List<String> archiveAppsList = new ArrayList<String>();
+      List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
 
-      // build an application archive using what is in resources/apps/APP_NAME
-      assertTrue(buildAppArchive(defaultAppParams()
-          .srcDirList(appSrcDirList)),
-          String.format("Failed to create app archive for %s", appName));
+      for (String appSrcDir : appSrcDirList) {
+        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
+          //remove from build
+          buildAppDirList.remove(appSrcDir);
+          archiveAppsList.add(appSrcDir);
+        }
+      }
 
-      // build the archive list
-      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-      archiveList = Collections.singletonList(zipFile);
+      if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
+        assertTrue(archiveApp(defaultAppParams()
+                .srcDirList(archiveAppsList)));
+        //archive provided ear or war file
+        String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
+                appSrcDirList.get(0).lastIndexOf("."));
+
+        // build the archive list
+        String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+        archiveList.add(zipAppFile);
+
+      }
+      if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
+        // build an application archive using what is in resources/apps/APP_NAME
+        assertTrue(buildAppArchive(defaultAppParams()
+                        .srcDirList(buildAppDirList)),
+                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+
+        // build the archive list
+        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+        archiveList.add(zipFile);
+      }
     }
+
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -632,6 +700,7 @@ public class CommonTestUtils {
     logger.info("Creating image pull secret in namespace {0}", namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
+
 
   /**
    * Create a Docker registry secret in the specified namespace.
@@ -741,6 +810,43 @@ public class CommonTestUtils {
                                            String curlCmd,
                                            List<String> expectedServerNames) {
 
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, manageServerPodNamePrefix, replicasBeforeScale,
+        replicasAfterScale, false, 0, "", "", curlCmd, expectedServerNames);
+  }
+
+  /**
+   * Scale the WebLogic cluster to specified number of servers.
+   * Verify the sample app can be accessed through NGINX if curlCmd is not null.
+   *
+   * @param clusterName the WebLogic cluster name in the domain to be scaled
+   * @param domainUid the domain to which the cluster belongs
+   * @param domainNamespace the namespace in which the domain exists
+   * @param manageServerPodNamePrefix managed server pod name prefix
+   * @param replicasBeforeScale the replicas of the WebLogic cluster before the scale
+   * @param replicasAfterScale the replicas of the WebLogic cluster after the scale
+   * @param withRestApi whether to use REST API to scale the cluster
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace the namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
+   *                in the cluster, if curlCmd is null, the method will not verify the accessibility of the sample app
+   *                through ingress controller
+   * @param expectedServerNames list of managed servers in the cluster before scale, if curlCmd is null,
+   *                            set expectedServerNames to null too
+   */
+  public static void scaleAndVerifyCluster(String clusterName,
+                                           String domainUid,
+                                           String domainNamespace,
+                                           String manageServerPodNamePrefix,
+                                           int replicasBeforeScale,
+                                           int replicasAfterScale,
+                                           boolean withRestApi,
+                                           int externalRestHttpsPort,
+                                           String opNamespace,
+                                           String opServiceAccount,
+                                           String curlCmd,
+                                           List<String> expectedServerNames) {
+
     // get the original managed server pod creation timestamp before scale
     List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
@@ -755,12 +861,22 @@ public class CommonTestUtils {
     // scale the cluster in the domain
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
         clusterName, domainUid, domainNamespace, replicasAfterScale);
-    assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
-        .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
-            clusterName, domainUid, domainNamespace)
-        .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
-            clusterName, domainUid, domainNamespace)
-        .isTrue();
+    if (withRestApi) {
+      assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
+          replicasAfterScale, externalRestHttpsPort, opNamespace, opServiceAccount)))
+          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with REST API succeeds",
+              clusterName, domainUid, domainNamespace)
+          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with REST API failed",
+              clusterName, domainUid, domainNamespace)
+          .isTrue();
+    } else {
+      assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
+          .as("Verify scaling cluster {0} of domain {1} in namespace {2} succeeds",
+              clusterName, domainUid, domainNamespace)
+          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} failed",
+              clusterName, domainUid, domainNamespace)
+          .isTrue();
+    }
 
     if (replicasBeforeScale <= replicasAfterScale) {
 
@@ -845,13 +961,143 @@ public class CommonTestUtils {
   }
 
   /**
+   * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
+   *
+   * @param promReleaseName the prometheus release name
+   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promValueFile the promeheus value.yaml file path
+   * @param promVersion the version of the prometheus helm chart
+   * @param promServerNodePort nodePort value for prometheus server
+   * @param alertManagerNodePort nodePort value for alertmanager
+   * @return the prometheus Helm installation parameters
+   */
+  public static HelmParams installAndVerifyPrometheus(String promReleaseName,
+                                                      String promNamespace,
+                                                      String promValueFile,
+                                                      String promVersion,
+                                                      int promServerNodePort,
+                                                      int alertManagerNodePort) {
+
+    // Helm install parameters
+    HelmParams promHelmParams = new HelmParams()
+        .releaseName(promReleaseName)
+        .namespace(promNamespace)
+        .chartDir("stable/prometheus")
+        .chartValuesFile(promValueFile);
+
+    if (promVersion != null) {
+      promHelmParams.chartVersion(promVersion);
+    }
+
+    // prometheus chart values to override
+    PrometheusParams prometheusParams = new PrometheusParams()
+        .helmParams(promHelmParams)
+        .nodePortServer(promServerNodePort)
+        .nodePortAlertManager(alertManagerNodePort);
+
+    // install prometheus
+    logger.info("Installing prometheus in namespace {0}", promNamespace);
+    assertTrue(installPrometheus(prometheusParams),
+        String.format("Failed to install prometheus in namespace %s", promNamespace));
+    logger.info("Prometheus installed in namespace {0}", promNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking prometheus release {0} status in namespace {1}",
+        promReleaseName, promNamespace);
+    assertTrue(isHelmReleaseDeployed(promReleaseName, promNamespace),
+        String.format("Prometheus release %s is not in deployed status in namespace %s",
+            promReleaseName, promNamespace));
+    logger.info("Prometheus release {0} status is deployed in namespace {1}",
+        promReleaseName, promNamespace);
+
+    // wait for the promethues pods to be ready
+    logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                promNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
+            "prometheusIsReady failed with ApiException"));
+
+    return promHelmParams;
+  }
+
+  /**
+   * Install Grafana and wait up to five minutes until the grafana pod is ready.
+   *
+   * @param grafanaReleaseName the grafana release name
+   * @param grafanaNamespace the grafana namespace in which the operator will be installed
+   * @param grafanaValueFile the grafana value.yaml file path
+   * @param grafanaVersion the version of the grafana helm chart
+   * @param grafanaNodePort nodePort value for grafana server
+   * @return the grafana Helm installation parameters
+   */
+  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
+                                                      String grafanaNamespace,
+                                                      String grafanaValueFile,
+                                                      String grafanaVersion,
+                                                      int grafanaNodePort) {
+
+    // Helm install parameters
+    HelmParams grafanaHelmParams = new HelmParams()
+        .releaseName(grafanaReleaseName)
+        .namespace(grafanaNamespace)
+        .chartDir("stable/grafana")
+        .chartValuesFile(grafanaValueFile);
+
+    if (grafanaVersion != null) {
+      grafanaHelmParams.chartVersion(grafanaVersion);
+    }
+
+    // grafana chart values to override
+    GrafanaParams grafanaParams = new GrafanaParams()
+        .helmParams(grafanaHelmParams)
+        .nodePort(grafanaNodePort);
+    //create grafana secret
+    createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    // install grafana
+    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    assertTrue(installGrafana(grafanaParams),
+        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    logger.info("Grafana installed in namespace {0}", grafanaNamespace);
+
+    // list Helm releases matching grafana release name in  namespace
+    logger.info("Checking grafana release {0} status in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+    assertTrue(isHelmReleaseDeployed(grafanaReleaseName, grafanaNamespace),
+        String.format("Grafana release %s is not in deployed status in namespace %s",
+            grafanaReleaseName, grafanaNamespace));
+    logger.info("Grafana release {0} status is deployed in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+
+    // wait for the grafana pod to be ready
+    logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                grafanaNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
+            "grafanaIsReady failed with ApiException"));
+
+    return grafanaHelmParams;
+  }
+
+
+  /**
    * Create a persistent volume and persistent volume claim.
    *
    * @param v1pv V1PersistentVolume object to create the persistent volume
    * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
    * @param labelSelector String containing the labels the PV is decorated with
    * @param namespace the namespace in which the persistence volume claim to be created
-   */
+   *
+   **/
   public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
                                           V1PersistentVolumeClaim v1pvc,
                                           String labelSelector,
@@ -980,17 +1226,17 @@ public class CommonTestUtils {
       String domainUid,
       String namespace,
       List<String> modelFiles) {
-    
+
     assertNotNull(configMapName, "ConfigMap name cannot be null");
-    
+
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
-   
+
     assertNotNull(configMapName, "ConfigMap name cannot be null");
 
     logger.info("Create ConfigMap {0} that contains model files {1}",
         configMapName, modelFiles);
-   
+
     Map<String, String> data = new HashMap<>();
 
     for (String modelFile : modelFiles) {
@@ -1009,7 +1255,23 @@ public class CommonTestUtils {
         String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
         String.format("Failed to create ConfigMap %s", configMapName));
   }
-  
+
+  /**
+   * A utility method to sed files.
+   *
+   * @throws java.io.IOException when copying files from source location to staging area fails
+   */
+  public static void replaceStringInFile(String filePath, String oldValue, String newValue)
+          throws IOException {
+    Path src = Paths.get(filePath);
+    logger.info("Copying {0}", src.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(src), charset);
+    content = content.replaceAll(oldValue, newValue);
+    logger.info("to {0}", src.toString());
+    Files.write(src, content.getBytes(charset));
+  }
+
   /**
    * Read the content of a model file as a String and add it to a map.
    */
@@ -1019,9 +1281,43 @@ public class CommonTestUtils {
 
     String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
         String.format("Failed to read model file %s", dsModelFile));
-    assertNotNull(cmData, 
+    assertNotNull(cmData,
         String.format("Failed to read model file %s", dsModelFile));
 
     data.put(modelFileName, cmData);
+  }
+
+  /**
+   * Create an external REST Identity secret in the specified namespace.
+   *
+   * @param namespace the namespace in which the secret to be created
+   * @param secretName name of the secret to be created
+   * @return true if the command to create secret succeeds, false otherwise
+   */
+  private static boolean createExternalRestIdentitySecret(String namespace, String secretName) {
+
+    StringBuffer command = new StringBuffer()
+        .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
+
+    if (Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
+      command.append(" -a \"IP:");
+    } else {
+      command.append(" -a \"DNS:");
+    }
+
+    command.append(K8S_NODEPORT_HOST)
+        .append(",DNS:localhost,IP:127.0.0.1\"")
+        .append(" -n ")
+        .append(namespace)
+        .append(" -s ")
+        .append(secretName);
+
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(command.toString())
+        .saveResults(true)
+        .redirect(true);
+
+    return Command.withParams(params).execute();
   }
 }

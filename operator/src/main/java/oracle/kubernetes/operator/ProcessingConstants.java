@@ -27,12 +27,7 @@ public interface ProcessingConstants {
   public static final String JOB_POD_NAME = "jobPodName";
   public static final String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
   public static final String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
-  public static final String SIT_CONFIG_MAP = "sitConfigMap";
-  public static final String DOMAIN_HASH = "domainHash";
-  public static final String SECRETS_HASH = "secretsHash";
-  public static final String DOMAIN_RESTART_VERSION = "weblogic.domainRestartVersion";
   public static final String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";
-  public static final String DOMAIN_INPUTS_HASH = "weblogic.domainInputsHash";
   public static final String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
 
   public static final String ENCODED_CREDENTIALS = "encodedCredentials";

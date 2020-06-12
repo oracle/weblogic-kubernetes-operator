@@ -82,6 +82,20 @@ public class Docker {
   }
 
   /**
+   * Create docker image.
+   * @param image image name:image tag
+   * @param dockerFileDir path to Dockerfile directory
+   * @return true if delete image is successful
+   */
+  public static boolean createImage(String dockerFileDir, String image) {
+    String cmdToExecute = String.format("docker build %s -t %s", dockerFileDir, image);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .execute();
+  }
+
+  /**
    * Create Docker registry configuration in json object.
    * @param username username for the Docker registry
    * @param password password for the Docker registry
