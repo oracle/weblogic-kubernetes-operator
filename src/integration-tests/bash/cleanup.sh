@@ -369,10 +369,6 @@ function deleteNamespaces {
   done
 }
 
-function deleteNamespacesIT {
-  kubectl delete ns $(kubectl get ns | awk '/ns-/{print $1}')
-}
-
 # Delete everything individually by name, one by one, in order of type, that matches given label $LABEL_SELECTOR
 # The order is determined by NAMESPACED_TYPES NOT_NAMESPACED_TYPES below...
 function deleteByTypeAndLabel {
@@ -665,7 +661,7 @@ deleteByTypeAndLabel
 
 g_arg1="all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress,deployments"
 g_arg2="crd,pv,ns,clusterroles,clusterrolebindings"
-g_arg3="logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu"
+g_arg3="Namespace/ns-|logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu"
 
 #
 # Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort
@@ -688,8 +684,6 @@ genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -friendlyDelete
 
 genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -forceDelete
 SUCCESS="$?"
-
-deleteNamespacesIT
 
 #
 # Phase 4: Delete pv host directories.
