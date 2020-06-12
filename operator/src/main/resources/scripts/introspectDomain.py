@@ -778,18 +778,18 @@ class TopologyGenerator(Generator):
         self.indent()
 
       istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-      self.addIstioNetworkAccessPoint("istio-probe", "http", istio_readiness_port, 0)
-      self.addIstioNetworkAccessPoint("istio-ldap", "ldap", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("istio-t3", "t3", server.getListenPort(), 0)
+      self.addIstioNetworkAccessPoint("http-probe", "http", istio_readiness_port, 0)
+      self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
+      self.addIstioNetworkAccessPoint("tcp-t3", "t3", server.getListenPort(), 0)
       ssl = getSSLOrNone(server)
       if ssl is not None and ssl.isEnabled():
         ssl_listen_port = ssl.getListenPort()
-        self.addIstioNetworkAccessPoint("istio-https", "http", ssl_listen_port, 0)
+        self.addIstioNetworkAccessPoint("https-ssl", "http", ssl_listen_port, 0)
 
       if is_server_template:
         istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
-        self.addIstioNetworkAccessPoint("istio-http", "http", istio_envoy_port, 0)
-        self.addIstioNetworkAccessPoint("istio-cluster", "CLUSTER-BROADCAST", server.getListenPort(), 0)
+        self.addIstioNetworkAccessPoint("http-envoy", "http", istio_envoy_port, 0)
+        self.addIstioNetworkAccessPoint("http-cluster", "CLUSTER-BROADCAST", server.getListenPort(), 0)
 
   def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
     self.writeln("  - name: " + name)
@@ -1158,24 +1158,24 @@ class SitConfigGenerator(Generator):
       return
 
     admin_port = server.getListenPort()
-    action, type = self._getNapConfigOverrideAction(server, "istio-probe")
+    action, type = self._getNapConfigOverrideAction(server, "http-probe")
 
-    self._writeIstioNAP(name='istio-probe', type=type, action=action, listen_address=listen_address,
+    self._writeIstioNAP(name='http-probe', type=type, action=action, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
-    action, type = self._getNapConfigOverrideAction(server, "istio-ldap")
-    self._writeIstioNAP(name='istio-ldap', type=type, action=action, listen_address=listen_address,
+    action, type = self._getNapConfigOverrideAction(server, "tcp-ldap")
+    self._writeIstioNAP(name='tcp-ldap', type=type, action=action, listen_address=listen_address,
                         listen_port=admin_port, protocol='ldap')
 
-    action, type = self._getNapConfigOverrideAction(server, "istio-t3")
-    self._writeIstioNAP(name='istio-t3', type=type, action=action, listen_address=listen_address,
+    action, type = self._getNapConfigOverrideAction(server, "tcp-t3")
+    self._writeIstioNAP(name='tcp-t3', type=type, action=action, listen_address=listen_address,
                         listen_port=admin_port, protocol='t3')
 
     ssl = getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
-      action, type = self._getNapConfigOverrideAction(server, "istio-https")
+      action, type = self._getNapConfigOverrideAction(server, "https-ssl")
       ssl_listen_port = ssl.getListenPort()
-      self._writeIstioNAP(name='istio-https', type=type, action=action, listen_address=listen_address,
+      self._writeIstioNAP(name='https-ssl', type=type, action=action, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
 
@@ -1188,29 +1188,29 @@ class SitConfigGenerator(Generator):
       return
 
     listen_port = template.getListenPort()
-    action, type = self._getNapConfigOverrideAction(template, "istio-probe")
-    self._writeIstioNAP(name='istio-probe', type=type, action=action, listen_address=listen_address,
+    action, type = self._getNapConfigOverrideAction(template, "http-probe")
+    self._writeIstioNAP(name='http-probe', type=type, action=action, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
-    action, type = self._getNapConfigOverrideAction(template, "istio-cluster")
-    self._writeIstioNAP(name='istio-cluster', type=type, action=action, listen_address=listen_address,
+    action, type = self._getNapConfigOverrideAction(template, "http-cluster")
+    self._writeIstioNAP(name='http-cluster', type=type, action=action, listen_address=listen_address,
                         listen_port=listen_port, protocol='CLUSTER-BROADCAST')
 
-    action, type = self._getNapConfigOverrideAction(template, "istio-t3")
-    self._writeIstioNAP(name='istio-t3', type=type, action=action, listen_address=listen_address,
+    action, type = self._getNapConfigOverrideAction(template, "tcp-t3")
+    self._writeIstioNAP(name='tcp-t3', type=type, action=action, listen_address=listen_address,
                         listen_port=listen_port, protocol='t3')
 
     istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
 
-    action, type = self._getNapConfigOverrideAction(template, "istio-http")
-    self._writeIstioNAP(name='istio-http', type=type, action=action, listen_address=listen_address,
+    action, type = self._getNapConfigOverrideAction(template, "http-envoy")
+    self._writeIstioNAP(name='http-envoy', type=type, action=action, listen_address=listen_address,
                         listen_port=istio_envoy_port, protocol='http', http_enabled="true")
 
     ssl = getSSLOrNone(template)
     if ssl is not None and ssl.isEnabled():
-      action, type = self._getNapConfigOverrideAction(template, "istio-https")
+      action, type = self._getNapConfigOverrideAction(template, "https-ssl")
       ssl_listen_port = ssl.getListenPort()
-      self._writeIstioNAP(name='istio-https', type=type, action=action, listen_address=listen_address,
+      self._writeIstioNAP(name='https-ssl', type=type, action=action, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
   def getLogOrNone(self,server):
