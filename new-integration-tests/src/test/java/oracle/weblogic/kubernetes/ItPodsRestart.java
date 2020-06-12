@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -155,14 +156,14 @@ class ItPodsRestart implements LoggedTest {
 
     // verify if cpu limit was set then the new value should be different than the original value
     if (limits.get("cpu") != null) {
-      assertNotEquals(limits.get("cpu").getNumber().intValue(), cpuLimit,
+      assertNotEquals(limits.get("cpu").getNumber().compareTo(new BigDecimal(cpuLimit)), 0,
           String.format("server pod compute resources cpu limit is already set to %s, set cpu limit to "
               + "a different value", cpuLimit));
     }
 
     // verify if cpu request was set then the new value should be different than the original value
     if (requests.get("cpu") != null) {
-      assertNotEquals(requests.get("cpu").getNumber().doubleValue(), cpuRequest,
+      assertNotEquals(requests.get("cpu").getNumber().compareTo(new BigDecimal(cpuRequest)), 0,
           String.format("server pod compute resources cpu request is already set to %s, set cpu request to "
               + "a different value", cpuRequest));
     }
@@ -201,7 +202,7 @@ class ItPodsRestart implements LoggedTest {
     // verify the server pod resources limits got updated
     logger.info("Checking that the server pod resources cpu limit was updated correctly");
     assertNotNull(limits.get("cpu"), domain1 + "/spec/serverPod/resources/limits/cpu is null");
-    assertEquals(limits.get("cpu").getNumber().intValue(), cpuLimit,
+    assertEquals(limits.get("cpu").getNumber().compareTo(new BigDecimal(cpuLimit)), 0,
         String.format("server pod compute resource limits were not updated correctly, set cpu limit to %s, got %s",
             cpuLimit, limits.get("cpu").getNumber().intValue()));
 
@@ -216,7 +217,7 @@ class ItPodsRestart implements LoggedTest {
     // verify the server pod resources requests got updated
     logger.info("Checking that the server pod resources cpu request is updated correctly");
     assertNotNull(requests.get("cpu"), domain1 + "/spec/serverPod/resources/requests/cpu is null");
-    assertEquals(requests.get("cpu").getNumber().doubleValue(), cpuRequest,
+    assertEquals(requests.get("cpu").getNumber().compareTo(new BigDecimal(cpuRequest)), 0,
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber().doubleValue()));
   }
