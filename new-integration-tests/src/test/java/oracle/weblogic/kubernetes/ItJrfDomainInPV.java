@@ -98,7 +98,7 @@ public class ItJrfDomainInPV implements LoggedTest {
 
     //TODO in the final version when JRF domain is added setupDBandRCUschema should be here
     //start DB and create RCU schema
-    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2}, "
+    logger.info("Start DB and create RCU schema for namespace: {0} RCU prefix: {1} dbPort: {2} "
         + "dbUrl: {3}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(RCUSCHEMAPREFIX, dbNamespace,
         dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
@@ -149,8 +149,8 @@ public class ItJrfDomainInPV implements LoggedTest {
   public void testDomainInPvUsingWlst() {
 
     //TODO temporarily being here.  Will be moved to BeforeAll when JRF domain is added
-    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2}, "
-        + "dbUrl: {3}, dbImage: {4}, fmwImage: {5]", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl, dbImage, fmwImage);
+    logger.info("Start DB and create RCU schema for namespace: {0} RCU prefix: {1} dbPort: {2} "
+        + "dbUrl: {3} dbImage: {4} fmwImage: {5}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl, dbImage, fmwImage);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
         dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl));

@@ -73,7 +73,7 @@ public class DbUtils {
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+          .atMost(10, MINUTES).await();
   /**
    * Start DB instance, create Oracle rcu pod and load database schema in the specified namespace.
    *
@@ -226,10 +226,10 @@ public class DbUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
-            "oracleDBService podRunning failed with ApiException"));
+            "oracleDBService podReady failed with ApiException"));
 
     // check if DB is ready to be used by searching pod log
-    logger.info("Check for DB pod {0} log contains ready message  in namespace {1}",
+    logger.info("Check for DB pod {0} log contains ready message in namespace {1}",
         dbPodName, dbNamespace);
     String msg = "The database is ready for use";
     checkDbReady(msg, dbPodName, dbNamespace);
@@ -272,7 +272,7 @@ public class DbUtils {
 
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
-        .atMost(1, MINUTES).await();
+        .atMost(5, MINUTES).await();
 
 
     Map labels = new HashMap<String, String>();
