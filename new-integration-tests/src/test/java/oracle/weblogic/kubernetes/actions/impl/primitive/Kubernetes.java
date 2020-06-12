@@ -1547,7 +1547,7 @@ public class Kubernetes implements LoggedTest {
     if (service != null) {
       V1ServicePort port = service.getSpec().getPorts().stream().filter(
           v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
-          .findAny().orElse(null);
+            .findAny().orElse(null);
       if (port != null) {
         return port.getNodePort();
       }

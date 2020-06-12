@@ -306,6 +306,54 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a Voyager pod is running in a given namespace.
+   * The method assumes the Voyager pod name to starts with voyager-release-
+   *
+   * @param namespace in which to check if the Voyager pod is running
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isVoyagerPodRunning(String namespace) throws ApiException {
+    return isPodRunning(namespace, null, "voyager-release-");
+  }
+
+  /**
+   * Checks if a Voyager pod is running in a given namespace.
+   * The method assumes the Voyager pod name to starts with voyager-release-
+   *
+   * @param namespace in which to check if the Voyager pod is ready
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isVoyagerPodReady(String namespace) throws ApiException {
+    return isPodReady(namespace, null, "voyager-release-");
+  }
+
+  /**
+   * Checks if a Voyager ingress pod is running in a given namespace and pod name.
+   *
+   * @param namespace in which to check if the Voyager ingress pod is running
+   * @param podName name of Voyager ingress pod to check
+   * @return true if the pod is running, otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isVoyagerIngressRunning(String namespace, String podName) throws ApiException {
+    return isPodRunning(namespace, null, podName);
+  }
+
+  /**
+   * Checks if a Voyager ingress pod exists and running in a given namespace and pod name.
+   *
+   * @param namespace in which to check if the Voyager ingress pod is ready
+   * @param podName name of Voyager ingress pod to check
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isVoyagerIngressReady(String namespace, String podName) throws ApiException {
+    return isPodReady(namespace, null, podName);
+  }
+
+  /**
    * Returns the V1Pod object given the following parameters.
    * @param namespace in which to check for the pod existence
    * @param labelSelector in the format "weblogic.domainUID in (%s)"

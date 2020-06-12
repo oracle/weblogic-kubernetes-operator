@@ -40,6 +40,8 @@ import oracle.weblogic.kubernetes.actions.impl.Pod;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.Voyager;
+import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -260,6 +262,17 @@ public class TestActions {
   }
 
   /**
+   * Install Voyager ingress controller.
+   *
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
+   */
+  public static boolean installVoyager(VoyagerParams params) {
+    return Voyager.install(params);
+  }
+
+  /**
    * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
    * The ingress host is set to 'domainUid.clusterName.test'.
    *
@@ -272,6 +285,21 @@ public class TestActions {
   public static List<String> createIngress(String ingressName, String domainNamespace, String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap) {
     return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap);
+  }
+
+  /**
+   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * The ingress host is set to 'domainUid.clusterName.test'.
+   *
+   * @param ingressName the name of the ingress to be created
+   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
+   * @param domainUid WebLogic domainUid which is backend to the ingress
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   */
+  public static List<String> createVoyagerIngress(String ingressName, String domainNamespace, String domainUid,
+                                           Map<String, Integer> clusterNameMsPortMap) {
+    return Voyager.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap);
   }
 
   /**
@@ -295,6 +323,16 @@ public class TestActions {
   }
 
   /**
+   * Uninstall the Voyager release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallVoyager(HelmParams params) {
+    return Voyager.uninstall(params);
+  }
+
+  /**
    * Get a list of ingresses in the specified namespace.
    *
    * @param namespace in which to list all the ingresses
@@ -303,6 +341,17 @@ public class TestActions {
    */
   public static List<String> listIngresses(String namespace) throws ApiException {
     return Nginx.listIngresses(namespace);
+  }
+
+  /**
+   * Get a list of ingresses in the specified namespace.
+   *
+   * @param namespace in which to list all the ingresses
+   * @return list of ingress names in the specified namespace
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static List<String> listVoyagerIngresses(String namespace) throws ApiException {
+    return Voyager.listIngresses(namespace);
   }
 
   // -------------------------  namespaces -------------------------------

@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -37,6 +38,8 @@ import org.joda.time.DateTime;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
@@ -60,6 +63,9 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -78,6 +84,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.createVoyagerIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
@@ -85,7 +92,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.installVoyager;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.listVoyagerIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
@@ -94,6 +103,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerIngressReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -270,7 +281,6 @@ public class CommonTestUtils {
     return true;
   }
 
-
   /**
    * Install NGINX and wait up to five minutes until the NGINX pod is ready.
    *
@@ -323,6 +333,62 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> isNginxReady(nginxNamespace), "isNginxReady failed with ApiException"));
 
     return nginxHelmParams;
+  }
+
+  /**
+   * Install Voyager and wait up to five minutes until the Voyager pod is ready.
+   *
+   * @param voyagerNamespace the namespace in which the Voyager will be installed
+   * @param cloudProvider the name of bare metal Kubernetes cluster
+   * @param enableValidatingWebhook whehter to enable validating webhook or not
+   * @return the Voyager Helm installation parameters
+   */
+  public static HelmParams installAndVerifyVoyager(String voyagerNamespace,
+                                                   String cloudProvider,
+                                                   boolean enableValidatingWebhook) {
+
+    // Helm install parameters
+    HelmParams voyagerHelmParams = new HelmParams()
+        .releaseName(VOYAGER_RELEASE_NAME)
+        .namespace(voyagerNamespace)
+        .repoUrl(APPSCODE_REPO_URL)
+        .repoName(APPSCODE_REPO_NAME)
+        .chartName(VOYAGER_CHART_NAME)
+        .version(VOYAGER_CHART_VERSION);
+
+    // Voyager chart values to override
+    VoyagerParams voyagerParams = new VoyagerParams()
+        .helmParams(voyagerHelmParams)
+        .cloudProvider(cloudProvider)
+        .enableValidatingWebhook(enableValidatingWebhook);
+
+    // install Voyager
+    assertThat(installVoyager(voyagerParams))
+        .as("Test Voyager installation succeeds")
+        .withFailMessage("Voyager installation is failed")
+        .isTrue();
+
+    // verify that Voyager is installed
+    logger.info("Checking Voyager release {0} status in namespace {1}",
+        VOYAGER_RELEASE_NAME, voyagerNamespace);
+    assertTrue(isHelmReleaseDeployed(VOYAGER_RELEASE_NAME, voyagerNamespace),
+        String.format("Voyager release %s is not in deployed status in namespace %s",
+            VOYAGER_RELEASE_NAME, voyagerNamespace));
+    logger.info("Voyager release {0} status is deployed in namespace {1}",
+        VOYAGER_RELEASE_NAME, voyagerNamespace);
+
+    // wait until the Voyager pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+              "Waiting for Voyager to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+              voyagerNamespace,
+              condition.getElapsedTimeInMS(),
+              condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace),
+            "isVoyagerReady failed with ApiException"));
+
+    return voyagerHelmParams;
   }
 
   /**
@@ -381,6 +447,51 @@ public class CommonTestUtils {
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
+        .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
+        .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
+        .contains(ingressName);
+
+    logger.info("ingress {0} for domain {1} was created in namespace {2}",
+        ingressName, domainUid, domainNamespace);
+
+    return ingressHostList;
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in a given namespace and verify.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param ingressName name of ingress to be created in a given domain
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @return list of ingress hosts
+   */
+  public static List<String> installVoyagerIngressAndVerify(String domainUid,
+                                                            String domainNamespace,
+                                                            String ingressName,
+                                                            Map<String, Integer> clusterNameMSPortMap) {
+
+    String ingressPodNamePrefix = VOYAGER_CHART_NAME + "-" + ingressName + "-";
+    // create an ingress in domain namespace
+    List<String> ingressHostList =
+        createVoyagerIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap);
+
+    assertNotNull(ingressHostList,
+        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // wait until the Voyager ingress pod is ready.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
+                domainUid,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isVoyagerIngressReady(domainNamespace, ingressPodNamePrefix),
+            "isVoyagerIngressReady failed with ApiException"));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listVoyagerIngresses(domainNamespace)))
         .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
         .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
         .contains(ingressName);

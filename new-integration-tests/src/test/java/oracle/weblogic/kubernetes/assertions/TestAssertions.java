@@ -20,6 +20,7 @@ import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
+import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
 
@@ -56,6 +57,48 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if Voyager pod is running.
+   *
+   * @param namespace in which to check if Voyager pod is running
+   * @return true if Voyager pod is running, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerRunning(String namespace) {
+    return Voyager.isRunning(namespace);
+  }
+
+  /**
+   * Check if Voyager pods is in the ready state in a given namespace.
+   *
+   * @param namespace in which to check if Voyager pod is in the ready state
+   * @return true if Voyager pod is in the ready state, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerReady(String namespace) {
+    return Voyager.isReady(namespace);
+  }
+
+  /**
+   * Check if Voyager ingress pod is running in a given namespace and pod name.
+   *
+   * @param namespace in which to check if Voyager ingress pod is running
+   * @param podName name of Voyager ingress pod to check
+   * @return true if Voyager ingress pod is running, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerIngressRunning(String namespace, String podName) {
+    return Voyager.isIngressRunning(namespace, podName);
+  }
+
+  /**
+   * Check if Voyager ingress pod exists and running in a given namespace and pod name.
+   *
+   * @param namespace in which to check if Voyager ingress pod is in the ready state
+   * @param podName name of Voyager ingress pod to check
+   * @return true if Voyager ingress pods is in the ready state, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerIngressReady(String namespace, String podName) {
+    return Voyager.isIngressReady(namespace, podName);
   }
 
   /**
