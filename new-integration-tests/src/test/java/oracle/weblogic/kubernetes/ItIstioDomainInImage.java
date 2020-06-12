@@ -3,11 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -50,7 +45,6 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -61,6 +55,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegis
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -91,6 +88,8 @@ class ItIstioDomainInImage implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
+
+    installIstio();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -192,7 +191,8 @@ class ItIstioDomainInImage implements LoggedTest {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    boolean deployRes = deployHttpIstioGatewayAndVirtualservice();
+    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
+    boolean deployRes = deployHttpIstioGatewayAndVirtualservice(domainNamespace,adminServerPodName, clusterService);
     assertTrue(deployRes, "Could not deploy Http Istio Gateway/VirtualService");
 
     int istioIngressPort = getIstioHttpIngressPort();
@@ -225,180 +225,6 @@ class ItIstioDomainInImage implements LoggedTest {
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
-  }
-
-  /**
-   * TODO: remove when infra for Istio Gateway and Virtual Service is ready.
-   * Replace a file with a String Replacement.
-   * @param in  input file
-   * @param out output file
-   * @param oldString the old String to be replaced 
-   * @param newString the new String 
-   */
-  public void updateFileWithStringReplacement(String in, String out, String oldString, String newString) {
-
-    File fileToBeModified = new File(in);
-    File fileToBeReplaced = new File(out);
-    String oldContent = "";
-    BufferedReader reader = null;
-    FileWriter writer = null;
-    try {
-      reader = new BufferedReader(new FileReader(fileToBeModified));
-      //Reading all the lines of input text file into oldContent
-      String line = reader.readLine();
-      while (line != null) {
-        oldContent = oldContent + line + System.lineSeparator();
-        line = reader.readLine();
-      }
-      //Replacing oldString with newString in the oldContent
-      String newContent = oldContent.replaceAll(oldString, newString);
-      //Rewriting the input text file with newContent
-      writer = new FileWriter(fileToBeReplaced);
-      writer.write(newContent);
-      reader.close();
-      writer.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  /*
-   * TODO: move to CommonTestUtils
-   * Deploy the Http Istio Gateway and Istio Virtualservice.
-   * @returns true if deployment is success otherwise false
-   **/
-
-  private boolean deployHttpIstioGatewayAndVirtualservice() {
-    String input = RESOURCE_DIR + "/istio/istio-http-template.service.yaml";
-    String output = RESOURCE_DIR + "/istio/istio-http-service.yaml";
-    String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-    updateFileWithStringReplacement(input, output, "NAMESPACE", domainNamespace); 
-    updateFileWithStringReplacement(output, output, "ADMIN_SERVICE", adminServerPodName); 
-    updateFileWithStringReplacement(output, output, "CLUSTER_SERVICE", clusterService); 
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
-    deployIstioGateway = new StringBuffer("kubectl apply -f ");
-    deployIstioGateway.append(RESOURCE_DIR)
-        .append("/istio/istio-http-service.yaml");
-    logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
-    try {
-      result = exec(new String(deployIstioGateway), true);
-    } catch (Exception ex) {
-      logger.info("Exception in deployIstioGateway() {0}", ex);
-      return false;
-    }
-    logger.info("deployIstioGateway: kubectl returned {0}", result.toString());
-    if (result.stdout().contains("istio-http-gateway created")) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  
-  /*
-   * TODO: move to CommonTestUtils
-   * Deploy the tcp Istio Gateway and Istio Virtualservice.
-   * @returns true if deployment is success otherwise false
-   **/
-
-  private boolean deployTcpIstioGatewayAndVirtualservice() {
-
-    String input = RESOURCE_DIR + "/istio/istio-tcp-template.service.yaml";
-    String output = RESOURCE_DIR + "/istio/istio-tcp-service.yaml";
-    String adminService = adminServerPodName + ".svc.cluster.local";
-    updateFileWithStringReplacement(input, output, "NAMESPACE", domainNamespace); 
-    updateFileWithStringReplacement(output, output, "ADMIN_SERVICE", adminService); 
-    ExecResult result = null;
-    StringBuffer deployIstioGateway = null;
-    deployIstioGateway = new StringBuffer("kubectl apply -f ");
-    deployIstioGateway.append(RESOURCE_DIR)
-        .append("/istio/istio-tcp-service.yaml");
-    logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
-    try {
-      result = exec(new String(deployIstioGateway), true);
-    } catch (Exception ex) {
-      logger.info("Exception in deployIstioGateway() {0}", ex);
-      return false;
-    }
-    logger.info("deployIstioGateway: kubectl returned {0}", result.toString());
-    if (result.stdout().contains("istio-tcp-gateway created")) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-
-  /*
-   * TODO: move to CommonTestUtils
-   * @returns ingress port for istio-ingressgateway
-   **/
-  private int getIstioHttpIngressPort() {
-    ExecResult result = null;
-    StringBuffer getIngressPort = null;
-    getIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
-    getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
-    logger.info("getIngressPort: kubectl command {0}", new String(getIngressPort));
-    try {
-      result = exec(new String(getIngressPort), true);
-    } catch (Exception ex) {
-      logger.info("Exception in getIngressPort() {0}", ex);
-      return 0;
-    }
-    logger.info("getIngressPort: kubectl returned {0}", result.toString());
-    if (result.stdout() == null) {
-      return 0;
-    } else {
-      return new Integer(result.stdout());
-    }
-  }
-
-  /*
-   * TODO: move to CommonTestUtils
-   * @returns secure ingress https port for istio-ingressgateway
-   **/
-  private int getIstioSecureIngressPort() {
-    ExecResult result = null;
-    StringBuffer getSecureIngressPort = null;
-    getSecureIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
-    getSecureIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"https\")].nodePort}'");
-    logger.info("getSecureIngressPort: kubectl command {0}", new String(getSecureIngressPort));
-    try {
-      result = exec(new String(getSecureIngressPort), true);
-    } catch (Exception ex) {
-      logger.info("Exception in getSecureIngressPort() {0}", ex);
-      return 0;
-    }
-    logger.info("getSecureIngressPort: kubectl returned {0}", result.toString());
-    if (result.stdout() == null) {
-      return 0;
-    } else {
-      return new Integer(result.stdout());
-    }
-  }
-
-  /*
-   * TODO: move to CommonTestUtils
-   * @returns tcp ingress port for istio-ingressgateway
-   **/
-  private int getIstioTcpIngressPort() {
-    ExecResult result = null;
-    StringBuffer getTcpIngressPort = null;
-    getTcpIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
-    getTcpIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"tcp\")].nodePort}'");
-    logger.info("getTcpIngressPort: kubectl command {0}", new String(getTcpIngressPort));
-    try {
-      result = exec(new String(getTcpIngressPort), true);
-    } catch (Exception ex) {
-      logger.info("Exception in getTcpIngressPort() {0}", ex);
-      return 0;
-    }
-    logger.info("getTcpIngressPort: kubectl returned {0}", result.toString());
-    if (result.stdout() == null) {
-      return 0;
-    } else {
-      return new Integer(result.stdout());
-    }
   }
 
   /*
