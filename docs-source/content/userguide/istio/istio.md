@@ -18,7 +18,7 @@ other components and services that have tracing enabled.
 
 The current support for Istio has these limitations:
 
-* It is tested with Istio 1.2.2 and later (up to 1.5), however it is tested with both single and
+* It is tested with Istio 1.2.2 and later (up to 1.5.4), however it is tested with both single and
   multicluster installations of Istio.
 
 #### Using the operator with Istio support
@@ -161,8 +161,8 @@ controller like Traefik.  Using the Istio gateway will enable you to view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
 the cluster, for example, the Istio gateway.
 
-To configure external access to your domain, you need to create an Istio `gateway` and
-`virtualservice` as shown in the example below:
+To configure external access to your domain, you need to create an Istio `Gateway` and
+`Virtualservice` as shown in the example below:
 
 ```
 ---
@@ -195,11 +195,20 @@ spec:
   http:
     - match:
         - uri:
-            prefix: /
+            prefix: /console
+        - port: 7001
+      route:
+        - destination:
+            host: sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local
+            port:
+              number: 7001
+    - match:
+        - uri:
+            prefix: /testwebapp
         - port: 8001
       route:
         - destination:
-            host: domain1-cluster-cluster-1.domain1.svc.cluster.local
+            host: sample-domain1-cluster-cluster-1.domain1.svc.cluster.local
             port:
               number: 8001
 ```
@@ -259,7 +268,7 @@ https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selec
 
 For non SSL traffic:
 
-|Name|Port|Protocol|Exposed in the container port|
+|Name|Port|Protocol|Exposed as a container port|
 |----|----|--------|-----|
 |http-probe|From configuration istio readinessPort|http|N|
 |tcp-t3|server listening port|t3|Y|
@@ -270,13 +279,13 @@ For non SSL traffic:
 
 For SSL traffic, if SSL is enabled on the server:
 
-|Name|Port|Protocol|Exposed in the container port|
+|Name|Port|Protocol|Exposed as a container port|
 |----|----|--------|-----|
-|tcp-t3s|server SSL listening port|t3s|Y|
-|https-ssl|server SSL listening port|https|Y|
-|tcp-iiops|server SSL listening port|iiops|N|
-|tcp-ldaps|server SSL listening port|ldaps|N|
-|tcp-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
+|tls-t3s|server SSL listening port|t3s|Y|
+|https-secure|server SSL listening port|https|Y|
+|tls-iiops|server SSL listening port|iiops|N|
+|tls-ldaps|server SSL listening port|ldaps|N|
+|tls-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
 
 If WebLogic Administration Port is enabled:
 
