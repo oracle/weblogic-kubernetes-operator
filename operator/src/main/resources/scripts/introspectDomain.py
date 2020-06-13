@@ -760,13 +760,15 @@ class TopologyGenerator(Generator):
         self.addNetworkAccessPoint(nap)
 
     self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
-    self.undent()
+    if len(naps) != 0:
+      self.undent()
 
   def addNetworkAccessPoint(self, nap):
 
     # Change the name to follow the istio port naming convention
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled:
+
+    if istio_enabled == 'true':
       http_protocol = [ 'http' ]
       https_protocol = ['https','admin']
       tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop']
@@ -796,37 +798,39 @@ class TopologyGenerator(Generator):
     :param added_nap:  true if there are existing nap section in the output
     '''
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled:
-      if not added_nap:
-        self.writeln("  networkAccessPoints:")
-        self.indent()
+    if istio_enabled == 'false':
+      return
 
-      # istio probe is not exposed
-      # istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-      # # self.addIstioNetworkAccessPoint("http-probe", "http", istio_readiness_port, 0)
+    if not added_nap:
+      self.writeln("  networkAccessPoints:")
+      self.indent()
 
-      self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
-      # No need to to http default, PodStepContext already handle it
-      self.addIstioNetworkAccessPoint("http-default", "t3", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
+    # istio probe is not exposed
+    # istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+    # # self.addIstioNetworkAccessPoint("http-probe", "http", istio_readiness_port, 0)
 
-      ssl = getSSLOrNone(server)
-      if ssl is not None and ssl.isEnabled():
-        ssl_listen_port = ssl.getListenPort()
-        self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
+    self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
+    # No need to to http default, PodStepContext already handle it
+    self.addIstioNetworkAccessPoint("http-default", "t3", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
 
-      if server.isAdministrationPortEnabled():
-        self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
+    ssl = getSSLOrNone(server)
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+      self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
 
-      # if is_server_template:
-      #   istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
-      #   self.addIstioNetworkAccessPoint("http-envoy", "http", istio_envoy_port, 0)
-      #   self.addIstioNetworkAccessPoint("http-cluster", "CLUSTER-BROADCAST", server.getListenPort(), 0)
+    if server.isAdministrationPortEnabled():
+      self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
+
+    # if is_server_template:
+    #   istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
+    #   self.addIstioNetworkAccessPoint("http-envoy", "http", istio_envoy_port, 0)
+    #   self.addIstioNetworkAccessPoint("http-cluster", "CLUSTER-BROADCAST", server.getListenPort(), 0)
 
   def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
     self.writeln("  - name: " + name)
@@ -1131,7 +1135,7 @@ class SitConfigGenerator(Generator):
         self.writeln("<d:network-access-point>")
         self.indent()
         self.writeln("<d:name>" + nap_name + "</d:name>")
-        if istio_enabled:
+        if istio_enabled == 'true':
           self.writeListenAddress("force a replace", '127.0.0.1')
           replace_action = 'f:combine-mode="replace"'
           self.writeln('<d:public-address %s>%s</d:public-address>' % (replace_action, listen_address))
@@ -1184,7 +1188,6 @@ class SitConfigGenerator(Generator):
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
-
     admin_server_port = server.getListenPort()
     # readiness probe
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,

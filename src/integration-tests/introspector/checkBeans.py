@@ -99,7 +99,7 @@ def checkNAPInDomainConfig(path):
   :param path:
   :return:  domainConfig nap path, true if the test path is istio network access points
   """
-  rep=re.compile('/(?:Servers|ServerTemplates)/.*/NetworkAccessPoints/istio-')
+  rep=re.compile('/(?:Servers|ServerTemplates)/.*/NetworkAccessPoints/(?:tcp-|http-|tls-|https-)')
   match = False
   if re.match(rep, path):
     match = True
