@@ -154,7 +154,7 @@ public class ItDomainInPV implements LoggedTest {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+          .atMost(8, MINUTES).await();
 
   /**
    * Assigns unique namespaces for operator and domains.
