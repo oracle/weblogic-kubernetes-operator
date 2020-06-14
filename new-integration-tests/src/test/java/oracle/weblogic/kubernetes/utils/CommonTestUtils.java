@@ -47,8 +47,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -66,8 +64,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
-import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -88,7 +85,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -603,47 +599,95 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
-                                                List<String> wdtModelList,
-                                                List<String> appSrcDirList,
-                                                String baseImageName,
-                                                String baseImageTag,
-                                                String domainType) {
-    return createImageAndVerify(miiImageNameBase,
-            wdtModelList,
-            appSrcDirList,
-            baseImageName,
-            baseImageTag,
-            domainType,
-            null,
-            true);
-  }
-
-  /**
-   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
-   *
-   * @param domainInImageNameBase the base domain image name used in local or to construct the image name in repository
-   * @param wdtModelList list of WDT model files used to build the Docker image
-   * @param appSrcDirList list of the sample application source directories used to build sample app ear files
-   * @param baseImageName the WebLogic base image name to be used while creating mii image
-   * @param baseImageTag the WebLogic base image tag to be used while creating mii image
-   * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
-   * @return image name with tag
-   */
-  public static String createImageAndVerify(String domainInImageNameBase,
                                                List<String> wdtModelList,
                                                List<String> appSrcDirList,
                                                String baseImageName,
                                                String baseImageTag,
-                                               String domainType,
-                                               List<String> modelVarList,
-                                               boolean isMii) {
+                                               String domainType) {
+    return createImageAndVerify(
+            miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
+            baseImageTag, domainType, true, null);
+  }
 
+  /**
+   * Create an image with modelfile, application archive and property file. If the property file
+   * is needed to be updated with a property that has been created by the framework, it is copied
+   * onto RESULT_ROOT and updated. Hence the altModelDir. Call this method to create a domain home in image.
+   * @param imageNameBase - base image name used in local or to construct image name in repository
+   * @param wdtModelFile - model file used to build the image
+   * @param appName - application to be added to the image
+   * @param modelPropFile - property file to be used with the model file above
+   * @param altModelDir - directory where the property file is found if not in the default MODEL_DIR
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String imageNameBase,
+                                            String wdtModelFile,
+                                            String appName,
+                                            String modelPropFile,
+                                            String altModelDir,
+                                            String domainHome) {
+
+    final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final List<String> appSrcDirList = Collections.singletonList(appName);
+    final List<String> modelPropList = Collections.singletonList(altModelDir + "/" + modelPropFile);
+
+    return createImageAndVerify(
+            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+            WLS_BASE_IMAGE_TAG, WLS, false, domainHome);
+  }
+
+  /**
+   * Create an image from the wdt model, application archives and property file. Call this method
+   * to create a domain home in image.
+   * @param imageNameBase - base image name used in local or to construct image name in repository
+   * @param wdtModelFile - model file used to build the image
+   * @param appName - application to be added to the image
+   * @param modelPropFile - property file to be used with the model file above
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String imageNameBase,
+                                            String wdtModelFile,
+                                            String appName,
+                                            String modelPropFile,
+                                            String domainHome) {
+
+    final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
+    final List<String> appSrcDirList = Collections.singletonList(appName);
+    final List<String> modelPropList = Collections.singletonList(MODEL_DIR + "/" + modelPropFile);
+
+    return createImageAndVerify(
+            imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
+            WLS_BASE_IMAGE_TAG, WLS, false, domainHome);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain or domain home in image using multiple WDT model
+   * files and application ear files.
+   * @param imageNameBase - the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelList - list of WDT model files used to build the Docker image
+   * @param appSrcDirList - list of the sample application source directories used to build sample app ear files
+   * @param modelPropList - the WebLogic base image name to be used while creating mii image
+   * @param baseImageName - the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag - the WebLogic base image tag to be used while creating mii image
+   * @param domainType - the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @param modelType - create a model image only or domain in image. set to true for MII
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String imageNameBase,
+                                            List<String> wdtModelList,
+                                            List<String> appSrcDirList,
+                                            List<String> modelPropList,
+                                            String baseImageName,
+                                            String baseImageTag,
+                                            String domainType,
+                                            boolean modelType,
+                                            String domainHome) {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
     final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = REPO_NAME + domainInImageNameBase;
+    final String imageName = REPO_NAME + imageNameBase;
     final String image = imageName + ":" + imageTag;
     List<String> archiveList = new ArrayList<String>();
 
@@ -683,7 +727,6 @@ public class CommonTestUtils {
       }
     }
 
-
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
     Map<String, String> env = new HashMap<>();
@@ -700,19 +743,20 @@ public class CommonTestUtils {
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = false;
-    if (isMii) {
+    if (!modelType) {  //create a domain home in image image
       result = createImage(
               new WitParams()
                       .baseImageName(baseImageName)
                       .baseImageTag(baseImageTag)
                       .domainType(domainType)
                       .modelImageName(imageName)
-                      .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
                       .modelImageTag(imageTag)
                       .modelFiles(wdtModelList)
+                      .modelVariableFiles(modelPropList)
                       .modelArchiveFiles(archiveList)
-                      .modelVariableFiles(modelVarList)
-                      .wdtModelOnly(true)
+                      .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainHome)
+                      .wdtModelOnly(modelType)
+                      .wdtOperation("CREATE")
                       .wdtVersion(WDT_VERSION)
                       .env(env)
                       .redirect(true));
@@ -721,14 +765,13 @@ public class CommonTestUtils {
               new WitParams()
                       .baseImageName(baseImageName)
                       .baseImageTag(baseImageTag)
-                      .modelImageName(imageName)
                       .domainType(domainType)
+                      .modelImageName(imageName)
                       .modelImageTag(imageTag)
                       .modelFiles(wdtModelList)
+                      .modelVariableFiles(modelPropList)
                       .modelArchiveFiles(archiveList)
-                      .modelVariableFiles(modelVarList)
-                      .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
-                      .wdtOperation("CREATE")
+                      .wdtModelOnly(modelType)
                       .wdtVersion(WDT_VERSION)
                       .env(env)
                       .redirect(true));

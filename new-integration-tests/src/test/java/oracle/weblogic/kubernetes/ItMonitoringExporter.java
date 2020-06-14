@@ -446,9 +446,9 @@ class ItMonitoringExporter implements LoggedTest {
         "webhook.webhook.svc.cluster.local",
                 String.format("webhook.%s.svc.cluster.local", webhookNS));
 
-    int nodeportalertmanserver = getNextFreePort(30400, 30600);
-    nodeportserver = getNextFreePort(32400, 32600);
     if (promHelmParams == null) {
+      nodeportserver = getNextFreePort(32400, 32600);
+      int nodeportalertmanserver = getNextFreePort(30400, 30600);
       promHelmParams = installAndVerifyPrometheus("prometheus",
               monitoringNS,
               targetPromFile.toString(),
@@ -459,7 +459,7 @@ class ItMonitoringExporter implements LoggedTest {
     logger.info("Prometheus is running");
 
     String testappPrometheusSearchKey =
-            "wls_servlet_invocation_total_count%7B%5D";
+            "wls_servlet_invocation_total_count%7Bapp%3D%22wls-exporter%22%7D%5B15s%5D";
 
     assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey, "wls-exporter"));
 
@@ -1104,9 +1104,12 @@ class ItMonitoringExporter implements LoggedTest {
         createImageAndVerify(MONEXP_IMAGE_NAME,
                 modelList,
                 appList,
+                propertyList,
                 WLS_BASE_IMAGE_NAME,
-                WLS_BASE_IMAGE_TAG,WLS,
-                propertyList,false);
+                WLS_BASE_IMAGE_TAG,
+                WLS,
+                false,
+                domain2Uid);
 
 
 
