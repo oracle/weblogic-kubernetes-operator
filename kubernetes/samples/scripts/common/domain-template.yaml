@@ -117,5 +117,4 @@ spec:
   %ISTIO_PREFIX%  istio:
   %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
   %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%
-  %ISTIO_PREFIX%    envoyPort: %ISTIO_ENVOY_PORT%
 
