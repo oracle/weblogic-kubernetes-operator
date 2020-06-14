@@ -23,7 +23,8 @@ The current support for Istio has these limitations:
 * It is tested with Istio 1.2.2 and later (up to 1.5.4), however it is tested with both single and
   multicluster installations of Istio.
 * You cannot expose the default channel, any attempt will result in an error when deploying the domain.  
-* In order to use WLST command, you can define a separate channel in your WebLogic Domain and the expose as a `NodePort` in your domain resource YAML.  
+* In order to use WLST command, you can define a separate channel in your WebLogic Domain and the expose as a `NodePort` 
+in your domain resource YAML instead of accessing the channel through the Istio mesh network.  
 
 #### Using the operator with Istio support
 
