@@ -137,6 +137,7 @@ public class ItDomainInPV implements LoggedTest {
   private final String wdtAdminServerName = "wdt-admin-server";
   private final String wdtAdminServerPodName = wdtDomainUid + "-" + wdtAdminServerName;
   private final String wdtClusterName = "cluster-wdtdomain-inpv";
+  private final String wdtManagedServerPodNamePrefix = wdtDomainUid + "-" + wdtManagedServerNameBase;
   private final int managedServerPort = 8001;
   private static int wdtT3ChannelPort;
   private final int wdtReplicaCount = 2;
@@ -206,7 +207,6 @@ public class ItDomainInPV implements LoggedTest {
   @DisplayName("Create WebLogic domain in PV using WDT")
   public void testDomainInPvUsingWdt() {
     previousTestSuccessful = false;
-    String managedServerPodNamePrefix = wdtDomainUid + "-" + wdtManagedServerNameBase;
     final String pvName = wdtDomainUid + "-pv"; // name of the persistent volume
     final String pvcName = wdtDomainUid + "-pvc"; // name of the persistent volume claim
 
@@ -319,15 +319,15 @@ public class ItDomainInPV implements LoggedTest {
     // verify managed server pods are ready
     for (int i = 1; i <= wdtReplicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, wdtDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, wdtDomainUid, wdtDomainNamespace);
+          wdtManagedServerPodNamePrefix + i, wdtDomainNamespace);
+      checkPodReady(wdtManagedServerPodNamePrefix + i, wdtDomainUid, wdtDomainNamespace);
     }
 
     // verify managed server services created
     for (int i = 1; i <= wdtReplicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, wdtDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, wdtDomainNamespace);
+          wdtManagedServerPodNamePrefix + i, wdtDomainNamespace);
+      checkServiceExists(wdtManagedServerPodNamePrefix + i, wdtDomainNamespace);
     }
     previousTestSuccessful = true;
   }
@@ -390,6 +390,7 @@ public class ItDomainInPV implements LoggedTest {
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= wdtReplicaCount; i++) {
       managedServers.add(wdtDomainUid + "-" + wdtManagedServerNameBase + i);
+      checkPodReady(wdtManagedServerPodNamePrefix + i, wdtDomainUid, wdtDomainNamespace);
     }
     assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
