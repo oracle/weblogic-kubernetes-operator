@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -275,13 +276,8 @@ public class Main {
 
       // Check for namespaces that are removed from the operator's
       // targetNamespaces list, or that are deleted from the Kubernetes cluster.
-      Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
-      for (String ns : targetNamespaces) {
-        // the active namespaces are the ones that will not be stopped
-        if (delegate.isNamespaceRunning(ns)) {
-          namespacesToStop.remove(ns);
-        }
-      }
+      // 'isNamespaceStopping' map will contain current and deleted targetNamespaces.
+      Set<String> namespacesToStop = removeActiveNamespaces(isNamespaceStopping);
       stopNamespaces(targetNamespaces, namespacesToStop);
 
       Collection<String> namespacesToStart = targetNamespaces;
@@ -307,6 +303,24 @@ public class Main {
         runSteps(new StartNamespacesStep(namespacesToStart, isFullRecheck));
       }
     };
+  }
+
+  // Parameter 'nameSpaceMap' contains a map of the namespaces to be stopped.
+  // Returns the set of namespaces that are to be stopped.  Any active/running namespaces are
+  // removed from the list so that they are not stopped by the operator.
+  private static Set<String> removeActiveNamespaces(Map<String, AtomicBoolean> nameSpacesMap) {
+    Set<String> namespacesToStop = new TreeSet<>(nameSpacesMap.keySet());
+
+    // Using iterator to avoid ConcurrentModificationException when removing active namespaces
+    // from list.
+    Iterator<String> itr = namespacesToStop.iterator();
+    while (itr.hasNext()) {
+      // the active namespaces are the ones that will not be stopped
+      if (delegate.isNamespaceRunning(itr.next())) {
+        itr.remove();
+      }
+    }
+    return namespacesToStop;
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {

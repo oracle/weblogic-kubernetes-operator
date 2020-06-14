@@ -3,6 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +30,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class NamespaceTest {
   private static final String NAMESPACES_PROPERTY = "OPERATOR_TARGET_NAMESPACES";
@@ -67,16 +71,38 @@ public class NamespaceTest {
 
   @Test
   public void givenJobWatcherForNamespace_afterNamespaceDeletedAndRecreatedHaveDifferentWatcher()
-      throws NoSuchFieldException {
+      throws NoSuchFieldException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     addTargetNamespace(NS);
     addTargetNamespace(ADDITIONAL_NAMESPACE);
     cacheStartedNamespaces();
     JobWatcher oldWatcher = JobWatcher.getOrCreateFor(domain);
 
+    // Stop the namespace before removing as a target namespace so operator will stop it.
+    invoke_stopNamespace(NS, false);
     deleteTargetNamespace(NS);
     Main.recheckDomains().run();
 
     assertThat(JobWatcher.getOrCreateFor(domain), not(sameInstance(oldWatcher)));
+  }
+
+  @Test
+  public void stopActiveNamespace_verifyRemovedFromStopNamespaceSet()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchFieldException {
+    addTargetNamespace(NS);
+    addTargetNamespace(ADDITIONAL_NAMESPACE);
+    cacheStartedNamespaces();
+
+    // Stop the namespace before removing as a target namespace so operator will stop it.
+    invoke_stopNamespace(NS, false);
+    deleteTargetNamespace(NS);
+
+    Field field = Main.class.getDeclaredField("isNamespaceStopping");
+    field.setAccessible(true);
+    Map<String, AtomicBoolean> isNamespaceStopping = (Map<String, AtomicBoolean>) field.get(null);
+
+    Set<String> nameSpacesToStop  = invoke_removeActiveNamespaces(isNamespaceStopping);
+    assertTrue(nameSpacesToStop.size() == 1);
+    assertTrue(nameSpacesToStop.contains(NS));
   }
 
   private void addTargetNamespace(String namespace) {
@@ -103,6 +129,24 @@ public class NamespaceTest {
   private Map<String, AtomicBoolean> createNamespaceFlags() {
     return currentNamespaces.stream()
         .collect(Collectors.toMap(identity(), a -> new AtomicBoolean()));
+  }
+
+  @SuppressWarnings("unchecked")
+  static void invoke_stopNamespace(String namespace, boolean remove)
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method stopNamespace =
+        Main.class.getDeclaredMethod("stopNamespace", String.class, Boolean.TYPE);
+    stopNamespace.setAccessible(true);
+    stopNamespace.invoke(null, namespace, remove);
+  }
+
+  @SuppressWarnings("unchecked")
+  static Set<String> invoke_removeActiveNamespaces(Map<String, AtomicBoolean> nameSpacesMap)
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Method removeActiveNamespaces =
+        Main.class.getDeclaredMethod("removeActiveNamespaces", Map.class);
+    removeActiveNamespaces.setAccessible(true);
+    return (Set<String>) removeActiveNamespaces.invoke(null, nameSpacesMap);
   }
 
   abstract static class TuningParametersStub implements TuningParameters {
