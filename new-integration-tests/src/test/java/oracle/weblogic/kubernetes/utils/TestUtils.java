@@ -56,6 +56,7 @@ public class TestUtils {
           result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
+          logger.info("Response for iteration {0}: {1}", i, response);
           managedServers.keySet().forEach(key -> {
             if (response.contains(key)) {
               managedServers.put(key, true);
