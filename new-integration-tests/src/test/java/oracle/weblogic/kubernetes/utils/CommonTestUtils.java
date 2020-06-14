@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTIT
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -65,6 +66,8 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -85,6 +88,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -599,6 +603,33 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
+                                                List<String> wdtModelList,
+                                                List<String> appSrcDirList,
+                                                String baseImageName,
+                                                String baseImageTag,
+                                                String domainType) {
+    return createImageAndVerify(miiImageNameBase,
+            wdtModelList,
+            appSrcDirList,
+            baseImageName,
+            baseImageTag,
+            domainType,
+            null,
+            true);
+  }
+
+  /**
+   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   *
+   * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
+   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param appSrcDirList list of the sample application source directories used to build sample app ear files
+   * @param baseImageName the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag the WebLogic base image tag to be used while creating mii image
+   * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @return image name with tag
+   */
+  public static String create1MiiImageAndVerify(String miiImageNameBase,
                                                List<String> wdtModelList,
                                                List<String> appSrcDirList,
                                                String baseImageName,
@@ -685,6 +716,132 @@ public class CommonTestUtils {
     // Check image exists using docker images | grep image tag.
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s does not exist", image));
+
+    logger.info("Image {0} are created successfully", image);
+    return image;
+  }
+
+  /**
+   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   *
+   * @param domainInImageNameBase the base domain image name used in local or to construct the image name in repository
+   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param appSrcDirList list of the sample application source directories used to build sample app ear files
+   * @param baseImageName the WebLogic base image name to be used while creating mii image
+   * @param baseImageTag the WebLogic base image tag to be used while creating mii image
+   * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @return image name with tag
+   */
+  public static String createImageAndVerify(String domainInImageNameBase,
+                                               List<String> wdtModelList,
+                                               List<String> appSrcDirList,
+                                               String baseImageName,
+                                               String baseImageTag,
+                                               String domainType,
+                                               List<String> modelVarList,
+                                               boolean isMii) {
+
+    // create unique image name with date
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    Date date = new Date();
+    final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
+    // Add repository name in image name for Jenkins runs
+    final String imageName = REPO_NAME + domainInImageNameBase;
+    final String image = imageName + ":" + imageTag;
+    List<String> archiveList = new ArrayList<String>();
+
+    if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
+      List<String> archiveAppsList = new ArrayList<String>();
+      List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
+
+      for (String appSrcDir : appSrcDirList) {
+        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
+          //remove from build
+          buildAppDirList.remove(appSrcDir);
+          archiveAppsList.add(appSrcDir);
+        }
+      }
+
+      if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
+        assertTrue(archiveApp(defaultAppParams()
+                .srcDirList(archiveAppsList)));
+        //archive provided ear or war file
+        String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
+                appSrcDirList.get(0).lastIndexOf("."));
+
+        // build the archive list
+        String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+        archiveList.add(zipAppFile);
+
+      }
+      if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
+        // build an application archive using what is in resources/apps/APP_NAME
+        assertTrue(buildAppArchive(defaultAppParams()
+                        .srcDirList(buildAppDirList)),
+                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+
+        // build the archive list
+        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+        archiveList.add(zipFile);
+      }
+    }
+
+
+    // Set additional environment variables for WIT
+    checkDirectory(WIT_BUILD_DIR);
+    Map<String, String> env = new HashMap<>();
+    env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+
+    // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
+    // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
+    // the next JDK 14 versions are released.
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      env.put("JAVA_HOME", witJavaHome);
+    }
+
+    // build an image using WebLogic Image Tool
+    logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
+    boolean result = false;
+    if (isMii) {
+      result = createImage(
+              new WitParams()
+                      .baseImageName(baseImageName)
+                      .baseImageTag(baseImageTag)
+                      .domainType(domainType)
+                      .modelImageName(imageName)
+                      .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
+                      .modelImageTag(imageTag)
+                      .modelFiles(wdtModelList)
+                      .modelArchiveFiles(archiveList)
+                      .modelVariableFiles(modelVarList)
+                      .wdtModelOnly(true)
+                      .wdtVersion(WDT_VERSION)
+                      .env(env)
+                      .redirect(true));
+    } else {
+      result = createImage(
+              new WitParams()
+                      .baseImageName(baseImageName)
+                      .baseImageTag(baseImageTag)
+                      .modelImageName(imageName)
+                      .domainType(domainType)
+                      .modelImageTag(imageTag)
+                      .modelFiles(wdtModelList)
+                      .modelArchiveFiles(archiveList)
+                      .modelVariableFiles(modelVarList)
+                      .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
+                      .wdtOperation("CREATE")
+                      .wdtVersion(WDT_VERSION)
+                      .env(env)
+                      .redirect(true));
+    }
+
+    assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
+
+    // Check image exists using docker images | grep image tag.
+    assertTrue(doesImageExist(imageTag),
+            String.format("Image %s does not exist", image));
 
     logger.info("Image {0} are created successfully", image);
     return image;
@@ -925,7 +1082,8 @@ public class CommonTestUtils {
 
         if (expectedServerNames != null) {
           // add the new managed server to the list
-          expectedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+          //expectedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+          expectedServerNames.add(manageServerPodName);
         }
       }
 
@@ -945,7 +1103,10 @@ public class CommonTestUtils {
         logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
             manageServerPodNamePrefix + i, domainNamespace);
         checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
-        expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+        if (expectedServerNames != null) {
+          //expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
+          expectedServerNames.remove(manageServerPodNamePrefix + i);
+        }
       }
 
       if (curlCmd != null && expectedServerNames != null) {
@@ -1077,7 +1238,7 @@ public class CommonTestUtils {
     logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+            condition -> logger.info("Waiting for grafana to be running in namespace {0} "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 grafanaNamespace,
                 condition.getElapsedTimeInMS(),
