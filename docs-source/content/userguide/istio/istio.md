@@ -14,6 +14,8 @@ If your applications have suitable tracing code in them, then you will also be a
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
+You can learn more about Istio at [Istio](https://istio.io/latest/docs/concepts/what-is-istio/)
+
 #### Limitations
 
 The current support for Istio has these limitations:
@@ -25,7 +27,7 @@ The current support for Istio has these limitations:
 
 {{% notice note %}}
 These instructions assume that you are using a Kubernetes cluster with
-[Istio](https://istio.io) installed and configured already.  The operator will not install
+[Istio Installation](https://istio.io/latest/docs/setup/install/) installed and configured already.  The operator will not install
 Istio for you.
 {{% /notice %}}
 
@@ -62,7 +64,7 @@ $ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-To enable the support for a domain, you need to add the
+To enable the Istio support for a domain, you need to add the
 `configuration` section to your domain custom resource YAML file as shown in the
 following example:  
 
@@ -81,39 +83,48 @@ spec:
     istio:
       enabled: true
       readinessPort: 8888
-      envoyPort: 31111
 ```
 
 To enable the Istio support, you must include the `istio` section
 and you must set `enabled: true` as shown.  The `readniessPort` is optional
-and defaults to `8888` if not provided.  The `envoyPort` is optional and defaults to `31111` if not provided.
+and defaults to `8888` if not provided, it is used for readiness health check.
 
 ##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on pods.  When you enable Istio support in the domain resource, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
-* On the Administration Server:
-    * A network channel called `http-probe` with listen address `127.0.0.1:8888` (or
-      the port you specified in the `readinessPort` setting).
-    * A network channel called `tcp-t3` with listen address `127.0.0.1` and the port
-      you specified as the admin port.
-    * A channel called `tcp-ldap` with listen address `127.0.0.1` and the port
-      you specified as the admin port, with only the LDAP protocol enabled.
-    * The introspector job does not create any configuration network channel for external access.  You can create a channel called `tcp-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your WebLogic domain configuration.
-* In the server template that is used to create Managed Servers in clusters:
-    * A channel called `http-probe` with listen address `127.0.0.1:8888` (or
-      the port you specified in the `readinessPort` setting) and the public address
-      set to the Kubernetes Service for the Managed Server.
-    * A channel called `tcp-t3` with listen address `127.0.0.1` and the port
-      you specified as the admin port and the public address
-      set to the Kubernetes Service for the Managed Server.
-    * A channel called `tcp-cluster` with listen address `127.0.0.1` and the port
-      you specified as the admin port, with only the CLUSTER_BROADCAST protocol enabled,
-      and the public address set to the Kubernetes Service for the Managed Server.
-    * A channel called `http-envoy` with listen address `127.0.0.1:31111` and the
-      public address set to the Kubernetes Service for the Managed Server. Note that `31111`
-      is the Istio proxy (envoy) port.  You can set it according to your environment or omit it, to use the default (31111)
+When deploying a domain with Istio sidecare injection enabled.  WebLogic Operator automatically add the following network
+channels via configuration overrides.
+
+https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+
+For non SSL traffic:
+
+|Name|Port|Protocol|Exposed as a container port|
+|----|----|--------|-----|
+|http-probe|From configuration istio readinessPort|http|N|
+|tcp-t3|server listening port|t3|Y|
+|http-default|server listening port|http|Y|
+|tcp-snmp|server listening port|snmp|Y|
+|tcp-cbt|server listening port|CLUSTER-BROADCAST|N|
+|tcp-iiop|server listening port|http|N|
+
+For SSL traffic, if SSL is enabled on the server:
+
+|Name|Port|Protocol|Exposed as a container port|
+|----|----|--------|-----|
+|tls-t3s|server SSL listening port|t3s|Y|
+|https-secure|server SSL listening port|https|Y|
+|tls-iiops|server SSL listening port|iiops|N|
+|tls-ldaps|server SSL listening port|ldaps|N|
+|tls-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
+
+If WebLogic Administration Port is enabled on the admin server:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|htps-admin|WebLogic Administration Port|https|Y|
 
 
 Additionally, when Istio support is enabled for a domain, the operator
@@ -258,38 +269,4 @@ as shown in the image above.
 
 You can learn more about [distrubting tracing in Istio](https://istio.io/docs/tasks/telemetry/distributed-tracing/)
 in their documentation.
-
-#### Internal WebLogic Domain Changes to support Istio
-
-When deploying a domain with Istio sidecare injection enabled.  WebLogic Operator automatically add the following network
-channels via configuration overrides.
-
-https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
-
-For non SSL traffic:
-
-|Name|Port|Protocol|Exposed as a container port|
-|----|----|--------|-----|
-|http-probe|From configuration istio readinessPort|http|N|
-|tcp-t3|server listening port|t3|Y|
-|http-default|server listening port|http|Y|
-|tcp-snmp|server listening port|snmp|Y|
-|tcp-cbt|server listening port|CLUSTER-BROADCAST|N|
-|tcp-iiop|server listening port|http|N|
-
-For SSL traffic, if SSL is enabled on the server:
-
-|Name|Port|Protocol|Exposed as a container port|
-|----|----|--------|-----|
-|tls-t3s|server SSL listening port|t3s|Y|
-|https-secure|server SSL listening port|https|Y|
-|tls-iiops|server SSL listening port|iiops|N|
-|tls-ldaps|server SSL listening port|ldaps|N|
-|tls-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
-
-If WebLogic Administration Port is enabled:
-
-|Name|Port|Protocol|Exposed in the container port|
-|----|----|--------|-----|
-|htps-admin|WebLogic Administration Port|https|Y|
 
