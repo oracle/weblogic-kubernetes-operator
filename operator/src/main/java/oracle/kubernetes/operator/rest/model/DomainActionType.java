@@ -3,6 +3,6 @@
 
 package oracle.kubernetes.operator.rest.model;
 
-public enum DomainUpdateType {
+public enum DomainActionType {
   UNKNOWN, INTROSPECT, RESTART
 }

@@ -5,7 +5,7 @@ package oracle.kubernetes.operator.rest.backend;
 
 import java.util.Set;
 
-import oracle.kubernetes.operator.rest.model.DomainUpdate;
+import oracle.kubernetes.operator.rest.model.DomainAction;
 
 /**
  * The RestBackend interface is to implement all of the WebLogic Operator REST resources that need
@@ -35,7 +35,7 @@ public interface RestBackend {
    * @param domainUid the unique ID of a domain
    * @param params an update command with optional parameters
    */
-  void updateDomain(String domainUid, DomainUpdate params);
+  void performDomainAction(String domainUid, DomainAction params);
 
   /**
    * Get the names of the clusters in a WebLogic domain.

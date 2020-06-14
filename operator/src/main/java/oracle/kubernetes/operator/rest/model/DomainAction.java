@@ -6,18 +6,18 @@ package oracle.kubernetes.operator.rest.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Describes an update to the domain applied by a human operator.
+ * Describes an action to the domain that the operation should take.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DomainUpdate {
+public class DomainAction {
 
-  private final DomainUpdateType updateType;
+  private final DomainActionType action;
 
-  public DomainUpdate(DomainUpdateType updateType) {
-    this.updateType = updateType;
+  public DomainAction(DomainActionType action) {
+    this.action = action;
   }
 
-  public DomainUpdateType getUpdateType() {
-    return updateType;
+  public DomainActionType getAction() {
+    return action;
   }
 }

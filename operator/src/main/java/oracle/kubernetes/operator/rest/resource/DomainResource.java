@@ -12,8 +12,8 @@ import javax.ws.rs.core.MediaType;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.model.DomainAction;
 import oracle.kubernetes.operator.rest.model.DomainModel;
-import oracle.kubernetes.operator.rest.model.DomainUpdate;
 
 /**
  * DomainResource is a jaxrs resource that implements the REST api for the
@@ -57,8 +57,8 @@ public class DomainResource extends BaseResource {
    */
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  public void post(final DomainUpdate params) {
-    getBackend().updateDomain(getDomainUid(), params);
+  public void post(final DomainAction params) {
+    getBackend().performDomainAction(getDomainUid(), params);
   }
 
   /**

@@ -21,8 +21,8 @@ import io.kubernetes.client.openapi.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
-import oracle.kubernetes.operator.rest.model.DomainUpdate;
-import oracle.kubernetes.operator.rest.model.DomainUpdateType;
+import oracle.kubernetes.operator.rest.model.DomainAction;
+import oracle.kubernetes.operator.rest.model.DomainActionType;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.utils.TestUtils;
@@ -127,23 +127,23 @@ public class RestBackendImplTest {
 
   @Test(expected = WebApplicationException.class)
   public void whenUnknownDomain_throwException() {
-    restBackend.updateDomain("no_such_uid", new DomainUpdate(DomainUpdateType.INTROSPECT));
+    restBackend.performDomainAction("no_such_uid", new DomainAction(DomainActionType.INTROSPECT));
   }
 
   @Test(expected = WebApplicationException.class)
   public void whenUnknownDomainUpdateCommand_throwException() {
-    restBackend.updateDomain(NAME1, new DomainUpdate(null));
+    restBackend.performDomainAction(NAME1, new DomainAction(null));
   }
 
   @Test
   public void whenIntrospectionRequestedWhileNoIntrospectVersionDefined_setIntrospectVersion() {
-    restBackend.updateDomain(NAME1, createIntrospectRequest());
+    restBackend.performDomainAction(NAME1, createIntrospectRequest());
 
     assertThat(getUpdatedIntrospectVersion(), equalTo(INITIAL_VERSION));
   }
 
-  private DomainUpdate createIntrospectRequest() {
-    return new DomainUpdate(DomainUpdateType.INTROSPECT);
+  private DomainAction createIntrospectRequest() {
+    return new DomainAction(DomainActionType.INTROSPECT);
   }
 
   private String getUpdatedIntrospectVersion() {
@@ -167,7 +167,7 @@ public class RestBackendImplTest {
   public void whenIntrospectionRequestedWhileIntrospectVersionNonNumeric_setNumericVersion() {
     configurator.withIntrospectVersion("zork");
 
-    restBackend.updateDomain(NAME1, createIntrospectRequest());
+    restBackend.performDomainAction(NAME1, createIntrospectRequest());
 
     assertThat(getUpdatedIntrospectVersion(), equalTo(INITIAL_VERSION));
   }
@@ -176,20 +176,20 @@ public class RestBackendImplTest {
   public void whenIntrospectionRequestedWhileIntrospectVersionDefined_incrementIntrospectVersion() {
     configurator.withIntrospectVersion("17");
 
-    restBackend.updateDomain(NAME1, createIntrospectRequest());
+    restBackend.performDomainAction(NAME1, createIntrospectRequest());
 
     assertThat(getUpdatedIntrospectVersion(), equalTo("18"));
   }
 
   @Test
   public void whenClusterRestartRequestedWhileNoRestartVersionDefined_setRestartVersion() {
-    restBackend.updateDomain(NAME1, createDomainRestartRequest());
+    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
 
     assertThat(getUpdatedRestartVersion(), equalTo(INITIAL_VERSION));
   }
 
-  private DomainUpdate createDomainRestartRequest() {
-    return new DomainUpdate(DomainUpdateType.RESTART);
+  private DomainAction createDomainRestartRequest() {
+    return new DomainAction(DomainActionType.RESTART);
   }
 
   private String getUpdatedRestartVersion() {
@@ -200,7 +200,7 @@ public class RestBackendImplTest {
   public void whenRestartRequestedWhileRestartVersionDefined_incrementIntrospectVersion() {
     configurator.withRestartVersion("23");
 
-    restBackend.updateDomain(NAME1, createDomainRestartRequest());
+    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
 
     assertThat(getUpdatedRestartVersion(), equalTo("24"));
   }
@@ -238,7 +238,7 @@ public class RestBackendImplTest {
 
   @Test
   public void whenDomainRestartRequestedWhileNoRestartVersionDefined_setRestartVersion() {
-    restBackend.updateDomain(NAME1, createDomainRestartRequest());
+    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
 
     assertThat(getUpdatedRestartVersion(), equalTo(INITIAL_VERSION));
   }

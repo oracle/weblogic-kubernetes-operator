@@ -35,8 +35,8 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
-import oracle.kubernetes.operator.rest.model.DomainUpdate;
-import oracle.kubernetes.operator.rest.model.DomainUpdateType;
+import oracle.kubernetes.operator.rest.model.DomainAction;
+import oracle.kubernetes.operator.rest.model.DomainActionType;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -196,11 +196,11 @@ public class RestBackendImpl implements RestBackend {
   }
 
   @Override
-  public void updateDomain(String domainUid, DomainUpdate params) {
+  public void performDomainAction(String domainUid, DomainAction params) {
     verifyDomain(domainUid);
     authorize(domainUid, Operation.update);
 
-    switch (Optional.ofNullable(params.getUpdateType()).orElse(DomainUpdateType.UNKNOWN)) {
+    switch (Optional.ofNullable(params.getAction()).orElse(DomainActionType.UNKNOWN)) {
       case INTROSPECT:
         introspect(domainUid);
         break;
