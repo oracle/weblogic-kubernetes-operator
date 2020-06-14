@@ -184,6 +184,13 @@ public class ItDomainInPV implements LoggedTest {
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, wdtDomainNamespace, wlstDomainNamespace);
 
+    // get a free node port for NGINX
+    nodeportshttp = getNextFreePort(30305, 30405);
+    int nodeportshttps = getNextFreePort(30443, 30543);
+
+    // install and verify NGINX
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {
       String kindRepoImage = KIND_REPO + image.substring(TestConstants.OCR_REGISTRY.length() + 1);
@@ -367,12 +374,6 @@ public class ItDomainInPV implements LoggedTest {
   public void testAccessAppUsingLBPort() {
     Assumptions.assumeTrue(previousTestSuccessful);
     previousTestSuccessful = false;
-    // get a free node port for NGINX
-    int nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
 
     //create ingress controller
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
