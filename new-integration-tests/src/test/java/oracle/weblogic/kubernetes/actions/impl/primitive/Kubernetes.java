@@ -482,7 +482,7 @@ public class Kubernetes implements LoggedTest {
    * @param namespace name of the pod's namespace
    * @param labelSelector in the format "weblogic.domainUID in (%s)"
    * @param podName name of the pod
-   * @param containerName name of the container, if null looks for first container
+   * @param containerName name of the container, null if there is only one container
    * @return restart count of the container
    * @throws ApiException if Kubernetes client API call fails
    */
