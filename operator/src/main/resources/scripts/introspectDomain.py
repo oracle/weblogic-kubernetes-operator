@@ -507,8 +507,6 @@ class TopologyGenerator(Generator):
           if adminPortEnabled != firstAdminPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
 
-
-
   def validateClusterServersListenPortProperty(self, cluster, errorMsg, clusterListenPortProperty):
     firstServer = None
     firstListenPortProperty = None
@@ -759,8 +757,8 @@ class TopologyGenerator(Generator):
       for nap in naps:
         self.addNetworkAccessPoint(nap)
 
-    self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
-    if len(naps) != 0:
+    added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
+    if len(naps) != 0 or added_istio_yaml:
       self.undent()
 
   def addNetworkAccessPoint(self, nap):
@@ -799,15 +797,11 @@ class TopologyGenerator(Generator):
     '''
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     if istio_enabled == 'false':
-      return
+      return False
 
     if not added_nap:
       self.writeln("  networkAccessPoints:")
       self.indent()
-
-    # istio probe is not exposed
-    # istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-    # # self.addIstioNetworkAccessPoint("http-probe", "http", istio_readiness_port, 0)
 
     self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
     self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
@@ -826,11 +820,7 @@ class TopologyGenerator(Generator):
 
     if server.isAdministrationPortEnabled():
       self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
-
-    # if is_server_template:
-    #   istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
-    #   self.addIstioNetworkAccessPoint("http-envoy", "http", istio_envoy_port, 0)
-    #   self.addIstioNetworkAccessPoint("http-cluster", "CLUSTER-BROADCAST", server.getListenPort(), 0)
+    return True
 
   def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
     self.writeln("  - name: " + name)
@@ -1148,7 +1138,17 @@ class SitConfigGenerator(Generator):
   def _getNapConfigOverrideAction(self, svr, testname):
     replace_action = 'f:combine-mode="replace"'
     add_action = 'f:combine-mode="add"'
-    return add_action, "add"
+    found = False
+    for nap in svr.getNetworkAccessPoints():
+      if nap.getName() == testname:
+        found = True
+        break
+
+    if found:
+      trace("SEVERE","Found NetWorkAccessPoints with name %s, this is an internal name used by the WebLogic Kubernetes Operator,please remove it from your domain and try again." % testname)
+      sys.exit(1)
+    else:
+      return add_action, "add"
 
   def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true"):
 
@@ -1261,12 +1261,6 @@ class SitConfigGenerator(Generator):
 
     self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
                         listen_port=listen_port, protocol='iiop')
-
-
-    # istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
-    #
-    # self._writeIstioNAP(name='http-envoy', server=template, listen_address=listen_address,
-    #                     listen_port=istio_envoy_port, protocol='http', http_enabled="true")
 
     ssl = getSSLOrNone(template)
     if ssl is not None and ssl.isEnabled():
@@ -1657,7 +1651,6 @@ class DomainIntrospector(SecretManager):
   
     tg.generate()
 
-
 # Work-around bugs in off-line WLST when accessing an SSL mbean
 def getSSLOrNone(server):
   try:
@@ -1671,7 +1664,6 @@ def getSSLOrNone(server):
     trace("Ignoring getSSL() exception, this is expected.")
     ret = None
   return ret
-
 
 def main(env):
   try:

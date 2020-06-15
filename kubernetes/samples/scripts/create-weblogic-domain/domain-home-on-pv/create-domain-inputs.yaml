@@ -162,8 +162,4 @@ createDomainFilesDir: wlst
 # istioEnabled specifies whether or not it is deployed under Istio.
 istioEnabled: false
 
-# istioReadinessPort specifies the WebLogic NAP port for use by the readiness probe
-istioReadinessPort: 8888
 
-# istioEnvoyPort specifies the WebLogic NAP port for use by the readiness probe
-istioEnvoyPort: 31111

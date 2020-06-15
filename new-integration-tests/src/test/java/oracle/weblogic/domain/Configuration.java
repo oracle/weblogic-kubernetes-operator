@@ -34,9 +34,8 @@ public class Configuration {
           + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
   private Long introspectorJobActiveDeadlineSeconds;
 
-  @ApiModelProperty("Istio property")
+  @ApiModelProperty("Istio service mesh integration")
   private Istio istio;
-
 
   public Configuration model(Model model) {
     this.model = model;

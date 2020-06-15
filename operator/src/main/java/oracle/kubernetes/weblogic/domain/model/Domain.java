@@ -479,10 +479,6 @@ public class Domain {
     return spec.getIstioReadinessPort();
   }
 
-  public int getIstioEnvoyPort() {
-    return spec.getIstioEnvoyPort();
-  }
-
   public boolean isDomainSourceFromModel(String type) {
     return DomainSourceType.FromModel.toString().equals(type);
   }
@@ -709,7 +705,8 @@ public class Domain {
     }
 
     private void checkForDefaultNameExposed(Channel channel) {
-      if (channel.getChannelName().contains("-default")) {
+      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
+            || "default-secure".equals(channel.getChannelName())) {
         failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio());
       }
     }

@@ -97,17 +97,17 @@ and defaults to `8888` if not provided, it is used for readiness health check.
 Istio enforces a number of requirements on Pods.  When you enable Istio support in the domain resource, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
-When deploying a domain with Istio sidecar injection enabled.  WebLogic Operator automatically add the following network
+When deploying a domain with Istio sidecar injection enabled.  The WebLogic Server Kubernetes Operator automatically add the following network
 channels via configuration overrides.
 
 https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
 
-For non SSL traffic:
+For non-SSL traffic:
 
 |Name|Port|Protocol|Exposed as a container port|
 |----|----|--------|-----|
 |http-probe|From configuration istio readinessPort|http|N|
-|tcp-t3|server listening port|t3|Y|
+|tcp-default|server listening port|t3|Y|
 |http-default|server listening port|http|Y|
 |tcp-snmp|server listening port|snmp|Y|
 |tcp-cbt|server listening port|CLUSTER-BROADCAST|N|
@@ -117,13 +117,13 @@ For SSL traffic, if SSL is enabled on the server:
 
 |Name|Port|Protocol|Exposed as a container port|
 |----|----|--------|-----|
-|tls-t3s|server SSL listening port|t3s|Y|
+|tls-default|server SSL listening port|t3s|Y|
 |https-secure|server SSL listening port|https|Y|
 |tls-iiops|server SSL listening port|iiops|N|
 |tls-ldaps|server SSL listening port|ldaps|N|
 |tls-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
 
-If WebLogic Administration Port is enabled on the admin server:
+If WebLogic Administration Port is enabled on the Administration Server:
 
 |Name|Port|Protocol|Exposed in the container port|
 |----|----|--------|-----|
@@ -131,7 +131,7 @@ If WebLogic Administration Port is enabled on the admin server:
 
 
 Additionally, when Istio support is enabled for a domain, the operator
-ensure that the Istio sidecar is not injected into the introspector job's pods.
+ensures that the Istio sidecar is not injected into the introspector job's pods.
 
 
 ### Apply the domain resource yaml
@@ -233,7 +233,7 @@ those requests to the cluster service for `cluster-1` in `domain1` in
 the namespace `domain1`.
 
 Once the gateway and virtual service has been setup, you can access it through your ingress host and port, 
-refer to the section `Determining the ingress IP and ports` in [Istio Getting Started](https://istio.io/latest/docs/setup/getting-started/)
+refer to [Determining the ingress IP and ports](https://istio.io/latest/docs/setup/getting-started/#determining-the-ingress-ip-and-ports)
 
 
 For more information about providing ingress using Istio, refer to the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).

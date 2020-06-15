@@ -35,37 +35,6 @@ topology:
                     PublicAddress: '@@PROP:T3CHANNEL2_PUBLIC_LISTEN_ADDR@@'
                 T3Channel3:
                     ListenPort: 30014
-                'istio-probe':
-                    Protocol: http
-                    ListenAddress: 127.0.0.1
-                    PublicAddress: 'bobbys-front-end-admin-server'
-                    ListenPort: 8888
-                    HttpEnabledForThisProtocol: true
-                    TunnelingEnabled: false
-                    OutboundEnabled: false
-                    Enabled: true
-                    TwoWaySSLEnabled: false
-                    ClientCertificateEnforced: false
-                'istio-t3':
-                    ListenAddress: 127.0.0.1
-                    PublicAddress: 'bobbys-front-end-admin-server'
-                    ListenPort: '7001'
-                    TunnelingEnabled: false
-                    OutboundEnabled: false
-                    Enabled: true
-                    TwoWaySSLEnabled: false
-                    ClientCertificateEnforced: false
-                'istio-ldap':
-                    Protocol: ldap
-                    ListenAddress: 127.0.0.1
-                    PublicAddress: 'bobbys-front-end-admin-server'
-                    ListenPort: '7001'
-                    HttpEnabledForThisProtocol: true
-                    TunnelingEnabled: false
-                    OutboundEnabled: false
-                    Enabled: true
-                    TwoWaySSLEnabled: false
-                    ClientCertificateEnforced: false
             SSL:
                 Enabled: true
         standalone1:

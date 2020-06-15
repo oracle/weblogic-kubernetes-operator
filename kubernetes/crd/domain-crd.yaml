@@ -80,10 +80,6 @@ spec:
                     type: object
                     description: Configuration for istio property.
                     properties:
-                      envoyPort:
-                        type: number
-                        description: The WebLogic proxy envoy port for Istio. Defaults
-                          to 31111. Not required.
                       readinessPort:
                         type: number
                         description: The WebLogic readiness port for Istio. Defaults
@@ -135,10 +131,6 @@ spec:
                     type: object
                     description: Istio service mesh integration configuration.
                     properties:
-                      envoyPort:
-                        type: number
-                        description: The WebLogic proxy envoy port for Istio. Defaults
-                          to 31111. Not required.
                       readinessPort:
                         type: number
                         description: The WebLogic readiness port for Istio. Defaults
