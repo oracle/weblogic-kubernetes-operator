@@ -538,6 +538,10 @@ class ItMonitoringExporter implements LoggedTest {
     logger.info("Shutting down domain1");
     assertTrue(shutdownDomain(domain1Uid, domain1Namespace),
             String.format("shutdown domain %s in namespace %s failed", domain1Uid, domain1Namespace));
+    // shutdown domain2
+    logger.info("Shutting down domain2");
+    assertTrue(shutdownDomain(domain2Uid, domain2Namespace),
+            String.format("shutdown domain %s in namespace %s failed", domain2Uid, domain2Namespace));
 
     // delete mii domain images created for parameterized test
     if (miiImage != null) {

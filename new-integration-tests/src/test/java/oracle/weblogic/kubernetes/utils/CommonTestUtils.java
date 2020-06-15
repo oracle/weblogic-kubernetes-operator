@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -1022,8 +1023,7 @@ public class CommonTestUtils {
 
         if (expectedServerNames != null) {
           // add the new managed server to the list
-          //expectedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
-          expectedServerNames.add(manageServerPodName);
+          expectedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
         }
       }
 
@@ -1044,8 +1044,7 @@ public class CommonTestUtils {
             manageServerPodNamePrefix + i, domainNamespace);
         checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
         if (expectedServerNames != null) {
-          //expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
-          expectedServerNames.remove(manageServerPodNamePrefix + i);
+          expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
         }
       }
 
