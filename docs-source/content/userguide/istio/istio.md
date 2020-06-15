@@ -6,7 +6,7 @@ weight: 1
 
 #### Overview
 
-WebLogic Server Kubernetes Operator version 2.3 and later includes support for Istio 1.2.2 and later.
+WebLogic Server Kubernetes Operator version 2.6 and later includes support for Istio 1.4.2 and later.
 This support allows you to run the operator itself, and WebLogic domains managed by
 the operator, with Istio sidecar injection enabled.  It will allow you to use
 Istio gateways and virtual services to access applications deployed in these domains.
@@ -20,10 +20,10 @@ You can learn more about Istio at [Istio](https://istio.io/latest/docs/concepts/
 
 The current support for Istio has these limitations:
 
-* It is tested with Istio 1.2.2 and later (up to 1.5.4), however it is tested with both single and
+* It is tested with Istio 1.4.2 and later (up to 1.5.4), however it is tested with both single and
   multicluster installations of Istio.
-* You cannot expose the default channel, any attempt will result in an error when deploying the domain.  
-* In order to use WLST command, you can define a separate channel in your WebLogic Domain and the expose as a `NodePort` 
+* You cannot expose any of the default channels, any attempt will result in an error when deploying the domain.  
+* In order to use WLST command, you can define a network access point (NAP) in your WebLogic Domain and expose it as a `NodePort` 
 in your domain resource YAML instead of accessing the channel through the Istio mesh network.  
 
 #### Using the operator with Istio support
@@ -94,10 +94,10 @@ and defaults to `8888` if not provided, it is used for readiness health check.
 
 ##### How Istio-enabled domains differ from regular domains
 
-Istio enforces a number of requirements on pods.  When you enable Istio support in the domain resource, the
+Istio enforces a number of requirements on Pods.  When you enable Istio support in the domain resource, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
-When deploying a domain with Istio sidecare injection enabled.  WebLogic Operator automatically add the following network
+When deploying a domain with Istio sidecar injection enabled.  WebLogic Operator automatically add the following network
 channels via configuration overrides.
 
 https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
