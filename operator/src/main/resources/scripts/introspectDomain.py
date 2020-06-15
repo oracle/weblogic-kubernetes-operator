@@ -507,8 +507,6 @@ class TopologyGenerator(Generator):
           if adminPortEnabled != firstAdminPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
 
-
-
   def validateClusterServersListenPortProperty(self, cluster, errorMsg, clusterListenPortProperty):
     firstServer = None
     firstListenPortProperty = None
@@ -759,14 +757,16 @@ class TopologyGenerator(Generator):
       for nap in naps:
         self.addNetworkAccessPoint(nap)
 
-    self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
-    self.undent()
+    added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
+    if len(naps) != 0 or added_istio_yaml:
+      self.undent()
 
   def addNetworkAccessPoint(self, nap):
 
     # Change the name to follow the istio port naming convention
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled:
+
+    if istio_enabled == 'true':
       http_protocol = [ 'http' ]
       https_protocol = ['https','admin']
       tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop']
@@ -796,37 +796,31 @@ class TopologyGenerator(Generator):
     :param added_nap:  true if there are existing nap section in the output
     '''
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled:
-      if not added_nap:
-        self.writeln("  networkAccessPoints:")
-        self.indent()
+    if istio_enabled == 'false':
+      return False
 
-      # istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
-      # # self.addIstioNetworkAccessPoint("http-probe", "http", istio_readiness_port, 0)
+    if not added_nap:
+      self.writeln("  networkAccessPoints:")
+      self.indent()
 
-      self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("tcp-t3", "t3", server.getListenPort(), 0)
-      # No need to to http default, PodStepContext already handle it
-      # self.addIstioNetworkAccessPoint("http-default", "t3", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
-      self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
+    # No need to to http default, PodStepContext already handle it
+    self.addIstioNetworkAccessPoint("http-default", "t3", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
 
-      ssl = getSSLOrNone(server)
-      if ssl is not None and ssl.isEnabled():
-        ssl_listen_port = ssl.getListenPort()
-        self.addIstioNetworkAccessPoint("https-ssl", "https", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tls-t3s", "t3s", ssl_listen_port, 0)
-        self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
+    ssl = getSSLOrNone(server)
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+      self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
 
-      # admin port
-      if server.isAdministrationPortEnabled():
-        self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
-
-      # if is_server_template:
-      #   istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
-      #   self.addIstioNetworkAccessPoint("http-envoy", "http", istio_envoy_port, 0)
-      #   self.addIstioNetworkAccessPoint("http-cluster", "CLUSTER-BROADCAST", server.getListenPort(), 0)
+    if server.isAdministrationPortEnabled():
+      self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
+    return True
 
   def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
     self.writeln("  - name: " + name)
@@ -1131,7 +1125,7 @@ class SitConfigGenerator(Generator):
         self.writeln("<d:network-access-point>")
         self.indent()
         self.writeln("<d:name>" + nap_name + "</d:name>")
-        if istio_enabled:
+        if istio_enabled == 'true':
           self.writeListenAddress("force a replace", '127.0.0.1')
           replace_action = 'f:combine-mode="replace"'
           self.writeln('<d:public-address %s>%s</d:public-address>' % (replace_action, listen_address))
@@ -1144,7 +1138,17 @@ class SitConfigGenerator(Generator):
   def _getNapConfigOverrideAction(self, svr, testname):
     replace_action = 'f:combine-mode="replace"'
     add_action = 'f:combine-mode="add"'
-    return add_action, "add"
+    found = False
+    for nap in svr.getNetworkAccessPoints():
+      if nap.getName() == testname:
+        found = True
+        break
+
+    if found:
+      trace("SEVERE","Found NetWorkAccessPoint with name %s in the WebLogic Domain, this is an internal name used by the WebLogic Kubernetes Operator, please remove it from your domain and try again." % testname)
+      sys.exit(1)
+    else:
+      return add_action, "add"
 
   def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true"):
 
@@ -1184,16 +1188,16 @@ class SitConfigGenerator(Generator):
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
-
     admin_server_port = server.getListenPort()
-
+    # readiness probe
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
+    # Generate NAP for each protocols
     self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='ldap')
 
-    self._writeIstioNAP(name='tcp-t3', server=server, listen_address=listen_address,
+    self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='t3')
 
     self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
@@ -1211,13 +1215,13 @@ class SitConfigGenerator(Generator):
     ssl = getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = ssl.getListenPort()
-      self._writeIstioNAP(name='https-ssl', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
       self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tls-t3s', server=server, listen_address=listen_address,
+      self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='t3s')
 
       self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
@@ -1241,10 +1245,10 @@ class SitConfigGenerator(Generator):
 
     listen_port = template.getListenPort()
     self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+                        listen_port=istio_readiness_port, protocol='http')
 
-    self._writeIstioNAP(name='tcp-t3', server=template, listen_address=listen_address,
-                        listen_port=listen_port, protocol='t3')
+    self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='t3', http_enabled='false')
 
     self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
                         listen_port=listen_port, protocol='http')
@@ -1258,23 +1262,17 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
                         listen_port=listen_port, protocol='iiop')
 
-
-    # istio_envoy_port = self.env.getEnvOrDef("ISTIO_ENVOY_PORT", "31111")
-    #
-    # self._writeIstioNAP(name='http-envoy', server=template, listen_address=listen_address,
-    #                     listen_port=istio_envoy_port, protocol='http', http_enabled="true")
-
     ssl = getSSLOrNone(template)
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = ssl.getListenPort()
-      self._writeIstioNAP(name='https-ssl', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='https', http_enabled="true")
+      self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='https')
 
       self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tls-t3s', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='t3s')
+      self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
 
       self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
@@ -1653,7 +1651,6 @@ class DomainIntrospector(SecretManager):
   
     tg.generate()
 
-
 # Work-around bugs in off-line WLST when accessing an SSL mbean
 def getSSLOrNone(server):
   try:
@@ -1667,7 +1664,6 @@ def getSSLOrNone(server):
     trace("Ignoring getSSL() exception, this is expected.")
     ret = None
   return ret
-
 
 def main(env):
   try:

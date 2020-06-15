@@ -172,10 +172,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getIstioReadinessPort();
   }
 
-  public int getIstioEnvoyPort() {
-    return getDomain().getIstioEnvoyPort();
-  }
-
   String getEffectiveLogHome() {
     return getDomain().getEffectiveLogHome();
   }

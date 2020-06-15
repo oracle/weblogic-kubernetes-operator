@@ -100,12 +100,6 @@ An element representing a cluster in the domain configuration.
 | `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified it overrides the value of spec.configOverrideSecrets. |
 | `istio` | [Istio](#istio) | Moved under configuration. Should we remove this ??? |
 
-### Experimental
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `istio` | [Istio](#istio) | Moved under configuration. Should we remove this ??? |
-
 ### Managed Server
 
 ManagedServer represents the operator configuration for a single Managed Server.

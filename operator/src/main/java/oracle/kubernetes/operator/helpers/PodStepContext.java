@@ -194,28 +194,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
-  private String getIstioNapNameIfEnabled(String name) {
-    boolean istioEnabled = this.getDomain().isIstioEnabled();
-    if (istioEnabled) {
-      if ("default".equals(name)) {
-        name = "http-default";
-      }
-      if ("default-secure".equals(name)) {
-        name = "https-ssl";
-      }
-      if ("default-admin".equals(name)) {
-        name = "https-admin";
-      }
-    }
-    return name;
-  }
-
   private List<V1ContainerPort> getContainerPorts() {
     if (scan != null) {
       List<V1ContainerPort> ports = new ArrayList<>();
       if (scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
-          String napName = getIstioNapNameIfEnabled(nap.getName());
+          String napName = nap.getName();
           V1ContainerPort port =
               new V1ContainerPort()
                   .name(LegalNames.toDns1123LegalName(napName))
@@ -224,29 +208,32 @@ public abstract class PodStepContext extends BasePodStepContext {
           ports.add(port);
         }
       }
-      if (scan.getListenPort() != null) {
-        String napName = getIstioNapNameIfEnabled("default");
-        ports.add(
-            new V1ContainerPort()
-                .name(napName)
-                .containerPort(scan.getListenPort())
-                .protocol("TCP"));
-      }
-      if (scan.getSslListenPort() != null) {
-        String napName = getIstioNapNameIfEnabled("default-secure");
-        ports.add(
-            new V1ContainerPort()
-                .name(napName)
-                .containerPort(scan.getSslListenPort())
-                .protocol("TCP"));
-      }
-      if (scan.getAdminPort() != null) {
-        String napName = getIstioNapNameIfEnabled("default-admin");
-        ports.add(
-            new V1ContainerPort()
-                .name(napName)
-                .containerPort(scan.getAdminPort())
-                .protocol("TCP"));
+      // Istio type is already passed from the introspector output, no need to create it again
+      if (!this.getDomain().isIstioEnabled()) {
+        if (scan.getListenPort() != null) {
+          String napName = "default";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getListenPort())
+                  .protocol("TCP"));
+        }
+        if (scan.getSslListenPort() != null) {
+          String napName = "default-secure";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getSslListenPort())
+                  .protocol("TCP"));
+        }
+        if (scan.getAdminPort() != null) {
+          String napName = "default-admin";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getAdminPort())
+                  .protocol("TCP"));
+        }
       }
       return ports;
     }

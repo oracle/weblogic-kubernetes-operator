@@ -1,12 +1,12 @@
 ---
 title: "Istio support"
 date: 2019-08-15T13:30:04-04:00
-weight: 1
+weight: 6
 ---
 
 #### Overview
 
-WebLogic Server Kubernetes Operator version 2.3 and later includes support for Istio 1.2.2 and later.
+WebLogic Server Kubernetes Operator version 2.6 and later includes support for Istio 1.4.2 and later.
 This support allows you to run the operator itself, and WebLogic domains managed by
 the operator, with Istio sidecar injection enabled.  It will allow you to use
 Istio gateways and virtual services to access applications deployed in these domains.
@@ -14,35 +14,39 @@ If your applications have suitable tracing code in them, then you will also be a
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
+You can learn more about Istio at [Istio.](https://istio.io/latest/docs/concepts/what-is-istio/)
+
 #### Limitations
 
 The current support for Istio has these limitations:
 
-* It is tested with Istio 1.2.2 and later (up to 1.5), however it is tested with both single and
+* It is tested with Istio 1.4.2 and later (up to 1.5.4), however it is tested with both single and
   multicluster installations of Istio.
+* You cannot expose any of the default channels; any attempt will result in an error when deploying the domain.  
+* In order to use WLST commands, define a network access point (NAP) in your WebLogic omain and expose it as a `NodePort` 
+in your domain resource YAML file instead of accessing the channel through the Istio mesh network.  
 
 #### Using the operator with Istio support
 
 {{% notice note %}}
 These instructions assume that you are using a Kubernetes cluster with
-[Istio](https://istio.io) installed and configured already.  The operator will not install
+[Istio](https://istio.io/latest/docs/setup/install/) installed and configured already.  The operator will not install
 Istio for you.
 {{% /notice %}}
 
 You can deploy the operator into a namespace which has Istio automatic sidecar
-injection enabled.  Before installing the operator, create the namespace you
-wish to run the operator in, and label it for automatic injection.
+injection enabled.  Before installing the operator, create the namespace in which you want to run the domain and label it.
 
 ```
 $ kubectl create namespace weblogic-operator
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
-After the namespace is labeled, you can install the operator using the normal
-method.  When the operator pod starts, you will notice that Istio automatically
-injects an `initContainer` called `istio-init` and the envoy container `istio-proxy`.
+After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).  
+When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init` 
+and the envoy container `istio-proxy`.
 
-You can check this using the following commands:
+You can validate this using the following commands:
 
 ```
 $ kubectl --namespace weblogic-operator get pods
@@ -54,7 +58,7 @@ In the second command, change `weblogic-operator-xxx-xxx` to the name of your po
 #### Creating a domain with Istio support
 
 You can configure your domains to run with Istio automatic sidecar injection enabled.
-Before creating your domain, create the namespace you wish to run the domain in,
+Before creating your domain, create the namespace in which you want to run the operator
 and label it for automatic injection.
 
 ```
@@ -62,7 +66,7 @@ $ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-To enable the support for a domain, you need to add the
+To enable the Istio support for a domain, you need to add the
 `configuration` section to your domain custom resource YAML file as shown in the
 following example:  
 
@@ -81,48 +85,57 @@ spec:
     istio:
       enabled: true
       readinessPort: 8888
-      envoyPort: 31111
 ```
 
 To enable the Istio support, you must include the `istio` section
 and you must set `enabled: true` as shown.  The `readniessPort` is optional
-and defaults to `8888` if not provided.  The `envoyPort` is optional and defaults to `31111` if not provided.
+and defaults to `8888` if not provided; it is used for readiness health check.
 
 ##### How Istio-enabled domains differ from regular domains
 
-Istio enforces a number of requirements on pods.  When you enable Istio support in the domain resource, the
+Istio enforces a number of requirements on Pods.  When you enable Istio support in the domain resource, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
-* On the Administration Server:
-    * A network channel called `http-probe` with listen address `127.0.0.1:8888` (or
-      the port you specified in the `readinessPort` setting).
-    * A network channel called `tcp-t3` with listen address `127.0.0.1` and the port
-      you specified as the admin port.
-    * A channel called `tcp-ldap` with listen address `127.0.0.1` and the port
-      you specified as the admin port, with only the LDAP protocol enabled.
-    * The introspector job does not create any configuration network channel for external access.  You can create a channel called `tcp-T3Channel` with listen address `127.0.0.1` and the port you specified as the T3 port in your WebLogic domain configuration.
-* In the server template that is used to create Managed Servers in clusters:
-    * A channel called `http-probe` with listen address `127.0.0.1:8888` (or
-      the port you specified in the `readinessPort` setting) and the public address
-      set to the Kubernetes Service for the Managed Server.
-    * A channel called `tcp-t3` with listen address `127.0.0.1` and the port
-      you specified as the admin port and the public address
-      set to the Kubernetes Service for the Managed Server.
-    * A channel called `tcp-cluster` with listen address `127.0.0.1` and the port
-      you specified as the admin port, with only the CLUSTER_BROADCAST protocol enabled,
-      and the public address set to the Kubernetes Service for the Managed Server.
-    * A channel called `http-envoy` with listen address `127.0.0.1:31111` and the
-      public address set to the Kubernetes Service for the Managed Server. Note that `31111`
-      is the Istio proxy (envoy) port.  You can set it according to your environment or omit it, to use the default (31111)
+When deploying a domain with Istio sidecar injection enabled.  The WebLogic Server Kubernetes Operator automatically adds the following network
+channels using configuration overrides.
+
+https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+
+For non-SSL traffic:
+
+|Name|Port|Protocol|Exposed as a container port|
+|----|----|--------|-----|
+|`http-probe`|`From configuration istio readinessPort`|`http`|`N`|
+|`tcp-default`|`Server listening port`|`t3`|`Y`|
+|`http-default`|`Server listening port`|`http`|`Y`|
+|`tcp-snmp`|`Server listening port`|`snmp`|`Y`|
+|`tcp-cbt`|`server listening port`|`CLUSTER-BROADCAST`|`N`|
+|`tcp-iiop`|`server listening port`|`http`|`N`|
+
+For SSL traffic, if SSL is enabled on the server:
+
+|Name|Port|Protocol|Exposed as a container port|
+|----|----|--------|-----|
+|`tls-default`|`Server SSL listening port`|`t3s`|`Y`|
+|`https-secure`|`Server SSL listening port`|`https`|`Y`|
+|`tls-iiops`|`Server SSL listening port`|`iiops`|`N`|
+|`tls-ldaps`|`Server SSL listening port`|`ldaps`|`N`|
+|`tls-cbts`|`Server listening port`|`CLUSTER-BROADCAST-SECURE`|`N`|
+
+If WebLogic Administration Port is enabled on the Administration Server:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|`https-admin`|`WebLogic dministration port`|`https`|`Y`|
 
 
 Additionally, when Istio support is enabled for a domain, the operator
-ensure that the Istio sidecar is not injected into the introspector job's pods.
+ensures that the Istio sidecar is not injected into the introspector job's pods.
 
 
 ### Apply the domain resource yaml
 
-After the domain resource YAML is modified, apply it by
+After the domain resource YAML file is modified, apply it by
 
 ```
 kubect apply -f domain.yaml
@@ -161,8 +174,8 @@ controller like Traefik.  Using the Istio gateway will enable you to view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
 the cluster, for example, the Istio gateway.
 
-To configure external access to your domain, you need to create an Istio `gateway` and
-`virtualservice` as shown in the example below:
+To configure external access to your domain, you need to create an Istio `Gateway` and
+`Virtualservice` as shown in the example below:
 
 ```
 ---
@@ -195,11 +208,20 @@ spec:
   http:
     - match:
         - uri:
-            prefix: /
+            prefix: /console
+        - port: 7001
+      route:
+        - destination:
+            host: sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local
+            port:
+              number: 7001
+    - match:
+        - uri:
+            prefix: /testwebapp
         - port: 8001
       route:
         - destination:
-            host: domain1-cluster-cluster-1.domain1.svc.cluster.local
+            host: sample-domain1-cluster-cluster-1.domain1.svc.cluster.local
             port:
               number: 8001
 ```
@@ -209,8 +231,8 @@ using HTTP on port 80, and a virtual service that will route all of
 those requests to the cluster service for `cluster-1` in `domain1` in
 the namespace `domain1`.
 
-Once the gateway and virtual service has been setup, you can access it through your ingress host and port, 
-refer to the section `Determining the ingress IP and ports` in [Istio Getting Started](https://istio.io/latest/docs/setup/getting-started/)
+After the gateway and virtual service has been set up, you can access it through your ingress host and port. 
+Refer to [Determining the ingress IP and ports.](https://istio.io/latest/docs/setup/getting-started/#determining-the-ingress-ip-and-ports)
 
 
 For more information about providing ingress using Istio, refer to the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
@@ -227,10 +249,10 @@ flowing:
 * In from the Istio gateway on the left.
 * To a domain called `domain1`.
 
-In this example you can see how the traffic flows to the cluster services and
+In this example, you can see how the traffic flows to the cluster services and
 then to the individual Managed Servers.
 
-![Traffic visualization with Kiali](/weblogic-kubernetes-operator/images/kiali.png)
+[Traffic visualization with Kiali](/weblogic-kubernetes-operator/images/kiali.png)
 
 You can learn more about [Istio traffic management](https://istio.io/docs/concepts/traffic-management/)
 in their documentation.
@@ -249,38 +271,4 @@ as shown in the image above.
 
 You can learn more about [distrubting tracing in Istio](https://istio.io/docs/tasks/telemetry/distributed-tracing/)
 in their documentation.
-
-#### Internal WebLogic Domain Changes to support Istio
-
-When deploying a domain with Istio sidecare injection enabled.  WebLogic Operator automatically add the following network
-channels via configuration overrides.
-
-https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
-
-For non SSL traffic:
-
-|Name|Port|Protocol|Exposed in the container port|
-|----|----|--------|-----|
-|http-probe|From configuration istio readinessPort|http|N|
-|tcp-t3|server listening port|t3|Y|
-|http-default|server listening port|http|Y|
-|tcp-snmp|server listening port|snmp|Y|
-|tcp-cbt|server listening port|CLUSTER-BROADCAST|N|
-|tcp-iiop|server listening port|http|N|
-
-For SSL traffic, if SSL is enabled on the server:
-
-|Name|Port|Protocol|Exposed in the container port|
-|----|----|--------|-----|
-|tcp-t3s|server SSL listening port|t3s|Y|
-|https-ssl|server SSL listening port|https|Y|
-|tcp-iiops|server SSL listening port|iiops|N|
-|tcp-ldaps|server SSL listening port|ldaps|N|
-|tcp-cbts|server listening port|CLUSTER-BROADCAST-SECURE|N|
-
-If WebLogic Administration Port is enabled:
-
-|Name|Port|Protocol|Exposed in the container port|
-|----|----|--------|-----|
-|htps-admin|WebLogic Administration Port|https|Y|
 

@@ -255,9 +255,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
-  @Description("Experimental feature configurations.")
-  private Experimental experimental;
-
+  /**
   /**
    * Adds a Cluster to the DomainSpec.
    *
@@ -663,18 +661,10 @@ public class DomainSpec extends BaseConfiguration {
    * @return istioEnabled
    */
   boolean isIstioEnabled() {
-    Optional<Experimental> exp = Optional.ofNullable(experimental);
-    if (exp.isPresent()) {
-      return exp
-          .map(Experimental::getIstio)
-          .map(Istio::getEnabled)
-          .orElse(false);
-    } else {
-      return Optional.ofNullable(configuration)
-          .map(Configuration::getIstio)
-          .map(Istio::getEnabled)
-          .orElse(false);
-    }
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
+        .map(Istio::getEnabled)
+        .orElse(false);
   }
 
   /**
@@ -687,18 +677,6 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
-  }
-
-  /**
-   * The WebLogic envoy port used under Istio environment.
-   *
-   * @return envoyPort
-   */
-  int getIstioEnvoyPort() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getIstio)
-        .map(Istio::getEnvoyPort)
-        .orElse(31111);
   }
 
   String getWdtDomainType() {
@@ -768,8 +746,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
-            .append("experimental", experimental);
+            .append("configOverrideSecrets", configOverrideSecrets);
 
     return builder.toString();
   }
@@ -798,8 +775,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
-            .append(configOverrideSecrets)
-            .append(experimental);
+            .append(configOverrideSecrets);
 
     return builder.toHashCode();
   }
@@ -836,8 +812,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets)
-            .append(experimental, rhs.experimental);
+            .append(configOverrideSecrets, rhs.configOverrideSecrets);
     return builder.isEquals();
   }
 

@@ -445,15 +445,11 @@ function createFiles {
     sed -i -e "s:%RCU_CREDENTIALS_SECRET_NAME%:${rcuCredentialsSecret}:g" ${createJobOutput}
     sed -i -e "s:%CUSTOM_RCUPREFIX%:${rcuSchemaPrefix}:g" ${createJobOutput}
     sed -i -e "s|%CUSTOM_CONNECTION_STRING%|${rcuDatabaseURL}|g" ${createJobOutput}
-
-    if [ "${istioEnabled}" != "true" ]; then
-      sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
-    fi
+    sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3Channel}:g" ${createJobOutput}
     # entries for Istio
     sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
-    sed -i -e "s:%ISTIO_ENVOY_PORT%:${istioEnvoyPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
@@ -517,8 +513,6 @@ function createFiles {
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
 
   if [ "${istioEnabled}" == "true" ]; then
-      exposeAdminT3ChannelPrefix="${disabledPrefix}"
-      exposeAnyChannelPrefix="${disabledPrefix}"
       exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
 
@@ -531,7 +525,6 @@ function createFiles {
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${dcrOutput}
-  sed -i -e "s:%ISTIO_ENVOY_PORT%:${istioEnvoyPort}:g" ${dcrOutput}
   # MII settings are used for model-in-image integration testing
   sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
   sed -i -e "s:%MII_CONFIG_MAP_PREFIX%:${miiConfigMapPrefix}:g" ${dcrOutput}

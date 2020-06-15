@@ -68,11 +68,6 @@ public class IntrospectorJobEnvVars {
   public static final String ISTIO_READINESS_PORT = "ISTIO_READINESS_PORT";
 
   /**
-   * Istio envoy port.
-   */
-  public static final String ISTIO_ENVOY_PORT = "ISTIO_ENVOY_PORT";
-
-  /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with
    * the introspection job.
    * @param name an environment variable name

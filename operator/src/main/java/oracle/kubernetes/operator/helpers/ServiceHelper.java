@@ -414,11 +414,7 @@ public class ServiceHelper {
     void addServicePorts(WlsServerConfig serverConfig) {
       getNetworkAccessPoints(serverConfig).forEach(this::addNapServicePort);
       boolean istioEnabled = this.getDomain().isIstioEnabled();
-      if (istioEnabled) {
-        addServicePortIfNeeded("http-default", serverConfig.getListenPort());
-        addServicePortIfNeeded("https-ssl", serverConfig.getSslListenPort());
-        addServicePortIfNeeded("https-admin", serverConfig.getAdminPort());
-      } else {
+      if (!istioEnabled) {
         addServicePortIfNeeded("default", serverConfig.getListenPort());
         addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());
         addServicePortIfNeeded("default-admin", serverConfig.getAdminPort());

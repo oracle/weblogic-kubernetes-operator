@@ -111,8 +111,8 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, namespace);
   }
 
-  static String cannotExposeDefaultChannelIstio() {
-    return getMessage(MessageKeys.CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO);
+  static String cannotExposeDefaultChannelIstio(String channelName) {
+    return getMessage(MessageKeys.CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO, channelName);
   }
 
 }

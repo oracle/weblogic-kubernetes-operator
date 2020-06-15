@@ -37,7 +37,7 @@
 #         introspectTest.sh
 #
 #     To check for ISTIO
-#         export ISTIO_ENABELD=true for any model test
+#         export ISTIO_ENABELD=true - this only test for Non Model in Image
 #
 #############################################################################
 #
@@ -717,15 +717,13 @@ function checkOverrides() {
   local src_input_file=checkBeans.inputt
   if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ] ; then
     src_input_file=checkMIIBeans.inputt
+  elif [ "${ISTIO_ENABLED}" == "true" ]; then
+    src_input_file=checkBeansIstio.inputt
   fi
+
   rm -f ${test_home}/checkBeans.input
 
-  cp ${src_input_file} ${src_input_file}_2 || exit 1
-  if [ "${ISTIO_ENABLED}" == "true" ]; then
-    cat checkBeansIstio.inputt >> ${src_input_file}_2 || exit 1
-  fi
-
-  ${SCRIPTPATH}/util_subst.sh -g ${src_input_file}_2 ${test_home}/checkBeans.input || exit 1
+  ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
 
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
