@@ -12,7 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -40,6 +43,8 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 public class ConfigMapHelper {
@@ -165,17 +170,11 @@ public class ConfigMapHelper {
   }
 
   static class ScriptConfigMapContext extends ConfigMapContext {
-    private final String operatorNamespace;
 
     ScriptConfigMapContext(Step conflictStep, String operatorNamespace, String domainNamespace) {
       super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace, loadScriptsFromClasspath(domainNamespace));
 
-      this.operatorNamespace = operatorNamespace;
-    }
-
-    @Override
-    protected V1ObjectMeta customize(V1ObjectMeta metadata) {
-      return metadata.putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
+      addLabel(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
     }
 
     private static synchronized Map<String, String> loadScriptsFromClasspath(String domainNamespace) {
@@ -198,22 +197,16 @@ public class ConfigMapHelper {
     private final String name;
     private final String namespace;
     private V1ConfigMap model;
+    private final Map<String, String> labels = new HashMap<>();
 
     ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents) {
       this.conflictStep = conflictStep;
       this.name = name;
       this.namespace = namespace;
       this.contents = contents;
-    }
 
-    /**
-     * Subclasses may override this to apply customizations to the model metadata. This is typically
-     * done to add labels that are specific to a particular type of config map.
-     * @param metadata the common metadata to customize
-     * @return the updated metadata
-     */
-    protected V1ObjectMeta customize(V1ObjectMeta metadata) {
-      return metadata;
+      addLabel(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION);
+      addLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
     /**
@@ -237,16 +230,24 @@ public class ConfigMapHelper {
     }
 
     protected final V1ConfigMap createModel(Map<String, String> data) {
-      return new V1ConfigMap().kind("ConfigMap").apiVersion("v1")
-            .metadata(customize(createMetadata())).data(data);
+      return new V1ConfigMap().kind("ConfigMap").apiVersion("v1").metadata(createMetadata()).data(data);
     }
 
     private V1ObjectMeta createMetadata() {
       return new V1ObjectMeta()
           .name(name)
           .namespace(namespace)
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
-          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+          .labels(labels);
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    void addLabel(String name, String value) {
+      labels.put(name, value);
+      model = null;
+    }
+
+    private Map<String,String> getLabels() {
+      return Collections.unmodifiableMap(labels);
     }
 
     /**
@@ -265,15 +266,19 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+        Optional.ofNullable((String) packet.get(DOMAIN_INTROSPECT_REQUESTED))
+              .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
         V1ConfigMap existingMap = callResponse.getResult();
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
-        } else if (isCompatibleMap(existingMap)) {
+        } else if (!isCompatibleMap(existingMap)) {
+          return doNext(updateConfigMap(getNext(), existingMap), packet);
+        } else if (mustPatchCurrentMap(existingMap)) {
+          return doNext(patchCurrentMap(existingMap, getNext()), packet);
+        } else {
           logConfigMapExists();
           recordCurrentMap(packet, existingMap);
           return doNext(packet);
-        } else {
-          return doNext(updateConfigMap(getNext(), existingMap), packet);
         }
       }
 
@@ -295,6 +300,21 @@ public class ConfigMapHelper {
         return new CallBuilder().replaceConfigMapAsync(name, namespace,
                                         createModel(getCombinedData(existingConfigMap)),
                                         createReplaceResponseStep(next));
+      }
+
+      private boolean mustPatchCurrentMap(V1ConfigMap currentMap) {
+        return KubernetesUtils.isMissingValues(currentMap.getMetadata().getLabels(), getLabels());
+      }
+
+      private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
+        JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+
+        KubernetesUtils.addPatches(
+            patchBuilder, "/metadata/labels/", currentMap.getMetadata().getLabels(), getLabels());
+
+        return new CallBuilder()
+            .patchConfigMapAsync(name, namespace,
+                new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
       }
     }
 
@@ -342,11 +362,30 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, SCRIPT_CONFIG_MAP_NAME, namespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, getName(), namespace);
         recordCurrentMap(packet, callResponse.getResult());
         return doNext(packet);
       }
     }
+
+
+    private ResponseStep<V1ConfigMap> createPatchResponseStep(Step next) {
+      return new PatchResponseStep(next);
+    }
+
+    private class PatchResponseStep extends ResponseStep<V1ConfigMap> {
+
+      PatchResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+        LOGGER.info(MessageKeys.CM_PATCHED, getName(), namespace);
+        return doNext(packet);
+      }
+    }
+
   }
 
   /** Returns true if the actual map contains all of the entries from the expected map. */
@@ -537,11 +576,7 @@ public class ConfigMapHelper {
       super(conflictStep, getIntrospectorConfigMapName(domain.getDomainUid()), domain.getNamespace(), data);
 
       this.domainUid = domain.getDomainUid();
-    }
-
-    @Override
-    protected V1ObjectMeta customize(V1ObjectMeta metadata) {
-      return metadata.putLabelsItem(LabelConstants.DOMAINUID_LABEL, domainUid);
+      addLabel(LabelConstants.DOMAINUID_LABEL, domainUid);
     }
 
   }
@@ -658,6 +693,35 @@ public class ConfigMapHelper {
     private void addToPacket(Packet packet, String key, String value) {
       LOGGER.finest("Read " + key + " value " + value + " from domain config map");
       packet.put(key, value);
+    }
+  }
+
+  /**
+   * Reads the introspector config map for the specified domain, populating the following packet entries.
+   *   INTROSPECTION_STATE_LABEL          the value of the domain's 'introspectVersion' when this map was created
+   *
+   * @param ns the namespace of the domain
+   * @param domainUid the unique domain ID
+   * @return a step to do the processing.
+   */
+  public static Step readIntrospectionVersionStep(String ns, String domainUid) {
+    String configMapName = getIntrospectorConfigMapName(domainUid);
+    return new CallBuilder().readConfigMapAsync(configMapName, ns, new ReadIntrospectionVersionStep());
+  }
+
+  private static class ReadIntrospectionVersionStep extends DefaultResponseStep<V1ConfigMap> {
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      Optional.ofNullable(callResponse.getResult())
+            .map(V1ConfigMap::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(l -> l.get(INTROSPECTION_STATE_LABEL))
+            .ifPresentOrElse(
+                version -> packet.put(INTROSPECTION_STATE_LABEL, version),
+                () -> packet.remove(INTROSPECTION_STATE_LABEL));
+
+      return doNext(packet);
     }
   }
 
