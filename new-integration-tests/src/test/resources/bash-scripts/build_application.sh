@@ -20,14 +20,7 @@ echo "Setting up build environment"
 source ${WL_HOME}/server/bin/setWLSEnv.sh
 
 # call ant all to build
-cd /
-echo "Printing / contents"
-ls -ls
 cd /application
-echo "Printing /application contents"
-ls -ls
-echo "Who am I?"
-id -u
 
 echo "Printing sysprops ${sysprops}"
 ant ${sysprops} ${targets}

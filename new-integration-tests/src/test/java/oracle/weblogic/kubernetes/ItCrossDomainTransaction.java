@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -49,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
@@ -68,6 +70,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -98,6 +101,9 @@ public class ItCrossDomainTransaction implements LoggedTest {
   private String domainUid1 = "domain1";
   private String domainUid2 = "domain2";
   private static Map<String, Object> secretNameMap;
+  private final String domain1AdminServerPodName = domainUid1 + "-admin-server";
+  private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
+  private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
 
   /**
    * Install Operator.
@@ -225,6 +231,28 @@ public class ItCrossDomainTransaction implements LoggedTest {
     createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
     //create domain2
     createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
+
+    logger.info("Getting admin server external service node port");
+    int adminServiceNodePort = assertDoesNotThrow(
+        () -> getServiceNodePort(domain1Namespace, domain1AdminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    //curl -v http://100.111.141.4:32179/txpropagate/TxPropagate?urls=t3://domain1-admin-server.ns-yatu:7001,
+    // t3://domain1-managed-server1.ns-yatu:8001,t3://domain2-managed-server1.ns-nooy:8001
+    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+            + "http://%s:%s/TxPropagate/TxPropagate?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001",
+             K8S_NODEPORT_HOST, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
+             domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace);
+
+    ExecResult result = null;
+    logger.info("curl command {0}", curlRequest);
+    result = assertDoesNotThrow(
+        () -> exec(curlRequest, true));
+    if (result.exitValue() == 0) {
+      logger.info("\n HTTP response is \n " + result.stdout());
+      logger.info("curl command returned {0}", result.toString());
+      assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
+    }
 
   }
 
