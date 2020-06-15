@@ -1,7 +1,7 @@
 ---
 title: "Istio support"
 date: 2019-08-15T13:30:04-04:00
-weight: 1
+weight: 6
 ---
 
 #### Overview
