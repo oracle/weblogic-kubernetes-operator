@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-//import java.util.Arrays;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -28,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Tests to create domain in persistent volume using WLST and WDT.
+ * Tests to create JRF domain in persistent volume using WLST.
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
@@ -48,10 +47,6 @@ public class ItJrfDomainInPV implements LoggedTest {
 
   private static String fmwImage = JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG;
   private static String dbImage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
-
-  private static boolean isUseSecret = true;
-
-  private final String wlSecretName = "weblogic-credentials";
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -88,8 +83,8 @@ public class ItJrfDomainInPV implements LoggedTest {
     //TODO in the final version when JRF domain is added setupDBandRCUschema should be here
     //start DB and create RCU schema
     logger.info("Start DB and create RCU schema for namespace: {0} RCU prefix: {1} dbPort: {2} "
-        + "dbUrl: {3}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl);
-    assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(RCUSCHEMAPREFIX, dbNamespace,
+        + "dbUrl: {3} dbImage: {4} fmwImage: {5}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl, dbImage, fmwImage);
+    assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
         dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl));
 

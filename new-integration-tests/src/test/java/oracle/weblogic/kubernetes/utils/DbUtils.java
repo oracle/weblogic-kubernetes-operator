@@ -58,26 +58,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class DbUtils {
 
-  //private static final String DBBASEIMAGENAME = ORACLE_DB_BASE_IMAGE_NAME + ":" + ORACLE_DB_BASE_IMAGE_TAG;
-  //private static final String FMWBASEIMAGENAME = FMW_BASE_IMAGE_NAME + ":" + FMW_BASE_IMAGE_TAG;
   private static final String CREATE_REPOSITORY_SCRIPT = "createRepository.sh";
   private static final String PASSWORD_FILE = "pwd.txt";
   private static final String RCUTYPE = "fmw";
   private static final String RCUPODNAME = "rcu";
   private static final String SYSPASSWORD = "Oradoc_db1";
 
-
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
-
 
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(15, MINUTES).await();
   /**
-   * Start DB instance, create Oracle rcu pod and load database schema in the specified namespace.
+   * Start Oracle DB instance, create rcu pod and load database schema in the specified namespace.
    *
+   * @param dbImage image name of database
+   * @param fmwImage image name of FMW
    * @param rcuSchemaPrefix rcu SchemaPrefixe
    * @param dbNamespace namespace where DB and RCU schema are going to start
    * @param dbPort NodePort of DB
@@ -88,11 +86,10 @@ public class DbUtils {
   public static void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix, String dbNamespace,
       int dbPort, String dbUrl) throws ApiException {
 
-
     CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
         OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
 
-    //TODO for Kind cluter?
+    //For Kind cluter
     String imagePullPolicy = "IfNotPresent";
     if (KIND_REPO != null) {
       imagePullPolicy = "Always";
@@ -128,6 +125,7 @@ public class DbUtils {
     Map requests = new HashMap<String, String>();
     requests.put("cpu", "500m");
     requests.put("ephemeral-storage", "8Gi");
+
     //create V1Deployment  for Oracle DB
     logger.info("Configure V1Deployment in namespace {0} using image {1}", dbNamespace,  dbBaseImageName);
     oracleDbDepl = new V1Deployment()
@@ -214,14 +212,14 @@ public class DbUtils {
     assertTrue(serviceCreated, String.format(
         "Create service failed with ApiException for oracleDBService in namespace %s ", dbNamespace));
 
-    // wait for the Oracle DB pod to be running
+    // wait for the Oracle DB pod to be ready
     String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
-    logger.info("Wait for the oracle Db pod: {0} running in namespace {1}", dbPodName, dbNamespace);
+    logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for Oracle DB to be running in namespace {0} "
+            condition -> logger.info("Waiting for Oracle DB to be ready in namespace {0} "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 dbNamespace,
                 condition.getElapsedTimeInMS(),
@@ -240,6 +238,7 @@ public class DbUtils {
   /**
    * Create a RCU schema in the namespace.
    *
+   * @param fmwBaseImageName the FMW image name
    * @param rcuPrefix prefix of RCU schema
    * @param imagePullPolicy image pull policy
    * @param dbUrl URL of DB
@@ -251,7 +250,7 @@ public class DbUtils {
 
     logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
     assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, imagePullPolicy, dbUrl, dbNamespace),
-        String.format("Create RCU pod failed with ApiException for image: %s, rcuPrefix: %s, imagePullPolicy: %s, "
+        String.format("Creating RCU pod failed with ApiException for image: %s, rcuPrefix: %s, imagePullPolicy: %s, "
                 + "dbUrl: %s in namespace: %s", fmwBaseImageName, rcuPrefix, imagePullPolicy, dbUrl, dbNamespace));
 
     assertTrue(assertDoesNotThrow(
@@ -263,6 +262,7 @@ public class DbUtils {
   /**
    * Create a RCU where createRepository script runs.
    *
+   * @param fmwBaseImageName the FMW image name
    * @param imagePullPolicy image pull policy
    * @param dbUrl URL of DB
    * @param dbNamespace namespace of DB where RCU is
@@ -274,7 +274,6 @@ public class DbUtils {
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
         .atMost(5, MINUTES).await();
-
 
     Map labels = new HashMap<String, String>();
     labels.put("ruc", "rcu");
@@ -310,92 +309,6 @@ public class DbUtils {
         .until(podReady(RCUPODNAME, null, dbNamespace));
 
     return pvPod;
-  }
-
-  private static boolean createRcuRepository(String dbNamespace, String dbUrl,
-                                         String rcuSchemaPrefix)
-      throws ApiException, IOException {
-
-    // copy the script and helper files to the RCU pod
-    Path createRepositoryScript = Paths.get(RESOURCE_DIR, "bash-scripts", CREATE_REPOSITORY_SCRIPT);
-    Path passwordFile = Paths.get(RESOURCE_DIR, "helper-files", PASSWORD_FILE);
-    Path podCreateRepositoryScript = Paths.get("/u01/oracle", CREATE_REPOSITORY_SCRIPT);
-    Path podPasswordFile = Paths.get("/u01/oracle", PASSWORD_FILE);
-
-    logger.info("source file is: {0}, target file is: {1}", createRepositoryScript, podCreateRepositoryScript);
-    FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, createRepositoryScript, podCreateRepositoryScript);
-    logger.info("source file is: {0}, target file is: {1}", passwordFile, podPasswordFile);
-    FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, passwordFile, podPasswordFile);
-
-    String createRepository = "/u01/oracle/createRepository.sh";
-    logger.info("Running the createRepository command: {0},  dbUrl: {1}, rcuSchemaPrefix: {2}, RCU type: {3}, "
-        + "SYSPASSWORD: {4} ", createRepository, dbUrl, rcuSchemaPrefix, RCUTYPE, SYSPASSWORD);
-    /*ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(dbNamespace, RCUPODNAME,
-            null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
-            RCUTYPE, SYSPASSWORD));
-    logger.info("Inside RCU pod command createRepository return value: {0}", execResult.exitValue());
-    if (execResult.exitValue() != 0) {
-      logger.info("Inside RCU pod command createRepository return error {0}", execResult.stderr());
-      return false;*/
-    try {
-      execCommand(dbNamespace, RCUPODNAME,
-          null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
-          RCUTYPE, SYSPASSWORD);
-
-    } catch (SSLProtocolException e) {
-      /* TODO For api 8.0.2 it looks that there is a bug on the web socket code or a timing bug
-      where it doesn't properly handle closing a socket that has already been closed by the other
-      side. Sometimes when RCU creation is completed java.net.ssl.SSLProtocolException is thrown
-      Ignore it for now */
-      return true;
-    } catch (InterruptedException e) {
-      return false;
-    } catch (ApiException e) {
-      return false;
-    }
-
-    return true;
-  }
-
-
-  private static String getPodNameOfDb(String dbNamespace) throws ApiException {
-
-    V1PodList  pod = null;
-    pod = Kubernetes.listPods(dbNamespace, null);
-
-    //There is only one pod in the given DB namespace
-    return pod.getItems().get(0).getMetadata().getName();
-  }
-
-  private static boolean checkPodLogContains(String matchStr, String podName, String namespace)
-      throws ApiException {
-    if (Kubernetes.getPodLog(podName,namespace,null).contains(matchStr)) {
-      return true;
-    }
-    return false;
-  }
-
-  private static Callable<Boolean> podLogContains(String matchStr, String podName, String dbNamespace)
-      throws ApiException {
-    return () -> {
-      return checkPodLogContains(matchStr, podName, dbNamespace);
-    };
-  }
-
-  private static void checkDbReady(String matchStr, String podName, String dbNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} log contain message {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                podName,
-                matchStr,
-                dbNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
-            String.format("podLogContains failed with ApiException for pod %s in namespace %s",
-               podName, dbNamespace)));
   }
 
   /**
@@ -442,11 +355,93 @@ public class DbUtils {
   public static Callable<Boolean> podIsReady(String namespace,
                                              String labelSelector,
                                              String podName) throws ApiException {
-    return () -> {
-      return isPodReady(namespace, labelSelector, podName);
-    };
+    return () -> isPodReady(namespace, labelSelector, podName);
   }
 
+  private static boolean createRcuRepository(String dbNamespace, String dbUrl,
+                                         String rcuSchemaPrefix)
+      throws ApiException, IOException {
 
+    // copy the script and helper files into the RCU pod
+    Path createRepositoryScript = Paths.get(RESOURCE_DIR, "bash-scripts", CREATE_REPOSITORY_SCRIPT);
+    Path passwordFile = Paths.get(RESOURCE_DIR, "helper-files", PASSWORD_FILE);
+    Path podCreateRepositoryScript = Paths.get("/u01/oracle", CREATE_REPOSITORY_SCRIPT);
+    Path podPasswordFile = Paths.get("/u01/oracle", PASSWORD_FILE);
 
+    logger.info("source file is: {0}, target file is: {1}", createRepositoryScript, podCreateRepositoryScript);
+    FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, createRepositoryScript, podCreateRepositoryScript);
+    logger.info("source file is: {0}, target file is: {1}", passwordFile, podPasswordFile);
+    FileUtils.copyFileToPod(dbNamespace, RCUPODNAME, null, passwordFile, podPasswordFile);
+
+    String createRepository = "/u01/oracle/createRepository.sh";
+    logger.info("Running the createRepository command: {0},  dbUrl: {1}, rcuSchemaPrefix: {2}, RCU type: {3}, "
+        + "SYSPASSWORD: {4} ", createRepository, dbUrl, rcuSchemaPrefix, RCUTYPE, SYSPASSWORD);
+
+    /* TODO The original code without encountering SSLProtocolException. Rollback to this oneWhen the bug is fixed.
+    ExecResult execResult = assertDoesNotThrow(
+        () -> execCommand(dbNamespace, RCUPODNAME,
+            null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
+            RCUTYPE, SYSPASSWORD));
+    logger.info("Inside RCU pod command createRepository return value: {0}", execResult.exitValue());
+    if (execResult.exitValue() != 0) {
+      logger.info("Inside RCU pod command createRepository return error {0}", execResult.stderr());
+      return false;
+    */
+    try {
+      execCommand(dbNamespace, RCUPODNAME,
+          null, true, "/bin/bash", createRepository, dbUrl, rcuSchemaPrefix,
+          RCUTYPE, SYSPASSWORD);
+
+    } catch (SSLProtocolException e) {
+      /* TODO For Api 8.0.2 it looks that there is a bug on the web socket code or a timing bug
+      where it doesn't properly handle closing a socket that has already been closed by the other
+      side. Sometimes on remote Jenkins cluster 10 when RCU creation is completed java.net.ssl.SSLProtocolException
+      is thrown. Ignore it for now */
+      return true;
+    } catch (InterruptedException e) {
+      return false;
+    } catch (ApiException e) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private static String getPodNameOfDb(String dbNamespace) throws ApiException {
+
+    V1PodList  pod = null;
+    pod = Kubernetes.listPods(dbNamespace, null);
+
+    //There is only one pod in the given DB namespace
+    return pod.getItems().get(0).getMetadata().getName();
+  }
+
+  private static boolean checkPodLogContains(String matchStr, String podName, String namespace)
+      throws ApiException {
+    if (Kubernetes.getPodLog(podName,namespace,null).contains(matchStr)) {
+      return true;
+    }
+    return false;
+  }
+
+  private static Callable<Boolean> podLogContains(String matchStr, String podName, String dbNamespace)
+      throws ApiException {
+    return () -> checkPodLogContains(matchStr, podName, dbNamespace);
+  }
+
+  private static void checkDbReady(String matchStr, String podName, String dbNamespace) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} log contain message {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                podName,
+                matchStr,
+                dbNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
+            String.format("podLogContains failed with ApiException for pod %s in namespace %s",
+               podName, dbNamespace)));
+  }
+  
 }
