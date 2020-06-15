@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Verify that Voyager and Voyager ingress are installed successfully.
  */
-@DisplayName("Test the HTTP session replication features of WebLogic")
+@DisplayName("Test Voyager is installed and the Voyager ingress is created successfully")
 @IntegrationTest
 class ItVoyagerSample implements LoggedTest {
 
@@ -139,7 +139,7 @@ class ItVoyagerSample implements LoggedTest {
    * The test invokes a webapp to verify the Voyager is installed successfully and ready to use.
    */
   @Test
-  @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
+  @DisplayName("Create the Voyager ingress and invoke the webapp to verify Voyager load balancer works")
   @Slow
   @MustNotRunInParallel
   public void testVoyagerWorks() {
