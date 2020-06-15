@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -57,14 +58,17 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAINUID_THREAD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
@@ -91,11 +95,13 @@ public class DomainProcessorTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private DomainConfigurator domainConfigurator;
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainConfigurator domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
+  private final DomainConfigurator newDomainConfigurator = DomainConfiguratorFactory.forDomain(newDomain);
 
   private static WlsDomainConfig createDomainConfig() {
     WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
@@ -122,7 +128,6 @@ public class DomainProcessorTest {
     mementos.add(UnitTestHash.install());
     mementos.add(ScanCacheStub.install());
 
-    domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
     testSupport.defineResources(domain);
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
@@ -269,42 +274,73 @@ public class DomainProcessorTest {
     assertThat(info.getExternalService(ADMIN_NAME), notNullValue());
   }
 
+  private static final String OLD_INTROSPECTION_STATE = "123";
+  private static final String NEW_INTROSPECTION_STATE = "124";
+  private static final String INTROSPECTOR_MAP_NAME = UID + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+
   @Test
   public void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
     defineServerResources(ADMIN_NAME);
-    defineSituationConfigMap();
+    testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
 
-    processor.makeRightDomainPresence(new DomainPresenceInfo(domain), false, false, true);
+    newDomainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
+    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
 
     assertThat(job, nullValue());
-
   }
 
   @Test
   public void whenDomainHasIntrospectVersionDifferentFromOldDomain_runIntrospectionJob() throws Exception {
-    defineServerResources(ADMIN_NAME);
-    defineSituationConfigMap();
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+    establishPreviousIntrospection();
 
-    processor.makeRightDomainPresence(
-          new DomainPresenceInfo(createDomainWithIntrospectVersion("789")), false, false, true);
+    newDomainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
 
     assertThat(job, notNullValue());
   }
 
+  private void establishPreviousIntrospection() throws JsonProcessingException {
+    defineServerResources(ADMIN_NAME);
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
+    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+  }
+
+  @Test
+  public void afterIntrospection_introspectorConfigMapHasUpToDateLabel() throws Exception {
+    establishPreviousIntrospection();
+
+    newDomainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
+
+    assertThat(getIntrospectorConfigMapIntrospectionVersion(), equalTo(NEW_INTROSPECTION_STATE));
+  }
+
+  private String getIntrospectorConfigMapIntrospectionVersion() {
+    return getConfigMaps()
+          .map(V1ConfigMap::getMetadata)
+          .filter(this::isIntrospectorMeta)
+          .findFirst()
+          .map(V1ObjectMeta::getLabels)
+          .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+          .orElse(null);
+  }
+
+  private Stream<V1ConfigMap> getConfigMaps() {
+    return testSupport.<V1ConfigMap>getResources(CONFIG_MAP).stream();
+  }
+
+  private boolean isIntrospectorMeta(@Nullable V1ObjectMeta meta) {
+    return meta != null && NS.equals(meta.getNamespace()) && INTROSPECTOR_MAP_NAME.equals(meta.getName());
+  }
+
   @Test
   public void whenFromModelDomainHasIntrospectVersionDifferentFromOldDomain_dontRunIntrospectionJob() throws Exception {
-    defineServerResources(ADMIN_NAME);
-    defineSituationConfigMap();
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+    establishPreviousIntrospection();
 
-    final Domain newDomain = createDomainWithIntrospectVersion("789");
-    DomainConfiguratorFactory.forDomain(newDomain).withDomainHomeSourceType(DomainSourceType.FromModel);
-    processor.makeRightDomainPresence(
-          new DomainPresenceInfo(newDomain), false, false, true);
+    newDomainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE).withDomainHomeSourceType(FromModel);
+    processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
 
     assertThat(job, nullValue());
   }
@@ -316,10 +352,6 @@ public class DomainProcessorTest {
     return newDomain;
   }
 
-  private void defineSituationConfigMap() throws JsonProcessingException {
-    testSupport.defineResources(createGenerateDomainMap());
-  }
-
   private V1Job job;
 
   private void recordJob(V1Job job) {
@@ -327,14 +359,18 @@ public class DomainProcessorTest {
   }
 
   // define a config map with a topology to avoid the no-topology condition that always runs the introspector
-  private V1ConfigMap createGenerateDomainMap() throws JsonProcessingException {
+  private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue) throws JsonProcessingException {
     return new V1ConfigMap()
-          .metadata(createGeneratedDomainMapMeta())
+          .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
           .data(new HashMap<>(Map.of(IntrospectorConfigMapKeys.TOPOLOGY_YAML, defineTopology())));
   }
 
-  private V1ObjectMeta createGeneratedDomainMapMeta() {
-    return new V1ObjectMeta().namespace(NS).name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
+  private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
+    final V1ObjectMeta meta = new V1ObjectMeta()
+          .namespace(NS)
+          .name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
+    Optional.ofNullable(introspectionDoneValue).ifPresent(v -> meta.putLabelsItem(INTROSPECTION_STATE_LABEL, v));
+    return meta;
   }
 
   private String defineTopology() throws JsonProcessingException {

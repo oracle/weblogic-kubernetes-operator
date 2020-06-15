@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.rest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import javax.annotation.Nonnull;
 import javax.ws.rs.WebApplicationException;
 
 import com.meterware.simplestub.Memento;
@@ -19,6 +21,8 @@ import io.kubernetes.client.openapi.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
+import oracle.kubernetes.operator.rest.model.DomainAction;
+import oracle.kubernetes.operator.rest.model.DomainActionType;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.utils.TestUtils;
@@ -36,7 +40,9 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -48,15 +54,16 @@ public class RestBackendImplTest {
   private static final String NS = "namespace1";
   private static final String NAME1 = "domain";
   private static final String NAME2 = "domain2";
-  private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(NAME1);
+  public static final String INITIAL_VERSION = "1";
+  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(NAME1);
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
   private RestBackend restBackend;
-  private Domain domain = createDomain(NS, NAME1);
-  private Domain domain2 = createDomain(NS, NAME2);
+  private final Domain domain = createDomain(NS, NAME1);
+  private final Domain domain2 = createDomain(NS, NAME2);
   private Domain updatedDomain;
-  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private WlsDomainConfig config;
 
   private static Domain createDomain(String namespace, String name) {
@@ -94,15 +101,149 @@ public class RestBackendImplTest {
     subjectAccessReview.setStatus(new V1SubjectAccessReviewStatus().allowed(true));
   }
 
-  /**
-   * Tear down test.
-   */
   @After
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
+
+  // functionality needed for Domains resource
+
+  @Test
+  public void retrieveRegisteredDomainIds() {
+    assertThat(restBackend.getDomainUids(), containsInAnyOrder(NAME1, NAME2));
+  }
+
+  // functionality needed for Domain resource
+
+  @Test
+  public void validateKnownUid() {
+    assertThat(restBackend.isDomainUid(NAME2), is(true));
+  }
+
+  @Test
+  public void rejectUnknownUid() {
+    assertThat(restBackend.isDomainUid("no_such_uid"), is(false));
+  }
+
+  @Test(expected = WebApplicationException.class)
+  public void whenUnknownDomain_throwException() {
+    restBackend.performDomainAction("no_such_uid", new DomainAction(DomainActionType.INTROSPECT));
+  }
+
+  @Test(expected = WebApplicationException.class)
+  public void whenUnknownDomainUpdateCommand_throwException() {
+    restBackend.performDomainAction(NAME1, new DomainAction(null));
+  }
+
+  @Test
+  public void whenIntrospectionRequestedWhileNoIntrospectVersionDefined_setIntrospectVersion() {
+    restBackend.performDomainAction(NAME1, createIntrospectRequest());
+
+    assertThat(getUpdatedIntrospectVersion(), equalTo(INITIAL_VERSION));
+  }
+
+  private DomainAction createIntrospectRequest() {
+    return new DomainAction(DomainActionType.INTROSPECT);
+  }
+
+  private String getUpdatedIntrospectVersion() {
+    return getOptionalDomain1().map(Domain::getIntrospectVersion).orElse(null);
+  }
+
+  @Nonnull
+  private Optional<Domain> getOptionalDomain1() {
+    return testSupport.<Domain>getResources(DOMAIN).stream().filter(this::isDomain1).findFirst();
+  }
+
+  private boolean isDomain1(Domain domain) {
+    return Optional.ofNullable(domain).map(Domain::getMetadata).filter(this::isDomain1Meta).isPresent();
+  }
+
+  private boolean isDomain1Meta(V1ObjectMeta meta) {
+    return meta != null && NS.equals(meta.getNamespace()) && NAME1.equals(meta.getName());
+  }
+
+  @Test
+  public void whenIntrospectionRequestedWhileIntrospectVersionNonNumeric_setNumericVersion() {
+    configurator.withIntrospectVersion("zork");
+
+    restBackend.performDomainAction(NAME1, createIntrospectRequest());
+
+    assertThat(getUpdatedIntrospectVersion(), equalTo(INITIAL_VERSION));
+  }
+
+  @Test
+  public void whenIntrospectionRequestedWhileIntrospectVersionDefined_incrementIntrospectVersion() {
+    configurator.withIntrospectVersion("17");
+
+    restBackend.performDomainAction(NAME1, createIntrospectRequest());
+
+    assertThat(getUpdatedIntrospectVersion(), equalTo("18"));
+  }
+
+  @Test
+  public void whenClusterRestartRequestedWhileNoRestartVersionDefined_setRestartVersion() {
+    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
+
+    assertThat(getUpdatedRestartVersion(), equalTo(INITIAL_VERSION));
+  }
+
+  private DomainAction createDomainRestartRequest() {
+    return new DomainAction(DomainActionType.RESTART);
+  }
+
+  private String getUpdatedRestartVersion() {
+    return getOptionalDomain1().map(Domain::getRestartVersion).orElse(null);
+  }
+
+  @Test
+  public void whenRestartRequestedWhileRestartVersionDefined_incrementIntrospectVersion() {
+    configurator.withRestartVersion("23");
+
+    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
+
+    assertThat(getUpdatedRestartVersion(), equalTo("24"));
+  }
+
+  // functionality needed for clusters resource
+
+  @Test
+  public void retrieveDefinedClusters() {
+    configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    configSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
+    setupScanCache();
+
+    assertThat(restBackend.getClusters(NAME1), containsInAnyOrder("cluster1", "cluster2"));
+  }
+
+  // functionality needed for cluster resource
+
+  @Test
+  public void acceptDefinedClusterName() {
+    configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    configSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
+    setupScanCache();
+
+    assertThat(restBackend.isCluster(NAME1, "cluster1"), is(true));
+  }
+
+  @Test
+  public void rejectUndefinedClusterName() {
+    configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
+    configSupport.addWlsCluster("cluster2", "ms4", "ms5", "ms6");
+    setupScanCache();
+
+    assertThat(restBackend.isCluster(NAME1, "cluster3"), is(false));
+  }
+
+  @Test
+  public void whenDomainRestartRequestedWhileNoRestartVersionDefined_setRestartVersion() {
+    restBackend.performDomainAction(NAME1, createDomainRestartRequest());
+
+    assertThat(getUpdatedRestartVersion(), equalTo(INITIAL_VERSION));
+  }
+
+  // functionality used for scale resource
 
   @Test(expected = WebApplicationException.class)
   public void whenNegativeScaleSpecified_throwException() {
