@@ -29,7 +29,7 @@ topology:
 
 appDeployments:
   Application:
-    txpropagate:
-      SourcePath: "wlsdeploy/applications/txpropagate.ear"
+    txforward:
+      SourcePath: "wlsdeploy/applications/txforward.ear"
       ModuleType: ear
       Target: 'admin-server,cluster-1'

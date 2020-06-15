@@ -58,10 +58,9 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-//import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -88,7 +87,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
   private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
   private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
   private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
-  private static final String WDT_APP_NAME = "txpropagate";
+  private static final String WDT_APP_NAME = "txforward";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
 
   private static HelmParams opHelmParams = null;
@@ -131,7 +130,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
     domain2Namespace = namespaces.get(2);
 
     // Now that we got the namespaces for both the domains,w e need to update the model properties
-    // file with the namspaces. for cross domain transaction to work, we need to have the externalDNSName
+    // file with the namespaces. for cross domain transaction to work, we need to have the externalDNSName
     // set in the config file. Cannot set this after the domain is up since a server restart is
     // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
     // property file
@@ -182,7 +181,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
   /*
    * This test verifies cross domain transaction is successful. domain in image using wdt is used
    * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
-   * is invoked which strats a transaction that spans both domains.
+   * is invoked which starts a transaction that spans both domains.
    */
   @Test
   @DisplayName("Check cross domain transaction works")
@@ -191,7 +190,8 @@ public class ItCrossDomainTransaction implements LoggedTest {
   public void testCrossDomainTransaction() {
 
     //build application archive
-    Path application = Paths.get(RESOURCE_DIR, "apps", "txpropagate");
+    //Path application = Paths.get(RESOURCE_DIR, "apps", "txpropagate");
+    Path application = Paths.get(RESOURCE_DIR, "apps", "txforward");
     BuildApplication.buildApplication(application, null, "build", domain1Namespace);
 
     // create admin credential secret for domain1
@@ -237,10 +237,8 @@ public class ItCrossDomainTransaction implements LoggedTest {
         () -> getServiceNodePort(domain1Namespace, domain1AdminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
-    //curl -v http://100.111.141.4:32179/txpropagate/TxPropagate?urls=t3://domain1-admin-server.ns-yatu:7001,
-    // t3://domain1-managed-server1.ns-yatu:8001,t3://domain2-managed-server1.ns-nooy:8001
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/TxPropagate/TxPropagate?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001",
+            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001",
              K8S_NODEPORT_HOST, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
              domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace);
 
@@ -263,7 +261,6 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
-    /*
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domain1Namespace),
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domain1Namespace);
@@ -272,7 +269,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid2, domain2Namespace),
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid2 + " from " + domain2Namespace);
-     */
+
   }
 
   private void createDomain(String domainUid, String domainNamespace, String adminSecretName,
