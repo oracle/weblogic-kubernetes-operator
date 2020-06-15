@@ -171,40 +171,44 @@ public class ServerStatusReader {
             String namespace = pod.getMetadata().getNamespace();
             LoggingContext.context(new LoggingContext().namespace(namespace));
             try {
-              KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
-              kubernetesExec.setStdin(stdin);
-              kubernetesExec.setTty(tty);
-              proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
+              try {
+                KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
+                kubernetesExec.setStdin(stdin);
+                kubernetesExec.setTty(tty);
+                proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
 
-              try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
-                state = CharStreams.toString(reader);
-              }
+                try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
+                  state = CharStreams.toString(reader);
+                }
 
-              if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                int exitValue = proc.exitValue();
-                LOGGER.fine("readState exit: " + exitValue + ", readState for " + pod.getMetadata().getName());
-                if (exitValue == 1 || exitValue == 2) {
-                  state =
-                      PodHelper.isDeleting(pod)
-                          ? WebLogicConstants.SHUTDOWN_STATE
-                          : WebLogicConstants.STARTING_STATE;
-                } else if (exitValue != 0) {
-                  state = WebLogicConstants.UNKNOWN_STATE;
+                if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+                  int exitValue = proc.exitValue();
+                  LOGGER.fine("readState exit: " + exitValue + ", readState for " + pod.getMetadata().getName());
+                  if (exitValue == 1 || exitValue == 2) {
+                    state =
+                        PodHelper.isDeleting(pod)
+                            ? WebLogicConstants.SHUTDOWN_STATE
+                            : WebLogicConstants.STARTING_STATE;
+                  } else if (exitValue != 0) {
+                    state = WebLogicConstants.UNKNOWN_STATE;
+                  }
+                }
+              } catch (InterruptedException ignore) {
+                Thread.currentThread().interrupt();
+              } catch (IOException | ApiException e) {
+                LOGGER.warning(MessageKeys.EXCEPTION, e);
+              } finally {
+                helper.recycle(client);
+                if (proc != null) {
+                  proc.destroy();
                 }
               }
-            } catch (InterruptedException ignore) {
-              Thread.currentThread().interrupt();
-            } catch (IOException | ApiException e) {
-              LOGGER.warning(MessageKeys.EXCEPTION, e);
+              LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
+              state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
+              serverStateMap.put(serverName, state);
             } finally {
-              helper.recycle(client);
-              if (proc != null) {
-                proc.destroy();
-              }
+              LoggingContext.remove();
             }
-            LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
-            state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
-            serverStateMap.put(serverName, state);
             fiber.resume(packet);
           });
     }
