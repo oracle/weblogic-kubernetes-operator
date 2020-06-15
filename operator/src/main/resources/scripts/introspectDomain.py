@@ -1145,7 +1145,7 @@ class SitConfigGenerator(Generator):
         break
 
     if found:
-      trace("SEVERE","Found NetWorkAccessPoints with name %s, this is an internal name used by the WebLogic Kubernetes Operator,please remove it from your domain and try again." % testname)
+      trace("SEVERE","Found NetWorkAccessPoint with name %s in the WebLogic Domain, this is an internal name used by the WebLogic Kubernetes Operator, please remove it from your domain and try again." % testname)
       sys.exit(1)
     else:
       return add_action, "add"
