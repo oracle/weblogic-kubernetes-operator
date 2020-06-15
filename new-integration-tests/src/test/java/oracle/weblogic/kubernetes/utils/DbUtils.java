@@ -440,8 +440,7 @@ public class DbUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
-            String.format("podLogContains failed with ApiException for pod %s in namespace %s",
-               podName, dbNamespace)));
+            String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)));
   }
-  
+
 }
