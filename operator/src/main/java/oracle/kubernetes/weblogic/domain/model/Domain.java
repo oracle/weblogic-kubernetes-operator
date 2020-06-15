@@ -707,7 +707,7 @@ public class Domain {
     private void checkForDefaultNameExposed(Channel channel) {
       if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
             || "default-secure".equals(channel.getChannelName())) {
-        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio());
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
       }
     }
 
