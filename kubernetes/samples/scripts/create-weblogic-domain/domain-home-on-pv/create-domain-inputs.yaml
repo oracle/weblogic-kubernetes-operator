@@ -158,7 +158,6 @@ createDomainFilesDir: wlst
 # serverPodMemoryLimit: "1Gi"
 # serverPodCpuLimit: "1000m"
 
-# Istio service mesh support is experimental.
 # istioEnabled specifies whether or not it is deployed under Istio.
 istioEnabled: false
 
