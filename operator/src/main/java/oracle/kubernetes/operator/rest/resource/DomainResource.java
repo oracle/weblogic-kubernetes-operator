@@ -3,13 +3,16 @@
 
 package oracle.kubernetes.operator.rest.resource;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.model.DomainAction;
 import oracle.kubernetes.operator.rest.model.DomainModel;
 
 /**
@@ -45,6 +48,17 @@ public class DomainResource extends BaseResource {
     addLink(item, "clusters");
     LOGGER.exiting(item);
     return item;
+  }
+
+  /**
+   * Apply changes to this domain. The changes depend on the details of the specified instructions
+   *
+   * @param params - an update command, including a command type and optional parameters
+   */
+  @POST
+  @Consumes(MediaType.APPLICATION_JSON)
+  public void post(final DomainAction params) {
+    getBackend().performDomainAction(getDomainUid(), params);
   }
 
   /**
