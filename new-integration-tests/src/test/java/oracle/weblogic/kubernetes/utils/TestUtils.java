@@ -48,7 +48,7 @@ public class TestUtils {
       if (managedServers.containsValue(false)) {
         try {
           // sometimes the pod is not ready even the condition check is ready, sleep a little bit
-          Thread.sleep(100);
+          Thread.sleep(1000);
         } catch (InterruptedException ignore) {
           // ignore
         }
@@ -57,6 +57,8 @@ public class TestUtils {
           result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
+          logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+              i, result.exitValue(), response, result.stderr());
           managedServers.keySet().forEach(key -> {
             if (response.contains(key)) {
               managedServers.put(key, true);

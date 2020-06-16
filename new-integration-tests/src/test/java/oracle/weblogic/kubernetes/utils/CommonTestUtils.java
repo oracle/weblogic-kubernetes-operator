@@ -1206,9 +1206,9 @@ public class CommonTestUtils {
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
     assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
-    logger.info("PodCreationTimestamp for pod ${0} in namespace ${1} is {2}",
-        namespace,
+    logger.info("PodCreationTimestamp for pod {0} in namespace {1} is {2}",
         podName,
+        namespace,
         podCreationTime);
     return podCreationTime;
   }
