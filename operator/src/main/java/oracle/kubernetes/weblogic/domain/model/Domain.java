@@ -700,12 +700,11 @@ public class Domain {
 
     private void verifyIstioExposingDefaultChannel() {
       if (spec.isIstioEnabled()) {
-        if (Optional.ofNullable(spec.getAdminServer()).isPresent()) {
-          AdminServer adminServer = spec.getAdminServer();
-          if (Optional.ofNullable(adminServer.getAdminService()).isPresent()) {
-            spec.getAdminServer().getAdminService().getChannels().forEach(this::checkForDefaultNameExposed);
-          }
-        }
+        Optional.ofNullable(spec.getAdminServer())
+            .map(a -> a.getAdminService())
+            .map(service -> service.getChannels())
+            .ifPresent(cs -> cs.stream()
+                              .forEach(this::checkForDefaultNameExposed));
       }
     }
 
