@@ -12,18 +12,18 @@
     <title>Install the operator :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1591893082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1591893082" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1592334978" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1591893082"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1592334978"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1591893082"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1591893082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1592334978"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1592334978"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1591893082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1592334978"></script>
 
     
   </div>
@@ -2775,7 +2775,15 @@
 
 
 	<p>The operator uses Helm to create and deploy the necessary resources and
-then run the operator in a Kubernetes cluster.</p>
+then run the operator in a Kubernetes cluster. This document describes how to install, upgrade,
+and remove the operator.</p>
+<h4 id="content">Content</h4>
+<ul>
+<li><a href="#install-the-operator-helm-chart">Install the operator Helm chart</a></li>
+<li><a href="#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository">Alternatively, install the operator Helm chart from the GitHub chart repository</a></li>
+<li><a href="#upgrade-the-operator">Upgrade the operator</a></li>
+<li><a href="#remove-the-operator">Remove the operator</a></li>
+</ul>
 <h4 id="install-the-operator-helm-chart">Install the operator Helm chart</h4>
 <p>Use the <code>helm install</code> command to install the operator Helm chart. As part of this, you must specify a &ldquo;release&rdquo; name for the operator.</p>
 <p>You can override default configuration values in the operator Helm chart by doing one of the following:</p>
@@ -2812,7 +2820,17 @@ weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/chart
 <pre><code>$ helm repo update
 </code></pre><p>Install the operator from the repository:</p>
 <pre><code>$ helm install weblogic-operator weblogic-operator/weblogic-operator
-</code></pre><h4 id="removing-the-operator">Removing the operator</h4>
+</code></pre><h4 id="upgrade-the-operator">Upgrade the operator</h4>
+<p>To upgrade the operator, use the <code>helm upgrade</code> command. When upgrading the operator,
+the <code>helm upgrade</code> command requires that you supply a new Helm chart and image. For example:</p>
+<pre><code>$ helm upgrade \
+  --reuse-values \
+  --set image=oracle/weblogic-kubernetes-operator:2.5.0 \
+  --namespace weblogic-operator-namespace \
+  --wait \
+  weblogic-operator \
+  kubernetes/charts/weblogic-operator
+</code></pre><h4 id="remove-the-operator">Remove the operator</h4>
 <p>The <code>helm delete</code> command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the <code>helm delete</code> command is the same release name used with the <code>helm install</code> command (see <a href="#install-the-operator-helm-chart">Install the Helm chart</a>).  For example:</p>
 <pre><code>$ helm uninstall weblogic-operator
 </code></pre>
@@ -4703,19 +4721,19 @@ weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/chart
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1591893083"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1591893083"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1591893083"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1591893083"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1591893083"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1591893083"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1592334978"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1591893083"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1591893083"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1591893083"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1592334978"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1591893083" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1591893083"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1592334978" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1592334978"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
