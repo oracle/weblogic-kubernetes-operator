@@ -127,7 +127,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
     Map<String, StartClusteredServersStepFactory> factories = new HashMap<>();
     startupInfos.stream()
-        .filter(ssi -> isServerInCluster(ssi))
+        .filter(this::isServerInCluster)
         .forEach(ssi ->
             factories.computeIfAbsent(ssi.getClusterName(),
                 k -> new StartClusteredServersStepFactory(getMaxConcurrentStartup(domain, ssi)))
