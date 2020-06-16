@@ -91,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 // to run kubectl.
 public class Kubernetes implements LoggedTest {
 
-  private static String PRETTY = "false";
+  private static String PRETTY = "true";
   private static Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static String RESOURCE_VERSION = "";
   private static Integer TIMEOUT_SECONDS = 5;
@@ -283,9 +283,34 @@ public class Kubernetes implements LoggedTest {
   }
 
   // ------------------------  deployments -----------------------------------
-  public static boolean createDeployment(String deploymentYaml) {
-    // do something with the command!!!
-    return true;
+
+  /**
+   * Create a deployment.
+   *
+   * @param deployment V1Deployment object containing deployment configuration data
+   * @return true if creation was successful
+   * @throws ApiException when create fails
+   */
+  public static boolean createDeployment(V1Deployment deployment) throws ApiException {
+    String namespace = deployment.getMetadata().getNamespace();
+    boolean status = false;
+    try {
+      AppsV1Api apiInstance = new AppsV1Api(apiClient);
+      V1Deployment createdDeployment = apiInstance.createNamespacedDeployment(
+          namespace, // String | namespace in which to create job
+          deployment, // V1Deployment | body of the V1Deployment containing deployment data
+          PRETTY, // String | pretty print output.
+          null, // String | dry run or permanent change
+          null // String | field manager who is making the change
+      );
+      if (createdDeployment != null) {
+        status = true;
+      }
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+    return status;
   }
 
   /**
@@ -596,6 +621,28 @@ public class Kubernetes implements LoggedTest {
     }
 
     return true;
+  }
+
+  /**
+   * Replace a existing namespace with configuration changes.
+   *
+   * @param ns V1Namespace object
+   * @throws ApiException when replacing namespace fails
+   */
+  public static void replaceNamespace(V1Namespace ns) throws ApiException {
+
+    try {
+      coreV1Api.replaceNamespace(
+          ns.getMetadata().getName(), // name of the namespace
+          ns, // V1Namespace object body
+          PRETTY, // pretty print the output
+          null, // dry run or changes need to be permanent
+          null // field manager
+      );
+    } catch (ApiException ex) {
+      logger.severe(ex.getResponseBody());
+      throw ex;
+    }
   }
 
   /**
@@ -1528,6 +1575,27 @@ public class Kubernetes implements LoggedTest {
           .findAny().orElse(null);
       if (port != null) {
         return port.getNodePort();
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Get port of a namespaced service given the channel name.
+   *
+   * @param namespace name of the namespace in which to get the service
+   * @param serviceName name of the service
+   * @param channelName name of the channel for which to get the port
+   * @return node port if service and channel is found, otherwise -1
+   */
+  public static int getServicePort(String namespace, String serviceName, String channelName) {
+    V1Service service = getNamespacedService(namespace, serviceName);
+    if (service != null) {
+      V1ServicePort port = service.getSpec().getPorts().stream().filter(
+          v1ServicePort -> v1ServicePort.getName().equalsIgnoreCase(channelName))
+          .findAny().orElse(null);
+      if (port != null) {
+        return port.getPort();
       }
     }
     return -1;

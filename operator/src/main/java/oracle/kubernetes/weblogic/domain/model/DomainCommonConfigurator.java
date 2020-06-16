@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -126,13 +127,19 @@ public class DomainCommonConfigurator extends DomainConfigurator {
    */
   @Override
   public DomainConfigurator withConfigOverrides(String configMapName) {
-    getDomainSpec().setConfigOverrides(configMapName);
+    getOrCreateConfiguration().setOverridesConfigMap(configMapName);
     return this;
   }
 
   @Override
   public DomainConfigurator withConfigOverrideSecrets(String... secretNames) {
-    getDomainSpec().setConfigOverrideSecrets(Arrays.asList(secretNames));
+    getOrCreateConfiguration().setSecrets(Arrays.asList(secretNames));
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withConfigOverrideDistributionStrategy(OverrideDistributionStrategy strategy) {
+    getOrCreateConfiguration().setOverrideDistributionStrategy(strategy);
     return this;
   }
 
@@ -211,7 +218,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withIntrospectVersion(String introspectVersion) {
-    getDomainSpec().setIntrospectVersionn(introspectVersion);
+    getDomainSpec().setIntrospectVersion(introspectVersion);
     return this;
   }
 
@@ -292,7 +299,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withIntrospectorJobActiveDeadlineSeconds(long deadline) {
-    getOrCreateConfiguration().withIntrospectorJobActiveDeadlineSeconds(deadline);
+    getOrCreateConfiguration().setIntrospectorJobActiveDeadlineSeconds(deadline);
     return this;
   }
 
@@ -329,7 +336,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   private Configuration getOrCreateConfiguration() {
     DomainSpec spec = getDomainSpec();
     if (spec.getConfiguration() == null) {
-      spec.withConfiguration(new Configuration());
+      spec.setConfiguration(new Configuration());
     } 
     return spec.getConfiguration();
   }
@@ -337,7 +344,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   private Model getOrCreateModel() {
     Configuration configuration = getOrCreateConfiguration();
     if (configuration.getModel() == null) {
-      configuration.withModel(new Model());
+      configuration.setModel(new Model());
     }
     return configuration.getModel();   
   }
@@ -345,7 +352,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   private Opss getOrCreateOpss() {
     Configuration configuration = getOrCreateConfiguration();
     if (configuration.getOpss() == null) {
-      configuration.withOpss(new Opss());
+      configuration.setOpss(new Opss());
     }
     return configuration.getOpss();   
   }

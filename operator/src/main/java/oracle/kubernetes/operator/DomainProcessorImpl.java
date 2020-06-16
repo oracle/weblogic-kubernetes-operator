@@ -68,6 +68,7 @@ import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
@@ -164,10 +165,29 @@ public class DomainProcessorImpl implements DomainProcessor {
     return bringAdminServerUpSteps(info, podAwaiterStepFactory);
   }
 
-  private static Step domainIntrospectionSteps() {
+  private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
     return Step.chain(
+          ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
+          new IntrospectionRequestStep(info),
           JobHelper.deleteDomainIntrospectorJobStep(null),
           JobHelper.createDomainIntrospectorJobStep(null));
+  }
+
+  private static class IntrospectionRequestStep extends Step {
+
+    private final String requestedIntrospectVersion;
+
+    public IntrospectionRequestStep(DomainPresenceInfo info) {
+      this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
+        packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
+      }
+      return doNext(packet);
+    }
   }
 
   private static Step bringAdminServerUpSteps(
@@ -584,7 +604,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     Packet packet = new Packet();
-    recordIntrospectionRequest(packet, info);
     packet
         .getComponents()
         .put(
@@ -603,8 +622,12 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   void recordIntrospectionRequest(Packet packet, DomainPresenceInfo info) {
-    packet.put(DOMAIN_INTROSPECT_REQUESTED,
-              !Objects.equals(getNewIntrospectVersion(info), getOldIntrospectVersion(info)));
+    packet.put(DOMAIN_INTROSPECT_REQUESTED, isIntrospectionRequested(info));
+  }
+
+  private boolean isIntrospectionRequested(DomainPresenceInfo info) {
+    return info.mayRequestIntrospection()
+           && !Objects.equals(getNewIntrospectVersion(info), getOldIntrospectVersion(info));
   }
 
   private String getNewIntrospectVersion(DomainPresenceInfo info) {
@@ -716,14 +739,14 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
-            domainIntrospectionSteps(),
+            domainIntrospectionSteps(info),
             new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
     return Step.chain(
           createDomainUpInitialStep(info),
-          ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUid()),
+          ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
           DomainStatusUpdater.createProgressingStep(INSPECTING_DOMAIN_PROGRESS_REASON,true, null),
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }

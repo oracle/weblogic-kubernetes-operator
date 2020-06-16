@@ -122,15 +122,37 @@ kubectl patch serviceaccount default \
 ```
 
 {{% notice note %}}
-You can provide mutliple `imagePullSecrets` if you need to pull Docker images from multiple
+You can provide multiple `imagePullSecrets` if you need to pull Docker images from multiple
 remote Docker registries or if your images require different authentication credentials.
 For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
 {{% /notice %}}
 
+#### Pushing the image to a repository
+
+If you have an image in your local repository that you would like to copy to
+a remote repository, then the Docker steps are:
+
+- Use [docker login](https://docs.docker.com/engine/reference/commandline/login/)
+  to log in to the target repository's registry. For example: 
+  ```
+  docker login some.registry.com -u username -p password
+  ```
+- Use [docker tag](https://docs.docker.com/engine/reference/commandline/tag/)
+  to mark the image with the target registry, owner, repository name, and tag.
+  For example:
+  ```
+  docker tag domain1:1.0 some.registry.com/owner/domain1:1.0
+  ```
+- Use [docker push](https://docs.docker.com/engine/reference/commandline/push/)
+  to push the image to the repository. For example:
+  ```
+  docker push some.registry.com/owner/domain1:1.0
+  ```
+
 #### Manually copying the image to your worker nodes
 
 If you are not able to use a remote Docker registry, for example if your Kubernetes cluster is
-in a secure network with no external access, you can manually copy the Docker images to the
+in a secure network with no external access, then you can manually copy the Docker images to the
 cluster instead.
 
 On the machine where you created the image, export it into a TAR file using this command:
