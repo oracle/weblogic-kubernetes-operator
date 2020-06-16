@@ -336,18 +336,7 @@ public class ItDomainInPV implements LoggedTest {
           wdtManagedServerPodNamePrefix + i, wdtDomainNamespace);
       checkServiceExists(wdtManagedServerPodNamePrefix + i, wdtDomainNamespace);
     }
-    previousTestSuccessful = true;
-  }
 
-  /**
-   * Deploy an application using admin t3 channel port, target to both cluster and admin server.
-   */
-  @Test
-  @Order(2)
-  @DisplayName("Deploy an application using t3 channel port")
-  public void testDeployAppUsingT3ChannelPort() {
-    Assumptions.assumeTrue(previousTestSuccessful);
-    previousTestSuccessful = false;
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         wdtDomainNamespace, wdtAdminServerPodName + "-external", "t3channel"),
@@ -369,7 +358,7 @@ public class ItDomainInPV implements LoggedTest {
    * load balanced among all the servers.
    */
   @Test
-  @Order(3)
+  @Order(2)
   @DisplayName("Access the application using LB port")
   public void testAccessAppUsingLBPort() {
     Assumptions.assumeTrue(previousTestSuccessful);
@@ -405,7 +394,7 @@ public class ItDomainInPV implements LoggedTest {
    * the application which is deployed to admin server using default node port.
    */
   @Test
-  @Order(4)
+  @Order(3)
   @DisplayName("Access the console and application using default channel node port")
   public void testDefaultChannelNodePort() {
     Assumptions.assumeTrue(previousTestSuccessful);
@@ -653,6 +642,18 @@ public class ItDomainInPV implements LoggedTest {
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        wlstDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
+    //deploy application using t3 channel port
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    logger.info("Deploying webapp {0} to domain using t3 channelport", archivePath);
+    DeployUtil.deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
+        wlstDomainNamespace);
   }
 
 
@@ -992,4 +993,5 @@ public class ItDomainInPV implements LoggedTest {
     killServerScript.setExecutable(true, false);
     return killServerScript;
   }
+
 }
