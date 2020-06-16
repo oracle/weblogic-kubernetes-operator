@@ -237,7 +237,8 @@ public class ItIstioDomainInPV implements LoggedTest {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
 
-    // create a domain custom resource configuration object
+    // Enable istio in domain custom resource configuration object.
+    // Add T3Channel Service with port assigned to Istio TCP ingress port.
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -247,8 +248,8 @@ public class ItIstioDomainInPV implements LoggedTest {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .domainHome("/shared/domains/" + domainUid) 
+            .domainHomeSourceType("PersistentVolume")
             .image(image)
             .imagePullPolicy("IfNotPresent")
             .imagePullSecrets(isUseSecret ? Arrays.asList(
@@ -281,9 +282,6 @@ public class ItIstioDomainInPV implements LoggedTest {
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
                         .channelName("istio-T3Channel")
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster() //cluster
@@ -293,7 +291,6 @@ public class ItIstioDomainInPV implements LoggedTest {
             .configuration(new Configuration()
                 .istio(new Istio()
                     .enabled(Boolean.TRUE)
-                    .envoyPort(31111)
                     .readinessPort(8888))));
 
     // verify the domain custom resource is created
