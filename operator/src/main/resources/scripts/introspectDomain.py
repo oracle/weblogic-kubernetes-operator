@@ -806,7 +806,7 @@ class TopologyGenerator(Generator):
     self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
     self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
     # No need to to http default, PodStepContext already handle it
-    self.addIstioNetworkAccessPoint("http-default", "t3", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("http-default", "http", server.getListenPort(), 0)
     self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
     self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
 

@@ -23,7 +23,7 @@ The current support for Istio has these limitations:
 * It is tested with Istio 1.4.2 and later (up to 1.5.4), however it is tested with both single and
   multicluster installations of Istio.
 * You cannot expose any of the default channels; any attempt will result in an error when deploying the domain.  
-* In order to use WLST commands, define a network access point (NAP) in your WebLogic omain and expose it as a `NodePort` 
+* In order to use WLST commands, define a network access point (NAP) in your WebLogic domain and expose it as a `NodePort` 
 in your domain resource YAML file instead of accessing the channel through the Istio mesh network.  
 
 #### Using the operator with Istio support
@@ -66,7 +66,7 @@ $ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-To enable the Istio support for a domain, you need to add the
+To enable Istio support for a domain, you need to add the
 `configuration` section to your domain custom resource YAML file as shown in the
 following example:  
 
@@ -87,8 +87,8 @@ spec:
       readinessPort: 8888
 ```
 
-To enable the Istio support, you must include the `istio` section
-and you must set `enabled: true` as shown.  The `readniessPort` is optional
+To enable Istio support, you must include the `istio` section
+and you must set `enabled: true` as shown.  The `readinessPort` is optional
 and defaults to `8888` if not provided; it is used for readiness health check.
 
 ##### How Istio-enabled domains differ from regular domains
@@ -96,7 +96,7 @@ and defaults to `8888` if not provided; it is used for readiness health check.
 Istio enforces a number of requirements on Pods.  When you enable Istio support in the domain resource, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
-When deploying a domain with Istio sidecar injection enabled.  The WebLogic Server Kubernetes Operator automatically adds the following network
+When deploying a domain with Istio sidecar injection enabled, the WebLogic Server Kubernetes Operator automatically adds the following network
 channels using configuration overrides.
 
 https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
@@ -126,7 +126,7 @@ If WebLogic Administration Port is enabled on the Administration Server:
 
 |Name|Port|Protocol|Exposed in the container port|
 |----|----|--------|-----|
-|`https-admin`|`WebLogic dministration port`|`https`|`Y`|
+|`https-admin`|`WebLogic administration port`|`https`|`Y`|
 
 
 Additionally, when Istio support is enabled for a domain, the operator
@@ -135,7 +135,7 @@ ensures that the Istio sidecar is not injected into the introspector job's pods.
 
 ### Apply the domain resource yaml
 
-After the domain resource YAML file is modified, apply it by
+After the domain resource YAML file is modified, apply it by:
 
 ```
 kubect apply -f domain.yaml
