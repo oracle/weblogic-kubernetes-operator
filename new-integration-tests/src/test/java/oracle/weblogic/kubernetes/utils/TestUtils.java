@@ -214,12 +214,18 @@ public class TestUtils {
         if (result != null) {
           logger.info("result.stdout: \n{0}", result.stdout());
           logger.info("result.stderr: \n{0}", result.stderr());
+          logger.info("result.exitValue: \n{0}", result.exitValue());
         }
         return false;
       }
     }
 
     logger.info("FAILURE: callWebApp did not return 200 response code, got {0}", responseCode);
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
+      logger.info("result.exitValue: \n{0}", result.exitValue());
+    }
 
     return false;
   }
