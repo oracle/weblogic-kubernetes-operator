@@ -574,7 +574,7 @@ public class Kubernetes {
           if (jobCondition.getType().equalsIgnoreCase("failed")) {
             logger.severe("Job {0} failed", jobName);
           } else if (jobCondition.getType().equalsIgnoreCase("complete")) {
-            logger.severe("Job {0} completed successfully ", jobName);
+            logger.info("Job {0} completed successfully ", jobName);
           }
         }
       }
