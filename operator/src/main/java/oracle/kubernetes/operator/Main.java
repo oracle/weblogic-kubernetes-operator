@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -208,11 +209,12 @@ public class Main {
 
       Step strategy = Step.chain(
           new InitializeNamespacesSecurityStep(targetNamespaces),
-          new NamespaceRulesReviewStep(),
-          CrdHelper.createDomainCrdStep(version,
-              new StartNamespacesStep(targetNamespaces, false)));
+          new NamespaceRulesReviewStep());
       if (!isDedicated()) {
-        strategy = Step.chain(strategy, readExistingNamespaces());
+        strategy = Step.chain(strategy, readExistingNamespaces(targetNamespaces));
+      } else {
+        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(version,
+            new StartNamespacesStep(targetNamespaces, false)));
       }
       runSteps(
           strategy,
@@ -360,8 +362,8 @@ public class Main {
         .listPodAsync(ns, new PodListStep(ns));
   }
 
-  private static Step readExistingNamespaces() {
-    return new CallBuilder().listNamespaceAsync(new NamespaceListStep());
+  private static Step readExistingNamespaces(Collection<String> targetNamespaces) {
+    return new CallBuilder().listNamespaceAsync(new NamespaceListStep(targetNamespaces));
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -865,6 +867,12 @@ public class Main {
   }
 
   private static class NamespaceListStep extends ResponseStep<V1NamespaceList> {
+    private final Collection<String> targetNamespaces;
+
+    NamespaceListStep(Collection<String> targetNamespaces) {
+      this.targetNamespaces = targetNamespaces;
+    }
+
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
@@ -875,22 +883,68 @@ public class Main {
     @Override
     protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return isNotAuthorizedOrForbidden(callResponse)
-          ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+          ? doNext(createDomainCrdAndStartNamespaces(targetNamespaces), packet) :
+          super.onFailureNoRetry(packet, callResponse);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       V1NamespaceList result = callResponse.getResult();
       // don't bother processing pre-existing events
+      String intialResourceVersion = getInitialResourceVersion(result);
+      List<String> nsList = getExistingNamespaces(result);
 
-      if (namespaceWatcher == null) {
-        namespaceWatcher = createNamespaceWatcher(getInitialResourceVersion(result));
+      Set<String> namespacesToStart = new TreeSet<>(targetNamespaces);
+      for (String ns : targetNamespaces) {
+        if (!nsList.contains(ns)) {
+          LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+          namespacesToStart.remove(ns);
+        }
       }
-      return doNext(packet);
+      Step strategy = null;
+      if (!namespacesToStart.isEmpty()) {
+        strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
+                new CreateNamespaceWatcherStep(intialResourceVersion));
+      } else {
+        strategy = CrdHelper.createDomainCrdStep(version,
+                new CreateNamespaceWatcherStep(intialResourceVersion));
+      }
+      return doNext(strategy, packet);
+    }
+
+    private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart) {
+      return CrdHelper.createDomainCrdStep(version,
+              new StartNamespacesStep(namespacesToStart, false));
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
       return result != null ? result.getMetadata().getResourceVersion() : "";
+    }
+
+    private List<String> getExistingNamespaces(V1NamespaceList result) {
+      List<String> namespaces = new ArrayList<>();
+      if (result != null) {
+        for (V1Namespace ns:result.getItems()) {
+          namespaces.add(ns.getMetadata().getName());
+        }
+      }
+      return namespaces;
+    }
+  }
+
+  private static class CreateNamespaceWatcherStep extends Step {
+    private final String initialResourceVersion;
+
+    CreateNamespaceWatcherStep(String initialResourceVersion) {
+      this.initialResourceVersion = initialResourceVersion;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (namespaceWatcher == null) {
+        namespaceWatcher = createNamespaceWatcher(initialResourceVersion);
+      }
+      return doNext(packet);
     }
   }
 
