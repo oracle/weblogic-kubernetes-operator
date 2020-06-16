@@ -186,8 +186,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         try {
           cc.cancel();
         } finally {
-          try (LoggingContext loggingContex = 
-              LoggingContext.context(new LoggingContext().namespace(requestParams.namespace))) {
+          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
             if (LOGGER.isFinerEnabled()) {
               logTimeout();
             }
@@ -434,8 +433,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
       // make sure that the domain namespace is added to the thread local so that
       // it can be passed to the LoggingFormatter
-      try (LoggingContext loggingContext = 
-          LoggingContext.context(new LoggingContext().namespace(requestParams.namespace))) {
+      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
         processing.onFailure(fiber, ae, statusCode, responseHeaders);
       }
     }
@@ -445,8 +443,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         T result, int statusCode, Map<String, List<String>> responseHeaders) {
       // make sure that the domain namespace is added to the thread local so that
       // it can be passed to the LoggingFormatter
-      try (LoggingContext loggingContext = 
-          LoggingContext.context(new LoggingContext().namespace(requestParams.namespace))) {
+      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
         processing.onSuccess(fiber, result, statusCode, responseHeaders);
       }
     }

@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -89,6 +88,14 @@ public class LoggingFormatterTest {
     assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-uid"));
   }
 
+
+  @Test
+  public void whenNotInFiber_retrieveDomainUidFromThread() throws JsonProcessingException {
+    try (LoggingContext stack = LoggingContext.setThreadContext().domainUid("test-uid")) {
+      assertThat(getFormattedMessage().get("domainUID"), equalTo("test-uid"));
+    }
+  }
+
   @Test
   public void whenPacketLacksDomainPresence_domainNamespaceIsEmpty() {
     assertThat(getFormattedMessageInFiber().get("namespace"), equalTo(""));
@@ -102,7 +109,7 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainNamespace() {
+  public void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainNamespaceFromDomainPresence() {
     testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns"));
 
@@ -117,19 +124,24 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenPacketContainsLoggingContext_hasThreadLocal_retrieveDomainNamespace() {
+  public void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveNamespaceFromLoggingContext() {
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns1"));
-    try (LoggingContext loggingContext =
-        new LoggingContext().namespace("test-lc-tl-ns")) {
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-ns")) {
       assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-ns1"));
     }
   }
 
   @Test
-  public void whenPacketContainsNoDomainPresenceLoggingContext_hasThreadLocal_retrieveDomainNamespace() {
-    try (LoggingContext loggingContext =
-        LoggingContext.context(new LoggingContext().namespace("test-lc-tl-ns1"))) {
+  public void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveNamespaceFromThread() {
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-ns1")) {
       assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-tl-ns1"));
+    }
+  }
+
+  @Test
+  public void whenNotInFiber_retrieveNamespaceFromThread() throws JsonProcessingException {
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-ns1")) {
+      assertThat(getFormattedMessage().get("namespace"), equalTo("test-lc-tl-ns1"));
     }
   }
 

@@ -7,16 +7,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import com.google.common.io.CharStreams;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -43,8 +46,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod. */
 public class ServerStatusReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
-  private static Function<Step, Step> STEP_FACTORY = ReadHealthStep::createReadHealthStep;
+  private static final KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
+  private static final Function<Step, Step> STEP_FACTORY = ReadHealthStep::createReadHealthStep;
 
   private ServerStatusReader() {
   }
@@ -168,9 +171,7 @@ public class ServerStatusReader {
             String state = null;
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
-            String namespace = pod.getMetadata().getNamespace();
-            try (LoggingContext loggingContext = 
-                LoggingContext.context(new LoggingContext().namespace(namespace))) {
+            try (LoggingContext stack = LoggingContext.setThreadContext().namespace(getNamespace(pod))) {
               try {
                 KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
@@ -209,6 +210,10 @@ public class ServerStatusReader {
             }
             fiber.resume(packet);
           });
+    }
+
+    private String getNamespace(@Nonnull V1Pod pod) {
+      return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null);
     }
 
     private String chooseStateOrLastKnownServerStatus(

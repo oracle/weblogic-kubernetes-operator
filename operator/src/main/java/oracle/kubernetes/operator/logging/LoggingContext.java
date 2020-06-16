@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.logging;
 
+import java.util.Optional;
+
 /** Necessary additional context information for Operator log messages. */
 public class LoggingContext implements AutoCloseable {
   public static final String LOGGING_CONTEXT_KEY = "LoggingContextComponent";
@@ -11,24 +13,25 @@ public class LoggingContext implements AutoCloseable {
 
   private String namespace;
   private String domainUid;
+
+  /**
+   * Creates a new LoggingContext and sets it as the current thread context. Returns the created context
+   * in order to append parameters.
+   * @return a new logging context
+   */
+  public static LoggingContext setThreadContext() {
+    LoggingContext loggingContext = new LoggingContext();
+    currentContext.set(loggingContext);
+    return loggingContext;
+  }
   
   /**
    * Gets the current logging context on the thread.
    *
    * @return current logging context
    */
-  public static LoggingContext context() {
-    return currentContext.get();
-  }
-
-  /**
-   * Set the current LoggingContext on the thread.
-   *
-   * @param loggingContext instance of {@link LoggingContext}
-   */
-  public static LoggingContext context(LoggingContext loggingContext) {
-    currentContext.set(loggingContext);
-    return loggingContext;
+  public static Optional<LoggingContext> optionalContext() {
+    return Optional.ofNullable(currentContext.get());
   }
 
   public LoggingContext namespace(String namespace) {

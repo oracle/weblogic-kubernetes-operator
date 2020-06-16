@@ -228,9 +228,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   public void stopNamespace(String ns) {
     // make sure that the domain namespace and domainUid are added to the ThreadLocal
     // so it can be passed to LoggingFormatter
-    try (LoggingContext loggingContext =
-        LoggingContext.context(
-            new LoggingContext().namespace(ns))) {
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
       Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
       if (map != null) {
         for (DomainPresenceInfo dpi : map.values()) {
@@ -258,22 +256,9 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getCurrentFibers().forEach(
                 (key, fiber) -> {
                   Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                  
-                    // find out the domainUID 
-                    Packet packet = fiber == null ? null : fiber.getPacket();
-                    String domainUid = null;
-                    if (packet != null) {
-                      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-                      if (info != null) {
-                        domainUid = info.getDomainUid();
-                      }
-                    }
-                   
-                    // make sure that the domain namespace and domainUid are added to the log message
-                    try (LoggingContext loggingContext = 
-                        LoggingContext.context(new LoggingContext().namespace(namespace).domainUid(domainUid))) {
-                      LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
-                          + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
+                    try (LoggingContext stack
+                             = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
+                      LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
                     }
                   });
                 });
@@ -281,6 +266,13 @@ public class DomainProcessorImpl implements DomainProcessor {
       makeRightFiberGates.forEach(consumer);
       statusFiberGates.forEach(consumer);
     }
+  }
+
+  private String getDomainUid(Fiber fiber) {
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(p -> p.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomainUid).orElse("");
   }
 
   /**
@@ -697,9 +689,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                       if (existing != null) {
                         // make sure that the domain namespace and domainUid are added to the ThreadLocal
                         // so it can be passed to LoggingFormatter
-                        try (LoggingContext loggingContext =
-                            LoggingContext.context(
-                                new LoggingContext().namespace(ns))) {
+                        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
                           int retryCount = existing.incrementAndGetFailureCount();

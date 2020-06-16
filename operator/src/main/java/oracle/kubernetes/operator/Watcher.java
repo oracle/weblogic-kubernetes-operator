@@ -155,8 +155,7 @@ abstract class Watcher<T> {
           continue;
         }
 
-        try (LoggingContext loggingContex = 
-            LoggingContext.context(new LoggingContext().namespace(getNamespace()))) {
+        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(getNamespace())) {
           if (isError(item)) {
             handleErrorResponse(item);
           } else {

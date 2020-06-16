@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -20,7 +21,6 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.JSON;
 import io.swagger.annotations.ApiModel;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;
 
@@ -156,18 +156,21 @@ public class LoggingFormatter extends Formatter {
    * @return the domain UID or empty string
    */
   private String getDomainUid(Fiber fiber) {
-
-    Packet packet = fiber == null ? null : fiber.getPacket();
-    if (packet != null) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (info != null) {
-        return info.getDomainUid() == null ? "" : info.getDomainUid();
-      }
-    } 
-    LoggingContext context = LoggingContext.context();
-    return context == null || context.domainUid() == null ? "" : context.domainUid();
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(this::getDomainPresenceInfo)
+          .map(DomainPresenceInfo::getDomainUid)
+          .orElse(getDomainUidFromThreadContext());
   }
-  
+
+  private DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class);
+  }
+
+  private String getDomainUidFromThreadContext() {
+    return LoggingContext.optionalContext().map(LoggingContext::domainUid).orElse("");
+  }
+
   /**
    * Get the namespace associated with the current log message.
    * Check the fiber that is currently being used to execute the step that initiate the log.
@@ -177,22 +180,20 @@ public class LoggingFormatter extends Formatter {
    * @return the namespace or empty string
    */
   private String getNamespace(Fiber fiber) {
-
-    Packet packet = fiber == null ? null : fiber.getPacket();
-    if (packet != null) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (info != null) {
-        return info.getNamespace() == null ? "" : info.getNamespace();
-      } 
-      // check LoggingContext component
-      LoggingContext context = packet.getSpi(LoggingContext.class);
-      if (context != null) {
-        return context.namespace() == null ? "" : context.namespace();
-      }
-    } 
-    // check ThreadLocal 
-    LoggingContext threadContext = LoggingContext.context();
-    return threadContext == null || threadContext.namespace() == null ? "" : threadContext.namespace();
-
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(this::getDomainPresenceInfo)
+          .map(DomainPresenceInfo::getNamespace)
+          .orElse(getNamespaceFromLoggingContext(fiber));
   }
+
+  private String getNamespaceFromLoggingContext(Fiber fiber) {
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(p -> p.getSpi(LoggingContext.class))
+          .or(LoggingContext::optionalContext)
+          .map(LoggingContext::namespace)
+          .orElse("");
+  }
+
 }
