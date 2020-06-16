@@ -4,9 +4,12 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -222,21 +225,24 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns a list of server configurations for servers that belong to this cluster, which includes
-   * both statically configured servers and dynamic servers.
+   * Returns a sorted list of server configurations for servers that belong to this cluster,
+   * which includes both statically configured servers and dynamic servers.
    *
-   * @return A list of WlsServerConfig containing configurations of servers that belong to this
-   *     cluster
+   * @return A sorted list of WlsServerConfig containing configurations of servers that belong to
+   *     this cluster
    */
   public synchronized List<WlsServerConfig> getServerConfigs() {
+    int dcsize = dynamicServersConfig == null ? 0 : dynamicServersConfig.getDynamicClusterSize();
+    List<WlsServerConfig> result = new ArrayList<>(dcsize + servers.size());
     if (dynamicServersConfig != null) {
-      List<WlsServerConfig> result =
-          new ArrayList<>(dynamicServersConfig.getDynamicClusterSize() + servers.size());
       result.addAll(dynamicServersConfig.getServerConfigs());
-      result.addAll(servers);
-      return result;
     }
-    return servers;
+    result.addAll(servers);
+    Collections.sort(
+        result,
+        Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName()))
+    );
+    return result;
   }
 
   public List<WlsServerConfig> getServers() {

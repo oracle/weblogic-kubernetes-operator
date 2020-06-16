@@ -4,6 +4,10 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -12,6 +16,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
@@ -33,6 +38,14 @@ public class AppBuilder {
    */
   public static AppParams defaultAppParams() {
     return new AppParams().defaults();
+  }
+
+  /**
+   * Create an AppParams instance with the custom values.
+   * @return an AppParams instance
+   */
+  public static AppParams customAppParams(List<String> srcDirList) {
+    return new AppParams().srcDirList(srcDirList);
   }
 
   /**
@@ -68,13 +81,13 @@ public class AppBuilder {
       logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
-    
+
     // make sure that we always have an app name
     if (params.appName() == null) {
       params.appName(params.srcDirList().get(0));
     }
 
-    // build the app archive 
+    // build the app archive
     String jarPath = String.format("%s.ear", params.appName());
     boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
     
@@ -127,5 +140,45 @@ public class AppBuilder {
             .command(cmd)
             .redirect(false))
         .execute();
+  }
+
+  /**
+   * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
+   * to create an image with the application for a model-in-image use case.
+   *
+   * @return true if the operation succeeds
+   */
+  public boolean archiveApp() {
+    List<String> srcFiles  = params.srcDirList();
+    String srcFile = srcFiles.get(0);
+    String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
+    try {
+      String appDir = ARCHIVE_DIR + "/wlsdeploy/applications";
+      cleanupDirectory(appDir);
+      checkDirectory(appDir);
+      for (String appSrcFile : srcFiles) {
+        if (appSrcFile.length() > 0) {
+          logger.info("copy {0]} to {1} ", appSrcFile, appDir);
+          String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
+          Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
+                  StandardCopyOption.REPLACE_EXISTING);
+        }
+      }
+    } catch (IOException ioe) {
+      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      return false;
+    }
+
+    String cmd = String.format(
+            "cd %s ; zip -r %s.zip wlsdeploy/applications ",
+            ARCHIVE_DIR,
+            appName
+    );
+
+    return Command.withParams(
+            defaultCommandParams()
+                    .command(cmd)
+                    .redirect(false))
+            .execute();
   }
 }
