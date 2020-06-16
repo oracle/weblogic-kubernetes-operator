@@ -181,10 +181,11 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "The maximum number of managed servers that the operator will start concurrently "
+      "The maximum number of managed servers that the operator will start in parallel "
           + "for a cluster, if maxConcurrentStartup is not specified at the cluster level. "
           + "A default value of 0 means there is no configured limit."
   )
+  @Range(minimum = 0)
   private Integer maxClusterConcurrentStartup;
 
   /**

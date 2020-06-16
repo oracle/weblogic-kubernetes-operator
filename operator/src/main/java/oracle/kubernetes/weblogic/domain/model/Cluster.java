@@ -66,9 +66,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   @Description(
       "The maximum number of managed servers that the operator will start in parallel "
-      + "for the cluster. The operator will wait until a managed server to be in Ready state "
-      + "before starting the next server, until the configured replica count is reached. "
-      + "A default value of 0 means all servers will start in parallel."
+      + "for the cluster in response to a change in replicas count for the cluster. "
+      + "If more managed servers need to be started, the operator will wait until a managed "
+      + "server to be in Ready and Running state before starting the next managed server. "
+      + "A value of 0 (the default) means all managed servers will start in parallel."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentStartup;

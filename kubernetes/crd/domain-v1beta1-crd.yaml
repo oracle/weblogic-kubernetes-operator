@@ -10604,10 +10604,12 @@ spec:
                     - IF_NEEDED
                   maxConcurrentStartup:
                     description: The maximum number of managed servers that the operator
-                      will start in parallel for the cluster. The operator will wait
-                      until a managed server to be in Ready state before starting
-                      the next server, until the configured replica count is reached.
-                      A default value of 0 means all servers will start in parallel.
+                      will start in parallel for the cluster in response to a change
+                      in replicas count for the cluster. If more managed servers need
+                      to be started, the operator will wait until a managed server
+                      to be in Ready and Running state before starting the next managed
+                      server. A value of 0 (the default) means all managed servers
+                      will start in parallel.
                     type: number
                     minimum: 0.0
                   restartVersion:
@@ -10639,9 +10641,10 @@ spec:
             maxClusterConcurrentStartup:
               type: number
               description: The maximum number of managed servers that the operator
-                will start concurrently for a cluster, if maxConcurrentStartup is
-                not specified at the cluster level. A default value of 0 means there
-                is no configured limit.
+                will start in parallel for a cluster, if maxConcurrentStartup is not
+                specified at the cluster level. A default value of 0 means there is
+                no configured limit.
+              minimum: 0.0
             replicas:
               type: number
               description: The number of managed servers to run in any cluster that
