@@ -21,10 +21,12 @@ import javax.annotation.Nullable;
 
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.logging.LoggingContext;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
+import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_KEY;
 
 /**
  * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to
@@ -120,6 +122,11 @@ public class FiberTestSupport {
 
   public FiberTestSupport addDomainPresenceInfo(DomainPresenceInfo info) {
     packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(info));
+    return this;
+  }
+
+  public FiberTestSupport addLoggingContext(LoggingContext loggingContext) {
+    packet.getComponents().put(LOGGING_CONTEXT_KEY, Component.createFor(loggingContext));
     return this;
   }
 
