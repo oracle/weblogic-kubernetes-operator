@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
+import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -54,6 +55,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 public class CrdHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String SCHEMA_LOCATION = "/schema";
+  public static final String NO_ERROR = "NO_ERROR";
   private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private static final FileGroupReader schemaReader = new FileGroupReader(SCHEMA_LOCATION);
@@ -588,7 +590,12 @@ public class CrdHelper {
       @Override
       public NextAction onFailure(
           Packet packet, CallResponse<V1CustomResourceDefinition> callResponse) {
-        return super.onFailure(conflictStep, packet, callResponse);
+        // Continue to onSuccess if failure is due to missing permissions
+        // okhttp3 client throws StreamResetException when permissions are missing
+        return ((callResponse.getE().getCause() instanceof StreamResetException)
+            && (callResponse.getExceptionString().contains(NO_ERROR)))
+            ? onSuccess(packet, callResponse)
+            : super.onFailure(conflictStep, packet, callResponse);
       }
 
       @Override
@@ -607,7 +614,12 @@ public class CrdHelper {
       @Override
       public NextAction onFailure(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        return super.onFailure(conflictStep, packet, callResponse);
+        // Continue to onSuccess if failure is due to missing permissions
+        // okhttp3 client throws StreamResetException when permissions are missing
+        return ((callResponse.getE().getCause() instanceof StreamResetException)
+            && (callResponse.getExceptionString().contains(NO_ERROR)))
+            ? onSuccess(packet, callResponse)
+            : super.onFailure(conflictStep, packet, callResponse);
       }
 
       @Override
