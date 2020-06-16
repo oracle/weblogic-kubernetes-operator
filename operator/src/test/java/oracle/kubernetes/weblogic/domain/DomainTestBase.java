@@ -361,42 +361,42 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void afterMaxClusterServerConcurrentStartupSetForCluster_canReadIt() {
-    configureCluster("cluster1").withMaxClusterServerConcurrentStartup(3);
+  public void afterMaxConcurrentStartupSetForCluster_canReadIt() {
+    configureCluster("cluster1").withMaxConcurrentStartup(3);
 
-    assertThat(domain.getMaxClusterServerConcurrentStartup("cluster1"), equalTo(3));
+    assertThat(domain.getMaxConcurrentStartup("cluster1"), equalTo(3));
   }
 
   @Test
-  public void whenNotSpecified_maxClusterServerConcurrentStartupHasDefault() {
+  public void whenNotSpecified_maxConcurrentStartupHasDefault() {
     configureCluster("cluster1");
-    configureDomain(domain).withMaxClusterServerConcurrentStartup(null);
+    configureDomain(domain).withMaxConcurrentStartup(null);
 
-    assertThat(domain.getMaxClusterServerConcurrentStartup("cluster1"),
+    assertThat(domain.getMaxConcurrentStartup("cluster1"),
         equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
   }
 
   @Test
-  public void whenNotSpecified_maxClusterServerConcurrentStartupFromDomain() {
+  public void whenNotSpecified_maxConcurrentStartupFromDomain() {
     configureCluster("cluster1");
-    configureDomain(domain).withMaxClusterServerConcurrentStartup(2);
+    configureDomain(domain).withMaxConcurrentStartup(2);
 
-    assertThat(domain.getMaxClusterServerConcurrentStartup("cluster1"),
+    assertThat(domain.getMaxConcurrentStartup("cluster1"),
         equalTo(2));
   }
 
   @Test
-  public void whenNoClusterSpec_maxClusterServerConcurrentStartupHasDefault() {
-    assertThat(domain.getMaxClusterServerConcurrentStartup("cluster-with-no-spec"),
+  public void whenNoClusterSpec_maxConcurrentStartupHasDefault() {
+    assertThat(domain.getMaxConcurrentStartup("cluster-with-no-spec"),
         equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
   }
 
   @Test
-  public void whenBothClusterAndDomainSpecified_maxClusterServerConcurrentStartupFromCluster() {
-    configureCluster("cluster1").withMaxClusterServerConcurrentStartup(1);
-    configureDomain(domain).withMaxClusterServerConcurrentStartup(0);
+  public void whenBothClusterAndDomainSpecified_maxConcurrentStartupFromCluster() {
+    configureCluster("cluster1").withMaxConcurrentStartup(1);
+    configureDomain(domain).withMaxConcurrentStartup(0);
 
-    assertThat(domain.getMaxClusterServerConcurrentStartup("cluster1"),
+    assertThat(domain.getMaxConcurrentStartup("cluster1"),
         equalTo(1));
   }
 

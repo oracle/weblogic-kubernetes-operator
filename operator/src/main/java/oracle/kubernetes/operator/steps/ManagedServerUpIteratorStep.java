@@ -83,16 +83,13 @@ public class ManagedServerUpIteratorStep extends Step {
           getDomainUid(packet), getServerNames(startupInfos)));
     }
 
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    Domain domain = info.getDomain();
-
     packet.put(ProcessingConstants.SERVERS_TO_ROLL, new ConcurrentHashMap<String, StepAndPacket>());
     Collection<StepAndPacket> startDetails =
         startupInfos.stream()
             .filter(ssi -> !isServerInCluster(ssi))
             .map(ssi -> createManagedServerUpDetails(packet, ssi)).collect(Collectors.toList());
 
-    getStartClusteredServersStepFactories(startupInfos, packet, domain).values()
+    getStartClusteredServersStepFactories(startupInfos, packet).values()
         .forEach(factory -> startDetails.addAll(factory.getServerStartsStepAndPackets()));
 
     return doNext(
@@ -124,15 +121,16 @@ public class ManagedServerUpIteratorStep extends Step {
 
   private Map<String, StartClusteredServersStepFactory> getStartClusteredServersStepFactories(
       Collection<ServerStartupInfo> startupInfos,
-      Packet packet,
-      Domain domain) {
+      Packet packet) {
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    Domain domain = info.getDomain();
+
     Map<String, StartClusteredServersStepFactory> factories = new HashMap<>();
     startupInfos.stream()
         .filter(ssi -> isServerInCluster(ssi))
         .forEach(ssi ->
             factories.computeIfAbsent(ssi.getClusterName(),
-                l -> new StartClusteredServersStepFactory(
-                    domain.getMaxClusterServerConcurrentStartup(ssi.getClusterName())))
+                k -> new StartClusteredServersStepFactory(getMaxConcurrentStartup(domain, ssi)))
                 .add(createManagedServerUpDetails(packet, ssi)));
 
     return factories;
@@ -158,6 +156,10 @@ public class ManagedServerUpIteratorStep extends Step {
     public NextAction apply(Packet packet) {
       return doForkJoin(new ManagedServerUpAfterStep(getNext()), packet, startDetails);
     }
+  }
+
+  private int getMaxConcurrentStartup(Domain domain, ServerStartupInfo ssi) {
+    return domain.getMaxConcurrentStartup(ssi.getClusterName());
   }
 
   private static class StartClusteredServersStepFactory {

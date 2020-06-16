@@ -131,5 +131,5 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize);
 
-  ClusterConfigurator withMaxClusterServerConcurrentStartup(Integer maxClusterServerConcurrentStartup);
+  ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup);
 }

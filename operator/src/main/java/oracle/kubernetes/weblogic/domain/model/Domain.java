@@ -311,8 +311,8 @@ public class Domain {
     return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
   }
 
-  public int getMaxClusterServerConcurrentStartup(String clusterName) {
-    return getEffectiveConfigurationFactory().getMaxClusterServerConcurrentStartup(clusterName);
+  public int getMaxConcurrentStartup(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
   }
 
 

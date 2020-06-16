@@ -721,8 +721,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withMaxClusterServerConcurrentStartup(Integer maxClusterServerConcurrentStartup) {
-      cluster.setMaxConcurrentStartup(maxClusterServerConcurrentStartup);
+    public ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
+      cluster.setMaxConcurrentStartup(maxConcurrentStartup);
       return this;
     }
 

@@ -99,7 +99,7 @@ public class ManagedServerUpIteratorStepTest {
 
   @Test
   public void verifyThat_withConcurrencyOf1_bothClusteredServersShouldStartSequentially() {
-    configureCluster(CLUSTER).withMaxClusterServerConcurrentStartup(1);
+    configureCluster(CLUSTER).withMaxConcurrentStartup(1);
     addWlsCluster(CLUSTER, "ms1", "ms2");
 
     invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER,"ms1", "ms2"));
@@ -110,7 +110,7 @@ public class ManagedServerUpIteratorStepTest {
 
   @Test
   public void verifyThat_withConcurrencyOf0_bothClusteredServersShouldStartConcurrently() {
-    configureCluster(CLUSTER).withMaxClusterServerConcurrentStartup(0);
+    configureCluster(CLUSTER).withMaxConcurrentStartup(0);
     addWlsCluster(CLUSTER, "ms1", "ms2");
 
     invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER,"ms1", "ms2"));
@@ -120,7 +120,7 @@ public class ManagedServerUpIteratorStepTest {
 
   @Test
   public void verifyThat_withConcurrencyOf2_bothClusteredServersShouldStartConcurrently() {
-    configureCluster(CLUSTER).withMaxClusterServerConcurrentStartup(2);
+    configureCluster(CLUSTER).withMaxConcurrentStartup(2);
     addWlsCluster(CLUSTER, "ms1", "ms2");
 
     invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER, "ms1", "ms2"));
@@ -130,7 +130,7 @@ public class ManagedServerUpIteratorStepTest {
 
   @Test
   public void verifyThat_withConcurrencyOf2_4clusteredServersShouldStartIn2Threads() {
-    configureCluster(CLUSTER).withMaxClusterServerConcurrentStartup(2);
+    configureCluster(CLUSTER).withMaxConcurrentStartup(2);
     addWlsCluster(CLUSTER, "ms1", "ms2", "ms3", "ms4");
 
     invokeStepWithServerStartupInfos(createServerStartupInfosForCluster(CLUSTER, "ms1", "ms2", "ms3", "ms4"));
@@ -142,8 +142,8 @@ public class ManagedServerUpIteratorStepTest {
   @Test
   public void verifyThat_withMultipleClusters_differentClusterShouldStartDifferently() {
     final String CLUSTER2 = "cluster2";
-    configureCluster(CLUSTER).withMaxClusterServerConcurrentStartup(1);
-    configureCluster(CLUSTER2).withMaxClusterServerConcurrentStartup(0);
+    configureCluster(CLUSTER).withMaxConcurrentStartup(1);
+    configureCluster(CLUSTER2).withMaxConcurrentStartup(0);
 
     addWlsCluster(CLUSTER, "ms1", "ms2");
     addWlsCluster(CLUSTER2, "ms3", "ms4");
@@ -157,7 +157,7 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_maxClusterServerConcurrentStartup_doesNotApplyToNonClusterdServers() {
+  public void verifyThat_maxClusterConcurrentStartup_doesNotApplyToNonClusterdServers() {
     domain.getSpec().setMaxClusterConcurrentStartup(1);
 
     addWlsServers("ms3", "ms4");

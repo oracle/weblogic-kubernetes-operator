@@ -903,13 +903,13 @@ public class DomainSpec extends BaseConfiguration {
     this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
-  private int getMaxClusterServerConcurrentStartupFor(Cluster cluster) {
-    return hasMaxClusterServerConcurrentStartup(cluster)
+  private int getMaxConcurrentStartupFor(Cluster cluster) {
+    return hasMaxConcurrentStartup(cluster)
         ? cluster.getMaxConcurrentStartup()
         : getMaxClusterConcurrentStartup();
   }
 
-  private boolean hasMaxClusterServerConcurrentStartup(Cluster cluster) {
+  private boolean hasMaxConcurrentStartup(Cluster cluster) {
     return cluster != null && cluster.getMaxConcurrentStartup() != null;
   }
 
@@ -988,8 +988,8 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public int getMaxClusterServerConcurrentStartup(String clusterName) {
-      return getMaxClusterServerConcurrentStartupFor(getCluster(clusterName));
+    public int getMaxConcurrentStartup(String clusterName) {
+      return getMaxConcurrentStartupFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {
