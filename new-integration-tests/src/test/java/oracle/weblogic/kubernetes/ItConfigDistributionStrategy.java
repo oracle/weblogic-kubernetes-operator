@@ -16,7 +16,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -63,9 +62,7 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
-import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
-import org.awaitility.core.EvaluatedCondition;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -97,19 +94,15 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
-import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -279,6 +272,13 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
 
+
+    String newConfigOverridemapName = "changeClusterSizeMap";
+    List<Path> files = new ArrayList<>();
+    files.add(Paths.get(RESOURCE_DIR, "configfiles", "configoverridesset1", "config.xml"));
+    files.add(Paths.get(RESOURCE_DIR, "configfiles", "configoverridesset1", "version.txt"));
+    CommonTestUtils.createConfigMapFromFiles(newConfigOverridemapName, files, introDomainNamespace);
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -290,7 +290,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         .spec(new DomainSpec()
             .configuration(
                 new Configuration()
-                    .overrideDistributionStrategy("DYNAMIC"))
+                    .overrideDistributionStrategy("DYNAMIC")
+            .overridesConfigMap(newConfigOverridemapName))
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
@@ -392,7 +393,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String patchStr =
           "["
-            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
             + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
 
@@ -406,24 +406,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     String introspectPodName = domainUid + "-" + "introspect-domain-job";
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
-
-    //verify the maximum cluster size is updated to expected value
-    withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
-        @Override
-        public void conditionEvaluated(EvaluatedCondition condition) {
-          logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
-              clusterName, 3);
-        }
-      })
-        .until((Callable<Boolean>) () -> {
-          Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
-          return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
-        }
-        );
-
-    // verify the 3rd server pod comes up
-    checkPodReady(managedServerPodNamePrefix + 3, domainUid, introDomainNamespace);
-    checkServiceExists(managedServerPodNamePrefix + 3, introDomainNamespace);
 
     // verify existing managed server pods are not affected
     for (int i = 1; i <= replicaCount; i++) {
@@ -493,114 +475,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount + 1; i++) {
-      managedServers.add(managedServerNameBase + i);
-    }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify all managed servers can see each other")
-        .withFailMessage("managed servers cannot see other")
-        .isTrue();
-
-  }
-
-  /**
-   * Test server pods are rolling restarted and updated when domain is patched
-   * with introSpectVersion when non dynamic changes are made.
-   * Updates the admin server listen port using online WLST.
-   * Patches the domain custom resource with introSpectVersion.
-   * Verifies the introspector runs and pods are restated in a rolling fashion.
-   * Verifies the new admin port of the admin server in services.
-   * Verifies accessing sample application in admin server works.
-   */
-  @Order(2)
-  @Test
-  @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
-  public void testDomainIntrospectVersionRolling() {
-
-    final String domainUid = "mydomain";
-    final String clusterName = "mycluster";
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
-    final String managedServerNameBase = "ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-
-    final int replicaCount = 3;
-    final int newAdminPort = 7005;
-
-    // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
-    }
-
-    logger.info("Getting node port for default channel");
-    int adminServerT3Port = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server node port failed");
-
-    // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-    Properties p = new Properties();
-    p.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p.setProperty("admin_port", Integer.toString(adminServerT3Port));
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("new_admin_port", Integer.toString(newAdminPort));
-    p.setProperty("test_name", "change_admin_port");
-    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
-
-    // changet the admin server port to a different value to force pod restart
-    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
-
-    assertTrue(assertDoesNotThrow(() ->
-            patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace),
-            "Patch domain with new IntrospectVersion threw ApiException"),
-        "Failed to patch domain with new IntrospectVersion");
-
-    //verify the introspector pod is created and runs
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
-
-    //verify the pods are restarted
-    verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
-
-    // verify the admin port is changed to newAdminPort
-    assertEquals(newAdminPort, assertDoesNotThrow(()
-        -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server port failed"),
-        "Updated admin server port is not equal to expected value");
-
-    logger.info("Getting node port for default channel");
-    int adminServerNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server to validate the new port
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + adminServerNodePort + "/testwebapp/index.jsp";
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the clusterview app through NGINX load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
       managedServers.add(managedServerNameBase + i);
     }
     assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
