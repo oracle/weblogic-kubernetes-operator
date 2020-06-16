@@ -21,6 +21,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.JRF_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -47,6 +48,7 @@ public class ItJrfDomainInPV implements LoggedTest {
 
   private static String fmwImage = JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG;
   private static String dbImage = DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
+  private static boolean isUseSecret = true;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -55,7 +57,7 @@ public class ItJrfDomainInPV implements LoggedTest {
       .atMost(5, MINUTES).await();
 
   /**
-   * Start DB service and create RCU schema
+   * Start DB service and create RCU schema.
    * Assigns unique namespaces for operator and domains.
    * Pull FMW image and Oracle DB image if running tests in Kind cluster.
    * Installs operator.
@@ -95,12 +97,15 @@ public class ItJrfDomainInPV implements LoggedTest {
      */
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
-    dbImage = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1)
-        + ":" + DB_IMAGE_TAG : DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
-    fmwImage = (KIND_REPO != null
-        ? KIND_REPO + JRF_BASE_IMAGE_NAME.substring(TestConstants.OCR_REGISTRY.length() + 1)
-        + ":" + JRF_BASE_IMAGE_TAG : JRF_BASE_IMAGE_NAME + ":" + JRF_BASE_IMAGE_TAG);
+    //determine if the tests are running in Kind cluster. if true use images from Kind registry
+    if (KIND_REPO != null) {
+      dbImage = KIND_REPO + DB_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
+        + ":" + DB_IMAGE_TAG;
+      fmwImage = KIND_REPO + JRF_BASE_IMAGE_NAME.substring(OCR_REGISTRY.length() + 1)
+        + ":" + JRF_BASE_IMAGE_TAG;
+      isUseSecret = false;
+    }
+
     logger.info("For ItJrfDomainInPV using DB image: {0}, FMW image {1}", dbImage, fmwImage);
 
   }
@@ -117,10 +122,11 @@ public class ItJrfDomainInPV implements LoggedTest {
 
     //TODO temporarily being here.  Will be moved to BeforeAll when JRF domain is added
     logger.info("Start DB and create RCU schema for namespace: {0} RCU prefix: {1} dbPort: {2} "
-        + "dbUrl: {3} dbImage: {4} fmwImage: {5}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl, dbImage, fmwImage);
+        + "dbUrl: {3} dbImage: {4} fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
+        dbImage, fmwImage, isUseSecret);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
-        dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl));
+        dbPort, dbUrl, isUseSecret), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
+        + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl, isUseSecret));
   }
 
 

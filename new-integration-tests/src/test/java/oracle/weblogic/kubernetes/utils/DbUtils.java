@@ -38,7 +38,6 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
@@ -76,7 +75,7 @@ public class DbUtils {
    *
    * @param dbImage image name of database
    * @param fmwImage image name of FMW
-   * @param rcuSchemaPrefix rcu SchemaPrefixe
+   * @param rcuSchemaPrefix rcu SchemaPrefix
    * @param dbNamespace namespace where DB and RCU schema are going to start
    * @param dbPort NodePort of DB
    * @param dbUrl URL of DB
@@ -84,23 +83,20 @@ public class DbUtils {
    */
 
   public static void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix, String dbNamespace,
-      int dbPort, String dbUrl) throws ApiException {
+      int dbPort, String dbUrl, boolean isUseSecret) throws ApiException {
 
-    CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
-
-    //For Kind cluter
-    String imagePullPolicy = "IfNotPresent";
-    if (KIND_REPO != null) {
-      imagePullPolicy = "Always";
+    // create pull secrets when running in non Kind Kubernetes cluster
+    if (isUseSecret) {
+      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
     }
 
     logger.info("Start Oracle DB with dbImage: {0}, imagePullPolicy: {1}, dbPort: {2}, "
-        + "dbNamespace: {3}", dbImage, imagePullPolicy, dbPort, dbNamespace);
-    startOracleDB(dbImage, imagePullPolicy, dbPort, dbNamespace);
+        + "dbNamespace: {3}", dbImage, dbPort, dbNamespace);
+    startOracleDB(dbImage, dbPort, dbNamespace, isUseSecret);
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, imagePullPolicy: {2}, "
-        + "dbUrl: {3}, dbNamespace: {4}", fmwImage, rcuSchemaPrefix, imagePullPolicy, dbUrl, dbNamespace);
-    createRcuSchema(fmwImage, rcuSchemaPrefix, imagePullPolicy, dbUrl, dbNamespace);
+        + "dbUrl: {3}, dbNamespace: {4}", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
+    createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace, isUseSecret);
 
   }
 
@@ -108,11 +104,10 @@ public class DbUtils {
    * Start Oracle DB pod and service in the specified namespace.
    *
    * @param dbBaseImageName full image name for DB deployment
-   * @param imagePullPolicy policy for image pull
    * @param dbPort NodePort of DB
    * @param dbNamespace namespace where DB instance is going to start
    */
-  public static void startOracleDB(String dbBaseImageName, String imagePullPolicy, int dbPort, String dbNamespace)
+  public static void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace, boolean isUseSecret)
       throws ApiException {
 
     Map labels = new HashMap<String, String>();
@@ -125,65 +120,6 @@ public class DbUtils {
     Map requests = new HashMap<String, String>();
     requests.put("cpu", "500m");
     requests.put("ephemeral-storage", "8Gi");
-
-    //create V1Deployment  for Oracle DB
-    logger.info("Configure V1Deployment in namespace {0} using image {1}", dbNamespace,  dbBaseImageName);
-    oracleDbDepl = new V1Deployment()
-        .apiVersion("apps/v1")
-        .kind("Deployment")
-        .metadata(new V1ObjectMeta()
-            .name("oracledb")
-            .namespace(dbNamespace)
-            .labels(labels))
-        .spec(new V1DeploymentSpec()
-            .replicas(1)
-            .selector(new V1LabelSelector()
-                .matchLabels(labels))
-            .strategy(new V1DeploymentStrategy()
-                 .rollingUpdate(new V1RollingUpdateDeployment()
-                     .maxSurge(new IntOrString(1)) //TODO
-                     .maxUnavailable(new IntOrString(1)))
-                 .type("RollingUpdate"))
-            .template(new V1PodTemplateSpec()
-                .metadata(new V1ObjectMeta()
-                    .labels(labels))
-                .spec(new V1PodSpec()
-                    .containers(Arrays.asList(
-                        new V1Container()
-                            .addEnvItem(new V1EnvVar().name("DB_SID").value("devcdb"))
-                            .addEnvItem(new V1EnvVar().name("DB_PDB").value("devpdb"))
-                            .addEnvItem(new V1EnvVar().name("DB_DOMAIN").value("k8s"))
-                            .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
-                            .image(dbBaseImageName)
-                            .imagePullPolicy(imagePullPolicy)
-                            .name("oracledb")
-                            .ports(Arrays.asList(
-                                new V1ContainerPort()
-                                .containerPort(1521)
-                                .name("tns")
-                                .protocol("TCP")
-                                .hostPort(1521)))
-                            .resources(new V1ResourceRequirements()
-                                .limits(limits)
-                                .requests(requests))
-                            .terminationMessagePath("/dev/termination-log")
-                            .terminationMessagePolicy("File")))
-                    .dnsPolicy("ClusterFirst")
-                    .restartPolicy("Always")
-                    .schedulerName("default-scheduler")
-                    .terminationGracePeriodSeconds(30L)
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))))));
-
-    logger.info("Create deployment for Oracle DB in namespace {0}",
-        dbNamespace);
-    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(oracleDbDepl),
-        String.format("Create deployment failed with ApiException for Oracle DB in namespace %s",
-            dbNamespace));
-    assertTrue(deploymentCreated, String.format(
-        "Create deployment failed with ApiException for Oracle DB in namespace %s ",
-        dbNamespace));
 
     //create V1Service for Oracle DB
     oracleDBService = new V1Service()
@@ -211,6 +147,66 @@ public class DbUtils {
             dbNamespace));
     assertTrue(serviceCreated, String.format(
         "Create service failed with ApiException for oracleDBService in namespace %s ", dbNamespace));
+
+    //create V1Deployment  for Oracle DB
+    logger.info("Configure V1Deployment in namespace {0} using image {1}", dbNamespace,  dbBaseImageName);
+    oracleDbDepl = new V1Deployment()
+        .apiVersion("apps/v1")
+        .kind("Deployment")
+        .metadata(new V1ObjectMeta()
+            .name("oracledb")
+            .namespace(dbNamespace)
+            .labels(labels))
+        .spec(new V1DeploymentSpec()
+            .replicas(1)
+            .selector(new V1LabelSelector()
+                .matchLabels(labels))
+            .strategy(new V1DeploymentStrategy()
+                 .rollingUpdate(new V1RollingUpdateDeployment()
+                     .maxSurge(new IntOrString(1))
+                     .maxUnavailable(new IntOrString(1)))
+                 .type("RollingUpdate"))
+            .template(new V1PodTemplateSpec()
+                .metadata(new V1ObjectMeta()
+                    .labels(labels))
+                .spec(new V1PodSpec()
+                    .containers(Arrays.asList(
+                        new V1Container()
+                            .addEnvItem(new V1EnvVar().name("DB_SID").value("devcdb"))
+                            .addEnvItem(new V1EnvVar().name("DB_PDB").value("devpdb"))
+                            .addEnvItem(new V1EnvVar().name("DB_DOMAIN").value("k8s"))
+                            .addEnvItem(new V1EnvVar().name("DB_BUNDLE").value("basic"))
+                            .image(dbBaseImageName)
+                            .imagePullPolicy("IfNotPresent")
+                            .name("oracledb")
+                            .ports(Arrays.asList(
+                                new V1ContainerPort()
+                                .containerPort(1521)
+                                .name("tns")
+                                .protocol("TCP")
+                                .hostPort(1521)))
+                            .resources(new V1ResourceRequirements()
+                                .limits(limits)
+                                .requests(requests))
+                            .terminationMessagePath("/dev/termination-log")
+                            .terminationMessagePolicy("File")))
+                    .dnsPolicy("ClusterFirst")
+                    .restartPolicy("Always")
+                    .schedulerName("default-scheduler")
+                    .terminationGracePeriodSeconds(30L)
+                    .imagePullSecrets(isUseSecret ? Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(OCR_SECRET_NAME))
+                        : null))));
+
+    logger.info("Create deployment for Oracle DB in namespace {0}",
+        dbNamespace);
+    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(oracleDbDepl),
+        String.format("Create deployment failed with ApiException for Oracle DB in namespace %s",
+            dbNamespace));
+    assertTrue(deploymentCreated, String.format(
+        "Create deployment failed with ApiException for Oracle DB in namespace %s ",
+        dbNamespace));
 
     // wait for the Oracle DB pod to be ready
     String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
@@ -240,18 +236,17 @@ public class DbUtils {
    *
    * @param fmwBaseImageName the FMW image name
    * @param rcuPrefix prefix of RCU schema
-   * @param imagePullPolicy image pull policy
    * @param dbUrl URL of DB
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String imagePullPolicy,
-      String dbUrl, String dbNamespace) throws ApiException {
+  public static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
+      String dbNamespace, boolean isUseSecret) throws ApiException {
 
     logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
-    assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, imagePullPolicy, dbUrl, dbNamespace),
-        String.format("Creating RCU pod failed with ApiException for image: %s, rcuPrefix: %s, imagePullPolicy: %s, "
-                + "dbUrl: %s in namespace: %s", fmwBaseImageName, rcuPrefix, imagePullPolicy, dbUrl, dbNamespace));
+    assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, dbUrl, dbNamespace, isUseSecret),
+        String.format("Creating RCU pod failed with ApiException for image: %s, rcuPrefix: %s, dbUrl: %s, "
+                + "in namespace: %s", fmwBaseImageName, rcuPrefix, dbUrl, dbNamespace));
 
     assertTrue(assertDoesNotThrow(
         () -> createRcuRepository(dbNamespace, dbUrl, rcuPrefix),
@@ -263,12 +258,11 @@ public class DbUtils {
    * Create a RCU where createRepository script runs.
    *
    * @param fmwBaseImageName the FMW image name
-   * @param imagePullPolicy image pull policy
    * @param dbUrl URL of DB
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static V1Pod createRcuPod(String fmwBaseImageName, String imagePullPolicy, String dbUrl, String dbNamespace)
+  public static V1Pod createRcuPod(String fmwBaseImageName, String dbUrl, String dbNamespace, boolean isUseSecret)
       throws ApiException {
 
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
@@ -290,12 +284,14 @@ public class DbUtils {
                 new V1Container()
                     .name("rcu")
                     .image(fmwBaseImageName)
-                    .imagePullPolicy(imagePullPolicy)
+                    .imagePullPolicy("IfNotPresent")
                     .addArgsItem("sleep")
                     .addArgsItem("infinity")))
-            .imagePullSecrets(Arrays.asList(
+            .imagePullSecrets(isUseSecret ? Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(OCR_SECRET_NAME))));
+                            .name(OCR_SECRET_NAME))
+                        : null));
+
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
     withStandardRetryPolicy
@@ -412,16 +408,21 @@ public class DbUtils {
     V1PodList  pod = null;
     pod = Kubernetes.listPods(dbNamespace, null);
 
+    String podName = null;
+
     //There is only one pod in the given DB namespace
-    return pod.getItems().get(0).getMetadata().getName();
+    if (pod != null) {
+      podName = pod.getItems().get(0).getMetadata().getName();
+    }
+
+    return podName;
   }
 
   private static boolean checkPodLogContains(String matchStr, String podName, String namespace)
       throws ApiException {
-    if (Kubernetes.getPodLog(podName,namespace,null).contains(matchStr)) {
-      return true;
-    }
-    return false;
+
+    return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
+
   }
 
   private static Callable<Boolean> podLogContains(String matchStr, String podName, String dbNamespace)
