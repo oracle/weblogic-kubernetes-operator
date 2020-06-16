@@ -98,7 +98,7 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_withConcurrencyOf1_bothClusteredServersShouldStartSequentially() {
+  public void withConcurrencyOf1_bothClusteredServersStartSequentially() {
     configureCluster(CLUSTER).withMaxConcurrentStartup(1);
     addWlsCluster(CLUSTER, "ms1", "ms2");
 
@@ -109,7 +109,7 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_withConcurrencyOf0_bothClusteredServersShouldStartConcurrently() {
+  public void withConcurrencyOf0_bothClusteredServersStartConcurrently() {
     configureCluster(CLUSTER).withMaxConcurrentStartup(0);
     addWlsCluster(CLUSTER, "ms1", "ms2");
 
@@ -119,7 +119,7 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_withConcurrencyOf2_bothClusteredServersShouldStartConcurrently() {
+  public void withConcurrencyOf2_bothClusteredServersStartConcurrently() {
     configureCluster(CLUSTER).withMaxConcurrentStartup(2);
     addWlsCluster(CLUSTER, "ms1", "ms2");
 
@@ -129,7 +129,7 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_withConcurrencyOf2_4clusteredServersShouldStartIn2Threads() {
+  public void withConcurrencyOf2_4clusteredServersStartIn2Threads() {
     configureCluster(CLUSTER).withMaxConcurrentStartup(2);
     addWlsCluster(CLUSTER, "ms1", "ms2", "ms3", "ms4");
 
@@ -140,7 +140,7 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_withMultipleClusters_differentClusterShouldStartDifferently() {
+  public void withMultipleClusters_differentClusterStartDifferently() {
     final String CLUSTER2 = "cluster2";
     configureCluster(CLUSTER).withMaxConcurrentStartup(1);
     configureCluster(CLUSTER2).withMaxConcurrentStartup(0);
@@ -157,7 +157,7 @@ public class ManagedServerUpIteratorStepTest {
   }
 
   @Test
-  public void verifyThat_maxClusterConcurrentStartup_doesNotApplyToNonClusterdServers() {
+  public void maxClusterConcurrentStartup_doesNotApplyToNonClusteredServers() {
     domain.getSpec().setMaxClusterConcurrentStartup(1);
 
     addWlsServers("ms3", "ms4");
