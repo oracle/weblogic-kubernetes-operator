@@ -65,11 +65,11 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "The maximum number of managed servers that the operator will start in parallel "
+      "The maximum number of Managed Servers that the operator will start in parallel "
       + "for the cluster in response to a change in replicas count for the cluster. "
-      + "If more managed servers need to be started, the operator will wait until a managed "
-      + "server to be in Ready and Running state before starting the next managed server. "
-      + "A value of 0 (the default) means all managed servers will start in parallel."
+      + "If more Managed Servers need to be started, the operator will wait until a Managed "
+      + "Server pod is in the `Ready` and `Running` state before starting the next Managed Server. "
+      + "A value of 0 (the default) means all Managed Servers will start in parallel."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentStartup;

@@ -176,14 +176,14 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description("Whether to allow the number of replicas to drop below the minimum "
       + "dynamic cluster size configured in the WebLogic domain home configuration, "
-      + "if this is not specified at the cluster level."
+      + "if this is not specified at the cluster level. Defaults to true."
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "The maximum number of managed servers that the operator will start in parallel "
-          + "for a cluster, if maxConcurrentStartup is not specified at the cluster level. "
-          + "A default value of 0 means there is no configured limit."
+      "The maximum number of Managed Servers that the operator will start in parallel "
+          + "for a cluster, if `maxConcurrentStartup` is not specified at the cluster level. "
+          + "A value of 0 (the default) means there is no configured limit."
   )
   @Range(minimum = 0)
   private Integer maxClusterConcurrentStartup;
