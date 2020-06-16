@@ -70,6 +70,11 @@ public class Operator {
     String branchName = "";
     if (!BUILD_ID.isEmpty()) {
       branchName = BRANCH_NAME_FROM_JENKINS;
+      // Ensure that the branch name can be used as a part of Docker tag by replacing illegal characters
+      branchName = branchName.codePoints()
+          .map(cp -> Character.isLetterOrDigit(cp) ? cp : '-')
+          .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+          .toString();
     } else  {
       CommandParams params = Command.defaultCommandParams()
           .command("git branch | grep \\* | cut -d ' ' -f2-")
