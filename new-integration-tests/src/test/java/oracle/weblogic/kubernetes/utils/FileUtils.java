@@ -36,7 +36,6 @@ public class FileUtils {
     if (!(file.exists() && file.isDirectory())) {
       file.mkdirs();
       logger.fine("Made a new directory {0}.", dir);
-      logger.info("Made a new directory {0}.", dir);
     }
   }
 
@@ -124,7 +123,6 @@ public class FileUtils {
   
   private static void copy(Path source, Path dest) throws IOException {
     logger.finest("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
-    logger.info("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
     if (!dest.toFile().isDirectory()) {
       Files.copy(source, dest, REPLACE_EXISTING);
     }

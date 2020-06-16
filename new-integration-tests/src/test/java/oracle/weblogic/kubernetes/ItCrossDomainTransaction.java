@@ -85,8 +85,8 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
   private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
-  private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
-  private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
+  private static final String WDT_IMAGE_NAME1 = "domain1-cdxaction-wdt-image";
+  private static final String WDT_IMAGE_NAME2 = "domain2-cdxaction-wdt-image";
   private static final String WDT_APP_NAME = "txforward";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
 
@@ -219,8 +219,6 @@ public class ItCrossDomainTransaction implements LoggedTest {
     dockerLoginAndPushImageToRegistry(domain1Image);
 
     logger.info("Creating image with model file and verify");
-    //String domain2Image = createImageAndVerify(
-    //    WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, WDT_APP_NAME, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
     String domain2Image = createImageAndVerify(
         WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, appSource, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
 
@@ -238,9 +236,10 @@ public class ItCrossDomainTransaction implements LoggedTest {
         "Getting admin server node port failed");
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001",
+            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3:%s2.%s:8001",
              K8S_NODEPORT_HOST, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
-             domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace);
+             domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
+             domain2ManagedServerPrefix, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);

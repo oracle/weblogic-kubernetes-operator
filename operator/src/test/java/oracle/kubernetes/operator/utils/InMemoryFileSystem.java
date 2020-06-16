@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.io.FileNotFoundException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.DirectoryStream;
@@ -27,7 +28,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class InMemoryFileSystem extends FileSystem {
   private static InMemoryFileSystem instance;
-  private FileSystemProviderStub provider = createStrictStub(FileSystemProviderStub.class);
+  private final FileSystemProviderStub provider = createStrictStub(FileSystemProviderStub.class);
 
   public static InMemoryFileSystem createInstance() {
     return instance = createStrictStub(InMemoryFileSystem.class);
@@ -38,8 +39,13 @@ public abstract class InMemoryFileSystem extends FileSystem {
   }
 
   @Nonnull
-  public Path getPath(String first, String... more) {
+  public Path getPath(@Nonnull String first, @Nonnull String... more) {
     return createStrictStub(PathStub.class, createPathString(first, more));
+  }
+
+  @Nonnull
+  public Path getPath(@Nonnull URI uri) {
+    return createStrictStub(PathStub.class, createPathString(uri.getPath(), new String[0]));
   }
 
   private String createPathString(String first, String[] more) {
@@ -67,8 +73,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
       boolean isRegularFile() {
         return true;
       }
-    },
-    NONE;
+    };
 
     boolean isDirectory() {
       return false;
@@ -80,14 +85,14 @@ public abstract class InMemoryFileSystem extends FileSystem {
   }
 
   abstract static class PathStub implements Path {
-    private String filePath;
+    private final String filePath;
 
     PathStub(String filePath) {
       this.filePath = filePath;
     }
 
     @Override
-    public FileSystem getFileSystem() {
+    @Nonnull public FileSystem getFileSystem() {
       return instance;
     }
 
@@ -103,7 +108,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
   }
 
   abstract static class FileSystemProviderStub extends FileSystemProvider {
-    private Map<String, String> fileContents = new HashMap<>();
+    private final Map<String, String> fileContents = new HashMap<>();
 
     static String getFilePath(Path path) {
       if (!(path instanceof PathStub)) {
@@ -140,10 +145,10 @@ public abstract class InMemoryFileSystem extends FileSystem {
     }
 
     private BasicFileAttributes createAttributes(String filePath) {
-      return createStrictStub(BasicFileAttributesStub.class, isDirectory(filePath));
+      return createStrictStub(BasicFileAttributesStub.class, getPathType(filePath));
     }
 
-    private PathType isDirectory(String filePath) {
+    private PathType getPathType(String filePath) {
       for (String key : fileContents.keySet()) {
         if (key.startsWith(filePath + '/')) {
           return PathType.DIRECTORY;
@@ -152,12 +157,12 @@ public abstract class InMemoryFileSystem extends FileSystem {
           return PathType.FILE;
         }
       }
-      return PathType.NONE;
+      return PathType.DIRECTORY;  // treat it as an empty directory
     }
   }
 
   abstract static class BasicFileAttributesStub implements BasicFileAttributes {
-    private PathType pathType;
+    private final PathType pathType;
 
     BasicFileAttributesStub(PathType pathType) {
       this.pathType = pathType;
@@ -203,7 +208,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
   }
 
   abstract static class SeekableByteChannelStub implements SeekableByteChannel {
-    private byte[] contents;
+    private final byte[] contents;
     private int index = 0;
 
     SeekableByteChannelStub(String contents) {
