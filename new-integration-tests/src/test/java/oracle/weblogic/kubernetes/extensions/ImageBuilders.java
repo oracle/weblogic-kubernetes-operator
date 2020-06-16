@@ -108,26 +108,28 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage));
 
-        // build basic wdt-domain-in-image image
-        wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-        assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
-            WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
-            String.format("Failed to create the image %s using WebLogic Image Tool",
-                wdtBasicImage));
+        if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+          // build basic wdt-domain-in-image image
+          wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+          assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+              WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
+              String.format("Failed to create the image %s using WebLogic Image Tool",
+                  wdtBasicImage));
 
 
-        /* Check image exists using docker images | grep image tag.
-         * Tag name is unique as it contains date and timestamp.
-         * This is a workaround for the issue on Jenkins machine
-         * as docker images imagename:imagetag is not working and
-         * the test fails even though the image exists.
-         */
-        assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
-            String.format("Image %s doesn't exist", wdtBasicImage));
+          /* Check image exists using docker images | grep image tag.
+           * Tag name is unique as it contains date and timestamp.
+           * This is a workaround for the issue on Jenkins machine
+           * as docker images imagename:imagetag is not working and
+           * the test fails even though the image exists.
+           */
+          assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
+              String.format("Image %s doesn't exist", wdtBasicImage));
 
-        if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          logger.info("docker login");
-          assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+          if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+            logger.info("docker login");
+            assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+          }
         }
 
         // push the image
@@ -135,9 +137,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
           assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
 
-          logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
-          assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
-
+          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+            logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
+            assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
+          }
         }
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
