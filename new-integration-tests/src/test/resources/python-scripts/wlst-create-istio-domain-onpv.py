@@ -27,7 +27,7 @@ def create_domain():
   set('ListenPort', int(admin_server_port))
   set('Name', admin_server_name)
 
-  print('Configuring network access point')
+  #print('Configuring network access point')
   #create('T3Channel', 'NetworkAccessPoint')
   #cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
   #set('PublicPort', int(admin_t3_channel_port))
@@ -35,10 +35,10 @@ def create_domain():
   #set('ListenPort', int(admin_t3_channel_port))
  
   # from create-weblogic-domain/domain-home-on-pv/wlst/istio-fix-domain.py
-  print('Configuring network access point istio-T3Channel')
+  print('Configuring network access point T3Channel for istio')
   cd('/Servers/' + admin_server_name)
-  create('istio-T3Channel', 'NetworkAccessPoint')
-  cd('/Servers/%s/NetworkAccessPoints/istio-T3Channel' % admin_server_name)
+  create('T3Channel', 'NetworkAccessPoint')
+  cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
   set('PublicPort', int(admin_t3_channel_port))
   set('PublicAddress', toDNS1123Legal(domain_uid + '-' + admin_server_name))
   set('ListenAddress', '127.0.0.1')

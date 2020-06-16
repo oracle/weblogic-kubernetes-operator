@@ -18,9 +18,6 @@ public class Istio {
   @ApiModelProperty("The WebLogic readiness port for Istio. Defaults to 8888. Not required.")
   private Integer readinessPort;
 
-  @ApiModelProperty("The WebLogic proxy envoy port for Istio. Defaults to 31111. Not required.")
-  private Integer envoyPort;
-
   public Istio enabled(Boolean enabled) {
     this.enabled = enabled;
     return this;
@@ -53,23 +50,6 @@ public class Istio {
 
   public void setReadinessPort(Integer readinessPort) {
     this.readinessPort = readinessPort;
-  }
-
-  public Istio envoyPort(Integer envoyPort) {
-    this.envoyPort = envoyPort;
-    return this;
-  }
-
-  public Integer envoyPort() {
-    return this.envoyPort;
-  }
-
-  public Integer getEnvoyPort() {
-    return envoyPort;
-  }
-
-  public void setEnvoyPort(Integer envoyPort) {
-    this.envoyPort = envoyPort;
   }
 
   @Override

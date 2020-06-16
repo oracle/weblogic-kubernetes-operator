@@ -117,9 +117,9 @@ class ItIstioDomainInImage implements LoggedTest {
 
   /**
    * Create a domain in domain-home-in-image model.
-   * Add istio Configuration with default readinessPort and envoyPort
+   * Add istio Configuration with default readinessPort 
    * Do not add any AdminService under AdminServer configuration
-   * Label domain namespace with istio-injection=enabled 
+   * Label domain namespace and operator namespace with istio-injection=enabled 
    * Deploy istio gateways and virtualservices 
    * Verify domain pods runs in ready state and services are created.
    * Login to WebLogic console is successful thru istio http ingress port.
@@ -254,9 +254,8 @@ class ItIstioDomainInImage implements LoggedTest {
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount) {
-    // In case of istio no need to create any AdminService in AdminServer configuration. 
-    // If you create a channel with name "default", the managedserver pods does not come up.  
-    // The managed server comes up if the channelName is set to "istio-default"
+    // In case of istio "default" channel can not be exposed through nodeport.
+    // No AdminService on domain resource.
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
@@ -290,7 +289,6 @@ class ItIstioDomainInImage implements LoggedTest {
                     .configuration(new Configuration()
                             .istio(new Istio()
                                  .enabled(Boolean.TRUE)
-                                 .envoyPort(31111)
                                  .readinessPort(8888))
                             .model(new Model()
                                     .domainType("WLS"))

@@ -282,7 +282,7 @@ public class ItIstioDomainInPV implements LoggedTest {
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
-                        .channelName("istio-T3Channel")
+                        .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
