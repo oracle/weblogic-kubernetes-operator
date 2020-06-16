@@ -83,9 +83,9 @@ public class DomainSpecTest {
   public void verifyThatDomainSpecWithoutMaxClusterServerConcurrentStartup_equalsToDomainSpecWithDefaultValue() {
     DomainSpec spec1 = new DomainSpec();
     DomainSpec spec2 = new DomainSpec();
-    spec2.setMaxClusterServerConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP);
+    spec2.setMaxClusterConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
     assertThat("Expected null maxClusterServerConcurrentStartup equal to explicit set to "
-        + KubernetesConstants.DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP,
+        + KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP,
         spec1.equals(spec2), equalTo(true));
   }
 
@@ -93,9 +93,10 @@ public class DomainSpecTest {
   public void verifyThatDomainSpecWithoutMaxClusterServerConcurrentStartup_notEqualsToDomainSpecWithFalse() {
     DomainSpec spec1 = new DomainSpec();
     DomainSpec spec2 = new DomainSpec();
-    spec2.setMaxClusterServerConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP + 1);
+    spec2.setMaxClusterConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP
+        + 1);
     assertThat("Expected null maxClusterServerConcurrentStartup not equal to explicit set to "
-            + (KubernetesConstants.DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP + 1),
+            + (KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP + 1),
         spec1.equals(spec2), equalTo(false));
   }
 

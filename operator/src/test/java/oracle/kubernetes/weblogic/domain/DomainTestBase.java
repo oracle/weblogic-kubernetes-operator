@@ -22,7 +22,7 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.LATEST_IMAGE_SUFFIX;
 import static org.hamcrest.Matchers.both;
@@ -373,7 +373,7 @@ public abstract class DomainTestBase {
     configureDomain(domain).withMaxClusterServerConcurrentStartup(null);
 
     assertThat(domain.getMaxClusterServerConcurrentStartup("cluster1"),
-        equalTo(DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP));
+        equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
   }
 
   @Test
@@ -388,7 +388,7 @@ public abstract class DomainTestBase {
   @Test
   public void whenNoClusterSpec_maxClusterServerConcurrentStartupHasDefault() {
     assertThat(domain.getMaxClusterServerConcurrentStartup("cluster-with-no-spec"),
-        equalTo(DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP));
+        equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
   }
 
   @Test

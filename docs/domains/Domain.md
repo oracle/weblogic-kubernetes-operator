@@ -37,7 +37,7 @@ DomainSpec is a description of a domain.
 | `logHome` | string | The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if logHomeEnabled is false. |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise. |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
-| `maxClusterServerConcurrentStartup` | number | The maximum number of managed servers that the operator will start concurrently for a cluster, if this is not specified at the cluster level. A default value of 0 means there is no configured limit. |
+| `maxClusterConcurrentStartup` | number | The maximum number of managed servers that the operator will start concurrently for a cluster, if maxConcurrentStartup is not specified at the cluster level. A default value of 0 means there is no configured limit. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods. |
@@ -82,7 +82,7 @@ An element representing a cluster in the domain configuration.
 | `allowReplicasBelowMinDynClusterSize` | Boolean | If true (the default), then the number of replicas is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration. Otherwise, the operator will ensure that the number of replicas is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. |
 | `clusterName` | string | The name of this cluster. Required |
 | `clusterService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for the WebLogic cluster. |
-| `maxClusterServerConcurrentStartup` | number | The maximum number of managed servers that the operator will start concurrently for the cluster. The operator will wait until a managed server to be in Ready state before starting the next server, until the configured replica count is reached. A default value of 0 means there is no configured limit. |
+| `maxConcurrentStartup` | number | The maximum number of managed servers that the operator will start in parallel for the cluster. The operator will wait until a managed server to be in Ready state before starting the next server, until the configured replica count is reached. A default value of 0 means all servers will start in parallel. |
 | `maxUnavailable` | number | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
 | `replicas` | number | The number of cluster members to run. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |

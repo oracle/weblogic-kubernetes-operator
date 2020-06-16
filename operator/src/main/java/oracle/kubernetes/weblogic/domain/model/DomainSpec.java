@@ -34,7 +34,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 /** DomainSpec is a description of a domain. */
@@ -182,10 +182,10 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description(
       "The maximum number of managed servers that the operator will start concurrently "
-          + "for a cluster, if this is not specified at the cluster level. "
+          + "for a cluster, if maxConcurrentStartup is not specified at the cluster level. "
           + "A default value of 0 means there is no configured limit."
   )
-  private Integer maxClusterServerConcurrentStartup;
+  private Integer maxClusterConcurrentStartup;
 
   /**
    * Whether the domain home is part of the image.
@@ -643,9 +643,9 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
   }
 
-  public Integer getMaxClusterServerConcurrentStartup() {
-    return Optional.ofNullable(maxClusterServerConcurrentStartup)
-        .orElse(DEFAULT_MAX_CLUSTER_SERVER_CONCURRENT_START_UP);
+  public Integer getMaxClusterConcurrentStartup() {
+    return Optional.ofNullable(maxClusterConcurrentStartup)
+        .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
   }
 
   @Nullable
@@ -804,7 +804,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides)
             .append(configOverrideSecrets)
             .append(allowReplicasBelowMinDynClusterSize)
-            .append(maxClusterServerConcurrentStartup)
+            .append(maxClusterConcurrentStartup)
             .append(experimental);
 
     return builder.toHashCode();
@@ -844,7 +844,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
-            .append(getMaxClusterServerConcurrentStartup(), rhs.getMaxClusterServerConcurrentStartup())
+            .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
             .append(experimental, rhs.experimental);
     return builder.isEquals();
   }
@@ -905,16 +905,16 @@ public class DomainSpec extends BaseConfiguration {
 
   private int getMaxClusterServerConcurrentStartupFor(Cluster cluster) {
     return hasMaxClusterServerConcurrentStartup(cluster)
-        ? cluster.getMaxClusterServerConcurrentStartup()
-        : getMaxClusterServerConcurrentStartup();
+        ? cluster.getMaxConcurrentStartup()
+        : getMaxClusterConcurrentStartup();
   }
 
   private boolean hasMaxClusterServerConcurrentStartup(Cluster cluster) {
-    return cluster != null && cluster.getMaxClusterServerConcurrentStartup() != null;
+    return cluster != null && cluster.getMaxConcurrentStartup() != null;
   }
 
-  public void setMaxClusterServerConcurrentStartup(Integer maxClusterServerConcurrentStartup) {
-    this.maxClusterServerConcurrentStartup = maxClusterServerConcurrentStartup;
+  public void setMaxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
+    this.maxClusterConcurrentStartup = maxClusterConcurrentStartup;
   }
 
   public AdminServer getAdminServer() {

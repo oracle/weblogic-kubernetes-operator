@@ -173,7 +173,7 @@ public abstract class DomainConfigurator {
   }
 
   public DomainConfigurator withMaxClusterServerConcurrentStartup(Integer maxClusterServerConcurrentStartup) {
-    getDomainSpec().setMaxClusterServerConcurrentStartup(maxClusterServerConcurrentStartup);
+    getDomainSpec().setMaxClusterConcurrentStartup(maxClusterServerConcurrentStartup);
     return this;
   }
 

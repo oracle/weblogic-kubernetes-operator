@@ -5464,12 +5464,6 @@ spec:
                 type: boolean
                 description: If true (the default), then the server .out file will
                   be included in the pod's stdout.
-              maxClusterServerConcurrentStartup:
-                type: number
-                description: The maximum number of managed servers that the operator
-                  will start concurrently for a cluster, if this is not specified
-                  at the cluster level. A default value of 0 means there is no configured
-                  limit.
               clusters:
                 type: array
                 description: Configuration for the clusters.
@@ -10826,13 +10820,13 @@ spec:
                       enum:
                       - NEVER
                       - IF_NEEDED
-                    maxClusterServerConcurrentStartup:
+                    maxConcurrentStartup:
                       description: The maximum number of managed servers that the
-                        operator will start concurrently for the cluster. The operator
+                        operator will start in parallel for the cluster. The operator
                         will wait until a managed server to be in Ready state before
                         starting the next server, until the configured replica count
-                        is reached. A default value of 0 means there is no configured
-                        limit.
+                        is reached. A default value of 0 means all servers will start
+                        in parallel.
                       type: number
                       minimum: 0.0
                     restartVersion:
@@ -10861,6 +10855,12 @@ spec:
                 - Always
                 - Never
                 - IfNotPresent
+              maxClusterConcurrentStartup:
+                type: number
+                description: The maximum number of managed servers that the operator
+                  will start concurrently for a cluster, if maxConcurrentStartup is
+                  not specified at the cluster level. A default value of 0 means there
+                  is no configured limit.
               replicas:
                 type: number
                 description: The number of managed servers to run in any cluster that

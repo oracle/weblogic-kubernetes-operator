@@ -158,7 +158,7 @@ public class ManagedServerUpIteratorStepTest {
 
   @Test
   public void verifyThat_maxClusterServerConcurrentStartup_doesNotApplyToNonClusterdServers() {
-    domain.getSpec().setMaxClusterServerConcurrentStartup(1);
+    domain.getSpec().setMaxClusterConcurrentStartup(1);
 
     addWlsServers("ms3", "ms4");
 

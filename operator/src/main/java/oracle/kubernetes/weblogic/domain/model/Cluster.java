@@ -65,13 +65,13 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   private Boolean allowReplicasBelowMinDynClusterSize;
 
   @Description(
-      "The maximum number of managed servers that the operator will start concurrently "
+      "The maximum number of managed servers that the operator will start in parallel "
       + "for the cluster. The operator will wait until a managed server to be in Ready state "
       + "before starting the next server, until the configured replica count is reached. "
-      + "A default value of 0 means there is no configured limit."
+      + "A default value of 0 means all servers will start in parallel."
   )
   @Range(minimum = 0)
-  private Integer maxClusterServerConcurrentStartup;
+  private Integer maxConcurrentStartup;
 
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
@@ -116,12 +116,12 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     allowReplicasBelowMinDynClusterSize = value;
   }
 
-  public Integer getMaxClusterServerConcurrentStartup() {
-    return maxClusterServerConcurrentStartup;
+  public Integer getMaxConcurrentStartup() {
+    return maxConcurrentStartup;
   }
 
-  public void setMaxClusterServerConcurrentStartup(Integer value) {
-    maxClusterServerConcurrentStartup = value;
+  public void setMaxConcurrentStartup(Integer value) {
+    maxConcurrentStartup = value;
   }
 
   @Nullable
@@ -208,7 +208,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterService, cluster.clusterService)
         .append(maxUnavailable, cluster.maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
-        .append(maxClusterServerConcurrentStartup, cluster.maxClusterServerConcurrentStartup)
+        .append(maxConcurrentStartup, cluster.maxConcurrentStartup)
         .isEquals();
   }
 
@@ -222,7 +222,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterService)
         .append(maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize)
-        .append(maxClusterServerConcurrentStartup)
+        .append(maxConcurrentStartup)
         .toHashCode();
   }
 
