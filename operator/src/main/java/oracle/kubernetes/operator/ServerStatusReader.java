@@ -169,8 +169,8 @@ public class ServerStatusReader {
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
             String namespace = pod.getMetadata().getNamespace();
-            LoggingContext.context(new LoggingContext().namespace(namespace));
-            try {
+            try (LoggingContext loggingContext = 
+                LoggingContext.context(new LoggingContext().namespace(namespace))) {
               try {
                 KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
@@ -206,8 +206,6 @@ public class ServerStatusReader {
               LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
               state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
               serverStateMap.put(serverName, state);
-            } finally {
-              LoggingContext.remove();
             }
             fiber.resume(packet);
           });

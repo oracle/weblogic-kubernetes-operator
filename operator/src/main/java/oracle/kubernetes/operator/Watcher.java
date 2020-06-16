@@ -103,18 +103,12 @@ abstract class Watcher<T> {
   private void doWatch() {
     setIsDraining(false);
 
-    LoggingContext.context(new LoggingContext().namespace(getNamespace()));
-
-    try {
-      while (!isDraining()) {
-        if (isStopping()) {
-          setIsDraining(true);
-        } else {
-          watchForEvents();
-        }
+    while (!isDraining()) {
+      if (isStopping()) {
+        setIsDraining(true);
+      } else {
+        watchForEvents();
       }
-    } finally {
-      LoggingContext.remove();
     }
   }
 
@@ -161,10 +155,13 @@ abstract class Watcher<T> {
           continue;
         }
 
-        if (isError(item)) {
-          handleErrorResponse(item);
-        } else {
-          handleRegularUpdate(item);
+        try (LoggingContext loggingContex = 
+            LoggingContext.context(new LoggingContext().namespace(getNamespace()))) {
+          if (isError(item)) {
+            handleErrorResponse(item);
+          } else {
+            handleRegularUpdate(item);
+          }
         }
       }
     } catch (Throwable ex) {

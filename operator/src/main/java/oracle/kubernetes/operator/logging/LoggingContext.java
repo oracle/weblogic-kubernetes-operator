@@ -4,7 +4,7 @@
 package oracle.kubernetes.operator.logging;
 
 /** Necessary additional context information for Operator log messages. */
-public class LoggingContext {
+public class LoggingContext implements AutoCloseable {
   public static final String LOGGING_CONTEXT_KEY = "LoggingContextComponent";
 
   private static final ThreadLocal<LoggingContext> currentContext = new ThreadLocal<>();
@@ -26,18 +26,11 @@ public class LoggingContext {
    *
    * @param loggingContext instance of {@link LoggingContext}
    */
-  public static void context(LoggingContext loggingContext) {
+  public static LoggingContext context(LoggingContext loggingContext) {
     currentContext.set(loggingContext);
+    return loggingContext;
   }
 
-  /**
-   * Remove the current LoggingContext on the thread.
-   *
-   */
-  public static void remove() {
-    currentContext.remove();
-  }
-  
   public LoggingContext namespace(String namespace) {
     this.namespace = namespace;
     return this;
@@ -54,5 +47,9 @@ public class LoggingContext {
   
   public String domainUid() {
     return domainUid;
+  }
+
+  public void close() {
+    currentContext.remove();
   }
 }

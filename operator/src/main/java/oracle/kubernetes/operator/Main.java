@@ -515,15 +515,20 @@ public class Main {
           // will continue to be handled in recheckDomain method, which periodically
           // checks for new domain resources in the target name spaces.
           if (!delegate.isNamespaceRunning(ns)) {
+            // make sure that the domain namespace is added to the ThreadLocal so that it
+            // shows up in the log messages that are associated with this namespace.
             Packet packet = new Packet();
+            LoggingContext lc = new LoggingContext().namespace(ns);
             packet.getComponents().put(
                 LoggingContext.LOGGING_CONTEXT_KEY,
-                Component.createFor(
-                    new LoggingContext().namespace(ns)));
+                Component.createFor(lc));
 
-            runSteps(Step.chain(
-                ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
-                createConfigMapStep(ns)), packet);
+            try (LoggingContext loggingContext = LoggingContext.context(lc)) {
+              runSteps(Step.chain(
+                  ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
+                  createConfigMapStep(ns)), packet);
+            }
+
             isNamespaceStopping.put(ns, new AtomicBoolean(false));
           }
           break;
@@ -576,16 +581,22 @@ public class Main {
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
       Collection<StepAndPacket> startDetails = new ArrayList<>();
+
+      // save the current thread local
       LoggingContext oldContext = LoggingContext.context();
       try {
         for (String ns : targetNamespaces) {
-          LoggingContext.context(new LoggingContext().namespace(ns));
-          startDetails.add(
-              new StepAndPacket(
-                  action(ns),
-                  packet.clone()));
+          // make sure that the right namespace is in the thread local
+          try (LoggingContext loggingContext = 
+              LoggingContext.context(new LoggingContext().namespace(ns))) {
+            startDetails.add(
+                new StepAndPacket(
+                    action(ns),
+                    packet.clone()));
+          }
         }
       } finally {
+        // restore the saved thread local
         LoggingContext.context(oldContext);
       }
       return doForkJoin(getNext(), packet, startDetails);
@@ -657,6 +668,9 @@ public class Main {
       // the health check helper.
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
           ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
+
+      // we don't have the domain presence information yet
+      // we add a logging context to pass the namespace information to the LoggingFormatter
       packet.getComponents().put(
           LoggingContext.LOGGING_CONTEXT_KEY,
           Component.createFor(

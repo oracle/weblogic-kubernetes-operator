@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
@@ -185,14 +186,12 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         try {
           cc.cancel();
         } finally {
-          LoggingContext.context(new LoggingContext().namespace(requestParams.namespace));
-          try {
+          try (LoggingContext loggingContex = 
+              LoggingContext.context(new LoggingContext().namespace(requestParams.namespace))) {
             if (LOGGER.isFinerEnabled()) {
               logTimeout();
             }
             addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
-          } finally {
-            LoggingContext.remove();
           }
           fiber.resume(packet);
         }
@@ -218,6 +217,16 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   @Override
   public NextAction apply(Packet packet) {
+    // we don't have the domain presence information and logging context information yet,
+    // add a logging context to pass the namespace information to the LoggingFormatter
+    if (requestParams.namespace != null
+        && packet.getComponents().get(DOMAIN_COMPONENT_NAME) == null
+        && packet.getComponents().get(LoggingContext.LOGGING_CONTEXT_KEY) == null) {
+      packet.getComponents().put(
+          LoggingContext.LOGGING_CONTEXT_KEY,
+          Component.createFor(new LoggingContext().namespace(requestParams.namespace)));
+    }
+
     // clear out earlier results
     String cont = null;
     RetryStrategy retry = null;
@@ -423,22 +432,22 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     @Override
     public void onFailure(
         ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-      LoggingContext.context(new LoggingContext().namespace(requestParams.namespace));
-      try {
+      // make sure that the domain namespace is added to the thread local so that
+      // it can be passed to the LoggingFormatter
+      try (LoggingContext loggingContext = 
+          LoggingContext.context(new LoggingContext().namespace(requestParams.namespace))) {
         processing.onFailure(fiber, ae, statusCode, responseHeaders);
-      } finally {
-        LoggingContext.remove();
       }
     }
 
     @Override
     public void onSuccess(
         T result, int statusCode, Map<String, List<String>> responseHeaders) {
-      LoggingContext.context(new LoggingContext().namespace(requestParams.namespace));
-      try {
+      // make sure that the domain namespace is added to the thread local so that
+      // it can be passed to the LoggingFormatter
+      try (LoggingContext loggingContext = 
+          LoggingContext.context(new LoggingContext().namespace(requestParams.namespace))) {
         processing.onSuccess(fiber, result, statusCode, responseHeaders);
-      } finally {
-        LoggingContext.remove();
       }
     }
   }

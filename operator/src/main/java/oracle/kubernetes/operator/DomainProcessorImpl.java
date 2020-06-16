@@ -206,17 +206,23 @@ public class DomainProcessorImpl implements DomainProcessor {
    * @param ns namespace
    */
   public void stopNamespace(String ns) {
-    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-    if (map != null) {
-      for (DomainPresenceInfo dpi : map.values()) {
-        Domain dom = dpi.getDomain();
-        DomainPresenceInfo value =
-            (dom != null)
-                ? new DomainPresenceInfo(dom)
-                : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
-        value.setDeleting(true);
-        value.setPopulated(true);
-        makeRightDomainPresence(value, true, true, false);
+    // make sure that the domain namespace and domainUid are added to the ThreadLocal
+    // so it can be passed to LoggingFormatter
+    try (LoggingContext loggingContext =
+        LoggingContext.context(
+            new LoggingContext().namespace(ns))) {
+      Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
+      if (map != null) {
+        for (DomainPresenceInfo dpi : map.values()) {
+          Domain dom = dpi.getDomain();
+          DomainPresenceInfo value =
+              (dom != null)
+                  ? new DomainPresenceInfo(dom)
+                  : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
+          value.setDeleting(true);
+          value.setPopulated(true);
+          makeRightDomainPresence(value, true, true, false);
+        }
       }
     }
   }
@@ -242,12 +248,12 @@ public class DomainProcessorImpl implements DomainProcessor {
                         domainUid = info.getDomainUid();
                       }
                     }
-                    LoggingContext.context(new LoggingContext().namespace(namespace).domainUid(domainUid));
-                    try {
+                   
+                    // make sure that the domain namespace and domainUid are added to the log message
+                    try (LoggingContext loggingContext = 
+                        LoggingContext.context(new LoggingContext().namespace(namespace).domainUid(domainUid))) {
                       LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
                           + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
-                    } finally {
-                      LoggingContext.remove();
                     }
                   });
                 });
@@ -531,7 +537,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     if (!delegate.isNamespaceRunning(liveInfo.getNamespace())) {
       return;
     }
-
     if (isShouldContinue(liveInfo, explicitRecheck)) {
       internalMakeRightDomainPresence(liveInfo, isDeleting, isWillInterrupt);
     } else {
@@ -667,23 +672,29 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        existing.setPopulated(false);
-                        // proceed only if we have not already retried max number of times
-                        int retryCount = existing.incrementAndGetFailureCount();
-                        LOGGER.fine(
-                            "Failure count for DomainPresenceInfo: "
-                                + existing
-                                + " is now: "
-                                + retryCount);
-                        if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
-                          makeRightDomainPresence(existing, true, isDeleting, false);
-                        } else {
-                          LOGGER.severe(
-                              MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
-                              domainUid,
-                              ns,
-                              DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                              throwable);
+                        // make sure that the domain namespace and domainUid are added to the ThreadLocal
+                        // so it can be passed to LoggingFormatter
+                        try (LoggingContext loggingContext =
+                            LoggingContext.context(
+                                new LoggingContext().namespace(ns))) {
+                          existing.setPopulated(false);
+                          // proceed only if we have not already retried max number of times
+                          int retryCount = existing.incrementAndGetFailureCount();
+                          LOGGER.fine(
+                              "Failure count for DomainPresenceInfo: "
+                                  + existing
+                                  + " is now: "
+                                  + retryCount);
+                          if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+                            makeRightDomainPresence(existing, true, isDeleting, false);
+                          } else {
+                            LOGGER.severe(
+                                MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
+                                domainUid,
+                                ns,
+                                DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                                throwable);
+                          }
                         }
                       }
                     },
