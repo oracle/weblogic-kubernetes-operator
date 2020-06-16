@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1ListMeta;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -28,6 +29,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
@@ -179,15 +181,17 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     // If this is the first event after the fiber resumes, it indicates that we did not receive
     // a callback within the timeout. So cancel the call and prepare to try again.
-    private void handleTimeout(AsyncFiber fiber, CancellableCall cc) {
+    private void handleTimeout(RequestParams requestParams, AsyncFiber fiber, CancellableCall cc) {
       if (firstTimeResumed()) {
         try {
           cc.cancel();
         } finally {
-          if (LOGGER.isFinerEnabled()) {
-            logTimeout();
+          try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
+            if (LOGGER.isFinerEnabled()) {
+              logTimeout();
+            }
+            addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
           }
-          addResponseComponent(Component.createFor(RetryStrategy.class, retryStrategy));
           fiber.resume(packet);
         }
       }
@@ -212,6 +216,16 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   @Override
   public NextAction apply(Packet packet) {
+    // we don't have the domain presence information and logging context information yet,
+    // add a logging context to pass the namespace information to the LoggingFormatter
+    if (requestParams.namespace != null
+        && packet.getComponents().get(DOMAIN_COMPONENT_NAME) == null
+        && packet.getComponents().get(LoggingContext.LOGGING_CONTEXT_KEY) == null) {
+      packet.getComponents().put(
+          LoggingContext.LOGGING_CONTEXT_KEY,
+          Component.createFor(new LoggingContext().namespace(requestParams.namespace)));
+    }
+
     // clear out earlier results
     String cont = null;
     RetryStrategy retry = null;
@@ -237,7 +251,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         (fiber) -> {
           try {
             CancellableCall cc = processing.createCall(fiber);
-            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(fiber, cc));
+            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(requestParams, fiber, cc));
           } catch (ApiException t) {
             logAsyncFailure(t, t.getResponseBody());
             processing.resumeAfterThrowable(fiber);
@@ -416,14 +430,22 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     @Override
     public void onFailure(
-          ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-      processing.onFailure(fiber, ae, statusCode, responseHeaders);
+        ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
+      // make sure that the domain namespace is added to the thread local so that
+      // it can be passed to the LoggingFormatter
+      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
+        processing.onFailure(fiber, ae, statusCode, responseHeaders);
+      }
     }
 
     @Override
     public void onSuccess(
         T result, int statusCode, Map<String, List<String>> responseHeaders) {
-      processing.onSuccess(fiber, result, statusCode, responseHeaders);
+      // make sure that the domain namespace is added to the thread local so that
+      // it can be passed to the LoggingFormatter
+      try (LoggingContext stack = LoggingContext.setThreadContext().namespace(requestParams.namespace)) {
+        processing.onSuccess(fiber, result, statusCode, responseHeaders);
+      }
     }
   }
 }

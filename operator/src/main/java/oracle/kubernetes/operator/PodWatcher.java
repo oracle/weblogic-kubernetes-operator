@@ -122,6 +122,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         .createPodWatch(namespace);
   }
 
+  @Override
+  public String getNamespace() {
+    return namespace;
+  }
+
   /**
    * Receive response.
    * @param item item

@@ -59,4 +59,9 @@ public class ServiceWatcher extends Watcher<V1Service> {
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createServiceWatch(ns);
   }
+
+  @Override
+  public String getNamespace() {
+    return ns;
+  }
 }
