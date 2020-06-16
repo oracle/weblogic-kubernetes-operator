@@ -117,6 +117,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -399,6 +400,24 @@ public class CommonTestUtils {
         ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
+  }
+
+  /**
+   * Check ingress is ready to route the app to the server pod.
+   *
+   * @param ingressHostList list of ingress hosts
+   * @param ingressControllerNodeport ingress controller nodeport
+   */
+  public static void checkIngressReady(List<String> ingressHostList, int ingressControllerNodeport) {
+    // check the ingress is ready to route the app to the pod
+    for (String ingressHost : ingressHostList) {
+      String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+          + "' http://" + K8S_NODEPORT_HOST + ":" + ingressControllerNodeport
+          + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+      logger.info("Executing curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+    }
   }
 
   /**

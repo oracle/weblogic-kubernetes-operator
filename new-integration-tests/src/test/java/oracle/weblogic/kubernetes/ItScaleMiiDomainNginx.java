@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkIngressReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -133,7 +134,10 @@ class ItScaleMiiDomainNginx implements LoggedTest {
       clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
     }
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
+    List<String> ingressHostList = createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
+
+    // check the ingress is ready
+    checkIngressReady(ingressHostList, nodeportshttp);
   }
 
   @Test
