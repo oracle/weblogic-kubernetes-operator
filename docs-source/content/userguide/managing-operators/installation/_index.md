@@ -6,7 +6,15 @@ weight: 1
 ---
 
 The operator uses Helm to create and deploy the necessary resources and
-then run the operator in a Kubernetes cluster.
+then run the operator in a Kubernetes cluster. This document describes how to install, upgrade,
+and remove the operator.
+
+#### Content
+
+ - [Install the operator Helm chart](#install-the-operator-helm-chart)
+ - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
+ - [Upgrade the operator](#upgrade-the-operator)
+ - [Remove the operator](#remove-the-operator)
 
 #### Install the operator Helm chart
 
@@ -76,7 +84,22 @@ Install the operator from the repository:
 $ helm install weblogic-operator weblogic-operator/weblogic-operator
 ```
 
-#### Removing the operator
+#### Upgrade the operator
+
+To upgrade the operator, use the `helm upgrade` command. When upgrading the operator,
+the `helm upgrade` command requires that you supply a new Helm chart and image. For example:
+
+```
+$ helm upgrade \
+  --reuse-values \
+  --set image=oracle/weblogic-kubernetes-operator:2.5.0 \
+  --namespace weblogic-operator-namespace \
+  --wait \
+  weblogic-operator \
+  kubernetes/charts/weblogic-operator
+```
+
+#### Remove the operator
 
 The `helm delete` command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the `helm delete` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart)).  For example:
 
