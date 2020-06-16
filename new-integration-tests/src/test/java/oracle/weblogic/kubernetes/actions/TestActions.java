@@ -904,6 +904,22 @@ public class TestActions {
 
     return serverStopped && serverStarted;
   }
+
+  /**
+   * Get the container's restart count in the pod.
+   * @param namespace name of the pod's namespace
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod
+   * @param containerName name of the container, if null looks for first container
+   * @return restart count of the container
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static int getContainerRestartCount(
+      String namespace, String labelSelector, String podName, String containerName)
+      throws ApiException {
+    return Kubernetes.getContainerRestartCount(namespace, labelSelector, podName, containerName);
+  }
+
   // ------------------------ where does this go  -------------------------
 
   /**
