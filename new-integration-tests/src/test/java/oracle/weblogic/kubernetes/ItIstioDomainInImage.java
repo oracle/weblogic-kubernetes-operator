@@ -104,6 +104,12 @@ class ItIstioDomainInImage implements LoggedTest {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
+    // Label the domain/operator namespace with istio-injection=enabled
+    boolean k8res = labelNamespace(domainNamespace);
+    assertTrue(k8res, "Could not label the WebLogic domain namespace");
+    k8res = labelNamespace(opNamespace);
+    assertTrue(k8res, "Could not label the Operator namespace");
+
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
@@ -131,9 +137,6 @@ class ItIstioDomainInImage implements LoggedTest {
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
 
-    // Label the domain namespace with istio-injection=enabled
-    boolean k8res = labelNamespace(domainNamespace);
-    assertTrue(k8res, "Could not label the WebLogic domain namespace");
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -231,7 +234,7 @@ class ItIstioDomainInImage implements LoggedTest {
    * TODO: move to CommonTestUtils
    * Label a namespace with Istio Injection
    **/
-  private boolean labelNamespace(String namespace) {
+  private static boolean labelNamespace(String namespace) {
     ExecResult result = null;
     StringBuffer labelNamespace = null;
     labelNamespace = new StringBuffer("kubectl label namespace ");

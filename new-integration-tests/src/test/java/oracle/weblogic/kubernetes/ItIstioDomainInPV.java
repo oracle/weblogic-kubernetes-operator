@@ -153,6 +153,12 @@ public class ItIstioDomainInPV implements LoggedTest {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
+    // Label the operator/domain namespace with istio-injection=enabled
+    boolean k8res = labelNamespace(opNamespace);
+    assertTrue(k8res, "Could not label the Operator namespace");
+    k8res = labelNamespace(domainNamespace);
+    assertTrue(k8res, "Could not label the WebLogic domain namespace");
+
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
 
@@ -190,11 +196,6 @@ public class ItIstioDomainInPV implements LoggedTest {
       createOCRRepoSecret(domainNamespace);
     }
 
-    // Label the operator/domain namespace with istio-injection=enabled
-    boolean k8res = labelNamespace(opNamespace);
-    assertTrue(k8res, "Could not label the Operator namespace");
-    k8res = labelNamespace(domainNamespace);
-    assertTrue(k8res, "Could not label the WebLogic domain namespace");
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -364,7 +365,7 @@ public class ItIstioDomainInPV implements LoggedTest {
    * TODO: move to CommonTestUtils
    * Label a namespace with Istio Injection
    **/
-  private boolean labelNamespace(String namespace) {
+  private static boolean labelNamespace(String namespace) {
     ExecResult result = null;
     StringBuffer labelNamespace = null;
     labelNamespace = new StringBuffer("kubectl label namespace ");
