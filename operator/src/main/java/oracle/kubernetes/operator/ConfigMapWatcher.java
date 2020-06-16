@@ -59,4 +59,9 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
         .withLabelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createConfigMapWatch(ns);
   }
+
+  @Override
+  public String getNamespace() {
+    return ns;
+  }
 }

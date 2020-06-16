@@ -151,6 +151,15 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1ConfigMap) requestParams.body,
                   callback));
+  private final CallFactory<V1ConfigMap> patchConfigMap =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchConfigMapAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  callback));
   private final CallFactory<V1Pod> createPod =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -998,6 +1007,30 @@ public class CallBuilder {
         responseStep,
         new RequestParams("replaceConfigMap", namespace, name, body),
         replaceConfigmap);
+  }
+
+  private Call patchConfigMapAsync(
+      ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1ConfigMap> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, false, callback);
+  }
+
+  /**
+   * Asynchronous step for patching a config map.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchConfigMapAsync(
+      String name, String namespace, V1Patch patchBody, ResponseStep<V1ConfigMap> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("patchConfigMap", namespace, name, patchBody),
+        patchConfigMap);
   }
 
   private Call listPodAsync(
