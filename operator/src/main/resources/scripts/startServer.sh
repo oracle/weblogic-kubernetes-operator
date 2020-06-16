@@ -71,6 +71,17 @@ function startWLS() {
   traceTiming "POD '${SERVICE_NAME}' MD5 END"
 
   #
+  # We "tail" the future WL Server .out file to stdout in background _before_ starting 
+  # the WLS Server because we use WLST 'nmStart()' to start the server and nmStart doesn't return
+  # control until WLS reaches the RUNNING state.
+  #
+
+  if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
+    trace "Showing the server out file from ${SERVER_OUT_FILE}"
+    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} ${SERVER_PID_FILE} &
+  fi
+
+  #
   # Start WL Server
   #
 
@@ -82,6 +93,12 @@ function startWLS() {
   ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
 
   traceTiming "POD '${SERVICE_NAME}' WLS STARTED"
+
+  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
+  SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
+  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
+    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
+  fi
 }
 
 function mockWLS() {
@@ -95,29 +112,25 @@ function mockWLS() {
   echo "RUNNING:Y:N" > $STATEFILE
 }
 
-function waitUntilShutdown() {
-  #
-  # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
-  #
-  if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
-    trace "Showing the server out file from ${SERVER_OUT_FILE}"
-    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} ${SERVER_PID_FILE} &
-  fi
-  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true} 
-  SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
-  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
-    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
-  fi
-  waitForShutdownMarker
-}
-
 # Define helper fn to copy sit cfg xml files from one dir to another
 #   $src_dir files are assumed to start with $fil_prefix and end with .xml
 #   Copied $tgt_dir files are stripped of their $fil_prefix
 #   Any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
 #
+# This method is called during boot, see 'copySitCfgWhileRunning' in 'livenessProbe.sh'
+# for the similar method that is periodically called while the server is running.
 
-function copySitCfg() {
+function copySitCfgWhileBooting() {
+  # Helper fn to copy sit cfg xml files to the WL server's domain home.
+  #   - params $1/$2/$3 == 'src_dir tgt_dir fil_prefix'
+  #   - $src_dir files are assumed to start with $fil_prefix and end with .xml
+  #   - copied $tgt_dir files are stripped of their $fil_prefix
+  #   - any .xml files in $tgt_dir that are not in $src_dir/$fil_prefix+FILE are deleted
+  #
+  # This method is called before the server boots, see
+  # 'copySitCfgWhileRunning' in 'livenessProbe.sh' for a similar method that
+  # is called periodically while the server is running. 
+
   src_dir=${1?}
   tgt_dir=${2?}
   fil_prefix=${3?}
@@ -340,17 +353,23 @@ createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
-copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
+copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 
-
+#
+# Start WLS
+#
 
 if [ "${MOCK_WLS}" == 'true' ]; then
   mockWLS
-  waitForShutdownMarker
 else
   startWLS
-  waitUntilShutdown
 fi
+
+#
+# Wait forever. Kubernetes will monitor this pod via liveness and readyness probes.
+#
+
+waitForShutdownMarker

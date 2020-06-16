@@ -79,7 +79,7 @@ $ helm upgrade \
 {{% notice note %}}
 Changes to the `domainNamespaces` list might not be picked up by the operator right away because the operator
 monitors the changes to the setting periodically. The operator becomes ready to host domain resources in
-a namespace only after the required `configmap` (namely `weblogic-domain-cm`) is initialized in the namespace.
+a namespace only after the required `configmap` (namely `weblogic-scripts-cm`) is initialized in the namespace.
 {{% /notice %}}
 
 You can verify that the operator is ready to host domain resources in a namespace by confirming the existence of the required `configmap` resource.
@@ -95,7 +95,7 @@ bash-4.2$ kubectl get cm -n ns1
 
 NAME                 DATA      AGE
 
-weblogic-domain-cm   14        12m
+weblogic-scripts-cm   14        12m
 ```
 
 ####  Delete a Kubernetes Namespace from the operator
@@ -130,7 +130,7 @@ Make sure that you wait a sufficient period of time between deleting and recreat
 namespace because it takes time for the resources in a namespace to go away after the namespace is deleted.
 In addition, as mentioned above, changes to the `domainNamespaces` setting is monitored by the operator
 periodically, and the operator becomes ready to host domain resources only after the required domain
-`configmap` (namely `weblogic-domain-cm`) is initialized in the namespace.
+`configmap` (namely `weblogic-scripts-cm`) is initialized in the namespace.
 {{% /notice %}}
 
 If a domain custom resource is created before the namespace is ready, you might see that the introspector job pod
@@ -147,7 +147,7 @@ Events:
 
   Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "default-token-jzblm"
 
-  Warning  FailedMount            27s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume "weblogic-domain-cm-volume" : configmaps "weblogic-domain-cm" not found
+  Warning  FailedMount            27s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume "weblogic-scripts-cm-volume" : configmaps "weblogic-scripts-cm" not found
 
 ```
 

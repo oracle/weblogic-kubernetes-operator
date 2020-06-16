@@ -14,6 +14,8 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -58,13 +60,7 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  /**
-   * Specifies the domain home source type.
-   *
-   * @param domainHomeSourceType String indicating the type of the domain home source
-   * @return this object
-   */
-  public DomainConfigurator withDomainHomeSourceType(String domainHomeSourceType) {
+  public DomainConfigurator withDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     getDomainSpec().setDomainHomeSourceType(domainHomeSourceType);
     return this;
   }
@@ -167,7 +163,7 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public DomainConfigurator withHttpAccessLogInLogHome(boolean httpAccessLogInLogHome) {
-    getDomainSpec().withHttpAccessLogInLogHome(httpAccessLogInLogHome);
+    getDomainSpec().setHttpAccessLogInLogHome(httpAccessLogInLogHome);
     return this;
   }
 
@@ -186,6 +182,9 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withConfigOverrideSecrets(String... secretNames);
+
+  public abstract DomainConfigurator withConfigOverrideDistributionStrategy(
+        OverrideDistributionStrategy strategy);
 
   /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the

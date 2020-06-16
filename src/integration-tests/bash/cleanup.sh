@@ -88,7 +88,7 @@ BG_DELETE="${BG_DELETE:-true}"
 
 [ "$1" = "-dryrun" ] && DRY_RUN="true"
 
-echo @@ `timestamp` Starting cleanup.
+echo @@ `timestamp` Info: Starting cleanup.
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
 source $PROJECT_ROOT/kubernetes/internal/utility.sh
@@ -110,6 +110,19 @@ function jobWaitAndKill {
   [ ! -z "$(jobs -rp)" ] && kill -9 $(jobs -rp)
 }
 
+# helper fn to speedup pvc deletes
+function patchPVCFinalizer() {
+  while read line; do
+    if [ ! "$DRY_RUN" = "true" ]; then
+      set -x
+      kubectl patch pvc $line -p '{"metadata":{"finalizers":null}}'
+      set +x
+    else
+      echo @@ `timestamp` Info: DRYRUN: "kubectl patch pvc $line -p '{\"metadata\":{\"finalizers\":null}}'"
+    fi
+  done
+}
+
 # use for kubectl delete of a specific name, exits silently if nothing found via 'get'
 # usage: doDeleteByName [-n foobar] kind name
 function doDeleteByName {
@@ -129,7 +142,7 @@ function doDeleteByName {
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
-  echo @@ `timestamp` doDeleteByName $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
+  echo @@ `timestamp` Info: doDeleteByName $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
   cat $tmpfile
   rm $tmpfile
 
@@ -157,7 +170,7 @@ function doDeleteByRange {
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
-  echo @@ `timestamp` doDeleteByRange $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
+  echo @@ `timestamp` Info: doDeleteByRange $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
   cat $tmpfile
   rm $tmpfile
 
@@ -209,14 +222,14 @@ waitForLabelPods() {
   local mnow=mstart
   local maxwaitsecs=$1
   local pods
-  echo "@@ `timestamp` Waiting $maxwaitsecs for pods to stop running."
+  echo "@@ `timestamp` Info: Waiting $maxwaitsecs for pods to stop running."
   while [ $((mnow - mstart)) -lt $maxwaitsecs ]; do
     pods=($(kubectl get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
     total=${#pods[*]}
     if [ $total -eq 0 ] ; then
         break
     else
-      echo "@@ `timestamp` There are $total running pods with label $LABEL_SELECTOR: $pods".
+      echo "@@ `timestamp` Info: There are $total running pods with label $LABEL_SELECTOR: $pods".
     fi
     sleep 0.5
     mnow=`date +%s`
@@ -240,7 +253,7 @@ deleteDomains() {
   if [ "$DRY_RUN" = "true" ]; then
     kubectl --all-namespaces=true get pods -l weblogic.serverName \
       -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
-      | awk '{ system("echo @@ dryrun: kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+      | awk '{ system("echo @@ DRYRUN: kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
   else
     kubectl --all-namespaces=true get pods -l weblogic.serverName \
       -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
@@ -302,7 +315,7 @@ deleteWebLogicPods() {
 # - the delete order is order of NAMESPACED_TYPES and then NOT_NAMESPACED_TYPES
 # - uses $1 as a temporary file
 function deleteLabel {
-  echo @@ `timestamp` Delete resources with label $LABEL_SELECTOR.
+  echo @@ `timestamp` Info: Delete resources with label $LABEL_SELECTOR.
 
   # clean the output file first
 
@@ -315,6 +328,16 @@ function deleteLabel {
 
   for resource_type in $NAMESPACED_TYPES
   do
+    # patch PVCs to speedup their deletion
+    if [ "$resource_type" = "pvc" ]; then
+      echo "@@ `timestamp` Info: Disabling finalizers on pvc resources to speed up their deletion (LABEL_SELECTOR='$LABEL_SELECTOR')."
+      kubectl get pvc \
+        -l "$LABEL_SELECTOR" \
+        -o=jsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
+        --all-namespaces=true \
+        | patchPVCFinalizer
+    fi
+
     kubectl get $resource_type \
       -l "$LABEL_SELECTOR" \
       -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
@@ -392,11 +415,12 @@ function deleteByTypeAndLabel {
   tempfile="/tmp/$(basename $0).tmp.$$"  # == /tmp/[script-file-name].tmp.[pid]
 
   LABEL_SELECTOR="weblogic.domainUID"
-  echo "@@ Deleting wls domain resources by LABEL_SELECTOR='$LABEL_SELECTOR', NAMESPACED_TYPES='$NAMESPACED_TYPES', NOT_NAMESPACED_TYPES='$NOT_NAMESPACED_TYPES'."
+
+  echo "@@ `timestamp` Info: Deleting wls domain resources by LABEL_SELECTOR='$LABEL_SELECTOR', NAMESPACED_TYPES='$NAMESPACED_TYPES', NOT_NAMESPACED_TYPES='$NOT_NAMESPACED_TYPES'."
   deleteLabel "$tempfile-0"
 
   LABEL_SELECTOR="weblogic.operatorName"
-  echo "@@ Deleting wls operator resources by LABEL_SELECTOR='$LABEL_SELECTOR', NAMESPACED_TYPES='$NAMESPACED_TYPES', NOT_NAMESPACED_TYPES='$NOT_NAMESPACED_TYPES'."
+  echo "@@ `timestamp` Info: Deleting wls operator resources by LABEL_SELECTOR='$LABEL_SELECTOR', NAMESPACED_TYPES='$NAMESPACED_TYPES', NOT_NAMESPACED_TYPES='$NOT_NAMESPACED_TYPES'."
   deleteLabel "$tempfile-1"
 
   # TBD: This appears to hurt more than it helps. Doesn't protect against out of order deletes.
@@ -408,7 +432,7 @@ function deleteByTypeAndLabel {
 
   if [ "$HANDLE_VOYAGER" = "true" ]; then
     if [ ! "$DRY_RUN" = "true" ]; then
-      echo @@ `timestamp` Deleting voyager controller.
+      echo @@ `timestamp` Info: Deleting voyager controller.
       # calls script in utility.sh
       deleteVoyagerOperator
     fi
@@ -456,8 +480,8 @@ function genericDelete {
     fi
   fi
 
-  echo "@@ `timestamp` In genericDelete with mode '$mode'"
-  echo "@@ `timestamp` Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
+  echo "@@ `timestamp` Info: In genericDelete with mode '$mode'"
+  echo "@@ `timestamp` Info: Waiting up to $maxwaitsecs seconds for ${1:?} and ${2:?} artifacts that contain string ${3:?} to delete."
 
   local artcount_no
   local artcount_yes
@@ -466,6 +490,15 @@ function genericDelete {
   local resfile_yes
 
   local mstart=`date +%s`
+
+  # patch PVCs to speedup their deletion
+  if [ ! "$1" = "${1/pvc//}" ]; then
+    echo "@@ `timestamp` Info: Disabling finalizers on pvc resources to speed up their deletion (filter='${3}')."
+    kubectl get pvc \
+      -o=jsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
+      --all-namespaces=true \
+      | egrep -e "($3)" | patchPVCFinalizer
+  fi
 
   while : ; do
     resfile_no="$TMP_DIR/kinv_filtered_nonamespace.out.tmp"
@@ -490,14 +523,14 @@ function genericDelete {
     mnow=`date +%s`
 
     if [ $((artcount_total)) -eq 0 ]; then
-      echo "@@ `timestamp` No artifacts found."
+      echo "@@ `timestamp` Info: No artifacts found."
       return 0
     fi
 
     if [ "$mode" = "-wait" ]; then
       # just wait to see if artifacts go away on there own
 
-      echo "@@ `timestamp` Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
+      echo "@@ `timestamp` Info: Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
 
       cat $resfile_yes | awk '{ print "n=" $1 " " $2 }'
       cat $resfile_no | awk '{ print $1 }'
@@ -505,7 +538,7 @@ function genericDelete {
     else
       # try to delete remaining artifacts
 
-      echo "@@ `timestamp` Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
+      echo "@@ `timestamp` Info: Trying to delete ${artcount_total} leftover artifacts, including ${artcount_yes} namespaced artifacts and ${artcount_no} non-namespaced artifacts, wait time $((mnow - mstart)) seconds (max=$maxwaitsecs)."
 
       if [ "$mode" = "-forceDelete" ]; then
         local fast_delete_orig="$FAST_DELETE"
@@ -563,9 +596,9 @@ function deleteHelmReleases {
   helm version --short --client  | grep v2
   [[ $? == 0 ]] && HELM_VERSION=V2
   [[ $? == 1 ]] && HELM_VERSION=V3
-  echo "@@ `timestamp` Detected Helm Version [$(helm version --short --client)]"
+  echo "@@ `timestamp` Info: Detected Helm Version [$(helm version --short --client)]"
 
-  echo @@ `timestamp` Deleting installed helm charts
+  echo @@ `timestamp` Info: Deleting installed helm charts
 
   if [ "$HELM_VERSION" == "V2" ]; then
    helm list --short | while read helm_name; do
@@ -594,7 +627,7 @@ function deleteHelmReleases {
 
   # cleanup tiller artifacts
   if [ "$SHARED_CLUSTER" = "true" ]; then
-    echo @@ `timestamp` Skipping tiller delete.
+    echo @@ `timestamp` Info: Skipping tiller delete.
     # TBD: According to MarkN no Tiller delete is needed.
     # kubectl $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
     # kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
@@ -605,7 +638,7 @@ function deleteHelmReleases {
 
 FAST_DELETE=${FAST_DELETE:---timeout=60s}
 
-echo "@@ `timestamp` RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
+echo "@@ `timestamp` Info: RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
 
 mkdir -p $TMP_DIR || exit 1
 
@@ -661,7 +694,7 @@ deleteByTypeAndLabel
 
 g_arg1="all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress,deployments"
 g_arg2="crd,pv,ns,clusterroles,clusterrolebindings"
-g_arg3="logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu"
+g_arg3="Namespace/ns-|logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu"
 
 #
 # Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort
@@ -693,20 +726,20 @@ if [ "${DELETE_FILES:-true}" = "true" ] && [ "$DRY_RUN" = "false" ]; then
 
   # Delete pv directories using a run (/sharedparent maps to PV_ROOT on the k8s cluster machines).
 
-  echo @@ `timestamp` Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
+  echo @@ `timestamp` Info: Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 600 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/*/acceptance_test_pv'
   [ "$?" = "0" ] || SUCCESS="1"
-  echo @@ `timestamp` SUCCESS=$SUCCESS
+  echo @@ `timestamp` Info: SUCCESS=$SUCCESS
 
   # Delete old test files owned by the current user.
 
-  echo @@ `timestamp` Deleting local $RESULT_DIR contents.
+  echo @@ `timestamp` Info: Deleting local $RESULT_DIR contents.
   rm -fr $RESULT_ROOT/*/acceptance_test_tmp
   [ "$?" = "0" ] || SUCCESS="1"
-  echo @@ `timestamp` SUCCESS=$SUCCESS
+  echo @@ `timestamp` Info: SUCCESS=$SUCCESS
 
-  echo @@ `timestamp` Deleting /tmp/test_suite.\* files.
+  echo @@ `timestamp` Info: Deleting /tmp/test_suite.\* files.
   rm -f /tmp/test_suite.*
 
 fi
@@ -725,5 +758,5 @@ if [ ! "$LEASE_ID" = "" ] && [ ! "$SUCCESS" = "0" ]; then
   rm -f /tmp/release_lease.out
 fi
 
-echo @@ `timestamp` Exiting after $SECONDS seconds with status $SUCCESS 
+echo @@ `timestamp` Info: Exiting after $SECONDS seconds with status $SUCCESS 
 exit $SUCCESS

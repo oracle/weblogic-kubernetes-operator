@@ -16,7 +16,7 @@ public class HelmParams {
   private String chartDir;
   private String chartValuesFile;
   private String filter;
-  private String version;
+  private String chartVersion;
 
   public HelmParams releaseName(String releaseName) {
     this.releaseName = releaseName;
@@ -58,8 +58,8 @@ public class HelmParams {
     return this;
   }
 
-  public HelmParams version(String version) {
-    this.version = version;
+  public HelmParams chartVersion(String chartVersion) {
+    this.chartVersion = chartVersion;
     return this;
   }
 
@@ -95,7 +95,7 @@ public class HelmParams {
     return filter;
   }
 
-  public String getVersion() {
-    return version;
+  public String getChartVersion() {
+    return chartVersion;
   }
 }

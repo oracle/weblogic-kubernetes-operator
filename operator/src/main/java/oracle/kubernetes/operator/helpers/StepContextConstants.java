@@ -9,7 +9,7 @@ public interface StepContextConstants {
   static final String OPSS_WALLETFILE_VOLUME = "opss-walletfile-volume";
   static final String WDT_ENCRYPT_PASSPHRASE_VOLUME = "wdt-encrypt-keypass-volume";
   static final String SECRETS_VOLUME = "weblogic-credentials-volume";
-  static final String SCRIPTS_VOLUME = "weblogic-domain-cm-volume";
+  static final String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
   static final String DEBUG_CM_VOLUME = "weblogic-domain-debug-cm-volume";
   static final String SIT_CONFIG_MAP_VOLUME = "weblogic-domain-introspect-cm-volume";
   static final String WDT_CONFIG_MAP_VOLUME = "weblogic-domain-introspect-wdt-cm-volume";
