@@ -88,7 +88,7 @@ public class JobHelper {
   }
 
   private static boolean introspectionRequested(Packet packet) {
-    return (Boolean) packet.getOrDefault(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, false);
+    return packet.containsKey(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED);
   }
 
   private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
