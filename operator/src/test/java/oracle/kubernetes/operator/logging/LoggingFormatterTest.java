@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -86,6 +87,50 @@ public class LoggingFormatterTest {
     testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
 
     assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-uid"));
+  }
+
+  @Test
+  public void whenPacketLacksDomainPresence_domainNamespaceIsEmpty() {
+    assertThat(getFormattedMessageInFiber().get("namespace"), equalTo(""));
+  }
+
+  @Test
+  public void whenPacketContainsDomainPresence_retrieveDomainNamespace() {
+    testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
+
+    assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-ns"));
+  }
+
+  @Test
+  public void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainNamespace() {
+    testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
+    testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns"));
+
+    assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-ns"));
+  }
+
+  @Test
+  public void whenPacketContainsLoggingContext_retrieveDomainNamespace() {
+    testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns"));
+
+    assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-ns"));
+  }
+
+  @Test
+  public void whenPacketContainsLoggingContext_hasThreadLocal_retrieveDomainNamespace() {
+    testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns1"));
+    try (LoggingContext loggingContext =
+        new LoggingContext().namespace("test-lc-tl-ns")) {
+      assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-ns1"));
+    }
+  }
+
+  @Test
+  public void whenPacketContainsNoDomainPresenceLoggingContext_hasThreadLocal_retrieveDomainNamespace() {
+    try (LoggingContext loggingContext =
+        LoggingContext.context(new LoggingContext().namespace("test-lc-tl-ns1"))) {
+      assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-tl-ns1"));
+    }
   }
 
   @SuppressWarnings("unchecked")
