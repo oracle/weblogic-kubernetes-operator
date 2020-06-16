@@ -236,7 +236,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
         "Getting admin server node port failed");
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3:%s2.%s:8001",
+            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
              K8S_NODEPORT_HOST, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
              domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
              domain2ManagedServerPrefix, domain2Namespace);
