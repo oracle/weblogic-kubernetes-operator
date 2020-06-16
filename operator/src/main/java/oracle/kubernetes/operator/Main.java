@@ -51,6 +51,7 @@ import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -258,13 +259,21 @@ public class Main {
     return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
+  private static void runSteps(Step firstStep, Packet packet) {
+    runSteps(firstStep, packet, null);
+  }
+
   private static void runSteps(Step firstStep) {
-    runSteps(firstStep, null);
+    runSteps(firstStep, new Packet(), null);
   }
 
   private static void runSteps(Step firstStep, Runnable completionAction) {
+    runSteps(firstStep, new Packet(), completionAction);
+  }
+
+  private static void runSteps(Step firstStep, Packet packet, Runnable completionAction) {
     Fiber f = engine.createFiber();
-    f.start(firstStep, new Packet(), andThenDo(completionAction));
+    f.start(firstStep, packet, andThenDo(completionAction));
   }
 
   private static NullCompletionCallback andThenDo(Runnable completionAction) {
@@ -508,9 +517,8 @@ public class Main {
           // will continue to be handled in recheckDomain method, which periodically
           // checks for new domain resources in the target name spaces.
           if (!delegate.isNamespaceRunning(ns)) {
-            runSteps(Step.chain(
-                ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
-                createConfigMapStep(ns)));
+            runSteps(getScriptCreationSteps(ns), createPacketWithLoggingContext(ns));
+
             isNamespaceStopping.put(ns, new AtomicBoolean(false));
           }
           break;
@@ -528,6 +536,21 @@ public class Main {
         case "ERROR":
         default:
       }
+    }
+  }
+
+  private static Packet createPacketWithLoggingContext(String ns) {
+    Packet packet = new Packet();
+    packet.getComponents().put(
+        LoggingContext.LOGGING_CONTEXT_KEY,
+        Component.createFor(new LoggingContext().namespace(ns)));
+    return packet;
+  }
+
+  private static Step getScriptCreationSteps(String ns) {
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+      return Step.chain(
+          ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns), createConfigMapStep(ns));
     }
   }
 
@@ -563,11 +586,11 @@ public class Main {
       // check for any existing resources and add the watches on them
       // this would happen when the Domain was running BEFORE the Operator starts up
       Collection<StepAndPacket> startDetails = new ArrayList<>();
+
       for (String ns : targetNamespaces) {
-        startDetails.add(
-            new StepAndPacket(
-                action(ns),
-                packet.clone()));
+        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+          startDetails.add(new StepAndPacket(action(ns), packet.clone()));
+        }
       }
       return doForkJoin(getNext(), packet, startDetails);
     }
@@ -638,6 +661,13 @@ public class Main {
       // the health check helper.
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(
           ns != null ? ns : operatorNamespace, (key) -> new NamespaceStatus());
+
+      // we don't have the domain presence information yet
+      // we add a logging context to pass the namespace information to the LoggingFormatter
+      packet.getComponents().put(
+          LoggingContext.LOGGING_CONTEXT_KEY,
+          Component.createFor(
+              new LoggingContext().namespace(ns != null ? ns : operatorNamespace)));
       V1SubjectRulesReviewStatus srrs = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
