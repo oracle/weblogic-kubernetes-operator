@@ -585,7 +585,7 @@ public class ItDomainInPV implements LoggedTest {
   }
 
   /**
-   * Verify liveness probe by killing managed server process 3 times to kick
+   * Verify liveness probe by killing managed server process 3 times to kickoff
    * pod container auto-restart.
    */
   @Test
