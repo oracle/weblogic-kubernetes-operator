@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,8 +28,10 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -67,6 +72,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
@@ -83,17 +89,21 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -589,11 +599,11 @@ public class CommonTestUtils {
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
-                                                List<String> wdtModelList,
-                                                List<String> appSrcDirList,
-                                                String baseImageName,
-                                                String baseImageTag,
-                                                String domainType) {
+                                               List<String> wdtModelList,
+                                               List<String> appSrcDirList,
+                                               String baseImageName,
+                                               String baseImageTag,
+                                               String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -602,20 +612,44 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
-    List<String> archiveList = null;
+    List<String> archiveList = new ArrayList<String>();
 
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
-      final String appName = appSrcDirList.get(0);
+      List<String> archiveAppsList = new ArrayList<String>();
+      List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
 
-      // build an application archive using what is in resources/apps/APP_NAME
-      assertTrue(buildAppArchive(defaultAppParams()
-          .srcDirList(appSrcDirList)),
-          String.format("Failed to create app archive for %s", appName));
+      for (String appSrcDir : appSrcDirList) {
+        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
+          //remove from build
+          buildAppDirList.remove(appSrcDir);
+          archiveAppsList.add(appSrcDir);
+        }
+      }
 
-      // build the archive list
-      String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-      archiveList = Collections.singletonList(zipFile);
+      if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
+        assertTrue(archiveApp(defaultAppParams()
+                .srcDirList(archiveAppsList)));
+        //archive provided ear or war file
+        String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
+                appSrcDirList.get(0).lastIndexOf("."));
+
+        // build the archive list
+        String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+        archiveList.add(zipAppFile);
+
+      }
+      if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
+        // build an application archive using what is in resources/apps/APP_NAME
+        assertTrue(buildAppArchive(defaultAppParams()
+                        .srcDirList(buildAppDirList)),
+                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+
+        // build the archive list
+        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+        archiveList.add(zipFile);
+      }
     }
+
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -666,6 +700,7 @@ public class CommonTestUtils {
     logger.info("Creating image pull secret in namespace {0}", namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
+
 
   /**
    * Create a Docker registry secret in the specified namespace.
@@ -926,13 +961,143 @@ public class CommonTestUtils {
   }
 
   /**
+   * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
+   *
+   * @param promReleaseName the prometheus release name
+   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promValueFile the promeheus value.yaml file path
+   * @param promVersion the version of the prometheus helm chart
+   * @param promServerNodePort nodePort value for prometheus server
+   * @param alertManagerNodePort nodePort value for alertmanager
+   * @return the prometheus Helm installation parameters
+   */
+  public static HelmParams installAndVerifyPrometheus(String promReleaseName,
+                                                      String promNamespace,
+                                                      String promValueFile,
+                                                      String promVersion,
+                                                      int promServerNodePort,
+                                                      int alertManagerNodePort) {
+
+    // Helm install parameters
+    HelmParams promHelmParams = new HelmParams()
+        .releaseName(promReleaseName)
+        .namespace(promNamespace)
+        .chartDir("stable/prometheus")
+        .chartValuesFile(promValueFile);
+
+    if (promVersion != null) {
+      promHelmParams.chartVersion(promVersion);
+    }
+
+    // prometheus chart values to override
+    PrometheusParams prometheusParams = new PrometheusParams()
+        .helmParams(promHelmParams)
+        .nodePortServer(promServerNodePort)
+        .nodePortAlertManager(alertManagerNodePort);
+
+    // install prometheus
+    logger.info("Installing prometheus in namespace {0}", promNamespace);
+    assertTrue(installPrometheus(prometheusParams),
+        String.format("Failed to install prometheus in namespace %s", promNamespace));
+    logger.info("Prometheus installed in namespace {0}", promNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking prometheus release {0} status in namespace {1}",
+        promReleaseName, promNamespace);
+    assertTrue(isHelmReleaseDeployed(promReleaseName, promNamespace),
+        String.format("Prometheus release %s is not in deployed status in namespace %s",
+            promReleaseName, promNamespace));
+    logger.info("Prometheus release {0} status is deployed in namespace {1}",
+        promReleaseName, promNamespace);
+
+    // wait for the promethues pods to be ready
+    logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                promNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
+            "prometheusIsReady failed with ApiException"));
+
+    return promHelmParams;
+  }
+
+  /**
+   * Install Grafana and wait up to five minutes until the grafana pod is ready.
+   *
+   * @param grafanaReleaseName the grafana release name
+   * @param grafanaNamespace the grafana namespace in which the operator will be installed
+   * @param grafanaValueFile the grafana value.yaml file path
+   * @param grafanaVersion the version of the grafana helm chart
+   * @param grafanaNodePort nodePort value for grafana server
+   * @return the grafana Helm installation parameters
+   */
+  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
+                                                      String grafanaNamespace,
+                                                      String grafanaValueFile,
+                                                      String grafanaVersion,
+                                                      int grafanaNodePort) {
+
+    // Helm install parameters
+    HelmParams grafanaHelmParams = new HelmParams()
+        .releaseName(grafanaReleaseName)
+        .namespace(grafanaNamespace)
+        .chartDir("stable/grafana")
+        .chartValuesFile(grafanaValueFile);
+
+    if (grafanaVersion != null) {
+      grafanaHelmParams.chartVersion(grafanaVersion);
+    }
+
+    // grafana chart values to override
+    GrafanaParams grafanaParams = new GrafanaParams()
+        .helmParams(grafanaHelmParams)
+        .nodePort(grafanaNodePort);
+    //create grafana secret
+    createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    // install grafana
+    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    assertTrue(installGrafana(grafanaParams),
+        String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    logger.info("Grafana installed in namespace {0}", grafanaNamespace);
+
+    // list Helm releases matching grafana release name in  namespace
+    logger.info("Checking grafana release {0} status in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+    assertTrue(isHelmReleaseDeployed(grafanaReleaseName, grafanaNamespace),
+        String.format("Grafana release %s is not in deployed status in namespace %s",
+            grafanaReleaseName, grafanaNamespace));
+    logger.info("Grafana release {0} status is deployed in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+
+    // wait for the grafana pod to be ready
+    logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                grafanaNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
+            "grafanaIsReady failed with ApiException"));
+
+    return grafanaHelmParams;
+  }
+
+
+  /**
    * Create a persistent volume and persistent volume claim.
    *
    * @param v1pv V1PersistentVolume object to create the persistent volume
    * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
    * @param labelSelector String containing the labels the PV is decorated with
    * @param namespace the namespace in which the persistence volume claim to be created
-   */
+   *
+   **/
   public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
                                           V1PersistentVolumeClaim v1pvc,
                                           String labelSelector,
@@ -1089,6 +1254,22 @@ public class CommonTestUtils {
     assertTrue(assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Create ConfigMap %s failed due to Kubernetes client  ApiException", configMapName)),
         String.format("Failed to create ConfigMap %s", configMapName));
+  }
+
+  /**
+   * A utility method to sed files.
+   *
+   * @throws java.io.IOException when copying files from source location to staging area fails
+   */
+  public static void replaceStringInFile(String filePath, String oldValue, String newValue)
+          throws IOException {
+    Path src = Paths.get(filePath);
+    logger.info("Copying {0}", src.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(src), charset);
+    content = content.replaceAll(oldValue, newValue);
+    logger.info("to {0}", src.toString());
+    Files.write(src, content.getBytes(charset));
   }
 
   /**
