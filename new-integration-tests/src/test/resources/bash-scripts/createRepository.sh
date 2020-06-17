@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 . /u01/oracle/wlserver/server/bin/setWLSEnv.sh
@@ -25,6 +25,7 @@ done
 
 if [ $counter -gt ${max} ]; then
  echo "[ERROR] Oracle DB Service is not ready after [${max}] iterations ..."
+ cat dbping.err
  exit -1
 else
  java utils.dbping ORACLE_THIN "sys as sysdba" ${sysPassword} ${connectString}
@@ -58,10 +59,6 @@ esac
 
 echo "Extra RCU Schema Component Choosen[${extComponents}]" 
 echo "Extra RCU Schema Variable Choosen[${extVariables}]" 
-
-#Debug 
-#export DISPLAY=0.0
-#/u01/oracle/oracle_common/bin/rcu -listComponents
 
 /u01/oracle/oracle_common/bin/rcu -silent -createRepository \
  -databaseType ORACLE -connectString ${connectString} \

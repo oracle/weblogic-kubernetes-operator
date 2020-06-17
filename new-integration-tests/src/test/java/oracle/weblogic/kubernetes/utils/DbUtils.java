@@ -146,9 +146,9 @@ public class DbUtils {
         String.format("Create service failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     assertTrue(serviceCreated, String.format(
-        "Create service failed with ApiException for oracleDBService in namespace %s ", dbNamespace));
+        "Create service failed for OracleDbService in namespace %s ", dbNamespace));
 
-    //create V1Deployment  for Oracle DB
+    //create V1Deployment for Oracle DB
     logger.info("Configure V1Deployment in namespace {0} using image {1}", dbNamespace,  dbBaseImageName);
     oracleDbDepl = new V1Deployment()
         .apiVersion("apps/v1")
@@ -205,7 +205,7 @@ public class DbUtils {
         String.format("Create deployment failed with ApiException for Oracle DB in namespace %s",
             dbNamespace));
     assertTrue(deploymentCreated, String.format(
-        "Create deployment failed with ApiException for Oracle DB in namespace %s ",
+        "Create deployment failed for oracleDbDepl in namespace %s ",
         dbNamespace));
 
     // wait for the Oracle DB pod to be ready

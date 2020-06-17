@@ -118,7 +118,7 @@ public class ItJrfDomainInPV implements LoggedTest {
    */
   @Test
   @DisplayName("Create JRF domain in PV using WLST script")
-  public void testDomainInPvUsingWlst() {
+  public void testJrfDomainInPvUsingWlst() {
 
     //TODO temporarily being here.  Will be moved to BeforeAll when JRF domain is added
     logger.info("Start DB and create RCU schema for namespace: {0} RCU prefix: {1} dbPort: {2} "
