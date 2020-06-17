@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
@@ -67,6 +68,7 @@ import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
@@ -163,10 +165,29 @@ public class DomainProcessorImpl implements DomainProcessor {
     return bringAdminServerUpSteps(info, podAwaiterStepFactory);
   }
 
-  private static Step domainIntrospectionSteps() {
+  private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
     return Step.chain(
+          ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
+          new IntrospectionRequestStep(info),
           JobHelper.deleteDomainIntrospectorJobStep(null),
           JobHelper.createDomainIntrospectorJobStep(null));
+  }
+
+  private static class IntrospectionRequestStep extends Step {
+
+    private final String requestedIntrospectVersion;
+
+    public IntrospectionRequestStep(DomainPresenceInfo info) {
+      this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (!Objects.equals(requestedIntrospectVersion, packet.get(INTROSPECTION_STATE_LABEL))) {
+        packet.put(DOMAIN_INTROSPECT_REQUESTED, Optional.ofNullable(requestedIntrospectVersion).orElse("0"));
+      }
+      return doNext(packet);
+    }
   }
 
   private static Step bringAdminServerUpSteps(
@@ -205,17 +226,21 @@ public class DomainProcessorImpl implements DomainProcessor {
    * @param ns namespace
    */
   public void stopNamespace(String ns) {
-    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-    if (map != null) {
-      for (DomainPresenceInfo dpi : map.values()) {
-        Domain dom = dpi.getDomain();
-        DomainPresenceInfo value =
-            (dom != null)
-                ? new DomainPresenceInfo(dom)
-                : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
-        value.setDeleting(true);
-        value.setPopulated(true);
-        makeRightDomainPresence(value, true, true, false);
+    // make sure that the domain namespace and domainUid are added to the ThreadLocal
+    // so it can be passed to LoggingFormatter
+    try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+      Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
+      if (map != null) {
+        for (DomainPresenceInfo dpi : map.values()) {
+          Domain dom = dpi.getDomain();
+          DomainPresenceInfo value =
+              (dom != null)
+                  ? new DomainPresenceInfo(dom)
+                  : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
+          value.setDeleting(true);
+          value.setPopulated(true);
+          makeRightDomainPresence(value, true, true, false);
+        }
       }
     }
   }
@@ -231,14 +256,23 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getCurrentFibers().forEach(
                 (key, fiber) -> {
                   Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                    LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
-                        + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
+                    try (LoggingContext stack
+                             = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
+                      LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
+                    }
                   });
                 });
           };
       makeRightFiberGates.forEach(consumer);
       statusFiberGates.forEach(consumer);
     }
+  }
+
+  private String getDomainUid(Fiber fiber) {
+    return Optional.ofNullable(fiber)
+          .map(Fiber::getPacket)
+          .map(p -> p.getSpi(DomainPresenceInfo.class))
+          .map(DomainPresenceInfo::getDomainUid).orElse("");
   }
 
   /**
@@ -515,7 +549,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     if (!delegate.isNamespaceRunning(liveInfo.getNamespace())) {
       return;
     }
-
     if (isShouldContinue(liveInfo, explicitRecheck)) {
       internalMakeRightDomainPresence(liveInfo, isDeleting, isWillInterrupt);
     } else {
@@ -563,7 +596,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     Packet packet = new Packet();
-    recordIntrospectionRequest(packet, info);
     packet
         .getComponents()
         .put(
@@ -655,23 +687,27 @@ public class DomainProcessorImpl implements DomainProcessor {
                     () -> {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
-                        existing.setPopulated(false);
-                        // proceed only if we have not already retried max number of times
-                        int retryCount = existing.incrementAndGetFailureCount();
-                        LOGGER.fine(
-                            "Failure count for DomainPresenceInfo: "
-                                + existing
-                                + " is now: "
-                                + retryCount);
-                        if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
-                          makeRightDomainPresence(existing, true, isDeleting, false);
-                        } else {
-                          LOGGER.severe(
-                              MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
-                              domainUid,
-                              ns,
-                              DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                              throwable);
+                        // make sure that the domain namespace and domainUid are added to the ThreadLocal
+                        // so it can be passed to LoggingFormatter
+                        try (LoggingContext stack = LoggingContext.setThreadContext().namespace(ns)) {
+                          existing.setPopulated(false);
+                          // proceed only if we have not already retried max number of times
+                          int retryCount = existing.incrementAndGetFailureCount();
+                          LOGGER.fine(
+                              "Failure count for DomainPresenceInfo: "
+                                  + existing
+                                  + " is now: "
+                                  + retryCount);
+                          if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+                            makeRightDomainPresence(existing, true, isDeleting, false);
+                          } else {
+                            LOGGER.severe(
+                                MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
+                                domainUid,
+                                ns,
+                                DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                                throwable);
+                          }
                         }
                       }
                     },
@@ -693,7 +729,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
-            domainIntrospectionSteps(),
+            domainIntrospectionSteps(info),
             new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);

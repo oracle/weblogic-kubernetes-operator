@@ -41,6 +41,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -56,6 +58,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
@@ -84,6 +87,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
@@ -101,6 +105,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -116,8 +121,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTim
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -154,6 +159,9 @@ public class ItIntrospectVersion implements LoggedTest {
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
 
+  private static final Path CLUSTERVIEW_APP_PATH = Paths.get(PV_ROOT,
+      "applications", "clusterview", "dist", "clusterview.war");
+
   /**
    * Assigns unique namespaces for operator and domains.
    * Pull WebLogic image if running tests in Kind cluster.
@@ -174,6 +182,9 @@ public class ItIntrospectVersion implements LoggedTest {
     assertNotNull(namespaces.get(2), "Namespace is null");
     nginxNamespace = namespaces.get(2);
 
+    // build the clusterview application
+    BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null, introDomainNamespace);
+
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
@@ -190,7 +201,11 @@ public class ItIntrospectVersion implements LoggedTest {
       logger.info("Using image {0}", kindRepoImage);
       image = kindRepoImage;
       isUseSecret = false;
+    } else {
+      // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+      createOCRRepoSecret(introDomainNamespace);
     }
+
   }
 
 
@@ -224,11 +239,6 @@ public class ItIntrospectVersion implements LoggedTest {
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
-
-    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
-    if (isUseSecret) {
-      createOCRRepoSecret(introDomainNamespace);
-    }
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
@@ -465,18 +475,26 @@ public class ItIntrospectVersion implements LoggedTest {
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
 
+
+    //deploy clusterview application
+    logger.info("Deploying clusterview app {0} to cluster {1}",
+        CLUSTERVIEW_APP_PATH, clusterName);
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, CLUSTERVIEW_APP_PATH,
+        introDomainNamespace);
+
     //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the sample app through NGINX load balancer");
+    logger.info("Accessing the clusterview app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServers.add(domainUid + "-" + managedServerNameBase + i);
+    for (int i = 1; i <= replicaCount + 1; i++) {
+      managedServers.add(managedServerNameBase + i);
     }
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlRequest, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+        .as("Verify all managed servers can see each other")
+        .withFailMessage("managed servers cannot see other")
         .isTrue();
 
   }
@@ -572,6 +590,20 @@ public class ItIntrospectVersion implements LoggedTest {
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
+
+    //access application in managed servers through NGINX load balancer
+    logger.info("Accessing the clusterview app through NGINX load balancer");
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServers.add(managedServerNameBase + i);
+    }
+    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
+        .as("Verify all managed servers can see each other")
+        .withFailMessage("managed servers cannot see other")
+        .isTrue();
 
   }
 
@@ -829,9 +861,21 @@ public class ItIntrospectVersion implements LoggedTest {
    *
    * @param namespace name of the namespace in which to create secret
    */
-  private void createOCRRepoSecret(String namespace) {
-    CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-        OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+  private static void createOCRRepoSecret(String namespace) {
+    boolean secretExists = false;
+    V1SecretList listSecrets = listSecrets(namespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+    }
   }
 
 
