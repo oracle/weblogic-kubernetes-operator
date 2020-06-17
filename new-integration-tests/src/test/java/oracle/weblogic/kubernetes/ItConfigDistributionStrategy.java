@@ -60,7 +60,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
-import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -86,7 +85,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
@@ -96,7 +94,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
@@ -108,20 +105,14 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.TestUtils.verifyClusterMemberCommunication;
-import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -290,8 +281,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         .spec(new DomainSpec()
             .configuration(
                 new Configuration()
-                    .overrideDistributionStrategy("DYNAMIC")
-            .overridesConfigMap(newConfigOverridemapName))
+                    .overrideDistributionStrategy("DYNAMIC"))
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
@@ -371,28 +361,16 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    logger.info("change the cluster size and verify the introspector runs and updates the domain status");
-    // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-    Properties p1 = new Properties();
-    p1.setProperty("admin_host", K8S_NODEPORT_HOST);
-    p1.setProperty("admin_port", Integer.toString(t3ChannelPort));
-    p1.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p1.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p1.setProperty("cluster_name", clusterName);
-    p1.setProperty("max_cluster_size", Integer.toString(3));
-    p1.setProperty("test_name", "change_server_count");
-    assertDoesNotThrow(() -> p1.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
-
-    // change the server count of the cluster by running online WLST
-    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
-
+    ArrayList<Path> configfiles = new ArrayList<>();
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+    String override1cm = "configoverride1";
+    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String patchStr =
           "["
+            + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
+        + "\"value\": \"configoverride1\"},"
             + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
 
@@ -427,60 +405,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
       podStateNotChanged(managedServerPodNamePrefix + i,
           domainUid, introDomainNamespace, pods.get(i));
     }
-
-    //create ingress controller
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
-    createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
-
-    // deploy application and verify all servers functions normally
-    logger.info("Getting node port for T3 channel");
-    int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
-        "Getting admin server t3channel node port failed");
-    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
-
-    //deploy application
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
-    logger.info("Deploying webapp to domain {0}", archivePath);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
-        introDomainNamespace);
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/testwebapp/index.jsp";
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-
-
-    //deploy clusterview application
-    logger.info("Deploying clusterview app {0} to cluster {1}",
-        CLUSTERVIEW_APP_PATH, clusterName);
-    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName, CLUSTERVIEW_APP_PATH,
-        introDomainNamespace);
-
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the clusterview app through NGINX load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-        + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    List<String> managedServers = new ArrayList<>();
-    for (int i = 1; i <= replicaCount + 1; i++) {
-      managedServers.add(managedServerNameBase + i);
-    }
-    assertThat(verifyClusterMemberCommunication(curlRequest, managedServers, 20))
-        .as("Verify all managed servers can see each other")
-        .withFailMessage("managed servers cannot see other")
-        .isTrue();
 
   }
 
