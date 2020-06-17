@@ -377,14 +377,18 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         }
 
         NextAction na = new NextAction();
-        if (statusCode == 0 && retryCount <= maxRetryCount) {
-          na.invoke(Optional.ofNullable(conflictStep).orElse(retryStep), packet);
-        } else {
-          LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
-          na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+        if (retryCount <= maxRetryCount) {
+          if (statusCode == 0) {
+            na.invoke(retryStep, packet);
+          } else {
+            LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
+            na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
+          }
+          return na;
         }
-        return na;
-      } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
+      } else if (statusCode == 409 /* Conflict */
+          && conflictStep != null
+          && retryCount <= maxRetryCount) {
         // Conflict is an optimistic locking failure.  Therefore, we can't
         // simply retry the request.  Instead, application code needs to rebuild
         // the request based on latest contents.  If provided, a conflict step will do that.
