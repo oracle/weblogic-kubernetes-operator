@@ -1,0 +1,82 @@
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+# The version of this inputs file.  Do not modify.
+version: create-domain-on-aks-inputs-v1
+
+# Must be specified
+# The service principal is used to login azure and create azure kubernetes.
+# If you don't have a service principal, please follow README.md#create-service-principal-for-aks to create.
+# Application id of the service principal.
+azureServicePrincipalAppId: azure-service-principal-app-id
+
+# Must be specified
+# A client secret of the service principal.
+azureServicePrincipalClientSecret: azure-service-principal-client-secret
+
+# Must be specified
+# Tenant (Directory ) id of the service principal.
+azureServicePrincipalTenantId: azure-service-principal-tenant-id
+
+# Specify a prefix to name azure resources, only allow lowercase letters and numbers, between 1 and 7 characters.
+# Resource group is named with ${azureResourceNamePrefix}resourcegroup<timstamp>, e.g. wlsresourcegroup1592469388
+# Kubernetes cluster is named with ${azureResourceNamePrefix}akscluster<timstamp>, e.g. wlsakscluster1592469388
+# Storage account is named with ${azureResourceNamePrefix}storage<timstamp>, e.g. wlsstorage1592469388
+azureResourceNamePrefix: wls
+
+# Specify where to create azure resource.
+azureLocation: eastus
+
+# Name of azure storage file share, used to create file share, and mount file share. 
+azureStorageShareName: weblogic
+
+# Name of file share secret.
+azureFileShareSecretName: azure-secret
+
+# Number of azure kubernetes nodes, used to create azure kubernetes cluster.
+azureKubernetesNodeCount: 3
+
+# Name of azure kubernetes node pool.
+azureKubernetesNodepoolName: nodepool1
+
+# VM size of azure kubernetes node.
+azureKubernetesNodeVMSize: Standard_D4s_v3
+
+# SKU of azure storage account, used to create storage account.
+azureStorageAccountSku: Standard_LRS
+
+# Name of Azure Storage Class
+# Please refer to https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes
+azureStorageClassName: azurefile
+
+# Name of the persistent volume claim
+# Parameter "persistentVolumeClaimName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+persistentVolumeClaimName: azurefile
+
+# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
+# Used to create kubenetes secret for docker hub account.
+# Parameter "imagePullSecretName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+imagePullSecretName: regcred
+
+# Must be specified
+# Docker user name, used to pull the WebLogic Server Docker image
+dockerUserName: docker-user-name
+
+# Must be specified
+# Docker password, used to pull the WebLogic Server Docker image
+dockerPassword: docker-password
+
+# Must be specified
+# Docker email, used to pull the WebLogic Server Docker image
+dockerEmail: docker-email
+
+# Name of weblogic user.
+weblogicUserName: weblogic
+
+# Password of weblogic account.
+weblogicAccountPassword: welcome1
+
+# WebLogic Server Docker image.
+# Parameter "image" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+weblogicDockerImage: store/oracle/weblogic:12.2.1.3
+
