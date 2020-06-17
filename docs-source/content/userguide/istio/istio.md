@@ -23,9 +23,9 @@ The current support for Istio has these limitations:
 * It is tested with Istio 1.4.2 and later (up to 1.5.4), however it is tested with both single and
   multicluster installations of Istio.
 * You cannot expose any of the default channels; any attempt will result in an error when deploying the domain.  
-* If the `istio-ingressgateway` service in your environment does not have an `EXTERNAL-IP` defined and in order to use 
-WLST commands, define a network access point (NAP) in your WebLogic domain and expose it as a `NodePort` 
-in your domain resource YAML file instead of accessing the channel through the Istio mesh network.  
+* In order to use WLST commands, if the `istio-ingressgateway` service in your environment does not have an `EXTERNAL-IP` defined, 
+define a network access point (NAP) in your WebLogic domain and expose it as a `NodePort` in your domain resource YAML file 
+and access it through the `NodePort` instead of accessing the channel through the Istio mesh network.   
 
 #### Using the operator with Istio support
 
