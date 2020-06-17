@@ -263,13 +263,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
 
-
-    String newConfigOverridemapName = "changeClusterSizeMap";
-    List<Path> files = new ArrayList<>();
-    files.add(Paths.get(RESOURCE_DIR, "configfiles", "configoverridesset1", "config.xml"));
-    files.add(Paths.get(RESOURCE_DIR, "configfiles", "configoverridesset1", "version.txt"));
-    CommonTestUtils.createConfigMapFromFiles(newConfigOverridemapName, files, introDomainNamespace);
-
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -364,13 +357,13 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     ArrayList<Path> configfiles = new ArrayList<>();
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride1";
+    String override1cm = "configoverride1-cm";
     CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String patchStr =
           "["
             + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
-        + "\"value\": \"configoverride1\"},"
+        + "\"value\": \"configoverride1-cm\"},"
             + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
 
