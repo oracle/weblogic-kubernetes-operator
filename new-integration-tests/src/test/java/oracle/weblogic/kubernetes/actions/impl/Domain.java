@@ -457,6 +457,13 @@ public class Domain {
       return false;
     }
 
+    // sleep for a while to make sure the diagnostic modules are created
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException ex) {
+      // ignore
+    }
+
     // call the web app to trigger the WLDF policy which will call the script action to scale the cluster
     CommandParams params = Command
         .defaultCommandParams()

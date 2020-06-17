@@ -43,6 +43,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Event;
@@ -134,7 +135,6 @@ public class Kubernetes implements LoggedTest {
       // to keep a long running connection with the server to fix SSL connection closed issue
       apiClient.setConnectTimeout(0);
       apiClient.setReadTimeout(0);
-      apiClient.setWriteTimeout(0);
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
@@ -507,6 +507,42 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Get the container's restart count in the pod.
+   * @param namespace name of the pod's namespace
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod
+   * @param containerName name of the container, null if there is only one container
+   * @return restart count of the container
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static int getContainerRestartCount(
+      String namespace, String labelSelector, String podName, String containerName)
+      throws ApiException {
+
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null && pod.getStatus() != null) {
+      List<V1ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
+      // if containerName is null, get first container restart count
+      if (containerName == null && containerStatuses.size() >= 1) {
+        return containerStatuses.get(0).getRestartCount();
+      } else {
+        for (V1ContainerStatus containerStatus : containerStatuses) {
+          if (containerName.equals(containerStatus.getName())) {
+            return containerStatus.getRestartCount();
+          }
+        }
+        logger.severe("Container {0} status doesn't exist or pod's container statuses is empty in namespace {1}",
+            containerName, namespace);
+      }
+    } else {
+      logger.severe("Pod {0} doesn't exist or pod status is null in namespace {1}",
+          podName, namespace);
+    }
+    return 0;
+  }
+
+
+  /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
    * @param namespace in which to check for the pod existence
@@ -573,21 +609,18 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * Copy a file to a pod in specified namespace.
-   * @param namespace namespace in which the pod exists
-   * @param pod name of pod where the file will be copied to
-   * @param container name of the container inside of the pod
-   * @param srcPath source location of the file
-   * @param destPath destination location of the file
-   * @throws ApiException if Kubernetes API client call fails
-   * @throws IOException if copy fails
+   * Copy a file from local filesystem to Kubernetes pod.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied to
+   * @param container name of the container
+   * @param srcPath source file location
+   * @param destPath destination file location on pod
+   * @throws IOException when copy fails
+   * @throws ApiException when pod interaction fails
    */
-  public static void copyFileToPod(String namespace,
-                                   String pod,
-                                   String container,
-                                   Path srcPath,
-                                   Path destPath)
-      throws ApiException, IOException {
+  public static void copyFileToPod(
+      String namespace, String pod, String container, Path srcPath, Path destPath)
+      throws IOException, ApiException {
     Copy copy = new Copy(apiClient);
     copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
