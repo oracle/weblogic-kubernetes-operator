@@ -660,7 +660,6 @@ public class ItDomainInPV implements LoggedTest {
         .as("Verify NGINX can access the test web app from all managed servers in the domain")
         .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
         .isTrue();
-
   }
 
   /**
