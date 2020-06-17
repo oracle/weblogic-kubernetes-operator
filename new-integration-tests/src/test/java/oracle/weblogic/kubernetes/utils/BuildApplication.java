@@ -205,19 +205,6 @@ public class BuildApplication {
                             .runAsGroup(0L)
                             .runAsUser(0L))))
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(image)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /application")
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath(APPLICATIONS_MOUNT_PATH)))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))))
                     .containers(Arrays.asList(jobContainer
                         .name("build-application-container")
                         .image(image)
@@ -281,7 +268,7 @@ public class BuildApplication {
             .storageClassName("weblogic-build-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("2Gi"))
-            .persistentVolumeReclaimPolicy("Retain")
+            .persistentVolumeReclaimPolicy("Recycle")
             .accessModes(Arrays.asList("ReadWriteMany"))
             .hostPath(new V1HostPathVolumeSource()
                 .path(hostPath.toString())))
