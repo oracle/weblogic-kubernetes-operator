@@ -14,7 +14,7 @@ If your applications have suitable tracing code in them, then you will also be a
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
-You can learn more about Istio at [Istio.](https://istio.io/latest/docs/concepts/what-is-istio/)
+You can learn more about service mesh at [Istio.](https://istio.io/latest/docs/concepts/what-is-istio/)
 
 #### Limitations
 
@@ -106,35 +106,35 @@ For non-SSL traffic:
 
 |Name|Port|Protocol|Exposed as a container port|
 |----|----|--------|-----|
-|`http-probe`|`From configuration istio readinessPort`|`http`|`N`|
-|`tcp-default`|`Server listening port`|`t3`|`Y`|
-|`http-default`|`Server listening port`|`http`|`Y`|
-|`tcp-snmp`|`Server listening port`|`snmp`|`Y`|
-|`tcp-cbt`|`server listening port`|`CLUSTER-BROADCAST`|`N`|
-|`tcp-iiop`|`server listening port`|`http`|`N`|
+|`http-probe`|From configuration istio readinessPort|`http`|`No`|
+|`tcp-default`|Server listening port|`t3`|`Yes`|
+|`http-default`|Server listening port|`http`|`Yes`|
+|`tcp-snmp`|Server listening port|`snmp`|`Yes`|
+|`tcp-cbt`|server listening port|`CLUSTER-BROADCAST`|`No`|
+|`tcp-iiop`|Server listening port|`http`|`No`|
 
 For SSL traffic, if SSL is enabled on the server:
 
 |Name|Port|Protocol|Exposed as a container port|
 |----|----|--------|-----|
-|`tls-default`|`Server SSL listening port`|`t3s`|`Y`|
-|`https-secure`|`Server SSL listening port`|`https`|`Y`|
-|`tls-iiops`|`Server SSL listening port`|`iiops`|`N`|
-|`tls-ldaps`|`Server SSL listening port`|`ldaps`|`N`|
-|`tls-cbts`|`Server listening port`|`CLUSTER-BROADCAST-SECURE`|`N`|
+|`tls-default`|Server SSL listening port|`t3s`|`Yes`|
+|`https-secure`|Server SSL listening port|`https`|`Yes`|
+|`tls-iiops`|Server SSL listening port|`iiops`|`No`|
+|`tls-ldaps`|Server SSL listening port|`ldaps`|`No`|
+|`tls-cbts`|Server listening port|`CLUSTER-BROADCAST-SECURE`|`No`|
 
-If WebLogic Administration Port is enabled on the Administration Server:
+If WebLogic Administration port is enabled on the Administration Server:
 
 |Name|Port|Protocol|Exposed in the container port|
 |----|----|--------|-----|
-|`https-admin`|`WebLogic administration port`|`https`|`Y`|
+|`https-admin`|WebLogic administration port|`https`|`Yes`|
 
 
 Additionally, when Istio support is enabled for a domain, the operator
 ensures that the Istio sidecar is not injected into the introspector job's pods.
 
 
-### Apply the domain resource yaml
+### Apply the domain resource YAML file
 
 After the domain resource YAML file is modified, apply it by:
 
@@ -169,14 +169,14 @@ weblogic-operator-7d86fffbdd-5dxzt.sample-weblogic-operator-ns     SYNCED     SY
 
 #### Exposing applications in Istio-enabled domains
 
-When a domain is running with Istio support, you should use the Istio
+When a domain is running with Istio support, you should use the Istio ingress
 gateway to provide external access to applications, instead of using an ingress
-controller like Traefik.  Using the Istio gateway will enable you to view the
+controller like Traefik.  Using the Istio ingress gateway, you can also view the
 traffic in Kiali and to use distributed tracing all the way from the entry point to
-the cluster, for example, the Istio gateway.
+the cluster.
 
 To configure external access to your domain, you need to create an Istio `Gateway` and
-`Virtualservice` as shown in the example below:
+`VirtualService` as shown in the example below:
 
 ```
 ---
@@ -230,7 +230,7 @@ spec:
 This example creates a gateway that will accept requests with any host name
 using HTTP on port 80, and a virtual service that will route all of
 those requests to the cluster service for `cluster-1` in `domain1` in
-the namespace `domain1`.
+the namespace `domain1`.  Note: in a production environment, the `hosts` should be limited to the proper DNS name.
 
 After the gateway and virtual service has been set up, you can access it through your ingress host and port. 
 Refer to [Determining the ingress IP and ports.](https://istio.io/latest/docs/setup/getting-started/#determining-the-ingress-ip-and-ports)
