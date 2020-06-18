@@ -1118,6 +1118,10 @@ window.onload = function() {
             "type": "string"
           }
         },
+        "istio": {
+          "description": "The Istio service mesh integration settings",
+          "$ref": "#/definitions/Istio"
+        },
         "overridesConfigMap": {
           "description": "The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides.",
           "type": "string"
@@ -1193,10 +1197,6 @@ window.onload = function() {
           "pattern": "^[a-z0-9-.]{1,253}$",
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
           "type": "string"
-        },
-        "experimental": {
-          "description": "Experimental feature configurations.",
-          "$ref": "#/definitions/Experimental"
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
@@ -1357,15 +1357,6 @@ window.onload = function() {
           "items": {
             "$ref": "#/definitions/ClusterStatus"
           }
-        }
-      }
-    },
-    "Experimental": {
-      "type": "object",
-      "properties": {
-        "istio": {
-          "description": "Istio service mesh integration configuration.",
-          "$ref": "#/definitions/Istio"
         }
       }
     },
