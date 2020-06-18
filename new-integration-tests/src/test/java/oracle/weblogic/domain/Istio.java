@@ -63,7 +63,6 @@ public class Istio {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort);
-
     return builder.toHashCode();
   }
 

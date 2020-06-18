@@ -1,0 +1,34 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: istio-tcp-gateway
+  namespace: NAMESPACE
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - '*'
+      port:
+        name: tcp
+        number: TCP_PORT
+        protocol: TCP
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: istio-tcp-virtualservice
+  namespace: NAMESPACE
+spec:
+  gateways:
+    - istio-tcp-gateway
+  hosts:
+    - '*'
+  tcp:
+    - match:
+        - port: TCP_PORT
+      route:
+        - destination:
+            host: ADMIN_SERVICE
+            port:
+              number: TCP_PORT
