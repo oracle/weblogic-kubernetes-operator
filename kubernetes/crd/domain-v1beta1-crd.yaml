@@ -20928,7 +20928,7 @@ spec:
                     type: number
                     minimum: 0.0
   versions:
-  - name: v7
+  - name: v8
     served: true
     storage: true
   - name: v2
@@ -20944,5 +20944,8 @@ spec:
     served: true
     storage: false
   - name: v6
+    served: true
+    storage: false
+  - name: v7
     served: true
     storage: false
