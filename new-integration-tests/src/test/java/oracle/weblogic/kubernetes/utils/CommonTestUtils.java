@@ -90,19 +90,18 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
-import static oracle.weblogic.kubernetes.actions.TestActions.createVoyagerIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.installVoyager;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
-import static oracle.weblogic.kubernetes.actions.TestActions.listVoyagerIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
@@ -113,7 +112,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerIngressReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
@@ -128,6 +126,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -357,6 +356,8 @@ public class CommonTestUtils {
                                                    String cloudProvider,
                                                    boolean enableValidatingWebhook) {
 
+    final String voyagerPodNamePrefix = VOYAGER_CHART_NAME +  "-release-";
+
     // Helm install parameters
     HelmParams voyagerHelmParams = new HelmParams()
         .releaseName(VOYAGER_RELEASE_NAME)
@@ -395,7 +396,7 @@ public class CommonTestUtils {
               voyagerNamespace,
               condition.getElapsedTimeInMS(),
               condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace),
+        .until(assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
             "isVoyagerReady failed with ApiException"));
 
     return voyagerHelmParams;
@@ -448,9 +449,14 @@ public class CommonTestUtils {
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
     // create an ingress in domain namespace
-    String ingressName = domainUid + "-nginx";
+    final String ingressNginxClass = "nginx";
+    String ingressName = domainUid + "-" + ingressNginxClass;
+
+    HashMap<String, String> annotations = new HashMap<>();
+    annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
+
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations);
 
     assertNotNull(ingressHostList,
         String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -481,13 +487,21 @@ public class CommonTestUtils {
                                                             String ingressName,
                                                             Map<String, Integer> clusterNameMSPortMap) {
 
-    String ingressPodNamePrefix = VOYAGER_CHART_NAME + "-" + ingressName + "-";
+    final String voyagerIngressName = VOYAGER_CHART_NAME + "-" + ingressName;
+    final String channelName = "tcp-80";
+    final String ingressType = "NodePort";
+    final String ingressAffinity = "cookie";
+    final String ingressClass = "voyager";
+
+    // set the annotations for Voyager
+    HashMap<String, String> annotations = new HashMap<>();
+    annotations.put("ingress.appscode.com/type", ingressType);
+    annotations.put("ingress.appscode.com/affinity", ingressAffinity);
+    annotations.put("kubernetes.io/ingress.class", ingressClass);
+
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createVoyagerIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap);
-
-    assertNotNull(ingressHostList,
-        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations);
 
     // wait until the Voyager ingress pod is ready.
     withStandardRetryPolicy
@@ -497,14 +511,35 @@ public class CommonTestUtils {
                 domainUid,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerIngressReady(domainNamespace, ingressPodNamePrefix),
-            "isVoyagerIngressReady failed with ApiException"));
+        .until(assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
+            "isVoyagerReady failed with ApiException"));
+
+    assertNotNull(ingressHostList,
+        String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     // check the ingress was found in the domain namespace
-    assertThat(assertDoesNotThrow(() -> listVoyagerIngresses(domainNamespace)))
+    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
         .as("Test ingress {0} was found in namespace {1}", ingressName, domainNamespace)
         .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
         .contains(ingressName);
+
+    // get ingress service Nodeport
+    int ingressServiceNodePort = assertDoesNotThrow(
+        () -> getServiceNodePort(domainNamespace, voyagerIngressName, channelName),
+            "Getting admin server node port failed");
+    logger.info("Node port for {0} is: {1} :", voyagerIngressName, ingressServiceNodePort);
+
+    // check the ingress is ready to route the app to the server pod
+    if (ingressServiceNodePort != 0) {
+      for (String ingressHost : ingressHostList) {
+        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+            + "' http://" + K8S_NODEPORT_HOST + ":" + ingressServiceNodePort
+            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+        logger.info("Executing curl command {0}", curlCmd);
+        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      }
+    }
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
         ingressName, domainUid, domainNamespace);

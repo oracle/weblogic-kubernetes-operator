@@ -57,4 +57,8 @@ public interface ActionConstants {
   public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_FILE_NAME;
   public static final String MONITORING_EXPORTER_DOWNLOAD_URL 
       = "https://github.com/oracle/weblogic-monitoring-exporter.git";
+
+  // ------------ Ingress constants----------------------------
+  public static final String INGRESS_API_VERSION = "extensions/v1beta1";
+  public static final String INGRESS_KIND = "Ingress";
 }

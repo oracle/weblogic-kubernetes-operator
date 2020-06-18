@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//import com.google.common.primitives.Ints;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -60,6 +59,7 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Verify that Voyager and Voyager ingress are installed successfully.
@@ -139,43 +139,42 @@ class ItVoyagerSample implements LoggedTest {
    * The test invokes a webapp to verify the Voyager is installed successfully and ready to use.
    */
   @Test
-  @DisplayName("Create the Voyager ingress and invoke the webapp to verify Voyager load balancer works")
+  @DisplayName("Create the Voyager ingress and test Voyager load balancing with host name-based routing")
   @Slow
   @MustNotRunInParallel
   public void testVoyagerWorks() {
     String ingressName = domainUid + "-ingress-host-routing";
     String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     String channelName = "tcp-80";
+    ExecResult result = null;
 
+    // create Voyager ingress resource
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(clusterName, managedServerPort);
+    List<String>  hostNames =
+        installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+
+    // get ingress service Nodeport
+    int ingressServiceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(domainNamespace, ingressServiceName, channelName),
+            "Getting admin server node port failed");
+    logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
+
+    // invoke webapp
+    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+        + "-H 'host: %s' http://%s:%s/sample-war/index.jsp",
+            hostNames.get(0), K8S_NODEPORT_HOST, ingressServiceNodePort);
+    logger.info("Exec curl command :" + curlRequest);
     try {
-      // create Voyager ingress resource
-      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-      clusterNameMsPortMap.put(clusterName, managedServerPort);
-      List<String>  hostNames =
-          installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
-
-      // wait 60 seconds for ingress service to be ready
-      Thread.sleep(60 * 1000);
-      logger.info("Getting node port for ingress service: " + ingressServiceName);
-
-      // get ingress service Nodeport
-      int ingressServiceNodePort = assertDoesNotThrow(()
-          -> getServiceNodePort(domainNamespace, ingressServiceName, channelName),
-              "Getting admin server node port failed");
-      logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
-
-      // invoke webapp
-      String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-          + "-H 'host: %s' http://%s:%s/sample-war/index.jsp",
-              hostNames.get(0), K8S_NODEPORT_HOST, ingressServiceNodePort);
-      logger.info("Exec curl command :" + curlRequest);
-      ExecResult result = ExecCommand.exec(curlRequest, true);
-      assertNotNull(result, "curl command returns null");
-      logger.info("curl command returns: \n{0}, \n{1}", result.stdout(), result.stderr());
-      assertTrue(result.stdout().contains("Hello World"), "Failed to invoke the webapp");
+      result = ExecCommand.exec(curlRequest, true);
     } catch (Exception ex) {
-      ex.printStackTrace();
+      logger.info("Got exception while running command: {0}", curlRequest);
+      fail("Failed to process curl command " + ex.getMessage());
     }
+
+    assertNotNull(result, "curl command returns null");
+    logger.info("curl command returns: \n{0}, \n{1}", result.stdout(), result.stderr());
+    assertTrue(result.stdout().contains("Hello World"), "Failed to invoke the webapp");
   }
 
   private static void createAndVerifyDomain() {

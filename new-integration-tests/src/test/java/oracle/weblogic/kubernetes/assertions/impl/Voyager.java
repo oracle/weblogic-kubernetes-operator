@@ -16,8 +16,9 @@ public class Voyager {
    * @param namespace in which to check if the Voyager pod is running
    * @return true if the Voyager pod is running, false otherwise
    */
-  public static Callable<Boolean> isRunning(String namespace) {
-    return () -> Kubernetes.isVoyagerPodRunning(namespace);
+  public static Callable<Boolean> isRunning(String namespace, String podName) {
+    String labelSelector = null;
+    return () -> Kubernetes.isPodRunning(namespace, labelSelector, podName);
   }
 
   /**
@@ -26,30 +27,8 @@ public class Voyager {
    * @param namespace in which to check the Voyager pod is ready
    * @return true if the Voyager pod is in the ready state, false otherwise
    */
-  public static Callable<Boolean> isReady(String namespace) {
-    return () -> Kubernetes.isVoyagerPodReady(namespace);
+  public static Callable<Boolean> isReady(String namespace, String podName) {
+    String labelSelector = null;
+    return () -> Kubernetes.isPodReady(namespace, labelSelector, podName);
   }
-
-  /**
-   * Check if the Voyager ingress pod is running in a given namespace and pod name.
-   *
-   * @param namespace in which to check if the Voyager ingress pod is running
-   * @param podName name of Voyager ingress pod to check
-   * @return true if the Voyager ingress pod is running, false otherwise
-   */
-  public static Callable<Boolean> isIngressRunning(String namespace, String podName) {
-    return () -> Kubernetes.isVoyagerIngressRunning(namespace, podName);
-  }
-
-  /**
-   * Check if the Voyager pod is ready in a given namespace and pod name.
-   *
-   * @param namespace in which to check the Voyager ingress pod is ready
-   * @param podName name of Voyager ingress pod to check
-   * @return true if the Voyager ingress pod is in the ready state, false otherwise
-   */
-  public static Callable<Boolean> isIngressReady(String namespace, String podName) {
-    return () -> Kubernetes.isVoyagerIngressReady(namespace, podName);
-  }
-
 }
