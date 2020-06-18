@@ -6,7 +6,7 @@ pre = "<b> </b>"
 +++
 
 {{% notice warning %}}
-This document contains details for the current production release 2.5.0 first, and then
+This document contains details for the current production release 2.6.0 first, and then
 for the [3.0.0-rc1 release candidate](#details-for-300-rc1) below.
 {{% /notice %}}
 
@@ -243,7 +243,7 @@ spec:
 The operator uses an "introspection" job to discover details about the WebLogic domain configuration, such as the list of clusters and network access points.  The Job Pod for the introspector is generated using the `serverPod` entries for the Administration Server.  Because the Administration Server name is not known until the introspection step is complete, the value of the `$(SERVER_NAME)` variable for the introspection job will be "introspector".
 
 {{% notice warning %}}
-This document contains details for the current production release 2.5.0 above, and then
+This document contains details for the current production release 2.6.0 above, and then
 for the 3.0.0-rc1 release candidate below.
 {{% /notice %}}
 
