@@ -15,7 +15,7 @@ domain_home=os.environ.get('DOMAIN_HOME')
 adminUsername=sys.argv[1]
 adminPassword=sys.argv[2]
 adminUrl=sys.argv[3]
-scaleaAction=sys.argv[4]
+scaleAction=sys.argv[4]
 domainUid=sys.argv[5]
 clusterName=sys.argv[6]
 domainNamespace=sys.argv[7]
@@ -25,6 +25,7 @@ scaling_size=sys.argv[10]
 myAppName=sys.argv[11]
 
 wldfname = 'Scaling' + clusterName
+scriptAction = 'ScriptAction' + scaleAction
 connect(adminUsername,adminPassword,adminUrl)
 print "Looking up WLDF System Resource: " + wldfname
 
@@ -46,7 +47,7 @@ wldfResource = wldfSysResource.getWLDFResource()
 print('Configuring New WLDF System Resource');
 
 wn1 = wldfResource.getWatchNotification()
-scriptAct = wn1.createScriptAction('ScriptAction' + scaleaAction)
+scriptAct = wn1.createScriptAction(scriptAction)
 scriptAct.setEnabled(true)
 scriptAct.setTimeout(0)
 scriptAct.setWorkingDirectory(domain_home + '/bin/scripts')
@@ -55,7 +56,7 @@ props = Properties()
 props.setProperty("INTERNAL_OPERATOR_CERT",  operator_cert_data);
 scriptAct.setEnvironment(props)
 
-params=['--action=%s' %scaleaAction]
+params=['--action=%s' %scaleAction]
 params.append('--domain_uid=%s' %domainUid)
 params.append('--cluster_name=%s' %clusterName)
 params.append('--wls_domain_namespace=%s' %domainNamespace)
@@ -79,6 +80,30 @@ wh1.addNotification(scriptAct)
 save()
 activate(block='true')
 
+print "verify the policy and script action is enabled"
+cd("WLDFSystemResources/" + wldfname + "/WLDFResource/" + wldfname + "/WatchNotification/" + wldfname + "/Watches/myScalePolicy")
+maxwait=300
+isEnabled=cmo.isEnabled()
+
+while(isEnabled != 1) and (maxwait > 0):
+  print isEnabled
+  maxwait -= 1
+  systime.sleep(1)
+  isEnabled=cmo.isEnabled()
+
+print "myScalePolicy is enabled"
+
+cd("/WLDFSystemResources/" + wldfname + "/WLDFResource/" + wldfname + "/WatchNotification/" + wldfname + "/ScriptActions/" + scriptAction)
+isEnabled = cmo.isEnabled()
+
+while(isEnabled != 1) and (maxwait > 0):
+  print isEnabled
+  maxwait -= 1
+  systime.sleep(1)
+  isEnabled=cmo.isEnabled()
+
+print "scriptAction " + scriptAction + " is enabled"
+
 print "wait for harvester watch to become active"
 
 domainRuntime()
@@ -86,7 +111,6 @@ domainRuntime()
 cd('ServerRuntimes/admin-server/WLDFRuntime/WLDFRuntime/WLDFWatchNotificationRuntime/WatchNotification')
 
 numWatchEval=cmo.getTotalHarvesterWatchEvaluations()
-maxwait=300
 
 while(numWatchEval < 1) and (maxwait > 0):
   print numWatchEval

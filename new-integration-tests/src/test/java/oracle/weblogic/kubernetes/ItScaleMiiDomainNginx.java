@@ -189,29 +189,20 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   @DisplayName("Verify scale each cluster of the domain by calling REST API")
   public void testScaleClustersWithRestApi() {
 
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+    String clusterName = "cluster-2";
+    int numberOfServers = 3;
 
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-      int numberOfServers;
-      // scale cluster-1 to 1 server and cluster-2 to 3 servers
-      if (i == 1) {
-        numberOfServers = 1;
-      } else {
-        numberOfServers = 3;
-      }
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
+    curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
+    scaleClusterAndVerifyWithRestApi(clusterName, replicaCount, numberOfServers, managedServersBeforeScale);
 
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-      curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
-      List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
-      scaleClusterAndVerifyWithRestApi(clusterName, replicaCount, numberOfServers, managedServersBeforeScale);
-
-      // then scale cluster-1 and cluster-2 to 2 servers
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-      managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
-      scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, replicaCount, managedServersBeforeScale);
-    }
+    // then scale cluster-1 and cluster-2 to 2 servers
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+    managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
+    scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, replicaCount, managedServersBeforeScale);
   }
 
   /**
@@ -220,25 +211,24 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   @Test
   @DisplayName("Verify scale each cluster of the domain using WLDF policy")
   public void testScaleClustersWithWLDF() {
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
 
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-      curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    String clusterName = "cluster-1";
+    curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
 
-      // scale up the cluster by 1 server
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
-      List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
-      scaleClusterAndVerifyWithWLDF(clusterName, replicaCount, replicaCount + 1,
-          managedServersBeforeScale, "scaleUp");
+    // scale up the cluster by 1 server
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
+    List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
+    scaleClusterAndVerifyWithWLDF(clusterName, replicaCount, replicaCount + 1,
+        managedServersBeforeScale, "scaleUp");
 
-      // scale down the cluster by 1 server
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, replicaCount + 1, replicaCount);
-      managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount + 1);
-      scaleClusterAndVerifyWithWLDF(clusterName, replicaCount + 1, replicaCount,
-          managedServersBeforeScale, "scaleDown");
-    }
+    // scale down the cluster by 1 server
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount + 1, replicaCount);
+    managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount + 1);
+    scaleClusterAndVerifyWithWLDF(clusterName, replicaCount + 1, replicaCount,
+        managedServersBeforeScale, "scaleDown");
+
   }
 
   /**
