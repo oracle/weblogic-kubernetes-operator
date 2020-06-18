@@ -44,7 +44,7 @@ public class NamespaceTest {
 
   private static final String NAMESPACES_PROPERTY = "OPERATOR_TARGET_NAMESPACES";
   private static final String ADDITIONAL_NAMESPACE = "NS3";
-  public static final String IS_NAMESPACE_STOPPING_MAP = "isNamespaceStoppingMap";
+  public static final String NAMESPACE_STOPPING_MAP = "namespaceStoppingMap";
 
   private Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0);
@@ -63,7 +63,7 @@ public class NamespaceTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.preserve(Main.class, "namespaceStatuses"));
-    mementos.add(StaticStubSupport.preserve(Main.class, IS_NAMESPACE_STOPPING_MAP));
+    mementos.add(StaticStubSupport.preserve(Main.class, NAMESPACE_STOPPING_MAP));
     mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
     mementos.add(TuningParametersStub.install(120));
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
@@ -99,7 +99,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenNamespaceNotInTargetNamespaceList_namespaceRemovedFromIsNamespaceStoppingMap()
+  public void whenNamespaceNotInTargetNamespaceList_namespaceRemovedFromNamespaceStoppingMap()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchFieldException {
     addTargetNamespace(NS);
     cacheStartedNamespaces();
@@ -107,14 +107,14 @@ public class NamespaceTest {
     // Stop the namespace that is not in targetNamespace list
     invoke_stopNamespace(NS, false);
 
-    Map<String, AtomicBoolean> isNamespaceStopping = getIsNamespaceStoppingMap();
+    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
 
-    // Verify 'namespace' removed from 'isNamespaceStopping' map
-    assertThat(isNamespaceStopping, anEmptyMap());
+    // Verify 'namespace' removed from 'namespaceStoppingMap'
+    assertThat(namespaceStoppingMap, anEmptyMap());
   }
 
   @Test
-  public void whenNamespaceInTargetNamespaceList_namespaceExistsInIsNamespaceStoppingMap()
+  public void whenNamespaceInTargetNamespaceList_namespaceExistsInNamespaceStoppingMap()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, NoSuchFieldException {
     addTargetNamespace(NS);
     addTargetNamespace(ADDITIONAL_NAMESPACE);
@@ -126,11 +126,11 @@ public class NamespaceTest {
     // Stop the namespace that is NOT in targetNamespace list
     invoke_stopNamespace(NS, false);
 
-    Map<String, AtomicBoolean> isNamespaceStopping = getIsNamespaceStoppingMap();
+    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
 
-    // Verify that 'isNamespaceStopping' map has only namespace that was in targetNamespace list
-    assertThat(isNamespaceStopping, aMapWithSize(1));
-    assertThat(isNamespaceStopping, hasKey(ADDITIONAL_NAMESPACE));
+    // Verify that 'namespaceStoppingMap' has only namespace that was in targetNamespace list
+    assertThat(namespaceStoppingMap, aMapWithSize(1));
+    assertThat(namespaceStoppingMap, hasKey(ADDITIONAL_NAMESPACE));
   }
 
   @Test
@@ -140,10 +140,10 @@ public class NamespaceTest {
     addTargetNamespace(ADDITIONAL_NAMESPACE);
     cacheStartedNamespaces();
 
-    Map<String, AtomicBoolean> isNamespaceStopping = getIsNamespaceStoppingMap();
+    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
 
     // set 'namespace' to stopping
-    isNamespaceStopping.put(NS, new AtomicBoolean(true));
+    namespaceStoppingMap.put(NS, new AtomicBoolean(true));
 
     // Stop the namespace
     invoke_stopNamespace(NS, false);
@@ -158,7 +158,7 @@ public class NamespaceTest {
     addTargetNamespace(NS);
     cacheStartedNamespaces();
 
-    Map<String, AtomicBoolean> isNamespaceStopping = getIsNamespaceStoppingMap();
+    Map<String, AtomicBoolean> namespaceStoppingMap = getNamespaceStoppingMap();
 
     // Stop the namespace not in targetNamespace list
     invoke_stopNamespace(NS, false);
@@ -167,9 +167,9 @@ public class NamespaceTest {
     assertThat(dp.nameSpaces, is(empty()));
   }
 
-  private Map<String, AtomicBoolean> getIsNamespaceStoppingMap()
+  private Map<String, AtomicBoolean> getNamespaceStoppingMap()
       throws NoSuchFieldException, IllegalAccessException {
-    Field field = Main.class.getDeclaredField(IS_NAMESPACE_STOPPING_MAP);
+    Field field = Main.class.getDeclaredField(NAMESPACE_STOPPING_MAP);
     field.setAccessible(true);
     return (Map<String, AtomicBoolean>) field.get(null);
   }
@@ -187,7 +187,7 @@ public class NamespaceTest {
 
   private void cacheStartedNamespaces() throws NoSuchFieldException {
     StaticStubSupport.install(Main.class, "namespaceStatuses", createNamespaceStatuses());
-    StaticStubSupport.install(Main.class, IS_NAMESPACE_STOPPING_MAP, createNamespaceFlags());
+    StaticStubSupport.install(Main.class, NAMESPACE_STOPPING_MAP, createNamespaceFlags());
   }
 
   private Map<String, NamespaceStatus> createNamespaceStatuses() {

@@ -87,7 +87,7 @@ public class Main {
   private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
   private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
-  private static Map<String, AtomicBoolean> isNamespaceStoppingMap = new ConcurrentHashMap<>();
+  private static Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
@@ -211,7 +211,7 @@ public class Main {
   private static void completeBegin() {
     try {
       // start the REST server
-      startRestServer(principal, isNamespaceStoppingMap.keySet());
+      startRestServer(principal, namespaceStoppingMap.keySet());
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig.getMainTuning().targetNamespaceRecheckIntervalSeconds;
@@ -236,7 +236,7 @@ public class Main {
 
     // Remove if namespace not in targetNamespace list
     if (!inTargetNamespaceList) {
-      isNamespaceStoppingMap.remove(ns);
+      namespaceStoppingMap.remove(ns);
     }
 
     // stop all Domains for namespace being stopped (not active)
@@ -265,7 +265,7 @@ public class Main {
   }
 
   private static AtomicBoolean isNamespaceStopping(String ns) {
-    return isNamespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+    return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
   private static void runSteps(Step firstStep, Packet packet) {
@@ -295,7 +295,7 @@ public class Main {
 
       // Check for namespaces that are removed from the operator's
       // targetNamespaces list, or that are deleted from the Kubernetes cluster.
-      Set<String> namespacesToStop = new TreeSet<>(isNamespaceStoppingMap.keySet());
+      Set<String> namespacesToStop = new TreeSet<>(namespaceStoppingMap.keySet());
       for (String ns : targetNamespaces) {
         // the active namespaces are the ones that will not be stopped
         if (delegate.isNamespaceRunning(ns)) {
@@ -451,7 +451,7 @@ public class Main {
       Thread.currentThread().interrupt();
     }
 
-    isNamespaceStoppingMap.forEach((key, value) -> value.set(true));
+    namespaceStoppingMap.forEach((key, value) -> value.set(true));
   }
 
   private static EventWatcher createEventWatcher(String ns, String initialResourceVersion) {
@@ -528,7 +528,7 @@ public class Main {
           if (!delegate.isNamespaceRunning(ns)) {
             runSteps(getScriptCreationSteps(ns), createPacketWithLoggingContext(ns));
 
-            isNamespaceStoppingMap.put(ns, new AtomicBoolean(false));
+            namespaceStoppingMap.put(ns, new AtomicBoolean(false));
           }
           break;
 
@@ -536,7 +536,7 @@ public class Main {
           // Mark the namespace as isStopping, which will cause the namespace be stopped
           // the next time when recheckDomains is triggered
           if (delegate.isNamespaceRunning(ns)) {
-            isNamespaceStoppingMap.put(ns, new AtomicBoolean(true));
+            namespaceStoppingMap.put(ns, new AtomicBoolean(true));
           }
 
           break;
@@ -1013,7 +1013,7 @@ public class Main {
       // make sure the map entry is initialized the value to "false" if absent
       isNamespaceStopping(namespace);
 
-      return !isNamespaceStoppingMap.get(namespace).get();
+      return !namespaceStoppingMap.get(namespace).get();
     }
 
     @Override
