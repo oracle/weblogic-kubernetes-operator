@@ -540,6 +540,7 @@ public class Domain {
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
       verifyNoAlternateSecretNamespaceSpecified();
+      verifyIstioExposingDefaultChannel();
 
       return failures;
     }
@@ -614,6 +615,23 @@ public class Domain {
         return path;
       } else {
         return path + File.separator;
+      }
+    }
+
+    private void verifyIstioExposingDefaultChannel() {
+      if (spec.isIstioEnabled()) {
+        Optional.ofNullable(spec.getAdminServer())
+            .map(a -> a.getAdminService())
+            .map(service -> service.getChannels())
+            .ifPresent(cs -> cs.stream()
+                .forEach(this::checkForDefaultNameExposed));
+      }
+    }
+
+    private void checkForDefaultNameExposed(Channel channel) {
+      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
+          || "default-secure".equals(channel.getChannelName())) {
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
       }
     }
 

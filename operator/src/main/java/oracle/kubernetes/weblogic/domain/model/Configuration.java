@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -8,36 +8,19 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class Experimental {
-
-  @Description("Istio service mesh integration configuration.")
+public class Configuration {
+  @Description("The Istio service mesh integration settings")
   private Istio istio;
 
-  /**
-   * Istio service mesh integration configuration.
-   *
-   * @return Istio service mesh integration configuration.
-   */
   public Istio getIstio() {
-    return this.istio;
+    return istio;
   }
 
-  /**
-   * Istio service mesh integration configuration.
-   *
-   * @param istio Istio service mesh integration configuration.
-   */
   public void setIstio(Istio istio) {
     this.istio = istio;
   }
 
-  /**
-   * Istio service mesh integration configuration.
-   *
-   * @param istio Istio service mesh integration configuration.
-   * @return this
-   */
-  public Experimental withIstio(Istio istio) {
+  public Configuration withIstio(Istio istio) {
     this.istio = istio;
     return this;
   }
@@ -53,9 +36,8 @@ public class Experimental {
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder =
-        new HashCodeBuilder()
-            .append(istio);
+    HashCodeBuilder builder = new HashCodeBuilder()
+        .append(istio);
 
     return builder.toHashCode();
   }
@@ -64,12 +46,11 @@ public class Experimental {
   public boolean equals(Object other) {
     if (other == this) {
       return true;
-    }
-    if (!(other instanceof Experimental)) {
+    } else if (!(other instanceof Configuration)) {
       return false;
     }
 
-    Experimental rhs = ((Experimental) other);
+    Configuration rhs = ((Configuration) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(istio, rhs.istio);
@@ -77,3 +58,4 @@ public class Experimental {
     return builder.isEquals();
   }
 }
+
