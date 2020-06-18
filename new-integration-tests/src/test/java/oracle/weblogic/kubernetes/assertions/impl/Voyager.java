@@ -14,6 +14,7 @@ public class Voyager {
    * Check if the Voyager pod is running in a given namespace.
    *
    * @param namespace in which to check if the Voyager pod is running
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
    * @return true if the Voyager pod is running, false otherwise
    */
   public static Callable<Boolean> isRunning(String namespace, String podName) {
@@ -25,6 +26,7 @@ public class Voyager {
    * Check if the Voyager pod is ready in a given namespace.
    *
    * @param namespace in which to check the Voyager pod is ready
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
    * @return true if the Voyager pod is in the ready state, false otherwise
    */
   public static Callable<Boolean> isReady(String namespace, String podName) {

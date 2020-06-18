@@ -24,7 +24,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.INGRESS_KIND;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
- * Utility class for Voyager ingress controller.
+ * Utility class for ingress resource .
  */
 public class Ingress {
 
@@ -36,6 +36,7 @@ public class Ingress {
    * @param domainNamespace the WebLogic domain namespace in which the ingress will be created
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @param annotations annotations to create ingress resource
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
    */
   public static List<String> createIngress(String ingressName,

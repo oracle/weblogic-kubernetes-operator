@@ -65,6 +65,7 @@ public class TestAssertions {
    * Check if Voyager pod is running.
    *
    * @param namespace in which to check if Voyager pod is running
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
    * @return true if Voyager pod is running, false otherwise
    */
   public static Callable<Boolean> isVoyagerRunning(String namespace, String podName) {
@@ -75,6 +76,7 @@ public class TestAssertions {
    * Check if Voyager pods is in the ready state in a given namespace.
    *
    * @param namespace in which to check if Voyager pod is in the ready state
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
    * @return true if Voyager pod is in the ready state, false otherwise
    */
   public static Callable<Boolean> isVoyagerReady(String namespace, String podName) {
