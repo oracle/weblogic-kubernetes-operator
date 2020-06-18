@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -50,7 +49,6 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
@@ -96,12 +94,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
-import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -263,6 +257,13 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
 
+
+    ArrayList<Path> configfiles = new ArrayList<>();
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+    String override1cm = "configoverride1-cm";
+    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -272,9 +273,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             .name(domainUid)
             .namespace(introDomainNamespace))
         .spec(new DomainSpec()
-            .configuration(
-                new Configuration()
-                    .overrideDistributionStrategy("DYNAMIC"))
+            .configOverrides(override1cm)
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
@@ -354,11 +353,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride1-cm";
-    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String patchStr =
           "["
@@ -366,38 +360,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "\"value\": \"configoverride1-cm\"},"
             + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
-
-    logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
-
-    // verify existing managed server pods are not affected
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
-    }
-
-    // verify existing managed server services are not affected
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, introDomainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
-    }
-
-    // verify existing pods are not restarted
-    podStateNotChanged(adminServerPodName, domainUid, introDomainNamespace, adminPodCreationTime);
-    for (int i = 1; i <= replicaCount; i++) {
-      podStateNotChanged(managedServerPodNamePrefix + i,
-          domainUid, introDomainNamespace, pods.get(i));
-    }
 
   }
 
