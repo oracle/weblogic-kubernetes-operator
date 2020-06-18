@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -229,14 +228,23 @@ public class Main {
     }
   }
 
-  private static void stopNamespace(String ns, boolean remove) {
-    processor.stopNamespace(ns);
-    AtomicBoolean stopping =
-        remove ? isNamespaceStopping.remove(ns) : isNamespaceStopping.get(ns);
+  private static void stopNamespace(String ns, boolean inTargetNamespaceList) {
+    AtomicBoolean isNamespaceStopping = isNamespaceStopping(ns);
 
-    if (stopping != null) {
-      stopping.set(true);
+    // Remove if namespace not in targetNamespace list
+    if (!inTargetNamespaceList) {
+      Main.isNamespaceStopping.remove(ns);
     }
+
+    // stop all Domains for namespace being stopped (not active)
+    if (isNamespaceStopping.get()) {
+      processor.stopNamespace(ns);
+    }
+
+    // set flag to indicate namespace is stopping.
+    isNamespaceStopping.set(true);
+
+    // unsubscribe from resource events for given namespace
     namespaceStatuses.remove(ns);
     domainWatchers.remove(ns);
     eventWatchers.remove(ns);
@@ -249,7 +257,7 @@ public class Main {
   private static void stopNamespaces(Collection<String> targetNamespaces,
                                      Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
-      stopNamespace(ns, (! targetNamespaces.contains(ns)));
+      stopNamespace(ns, targetNamespaces.contains(ns));
     }
   }
 
@@ -276,8 +284,13 @@ public class Main {
 
       // Check for namespaces that are removed from the operator's
       // targetNamespaces list, or that are deleted from the Kubernetes cluster.
-      // 'isNamespaceStopping' map will contain current and deleted targetNamespaces.
-      Set<String> namespacesToStop = removeActiveNamespaces(isNamespaceStopping);
+      Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
+      for (String ns : targetNamespaces) {
+        // the active namespaces are the ones that will not be stopped
+        if (delegate.isNamespaceRunning(ns)) {
+          namespacesToStop.remove(ns);
+        }
+      }
       stopNamespaces(targetNamespaces, namespacesToStop);
 
       Collection<String> namespacesToStart = targetNamespaces;
@@ -303,24 +316,6 @@ public class Main {
         runSteps(new StartNamespacesStep(namespacesToStart, isFullRecheck));
       }
     };
-  }
-
-  // Parameter 'nameSpaceMap' contains a map of the namespaces to be stopped.
-  // Returns the set of namespaces that are to be stopped.  Any active/running namespaces are
-  // removed from the list so that they are not stopped by the operator.
-  private static Set<String> removeActiveNamespaces(Map<String, AtomicBoolean> nameSpacesMap) {
-    Set<String> namespacesToStop = new TreeSet<>(nameSpacesMap.keySet());
-
-    // Using iterator to avoid ConcurrentModificationException when removing active namespaces
-    // from list.
-    Iterator<String> itr = namespacesToStop.iterator();
-    while (itr.hasNext()) {
-      // the active namespaces are the ones that will not be stopped
-      if (delegate.isNamespaceRunning(itr.next())) {
-        itr.remove();
-      }
-    }
-    return namespacesToStop;
   }
 
   static Step readExistingResources(String operatorNamespace, String ns) {
