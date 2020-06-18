@@ -183,7 +183,7 @@ The content of the generated `domain.yaml`:
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain1
