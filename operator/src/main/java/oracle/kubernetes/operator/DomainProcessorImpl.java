@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -126,7 +125,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static void onEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
-    if (ref == null) {
+    if (ref == null || ref.getName() == null) {
       return;
     }
 
@@ -394,7 +393,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
     V1ConfigMap c = item.object;
-    if (c != null) {
+    if (c != null && c.getMetadata() != null) {
       switch (item.type) {
         case "MODIFIED":
         case "DELETED":
@@ -611,30 +610,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         new StepAndPacket(strategy, packet),
         isDeleting,
         isWillInterrupt);
-  }
-
-  void recordIntrospectionRequest(Packet packet, DomainPresenceInfo info) {
-    packet.put(DOMAIN_INTROSPECT_REQUESTED, isIntrospectionRequested(info));
-  }
-
-  private boolean isIntrospectionRequested(DomainPresenceInfo info) {
-    return info.mayRequestIntrospection()
-           && !Objects.equals(getNewIntrospectVersion(info), getOldIntrospectVersion(info));
-  }
-
-  private String getNewIntrospectVersion(DomainPresenceInfo info) {
-    return getIntrospectVersion(info);
-  }
-
-  private String getOldIntrospectVersion(DomainPresenceInfo info) {
-    return getIntrospectVersion(getExistingDomainPresenceInfo(info.getNamespace(), info.getDomainUid()));
-  }
-
-  private String getIntrospectVersion(@Nullable DomainPresenceInfo domainPresenceInfo) {
-    return Optional.ofNullable(domainPresenceInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getIntrospectVersion)
-          .orElse(null);
   }
 
   private Step readExistingServices(DomainPresenceInfo info) {

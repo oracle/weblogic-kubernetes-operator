@@ -4,19 +4,21 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -80,7 +82,7 @@ public class JobHelper {
     return topology == null
           || isBringingUpNewDomain(info)
           || introspectionRequested(packet)
-          || isModelInImageUpdate(packet, info);
+          || isModelInImageUpdate(info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
@@ -91,39 +93,8 @@ public class JobHelper {
     return packet.containsKey(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED);
   }
 
-  private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
-    if (info.getDomain().getDomainHomeSourceType() == FromModel) {
-
-      final String currentPodRestartVersion = info.getDomain().getRestartVersion();
-      final String configMapRestartVersion = (String) packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
-      final String configMapSpecHash = (String) packet.get(IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH);
-      final String currentImageSpecHash = String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain()
-          .getSpec().getImage()));
-
-      LOGGER.finest("JobHelper.isModelInImageUpdate currentPodRestartVersion " + currentPodRestartVersion);
-      LOGGER.finest("JobHelper.isModelInImageUpdate configMapRestartVersion " + configMapRestartVersion);
-
-      // If either one is set, check for differences and decide to run intropsect job
-
-      if (currentPodRestartVersion != null
-            && !currentPodRestartVersion.equals(configMapRestartVersion)) {
-        LOGGER.fine("JobHelper: currentPodRestartVersion version different from configmap");
-        return true;
-      }
-
-      if (configMapRestartVersion != null
-          && !configMapRestartVersion.equals(currentPodRestartVersion)) {
-        LOGGER.fine("JobHelper: configMapRestartVersion version different from configmap");
-        return true;
-      }
-
-      if (!currentImageSpecHash.equals(configMapSpecHash)) {
-        LOGGER.fine("JobHelper: currentImageSpecHash version different from configmap");
-        return true;
-      }
-
-    }
-    return false;
+  private static boolean isModelInImageUpdate(DomainPresenceInfo info) {
+    return info.getDomain().getDomainHomeSourceType() == FromModel;
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
@@ -219,14 +190,12 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
-    private final DomainPresenceInfo info;
 
     // domainTopology is null if this is 1st time we're running job for this domain
     private final WlsDomainConfig domainTopology;
 
-    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
+    DomainIntrospectorJobStepContext(Packet packet) {
       super(packet);
-      this.info = info;
       this.domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       init();
     }
@@ -341,7 +310,7 @@ public class JobHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
+        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
 
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
@@ -452,7 +421,7 @@ public class JobHelper {
           }
         }
         if (jobConditionsReason.size() == 0) {
-          jobConditionsReason.add(DomainStatusPatch.ERR_INTROSPECTOR);
+          jobConditionsReason.add(DomainStatusUpdater.ERR_INTROSPECTOR);
         }
         //Introspector job is incomplete, update domain status and terminate processing
         return doNext(
@@ -467,7 +436,7 @@ public class JobHelper {
     }
 
     private boolean isNotComplete(V1Job domainIntrospectorJob) {
-      return domainIntrospectorJob == null || !JobWatcher.isComplete(domainIntrospectorJob);
+      return !JobWatcher.isComplete(domainIntrospectorJob);
     }
 
     // Parse log messages out of a Job Log
@@ -534,7 +503,7 @@ public class JobHelper {
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
       DomainStatusPatch.updateSynchronously(
-            domainPresenceInfo.getDomain(), DomainStatusPatch.ERR_INTROSPECTOR, onSeparateLines(severeStatuses));
+            domainPresenceInfo.getDomain(), DomainStatusUpdater.ERR_INTROSPECTOR, onSeparateLines(severeStatuses));
     }
 
     private String onSeparateLines(List<String> lines) {
@@ -579,18 +548,28 @@ public class JobHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      String jobNamePrefix = createJobName(domainUid);
-      V1PodList result = callResponse.getResult();
-      if (result != null) {
-        for (V1Pod pod : result.getItems()) {
-          if (pod.getMetadata().getName().startsWith(jobNamePrefix)) {
-            LOGGER.fine("+++++ JobHelper.PodListStep pod: " + pod.toString());
-            packet.put(ProcessingConstants.JOB_POD_NAME, pod.getMetadata().getName());
-          }
-        }
-      }
+      Optional.ofNullable(callResponse.getResult())
+            .map(V1PodList::getItems)
+            .orElseGet(Collections::emptyList)
+            .stream()
+            .map(this::getName)
+            .filter(this::isJobPodName)
+            .findFirst()
+            .ifPresent(name -> recordJobPodName(packet, name));
 
       return doNext(packet);
+    }
+
+    private String getName(V1Pod pod) {
+      return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+    }
+
+    private boolean isJobPodName(String podName) {
+      return podName.startsWith(createJobName(domainUid));
+    }
+
+    private void recordJobPodName(Packet packet, String podName) {
+      packet.put(ProcessingConstants.JOB_POD_NAME, podName);
     }
   }
 }

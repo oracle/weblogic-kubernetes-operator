@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
@@ -280,9 +281,7 @@ public class DomainProcessorTest {
 
   @Test
   public void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
-    defineServerResources(ADMIN_NAME);
-    testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
-    testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+    establishPreviousIntrospection();
 
     newDomainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
     processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
@@ -305,6 +304,31 @@ public class DomainProcessorTest {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
+  }
+
+  // define a config map with a topology to avoid the no-topology condition that always runs the introspector
+  @SuppressWarnings("SameParameterValue")
+  private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue) throws JsonProcessingException {
+    return new V1ConfigMap()
+          .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
+          .data(new HashMap<>(Map.of(IntrospectorConfigMapKeys.TOPOLOGY_YAML, defineTopology())));
+  }
+
+  private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
+    final V1ObjectMeta meta = new V1ObjectMeta()
+          .namespace(NS)
+          .name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
+    Optional.ofNullable(introspectionDoneValue).ifPresent(v -> meta.putLabelsItem(INTROSPECTION_STATE_LABEL, v));
+    return meta;
+  }
+
+  private String defineTopology() throws JsonProcessingException {
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain")
+          .withAdminServerName("admin").withWlsServer("admin", 8045);
+
+    return new ObjectMapper(new YAMLFactory())
+          .setSerializationInclusion(JsonInclude.Include.NON_DEFAULT)
+          .writeValueAsString(new DomainTopology(configSupport.createDomainConfig()));
   }
 
   @Test
@@ -336,50 +360,20 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenFromModelDomainHasIntrospectVersionDifferentFromOldDomain_dontRunIntrospectionJob() throws Exception {
+  public void whenDomainTypeIsFromModelDomain_alwaysRunIntrospectionJob() throws Exception {
     establishPreviousIntrospection();
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    newDomainConfigurator.withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret");
 
-    newDomainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE).withDomainHomeSourceType(FromModel);
     processor.makeRightDomainPresence(new DomainPresenceInfo(newDomain), false, false, true);
 
-    assertThat(job, nullValue());
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private Domain createDomainWithIntrospectVersion(String introspectVersion) {
-    final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
-    DomainConfiguratorFactory.forDomain(newDomain).withIntrospectVersion(introspectVersion);
-    return newDomain;
+    assertThat(job, notNullValue());
   }
 
   private V1Job job;
 
   private void recordJob(V1Job job) {
     this.job = job;
-  }
-
-  // define a config map with a topology to avoid the no-topology condition that always runs the introspector
-  private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue) throws JsonProcessingException {
-    return new V1ConfigMap()
-          .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
-          .data(new HashMap<>(Map.of(IntrospectorConfigMapKeys.TOPOLOGY_YAML, defineTopology())));
-  }
-
-  private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
-    final V1ObjectMeta meta = new V1ObjectMeta()
-          .namespace(NS)
-          .name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
-    Optional.ofNullable(introspectionDoneValue).ifPresent(v -> meta.putLabelsItem(INTROSPECTION_STATE_LABEL, v));
-    return meta;
-  }
-
-  private String defineTopology() throws JsonProcessingException {
-    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain")
-          .withAdminServerName("admin").withWlsServer("admin", 8045);
-
-    return new ObjectMapper(new YAMLFactory())
-          .setSerializationInclusion(JsonInclude.Include.NON_DEFAULT)
-          .writeValueAsString(new DomainTopology(configSupport.createDomainConfig()));
   }
 
 

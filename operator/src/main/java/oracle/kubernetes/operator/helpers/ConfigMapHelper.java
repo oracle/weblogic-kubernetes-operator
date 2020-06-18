@@ -14,11 +14,13 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
+import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -38,6 +40,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.joda.time.DateTime;
 
+import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
@@ -45,9 +48,11 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 public class ConfigMapHelper {
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String SCRIPT_LOCATION = "/scripts";
@@ -303,14 +308,18 @@ public class ConfigMapHelper {
       }
 
       private boolean mustPatchCurrentMap(V1ConfigMap currentMap) {
-        return KubernetesUtils.isMissingValues(currentMap.getMetadata().getLabels(), getLabels());
+        return KubernetesUtils.isMissingValues(getMapLabels(currentMap), getLabels());
+      }
+
+      private Map<String, String> getMapLabels(@NotNull V1ConfigMap map) {
+        return Optional.ofNullable(map.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
       }
 
       private Step patchCurrentMap(V1ConfigMap currentMap, Step next) {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
         KubernetesUtils.addPatches(
-            patchBuilder, "/metadata/labels/", currentMap.getMetadata().getLabels(), getLabels());
+            patchBuilder, "/metadata/labels/", getMapLabels(currentMap), getLabels());
 
         return new CallBuilder()
             .patchConfigMapAsync(name, namespace,
@@ -416,7 +425,7 @@ public class ConfigMapHelper {
   }
 
   /**
-   * The first in a chain of steps to create the situation config map from introspection results.
+   * The first in a chain of steps to create the introspector config map from introspection results.
    */
   static class IntrospectionConfigMapStep extends Step {
 
@@ -427,15 +436,15 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       IntrospectionLoader loader = new IntrospectionLoader(packet, this);
-      
-      if (loader.getDomainConfig() == null) {
-        return doNext(null, packet);
+      if (loader.isTopologyNotValid()) {
+        return doNext(reportTopologyErrorsAndStop(), packet);
+      } else if (loader.getDomainConfig() == null)  {
+        return doNext(packet);
       } else {
         LOGGER.fine(MessageKeys.WLS_CONFIGURATION_READ, timeSinceJobStart(packet), loader.getDomainConfig());
         loader.updatePacket();
         return doNext(loader.createValidationStep(), packet);
       }
-
     }
 
     private long timeSinceJobStart(Packet packet) {
@@ -467,9 +476,13 @@ public class ConfigMapHelper {
       LOGGER.fine("================");
 
       wlsDomainConfig = Optional.ofNullable(data.get(IntrospectorConfigMapKeys.TOPOLOGY_YAML))
-            .map(IntrospectionLoader::getDomainTopology)
+            .map(this::getDomainTopology)
             .map(DomainTopology::getDomain)
             .orElse(null);
+    }
+
+    boolean isTopologyNotValid() {
+      return packet.containsKey(DOMAIN_VALIDATION_ERRORS);
     }
 
     private void updatePacket() {
@@ -513,18 +526,42 @@ public class ConfigMapHelper {
       return wlsDomainConfig;
     }
 
-    private static DomainTopology getDomainTopology(String topologyYaml) {
+    private DomainTopology getDomainTopology(String topologyYaml) {
       LOGGER.fine("topology.yaml: " + topologyYaml);
-      return DomainTopology.parseDomainTopologyYaml(topologyYaml,
-            IntrospectionLoader::logValidationErrors);
+      return DomainTopology.parseDomainTopologyYaml(topologyYaml, this::reportValidationErrors);
     }
 
-    private static void logValidationErrors(List<String> validationErrors) {
+    private void reportValidationErrors(List<String> validationErrors) {
+      packet.put(ProcessingConstants.DOMAIN_VALIDATION_ERRORS, validationErrors);
       if (!validationErrors.isEmpty()) {
         for (String err : validationErrors) {
           LOGGER.severe(err);
         }
       }
+    }
+  }
+
+  public static Step reportTopologyErrorsAndStop() {
+    return new TopologyErrorsReportStep();
+  }
+
+  private static class TopologyErrorsReportStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      List<String> errors = getErrors(packet);
+      Step step = DomainStatusUpdater.createFailedStep(DomainStatusUpdater.BAD_TOPOLOGY, perLine(errors), null);
+      return doNext(step, packet);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> getErrors(Packet packet) {
+      return (List<String>) packet.get(DOMAIN_VALIDATION_ERRORS);
+    }
+
+    @NotNull
+    private String perLine(List<String> errors) {
+      return String.join(lineSeparator(), errors);
     }
   }
 

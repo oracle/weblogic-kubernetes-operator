@@ -46,6 +46,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -668,7 +669,7 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore("Ignored: getCreatedPodSpecContainer is returing null because Pod is not yet created")
+  @Ignore("Ignored: getCreatedPodSpecContainer is returning null because Pod is not yet created")
   public void whenPodCreated_containerUsesListenPort() {
     V1Container v1Container = getCreatedPodSpecContainer();
 
@@ -947,6 +948,26 @@ public abstract class PodHelperTestBase {
     initializeExistingPod();
 
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("nap1", "TCP", 1234, 9001));
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiSecretsHashChanged_replacePod() {
+    testSupport.addToPacket(IntrospectorConfigMapKeys.SECRETS_MD_5, "originalSecret");
+    initializeExistingPod();
+
+    testSupport.addToPacket(IntrospectorConfigMapKeys.SECRETS_MD_5, "newSecret");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiDomainZipHashChanged_replacePod() {
+    testSupport.addToPacket(IntrospectorConfigMapKeys.DOMAINZIP_HASH, "originalSecret");
+    initializeExistingPod();
+
+    testSupport.addToPacket(IntrospectorConfigMapKeys.DOMAINZIP_HASH, "newSecret");
 
     verifyPodReplaced();
   }

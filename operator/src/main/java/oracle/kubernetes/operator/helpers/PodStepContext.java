@@ -329,16 +329,21 @@ public abstract class PodStepContext extends BasePodStepContext {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
     KubernetesUtils.addPatches(
-        patchBuilder, "/metadata/labels/", currentPod.getMetadata().getLabels(), getPodLabels());
+        patchBuilder, "/metadata/labels/", getLabels(currentPod), getPodLabels());
     KubernetesUtils.addPatches(
-        patchBuilder,
-        "/metadata/annotations/",
-        currentPod.getMetadata().getAnnotations(),
-        getPodAnnotations());
+        patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
     return new CallBuilder()
         .patchPodAsync(getPodName(), getNamespace(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+  }
+
+  private Map<String, String> getLabels(V1Pod pod) {
+    return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
+  }
+
+  private Map<String, String> getAnnotations(V1Pod pod) {
+    return Optional.ofNullable(pod.getMetadata()).map(V1ObjectMeta::getAnnotations).orElseGet(Collections::emptyMap);
   }
 
   private void logPodCreated() {
@@ -370,9 +375,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean mustPatchPod(V1Pod currentPod) {
-    return KubernetesUtils.isMissingValues(currentPod.getMetadata().getLabels(), getPodLabels())
-        || KubernetesUtils.isMissingValues(
-            currentPod.getMetadata().getAnnotations(), getPodAnnotations());
+    return KubernetesUtils.isMissingValues(getLabels(currentPod), getPodLabels())
+        || KubernetesUtils.isMissingValues(getAnnotations(currentPod), getPodAnnotations());
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
@@ -423,7 +427,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   V1Pod withNonHashedElements(V1Pod pod) {
-    V1ObjectMeta metadata = pod.getMetadata();
+    V1ObjectMeta metadata = Objects.requireNonNull(pod.getMetadata());
     // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
     getPodLabels().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
@@ -500,6 +504,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         + getServerSpec().getDomainRestartVersion());
     LOGGER.finest("PodStepContext.createMetaData domainIntrospectVersion from spec "
         + getDomain().getIntrospectVersion());
+    
     metadata
         .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
@@ -513,20 +518,24 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
-    if (miiDomainZipHash != null) {
-      String formattedLabel = String.format("md5.%s.md5", miiDomainZipHash.replace("\n",""));
-      metadata.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, formattedLabel);
-    }
-
-    if (miiModelSecretsHash != null) {
-      String formattedLabel = String.format("md5.%s.md5", miiModelSecretsHash.replace("\n", ""));
-      metadata.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, formattedLabel);
-    }
+    Optional.ofNullable(miiDomainZipHash)
+          .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+    Optional.ofNullable(miiModelSecretsHash)
+          .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
 
     // Add prometheus annotations. This will overwrite any custom annotations with same name.
     AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort());
     return metadata;
   }
+
+  private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
+    metadata.putLabelsItem(label, formatHashLabel(hash));
+  }
+
+  private static String formatHashLabel(String hash) {
+    return String.format("md5.%s.md5", hash.replace("\n", ""));
+  }
+
 
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = createPodSpec(tuningParameters)
