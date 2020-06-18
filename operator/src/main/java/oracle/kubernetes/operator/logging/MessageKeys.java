@@ -142,6 +142,7 @@ public class MessageKeys {
   public static final String OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0010";
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
+  public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
 
   private MessageKeys() {
   }
