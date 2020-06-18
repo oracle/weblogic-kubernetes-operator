@@ -49,6 +49,7 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
@@ -273,7 +274,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             .name(domainUid)
             .namespace(introDomainNamespace))
         .spec(new DomainSpec()
-            .configOverrides(override1cm)
+            .configuration(new Configuration()
+                .overridesConfigMap(override1cm)) //.configOverrides(override1cm)
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
