@@ -47,23 +47,6 @@ spec:
               - Always
               - Never
               - IfNotPresent
-            configuration:
-              type: object
-              description: Properties affecting the WebLogic domain configuration.
-              properties:
-                istio:
-                  type: object
-                  description: The Istio service mesh integration settings
-                  properties:
-                    readinessPort:
-                      type: number
-                      description: The WebLogic readiness port for Istio. Defaults
-                        to 8888. Not required.
-                    enabled:
-                      type: boolean
-                      description: True, if this domain is deployed under an Istio
-                        service mesh. Defaults to true when the 'istio' element is
-                        included. Not required.
             replicas:
               type: number
               description: The number of managed servers to run in any cluster that
@@ -96,6 +79,23 @@ spec:
               description: Domain unique identifier. Must be unique across the Kubernetes
                 cluster. Not required. Defaults to the value of metadata.name.
               pattern: ^[a-z0-9-.]{1,253}$
+            experimental:
+              type: object
+              description: Experimental feature configurations.
+              properties:
+                istio:
+                  type: object
+                  description: Istio service mesh integration configuration.
+                  properties:
+                    readinessPort:
+                      type: number
+                      description: The WebLogic readiness port for Istio. Defaults
+                        to 8888. Not required.
+                    enabled:
+                      type: boolean
+                      description: True, if this domain is deployed under an Istio
+                        service mesh. Defaults to true when the 'istio' element is
+                        included. Not required.
             serverStartPolicy:
               type: string
               description: The strategy for deciding whether to start a server. Legal
@@ -20829,7 +20829,7 @@ spec:
                     type: number
                     minimum: 0.0
   versions:
-  - name: v7
+  - name: v6
     served: true
     storage: true
   - name: v2
@@ -20842,8 +20842,5 @@ spec:
     served: true
     storage: false
   - name: v5
-    served: true
-    storage: false
-  - name: v6
     served: true
     storage: false
