@@ -171,3 +171,8 @@ domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-ho
 # serverPodMemoryLimit: "1Gi"
 # serverPodCpuLimit: "1000m"
 
+# istioEnabled specifies whether or not it is deployed under Istio.
+istioEnabled: false
+
+# istioReadinessPort specifies the WebLogic NAP port for use by the readiness probe
+istioReadinessPort: 8888
