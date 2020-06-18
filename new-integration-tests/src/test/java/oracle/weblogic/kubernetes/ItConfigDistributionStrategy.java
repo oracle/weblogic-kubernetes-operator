@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -49,16 +50,17 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -93,10 +95,15 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -104,10 +111,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -141,15 +151,31 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   private static final Path CLUSTERVIEW_APP_PATH = Paths.get(PV_ROOT,
       "applications", "clusterview", "dist", "clusterview.war");
 
+  final String domainUid = "mydomain";
+  final String clusterName = "mycluster";
+
+  final String adminServerName = "admin-server";
+  final String adminServerPodName = domainUid + "-" + adminServerName;
+
+  final String managedServerNameBase = "ms-";
+  String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+  final int managedServerPort = 8001;
+
+  int replicaCount = 2;
+
+  final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
+
+  final String pvName = domainUid + "-pv"; // name of the persistent volume
+  final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+
   /**
-   * Assigns unique namespaces for operator and domains.
-   * Pull WebLogic image if running tests in Kind cluster.
-   * Installs operator.
+   * Assigns unique namespaces for operator and domains. Pull WebLogic image if running tests in Kind cluster. Installs
+   * operator.
    *
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public void initAll(@Namespaces(3) List<String> namespaces) {
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -187,37 +213,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
 
   }
 
-
-  /**
-   * Test domain status gets updated when introspectVersion attribute is added under domain.spec.
-   * Test Creates a domain in persistent volume using WLST.
-   * Updates the cluster configuration; cluster size using online WLST.
-   * Patches the domain custom resource with introSpectVersion.
-   * Verifies the introspector runs and the cluster maximum replica is updated
-   * under domain status.
-   * Verifies that the new pod comes up and sample application deployment works.
-   */
-  @Order(1)
-  @Test
-  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testDomainIntrospectVersionNotRolling() {
-
-    final String domainUid = "mydomain";
-    final String clusterName = "mycluster";
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
-    final String managedServerNameBase = "ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int managedServerPort = 8001;
-
-    int replicaCount = 2;
-
-    final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
-
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  private void createDomain() {
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, introDomainNamespace,
@@ -229,8 +225,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     createPVC(pvName, pvcName, domainUid, introDomainNamespace);
 
     // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(() ->
-        File.createTempFile("domain", "properties"),
+    File domainPropertiesFile = assertDoesNotThrow(()
+        -> File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
@@ -247,8 +243,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     p.setProperty("managed_server_name_base", managedServerNameBase);
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
-    assertDoesNotThrow(() ->
-        p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+    assertDoesNotThrow(()
+        -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
         "Failed to write domain properties file");
 
     // WLST script for creating domain
@@ -257,13 +253,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, introDomainNamespace);
-
-
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride1-cm";
-    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -274,11 +263,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             .name(domainUid)
             .namespace(introDomainNamespace))
         .spec(new DomainSpec()
-            .configuration(new Configuration()
-                .overrideDistributionStrategy("DYNAMIC")
-                .overridesConfigMap(override1cm)) //.configOverrides(override1cm)
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
+            .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
             .image(image)
             .imagePullPolicy("IfNotPresent")
@@ -344,6 +330,53 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
     }
+  }
+
+  private void deployApplication(){
+        // deploy application and verify all servers functions normally
+    logger.info("Getting node port for T3 channel");
+    int t3channelNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        "Getting admin server t3channel node port failed");
+    assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
+
+    //deploy application
+    Path archivePath = Paths.get(RESOURCE_DIR, "apps/clusterview.war");
+    logger.info("Deploying webapp to domain {0}", archivePath);
+    deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
+        introDomainNamespace);
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    //access application from admin server
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/ConfigServlet?attribute=maxmessagesize";
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+  }
+
+  /**
+   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
+   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
+   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
+   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
+   */
+  @Order(1)
+  @Test
+  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
+  public void testDefaultDynamicOverride() {
+
+    ArrayList<Path> configfiles = new ArrayList<>();
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+    String override1cm = "configoverride1-cm";
+    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -357,19 +390,38 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
 
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
-    String patchStr =
-          "["
-            + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
+    String patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
         + "\"value\": \"configoverride1-cm\"},"
-            + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
         + "]";
+
+    logger.info("Updating server configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, runs and deleted");
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+
+    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
+      String podName = (String) entry.getKey();
+      DateTime creationTimestamp = (DateTime) entry.getValue();
+      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, introDomainNamespace,
+          creationTimestamp), "Pod is restarted");
+    }
+
+
 
   }
 
   /**
-   * Create a WebLogic domain on a persistent volume by doing the following.
-   * Create a configmap containing WLST script and property file.
-   * Create a Kubernetes job to create domain on persistent volume.
+   * Create a WebLogic domain on a persistent volume by doing the following. Create a configmap containing WLST script
+   * and property file. Create a Kubernetes job to create domain on persistent volume.
    *
    * @param wlstScriptFile python script to create domain
    * @param domainPropertiesFile properties file containing domain configuration
@@ -419,7 +471,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     logger.info("Creating configmap {0}", configMapName);
 
     Path domainScriptsDir = Files.createDirectories(
-          Paths.get(TestConstants.LOGS_DIR, this.getClass().getSimpleName(), namespace));
+        Paths.get(TestConstants.LOGS_DIR, this.getClass().getSimpleName(), namespace));
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
@@ -478,7 +530,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
                         .securityContext(new V1SecurityContext()
                             .runAsGroup(0L)
                             .runAsUser(0L))))
-                    .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
+                    .containers(Arrays.asList(jobContainer // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
                         .imagePullPolicy("Always")
@@ -637,11 +689,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
   }
 
-
   /**
-   * Uninstall Nginx.
-   * The cleanup framework does not uninstall Nginx release.
-   * Do it here for now.
+   * Uninstall Nginx. The cleanup framework does not uninstall Nginx release. Do it here for now.
    */
   @AfterAll
   public void tearDownAll() {
