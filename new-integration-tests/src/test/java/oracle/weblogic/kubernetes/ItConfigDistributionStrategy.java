@@ -275,6 +275,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             .namespace(introDomainNamespace))
         .spec(new DomainSpec()
             .configuration(new Configuration()
+                .overrideDistributionStrategy("DYNAMIC")
                 .overridesConfigMap(override1cm)) //.configOverrides(override1cm)
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
