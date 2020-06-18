@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,13 @@ import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlFileInput;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
@@ -138,6 +146,7 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -154,10 +163,11 @@ class ItMonitoringExporter implements LoggedTest {
 
   // domain constants
   private static final int replicaCount = 2;
+  private static int managedServersCount = 2;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
-  private static String domain1Uid = "monexp-domain1";
-  private static String domain2Uid = "monexp-domain2";
+  private static String domain1Uid = "monexp-domain-1";
+  private static String domain2Uid = "monexp-domain-2";
   private static HelmParams nginxHelmParams1 = null;
   private static int nodeportshttp1 = 0;
   private static int nodeportshttp2 = 0;
@@ -189,6 +199,8 @@ class ItMonitoringExporter implements LoggedTest {
   private static String  coordinatorImage = null;
   private static int managedServerPort = 8001;
   private static int nodeportserver;
+  private static String exporterUrl = null;
+  private static String prometheusDomainRegexValue = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -266,9 +278,10 @@ class ItMonitoringExporter implements LoggedTest {
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
     ingressHost1List =
-        createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap);
+        createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
     ingressHost2List =
             createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
+    exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp1);
 
     //create pv and pvc for monitoring
     HashMap<String, String> labels = new HashMap<>();
@@ -292,20 +305,22 @@ class ItMonitoringExporter implements LoggedTest {
   public void testCheckPromGrafanaLatestVersion() throws Exception {
     //check if helm was already created and uninstall
     uninstallPrometheusGrafana();
+    try {
+      installPrometheusGrafana(null, null,
+              domain2Namespace,
+              domain2Uid);
 
-    installPrometheusGrafana(null,null,
-            domain1Namespace,
-            domain1Uid,
-            "regex: default;domain1;cluster-1");
 
-
-    //verify access to Monitoring Exporter
-    verifyMonExpAppAccessThroughNginx();
-    //verify metrics via prometheus
-    String testappPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(testappPrometheusSearchKey, "myear");
-    uninstallPrometheusGrafana();
+      //verify access to Monitoring Exporter
+      verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0),managedServersCount);
+      //verify metrics via prometheus
+      String testappPrometheusSearchKey =
+              "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp");
+    }
+    finally{
+        uninstallPrometheusGrafana();
+      }
 
   }
 
@@ -324,14 +339,12 @@ class ItMonitoringExporter implements LoggedTest {
 
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
               domain2Namespace,
-              domain2Uid,
-              "regex: default;domain1;cluster-1");
+              domain2Uid);
 
     installWebhook();
-    installCoordinator(domain2Namespace);
 
     //verify access to Monitoring Exporter
-    verifyMonExpAppAccessThroughNginx();
+    verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount);
     //verify metrics via prometheus
     String testappPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
@@ -341,18 +354,71 @@ class ItMonitoringExporter implements LoggedTest {
     //switch to monitor another domain
     String oldRegex = String.format("regex: %s;%s;%s", domain2Namespace, domain2Uid, clusterName);
     String newRegex = String.format("regex: %s;%s;%s", domain1Namespace, domain1Uid, clusterName);
-    editPrometheusCRD(oldRegex,newRegex);
+    editPrometheusCM(oldRegex,newRegex);
     String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
     checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr");
+  }
+
+  /**
+   * Test covers end to end sample, provided in the Monitoring Exporter github project .
+   * Create Prometheus, Grafana, Webhook, Coordinator
+   * create domain in Image with monitoring exporter
+   * verify access to monitoring exporter WebLogic metrics via nginx
+   * check generated by monitoring exporter WebLogic metrics via Prometheus, Grafana
+   * fire Alert using Webhook
+   * change prometheus to add different domain to monitor
+   */
+  @Test
+  @DisplayName("Test Basic Functionality of Monitoring Exporter.")
+  public void testBasicFunctionality() throws Exception {
+    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+            domain1Namespace,
+            domain1Uid);
+    installCoordinator(domain1Namespace);
+
+    //verify access to Monitoring Exporter
+    verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0),replicaCount);
+
+    //verify metrics via prometheus
+    // scale cluster to 1 managed server only to test functionality of the exporter without
+    // coordinator layer
+    scaleAndVerifyCluster(clusterName, domain1Uid, domain1Namespace,
+            domain1Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, 1,
+            null, null);
+    try {
+      replaceConfiguration();
+      appendConfiguration();
+      replaceOneAttributeValueAsArrayConfiguration();
+      appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
+      replaceWithEmptyConfiguration();
+      appendWithEmptyConfiguration();
+      appendWithNotYmlConfiguration();
+      replaceWithNotYmlConfiguration();
+      appendWithCorruptedYmlConfiguration();
+      replaceWithCorruptedYmlConfiguration();
+      replaceWithDublicatedValuesConfiguration();
+      appendWithDuplicatedValuesConfiguration();
+      replaceMetricsNameSnakeCaseFalseConfiguration();
+      changeConfigNoCredentials();
+      changeConfigInvalidUser();
+      changeConfigInvalidPass();
+      changeConfigEmptyUser();
+      changeConfigEmptyPass();
+      replaceMetricsDomainQualifierTrueConfiguration();
+    } finally {
+      //restore configuration
+      submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/exporter-config.yml");
+    }
   }
 
   private void fireAlert() throws ApiException {
     // scale domain2
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
             clusterName, domain2Uid, domain2Namespace, 1);
+    managedServersCount = 1;
     scaleAndVerifyCluster(clusterName, domain2Uid, domain2Namespace,
-            domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, 1,
+            domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, managedServersCount,
             null, null);
 
     //check webhook log for firing alert
@@ -382,12 +448,12 @@ class ItMonitoringExporter implements LoggedTest {
   }
 
   /**
-   * Edit Prometheus CRD.
+   * Edit Prometheus Config Map.
    * @param oldRegex search for existed value to replace
    * @param newRegex new value
    * @throws ApiException when update fails
    */
-  private void editPrometheusCRD(String oldRegex, String newRegex) throws ApiException {
+  private void editPrometheusCM(String oldRegex, String newRegex) throws ApiException {
     List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(monitoringNS).getItems();
 
     V1ConfigMap promCm = cmList.stream()
@@ -423,30 +489,29 @@ class ItMonitoringExporter implements LoggedTest {
   private void installPrometheusGrafana(String promChartVersion,
                                         String grafanaChartVersion,
                                         String domainNS,
-                                        String domainUid,
-                                        String oldRegexVal) throws IOException, ApiException {
-
-
-    logger.info("create a staging location for monitoring creation scripts");
-    Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "createTempValueFile");
-    FileUtils.deleteDirectory(fileTemp.toFile());
-    Files.createDirectories(fileTemp);
-
-    logger.info("copy the promvalue.yaml to staging location");
-    Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
-    Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
-    Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING);
-    String newValue = String.format("regex: %s;%s;%s", domainNS,domainUid,clusterName);
-    //"regex: default;domain1;cluster-1"
-    replaceStringInFile(targetPromFile.toString(),
-        oldRegexVal,
-        newValue);
-    //replace with webhook ns
-    replaceStringInFile(targetPromFile.toString(),
-        "webhook.webhook.svc.cluster.local",
-                String.format("webhook.%s.svc.cluster.local", webhookNS));
-
+                                        String domainUid
+                                        ) throws IOException, ApiException {
+    final String prometheusRegexValue = String.format("regex: %s;%s;%s", domainNS, domainUid, clusterName);
     if (promHelmParams == null) {
+      logger.info("create a staging location for monitoring creation scripts");
+      Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "createTempValueFile");
+      FileUtils.deleteDirectory(fileTemp.toFile());
+      Files.createDirectories(fileTemp);
+  
+      logger.info("copy the promvalue.yaml to staging location");
+      Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
+      Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
+      Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING);
+      String oldValue = "regex: default;domain1;cluster-1";
+      replaceStringInFile(targetPromFile.toString(),
+              oldValue,
+              prometheusRegexValue);
+      //replace with webhook ns
+      replaceStringInFile(targetPromFile.toString(),
+              "webhook.webhook.svc.cluster.local",
+              String.format("webhook.%s.svc.cluster.local", webhookNS));
+
+    
       nodeportserver = getNextFreePort(32400, 32600);
       int nodeportalertmanserver = getNextFreePort(30400, 30600);
       promHelmParams = installAndVerifyPrometheus("prometheus",
@@ -455,6 +520,13 @@ class ItMonitoringExporter implements LoggedTest {
               promChartVersion,
               nodeportserver,
               nodeportalertmanserver);
+    
+      prometheusDomainRegexValue = prometheusRegexValue;
+    }
+    //if prometheus already installed change CM for specified domain
+    if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
+      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue);
+      prometheusDomainRegexValue = prometheusRegexValue;
     }
     logger.info("Prometheus is running");
 
@@ -823,65 +895,67 @@ class ItMonitoringExporter implements LoggedTest {
                                         String imagePullPolicy,
                                         String namespace,
                                         String secretName) throws ApiException {
-    Map labels = new HashMap<String, String>();
-    labels.put("app", "coordinator");
-    coordinatorDepl = new V1Deployment()
-        .apiVersion("apps/v1")
-        .kind("Deployment")
-        .metadata(new V1ObjectMeta()
-            .name("coordinator")
-            .namespace(namespace)
-            .labels(labels))
-        .spec(new V1DeploymentSpec()
-            .replicas(1)
-            .selector(new V1LabelSelector()
-                .matchLabels(labels))
-            .strategy(new V1DeploymentStrategy()
-            .type("Recreate"))
-            .template(new V1PodTemplateSpec()
-                .metadata(new V1ObjectMeta()
-                    .labels(labels))
-                .spec(new V1PodSpec()
-                    .containers(Arrays.asList(
-                        new V1Container()
-                            .image(image)
-                            .imagePullPolicy(imagePullPolicy)
-                            .name("coordinator")
-                    .ports(Arrays.asList(
-                        new V1ContainerPort()
-                        .containerPort(8999)))))
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(secretName))))));
+    if (coordinatorDepl == null) {
+      Map labels = new HashMap<String, String>();
+      labels.put("app", "coordinator");
+      coordinatorDepl = new V1Deployment()
+              .apiVersion("apps/v1")
+              .kind("Deployment")
+              .metadata(new V1ObjectMeta()
+                      .name("coordinator")
+                      .namespace(namespace)
+                      .labels(labels))
+              .spec(new V1DeploymentSpec()
+                      .replicas(1)
+                      .selector(new V1LabelSelector()
+                              .matchLabels(labels))
+                      .strategy(new V1DeploymentStrategy()
+                              .type("Recreate"))
+                      .template(new V1PodTemplateSpec()
+                              .metadata(new V1ObjectMeta()
+                                      .labels(labels))
+                              .spec(new V1PodSpec()
+                                      .containers(Arrays.asList(
+                                              new V1Container()
+                                                      .image(image)
+                                                      .imagePullPolicy(imagePullPolicy)
+                                                      .name("coordinator")
+                                                      .ports(Arrays.asList(
+                                                              new V1ContainerPort()
+                                                                      .containerPort(8999)))))
+                                      .imagePullSecrets(Arrays.asList(
+                                              new V1LocalObjectReference()
+                                                      .name(secretName))))));
 
-    logger.info("Create deployment for coordinator in namespace {0}",
-        namespace);
-    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(coordinatorDepl),
-        String.format("Create deployment failed with ApiException for coordinator in namespace %s",
-            namespace));
-    assertTrue(deploymentCreated, String.format(
-        "Create deployment failed with ApiException for coordinator in namespace %s ",
-        namespace));
+      logger.info("Create deployment for coordinator in namespace {0}",
+              namespace);
+      boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(coordinatorDepl),
+              String.format("Create deployment failed with ApiException for coordinator in namespace %s",
+                      namespace));
+      assertTrue(deploymentCreated, String.format(
+              "Create deployment failed with ApiException for coordinator in namespace %s ",
+              namespace));
 
-    coordinatorService = new V1Service()
-        .metadata(new V1ObjectMeta()
-            .name("coordinator")
-            .namespace(namespace)
-            .labels(labels))
-        .spec(new V1ServiceSpec()
-            .ports(Arrays.asList(
-                new V1ServicePort()
-                    .port(8999)
-                    .targetPort(new IntOrString(8999))))
-            .type("NodePort")
-            .selector(labels));
+      coordinatorService = new V1Service()
+              .metadata(new V1ObjectMeta()
+                      .name("coordinator")
+                      .namespace(namespace)
+                      .labels(labels))
+              .spec(new V1ServiceSpec()
+                      .ports(Arrays.asList(
+                              new V1ServicePort()
+                                      .port(8999)
+                                      .targetPort(new IntOrString(8999))))
+                      .type("NodePort")
+                      .selector(labels));
 
-    logger.info("Create service for coordinator in namespace {0}",
-        namespace);
-    boolean success = assertDoesNotThrow(() -> Kubernetes.createService(coordinatorService),
-        String.format("Create service failed with ApiException for coordinator in namespace %s",
-            namespace));
-    assertTrue(success, "Coordinator service creation failed");
+      logger.info("Create service for coordinator in namespace {0}",
+              namespace);
+      boolean success = assertDoesNotThrow(() -> Kubernetes.createService(coordinatorService),
+              String.format("Create service failed with ApiException for coordinator in namespace %s",
+                      namespace));
+      assertTrue(success, "Coordinator service creation failed");
+    }
   }
 
   /**
@@ -1247,7 +1321,7 @@ class ItMonitoringExporter implements LoggedTest {
   /**
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    */
-  private void verifyMonExpAppAccessThroughNginx() {
+  private void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount) {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -1257,7 +1331,7 @@ class ItMonitoringExporter implements LoggedTest {
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
-            ingressHost1List.get(0),
+                nginxHost,
                 ADMIN_USERNAME_DEFAULT,
                 ADMIN_PASSWORD_DEFAULT,
                 K8S_NODEPORT_HOST,
@@ -1350,6 +1424,7 @@ class ItMonitoringExporter implements LoggedTest {
     if (promHelmParams != null) {
       Prometheus.uninstall(promHelmParams);
       promHelmParams = null;
+      prometheusDomainRegexValue = null;
       logger.info("Prometheus is uninstalled");
     }
     if (grafanaHelmParams != null) {
@@ -1358,5 +1433,412 @@ class ItMonitoringExporter implements LoggedTest {
       grafanaHelmParams = null;
       logger.info("Grafana is uninstalled");
     }
+  }
+
+  private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
+          throws Exception {
+    final WebClient webClient = new WebClient();
+    //webClient.addRequestHeader("Host", ingressHost1List.get(0));
+    HtmlPage originalPage = webClient.getPage(exporterUrl);
+    assertNotNull(originalPage);
+    HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile);
+    assertTrue((page.asText()).contains(expectedErrorMsg));
+    assertTrue(!(page.asText()).contains("Error 500--Internal Server Error"));
+  }
+
+  private void changeConfigNegativeAuth(
+          String effect, String configFile, String expectedErrorMsg, String username, String password)
+          throws Exception {
+    try {
+      final WebClient webClient = new WebClient();
+      //webClient.addRequestHeader("Host", ingressHost1List.get(0));
+      //webClient.addRequestHeader("Location",exporterUrl);
+      //webClient.addRequestHeader("Referer", exporterUrl);
+
+      setCredentials(webClient, username, password);
+      HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, webClient);
+      throw new RuntimeException("Expected exception was not thrown ");
+    } catch (FailingHttpStatusCodeException ex) {
+      assertTrue((ex.getMessage()).contains(expectedErrorMsg));
+    }
+  }
+
+  private HtmlPage submitConfigureForm(String exporterUrl, String effect, String configFile)
+          throws Exception {
+    final WebClient webClient = new WebClient();
+    //webClient.addRequestHeader("Host", ingressHost1List.get(0));
+    //webClient.getOptions().setRedirectEnabled(true);
+    //webClient.addRequestHeader("Location",exporterUrl);
+    //webClient.addRequestHeader("Referer", exporterUrl);
+    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+    /*
+    webClient.setRefreshHandler(new ThreadedRefreshHandler());
+    webClient.getCookieManager().setCookiesEnabled(true);
+    webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
+    webClient.getOptions().setThrowExceptionOnScriptError(false);
+    webClient.getOptions().setJavaScriptEnabled(false);
+    webClient.getOptions().setCssEnabled(false);
+    webClient.getOptions().setPopupBlockerEnabled(true);
+    webClient.getOptions().setPrintContentOnFailingStatusCode(false);
+    webClient.getOptions().setTimeout(20000);
+    webClient.getOptions().setPrintContentOnFailingStatusCode(false);
+    webClient.getOptions().setUseInsecureSSL(true);
+
+     */
+
+    setCredentials(webClient);
+    return submitConfigureForm(exporterUrl, effect, configFile, webClient);
+  }
+
+  private HtmlPage submitConfigureForm(
+          String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
+    // Get the first page
+    //WebRequest request = new WebRequest(new URL(exporterUrl));
+    //request.setAdditionalHeader("Host", ingressHost1List.get(0));
+    //HtmlPage page1 = webClient.getPage(request);
+    //page.getAnchors().get(0).click();
+
+    HtmlPage page1 = webClient.getPage(exporterUrl);
+    if (page1 == null) {
+      //try again
+      page1 = webClient.getPage(exporterUrl);
+    }
+    assertNotNull(page1);
+    assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."),
+            "Can't find needed info " + page1.asText());
+
+    // Get the form that we are dealing with and within that form,
+    // find the submit button and the field that we want to change.Generated form for cluster had
+    // extra path for wls-exporter
+
+    HtmlForm form = page1.getFirstByXPath("//form[@action='configure']");
+    if (form == null) {
+      form = page1.getFirstByXPath("//form[@action='/wls-exporter/configure']");
+    }
+    assertNotNull(form);
+
+    List<HtmlRadioButtonInput> radioButtons = form.getRadioButtonsByName("effect");
+    assertNotNull(radioButtons);
+    for (HtmlRadioButtonInput radioButton : radioButtons) {
+      if (radioButton.getValueAttribute().equalsIgnoreCase(effect)) {
+        radioButton.setChecked(true);
+      }
+    }
+
+    HtmlSubmitInput button =
+            page1.getFirstByXPath("//form//input[@type='submit']");
+    assertNotNull(button);
+    final HtmlFileInput fileField = form.getInputByName("configuration");
+    assertNotNull(fileField);
+
+    // Change the value of the text field
+    fileField.setValueAttribute(configFile);
+    fileField.setContentType("multipart/form-data");
+
+    // Now submit the form by clicking the button and get back the second page.
+    HtmlPage page2 = button.click();
+    assertNotNull(page2);
+    String htmlBody = page2.getWebResponse().getContentAsString();
+    logger.info(htmlBody);
+
+    assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
+    // wait time for coordinator to update both managed configuration
+    Thread.sleep(15 * 1000);
+    return page2;
+  }
+
+  private static void setCredentials(WebClient webClient) {
+    String base64encodedUsernameAndPassword =
+            base64Encode(String.format("%s:%s",
+                    ADMIN_USERNAME_DEFAULT,
+                    ADMIN_PASSWORD_DEFAULT));
+    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
+  }
+
+  private static void setCredentials(WebClient webClient, String username, String password) {
+    String base64encodedUsernameAndPassword = base64Encode(username + ":" + password);
+    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
+  }
+
+  private static String base64Encode(String stringToEncode) {
+    Base64.Encoder enc = Base64.getEncoder();
+    return enc.encodeToString(stringToEncode.getBytes());
+  }
+
+  /**
+   * Replace monitoring exporter configuration and verify it was applied to both managed servers.
+   *
+   * @throws Exception if test fails
+   */
+  private void replaceConfiguration() throws Exception {
+    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
+    String prometheusSearchKey1 =
+            "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
+    String prometheusSearchKey2 =
+            "heap_free_current%7Bname%3D%22managed-server2%22%7D%5B15s%5D";
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yml");
+    assertNotNull(page, "Failed to replace configuration");
+    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
+    //checkMetricsViaPrometheus(prometheusSearchKey2, "managed-server2");
+
+  }
+
+  /**
+   * Add additional monitoring exporter configuration and verify it was applied.
+   *
+   * @throws Exception if test fails
+   */
+  private void appendConfiguration() throws Exception {
+    // scale cluster to 1 managed server only to test functionality of the exporter without
+    // coordinator layer
+    /*
+    scaleAndVerifyCluster(clusterName, domain1Uid, domain1Namespace,
+            domain1Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, 1,
+            null, null);
+   
+*/
+    // make sure some config is there
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yml");
+
+    assertTrue(page.asText().contains("JVMRuntime"));
+    assertFalse(page.asText().contains("WebAppComponentRuntime"));
+    // run append
+    page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_webapp.yml");
+    assertTrue(page.asText().contains("WebAppComponentRuntime"));
+    // check previous config is there
+    assertTrue(page.asText().contains("JVMRuntime"));
+
+    String sessionAppPrometheusSearchKey =
+            "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr");
+  }
+
+  /**
+   * Replace monitoring exporter configuration with only one attribute and verify it was applied.
+   *
+   * @throws Exception if test fails
+   */
+  private void replaceOneAttributeValueAsArrayConfiguration() throws Exception {
+    HtmlPage page =
+            submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_oneattribval.yml");
+    assertTrue(page.asText().contains("values: invocationTotalCount"));
+    assertFalse(page.asText().contains("reloadTotal"));
+  }
+
+  /**
+   * Append monitoring exporter configuration with one more attribute and verify it was applied
+   * append to [a] new config [a,b].
+   *
+   * @throws Exception if test fails
+   */
+  private void appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
+          throws Exception {
+    HtmlPage page =
+            submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_oneattribval.yml");
+    assertTrue(page.asText().contains("values: invocationTotalCount"));
+    page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_twoattribs.yml");
+    assertTrue(page.asText().contains("values: [invocationTotalCount, executionTimeAverage]"));
+  }
+
+  /**
+   * Replace monitoring exporter configuration with empty configuration.
+   *
+   * @throws Exception if test fails
+   */
+  private void replaceWithEmptyConfiguration() throws Exception {
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_empty.yml");
+    assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with empty configuration.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  private void appendWithEmptyConfiguration() throws Exception {
+    final WebClient webClient = new WebClient();
+    HtmlPage originalPage = webClient.getPage(exporterUrl);
+    assertNotNull(originalPage);
+    HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_empty.yml");
+    assertTrue(originalPage.asText().equals(page.asText()));
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with configuration file not in the yaml format.
+   *
+   * @throws Exception if test fails
+   */
+  private void appendWithNotYmlConfiguration() throws Exception {
+    changeConfigNegative(
+            "append", RESOURCE_DIR + "/exporter/rest_notymlformat.yml", "Configuration is not in YAML format");
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file not in the yaml
+   * format.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  private void replaceWithNotYmlConfiguration() throws Exception {
+    changeConfigNegative(
+            "replace", RESOURCE_DIR + "/exporter/rest_notymlformat.yml", "Configuration is not in YAML format");
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with configuration file in the corrupted yaml
+   * format.
+   *
+   * @throws Exception if test fails
+   */
+  private void appendWithCorruptedYmlConfiguration() throws Exception {
+    changeConfigNegative(
+            "append",
+            RESOURCE_DIR + "/exporter/rest_notyml.yml",
+            "Configuration YAML format has errors while scanning a simple key");
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file in the corrupted yaml
+   * format.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  private void replaceWithCorruptedYmlConfiguration() throws Exception {
+    changeConfigNegative(
+            "replace",
+            RESOURCE_DIR + "/exporter/rest_notyml.yml",
+            "Configuration YAML format has errors while scanning a simple key");
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file with dublicated
+   * values.
+   *
+   * @throws Exception if test fails
+   */
+  private void replaceWithDublicatedValuesConfiguration() throws Exception {
+    changeConfigNegative(
+            "replace",
+            RESOURCE_DIR + "/exporter/rest_dublicatedval.yml",
+            "Duplicate values for [deploymentState] at applicationRuntimes.componentRuntimes");
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with configuration file with duplicated values.
+   *
+   * @throws Exception if test fails
+   */
+  private void appendWithDuplicatedValuesConfiguration() throws Exception {
+    changeConfigNegative(
+            "append",
+            RESOURCE_DIR + "/exporter/rest_dublicatedval.yml",
+            "Duplicate values for [deploymentState] at applicationRuntimes.componentRuntimes");
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file with
+   * NameSnakeCase=false.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  private void replaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
+    HtmlPage page =
+            submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_snakecasefalse.yml");
+    assertNotNull(page);
+    assertFalse(page.asText().contains("metricsNameSnakeCase"));
+    String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(searchKey, "sessmigr");
+  }
+
+  /**
+   * Test to replace monitoring exporter configuration with configuration file with
+   * domainQualifier=true.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  private void replaceMetricsDomainQualifierTrueConfiguration() throws Exception {
+    HtmlPage page =
+            submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_domainqualtrue.yml");
+    assertNotNull(page);
+    logger.info("page - " + page.asText());
+    assertTrue(page.asText().contains("domainQualifier"));
+
+    String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-" + domain1Uid + "\"");
+  }
+
+  /**
+   * Test to change monitoring exporter configuration without authentication.
+   *
+   * @throws Exception if failed to apply configuration or check the expected values.
+   */
+  // verify that change configuration fails without authentication
+  private void changeConfigNoCredentials() throws Exception {
+    WebClient webClient = new WebClient();
+    String expectedErrorMsg = "401 Unauthorized for " + exporterUrl;
+    try {
+      HtmlPage page =
+              submitConfigureForm(
+                      exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_snakecasetrue.yml", webClient);
+      throw new RuntimeException("Form was submitted successfully with no credentials");
+    } catch (FailingHttpStatusCodeException ex) {
+      assertTrue((ex.getMessage()).contains(expectedErrorMsg));
+    }
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with invalid username.
+   *
+   * @throws Exception if the expected exception message does not match
+   */
+  private void changeConfigInvalidUser() throws Exception {
+    changeConfigNegativeAuth(
+            "replace",
+            RESOURCE_DIR + "/exporter/rest_snakecasetrue.yml",
+            "401 Unauthorized for " + exporterUrl,
+            "invaliduser",
+            ADMIN_PASSWORD_DEFAULT);
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with invalid password.
+   *
+   * @throws Exception if the expected exception message does not match
+   */
+  private void changeConfigInvalidPass() throws Exception {
+    changeConfigNegativeAuth(
+            "replace",
+            RESOURCE_DIR + "/exporter/rest_snakecasetrue.yml",
+            "401 Unauthorized for " + exporterUrl,
+            ADMIN_USERNAME_DEFAULT,
+            "invalidpass");
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with empty username.
+   *
+   * @throws Exception if the expected exception message does not match
+   */
+  private void changeConfigEmptyUser() throws Exception {
+    changeConfigNegativeAuth(
+            "replace",
+            RESOURCE_DIR + "/exporter/rest_snakecasetrue.yml",
+            "401 Unauthorized for " + exporterUrl,
+            "",
+            ADMIN_PASSWORD_DEFAULT);
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with empty pass.
+   *
+   * @throws Exception if the expected exception message does not match
+   */
+  private void changeConfigEmptyPass() throws Exception {
+    changeConfigNegativeAuth(
+            "replace",
+            RESOURCE_DIR + "/exporter/rest_snakecasetrue.yml",
+            "401 Unauthorized for " + exporterUrl,
+            ADMIN_USERNAME_DEFAULT,
+            "");
   }
 }
