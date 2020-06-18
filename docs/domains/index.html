@@ -1088,6 +1088,15 @@ window.onload = function() {
         }
       }
     },
+    "Configuration": {
+      "type": "object",
+      "properties": {
+        "istio": {
+          "description": "The Istio service mesh integration settings",
+          "$ref": "#/definitions/Istio"
+        }
+      }
+    },
     "DateTime": {
       "format": "date-time",
       "type": "string"
@@ -1151,6 +1160,10 @@ window.onload = function() {
             "IfNotPresent"
           ]
         },
+        "configuration": {
+          "description": "Properties affecting the WebLogic domain configuration.",
+          "$ref": "#/definitions/Configuration"
+        },
         "replicas": {
           "description": "The number of managed servers to run in any cluster that does not specify a replica count.",
           "type": "number",
@@ -1178,10 +1191,6 @@ window.onload = function() {
           "pattern": "^[a-z0-9-.]{1,253}$",
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
           "type": "string"
-        },
-        "experimental": {
-          "description": "Experimental feature configurations.",
-          "$ref": "#/definitions/Experimental"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
@@ -1293,15 +1302,6 @@ window.onload = function() {
           "items": {
             "$ref": "#/definitions/ClusterStatus"
           }
-        }
-      }
-    },
-    "Experimental": {
-      "type": "object",
-      "properties": {
-        "istio": {
-          "description": "Istio service mesh integration configuration.",
-          "$ref": "#/definitions/Istio"
         }
       }
     },

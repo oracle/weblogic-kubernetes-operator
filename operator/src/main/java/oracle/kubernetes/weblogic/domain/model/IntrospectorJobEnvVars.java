@@ -31,6 +31,16 @@ public class IntrospectorJobEnvVars {
   public static final String DOMAIN_SOURCE_TYPE = "DOMAIN_SOURCE_TYPE";
 
   /**
+   * Istio enabled.
+   */
+  public static final String ISTIO_ENABLED = "ISTIO_ENABLED";
+
+  /**
+   * Istio readiness port.
+   */
+  public static final String ISTIO_READINESS_PORT = "ISTIO_READINESS_PORT";
+
+  /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with
    * the introspection job.
    * @param name an environment variable name
