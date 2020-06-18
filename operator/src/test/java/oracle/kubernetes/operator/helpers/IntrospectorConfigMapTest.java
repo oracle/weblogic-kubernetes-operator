@@ -13,9 +13,11 @@ import java.util.Optional;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -40,6 +42,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.TOPOLOGY_YAML;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
@@ -60,6 +63,7 @@ public class IntrospectorConfigMapTest {
   private final TerminalStep terminalStep = new TerminalStep();
   private final IntrospectResult introspectResult = new IntrospectResult();
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @Before
   public void setUp() throws Exception {
@@ -67,7 +71,7 @@ public class IntrospectorConfigMapTest {
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
 
-    testSupport.addDomainPresenceInfo(new DomainPresenceInfo(domain));
+    testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(JobHelper.START_TIME, System.currentTimeMillis() - 10);
   }
 
@@ -207,7 +211,7 @@ public class IntrospectorConfigMapTest {
   public void whenIntrospectorConfigMapExists_addEntries() {
     testSupport.defineResources(createIntrospectorConfigMap(Map.of(SECRETS_MD_5, MD5_SECRETS)));
 
-    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(domain, Map.of("a", "b", "c", "d"), terminalStep);
+    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(info, Map.of("a", "b", "c", "d"), terminalStep);
     testSupport.runSteps(chain);
 
     assertThat(getIntrospectorConfigMapData(),
@@ -222,10 +226,26 @@ public class IntrospectorConfigMapTest {
 
   @Test
   public void whenIntrospectorConfigMapDoesNotExist_addEntries() {
-    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(domain, Map.of("a", "b", "c", "d"), terminalStep);
+    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(info, Map.of("a", "b", "c", "d"), terminalStep);
     testSupport.runSteps(chain);
 
     assertThat(getIntrospectorConfigMapData(), allOf(hasEntry("a", "b"), hasEntry("c", "d")));
+  }
+
+  @Test
+  public void whenIntrospectorConfigMapDoesNotExist_createWithOwnerReference() {
+    V1OwnerReference expectedReference = new V1OwnerReference()
+        .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
+        .kind(KubernetesConstants.DOMAIN)
+        .name(DomainProcessorTestSetup.UID)
+        .uid(DomainProcessorTestSetup.KUBERNETES_UID)
+        .controller(true);
+
+    Step chain = ConfigMapHelper.addIntrospectorConfigMapEntriesStep(info, Map.of("a", "b", "c", "d"), terminalStep);
+    testSupport.runSteps(chain);
+
+    assertThat(IntrospectorCMTestUtils.getIntrospectorConfigMapMetadata(testSupport).getOwnerReferences(),
+        contains(expectedReference));
   }
 
   @Test

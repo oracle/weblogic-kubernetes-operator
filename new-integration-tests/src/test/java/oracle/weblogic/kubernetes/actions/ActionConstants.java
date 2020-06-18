@@ -55,5 +55,6 @@ public interface ActionConstants {
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";
   public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_FILE_NAME;
-
+  public static final String MONITORING_EXPORTER_DOWNLOAD_URL 
+      = "https://github.com/oracle/weblogic-monitoring-exporter.git";
 }

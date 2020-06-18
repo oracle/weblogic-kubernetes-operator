@@ -72,7 +72,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String READINESS_PATH = "/weblogic/ready";
 
   final WlsServerConfig scan;
-  private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
@@ -81,8 +80,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final String domainRestartVersion;
 
   PodStepContext(Step conflictStep, Packet packet) {
+    super(packet.getSpi(DomainPresenceInfo.class));
     this.conflictStep = conflictStep;
-    info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
     miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
@@ -199,34 +198,41 @@ public abstract class PodStepContext extends BasePodStepContext {
       List<V1ContainerPort> ports = new ArrayList<>();
       if (scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+          String napName = nap.getName();
           V1ContainerPort port =
               new V1ContainerPort()
-                  .name(LegalNames.toDns1123LegalName(nap.getName()))
+                  .name(LegalNames.toDns1123LegalName(napName))
                   .containerPort(nap.getListenPort())
                   .protocol("TCP");
           ports.add(port);
         }
       }
-      if (scan.getListenPort() != null) {
-        ports.add(
-            new V1ContainerPort()
-                .name("default")
-                .containerPort(scan.getListenPort())
-                .protocol("TCP"));
-      }
-      if (scan.getSslListenPort() != null) {
-        ports.add(
-            new V1ContainerPort()
-                .name("default-secure")
-                .containerPort(scan.getSslListenPort())
-                .protocol("TCP"));
-      }
-      if (scan.getAdminPort() != null) {
-        ports.add(
-            new V1ContainerPort()
-                .name("default-admin")
-                .containerPort(scan.getAdminPort())
-                .protocol("TCP"));
+      // Istio type is already passed from the introspector output, no need to create it again
+      if (!this.getDomain().isIstioEnabled()) {
+        if (scan.getListenPort() != null) {
+          String napName = "default";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getListenPort())
+                  .protocol("TCP"));
+        }
+        if (scan.getSslListenPort() != null) {
+          String napName = "default-secure";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getSslListenPort())
+                  .protocol("TCP"));
+        }
+        if (scan.getAdminPort() != null) {
+          String napName = "default-admin";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getAdminPort())
+                  .protocol("TCP"));
+        }
       }
       return ports;
     }
@@ -428,6 +434,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
 
+    updateForOwnerReference(metadata);
     return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 

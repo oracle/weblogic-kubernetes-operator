@@ -1096,7 +1096,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "overrideDistributionStrategy": {
-          "description": "Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC (the default) and ON_RESTART.",
+          "description": "Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.",
           "type": "string",
           "enum": [
             "DYNAMIC",
@@ -1117,6 +1117,10 @@ window.onload = function() {
           "items": {
             "type": "string"
           }
+        },
+        "istio": {
+          "description": "The Istio service mesh integration settings",
+          "$ref": "#/definitions/Istio"
         },
         "overridesConfigMap": {
           "description": "The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides.",
@@ -1193,10 +1197,6 @@ window.onload = function() {
           "pattern": "^[a-z0-9-.]{1,253}$",
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
           "type": "string"
-        },
-        "experimental": {
-          "description": "Experimental feature configurations.",
-          "$ref": "#/definitions/Experimental"
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic Server instances.",
@@ -1357,15 +1357,6 @@ window.onload = function() {
           "items": {
             "$ref": "#/definitions/ClusterStatus"
           }
-        }
-      }
-    },
-    "Experimental": {
-      "type": "object",
-      "properties": {
-        "istio": {
-          "description": "Istio service mesh integration configuration.",
-          "$ref": "#/definitions/Istio"
         }
       }
     },

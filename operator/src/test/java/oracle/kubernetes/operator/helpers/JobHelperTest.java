@@ -737,16 +737,6 @@ public class JobHelperTest {
   @Test
   public void whenIntrospectNotRequested_dontRunIntrospector() {
     defineTopology();
-    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, false);
-
-    runCreateJob();
-
-    assertThat(job, nullValue());
-  }
-
-  @Test
-  public void whenIntrospectNotSet_dontRunIntrospector() {
-    defineTopology();
 
     runCreateJob();
 
@@ -756,7 +746,7 @@ public class JobHelperTest {
   @Test
   public void whenIntrospectRequestSet_runIntrospector() {
     defineTopology();
-    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, true);
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, "123");
 
     runCreateJob();
 

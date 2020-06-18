@@ -126,6 +126,8 @@ public class MessageKeys {
   public static final String CALL_FAILED = "WLSKO-0168";
   public static final String JOB_CREATION_TIMESTAMP_MESSAGE = "WLSKO-0169";
   public static final String HTTP_REQUEST_TIMED_OUT = "WLSKO-0170";
+  public static final String NAMESPACE_IS_MISSING = "WLSKO-0171";
+  public static final String CM_PATCHED = "WLSKO-0172";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -140,6 +142,7 @@ public class MessageKeys {
   public static final String OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0010";
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
+  public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
 
   private MessageKeys() {
   }
