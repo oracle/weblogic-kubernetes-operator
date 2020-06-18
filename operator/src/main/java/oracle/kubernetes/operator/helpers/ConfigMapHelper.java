@@ -172,7 +172,7 @@ public class ConfigMapHelper {
   static class ScriptConfigMapContext extends ConfigMapContext {
 
     ScriptConfigMapContext(Step conflictStep, String operatorNamespace, String domainNamespace) {
-      super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace, loadScriptsFromClasspath(domainNamespace));
+      super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace, loadScriptsFromClasspath(domainNamespace), null);
 
       addLabel(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
     }
@@ -191,7 +191,7 @@ public class ConfigMapHelper {
 
   }
 
-  abstract static class ConfigMapContext {
+  abstract static class ConfigMapContext extends StepContextBase {
     private final Map<String, String> contents;
     private final Step conflictStep;
     private final String name;
@@ -199,7 +199,9 @@ public class ConfigMapHelper {
     private V1ConfigMap model;
     private final Map<String, String> labels = new HashMap<>();
 
-    ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents) {
+    ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents,
+                     DomainPresenceInfo info) {
+      super(info);
       this.conflictStep = conflictStep;
       this.name = name;
       this.namespace = namespace;
@@ -234,10 +236,11 @@ public class ConfigMapHelper {
     }
 
     private V1ObjectMeta createMetadata() {
-      return new V1ObjectMeta()
+      return updateForOwnerReference(
+          new V1ObjectMeta()
           .name(name)
           .namespace(namespace)
-          .labels(labels);
+          .labels(labels));
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -489,7 +492,7 @@ public class ConfigMapHelper {
     }
 
     private IntrospectorConfigMapContext createIntrospectorConfigMapContext(Step conflictStep) {
-      return new IntrospectorConfigMapContext(conflictStep, info.getDomain(), data);
+      return new IntrospectorConfigMapContext(conflictStep, info.getDomain(), data, info);
     }
 
     private String getModelInImageSpecHash() {
@@ -533,13 +536,14 @@ public class ConfigMapHelper {
    * the current domain presence info.
    *
    *
-   * @param domain the domain associated with the map
+   * @param info the domain info
    * @param entries a map of entries to add
    * @param next the next step to process after the config map is updated
    * @return the created step
    */
-  public static Step addIntrospectorConfigMapEntriesStep(Domain domain, Map<String, String> entries, Step next) {
-    return new AddIntrospectorConfigEntriesStep(domain, entries, next);
+  public static Step addIntrospectorConfigMapEntriesStep(DomainPresenceInfo info, Map<String, String> entries,
+                                                         Step next) {
+    return new AddIntrospectorConfigEntriesStep(info, entries, next);
   }
 
   /**
@@ -547,12 +551,12 @@ public class ConfigMapHelper {
    */
   static class AddIntrospectorConfigEntriesStep extends Step {
 
-    private final Domain domain;
+    private final DomainPresenceInfo info;
     private final Map<String, String> additionalEntries;
 
-    public AddIntrospectorConfigEntriesStep(Domain domain, Map<String, String> additionalEntries, Step next) {
+    public AddIntrospectorConfigEntriesStep(DomainPresenceInfo info, Map<String, String> additionalEntries, Step next) {
       super(next);
-      this.domain = domain;
+      this.info = info;
       this.additionalEntries = new HashMap<>(additionalEntries);
     }
 
@@ -562,7 +566,7 @@ public class ConfigMapHelper {
     }
 
     private IntrospectorConfigMapContext createContext() {
-      return new IntrospectorConfigMapContext(this, domain, additionalEntries);
+      return new IntrospectorConfigMapContext(this, info.getDomain(), additionalEntries, info);
     }
   }
 
@@ -572,8 +576,9 @@ public class ConfigMapHelper {
     IntrospectorConfigMapContext(
           Step conflictStep,
           Domain domain,
-          Map<String, String> data) {
-      super(conflictStep, getIntrospectorConfigMapName(domain.getDomainUid()), domain.getNamespace(), data);
+          Map<String, String> data,
+          DomainPresenceInfo info) {
+      super(conflictStep, getIntrospectorConfigMapName(domain.getDomainUid()), domain.getNamespace(), data, info);
 
       this.domainUid = domain.getDomainUid();
       addLabel(LabelConstants.DOMAINUID_LABEL, domainUid);

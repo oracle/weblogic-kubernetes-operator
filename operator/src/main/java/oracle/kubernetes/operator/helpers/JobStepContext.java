@@ -43,11 +43,10 @@ public abstract class JobStepContext extends BasePodStepContext {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
         "/weblogic-operator/scripts/introspectDomain.sh";
-  private final DomainPresenceInfo info;
   private V1Job jobModel;
 
   JobStepContext(Packet packet) {
-    info = packet.getSpi(DomainPresenceInfo.class);
+    super(packet.getSpi(DomainPresenceInfo.class));
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
@@ -218,12 +217,13 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   V1ObjectMeta createMetadata() {
-    return new V1ObjectMeta()
+    return updateForOwnerReference(
+        new V1ObjectMeta()
           .name(getJobName())
           .namespace(getNamespace())
           .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
-          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {

@@ -376,16 +376,15 @@ public class ServiceHelper {
     return true;
   }
 
-  private abstract static class ServiceStepContext {
+  private abstract static class ServiceStepContext extends StepContextBase {
     private final Step conflictStep;
     protected List<V1ServicePort> ports;
-    final DomainPresenceInfo info;
     final WlsDomainConfig domainTopology;
     private final OperatorServiceType serviceType;
 
     ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
+      super(packet.getSpi(DomainPresenceInfo.class));
       this.conflictStep = conflictStep;
-      info = packet.getSpi(DomainPresenceInfo.class);
       domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       this.serviceType = serviceType;
     }
@@ -395,7 +394,13 @@ public class ServiceHelper {
     }
 
     V1Service createModel() {
-      return AnnotationHelper.withSha256Hash(createRecipe());
+      return withNonHashedElements(AnnotationHelper.withSha256Hash(createRecipe()));
+    }
+
+    V1Service withNonHashedElements(V1Service service) {
+      V1ObjectMeta metadata = service.getMetadata();
+      updateForOwnerReference(metadata);
+      return service;
     }
 
     V1Service createRecipe() {
@@ -465,7 +470,6 @@ public class ServiceHelper {
 
       // Add custom annotations
       getServiceAnnotations().forEach(metadata::putAnnotationsItem);
-
       return metadata;
     }
 
