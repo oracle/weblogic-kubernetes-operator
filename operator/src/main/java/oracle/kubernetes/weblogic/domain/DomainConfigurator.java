@@ -470,6 +470,13 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withOpssWalletFileSecret(String secret);
 
   /**
+   * Add Istio for the domain resource.
+   *
+   * @return this object
+   */
+  public abstract DomainConfigurator withIstio();
+
+  /**
    * Add domain type for the domain resource.
    *
    * @param type the domain type
