@@ -78,7 +78,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
-    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStopping");
+    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStoppingMap");
     return stoppingMemento.getOriginalValue();
   }
 

@@ -41,8 +41,10 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class NamespaceTest {
+
   private static final String NAMESPACES_PROPERTY = "OPERATOR_TARGET_NAMESPACES";
   private static final String ADDITIONAL_NAMESPACE = "NS3";
+  public static final String IS_NAMESPACE_STOPPING_MAP = "isNamespaceStoppingMap";
 
   private Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0);
@@ -61,7 +63,7 @@ public class NamespaceTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.preserve(Main.class, "namespaceStatuses"));
-    mementos.add(StaticStubSupport.preserve(Main.class, "isNamespaceStopping"));
+    mementos.add(StaticStubSupport.preserve(Main.class, IS_NAMESPACE_STOPPING_MAP));
     mementos.add(StaticStubSupport.install(Main.class, "getHelmVariable", getTestHelmValue));
     mementos.add(TuningParametersStub.install(120));
     mementos.add(StaticStubSupport.install(Main.class, "processor", dp));
@@ -167,7 +169,7 @@ public class NamespaceTest {
 
   private Map<String, AtomicBoolean> getIsNamespaceStoppingMap()
       throws NoSuchFieldException, IllegalAccessException {
-    Field field = Main.class.getDeclaredField("isNamespaceStopping");
+    Field field = Main.class.getDeclaredField(IS_NAMESPACE_STOPPING_MAP);
     field.setAccessible(true);
     return (Map<String, AtomicBoolean>) field.get(null);
   }
@@ -185,7 +187,7 @@ public class NamespaceTest {
 
   private void cacheStartedNamespaces() throws NoSuchFieldException {
     StaticStubSupport.install(Main.class, "namespaceStatuses", createNamespaceStatuses());
-    StaticStubSupport.install(Main.class, "isNamespaceStopping", createNamespaceFlags());
+    StaticStubSupport.install(Main.class, IS_NAMESPACE_STOPPING_MAP, createNamespaceFlags());
   }
 
   private Map<String, NamespaceStatus> createNamespaceStatuses() {
