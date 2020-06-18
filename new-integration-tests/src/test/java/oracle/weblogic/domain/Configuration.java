@@ -8,18 +8,18 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class Experimental {
+public class Configuration {
 
-  @ApiModelProperty("Istio service mesh integration configuration.")
+  @ApiModelProperty("Istio service mesh integration")
   private Istio istio;
 
-  public Experimental istio(Istio istio) {
+  public Configuration istio(Istio istio) {
     this.istio = istio;
     return this;
   }
 
   public Istio istio() {
-    return this.istio;
+    return istio;
   }
 
   public Istio getIstio() {
@@ -32,14 +32,18 @@ public class Experimental {
 
   @Override
   public String toString() {
-    ToStringBuilder builder = new ToStringBuilder(this).append("istio", istio);
+    ToStringBuilder builder =
+        new ToStringBuilder(this)
+            .append("istio", istio);
 
     return builder.toString();
   }
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder = new HashCodeBuilder().append(istio);
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .append(istio);
 
     return builder.toHashCode();
   }
@@ -53,8 +57,10 @@ public class Experimental {
     if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    Experimental rhs = (Experimental) other;
-    EqualsBuilder builder = new EqualsBuilder().append(istio, rhs.istio);
+    Configuration rhs = (Configuration) other;
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .append(istio, rhs.istio);
 
     return builder.isEquals();
   }

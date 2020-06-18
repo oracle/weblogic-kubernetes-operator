@@ -30,6 +30,9 @@
 #
 #         introspectTest.sh
 #
+#     To check for ISTIO
+#         export ISTIO_ENABELD=true
+#
 #############################################################################
 #
 # Initialize basic globals
@@ -96,6 +99,8 @@ export CLUSTER_TYPE="${CLUSTER_TYPE:-DYNAMIC}"
 export T3CHANNEL1_PORT=${T3CHANNEL1_PORT:-30012}
 export T3CHANNEL2_PORT=${T3CHANNEL2_PORT:-30013}
 export T3CHANNEL3_PORT=${T3CHANNEL3_PORT:-30014}
+export ISTIO_ENABLED=${ISTIO_ENABLED:-false}
+export ISTIO_READINESS_PORT=${ISTIO_READINESS_PORT:-8888}
 export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-}
 export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
 export ALLOW_DYNAMIC_CLUSTER_IN_FMW=${ALLOW_DYNAMIC_CLUSTER_IN_FMW:-false}
@@ -620,8 +625,14 @@ function checkOverrides() {
 
   trace "Info: Checking beans to see if sit-cfg took effect.  Input file '$test_home/checkBeans.input', output file '$test_home/checkBeans.out'."
   local src_input_file=checkBeans.inputt
+  if [ "${ISTIO_ENABLED}" == "true" ]; then
+    src_input_file=checkBeansIstio.inputt
+  fi
+
   rm -f ${test_home}/checkBeans.input
+
   ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
+
   kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
   kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
   tracen "Info: Waiting for WLST checkBeans.py to complete."
@@ -641,6 +652,8 @@ function checkOverrides() {
   if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
     exit 1
   fi
+
+  rm ${src_input_file}_2
 }
 
 

@@ -89,6 +89,9 @@ public class DomainSpec {
           + " on a persistent volume.")
   private Boolean domainHomeInImage;
 
+  @ApiModelProperty("Properties affecting the WebLogic domain configuration.")
+  private Configuration configuration;
+
   @ApiModelProperty(
       "The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
@@ -105,9 +108,6 @@ public class DomainSpec {
 
   @ApiModelProperty("Configuration for the clusters.")
   private List<Cluster> clusters = new ArrayList<>();
-
-  @ApiModelProperty("Experimental feature configurations.")
-  private Experimental experimental;
 
   @ApiModelProperty("Configuration affecting server pods.")
   private ServerPod serverPod;
@@ -360,6 +360,23 @@ public class DomainSpec {
     this.domainHomeInImage = domainHomeInImage;
   }
 
+  public DomainSpec configuration(Configuration configuration) {
+    this.configuration = configuration;
+    return this;
+  }
+
+  public Configuration configuration() {
+    return configuration;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
+
   public DomainSpec configOverrides(String configOverrides) {
     this.configOverrides = configOverrides;
     return this;
@@ -484,23 +501,6 @@ public class DomainSpec {
     this.clusters = clusters;
   }
 
-  public DomainSpec experimental(Experimental experimental) {
-    this.experimental = experimental;
-    return this;
-  }
-
-  public Experimental experimental() {
-    return experimental;
-  }
-
-  public Experimental getExperimental() {
-    return experimental;
-  }
-
-  public void setExperimental(Experimental experimental) {
-    this.experimental = experimental;
-  }
-
   public DomainSpec serverPod(ServerPod serverPod) {
     this.serverPod = serverPod;
     return this;
@@ -586,12 +586,12 @@ public class DomainSpec {
             .append("imagePullSecrets", imagePullSecrets)
             .append("replicas", replicas)
             .append("domainHomeInImage", domainHomeInImage)
+            .append("configuration", configuration)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
-            .append("experimental", experimental)
             .append("serverStartState", serverStartState)
             .append("serverPod", serverPod)
             .append("serverService", serverService)
@@ -617,12 +617,12 @@ public class DomainSpec {
             .append(imagePullSecrets)
             .append(replicas)
             .append(domainHomeInImage)
+            .append(configuration)
             .append(configOverrides)
             .append(configOverrideSecrets)
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
-            .append(experimental)
             .append(serverPod)
             .append(serverService)
             .append(serverStartState)
@@ -656,12 +656,12 @@ public class DomainSpec {
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(replicas, rhs.replicas)
             .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(configuration, rhs.configuration)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
             .append(clusters, rhs.clusters)
-            .append(experimental, rhs.experimental)
             .append(serverPod, rhs.serverPod)
             .append(serverService, rhs.serverService)
             .append(serverStartState, rhs.serverStartState)
