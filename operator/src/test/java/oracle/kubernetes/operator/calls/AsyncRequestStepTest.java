@@ -124,6 +124,13 @@ public class AsyncRequestStepTest {
         () -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
   }
 
+  private void sendMultipleFailedCallback(int statusCode, int maxRetries) {
+    for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
+      testSupport.schedule(
+          () -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
+    }
+  }
+
   @Test
   public void afterFailedCallback_retrySentAfterDelay() {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
@@ -132,6 +139,21 @@ public class AsyncRequestStepTest {
     testSupport.setTime(TIMEOUT_SECONDS - 1, TimeUnit.SECONDS);
 
     assertTrue(callFactory.invokedWith(requestParams));
+  }
+
+  @Test
+  public void multipleFailedCallbackRetriesLeft_nextStepAppliedWithValue() {
+    sendMultipleFailedCallback(0, 2);
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
+    assertThat(nextStep.result, equalTo(17));
+  }
+
+  @Test
+  public void multipleFailedCallbackNoRetriesLeft_verifyCompletionThrowable() {
+    sendMultipleFailedCallback(0, 3);
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    assertThat(nextStep.result, equalTo(null));
   }
 
   // todo tests
