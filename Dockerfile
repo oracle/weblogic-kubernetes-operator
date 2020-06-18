@@ -20,21 +20,23 @@ RUN set -eux; \
 # Default to UTF-8 file.encoding
 ENV LANG en_US.UTF-8
 
-ENV JAVA_HOME /usr/local/openjdk-11
+ENV JAVA_HOME /usr/local/graalvm-ce-java11
 ENV PATH /operator:$JAVA_HOME/bin:$PATH
 
 ENV JAVA_VERSION 11.0.7
-ENV JAVA_URL https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.7%2B10/OpenJDK11U-jre_x64_linux_11.0.7_10.tar.gz
+ENV JAVA_URL https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-19.3.2/graalvm-ce-java11-linux-amd64-19.3.2.tar.gz
 
 # Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
-    curl -fL -o /openjdk.tgz "$JAVA_URL"; \
+    curl -fL -o /graalvm-ce-java11.tar.gz "$JAVA_URL"; \
     mkdir -p "$JAVA_HOME"; \
-    tar --extract --file /openjdk.tgz --directory "$JAVA_HOME" --strip-components 1; \
-    rm /openjdk.tgz; \
+    tar --extract --file /graalvm-ce-java11.tar.gz --directory "$JAVA_HOME" --strip-components 1; \
+    rm /graalvm-ce-java11.tar.gz; \
     mkdir /usr/java; \
     ln -sfT "$JAVA_HOME" /usr/java/default; \
     ln -sfT "$JAVA_HOME" /usr/java/latest; \
+    rm -Rf "$JAVA_HOME/include" "$JAVA_HOME/jmods" "$JAVA_HOME/languages" "$JAVA_HOME/tools" "$JAVA_HOME/lib/svm" "$JAVA_HOME/lib/installer" "$JAVA_HOME/lib/visualvm" "$JAVA_HOME/lib/truffle" "$JAVA_HOME/lib/polyglot"; \
+    rm -f "$JAVA_HOME/lib/src.zip" "$JAVA_HOME/lib/libjvmcicompiler.so" "$JAVA_HOME/bin/polyglot"; \
     for bin in "$JAVA_HOME/bin/"*; do \
         base="$(basename "$bin")"; \
         [ ! -e "/usr/bin/$base" ]; \
