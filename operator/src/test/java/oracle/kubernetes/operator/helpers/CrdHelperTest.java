@@ -46,6 +46,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class CrdHelperTest {
@@ -174,13 +175,14 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenNoCrd_retryOnFailure() {
+  public void whenNoCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
 
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
   @Test
@@ -233,7 +235,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenReplaceFails_scheduleRetry() {
+  public void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
@@ -242,6 +244,7 @@ public class CrdHelperTest {
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
 
