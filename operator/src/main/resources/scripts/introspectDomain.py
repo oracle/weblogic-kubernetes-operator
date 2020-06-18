@@ -149,7 +149,7 @@ class OfflineWlstEnv(object):
 
     self.generatedFiles     = []
 
-    # create tmp directory (mkpath == 'mkdir -p') 
+    # create tmp directory (mkpath == 'mkdir -p')
 
     distutils.dir_util.mkpath(self.INTROSPECT_HOME)
 
@@ -350,21 +350,6 @@ class TopologyGenerator(Generator):
       ret = None
     return ret
 
-  # Work-around bugs in off-line WLST when accessing an SSL mbean
-  def getSSLOrNone(self,server):
-    try:
-      # this can throw if SSL mbean not there
-      ssl = server.getSSL()
-      # this can throw if SSL mbean is there but enabled is false 
-      ssl.getListenPort()
-      # this can throw if SSL mbean is there but enabled is false
-      ssl.isEnabled()
-      ret = ssl
-    except:
-      trace("Ignoring getSSL() exception, this is expected.")
-      ret = None
-    return ret
-
   def validateAdminServer(self):
     adminServerName = self.env.getDomain().getAdminServerName()
     if adminServerName is None:
@@ -379,7 +364,7 @@ class TopologyGenerator(Generator):
       return
     cluster = self.env.getClusterOrNone(adminServer)
     if cluster is not None:
-      self.addError("The admin server " + self.name(adminServer) + " belongs to the WebLogic cluster " + self.name(cluster) + ".")
+      self.addError("The admin server " + self.name(adminServer) + " belongs to the WebLogic cluster " + self.name(cluster) + ", the operator does not support having an admin server participate in a cluster.")
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
@@ -409,7 +394,7 @@ class TopologyGenerator(Generator):
   def validateNonDynamicClusterNotReferencedByAnyServerTemplates(self, cluster):
     for template in self.env.getDomain().getServerTemplates():
       if self.env.getClusterOrNone(template) is cluster:
-        self.addError("The WebLogic configured cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ".")
+        self.addError("The WebLogic configured cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   LISTEN_PORT = 'listen port'
   LISTEN_PORT_ENABLED = 'listen port enabled'
@@ -420,20 +405,20 @@ class TopologyGenerator(Generator):
 
   def getServerClusterPortPropertyValue(self, server, clusterListenPortProperty):
     sslListenPort = None
-    ssl = self.getSSLOrNone(server)
+    ssl = getSSLOrNone(server)
     if ssl is not None:
       sslListenPort = ssl.getListenPort()
     sslListenPortEnabled = None
     if ssl is not None:
       sslListenPortEnabled = ssl.isEnabled()
     return {
-             LISTEN_PORT: server.getListenPort(),
-             LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
-             SSL_LISTEN_PORT: sslListenPort,
-             SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
-             ADMIN_LISTEN_PORT: server.getAdministrationPort(),
-             ADMIN_LISTEN_PORT_ENABLED: server.isAdministrationPortEnabled()
-     }[clusterListenPortProperty]
+      LISTEN_PORT: server.getListenPort(),
+      LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
+      SSL_LISTEN_PORT: sslListenPort,
+      SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
+      ADMIN_LISTEN_PORT: server.getAdministrationPort(),
+      ADMIN_LISTEN_PORT_ENABLED: server.isAdministrationPortEnabled()
+    }[clusterListenPortProperty]
 
   def validateNonDynamicClusterServersHaveSameListenPort(self, cluster):
     firstServer = None
@@ -447,12 +432,12 @@ class TopologyGenerator(Generator):
       if cluster is self.env.getClusterOrNone(server):
         listenPort = server.getListenPort()
         listenPortEnabled = server.isListenPortEnabled()
-        ssl = self.getSSLOrNone(server)
+        ssl = getSSLOrNone(server)
         sslListenPort = None
         sslListenPortEnabled = None
         if ssl is not None:
-              sslListenPort = ssl.getListenPort()
-              sslListenPortEnabled = ssl.isEnabled()
+          sslListenPort = ssl.getListenPort()
+          sslListenPortEnabled = ssl.isEnabled()
         adminPort = server.getAdministrationPort()
         adminPortEnabled = server.isAdministrationPortEnabled()
         if firstServer is None:
@@ -469,15 +454,13 @@ class TopologyGenerator(Generator):
           if listenPortEnabled != firstListenPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if sslListenPort != firstSslListenPort:
-             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
           if sslListenPortEnabled != firstSslListenPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
           if adminPort != firstAdminPort:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
           if adminPortEnabled != firstAdminPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
-
-
 
   def validateClusterServersListenPortProperty(self, cluster, errorMsg, clusterListenPortProperty):
     firstServer = None
@@ -494,28 +477,28 @@ class TopologyGenerator(Generator):
             return
 
   def validateNonDynamicClusterServerHaveSameCustomChannels(self, cluster):
-     firstServer = None
-     serverNap = {}
-     for server in self.env.getDomain().getServers():
-       if cluster is self.env.getClusterOrNone(server):
-         if firstServer is None:
-           for nap in server.getNetworkAccessPoints():
-             serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
-           firstServer = server
-         else:
-           naps = server.getNetworkAccessPoints()
-           if len(naps) != len(serverNap):
-             self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
-             return
-           else:
-             for nap in naps:
-               if nap.getName() in serverNap:
-                 if serverNap[nap.getName()] != nap.getProtocol() + "~" + str(nap.getListenPort()):
-                   self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
-                   return
-               else:
-                 self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
-                 return
+    firstServer = None
+    serverNap = {}
+    for server in self.env.getDomain().getServers():
+      if cluster is self.env.getClusterOrNone(server):
+        if firstServer is None:
+          for nap in server.getNetworkAccessPoints():
+            serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
+          firstServer = server
+        else:
+          naps = server.getNetworkAccessPoints()
+          if len(naps) != len(serverNap):
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+            return
+          else:
+            for nap in naps:
+              if nap.getName() in serverNap:
+                if serverNap[nap.getName()] != nap.getProtocol() + "~" + str(nap.getListenPort()):
+                  self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                  return
+              else:
+                self.addError("The WebLogic configured cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                return
 
 
   def validateDynamicCluster(self, cluster):
@@ -539,7 +522,7 @@ class TopologyGenerator(Generator):
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
       if self.env.getClusterOrNone(server) is cluster:
-        self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced by the server " + self.name(server) + ".")
+        self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced by configured server " + self.name(server) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
 
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
     if cluster.getDynamicServers().isCalculatedListenPorts() == True:
@@ -588,7 +571,7 @@ class TopologyGenerator(Generator):
     for cluster in clusters:
       self.addConfiguredCluster(cluster)
     self.undent()
-  
+
   def getConfiguredClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
@@ -634,7 +617,7 @@ class TopologyGenerator(Generator):
         rtn.append(server)
     return rtn
 
-  def addServer(self, server):
+  def addServer(self, server, is_server_template=False):
     name=self.name(server)
     self.writeln("- name: " + name)
     if server.isListenPortEnabled():
@@ -646,10 +629,10 @@ class TopologyGenerator(Generator):
       if self.env.getDomain().isAdministrationPortEnabled():
         self.writeln("  adminPort: " + str(self.env.getDomain().getAdministrationPort()))
     self.addSSL(server)
-    self.addNetworkAccessPoints(server)
+    self.addNetworkAccessPoints(server, is_server_template)
 
   def addSSL(self, server):
-    ssl = self.getSSLOrNone(server)
+    ssl = getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
@@ -667,7 +650,7 @@ class TopologyGenerator(Generator):
     self.undent()
 
   def addServerTemplate(self, serverTemplate):
-    self.addServer(serverTemplate)
+    self.addServer(serverTemplate, is_server_template=True)
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
 
   def addDynamicClusters(self):
@@ -679,7 +662,7 @@ class TopologyGenerator(Generator):
     for cluster in clusters:
       self.addDynamicCluster(cluster)
     self.undent()
-  
+
   def getDynamicClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
@@ -715,22 +698,90 @@ class TopologyGenerator(Generator):
         self.addServer(server)
     self.undent()
 
-  def addNetworkAccessPoints(self, server):
+  def addNetworkAccessPoints(self, server, is_server_template=False):
+    """
+    Add network access points for server or server template
+    :param server:  server or server template
+    """
     naps = server.getNetworkAccessPoints()
-    if len(naps) == 0:
-      return
-    self.writeln("  networkAccessPoints:")
-    self.indent()
-    for nap in naps:
-      self.addNetworkAccessPoint(nap)
-    self.undent()
+    added_nap = False
+    if len(naps) != 0:
+      added_nap = True
+      self.writeln("  networkAccessPoints:")
+      self.indent()
+      for nap in naps:
+        self.addNetworkAccessPoint(nap)
+
+    added_istio_yaml = self.addIstioNetworkAccessPoints(server, is_server_template, added_nap)
+    if len(naps) != 0 or added_istio_yaml:
+      self.undent()
 
   def addNetworkAccessPoint(self, nap):
-    name=self.name(nap)
+
+    # Change the name to follow the istio port naming convention
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+
+    if istio_enabled == 'true':
+      http_protocol = [ 'http' ]
+      https_protocol = ['https','admin']
+      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop']
+      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure']
+      if nap.getProtocol() in http_protocol:
+        name = 'http-' + nap.getName().replace(' ', '_')
+      elif nap.getProtocol() in https_protocol:
+        name = 'https-' + nap.getName().replace(' ', '_')
+      elif nap.getProtocol() in tcp_protocol:
+        name = 'tcp-' + nap.getName().replace(' ', '_')
+      elif nap.getProtocol() in tls_protocol:
+        name = 'tls-' + nap.getName().replace(' ', '_')
+      else:
+        name = 'tcp-' + nap.getName().replace(' ', '_')
+    else:
+      name=self.name(nap)
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap.getProtocol()))
     self.writeln("    listenPort: " + str(nap.getListenPort()))
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
+
+  def addIstioNetworkAccessPoints(self, server, is_server_template, added_nap):
+    '''
+    Write the container ports information for operator to create the container ports
+    :param server:   server or template mbean
+    :param is_server_template:  true if it is from ServerTemplate
+    :param added_nap:  true if there are existing nap section in the output
+    '''
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return False
+
+    if not added_nap:
+      self.writeln("  networkAccessPoints:")
+      self.indent()
+
+    self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
+    # No need to to http default, PodStepContext already handle it
+    self.addIstioNetworkAccessPoint("http-default", "http", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
+
+    ssl = getSSLOrNone(server)
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+      self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-ldaps", "ldaps", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-default", "t3s", ssl_listen_port, 0)
+      self.addIstioNetworkAccessPoint("tls-iiops", "iiops", ssl_listen_port, 0)
+
+    if server.isAdministrationPortEnabled():
+      self.addIstioNetworkAccessPoint("https-admin", "https", server.getAdministrationPort(), 0)
+    return True
+
+  def addIstioNetworkAccessPoint(self, name, protocol, listen_port, public_port):
+    self.writeln("  - name: " + name)
+    self.writeln("    protocol: " + protocol)
+    self.writeln("    listenPort: " + str(listen_port))
+    self.writeln("    publicPort: " + str(public_port))
 
   def booleanToString(self, bool):
     if bool == 0:
@@ -779,7 +830,7 @@ class UserConfigAndKeyGenerator(Generator):
     username = self.readCredentialsSecret("username")
     password = self.readCredentialsSecret("password")
     nm_host = 'localhost'
-    nm_port = '5556' 
+    nm_port = '5556'
     domain_name = self.env.getDomain().getName()
     domain_home = self.env.getDomainHome()
     isNodeManager = "true"
@@ -872,6 +923,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(server)
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
+    self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     self.undent()
     self.writeln("</d:server>")
 
@@ -892,6 +944,7 @@ class SitConfigGenerator(Generator):
     self.customizeDefaultFileStore(template)
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
+    self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
     self.undent()
     self.writeln("</d:server-template>")
 
@@ -901,18 +954,172 @@ class SitConfigGenerator(Generator):
 
   def customizeNetworkAccessPoint(self, nap, listen_address):
     # Don't bother 'add' a nap listen-address, only do a 'replace'.
-    # If we try 'add' this appears to mess up an attempt to 
+    # If we try 'add' this appears to mess up an attempt to
     #   'add' PublicAddress/Port via custom sit-cfg.
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
+
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+
     nap_name=nap.getName()
     if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0 and not (nap_name.startswith('istio-')):
-        self.writeln("<d:network-access-point>")
-        self.indent()
-        self.writeln("<d:name>" + nap_name + "</d:name>")
+      self.writeln("<d:network-access-point>")
+      self.indent()
+      self.writeln("<d:name>" + nap_name + "</d:name>")
+      if istio_enabled == 'true':
+        self.writeListenAddress("force a replace", '127.0.0.1')
+        replace_action = 'f:combine-mode="replace"'
+        self.writeln('<d:public-address %s>%s</d:public-address>' % (replace_action, listen_address))
+      else:
         self.writeListenAddress("force a replace",listen_address)
-        self.undent()
-        self.writeln("</d:network-access-point>")
+
+      self.undent()
+      self.writeln("</d:network-access-point>")
+
+  def _getNapConfigOverrideAction(self, svr, testname):
+    replace_action = 'f:combine-mode="replace"'
+    add_action = 'f:combine-mode="add"'
+    found = False
+    for nap in svr.getNetworkAccessPoints():
+      if nap.getName() == testname:
+        found = True
+        break
+
+    if found:
+      trace("SEVERE","Found NetWorkAccessPoint with name %s in the WebLogic Domain, this is an internal name used by the WebLogic Kubernetes Operator, please remove it from your domain and try again." % testname)
+      sys.exit(1)
+    else:
+      return add_action, "add"
+
+  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true"):
+
+    action, type = self._getNapConfigOverrideAction(server, "http-probe")
+
+    # For add, we must put the combine mode as add
+    # For replace, we must omit it
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
+
+    self.indent()
+    if type == "add":
+      self.writeln('<d:name %s>%s</d:name>' % (action, name))
+    else:
+      self.writeln('<d:name>%s</d:name>' % name)
+
+    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
+    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
+    self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
+    self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
+    self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
+                 (action, http_enabled))
+    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
+    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+  def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return
+    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+    if istio_readiness_port is None:
+      return
+    admin_server_port = server.getListenPort()
+    # readiness probe
+    self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
+                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+
+    # Generate NAP for each protocols
+    self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='ldap')
+
+    self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='t3')
+
+    self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='http')
+
+    self._writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='snmp')
+
+    self._writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
+
+    self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
+                        listen_port=admin_server_port, protocol='iiop')
+
+    ssl = getSSLOrNone(server)
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+      self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='https', http_enabled="true")
+
+      self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='ldaps')
+
+      self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='t3s')
+
+      self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
+
+      self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='iiops')
+
+    if server.isAdministrationPortEnabled():
+      self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
+                          listen_port=server.getAdministrationPort(), protocol='https', http_enabled="true")
+
+
+  def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled == 'false':
+      return
+    istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
+    if istio_readiness_port is None:
+      return
+
+    listen_port = template.getListenPort()
+    self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
+                        listen_port=istio_readiness_port, protocol='http')
+
+    self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='t3', http_enabled='false')
+
+    self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='http')
+
+    self._writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='snmp')
+
+    self._writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='CLUSTER-BROADCAST')
+
+    self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
+                        listen_port=listen_port, protocol='iiop')
+
+    ssl = getSSLOrNone(template)
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = ssl.getListenPort()
+      self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='https')
+
+      self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='ldaps')
+
+      self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
+
+      self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
+
+      self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='iiops')
 
   def getLogOrNone(self,server):
     try:
@@ -1035,7 +1242,7 @@ class CustomSitConfigIntrospector(SecretManager):
         secret_path = os.path.join(self.env.CUSTOM_SECRET_ROOT, secret_name)
         self.addSecretsFromDirectory(secret_path, secret_name)
 
-    self.addSecretsFromDirectory(self.env.CREDENTIALS_SECRET_PATH, 
+    self.addSecretsFromDirectory(self.env.CREDENTIALS_SECRET_PATH,
                                  self.env.CREDENTIALS_SECRET_NAME)
 
     self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
@@ -1056,19 +1263,19 @@ class CustomSitConfigIntrospector(SecretManager):
     # Populate module maps with known module files and names, log them
 
     self.jdbcModuleStr = self.buildModuleTable(
-                           'jdbc', 
-                           self.env.getDomain().getJDBCSystemResources(),
-                           self.env.CUSTOM_PREFIX_JDBC)
+      'jdbc',
+      self.env.getDomain().getJDBCSystemResources(),
+      self.env.CUSTOM_PREFIX_JDBC)
 
     self.jmsModuleStr = self.buildModuleTable(
-                           'jms', 
-                           self.env.getDomain().getJMSSystemResources(),
-                           self.env.CUSTOM_PREFIX_JMS)
+      'jms',
+      self.env.getDomain().getJMSSystemResources(),
+      self.env.CUSTOM_PREFIX_JMS)
 
     self.wldfModuleStr = self.buildModuleTable(
-                           'diagnostics', 
-                           self.env.getDomain().getWLDFSystemResources(),
-                           self.env.CUSTOM_PREFIX_WLDF)
+      'diagnostics',
+      self.env.getDomain().getWLDFSystemResources(),
+      self.env.CUSTOM_PREFIX_WLDF)
 
     trace('Available modules: ' + self.moduleStr)
 
@@ -1077,7 +1284,7 @@ class CustomSitConfigIntrospector(SecretManager):
     if not os.path.isdir(secret_path):
       # The operator pod somehow put a file where we
       # only expected to find a directory mount.
-      self.env.addError("Internal Error:  Secret path'" 
+      self.env.addError("Internal Error:  Secret path'"
                         + secret_path + "'" +
                         + " is not a directory.")
       return
@@ -1113,14 +1320,14 @@ class CustomSitConfigIntrospector(SecretManager):
           "Error, the operator expects module files of type '" + moduleTypeStr + "'"
           + " to be located in directory '" + moduleTypeStr + "/'"
           + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
-          + " is configured with DescriptorFileName='" + mfile + "'.")      
+          + " is configured with DescriptorFileName='" + mfile + "'.")
 
       if mfile.count(".xml") != 1 or mfile.find(".xml") + 4 != len(mfile):
         self.env.addError(
           "Error, the operator expects system resource module files"
           + " to end in '.xml'"
           + ", but the " + moduleTypeStr + " system resource module '" + mname + "'"
-          + " is configured with DescriptorFileName='" + mfile + "'.")      
+          + " is configured with DescriptorFileName='" + mfile + "'.")
 
       if not firstModule:
         self.moduleStr += ", "
@@ -1135,7 +1342,7 @@ class CustomSitConfigIntrospector(SecretManager):
 
     # end of for loop
 
-    self.moduleStr += ')' 
+    self.moduleStr += ')'
 
 
   def validateUnresolvedMacros(self, file, filestr):
@@ -1156,7 +1363,7 @@ class CustomSitConfigIntrospector(SecretManager):
         errstr += ","
       errstr += unknown_macro
     if errstr:
-      self.env.addError("Error, unresolvable macro(s) '" + errstr + "'" 
+      self.env.addError("Error, unresolvable macro(s) '" + errstr + "'"
                         + " in custom sit config file '" + file + "'."
                         + " Known macros are '" + self.macroStr + "'.")
 
@@ -1177,20 +1384,20 @@ class CustomSitConfigIntrospector(SecretManager):
     #
     versionPath=os.path.join(self.env.CUSTOM_SITCFG_PATH,"version.txt")
     if not os.path.exists(versionPath):
-        self.env.addError("Error, Required file, '"+versionPath+"', does not exist")
+      self.env.addError("Error, Required file, '"+versionPath+"', does not exist")
     else:
-        version=self.env.readFile(versionPath).strip()
-        if not version == "2.0":
-            # truncate and ellipsify at 75 characters
-            version = version[:75] + (version[75:] and '...')
-            self.env.addError("Error, "+versionPath+" does not have the value of"
-                              + " '2.0'. The current content: '" + version 
-                              + "' is not valid.")
+      version=self.env.readFile(versionPath).strip()
+      if not version == "2.0":
+        # truncate and ellipsify at 75 characters
+        version = version[:75] + (version[75:] and '...')
+        self.env.addError("Error, "+versionPath+" does not have the value of"
+                          + " '2.0'. The current content: '" + version
+                          + "' is not valid.")
 
     for the_file in os.listdir(self.env.CUSTOM_SITCFG_PATH):
 
       if the_file == "version.txt":
-        continue  
+        continue
 
       the_file_path = os.path.join(self.env.CUSTOM_SITCFG_PATH, the_file)
 
@@ -1202,11 +1409,11 @@ class CustomSitConfigIntrospector(SecretManager):
       # check if file name corresponds with config.xml or a module
 
       if not self.moduleMap.has_key(the_file) and the_file != "config.xml":
-        self.env.addError("Error, custom sit config override file '" + the_file + "'" 
-          + " is not named 'config.xml' or has no matching system resource"
-          + " module. Custom sit config files must be named 'config.xml'"
-          + " to override config.xml or 'moduletype-modulename.xml' to override"
-          + " a module. Known module names for each type: " + self.moduleStr + ".")
+        self.env.addError("Error, custom sit config override file '" + the_file + "'"
+                          + " is not named 'config.xml' or has no matching system resource"
+                          + " module. Custom sit config files must be named 'config.xml'"
+                          + " to override config.xml or 'moduletype-modulename.xml' to override"
+                          + " a module. Known module names for each type: " + self.moduleStr + ".")
         continue
 
       # substitute macros and validate unresolved macros
@@ -1225,7 +1432,7 @@ class CustomSitConfigIntrospector(SecretManager):
       genfile = self.env.INTROSPECT_HOME + '/';
 
       if the_file == 'config.xml':
-        genfile += self.env.CUSTOM_PREFIX_CFG + 'custom-situational-config.xml' 
+        genfile += self.env.CUSTOM_PREFIX_CFG + 'custom-situational-config.xml'
       else:
         genfile += self.moduleMap[the_file]
 
@@ -1255,9 +1462,22 @@ class DomainIntrospector(SecretManager):
     # If the topology is invalid, the generated topology
     # file contains a list of one or more validation errors
     # instead of a topology.
-  
+
     tg.generate()
 
+# Work-around bugs in off-line WLST when accessing an SSL mbean
+def getSSLOrNone(server):
+  try:
+    # this can throw if SSL mbean not there
+    ret = server.getSSL()
+    # this can throw if SSL mbean is there but enabled is false
+    ret.getListenPort()
+    # this can throw if SSL mbean is there but enabled is false
+    ret.isEnabled()
+  except:
+    trace("Ignoring getSSL() exception, this is expected.")
+    ret = None
+  return ret
 
 def main(env):
   try:
