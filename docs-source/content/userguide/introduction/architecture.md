@@ -18,7 +18,7 @@ The operator is packaged in a [Docker image](https://hub.docker.com/r/oracle/web
 
 ```
 $ docker login
-$ docker pull oracle/weblogic-kubernetes-operator:2.5.0
+$ docker pull oracle/weblogic-kubernetes-operator:2.6.0
 ```
 
 For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}).
