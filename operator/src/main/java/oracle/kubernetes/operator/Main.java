@@ -86,7 +86,7 @@ public class Main {
   private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
   private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
-  private static Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  private static Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
@@ -227,7 +227,7 @@ public class Main {
   private static void completeBegin() {
     try {
       // start the REST server
-      startRestServer(principal, isNamespaceStopping.keySet());
+      startRestServer(principal, namespaceStoppingMap.keySet());
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig.getMainTuning().targetNamespaceRecheckIntervalSeconds;
@@ -247,14 +247,23 @@ public class Main {
     }
   }
 
-  private static void stopNamespace(String ns, boolean remove) {
-    processor.stopNamespace(ns);
-    AtomicBoolean stopping =
-        remove ? isNamespaceStopping.remove(ns) : isNamespaceStopping.get(ns);
+  private static void stopNamespace(String ns, boolean inTargetNamespaceList) {
+    AtomicBoolean isNamespaceStopping = isNamespaceStopping(ns);
 
-    if (stopping != null) {
-      stopping.set(true);
+    // Remove if namespace not in targetNamespace list
+    if (!inTargetNamespaceList) {
+      namespaceStoppingMap.remove(ns);
     }
+
+    // stop all Domains for namespace being stopped (not active)
+    if (isNamespaceStopping.get()) {
+      processor.stopNamespace(ns);
+    }
+
+    // set flag to indicate namespace is stopping.
+    isNamespaceStopping.set(true);
+
+    // unsubscribe from resource events for given namespace
     namespaceStatuses.remove(ns);
     domainWatchers.remove(ns);
     eventWatchers.remove(ns);
@@ -267,12 +276,12 @@ public class Main {
   private static void stopNamespaces(Collection<String> targetNamespaces,
                                      Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
-      stopNamespace(ns, (! targetNamespaces.contains(ns)));
+      stopNamespace(ns, targetNamespaces.contains(ns));
     }
   }
 
   private static AtomicBoolean isNamespaceStopping(String ns) {
-    return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+    return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
   private static void runSteps(Step firstStep) {
@@ -294,7 +303,7 @@ public class Main {
 
       // Check for namespaces that are removed from the operator's
       // targetNamespaces list, or that are deleted from the Kubernetes cluster.
-      Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
+      Set<String> namespacesToStop = new TreeSet<>(namespaceStoppingMap.keySet());
       for (String ns : targetNamespaces) {
         // the active namespaces are the ones that will not be stopped
         if (delegate.isNamespaceRunning(ns)) {
@@ -403,7 +412,7 @@ public class Main {
     return isDedicated()
         ? Collections.singleton(operatorNamespace)
         : getTargetNamespaces(Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
-            .orElse(tuningAndConfig.get("targetNamespaces")), operatorNamespace);
+        .orElse(tuningAndConfig.get("targetNamespaces")), operatorNamespace);
   }
 
   public static boolean isDedicated() {
@@ -450,7 +459,7 @@ public class Main {
       Thread.currentThread().interrupt();
     }
 
-    isNamespaceStopping.forEach((key, value) -> value.set(true));
+    namespaceStoppingMap.forEach((key, value) -> value.set(true));
   }
 
   private static EventWatcher createEventWatcher(String ns, String initialResourceVersion) {
@@ -528,7 +537,7 @@ public class Main {
             runSteps(Step.chain(
                 ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
                 createConfigMapStep(ns)));
-            isNamespaceStopping.put(ns, new AtomicBoolean(false));
+            namespaceStoppingMap.put(ns, new AtomicBoolean(false));
           }
           break;
 
@@ -536,7 +545,7 @@ public class Main {
           // Mark the namespace as isStopping, which will cause the namespace be stopped
           // the next time when recheckDomains is triggered
           if (delegate.isNamespaceRunning(ns)) {
-            isNamespaceStopping.put(ns, new AtomicBoolean(true));
+            namespaceStoppingMap.put(ns, new AtomicBoolean(true));
           }
 
           break;
@@ -904,17 +913,17 @@ public class Main {
       Step strategy = null;
       if (!namespacesToStart.isEmpty()) {
         strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
-                new CreateNamespaceWatcherStep(intialResourceVersion));
+            new CreateNamespaceWatcherStep(intialResourceVersion));
       } else {
         strategy = CrdHelper.createDomainCrdStep(version,
-                new CreateNamespaceWatcherStep(intialResourceVersion));
+            new CreateNamespaceWatcherStep(intialResourceVersion));
       }
       return doNext(strategy, packet);
     }
 
     private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart) {
       return CrdHelper.createDomainCrdStep(version,
-              new StartNamespacesStep(namespacesToStart, false));
+          new StartNamespacesStep(namespacesToStart, false));
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
@@ -991,7 +1000,7 @@ public class Main {
       // make sure the map entry is initialized the value to "false" if absent
       isNamespaceStopping(namespace);
 
-      return !isNamespaceStopping.get(namespace).get();
+      return !namespaceStoppingMap.get(namespace).get();
     }
 
     @Override
