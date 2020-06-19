@@ -154,6 +154,9 @@ public class CrdHelper {
     @Override
     public NextAction apply(Packet packet) {
       if (context.version.isCrdV1Supported()) {
+        /* MARKER-2.6.0-ONLY */
+        Main.useDomainStatusEndpoint.set(true);
+        /* END-2.6.0-ONLY */
         return doNext(context.verifyCrd(getNext()), packet);
       } else {
         return doNext(context.verifyBetaCrd(getNext()), packet);
@@ -529,9 +532,6 @@ public class CrdHelper {
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
         V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
         if (version.isCrdV1Supported()) {
-          /* MARKER-2.6.0-ONLY */
-          Main.useDomainStatusEndpoint.set(true);
-          /* END-2.6.0-ONLY */
           if (existingCrd == null) {
             return doNext(createCrd(getNext()), packet);
           } else {
