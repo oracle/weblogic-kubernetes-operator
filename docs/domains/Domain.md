@@ -17,6 +17,7 @@ DomainSpec is a description of a domain.
 | Name | Type | Description |
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Configuration for the Administration Server. |
+| `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration, if this is not specified at the cluster level. Defaults to true. |
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
 | `configOverrides` | string | Deprecated. Use configuration.overridesConfigMap instead. Ignored if configuration.overridesConfigMap is specified. The name of the config map for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified. A list of names of the secrets for optional WebLogic configuration overrides. |
@@ -35,6 +36,7 @@ DomainSpec is a description of a domain.
 | `logHome` | string | The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if logHomeEnabled is false. |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise. |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
+| `maxClusterConcurrentStartup` | number | The maximum number of Managed Servers that the operator will start in parallel for a cluster, if `maxConcurrentStartup` is not specified at the cluster level. A value of 0 (the default) means there is no configured limit. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods. |
@@ -79,6 +81,7 @@ An element representing a cluster in the domain configuration.
 | `allowReplicasBelowMinDynClusterSize` | Boolean | If true (the default), then the number of replicas is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration. Otherwise, the operator will ensure that the number of replicas is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. |
 | `clusterName` | string | The name of this cluster. Required |
 | `clusterService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for the WebLogic cluster. |
+| `maxConcurrentStartup` | number | The maximum number of Managed Servers that the operator will start in parallel for the cluster in response to a change in replicas count for the cluster. If more Managed Servers need to be started, the operator will wait until a Managed Server pod is in the `Ready` and `Running` state before starting the next Managed Server. A value of 0 (the default) means all Managed Servers will start in parallel. |
 | `maxUnavailable` | number | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
 | `replicas` | number | The number of cluster members to run. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
