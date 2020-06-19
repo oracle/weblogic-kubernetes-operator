@@ -118,6 +118,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -382,6 +383,23 @@ public class CommonTestUtils {
                                                              String domainNamespace,
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap) {
+
     // create an ingress in domain namespace
     String ingressName = domainUid + "-nginx";
     List<String> ingressHostList =
@@ -398,6 +416,18 @@ public class CommonTestUtils {
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
         ingressName, domainUid, domainNamespace);
+
+    // check the ingress is ready to route the app to the server pod
+    if (nodeport != 0) {
+      for (String ingressHost : ingressHostList) {
+        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+        logger.info("Executing curl command {0}", curlCmd);
+        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      }
+    }
 
     return ingressHostList;
   }
