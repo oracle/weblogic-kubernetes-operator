@@ -232,7 +232,7 @@ class ItSimpleValidation implements LoggedTest {
   /**
    * Create domain.
    */
-  @Test
+  //@Test
   @Order(2)
   @DisplayName("Create a domain")
   @Slow

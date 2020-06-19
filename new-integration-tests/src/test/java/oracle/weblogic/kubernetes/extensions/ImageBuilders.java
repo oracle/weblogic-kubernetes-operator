@@ -14,9 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Handler;
 
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+//import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -83,9 +85,13 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
+  //private LoggingFacade logger = ThreadSafeLogger.globalLogger;
 
   @Override
   public void beforeAll(ExtensionContext context) {
+    // initialize logger for each test
+    ThreadSafeLogger.init(context.getRequiredTestClass().getSimpleName());
+
     /* The pattern is that we have initialization code that we want to run once to completion
      * before any tests are executed. This method will be called before every test method. Therefore, the
      * very first time this method is called we will do the initialization. Since we assume that the tests
@@ -219,6 +225,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           deleteImageOcir(token, image);
         }
       }
+    }
+
+    for (Handler handler:logger.getUnderlyingLogger().getHandlers()) {
+      handler.close();
     }
   }
 
