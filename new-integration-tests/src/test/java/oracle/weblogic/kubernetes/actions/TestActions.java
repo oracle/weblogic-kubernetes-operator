@@ -10,6 +10,7 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -17,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -24,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.Domain;
@@ -249,6 +252,39 @@ public class TestActions {
                                                 String opServiceAccount) {
     return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
         externalRestHttpsPort, opNamespace, opServiceAccount);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with WLDF policy.
+   *
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param domainUid domainUid of the domain to be scaled
+   * @param domainNamespace domain namespace in which the domain exists
+   * @param domainHomeLocation domain home location of the domain
+   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
+   * @param scalingSize number of servers to be scaled up or down
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount service account of operator
+   * @param myWebAppName web app name deployed to the domain used in the WLDF policy expression
+   * @param curlCommand curl command to call the web app used in the WLDF policy expression
+   * @return true if scaling the cluster succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws IOException if an I/O error occurs
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static boolean scaleClusterWithWLDF(String clusterName,
+                                             String domainUid,
+                                             String domainNamespace,
+                                             String domainHomeLocation,
+                                             String scalingAction,
+                                             int scalingSize,
+                                             String opNamespace,
+                                             String opServiceAccount,
+                                             String myWebAppName,
+                                             String curlCommand)
+      throws ApiException, IOException, InterruptedException {
+    return Domain.scaleClusterWithWLDF(clusterName, domainUid, domainNamespace, domainHomeLocation, scalingAction,
+        scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
   }
 
   // ------------------------   Ingress Controller ----------------------
@@ -585,26 +621,59 @@ public class TestActions {
   // ----------------------- Role-based access control (RBAC)   ---------------------------
 
   /**
-   * Create a Cluster Role Binding.
+   * Create a cluster role.
    *
-   * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration
-   *     data
-   * @return true if successful
+   * @param clusterRole V1ClusterRole object containing cluster role configuration data
+   * @return true if creation is successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+    return ClusterRole.createClusterRole(clusterRole);
+  }
+
+  /**
+   * Create a cluster role binding.
+   *
+   * @param clusterRoleBinding V1ClusterRoleBinding object containing cluster role binding configuration data
+   * @return true if creation is successful, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding)
       throws ApiException {
-    return ClusterRoleBinding.create(clusterRoleBinding);
+    return ClusterRoleBinding.createClusterRoleBinding(clusterRoleBinding);
   }
 
   /**
-   * Delete Cluster Role Binding.
+   * Create a role binding in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param roleBinding V1RoleBinding object containing role binding configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
+    return Kubernetes.createNamespacedRoleBinding(namespace, roleBinding);
+  }
+
+  /**
+   * Delete cluster role binding.
    *
    * @param name name of cluster role binding
-   * @return true if successful, false otherwise
+   * @return true if deletion is successful, false otherwise
    */
   public static boolean deleteClusterRoleBinding(String name) {
-    return ClusterRoleBinding.delete(name);
+    return ClusterRoleBinding.deleteClusterRoleBinding(name);
+  }
+
+  /**
+   * Delete a cluster role.
+   *
+   * @param name the name of cluster role to delete
+   * @return true if deletion succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean deleteClusterRole(String name) throws ApiException {
+    return ClusterRole.deleteClusterRole(name);
   }
 
   // ----------------------- Helm -----------------------------------

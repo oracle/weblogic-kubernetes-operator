@@ -831,6 +831,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private class CreateResponseStep extends BaseResponseStep {
+
     CreateResponseStep(Step next) {
       super(next);
     }
@@ -841,6 +842,14 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (callResponse.getResult() != null) {
         info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
         setRecordedPod(callResponse.getResult());
+      }
+
+      boolean waitForPodReady =
+          (boolean) Optional.ofNullable(packet.get(ProcessingConstants.WAIT_FOR_POD_READY)).orElse(false);
+
+      if (waitForPodReady) {
+        PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+        return doNext(pw.waitForReady(callResponse.getResult(), getNext()), packet);
       }
       return doNext(packet);
     }
