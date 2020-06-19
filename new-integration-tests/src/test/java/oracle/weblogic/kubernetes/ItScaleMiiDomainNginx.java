@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,8 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.AdminService;
+import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -37,7 +40,16 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_BINDING_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRole;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBinding;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -52,7 +64,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verify the model in image domain with multiple clusters can be scaled up and down.
@@ -73,6 +87,10 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int replicaCount = 2;
+  private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
+  private static final String WLDF_OPENSESSION_APP = "opensessionapp";
+  private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
+  private static final String DOMAIN_HOME = "/u01/domains/domain1";
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -153,7 +171,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
 
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers);
-      curlCmd = generateCurlCmd(clusterName);
+      curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
       List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
       scaleClusterAndVerifyByPatchingDomainResource(clusterName, replicaCount, numberOfServers,
           managedServersBeforeScale);
@@ -171,29 +189,46 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   @DisplayName("Verify scale each cluster of the domain by calling REST API")
   public void testScaleClustersWithRestApi() {
 
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+    String clusterName = "cluster-2";
+    int numberOfServers = 3;
 
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-      int numberOfServers;
-      // scale cluster-1 to 1 server and cluster-2 to 3 servers
-      if (i == 1) {
-        numberOfServers = 1;
-      } else {
-        numberOfServers = 3;
-      }
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
+    curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
+    scaleClusterAndVerifyWithRestApi(clusterName, replicaCount, numberOfServers, managedServersBeforeScale);
 
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-      curlCmd = generateCurlCmd(clusterName);
-      List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
-      scaleClusterAndVerifyWithRestApi(clusterName, replicaCount, numberOfServers, managedServersBeforeScale);
+    // then scale cluster-1 and cluster-2 to 2 servers
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+    managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
+    scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, replicaCount, managedServersBeforeScale);
+  }
 
-      // then scale cluster-1 and cluster-2 to 2 servers
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-      managedServersBeforeScale = listManagedServersBeforeScale(clusterName, numberOfServers);
-      scaleClusterAndVerifyWithRestApi(clusterName, numberOfServers, replicaCount, managedServersBeforeScale);
-    }
+  /**
+   * Scale each cluster in the domain using WLDF policy.
+   */
+  @Test
+  @DisplayName("Verify scale each cluster of the domain using WLDF policy")
+  public void testScaleClustersWithWLDF() {
+
+    String clusterName = "cluster-1";
+    curlCmd = generateCurlCmd(clusterName, SAMPLE_APP_CONTEXT_ROOT);
+
+    // scale up the cluster by 1 server
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
+    List<String> managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount);
+    scaleClusterAndVerifyWithWLDF(clusterName, replicaCount, replicaCount + 1,
+        managedServersBeforeScale, "scaleUp");
+
+    // scale down the cluster by 1 server
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount + 1, replicaCount);
+    managedServersBeforeScale = listManagedServersBeforeScale(clusterName, replicaCount + 1);
+    scaleClusterAndVerifyWithWLDF(clusterName, replicaCount + 1, replicaCount,
+        managedServersBeforeScale, "scaleDown");
+
   }
 
   /**
@@ -202,11 +237,26 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    */
   @AfterAll
   public void tearDownAll() {
+
     // uninstall NGINX release
     if (nginxHelmParams != null) {
       assertThat(uninstallNginx(nginxHelmParams))
           .as("Test uninstallNginx returns true")
           .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
+
+    // delete cluster role binding created for WLDF policy
+    if (assertDoesNotThrow(() -> clusterRoleBindingExists(WLDF_CLUSTER_ROLE_BINDING_NAME))) {
+      assertTrue(deleteClusterRoleBinding(WLDF_CLUSTER_ROLE_BINDING_NAME));
+    }
+
+    // delete cluster role created for WLDF policy
+    if (assertDoesNotThrow(() -> clusterRoleExists(WLDF_CLUSTER_ROLE_NAME))) {
+      assertThat(assertDoesNotThrow(() -> deleteClusterRole(WLDF_CLUSTER_ROLE_NAME),
+          "deleteClusterRole failed with ApiException"))
+          .as("Test delete cluster role returns true")
+          .withFailMessage("deleteClusterRole() did not return true")
           .isTrue();
     }
   }
@@ -217,11 +267,16 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static void createMiiDomainWithMultiClusters() {
 
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     // create image with model files
     logger.info("Creating image with model file and verify");
-    String miiImage = createMiiImageAndVerify(MII_IMAGE_NAME, WDT_MODEL_FILE, MII_BASIC_APP_NAME);
+    List<String> appSrcDirList = new ArrayList<>();
+    appSrcDirList.add(MII_BASIC_APP_NAME);
+    appSrcDirList.add(WLDF_OPENSESSION_APP);
+    String miiImage =
+        createMiiImageAndVerify(MII_IMAGE_NAME, Collections.singletonList(MODEL_DIR + "/" + WDT_MODEL_FILE),
+            appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -275,7 +330,11 @@ class ItScaleMiiDomainNginx implements LoggedTest {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
             .clusters(clusterList)
             .configuration(new Configuration()
                 .model(new Model()
@@ -330,12 +389,13 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    * Generate the curl command to access the sample app from the ingress controller.
    *
    * @param clusterName WebLogic cluster name which is the backend of the ingress
+   * @param appContextRoot the context root of the application
    * @return curl command string
    */
-  private String generateCurlCmd(String clusterName) {
+  private String generateCurlCmd(String clusterName, String appContextRoot) {
 
-    return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/sample-war/index.jsp",
-        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    return String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
+        domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
   }
 
   /**
@@ -369,7 +429,30 @@ class ItScaleMiiDomainNginx implements LoggedTest {
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
         domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
         replicasBeforeScale, replicasAfterScale, true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        curlCmd, managedServersBeforeScale);
+        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+  }
+
+  /**
+   * Scale a cluster using WLDF policy.
+   *
+   * @param clusterName               cluster name to scale
+   * @param replicasBeforeScale       number of servers in cluster before scaling
+   * @param replicasAfterScale        number of servers in cluster after scaling
+   * @param managedServersBeforeScale list of managed servers in the cluster before scale
+   * @param scalingAction             scale action, accepted value: scaleUp or scaleDown
+   */
+  private void scaleClusterAndVerifyWithWLDF(String clusterName,
+                                             int replicasBeforeScale,
+                                             int replicasAfterScale,
+                                             List<String> managedServersBeforeScale,
+                                             String scalingAction) {
+    String curlCmdForWLDFScript = generateCurlCmd(clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
+
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace,
+        domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
+        replicasBeforeScale, replicasAfterScale, false, 0, opNamespace, opServiceAccount,
+        true, DOMAIN_HOME, scalingAction, 1,
+        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
   }
 
   /**
@@ -388,4 +471,5 @@ class ItScaleMiiDomainNginx implements LoggedTest {
         domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE,
         replicasBeforeScale, replicasAfterScale, curlCmd, managedServersBeforeScale);
   }
+
 }
