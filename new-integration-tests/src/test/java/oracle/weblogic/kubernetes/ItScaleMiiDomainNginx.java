@@ -151,7 +151,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
       clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
     }
     logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-    createIngressForDomainAndVerify(domainUid, domainNamespace, clusterNameMsPortMap);
+    createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap);
   }
 
   @Test
