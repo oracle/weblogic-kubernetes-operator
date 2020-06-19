@@ -105,7 +105,7 @@ function compareArtifactsMD5() {
   if [ -f ${INTROSPECTCM_IMAGE_MD5} ] ; then
     has_md5=1
     # introspectorDomain py put two blank lines in the configmap, use -B to ignore blank lines
-    diff -B ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5} > /tmp/imgmd5diff
+    diff -wB ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5} > /tmp/imgmd5diff
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in image changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
@@ -116,7 +116,7 @@ function compareArtifactsMD5() {
   trace "Checking wdt artifacts in config map"
   if [ -f ${INTROSPECTCM_CM_MD5} ] ; then
     has_md5=1
-    diff -B  ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
+    diff -wB  ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in wdt config map changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
