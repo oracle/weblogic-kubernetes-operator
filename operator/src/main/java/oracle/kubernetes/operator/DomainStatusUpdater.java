@@ -242,6 +242,7 @@ public class DomainStatusUpdater {
       return new StatusReplaceResponseStep(this,
           /* MARKER-2.6.0-ONLY */
           newStatus,
+          useDomainStatusEndpoint,
           /* END-2.6.0-ONLY */
           context, next);
     }
@@ -252,11 +253,13 @@ public class DomainStatusUpdater {
     private final DomainStatusUpdaterContext context;
     /* MARKER-2.6.0-ONLY */
     private final DomainStatus newStatus;
+    private final boolean useDomainStatusEndpoint;
     /* END-2.6.0-ONLY */
 
     public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep,
                                      /* MARKER-2.6.0-ONLY */
                                      DomainStatus newStatus,
+                                     boolean useDomainStatusEndpoint,
                                      /* END-2.6.0-ONLY */
                                      DomainStatusUpdaterContext context, Step nextStep) {
       super(nextStep);
@@ -264,6 +267,7 @@ public class DomainStatusUpdater {
       this.context = context;
       /* MARKER-2.6.0-ONLY */
       this.newStatus = newStatus;
+      this.useDomainStatusEndpoint = useDomainStatusEndpoint;
       /* END-2.6.0-ONLY */
     }
 
@@ -273,15 +277,9 @@ public class DomainStatusUpdater {
       // If the 3.0.0 operator updated the CRD to use status endpoint while this operator is running
       // then these domain replace calls will succeed, but the proposed domain status will have been
       // ignored. Check if the status on the returned domain is expected
-      if (callResponse.getResult() == null || !newStatus.equals(callResponse.getResult().getStatus())) {
+      if (!useDomainStatusEndpoint
+          && (callResponse.getResult() == null || !newStatus.equals(callResponse.getResult().getStatus()))) {
         LOGGER.info(MessageKeys.DOMAIN_STATUS_IGNORED);
-
-        // TEST
-        if (callResponse.getResult() != null) {
-          System.out.println("response status: " + callResponse.getResult().getStatus());
-        }
-        System.out.println("expected newStatus: " + newStatus);
-
         return doNext(CrdHelper.createDomainCrdStep(packet.getSpi(KubernetesVersion.class),
             createRetry(context, getNext())), packet);
       }
