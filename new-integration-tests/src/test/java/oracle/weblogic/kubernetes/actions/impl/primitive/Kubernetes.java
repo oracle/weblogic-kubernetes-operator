@@ -131,6 +131,10 @@ public class Kubernetes implements LoggedTest {
     try {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
       apiClient = Configuration.getDefaultApiClient();
+      // disable connection and read write timeout to force the internal HTTP client
+      // to keep a long running connection with the server to fix SSL connection closed issue
+      apiClient.setConnectTimeout(0);
+      apiClient.setReadTimeout(0);
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
@@ -617,7 +621,7 @@ public class Kubernetes implements LoggedTest {
   public static void copyFileToPod(
       String namespace, String pod, String container, Path srcPath, Path destPath)
       throws IOException, ApiException {
-    Copy copy = new Copy();
+    Copy copy = new Copy(apiClient);
     copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
@@ -1843,6 +1847,28 @@ public class Kubernetes implements LoggedTest {
   // --------------------------- Role-based access control (RBAC)   ---------------------------
 
   /**
+   * Create a cluster role.
+   * @param clusterRole V1ClusterRole object containing cluster role configuration data
+   * @return true if creation is successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+    try {
+      V1ClusterRole cr = rbacAuthApi.createClusterRole(
+          clusterRole, // cluster role configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
    * Create a Cluster Role Binding.
    *
    * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration data
@@ -1854,6 +1880,31 @@ public class Kubernetes implements LoggedTest {
     try {
       V1ClusterRoleBinding crb = rbacAuthApi.createClusterRoleBinding(
           clusterRoleBinding, // role binding configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Create a role binding in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param roleBinding V1RoleBinding object containing role binding configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createNamespacedRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
+    try {
+      V1RoleBinding crb = rbacAuthApi.createNamespacedRoleBinding(
+          namespace, // namespace where this role binding is created
+          roleBinding, // role binding configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
           null // fieldManager is a name associated with the actor
@@ -1892,13 +1943,13 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List cluster role bindings.
+   * List role bindings in all namespaces.
    *
    * @param labelSelector labels to narrow the list
    * @return V1RoleBindingList list of {@link V1RoleBinding} objects
    * @throws ApiException when listing fails
    */
-  public static V1RoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+  public static V1RoleBindingList listRoleBindingForAllNamespaces(String labelSelector) throws ApiException {
     V1RoleBindingList roleBindings;
     try {
       roleBindings = rbacAuthApi.listRoleBindingForAllNamespaces(
@@ -1917,6 +1968,34 @@ public class Kubernetes implements LoggedTest {
       throw apex;
     }
     return roleBindings;
+  }
+
+  /**
+   * List cluster role bindings.
+   *
+   * @param labelSelector labels to narrow the list
+   * @return V1ClusterRoleBindingList list of {@link V1CLusterRoleBinding} objects
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1ClusterRoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+    V1ClusterRoleBindingList clusterRoleBindingList;
+    try {
+      clusterRoleBindingList = rbacAuthApi.listClusterRoleBinding(
+          PRETTY, // String | If true, then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+    return clusterRoleBindingList;
   }
 
   /**
