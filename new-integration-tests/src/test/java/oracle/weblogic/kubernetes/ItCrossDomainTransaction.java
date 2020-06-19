@@ -214,6 +214,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
         WDT_IMAGE_NAME1, WDT_MODEL_FILE_DOMAIN1, appSource, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
+    logger.info("Created {0} image", domain1Image);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain1Image);
@@ -221,6 +222,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
     logger.info("Creating image with model file and verify");
     String domain2Image = createImageAndVerify(
         WDT_IMAGE_NAME2, WDT_MODEL_FILE_DOMAIN2, appSource, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
+    logger.info("Created {0} image", domain2Image);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain2Image);
