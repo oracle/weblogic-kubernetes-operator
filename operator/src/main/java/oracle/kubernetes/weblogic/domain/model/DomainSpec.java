@@ -270,9 +270,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
-  @Description("Experimental feature configurations.")
-  private Experimental experimental;
-
+  /**
   /**
    * Adds a Cluster to the DomainSpec.
    *
@@ -688,8 +686,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return istioEnabled
    */
   boolean isIstioEnabled() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getEnabled)
         .orElse(false);
   }
@@ -700,8 +698,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return readinessPort
    */
   int getIstioReadinessPort() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
   }
@@ -773,8 +771,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
-            .append("experimental", experimental);
+            .append("configOverrideSecrets", configOverrideSecrets);
 
     return builder.toString();
   }
@@ -805,8 +802,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides)
             .append(configOverrideSecrets)
             .append(allowReplicasBelowMinDynClusterSize)
-            .append(maxClusterConcurrentStartup)
-            .append(experimental);
+            .append(maxClusterConcurrentStartup);
 
     return builder.toHashCode();
   }
@@ -845,8 +841,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
-            .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
-            .append(experimental, rhs.experimental);
+            .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup());
     return builder.isEquals();
   }
 

@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import sys
-import os
+import os, re
 
 #
 # This program verifies that bean attr values are expected values,
@@ -91,6 +91,29 @@ errors=[]
 def addError(err):
   errors.append(err)
 
+def checkNAPInDomainConfig(path):
+  """
+  Check to see if there is a network access points defined in the domainConfig tree
+  Avoid getting cd exception by navigating the tree using ls()
+
+  :param path:
+  :return:  domainConfig nap path, true if the test path is istio network access points
+  """
+  rep=re.compile('/(?:Servers|ServerTemplates)/.*/NetworkAccessPoints/(?:tcp-|http-|tls-|https-)')
+  match = False
+  if re.match(rep, path):
+    match = True
+    path_tokens = path.split('/')
+    nap_path = '/'.join(path_tokens[:len(path_tokens)-1])
+    nap_list = ls(nap_path, returnMap='true')
+    if path_tokens[-1] in nap_list:
+      return path_tokens[-1], match
+    else:
+      return None, match
+  else:
+    return None, match
+
+
 file = open(input_file, 'r')
 
 line_no=0
@@ -118,8 +141,14 @@ for line in file:
   )
 
   domainConfig()
-  cd(bean_path)
-  originalActual=str(get(attr))
+  existing_istio_paths, is_istio_testpath = checkNAPInDomainConfig(bean_path)
+  # if it is an istio test path from the input file
+  # and not actually in the domain config (add case)
+  if is_istio_testpath and existing_istio_paths is None:
+    originalActual = originalExpected
+  else:
+    cd(bean_path)
+    originalActual=str(get(attr))
   serverConfig()
   cd(bean_path)
   overriddenActual=str(get(attr))

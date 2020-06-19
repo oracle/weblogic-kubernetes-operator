@@ -62,4 +62,9 @@ public class EventWatcher extends Watcher<V1Event> {
   public WatchI<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder.withFieldSelector(fieldSelector).createEventWatch(ns);
   }
+
+  @Override
+  public String getNamespace() {
+    return ns;
+  }
 }

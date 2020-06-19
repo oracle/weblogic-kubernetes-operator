@@ -142,7 +142,7 @@ This example snippet illustrates how to add some of the above environment variab
 # Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: domain1
@@ -192,7 +192,7 @@ This example domain YAML file specifies that Pods for WebLogic Server instances 
 # Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: domain1

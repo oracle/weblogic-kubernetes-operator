@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;
@@ -16,6 +17,7 @@ public class ServiceHelperTestBase {
   static final String DOMAIN_NAME = "domain1";
   static final String NS = "namespace";
   static final String UID = "uid1";
+  static final String KUBERNETES_UID = "12345";
   List<Memento> mementos = new ArrayList<>();
   DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
 
@@ -32,7 +34,9 @@ public class ServiceHelperTestBase {
   private DomainPresenceInfo createPresenceInfo() {
     return new DomainPresenceInfo(
         new Domain()
-            .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME))
+            .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
+            .withKind(KubernetesConstants.DOMAIN)
+            .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
             .withSpec(createDomainSpec()));
   }
 
