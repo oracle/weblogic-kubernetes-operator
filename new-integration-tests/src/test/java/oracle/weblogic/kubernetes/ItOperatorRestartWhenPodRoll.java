@@ -33,11 +33,13 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteOperatorPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -120,7 +122,6 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
     final boolean VALID = true;
     final boolean INVALID = false;
 
-    LinkedHashMap<String, DateTime> adminPod = new LinkedHashMap<>();
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
 
     // get the creation time of the admin server pod before patching
@@ -135,7 +136,7 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
         adminServerPodName,
         adminPodCreationTime);
 
-    adminPod.put(adminServerPodName, adminPodCreationTime);
+    pods.put(adminServerPodName, adminPodCreationTime);
 
     List<DateTime> msLastCreationTime = new ArrayList<DateTime>();
     // get the creation time of the managed server pods before patching
@@ -185,11 +186,6 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
     logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
         domainUid, adminServerPodName, domainNamespace);
 
-    assertTrue(assertDoesNotThrow(
-        () -> (verifyRollingRestartOccurred(adminPod, 1, domainNamespace)),
-        "More than one pod was restarted at same time"),
-        "Rolling restart failed");
-
     restartOperatorAndVerify();
 
     assertTrue(assertDoesNotThrow(
@@ -214,9 +210,22 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
   }
 
   private void restartOperatorAndVerify() {
+    String opPodName = assertDoesNotThrow(() -> getOperatorPodName(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
+        "Failed to get the name of the operator pod");
+
+    // get the creation time of the admin server pod before patching
+    DateTime opPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", opPodName),
+            String.format("Failed to get creationTimestamp for pod %s", opPodName));
+    assertNotNull(opPodCreationTime, "creationTimestamp of the operator pod is null");
+
     assertDoesNotThrow(
-        () -> deleteOperatorPod(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
+        () -> deleteOperatorPod(opPodName, opNamespace),
         "Got exception in deleting the Operator pod");
+
+    assertTrue(assertDoesNotThrow(() -> isPodRestarted(opPodName, opNamespace, opPodCreationTime),
+        "More than one pod was restarted at same time"),
+        "Rolling restart failed");
 
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);

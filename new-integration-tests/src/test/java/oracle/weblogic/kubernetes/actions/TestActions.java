@@ -842,6 +842,17 @@ public class TestActions {
   }
 
   /**
+   * Delete the operator pod.
+   *
+   * @param podName the name of the operator pod
+   * @param namespace the Kubernetes namespace that the operator belongs to
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static void deleteOperatorPod(String podName, String namespace) throws ApiException {
+    Kubernetes.deletePod(podName, namespace);
+  }
+
+  /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
    * @param namespace in which to check for the pod existence
@@ -1019,13 +1030,13 @@ public class TestActions {
   }
 
   /**
-   * Delete the operator pod.
+   * Get the name of the operator pod.
    *
    * @param release the release name of the operator
    * @param namespace the Kubernetes namespace that the operator belongs to
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static void deleteOperatorPod(String release, String namespace) throws ApiException {
-    Kubernetes.deletePod(Kubernetes.getOperatorPodName(release, namespace), namespace);
+  public static String getOperatorPodName(String release, String namespace) throws ApiException {
+    return Kubernetes.getOperatorPodName(release, namespace);
   }
 }

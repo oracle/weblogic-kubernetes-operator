@@ -488,7 +488,7 @@ public class CommonTestUtils {
                 domNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
+        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domNamespace, lastCreationTime),
             String.format(
                 "pod %s has not been restarted in namespace %s", podName, domNamespace)));
   }
