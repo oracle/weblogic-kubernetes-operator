@@ -1018,4 +1018,14 @@ public class TestActions {
     return String.valueOf(newVersion);
   }
 
+  /**
+   * Delete the operator pod.
+   *
+   * @param release the release name of the operator
+   * @param namespace the Kubernetes namespace that the operator belongs to
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static void deleteOperatorPod(String release, String namespace) throws ApiException {
+    Kubernetes.deletePod(Kubernetes.getOperatorPodName(release, namespace), namespace);
+  }
 }

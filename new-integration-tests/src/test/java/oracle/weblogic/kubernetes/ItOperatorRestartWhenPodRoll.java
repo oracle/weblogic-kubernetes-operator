@@ -32,9 +32,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteOperatorPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -51,8 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
-class ItMiiChangeAdminCredentials implements LoggedTest {
-
+class ItOperatorRestartWhenPodRoll implements LoggedTest {
+  private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
   private static ConditionFactory withStandardRetryPolicy = null;
@@ -66,8 +68,9 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
    * Perform initialization for all the tests in this class.
    * Set up the necessary namespaces, install the operator in the first namespace, and
    * create a domain in the second namespace using the pre-created basic MII image.
+   *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *                   JUnit engine parameter resolution mechanism
+   *           JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -78,12 +81,12 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
 
     // create quick, reusable retry/backoff policy
     withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(3, SECONDS)
-        .atMost(12, SECONDS).await();
+      .and().with().pollInterval(3, SECONDS)
+      .atMost(12, SECONDS).await();
 
     // get namespaces
     assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
-    String opNamespace = namespaces.get(0);
+    opNamespace = namespaces.get(0);
 
     assertNotNull(namespaces.get(1), String.format("Namespace namespaces.get(1) is null"));
     domainNamespace = namespaces.get(1);
@@ -103,23 +106,26 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
    * Test patching a running model-in-image domain with a new WebLogic credentials secret.
    * Perform two patching operations to the domain spec. First, change the webLogicCredentialsSecret to
    * a new secret, and then change the domainRestartVersion to trigger a rolling restart of the server pods.
-   * Verify that the domain spec's webLogicCredentialsSecret and restartVersion are updated,
-   * the server pods are recreated by checking each pod's creationTimestamp before and after patching,
-   * the server pods' weblogic.domainRestartVersion label is updated, and
-   * the new credentials are valid and can be used to access WebLogic RESTful Management Services.
+   * While the rolling is on-going, restart the operator pod.
+   * Verify that after the operator is restarted, the domain spec's webLogicCredentialsSecret and,
+   * restartVersion are updated, and the server pods are recreated, the server pods' weblogic.domainRestartVersion
+   * label is updated, and the new credentials are valid and can be used to access WebLogic RESTful
+   * Management Services.
    */
   @Test
-  @DisplayName("Change the WebLogic credentials")
+  @DisplayName("Restart operator when the domain is rolling after the admin credentials are changed")
   @Slow
   @MustNotRunInParallel
-  public void testChangeWebLogicCredentials() {
+  public void testOperatorRestartWhenPodRoll() {
     final boolean VALID = true;
     final boolean INVALID = false;
 
+    LinkedHashMap<String, DateTime> adminPod = new LinkedHashMap<>();
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
     // get the creation time of the admin server pod before patching
     DateTime adminPodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace,"",adminServerPodName),
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
         String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
     assertNotNull(adminPodCreationTime, "creationTimestamp of the admin server pod is null");
 
@@ -129,24 +135,24 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         adminServerPodName,
         adminPodCreationTime);
 
-    pods.put(adminServerPodName, adminPodCreationTime);
+    adminPod.put(adminServerPodName, adminPodCreationTime);
 
     List<DateTime> msLastCreationTime = new ArrayList<DateTime>();
     // get the creation time of the managed server pods before patching
     assertDoesNotThrow(
         () -> {
-          for (int i = 1; i <= replicaCount; i++) {
-            String managedServerPodName = managedServerPrefix + i;
-            DateTime creationTime = getPodCreationTimestamp(domainNamespace,"", managedServerPodName);
-            msLastCreationTime.add(creationTime);
-            pods.put(managedServerPodName, creationTime);
+            for (int i = 1; i <= replicaCount; i++) {
+              String managedServerPodName = managedServerPrefix + i;
+              DateTime creationTime = getPodCreationTimestamp(domainNamespace, "", managedServerPodName);
+              msLastCreationTime.add(creationTime);
+              pods.put(managedServerPodName, creationTime);
 
-            logger.info("Domain {0} in namespace {1}, managed server pod {2} creationTimestamp before patching is {3}",
-                domainUid,
-                domainNamespace,
-                managedServerPodName,
-                creationTime);
-          }
+              logger.info("Domain {0} in namespace {1}, server pod {2} creationTimestamp before patching is {3}",
+                  domainUid,
+                  domainNamespace,
+                  managedServerPodName,
+                  creationTime);
+            }
         },
         String.format("Failed to get creationTimestamp for managed server pods"));
 
@@ -180,8 +186,15 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         domainUid, adminServerPodName, domainNamespace);
 
     assertTrue(assertDoesNotThrow(
+        () -> (verifyRollingRestartOccurred(adminPod, 1, domainNamespace)),
+        "More than one pod was restarted at same time"),
+        "Rolling restart failed");
+
+    restartOperatorAndVerify();
+
+    assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
-         "More than one pod was restarted at same time"),
+        "More than one pod was restarted at same time"),
         "Rolling restart failed");
 
     for (int i = 1; i <= replicaCount; i++) {
@@ -200,13 +213,32 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
         domainUid, domainNamespace);
   }
 
+  private void restartOperatorAndVerify() {
+    assertDoesNotThrow(
+        () -> deleteOperatorPod(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
+        "Got exception in deleting the Operator pod");
+
+    // wait for the operator to be ready
+    logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for operator to be running in namespace {0} "
+              + "(elapsed time {1}ms, remaining time {2}ms)",
+            opNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+          "operatorIsReady failed with ApiException"));
+  }
+
+
   /**
    * Check that the given credentials are valid to access the WebLogic domain.
    *
-   * @param podName name of the admin server pod
-   * @param namespace name of the namespace that the pod is running in
-   * @param username WebLogic admin username
-   * @param password WebLogic admin password
+   * @param podName   name of the admin server pod
+   * @param namespace   name of the namespace that the pod is running in
+   * @param username  WebLogic admin username
+   * @param password  WebLogic admin password
    * @param expectValid true if the check expects a successful result
    */
   private void verifyCredentials(
@@ -228,23 +260,22 @@ class ItMiiChangeAdminCredentials implements LoggedTest {
             condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(
             expectValid
-            ?
+                ?
             () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
-            :
+                :
             () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
             String.format(
-               "Failed to validate credentials %s/%s on pod %s in namespace %s",
-               username, password, podName, namespace)));
+                "Failed to validate credentials %s/%s on pod %s in namespace %s",
+                username, password, podName, namespace)));
   }
 
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
-   *
    */
   private static void createAndVerifyMiiDomain() {
     logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-            String.format("createSecret failed for %s", REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");

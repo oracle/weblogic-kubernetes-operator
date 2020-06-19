@@ -20,14 +20,25 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import oracle.weblogic.domain.AdminService;
+import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -43,11 +54,14 @@ import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -83,22 +97,23 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
@@ -109,6 +124,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
@@ -141,8 +157,9 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
-                                                    String... domainNamespace) {
+  public static HelmParams installAndVerifyOperator(
+      String opNamespace,
+      String... domainNamespace) {
 
     return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, domainNamespace);
   }
@@ -157,22 +174,25 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
-                                                    String opServiceAccount,
-                                                    boolean withRestAPI,
-                                                    int externalRestHttpsPort,
-                                                    String... domainNamespace) {
+  public static HelmParams installAndVerifyOperator(
+      String opNamespace,
+      String opServiceAccount,
+      boolean withRestAPI,
+      int externalRestHttpsPort,
+      String... domainNamespace) {
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
-    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(new V1ObjectMeta()
-            .namespace(opNamespace)
-            .name(opServiceAccount))));
+    assertDoesNotThrow(() -> {
+      TestActions.createServiceAccount(new V1ServiceAccount()
+          .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
+              .namespace(opNamespace)
+              .name(opServiceAccount)));
+    });
     logger.info("Created service account: {0}", opServiceAccount);
 
     // get operator image name
-    String operatorImage = getOperatorImageName();
+    String operatorImage = TestActions.getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
 
@@ -245,8 +265,9 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return true if successful
    */
-  public static boolean upgradeAndVerifyOperator(String opNamespace,
-                                                    String... domainNamespace) {
+  public static boolean upgradeAndVerifyOperator(
+      String opNamespace,
+      String... domainNamespace) {
     // Helm upgrade parameters
     HelmParams opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -289,9 +310,10 @@ public class CommonTestUtils {
    * @param nodeportshttps the https nodeport of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(String nginxNamespace,
-                                                 int nodeportshttp,
-                                                 int nodeportshttps) {
+  public static HelmParams installAndVerifyNginx(
+      String nginxNamespace,
+      int nodeportshttp,
+      int nodeportshttps) {
 
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
@@ -377,9 +399,10 @@ public class CommonTestUtils {
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @return list of ingress hosts
    */
-  public static List<String> createIngressForDomainAndVerify(String domainUid,
-                                                             String domainNamespace,
-                                                             Map<String, Integer> clusterNameMSPortMap) {
+  public static List<String> createIngressForDomainAndVerify(
+      String domainUid,
+      String domainNamespace,
+      Map<String, Integer> clusterNameMSPortMap) {
 
     // create an ingress in domain namespace
     String ingressName = domainUid + "-nginx";
@@ -440,7 +463,7 @@ public class CommonTestUtils {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
             String.format("podReady failed with ApiException for pod %s in namespace %s",
-               podName, domainNamespace)));
+                podName, domainNamespace)));
   }
 
   /**
@@ -460,11 +483,11 @@ public class CommonTestUtils {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            podName,
-            domNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> isPodRestarted(podName, domainUid, domNamespace, lastCreationTime),
             String.format(
                 "pod %s has not been restarted in namespace %s", podName, domNamespace)));
@@ -539,9 +562,10 @@ public class CommonTestUtils {
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @return image name with tag
    */
-  public static  String createMiiImageAndVerify(String miiImageNameBase,
-                                                String wdtModelFile,
-                                                String appName) {
+  public static String createMiiImageAndVerify(
+      String miiImageNameBase,
+      String wdtModelFile,
+      String appName) {
     return createMiiImageAndVerify(miiImageNameBase, wdtModelFile, appName,
         WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
   }
@@ -557,12 +581,13 @@ public class CommonTestUtils {
    * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @return image name with tag
    */
-  public static  String createMiiImageAndVerify(String miiImageNameBase,
-                                                String wdtModelFile,
-                                                String appName,
-                                                String baseImageName,
-                                                String baseImageTag,
-                                                String domainType) {
+  public static String createMiiImageAndVerify(
+      String miiImageNameBase,
+      String wdtModelFile,
+      String appName,
+      String baseImageName,
+      String baseImageTag,
+      String domainType) {
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
@@ -579,9 +604,10 @@ public class CommonTestUtils {
    * @param appSrcDirList list of the sample application source directories used to build sample app ear files
    * @return image name with tag
    */
-  public static  String createMiiImageAndVerify(String miiImageNameBase,
-                                                List<String> wdtModelList,
-                                                List<String> appSrcDirList) {
+  public static String createMiiImageAndVerify(
+      String miiImageNameBase,
+      List<String> wdtModelList,
+      List<String> appSrcDirList) {
     return createMiiImageAndVerify(
         miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
 
@@ -598,12 +624,13 @@ public class CommonTestUtils {
    * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @return image name with tag
    */
-  public static String createMiiImageAndVerify(String miiImageNameBase,
-                                               List<String> wdtModelList,
-                                               List<String> appSrcDirList,
-                                               String baseImageName,
-                                               String baseImageTag,
-                                               String domainType) {
+  public static String createMiiImageAndVerify(
+      String miiImageNameBase,
+      List<String> wdtModelList,
+      List<String> appSrcDirList,
+      String baseImageName,
+      String baseImageTag,
+      String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -628,10 +655,10 @@ public class CommonTestUtils {
 
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
-                .srcDirList(archiveAppsList)));
+            .srcDirList(archiveAppsList)));
         //archive provided ear or war file
         String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
-                appSrcDirList.get(0).lastIndexOf("."));
+            appSrcDirList.get(0).lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
@@ -641,8 +668,8 @@ public class CommonTestUtils {
       if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
         // build an application archive using what is in resources/apps/APP_NAME
         assertTrue(buildAppArchive(defaultAppParams()
-                        .srcDirList(buildAppDirList)),
-                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+                .srcDirList(buildAppDirList)),
+            String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
 
         // build the archive list
         String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
@@ -714,6 +741,7 @@ public class CommonTestUtils {
 
   /**
    * Create docker registry secret with given parameters.
+   *
    * @param userName repository user name
    * @param password repository password
    * @param email repository email
@@ -721,7 +749,8 @@ public class CommonTestUtils {
    * @param secretName name of the secret to create
    * @param namespace namespace in which to create the secret
    */
-  public static void createDockerRegistrySecret(String userName, String password,
+  public static void createDockerRegistrySecret(
+      String userName, String password,
       String email, String registry, String secretName, String namespace) {
 
     // Create registry secret in the namespace to pull the image from repository
@@ -770,10 +799,11 @@ public class CommonTestUtils {
    * @param username username in the secret
    * @param password passowrd in the secret
    */
-  public static void createSecretWithUsernamePassword(String secretName,
-                                                      String namespace,
-                                                      String username,
-                                                      String password) {
+  public static void createSecretWithUsernamePassword(
+      String secretName,
+      String namespace,
+      String username,
+      String password) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
@@ -786,8 +816,9 @@ public class CommonTestUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
 
-  /** Scale the WebLogic cluster to specified number of servers.
-   *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
+  /**
+   * Scale the WebLogic cluster to specified number of servers.
+   * Verify the sample app can be accessed through NGINX if curlCmd is not null.
    *
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param domainUid the domain to which the cluster belongs
@@ -801,14 +832,15 @@ public class CommonTestUtils {
    * @param expectedServerNames list of managed servers in the cluster before scale, if curlCmd is null,
    *                            set expectedServerNames to null too
    */
-  public static void scaleAndVerifyCluster(String clusterName,
-                                           String domainUid,
-                                           String domainNamespace,
-                                           String manageServerPodNamePrefix,
-                                           int replicasBeforeScale,
-                                           int replicasAfterScale,
-                                           String curlCmd,
-                                           List<String> expectedServerNames) {
+  public static void scaleAndVerifyCluster(
+      String clusterName,
+      String domainUid,
+      String domainNamespace,
+      String manageServerPodNamePrefix,
+      int replicasBeforeScale,
+      int replicasAfterScale,
+      String curlCmd,
+      List<String> expectedServerNames) {
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, manageServerPodNamePrefix, replicasBeforeScale,
         replicasAfterScale, false, 0, "", "", curlCmd, expectedServerNames);
@@ -834,18 +866,19 @@ public class CommonTestUtils {
    * @param expectedServerNames list of managed servers in the cluster before scale, if curlCmd is null,
    *                            set expectedServerNames to null too
    */
-  public static void scaleAndVerifyCluster(String clusterName,
-                                           String domainUid,
-                                           String domainNamespace,
-                                           String manageServerPodNamePrefix,
-                                           int replicasBeforeScale,
-                                           int replicasAfterScale,
-                                           boolean withRestApi,
-                                           int externalRestHttpsPort,
-                                           String opNamespace,
-                                           String opServiceAccount,
-                                           String curlCmd,
-                                           List<String> expectedServerNames) {
+  public static void scaleAndVerifyCluster(
+      String clusterName,
+      String domainUid,
+      String domainNamespace,
+      String manageServerPodNamePrefix,
+      int replicasBeforeScale,
+      int replicasAfterScale,
+      boolean withRestApi,
+      int externalRestHttpsPort,
+      String opNamespace,
+      String opServiceAccount,
+      String curlCmd,
+      List<String> expectedServerNames) {
 
     // get the original managed server pod creation timestamp before scale
     List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
@@ -971,12 +1004,13 @@ public class CommonTestUtils {
    * @param alertManagerNodePort nodePort value for alertmanager
    * @return the prometheus Helm installation parameters
    */
-  public static HelmParams installAndVerifyPrometheus(String promReleaseName,
-                                                      String promNamespace,
-                                                      String promValueFile,
-                                                      String promVersion,
-                                                      int promServerNodePort,
-                                                      int alertManagerNodePort) {
+  public static HelmParams installAndVerifyPrometheus(
+      String promReleaseName,
+      String promNamespace,
+      String promValueFile,
+      String promVersion,
+      int promServerNodePort,
+      int alertManagerNodePort) {
 
     // Helm install parameters
     HelmParams promHelmParams = new HelmParams()
@@ -1035,11 +1069,12 @@ public class CommonTestUtils {
    * @param grafanaNodePort nodePort value for grafana server
    * @return the grafana Helm installation parameters
    */
-  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
-                                                      String grafanaNamespace,
-                                                      String grafanaValueFile,
-                                                      String grafanaVersion,
-                                                      int grafanaNodePort) {
+  public static HelmParams installAndVerifyGrafana(
+      String grafanaReleaseName,
+      String grafanaNamespace,
+      String grafanaValueFile,
+      String grafanaVersion,
+      int grafanaNodePort) {
 
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
@@ -1096,12 +1131,12 @@ public class CommonTestUtils {
    * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
    * @param labelSelector String containing the labels the PV is decorated with
    * @param namespace the namespace in which the persistence volume claim to be created
-   *
    **/
-  public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
-                                          V1PersistentVolumeClaim v1pvc,
-                                          String labelSelector,
-                                          String namespace) {
+  public static void createPVPVCAndVerify(
+      V1PersistentVolume v1pv,
+      V1PersistentVolumeClaim v1pvc,
+      String labelSelector,
+      String namespace) {
 
     assertNotNull(v1pv, "v1pv is null");
     assertNotNull(v1pvc, "v1pvc is null");
@@ -1145,13 +1180,15 @@ public class CommonTestUtils {
 
   /**
    * Create ConfigMap from the specified files.
+   *
    * @param configMapName name of the ConfigMap to create
    * @param files files to be added in ConfigMap
    * @param namespace the namespace in which the ConfigMap to be created
    */
-  public static void createConfigMapFromFiles(String configMapName,
-                                              List<Path> files,
-                                              String namespace) {
+  public static void createConfigMapFromFiles(
+      String configMapName,
+      List<Path> files,
+      String namespace) {
 
     // create a ConfigMap of the domain
     Map<String, String> data = new HashMap<>();
@@ -1262,7 +1299,7 @@ public class CommonTestUtils {
    * @throws java.io.IOException when copying files from source location to staging area fails
    */
   public static void replaceStringInFile(String filePath, String oldValue, String newValue)
-          throws IOException {
+      throws IOException {
     Path src = Paths.get(filePath);
     logger.info("Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
@@ -1319,5 +1356,217 @@ public class CommonTestUtils {
         .redirect(true);
 
     return Command.withParams(params).execute();
+  }
+
+  /**
+   * Patch the domain resource with a new WebLogic admin credentials secret.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param secretName name of the new WebLogic admin credentials secret
+   * @return restartVersion new restartVersion of the domain resource
+   */
+  public static String patchDomainResourceWithNewAdminSecret(
+      String domainResourceName,
+      String namespace,
+      String secretName
+  ) {
+    String patch = String.format(
+        "[\n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}\n]\n",
+        "webLogicCredentialsSecret/name", secretName);
+    logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
+        domainResourceName, namespace, patch);
+
+    assertTrue(patchDomainCustomResource(
+        domainResourceName,
+        namespace,
+        new V1Patch(patch),
+        V1Patch.PATCH_FORMAT_JSON_PATCH),
+        String.format("Failed to patch the domain resource %s in namespace %s with %s: %s",
+            domainResourceName, namespace, "/spec/webLogicCredentialsSecret/name", secretName));
+
+    String oldVersion = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
+        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+        domainResourceName, namespace, oldVersion, newVersion);
+    patch =
+        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}\n]\n",
+            newVersion);
+
+    logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
+        domainResourceName, namespace, patch);
+
+    assertTrue(patchDomainCustomResource(
+        domainResourceName,
+        namespace,
+        new V1Patch(patch),
+        V1Patch.PATCH_FORMAT_JSON_PATCH),
+        String.format("Failed to patch the domain resource %s in namespace %s with startVersion: %s",
+            domainResourceName, namespace, newVersion));
+
+    String updatedVersion = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
+        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
+    logger.info("Current restartVersion is {0}", updatedVersion);
+    assertTrue(updatedVersion.equals(String.valueOf(newVersion)),
+        String.format("Failed to update the restartVersion of domain %s from %s to %s",
+            domainResourceName,
+            oldVersion,
+            newVersion));
+    return String.valueOf(newVersion);
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret for encryption
+   * @param replicaCount number of managed servers to start
+   * @return domain of the domain resource
+   */
+  public static Domain createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount) {
+    // create the domain CR
+    return new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainResourceName)
+            .namespace(domNamespace))
+        .spec(new oracle.weblogic.domain.DomainSpec()
+            .domainUid(domainResourceName)
+            .domainHomeSourceType("FromModel")
+            .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new oracle.weblogic.domain.AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+
+  }
+
+  /**
+   * Patch domain resource with a new WebLogic domain credentials secret and a new restartVersion,
+   * and verify if the domain spec has been correctly updated.
+   *
+   * @param domainUid name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName name of the WebLogic admin server
+   * @param managedServerPrefix prefix of the managed servers
+   * @param replicaCount number of managed servers to start
+   * @param secretName name of the secret that is used to patch the domain resource
+   * @return restartVersion of the domain resource
+   */
+  public static String patchDomainWithNewSecretAndVerify(
+      final String domainUid,
+      final String namespace,
+      final String adminServerPodName,
+      final String managedServerPrefix,
+      final int replicaCount,
+      final String secretName
+  ) {
+    logger.info(
+        "Patch domain resource {0} in namespace {1} to use the new secret {2}",
+        domainUid, namespace, secretName);
+
+    String restartVersion = patchDomainResourceWithNewAdminSecret(domainUid, namespace, secretName);
+
+    logger.info(
+        "Check that domain resource {0} in namespace {1} has been patched with new secret {2}",
+        domainUid, namespace, secretName);
+    checkDomainCredentialsSecretPatched(domainUid, namespace, secretName);
+
+    // check and wait for the admin server pod to be patched with the new secret
+    logger.info(
+        "Check that admin server pod for domain resource {0} in namespace {1} has been patched with {2}: {3}",
+        domainUid, namespace, "/spec/webLogicCredentialsSecret/name", secretName);
+
+    return restartVersion;
+  }
+
+  /**
+   * Check that domain resource has been updated with the new WebLogic domain credentials secret.
+   *
+   * @param domainUid name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param newValue new secret name for the WebLogic domain credentials secret
+   */
+  private static void checkDomainCredentialsSecretPatched(
+      String domainUid,
+      String namespace,
+      String newValue
+  ) {
+
+    // check if domain resource has been patched with the new secret
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUid,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> domainResourceCredentialsSecretPatched(domainUid, namespace, newValue),
+            String.format(
+                "Domain %s in namespace %s is not patched with admin credentials secret %s",
+                domainUid, namespace, newValue)));
+
+  }
+
+  /**
+   * Check if the given server pod's domain restart version has been updated.
+   *
+   * @param podName name of the server pod
+   * @param domainUid the domain that the server pod belongs to
+   * @param namespace the Kubernetes namespace that the pod belongs to
+   * @param restartVersion the expected value of the restart version
+   */
+  public static void checkPodRestartVersionUpdated(
+      String podName,
+      String domainUid,
+      String namespace,
+      String restartVersion) {
+    logger.info("Check that weblogic.domainRestartVersion of pod {0} has been updated", podName);
+    boolean restartVersionUpdated = assertDoesNotThrow(
+        () -> podRestartVersionUpdated(podName, domainUid, namespace, restartVersion),
+        String.format("Failed to get weblogic.domainRestartVersion label of pod %s in namespace %s",
+            podName, namespace));
+    assertTrue(restartVersionUpdated,
+        String.format("Label weblogic.domainRestartVersion of pod %s in namespace %s has not been updated",
+            podName, namespace));
   }
 }
