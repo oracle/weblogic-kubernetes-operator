@@ -20931,21 +20931,6 @@ spec:
   - name: v8
     served: true
     storage: true
-  - name: v2
-    served: true
-    storage: false
-  - name: v3
-    served: true
-    storage: false
-  - name: v4
-    served: true
-    storage: false
-  - name: v5
-    served: true
-    storage: false
-  - name: v6
-    served: true
-    storage: false
   - name: v7
     served: true
     storage: false
