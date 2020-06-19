@@ -55,6 +55,17 @@ public interface ActionConstants {
 
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";
   public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_FILE_NAME;
+
+  // ------------ WLDF RBAC constants ------------------------------------------
+  public static final String WLDF_CLUSTER_ROLE_NAME = "weblogic-domain-cluster-role";
+  public static final String WLDF_CLUSTER_ROLE_BINDING_NAME = "domain-cluster-rolebinding";
+  public static final String WLDF_ROLE_BINDING_NAME = "weblogic-domain-operator-rolebinding";
+  public static final String RBAC_CLUSTER_ROLE = "ClusterRole";
+  public static final String RBAC_CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+  public static final String RBAC_ROLE_BINDING = "RoleBinding";
+  public static final String RBAC_API_VERSION = "rbac.authorization.k8s.io/v1";
+  public static final String RBAC_API_GROUP = "rbac.authorization.k8s.io";
+
   public static final String MONITORING_EXPORTER_DOWNLOAD_URL 
       = "https://github.com/oracle/weblogic-monitoring-exporter.git";
 }

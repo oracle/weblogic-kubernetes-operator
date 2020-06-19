@@ -17,7 +17,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.apache.commons.io.FileUtils.cleanDirectory;
 
 /**
@@ -110,13 +109,6 @@ public class FileUtils {
       });
     }
   }
-  
-  private static void copy(Path source, Path dest) throws IOException {
-    logger.finest("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
-    if (!dest.toFile().isDirectory()) {
-      Files.copy(source, dest, REPLACE_EXISTING);
-    }
-  }
 
   /**
    * Copy a file to a pod in specified namespace.
@@ -134,5 +126,12 @@ public class FileUtils {
                                    Path srcPath,
                                    Path destPath) throws ApiException, IOException {
     Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+  }
+
+  private static void copy(Path source, Path dest) throws IOException {
+    logger.finest("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
+    if (!dest.toFile().isDirectory()) {
+      Files.copy(source, dest, REPLACE_EXISTING);
+    }
   }
 }
