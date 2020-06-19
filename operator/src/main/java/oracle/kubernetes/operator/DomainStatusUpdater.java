@@ -275,6 +275,13 @@ public class DomainStatusUpdater {
       // ignored. Check if the status on the returned domain is expected
       if (callResponse.getResult() == null || !newStatus.equals(callResponse.getResult().getStatus())) {
         LOGGER.info(MessageKeys.DOMAIN_STATUS_IGNORED);
+
+        // TEST
+        if (callResponse.getResult() != null) {
+          System.out.println("response status: " + callResponse.getResult().getStatus());
+        }
+        System.out.println("expected newStatus: " + newStatus);
+
         return doNext(CrdHelper.createDomainCrdStep(packet.getSpi(KubernetesVersion.class),
             createRetry(context, getNext())), packet);
       }
