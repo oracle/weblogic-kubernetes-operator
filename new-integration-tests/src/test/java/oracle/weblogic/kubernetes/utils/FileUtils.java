@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
