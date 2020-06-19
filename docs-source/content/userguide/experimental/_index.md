@@ -3,7 +3,7 @@ title: "Experimental features"
 date: 2019-08-15T13:29:04-04:00
 weight: 6
 description: "Learn about experimental features included in the operator."
-draft: false
+draft: true
 ---
 
 This section provides details of experimental features in the operator.

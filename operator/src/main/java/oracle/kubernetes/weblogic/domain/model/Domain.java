@@ -479,6 +479,10 @@ public class Domain {
     return spec.getIstioReadinessPort();
   }
 
+  public boolean isDomainSourceFromModel(String type) {
+    return DomainSourceType.FromModel.toString().equals(type);
+  }
+
   /**
    * Returns the domain home. May be null, but will not be an empty string.
    *
@@ -609,6 +613,7 @@ public class Domain {
       addIllegalSitConfigForMii();
       verifyNoAlternateSecretNamespaceSpecified();
       addMissingModelConfigMap(kubernetesResources);
+      verifyIstioExposingDefaultChannel();
 
       return failures;
     }
@@ -690,6 +695,23 @@ public class Domain {
       if (getDomainHomeSourceType() == DomainSourceType.FromModel
           && getConfigOverrides() != null) {
         failures.add(DomainValidationMessages.illegalSitConfigForMii(getConfigOverrides()));
+      }
+    }
+
+    private void verifyIstioExposingDefaultChannel() {
+      if (spec.isIstioEnabled()) {
+        Optional.ofNullable(spec.getAdminServer())
+            .map(a -> a.getAdminService())
+            .map(service -> service.getChannels())
+            .ifPresent(cs -> cs.stream()
+                              .forEach(this::checkForDefaultNameExposed));
+      }
+    }
+
+    private void checkForDefaultNameExposed(Channel channel) {
+      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
+            || "default-secure".equals(channel.getChannelName())) {
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
       }
     }
 

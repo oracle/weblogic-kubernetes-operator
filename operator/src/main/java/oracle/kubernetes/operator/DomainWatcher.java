@@ -57,4 +57,9 @@ public class DomainWatcher extends Watcher<Domain> {
   public WatchI<Domain> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder.createDomainWatch(ns);
   }
+
+  @Override
+  public String getNamespace() {
+    return ns;
+  }
 }

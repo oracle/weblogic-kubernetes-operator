@@ -37,6 +37,10 @@ spec:
       value: "${DOMAIN_SOURCE_TYPE}"
     - name: WDT_DOMAIN_TYPE
       value: "${WDT_DOMAIN_TYPE:-WLS}"
+    - name: ISTIO_ENABLED
+      value: "${ISTIO_ENABLED:-false}"
+    - name: ISTIO_READINESS_PORT
+      value: "${ISTIO_READINESS_PORT:-8888}"
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     name: weblogic-server
