@@ -259,12 +259,38 @@ public class CrdHelperTest {
   }
 
   @Test
+  public void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
+    testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
+    testSupport.runSteps(scriptCrdStep);
+
+    assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
+  }
+
+  @Test
   public void whenBetaCrdReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
-    testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
+    testSupport.failOnReplace(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
 
-    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
+    testSupport.runSteps(scriptCrdStep);
+
+    assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
+  }
+
+  @Test
+  public void whenBetaCrdReplaceThrowsStreamResetException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.failOnReplaceWithStreamResetException(BETA_CRD, KubernetesConstants.CRD_NAME, null);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
     testSupport.runSteps(scriptCrdStep);
 
     assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
