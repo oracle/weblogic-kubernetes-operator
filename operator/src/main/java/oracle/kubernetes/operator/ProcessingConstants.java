@@ -31,4 +31,6 @@ public interface ProcessingConstants {
   public static final String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
 
   public static final String ENCODED_CREDENTIALS = "encodedCredentials";
+
+  public static final String WAIT_FOR_POD_READY = "waitForPodReady";
 }

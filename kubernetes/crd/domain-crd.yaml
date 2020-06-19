@@ -10816,6 +10816,16 @@ spec:
                       enum:
                       - NEVER
                       - IF_NEEDED
+                    maxConcurrentStartup:
+                      description: The maximum number of Managed Servers that the
+                        operator will start in parallel for the cluster in response
+                        to a change in replicas count for the cluster. If more Managed
+                        Servers need to be started, the operator will wait until a
+                        Managed Server pod is in the `Ready` and `Running` state before
+                        starting the next Managed Server. A value of 0 (the default)
+                        means all Managed Servers will start in parallel.
+                      type: number
+                      minimum: 0.0
                     restartVersion:
                       description: If present, every time this value is updated the
                         operator will restart the required servers.
@@ -10842,6 +10852,13 @@ spec:
                 - Always
                 - Never
                 - IfNotPresent
+              maxClusterConcurrentStartup:
+                type: number
+                description: The maximum number of Managed Servers that the operator
+                  will start in parallel for a cluster, if `maxConcurrentStartup`
+                  is not specified at the cluster level. A value of 0 (the default)
+                  means there is no configured limit.
+                minimum: 0.0
               replicas:
                 type: number
                 description: The number of managed servers to run in any cluster that
@@ -10887,6 +10904,12 @@ spec:
                 description: Specified whether the log home folder is enabled. Not
                   required. Defaults to true if domainHomeSourceType is PersistentVolume;
                   false, otherwise.
+              allowReplicasBelowMinDynClusterSize:
+                type: boolean
+                description: Whether to allow the number of replicas to drop below
+                  the minimum dynamic cluster size configured in the WebLogic domain
+                  home configuration, if this is not specified at the cluster level.
+                  Defaults to true.
               serverPod:
                 type: object
                 description: Configuration affecting server pods.
