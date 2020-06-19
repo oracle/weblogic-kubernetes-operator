@@ -73,7 +73,7 @@ public class BuildApplication {
    *         "/scratch/speriyat/weblogic-kubernetes-operator/new-integration-tests/src/test/resources/apps/clusterview",
    *         antParams,
    *         "clean build all" // these targets must be supported by your build file
-   *         "dist" // whatever the directory your build system creates
+   *         "dist" // the directory your build system creates
    *         "ns-abcd" // your domain or operator namespace, so that the pods are cleaned up after test is done
    *     );
    *     }
@@ -104,12 +104,11 @@ public class BuildApplication {
     assertDoesNotThrow(() -> {
       // recreate WORK_DIR/j2eeapplications/<application_directory_name>
       logger.info("Deleting and recreating {0}", tempAppPath);
-
       Files.createDirectories(tempAppPath);
       deleteDirectory(tempAppPath.toFile());
       Files.createDirectories(tempAppPath);
 
-      // copy the application source to WORK_DIR/j2eeapplications/<application_directory_name>
+      // copy the application source to WORK_DIR/j2eeapplications/<application_directory_name> for zipping
       logger.info("Copying {0} to {1}", appSrcPath, tempAppPath);
       copyDirectory(appSrcPath.toFile(), tempAppPath.toFile());
     });
@@ -119,15 +118,15 @@ public class BuildApplication {
 
 
     assertDoesNotThrow(() -> {
-      // add ant properties to env
+      // add ant properties as env variable in pod
       V1Container buildContainer = new V1Container();
 
-      // set ZIP_FILE location in env variable
+      // set ZIP_FILE location as env variable in pod
       buildContainer.addEnvItem(new V1EnvVar()
           .name("ZIP_FILE")
           .value(zipFile.getFileName().toString()));
 
-      // set ant parameteres in env variable sysprops
+      // set ant parameteres as env variable in pod
       if (antParams != null) {
         StringBuilder params = new StringBuilder();
         antParams.entrySet().forEach((parameter) -> {
@@ -137,13 +136,13 @@ public class BuildApplication {
             .addEnvItem(new V1EnvVar().name("sysprops").value(params.toString()));
       }
 
-      // set add targets in env variable targets
+      // set add targets in env variable "targets"
       if (antTargets != null) {
         buildContainer = buildContainer
             .addEnvItem(new V1EnvVar().name("targets").value(antTargets));
       }
 
-      //setup temporary WebLogic to build application
+      //setup temporary WebLogic pod to build application
       V1Pod webLogicPod = setupWebLogicPod(namespace, buildContainer);
 
       //copy the zip file to /u01 location inside pod

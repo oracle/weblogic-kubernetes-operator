@@ -159,8 +159,7 @@ public class ItIntrospectVersion implements LoggedTest {
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
 
-  private static Path clusterViewAppPath = Paths.get(PV_ROOT,
-      "applications", "clusterview", "dist", "clusterview.war");
+  private static Path clusterViewAppPath;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -186,7 +185,9 @@ public class ItIntrospectVersion implements LoggedTest {
     // build the clusterview application
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
         "dist", introDomainNamespace);
-    assertTrue(Paths.get(distDir.toString(), "u01/application/dist/clusterview.war").toFile().exists());
+    assertTrue(Paths.get(distDir.toString(),
+        "u01/application/dist/clusterview.war").toFile().exists(),
+        "Application archive is not available");
     clusterViewAppPath = Paths.get(distDir.toString(), "u01/application/dist/clusterview.war");
 
     // install operator and verify its running in ready state
