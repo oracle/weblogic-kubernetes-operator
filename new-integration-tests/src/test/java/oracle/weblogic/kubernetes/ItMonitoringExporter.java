@@ -259,12 +259,12 @@ class ItMonitoringExporter implements LoggedTest {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel");
+    createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1);
 
     wdtImage = createAndVerifyDomainInImage();
     // create and verify one cluster wdt domain
     logger.info("Create wdt domain and verify that it's running");
-    createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image");
+    createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount);
 
     // get a free node port for NGINX
     nodeportshttp1 = getNextFreePort(30305, 30405);
@@ -317,10 +317,9 @@ class ItMonitoringExporter implements LoggedTest {
       String testappPrometheusSearchKey =
               "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
       checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp");
+    } finally {
+      uninstallPrometheusGrafana();
     }
-    finally{
-        uninstallPrometheusGrafana();
-      }
 
   }
 
@@ -342,6 +341,7 @@ class ItMonitoringExporter implements LoggedTest {
               domain2Uid);
 
     installWebhook();
+    installCoordinator(domain2Namespace);
 
     //verify access to Monitoring Exporter
     verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount);
@@ -375,17 +375,10 @@ class ItMonitoringExporter implements LoggedTest {
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
             domain1Namespace,
             domain1Uid);
-    installCoordinator(domain1Namespace);
 
     //verify access to Monitoring Exporter
-    verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0),replicaCount);
+    verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0),1);
 
-    //verify metrics via prometheus
-    // scale cluster to 1 managed server only to test functionality of the exporter without
-    // coordinator layer
-    scaleAndVerifyCluster(clusterName, domain1Uid, domain1Namespace,
-            domain1Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, 1,
-            null, null);
     try {
       replaceConfiguration();
       appendConfiguration();
@@ -936,9 +929,12 @@ class ItMonitoringExporter implements LoggedTest {
               "Create deployment failed with ApiException for coordinator in namespace %s ",
               namespace));
 
+      HashMap<String,String> annotations = new HashMap<>();
+      annotations.put("kubectl.kubernetes.io/last-applied-configuration","");
       coordinatorService = new V1Service()
               .metadata(new V1ObjectMeta()
                       .name("coordinator")
+                      .annotations(annotations)
                       .namespace(namespace)
                       .labels(labels))
               .spec(new V1ServiceSpec()
@@ -1206,7 +1202,8 @@ class ItMonitoringExporter implements LoggedTest {
   private static void createAndVerifyDomain(String miiImage,
                                             String domainUid,
                                             String namespace,
-                                            String domainHomeSource) {
+                                            String domainHomeSource,
+                                            int replicaCount) {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
@@ -1225,7 +1222,7 @@ class ItMonitoringExporter implements LoggedTest {
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, miiImage);
     createDomainCrAndVerify(adminSecretName, REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
-            namespace, domainHomeSource);
+            namespace, domainHomeSource, replicaCount);
     String adminServerPodName = domainUid + "-admin-server";
     // check that admin server pod exists in the domain namespace
     logger.info("Checking that admin server pod {0} exists in namespace {1}",
@@ -1270,7 +1267,8 @@ class ItMonitoringExporter implements LoggedTest {
                                               String miiImage,
                                               String domainUid,
                                               String namespace,
-                                              String domainHomeSource) {
+                                              String domainHomeSource,
+                                              int replicaCount) {
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -1466,7 +1464,7 @@ class ItMonitoringExporter implements LoggedTest {
   private HtmlPage submitConfigureForm(String exporterUrl, String effect, String configFile)
           throws Exception {
     final WebClient webClient = new WebClient();
-    //webClient.addRequestHeader("Host", ingressHost1List.get(0));
+    //webClient.addRequestHeader("host", ingressHost1List.get(0));
     //webClient.getOptions().setRedirectEnabled(true);
     //webClient.addRequestHeader("Location",exporterUrl);
     //webClient.addRequestHeader("Referer", exporterUrl);
@@ -1497,12 +1495,7 @@ class ItMonitoringExporter implements LoggedTest {
     //request.setAdditionalHeader("Host", ingressHost1List.get(0));
     //HtmlPage page1 = webClient.getPage(request);
     //page.getAnchors().get(0).click();
-
     HtmlPage page1 = webClient.getPage(exporterUrl);
-    if (page1 == null) {
-      //try again
-      page1 = webClient.getPage(exporterUrl);
-    }
     assertNotNull(page1);
     assertTrue((page1.asText()).contains("This is the WebLogic Monitoring Exporter."),
             "Can't find needed info " + page1.asText());
@@ -1515,6 +1508,7 @@ class ItMonitoringExporter implements LoggedTest {
     if (form == null) {
       form = page1.getFirstByXPath("//form[@action='/wls-exporter/configure']");
     }
+
     assertNotNull(form);
 
     List<HtmlRadioButtonInput> radioButtons = form.getRadioButtonsByName("effect");
@@ -1538,12 +1532,7 @@ class ItMonitoringExporter implements LoggedTest {
     // Now submit the form by clicking the button and get back the second page.
     HtmlPage page2 = button.click();
     assertNotNull(page2);
-    String htmlBody = page2.getWebResponse().getContentAsString();
-    logger.info(htmlBody);
-
     assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
-    // wait time for coordinator to update both managed configuration
-    Thread.sleep(15 * 1000);
     return page2;
   }
 
@@ -1578,9 +1567,8 @@ class ItMonitoringExporter implements LoggedTest {
             "heap_free_current%7Bname%3D%22managed-server2%22%7D%5B15s%5D";
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yml");
     assertNotNull(page, "Failed to replace configuration");
+    Thread.sleep(15 * 1000);
     checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
-    //checkMetricsViaPrometheus(prometheusSearchKey2, "managed-server2");
-
   }
 
   /**
