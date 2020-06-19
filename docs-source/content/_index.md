@@ -23,34 +23,9 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 ***
 #### Current release
 
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.5.0.
-This release was published on February 26, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.0.0.
+This release was published on July , 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
-##### Preview of next planned release
-
-The next planned release is 3.0.0-rc1 (release candidate).  This release candidate will
-be suitable for use by early adopters who wish to test 3.0.0 features and provide
-feedback.  
-
-This release is planned for April 2020, subject to change.
-
-The planned feature changes in 3.0.0 are:
-
-* Introduction of a new "Model In Image" feature which allows you to have a domain
-  created at pod startup time from a WebLogic Deploy Tool model and archive.
-  This supports user-requested use cases like creating multiple domains from
-  the same model and automated updating of the domain based on model changes.
-  The operator automates management of the domain encryption keys to ensure
-  that they are not changed during domain updates.
-  We provide a [sample]({{% relref "/samples/simple/domains/model-in-image" %}}) that
-  demonstrates the key use cases for this feature.
-* Support for running the operator on Kubernetes 1.16, 1.17 and 1.18.
-* Deprecation and removal of support for running the operator on Kubernetes 1.13
-  and earlier versions.
-* Deprecation and removal of support for Helm 2.x.  Helm 2.x uses the "tiller" pod
-  which needs to run with elevated privileges (`cluster-admin` or very close to that)
-  and which could be a vector for a privilege escalation attack.  Helm 3.x removes
-  Tiller and does not create the same exposure.
 
 ***
 
