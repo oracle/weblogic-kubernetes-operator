@@ -183,10 +183,11 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
         replicaCount,
         adminSecretName);
 
+    logger.info("Delete the operator pod in namespace {0} and wait for it to be restarted", opNamespace);
+    restartOperatorAndVerify();
+
     logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
         domainUid, adminServerPodName, domainNamespace);
-
-    restartOperatorAndVerify();
 
     assertTrue(assertDoesNotThrow(
         () -> (verifyRollingRestartOccurred(pods, 1, domainNamespace)),
@@ -210,22 +211,19 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
   }
 
   private void restartOperatorAndVerify() {
-    String opPodName = assertDoesNotThrow(() -> getOperatorPodName(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
+    String opPodName = 
+        assertDoesNotThrow(() -> getOperatorPodName(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
         "Failed to get the name of the operator pod");
 
     // get the creation time of the admin server pod before patching
     DateTime opPodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", opPodName),
+        assertDoesNotThrow(() -> getPodCreationTimestamp(opNamespace, "", opPodName),
             String.format("Failed to get creationTimestamp for pod %s", opPodName));
     assertNotNull(opPodCreationTime, "creationTimestamp of the operator pod is null");
 
     assertDoesNotThrow(
         () -> deleteOperatorPod(opPodName, opNamespace),
         "Got exception in deleting the Operator pod");
-
-    assertTrue(assertDoesNotThrow(() -> isPodRestarted(opPodName, opNamespace, opPodCreationTime),
-        "More than one pod was restarted at same time"),
-        "Rolling restart failed");
 
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
@@ -238,6 +236,14 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
             condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
           "operatorIsReady failed with ApiException"));
+
+    String opPodNameNew = 
+        assertDoesNotThrow(() -> getOperatorPodName(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
+        "Failed to get the name of the operator pod");
+
+    assertTrue(assertDoesNotThrow(() -> isPodRestarted(opPodNameNew, opNamespace, opPodCreationTime),
+        "Failed to check the operator for its new creation time with ApiException"),
+        "Operator restart failed");
   }
 
 
