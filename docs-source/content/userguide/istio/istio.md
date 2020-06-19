@@ -72,7 +72,7 @@ To enable Istio support for a domain, you need to add the
 following example:  
 
 ```
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: domain2

@@ -311,6 +311,10 @@ public class Domain {
     return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
   }
 
+  public int getMaxConcurrentStartup(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterName);
+  }
+
 
   /**
    * DomainSpec is a description of a domain.

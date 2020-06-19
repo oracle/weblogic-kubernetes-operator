@@ -32,4 +32,6 @@ public interface ProcessingConstants {
 
   String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
+
+  String WAIT_FOR_POD_READY = "waitForPodReady";
 }
