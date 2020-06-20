@@ -3,7 +3,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: istio-http-gateway
+  name: DUID-istio-http-gateway
   namespace: NAMESPACE
 spec:
   selector:
@@ -19,11 +19,11 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: istio-http-virtualservice
+  name: DUID-istio-http-virtualservice
   namespace: NAMESPACE
 spec:
   gateways:
-    - istio-http-gateway
+    - DUID-istio-http-gateway
   hosts:
     - '*'
   http:

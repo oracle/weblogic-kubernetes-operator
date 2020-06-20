@@ -1,7 +1,10 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: istio-tcp-gateway
+  name: DUID-istio-tcp-gateway
   namespace: NAMESPACE
 spec:
   selector:
@@ -17,11 +20,11 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: istio-tcp-virtualservice
+  name: DUID-istio-tcp-virtualservice
   namespace: NAMESPACE
 spec:
   gateways:
-    - istio-tcp-gateway
+    - DUID-istio-tcp-gateway
   hosts:
     - '*'
   tcp:
