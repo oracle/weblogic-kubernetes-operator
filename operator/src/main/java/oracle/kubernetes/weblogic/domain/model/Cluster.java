@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Map;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -13,7 +12,6 @@ import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -59,14 +57,22 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Expose
   private KubernetesResource clusterService = new KubernetesResource();
 
-  /** Whether to allow the number of replicas to drop below the minimum dynamic cluster
-   *  size configured in the WebLogic domain home configuration. Default is true. */
   @Description("If true (the default), then the number of replicas is allowed to drop below the "
       + "minimum dynamic cluster size configured in the WebLogic domain home configuration. "
       + "Otherwise, the operator will ensure that the number of replicas is not less than "
       + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only."
   )
   private Boolean allowReplicasBelowMinDynClusterSize;
+
+  @Description(
+      "The maximum number of Managed Servers that the operator will start in parallel "
+      + "for the cluster in response to a change in replicas count for the cluster. "
+      + "If more Managed Servers need to be started, the operator will wait until a Managed "
+      + "Server pod is in the `Ready` and `Running` state before starting the next Managed Server. "
+      + "A value of 0 (the default) means all Managed Servers will start in parallel."
+  )
+  @Range(minimum = 0)
+  private Integer maxConcurrentStartup;
 
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
@@ -103,13 +109,20 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
    * @return whether to allow number of replicas to drop below the minimum dynamic cluster size
    *     configured in the WebLogic domain home configuration.
    */
-  public boolean isAllowReplicasBelowMinDynClusterSize() {
-    return Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
-        .orElse(KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+  public Boolean isAllowReplicasBelowMinDynClusterSize() {
+    return allowReplicasBelowMinDynClusterSize;
   }
 
-  public void setAllowReplicasBelowMinDynClusterSize(boolean value) {
+  public void setAllowReplicasBelowMinDynClusterSize(Boolean value) {
     allowReplicasBelowMinDynClusterSize = value;
+  }
+
+  public Integer getMaxConcurrentStartup() {
+    return maxConcurrentStartup;
+  }
+
+  public void setMaxConcurrentStartup(Integer value) {
+    maxConcurrentStartup = value;
   }
 
   @Nullable
@@ -196,6 +209,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterService, cluster.clusterService)
         .append(maxUnavailable, cluster.maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize, cluster.allowReplicasBelowMinDynClusterSize)
+        .append(maxConcurrentStartup, cluster.maxConcurrentStartup)
         .isEquals();
   }
 
@@ -209,6 +223,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterService)
         .append(maxUnavailable)
         .append(allowReplicasBelowMinDynClusterSize)
+        .append(maxConcurrentStartup)
         .toHashCode();
   }
 

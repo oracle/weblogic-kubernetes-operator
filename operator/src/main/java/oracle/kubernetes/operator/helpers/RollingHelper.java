@@ -36,7 +36,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
  */
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static long DELAY_IN_SECONDS = 10;
+  private static long DELAY_IN_SECONDS = 1;
 
   private RollingHelper() {
   }

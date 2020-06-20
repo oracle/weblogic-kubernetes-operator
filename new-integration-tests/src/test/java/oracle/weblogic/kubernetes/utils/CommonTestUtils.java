@@ -97,6 +97,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -118,6 +119,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -398,6 +400,25 @@ public class CommonTestUtils {
                                                              Map<String, Integer> clusterNameMSPortMap,
                                                              boolean setIngressHost) {
 
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, setIngressHost);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @param setIngressHost if false does not set ingress host
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap,
+                                                             boolean setIngressHost) {
+
     // create an ingress in domain namespace
     String ingressName = domainUid + "-nginx";
     List<String> ingressHostList =
@@ -414,6 +435,18 @@ public class CommonTestUtils {
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
             ingressName, domainUid, domainNamespace);
+
+    // check the ingress is ready to route the app to the server pod
+    if (nodeport != 0) {
+      for (String ingressHost : ingressHostList) {
+        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+
+        logger.info("Executing curl command {0}", curlCmd);
+        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      }
+    }
 
     return ingressHostList;
   }
@@ -585,7 +618,7 @@ public class CommonTestUtils {
     final List<String> appSrcDirList = Collections.singletonList(appName);
 
     return createMiiImageAndVerify(
-        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType);
+        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType, true);
   }
 
   /**
@@ -600,7 +633,7 @@ public class CommonTestUtils {
                                                 List<String> wdtModelList,
                                                 List<String> appSrcDirList) {
     return createMiiImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
+        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS, true);
 
   }
 
@@ -613,6 +646,7 @@ public class CommonTestUtils {
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
    * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
+   * @param oneArchiveContainsMultiApps whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
@@ -620,10 +654,12 @@ public class CommonTestUtils {
                                                List<String> appSrcDirList,
                                                String baseImageName,
                                                String baseImageTag,
-                                               String domainType) {
+                                               String domainType,
+                                               boolean oneArchiveContainsMultiApps) {
+
     return createImageAndVerify(
             miiImageNameBase, wdtModelList, appSrcDirList, null, baseImageName,
-            baseImageTag, domainType, true, null);
+            baseImageTag, domainType, true, "domain1", oneArchiveContainsMultiApps);
   }
 
   /**
@@ -635,6 +671,7 @@ public class CommonTestUtils {
    * @param appName - application to be added to the image
    * @param modelPropFile - property file to be used with the model file above
    * @param altModelDir - directory where the property file is found if not in the default MODEL_DIR
+   * @param oneArchiveContainsMultiApps whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
@@ -642,7 +679,8 @@ public class CommonTestUtils {
                                             String appName,
                                             String modelPropFile,
                                             String altModelDir,
-                                            String domainHome) {
+                                            String domainHome,
+                                            boolean oneArchiveContainsMultiApps) {
 
     final List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
@@ -650,7 +688,7 @@ public class CommonTestUtils {
 
     return createImageAndVerify(
             imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-            WLS_BASE_IMAGE_TAG, WLS, false, domainHome);
+            WLS_BASE_IMAGE_TAG, WLS, false, domainHome, oneArchiveContainsMultiApps);
   }
 
   /**
@@ -674,7 +712,7 @@ public class CommonTestUtils {
 
     return createImageAndVerify(
             imageNameBase, wdtModelList, appSrcDirList, modelPropList, WLS_BASE_IMAGE_NAME,
-            WLS_BASE_IMAGE_TAG, WLS, false, domainHome);
+            WLS_BASE_IMAGE_TAG, WLS, false, domainHome, true);
   }
 
   /**
@@ -688,6 +726,8 @@ public class CommonTestUtils {
    * @param baseImageTag - the WebLogic base image tag to be used while creating mii image
    * @param domainType - the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @param modelType - create a model image only or domain in image. set to true for MII
+   * @param domainHome - domain home dir
+   * @param oneArchiveContainsMultiApps whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createImageAndVerify(String imageNameBase,
@@ -698,7 +738,8 @@ public class CommonTestUtils {
                                             String baseImageTag,
                                             String domainType,
                                             boolean modelType,
-                                            String domainHome) {
+                                            String domainHome,
+                                            boolean oneArchiveContainsMultiApps) {
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     Date date = new Date();
@@ -706,11 +747,11 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + imageNameBase;
     final String image = imageName + ":" + imageTag;
-    List<String> archiveList = new ArrayList<String>();
 
+    List<String> archiveList = new ArrayList<>();
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
-      List<String> archiveAppsList = new ArrayList<String>();
-      List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
+      List<String> archiveAppsList = new ArrayList<>();
+      List<String> buildAppDirList = new ArrayList<>(appSrcDirList);
 
       for (String appSrcDir : appSrcDirList) {
         if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
@@ -732,15 +773,28 @@ public class CommonTestUtils {
         archiveList.add(zipAppFile);
 
       }
+
       if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
         // build an application archive using what is in resources/apps/APP_NAME
-        assertTrue(buildAppArchive(defaultAppParams()
-                        .srcDirList(buildAppDirList)),
-                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
-
-        // build the archive list
-        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
-        archiveList.add(zipFile);
+        String zipFile = "";
+        if (oneArchiveContainsMultiApps) {
+          assertTrue(buildAppArchive(defaultAppParams()
+                          .srcDirList(buildAppDirList)),
+                  String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+          zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+          // build the archive list
+          archiveList.add(zipFile);
+        } else {
+          for (String appName : buildAppDirList) {
+            assertTrue(buildAppArchive(defaultAppParams()
+                            .srcDirList(Collections.singletonList(appName))
+                            .appName(appName)),
+                    String.format("Failed to create app archive for %s", appName));
+            zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+            // build the archive list
+            archiveList.add(zipFile);
+          }
+        }
       }
     }
 
@@ -925,7 +979,8 @@ public class CommonTestUtils {
                                            List<String> expectedServerNames) {
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, manageServerPodNamePrefix, replicasBeforeScale,
-        replicasAfterScale, false, 0, "", "", curlCmd, expectedServerNames);
+        replicasAfterScale, false, 0, "", "",
+        false, "", "", 0, "", "", curlCmd, expectedServerNames);
   }
 
   /**
@@ -942,6 +997,12 @@ public class CommonTestUtils {
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opNamespace the namespace of WebLogic operator
    * @param opServiceAccount the service account for operator
+   * @param withWLDF whether to use WLDF to scale cluster
+   * @param domainHomeLocation the domain home location of the domain
+   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
+   * @param scalingSize the number of servers to scale up or scale down
+   * @param myWebAppName the web app name deployed to the domain
+   * @param curlCmdForWLDFApp the curl command to call the web app used in the WLDF script
    * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
    *                in the cluster, if curlCmd is null, the method will not verify the accessibility of the sample app
    *                through ingress controller
@@ -958,6 +1019,12 @@ public class CommonTestUtils {
                                            int externalRestHttpsPort,
                                            String opNamespace,
                                            String opServiceAccount,
+                                           boolean withWLDF,
+                                           String domainHomeLocation,
+                                           String scalingAction,
+                                           int scalingSize,
+                                           String myWebAppName,
+                                           String curlCmdForWLDFApp,
                                            String curlCmd,
                                            List<String> expectedServerNames) {
 
@@ -981,6 +1048,16 @@ public class CommonTestUtils {
           .as("Verify scaling cluster {0} of domain {1} in namespace {2} with REST API succeeds",
               clusterName, domainUid, domainNamespace)
           .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with REST API failed",
+              clusterName, domainUid, domainNamespace)
+          .isTrue();
+    } else if (withWLDF) {
+      // scale the cluster using WLDF policy
+      assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
+          domainHomeLocation, scalingAction, scalingSize, opNamespace, opServiceAccount, myWebAppName,
+          curlCmdForWLDFApp)))
+          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with WLDF policy succeeds",
+              clusterName, domainUid, domainNamespace)
+          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with WLDF policy failed",
               clusterName, domainUid, domainNamespace)
           .isTrue();
     } else {

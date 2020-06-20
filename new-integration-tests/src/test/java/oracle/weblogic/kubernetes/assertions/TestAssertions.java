@@ -9,6 +9,8 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Grafana;
@@ -491,5 +493,27 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
     return PersistentVolumeClaim.pvcExists(pvcName, namespace);
+  }
+
+  /**
+   * Check whether the cluster role exists.
+   *
+   * @param clusterRoleName name of the cluster role
+   * @return true if cluster role exists, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean clusterRoleExists(String clusterRoleName) throws ApiException {
+    return ClusterRole.clusterRoleExists(clusterRoleName);
+  }
+
+  /**
+   * Check whether the cluster role binding exists.
+   *
+   * @param clusterRoleBindingName name of the cluster role binding
+   * @return true if cluster role binding exists, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean clusterRoleBindingExists(String clusterRoleBindingName) throws ApiException {
+    return ClusterRoleBinding.clusterRoleBindingExists(clusterRoleBindingName);
   }
 }
