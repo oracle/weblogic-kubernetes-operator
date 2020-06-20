@@ -278,7 +278,7 @@ class ItMonitoringExporter implements LoggedTest {
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
     ingressHost1List =
-        createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
+        createIngressForDomainAndVerify(domain1Uid, domain1Namespace, nodeportshttp1,clusterNameMsPortMap, false);
     ingressHost2List =
             createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp1);
@@ -537,16 +537,29 @@ class ItMonitoringExporter implements LoggedTest {
               grafanaChartVersion,
               nodeportgrafana);
 
+      //wait until it starts dashboard
+      String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
+                      + " -X GET http://admin:12345678@%s:%s/api/datasources",
+              K8S_NODEPORT_HOST, nodeportgrafana);
+      withStandardRetryPolicy
+              .conditionEvaluationListener(
+                      condition -> logger.info("Check access to grafana dashboard  "
+                                      + "(elapsed time {0}ms, remaining time {1}ms)",
+                              condition.getElapsedTimeInMS(),
+                              condition.getRemainingTimeInMS()))
+              .until(assertDoesNotThrow(() -> searchForKey(curlCmd, "prometheus"),
+                      String.format("Check access to grafana dashboard"
+                              )));
       logger.info("installing grafana dashboard");
       // url
-      String curlCmd =
+      String curlCmd0 =
               String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
                               + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
                               + "  --data-binary @%sgrafana/datasource.json",
                       K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
 
       logger.info("Executing Curl cmd {0}", curlCmd);
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd));
+      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
 
       String curlCmd1 =
               String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
@@ -1183,7 +1196,7 @@ class ItMonitoringExporter implements LoggedTest {
                 WLS_BASE_IMAGE_TAG,
                 WLS,
                 false,
-                domain2Uid);
+                domain2Uid, true);
 
 
 
@@ -1222,7 +1235,7 @@ class ItMonitoringExporter implements LoggedTest {
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, miiImage);
     createDomainCrAndVerify(adminSecretName, REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
-            namespace, domainHomeSource, replicaCount);
+            namespace, domainHomeSource, 2);
     String adminServerPodName = domainUid + "-admin-server";
     // check that admin server pod exists in the domain namespace
     logger.info("Checking that admin server pod {0} exists in namespace {1}",
