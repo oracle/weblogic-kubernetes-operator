@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -108,6 +109,10 @@ public class BuildApplication {
       deleteDirectory(tempAppPath.toFile());
       Files.createDirectories(tempAppPath);
 
+      Files.createDirectories(destArchiveDir);
+      deleteDirectory(destArchiveDir.toFile());
+      Files.createDirectories(destArchiveDir);
+
       // copy the application source to WORK_DIR/j2eeapplications/<application_directory_name> for zipping
       logger.info("Copying {0} to {1}", appSrcPath, tempAppPath);
       copyDirectory(appSrcPath.toFile(), tempAppPath.toFile());
@@ -117,33 +122,34 @@ public class BuildApplication {
     Path zipFile = Paths.get(FileUtils.createZipFile(tempAppPath));
 
 
-    assertDoesNotThrow(() -> {
-      // add ant properties as env variable in pod
-      V1Container buildContainer = new V1Container();
+    // add ant properties as env variable in pod
+    V1Container buildContainer = new V1Container();
 
-      // set ZIP_FILE location as env variable in pod
-      buildContainer.addEnvItem(new V1EnvVar()
-          .name("ZIP_FILE")
-          .value(zipFile.getFileName().toString()));
+    // set ZIP_FILE location as env variable in pod
+    buildContainer.addEnvItem(new V1EnvVar()
+        .name("ZIP_FILE")
+        .value(zipFile.getFileName().toString()));
 
-      // set ant parameteres as env variable in pod
-      if (antParams != null) {
-        StringBuilder params = new StringBuilder();
-        antParams.entrySet().forEach((parameter) -> {
-          params.append("-D").append(parameter.getKey()).append("=").append(parameter.getValue()).append(" ");
-        });
-        buildContainer = buildContainer
-            .addEnvItem(new V1EnvVar().name("sysprops").value(params.toString()));
-      }
+    // set ant parameteres as env variable in pod
+    if (antParams != null) {
+      StringBuilder params = new StringBuilder();
+      antParams.entrySet().forEach((parameter) -> {
+        params.append("-D").append(parameter.getKey()).append("=").append(parameter.getValue()).append(" ");
+      });
+      buildContainer = buildContainer
+          .addEnvItem(new V1EnvVar().name("sysprops").value(params.toString()));
+    }
 
-      // set add targets in env variable "targets"
-      if (antTargets != null) {
-        buildContainer = buildContainer
-            .addEnvItem(new V1EnvVar().name("targets").value(antTargets));
-      }
+    // set add targets in env variable "targets"
+    if (antTargets != null) {
+      buildContainer = buildContainer
+          .addEnvItem(new V1EnvVar().name("targets").value(antTargets));
+    }
 
-      //setup temporary WebLogic pod to build application
-      V1Pod webLogicPod = setupWebLogicPod(namespace, buildContainer);
+    //setup temporary WebLogic pod to build application
+    V1Pod webLogicPod = setupWebLogicPod(namespace, buildContainer);
+
+    try {
 
       //copy the zip file to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
@@ -162,13 +168,12 @@ public class BuildApplication {
         logger.info(exec.stderr());
       }
 
-      Files.createDirectories(destArchiveDir);
-      deleteDirectory(destArchiveDir.toFile());
-      Files.createDirectories(destArchiveDir);
-
       Kubernetes.copyDirectoryFromPod(webLogicPod,
           Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveDir);
-    });
+
+    } catch (ApiException | IOException | InterruptedException ioex) {
+      logger.info(ioex.getMessage());
+    }
 
     return destArchiveDir;
   }
@@ -182,7 +187,7 @@ public class BuildApplication {
    * @return V1Pod created pod object
    * @throws ApiException when create pod fails
    */
-  private static V1Pod setupWebLogicPod(String namespace, V1Container container) throws ApiException {
+  private static V1Pod setupWebLogicPod(String namespace, V1Container container) {
 
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
@@ -204,7 +209,7 @@ public class BuildApplication {
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");
-    V1Pod wlsPod = Kubernetes.createPod(namespace, podBody);
+    V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
