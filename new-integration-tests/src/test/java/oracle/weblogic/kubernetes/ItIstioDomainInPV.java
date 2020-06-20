@@ -81,6 +81,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
@@ -96,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
@@ -154,10 +154,11 @@ public class ItIstioDomainInPV implements LoggedTest {
     domainNamespace = namespaces.get(1);
 
     // Label the operator/domain namespace with istio-injection=enabled
-    boolean k8res = labelNamespace(opNamespace);
-    assertTrue(k8res, "Could not label the Operator namespace");
-    k8res = labelNamespace(domainNamespace);
-    assertTrue(k8res, "Could not label the WebLogic domain namespace");
+    Map<String, String> labelMap = new HashMap();
+    labelMap.put("istio-injection", "enabled");
+
+    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -317,7 +318,8 @@ public class ItIstioDomainInPV implements LoggedTest {
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-    boolean deployRes = deployHttpIstioGatewayAndVirtualservice(domainNamespace,adminServerPodName, clusterService);
+    boolean deployRes = assertDoesNotThrow(
+        () -> deployHttpIstioGatewayAndVirtualservice(domainNamespace, domainUid, adminServerPodName, clusterService));
     assertTrue(deployRes, "Could not deploy Istio Gateway/Virtual Service");
 
     int istioIngressPort = getIstioHttpIngressPort();
@@ -356,28 +358,6 @@ public class ItIstioDomainInPV implements LoggedTest {
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
-  }
-
-  /*
-   * TODO: move to CommonTestUtils
-   * Label a namespace with Istio Injection
-   **/
-  private static boolean labelNamespace(String namespace) {
-    ExecResult result = null;
-    StringBuffer labelNamespace = null;
-    labelNamespace = new StringBuffer("kubectl label namespace ");
-    labelNamespace.append(namespace)
-        .append(" istio-injection=enabled --overwrite");
-    logger.info("labelNamespace: kubectl command {0}", new String(labelNamespace));
-    try {
-      result = exec(new String(labelNamespace), true);
-    } catch (Exception ex) {
-      logger.info("labelNamespace: kubectl returned {0}", result.stdout());
-      logger.info("Exception in labelNamespace() {0}", ex);
-      return false;
-    }
-    logger.info("labelNamespace: kubectl returned {0}", result.stdout());
-    return true;
   }
 
   /**
