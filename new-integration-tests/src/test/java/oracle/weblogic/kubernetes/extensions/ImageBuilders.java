@@ -10,11 +10,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -114,50 +118,53 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
         assertTrue(Operator.buildImage(operatorImage));
 
-        // build MII basic image
-        miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-        assertTrue(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
-            null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
-            String.format("Failed to create the image %s using WebLogic Image Tool",
-                miiBasicImage));
+        if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+          // build MII basic image
+          miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+          assertTrue(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+              null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
+              String.format("Failed to create the image %s using WebLogic Image Tool",
+                  miiBasicImage));
 
-        // build basic wdt-domain-in-image image
-        wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-        assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
-            WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
-            String.format("Failed to create the image %s using WebLogic Image Tool",
-                wdtBasicImage));
+          // build basic wdt-domain-in-image image
+          wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+          assertTrue(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+              WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
+              String.format("Failed to create the image %s using WebLogic Image Tool",
+                  wdtBasicImage));
 
 
-        /* Check image exists using docker images | grep image tag.
-         * Tag name is unique as it contains date and timestamp.
-         * This is a workaround for the issue on Jenkins machine
-         * as docker images imagename:imagetag is not working and
-         * the test fails even though the image exists.
-         */
-        assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
-            String.format("Image %s doesn't exist", miiBasicImage));
+          /* Check image exists using docker images | grep image tag.
+           * Tag name is unique as it contains date and timestamp.
+           * This is a workaround for the issue on Jenkins machine
+           * as docker images imagename:imagetag is not working and
+           * the test fails even though the image exists.
+           */
+          assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
+              String.format("Image %s doesn't exist", miiBasicImage));
 
-        assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
-            String.format("Image %s doesn't exist", wdtBasicImage));
+          assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
+              String.format("Image %s doesn't exist", wdtBasicImage));
 
-        if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-          logger.info("docker login");
-          assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+          if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
+            logger.info("docker login");
+            assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
+          }
         }
-
         // push the image
         if (!REPO_NAME.isEmpty()) {
           logger.info("docker push image {0} to {1}", operatorImage, REPO_NAME);
           assertTrue(dockerPush(operatorImage), String.format("docker push failed for image %s", operatorImage));
 
-          logger.info("docker push mii basic image {0} to registry", miiBasicImage);
-          assertTrue(dockerPush(miiBasicImage), String.format("docker push failed for image %s", miiBasicImage));
+          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+            logger.info("docker push mii basic image {0} to registry", miiBasicImage);
+            assertTrue(dockerPush(miiBasicImage), String.format("docker push failed for image %s", miiBasicImage));
 
-          logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
-          assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
-
+            logger.info("docker push wdt basic domain in image {0} to registry", wdtBasicImage);
+            assertTrue(dockerPush(wdtBasicImage), String.format("docker push failed for image %s", wdtBasicImage));
+          }
         }
+
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
           // We can't figure out why the kind clusters can't pull images from OCR using the image pull secret. There
@@ -259,7 +266,65 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
     if (result != null) {
       logger.info("result.stdout: \n{0}", result.stdout());
+      String stdout = result.stdout();
+      logger.info("result.stdout: \n{0}", stdout);
       logger.info("result.stderr: \n{0}", result.stderr());
+
+      // check if delete was successful and respond if tag couldn't be deleted because there is only one image
+      if (!stdout.isEmpty()) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+          JsonNode root = mapper.readTree(stdout);
+          JsonNode errors = root.path("errors");
+          if (errors != null) {
+            Iterator<JsonNode> it = errors.elements();
+            while (it.hasNext()) {
+              JsonNode entry = it.next();
+              if (entry != null) {
+                JsonNode code = entry.path("code");
+                if (code != null) {
+                  if ("SEMANTIC_VALIDATION_ERROR".equals(code.asText())) {
+                    // The delete of the tag failed because there is only one tag remaining in the
+                    // repository
+                    // Note: there are probably other semantic validation errors, but I don't think
+                    // it's worth
+                    // checking now because our use cases are fairly simple
+
+                    int colonIdx = imageAndTag.indexOf(':');
+                    String repo = imageAndTag.substring(0, colonIdx);
+
+                    // Delete the repository
+                    curlCmd =
+                        "curl -skL -X \"DELETE\" -H \"Authorization: Bearer "
+                            + token
+                            + "\" \"https://"
+                            + registry
+                            + "/20180419/docker/repos/"
+                            + tenancy
+                            + "/"
+                            + repo
+                            + "\"";
+                    logger.info("About to invoke: " + curlCmd);
+                    result = null;
+                    try {
+                      result = ExecCommand.exec(curlCmd, true);
+                    } catch (Exception e) {
+                      logger.info("Got exception while running command: {0}", curlCmd);
+                      logger.info(e.toString());
+                    }
+                    if (result != null) {
+                      logger.info("result.stdout: \n{0}", result.stdout());
+                      logger.info("result.stderr: \n{0}", result.stderr());
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (JsonProcessingException e) {
+          logger.info("Got exception, parsing failed with errors " + e.getMessage());
+        }
+      }
     }
   }
 

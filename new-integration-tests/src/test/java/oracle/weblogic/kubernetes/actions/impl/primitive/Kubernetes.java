@@ -43,6 +43,7 @@ import io.kubernetes.client.openapi.models.V1ClusterRoleBindingList;
 import io.kubernetes.client.openapi.models.V1ClusterRoleList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Event;
@@ -96,7 +97,7 @@ public class Kubernetes implements LoggedTest {
   private static String RESOURCE_VERSION = "";
   private static Integer TIMEOUT_SECONDS = 5;
   private static String DOMAIN_GROUP = "weblogic.oracle";
-  private static String DOMAIN_VERSION = "v7";
+  private static String DOMAIN_VERSION = "v8";
   private static String DOMAIN_PLURAL = "domains";
   private static String FOREGROUND = "Foreground";
   private static String BACKGROUND = "Background";
@@ -130,6 +131,10 @@ public class Kubernetes implements LoggedTest {
     try {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
       apiClient = Configuration.getDefaultApiClient();
+      // disable connection and read write timeout to force the internal HTTP client
+      // to keep a long running connection with the server to fix SSL connection closed issue
+      apiClient.setConnectTimeout(0);
+      apiClient.setReadTimeout(0);
       coreV1Api = new CoreV1Api();
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
@@ -502,6 +507,42 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
+   * Get the container's restart count in the pod.
+   * @param namespace name of the pod's namespace
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod
+   * @param containerName name of the container, null if there is only one container
+   * @return restart count of the container
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static int getContainerRestartCount(
+      String namespace, String labelSelector, String podName, String containerName)
+      throws ApiException {
+
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null && pod.getStatus() != null) {
+      List<V1ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
+      // if containerName is null, get first container restart count
+      if (containerName == null && containerStatuses.size() >= 1) {
+        return containerStatuses.get(0).getRestartCount();
+      } else {
+        for (V1ContainerStatus containerStatus : containerStatuses) {
+          if (containerName.equals(containerStatus.getName())) {
+            return containerStatus.getRestartCount();
+          }
+        }
+        logger.severe("Container {0} status doesn't exist or pod's container statuses is empty in namespace {1}",
+            containerName, namespace);
+      }
+    } else {
+      logger.severe("Pod {0} doesn't exist or pod status is null in namespace {1}",
+          podName, namespace);
+    }
+    return 0;
+  }
+
+
+  /**
    * Get the weblogic.domainRestartVersion label from a given pod.
    *
    * @param namespace in which to check for the pod existence
@@ -565,6 +606,23 @@ public class Kubernetes implements LoggedTest {
       throws IOException, ApiException {
     Copy copy = new Copy();
     copy.copyDirectoryFromPod(pod, srcPath, destination);
+  }
+
+  /**
+   * Copy a file from local filesystem to Kubernetes pod.
+   * @param namespace namespace of the pod
+   * @param pod name of the pod where the file is copied to
+   * @param container name of the container
+   * @param srcPath source file location
+   * @param destPath destination file location on pod
+   * @throws IOException when copy fails
+   * @throws ApiException when pod interaction fails
+   */
+  public static void copyFileToPod(
+      String namespace, String pod, String container, Path srcPath, Path destPath)
+      throws IOException, ApiException {
+    Copy copy = new Copy(apiClient);
+    copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
   // --------------------------- namespaces -----------------------------------
@@ -1789,6 +1847,28 @@ public class Kubernetes implements LoggedTest {
   // --------------------------- Role-based access control (RBAC)   ---------------------------
 
   /**
+   * Create a cluster role.
+   * @param clusterRole V1ClusterRole object containing cluster role configuration data
+   * @return true if creation is successful, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createClusterRole(V1ClusterRole clusterRole) throws ApiException {
+    try {
+      V1ClusterRole cr = rbacAuthApi.createClusterRole(
+          clusterRole, // cluster role configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
    * Create a Cluster Role Binding.
    *
    * @param clusterRoleBinding V1ClusterRoleBinding object containing role binding configuration data
@@ -1800,6 +1880,31 @@ public class Kubernetes implements LoggedTest {
     try {
       V1ClusterRoleBinding crb = rbacAuthApi.createClusterRoleBinding(
           clusterRoleBinding, // role binding configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      logger.severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Create a role binding in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param roleBinding V1RoleBinding object containing role binding configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createNamespacedRoleBinding(String namespace, V1RoleBinding roleBinding) throws ApiException {
+    try {
+      V1RoleBinding crb = rbacAuthApi.createNamespacedRoleBinding(
+          namespace, // namespace where this role binding is created
+          roleBinding, // role binding configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
           null // fieldManager is a name associated with the actor
@@ -1838,13 +1943,13 @@ public class Kubernetes implements LoggedTest {
   }
 
   /**
-   * List cluster role bindings.
+   * List role bindings in all namespaces.
    *
    * @param labelSelector labels to narrow the list
    * @return V1RoleBindingList list of {@link V1RoleBinding} objects
    * @throws ApiException when listing fails
    */
-  public static V1RoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+  public static V1RoleBindingList listRoleBindingForAllNamespaces(String labelSelector) throws ApiException {
     V1RoleBindingList roleBindings;
     try {
       roleBindings = rbacAuthApi.listRoleBindingForAllNamespaces(
@@ -1863,6 +1968,34 @@ public class Kubernetes implements LoggedTest {
       throw apex;
     }
     return roleBindings;
+  }
+
+  /**
+   * List cluster role bindings.
+   *
+   * @param labelSelector labels to narrow the list
+   * @return V1ClusterRoleBindingList list of {@link V1CLusterRoleBinding} objects
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static V1ClusterRoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
+    V1ClusterRoleBindingList clusterRoleBindingList;
+    try {
+      clusterRoleBindingList = rbacAuthApi.listClusterRoleBinding(
+          PRETTY, // String | If true, then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          labelSelector, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources
+      );
+    } catch (ApiException apex) {
+      logger.warning(apex.getResponseBody());
+      throw apex;
+    }
+    return clusterRoleBindingList;
   }
 
   /**

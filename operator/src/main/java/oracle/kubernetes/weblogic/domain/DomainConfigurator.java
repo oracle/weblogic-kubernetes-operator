@@ -167,6 +167,16 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    getDomainSpec().setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize);
+    return this;
+  }
+
+  public DomainConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
+    getDomainSpec().setMaxClusterConcurrentStartup(maxConcurrentStartup);
+    return this;
+  }
+
   /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *
@@ -468,6 +478,13 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withOpssWalletFileSecret(String secret);
+
+  /**
+   * Add Istio for the domain resource.
+   *
+   * @return this object
+   */
+  public abstract DomainConfigurator withIstio();
 
   /**
    * Add domain type for the domain resource.
