@@ -91,8 +91,8 @@ public class DbUtils {
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
     }
 
-    logger.info("Start Oracle DB with dbImage: {0}, imagePullPolicy: {1}, dbPort: {2}, "
-        + "dbNamespace: {3}", dbImage, dbPort, dbNamespace);
+    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {2}, dbNamespace: {3}",
+        dbImage, dbPort, dbNamespace);
     startOracleDB(dbImage, dbPort, dbNamespace, isUseSecret);
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, imagePullPolicy: {2}, "
         + "dbUrl: {3}, dbNamespace: {4}", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
@@ -207,6 +207,12 @@ public class DbUtils {
     assertTrue(deploymentCreated, String.format(
         "Create deployment failed for oracleDbDepl in namespace %s ",
         dbNamespace));
+
+    try {
+      Thread.sleep(2 * 1000);
+    } catch (InterruptedException ie) {
+        // ignore
+    }
 
     // wait for the Oracle DB pod to be ready
     String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
