@@ -85,8 +85,8 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
   private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
-  private static final String WDT_IMAGE_NAME1 = REPO_NAME + "domain1-cdxaction-wdt-image";
-  private static final String WDT_IMAGE_NAME2 = REPO_NAME + "domain2-cdxaction-wdt-image";
+  private static final String WDT_IMAGE_NAME1 = "domain1-cdxaction-wdt-image";
+  private static final String WDT_IMAGE_NAME2 = "domain2-cdxaction-wdt-image";
   private static final String WDT_APP_NAME = "txforward";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
 
@@ -361,7 +361,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("Image")
-            .image(REPO_NAME + domainImage)
+            .image(domainImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new V1SecretReference()
