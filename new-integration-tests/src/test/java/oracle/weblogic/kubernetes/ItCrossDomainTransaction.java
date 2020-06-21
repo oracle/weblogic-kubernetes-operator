@@ -52,7 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
