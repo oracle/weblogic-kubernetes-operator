@@ -48,7 +48,7 @@ public class TestUtils {
       if (managedServers.containsValue(false)) {
         try {
           // sometimes the pod is not ready even the condition check is ready, sleep a little bit
-          Thread.sleep(100);
+          Thread.sleep(1000);
         } catch (InterruptedException ignore) {
           // ignore
         }
@@ -57,6 +57,8 @@ public class TestUtils {
           result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
+          logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+              i, result.exitValue(), response, result.stderr());
           managedServers.keySet().forEach(key -> {
             if (response.contains(key)) {
               managedServers.put(key, true);
@@ -180,30 +182,6 @@ public class TestUtils {
   }
 
   /**
-   * Check if the given port number is free.
-   *
-   * @param port port number to check
-   * @return true if the port is free, false otherwise
-   */
-  private static boolean isLocalPortFree(int port) {
-    Socket socket = null;
-    try {
-      socket = new Socket(K8S_NODEPORT_HOST, port);
-      return false;
-    } catch (IOException ignored) {
-      return true;
-    } finally {
-      if (socket != null) {
-        try {
-          socket.close();
-        } catch (IOException ex) {
-          logger.severe("can not close Socket {0}", ex.getMessage());
-        }
-      }
-    }
-  }
-
-  /**
    * Call a web app and wait for the response code 200.
    * @param curlCmd curl command to call the web app
    * @param maxIterations max iterations to call the curl command
@@ -221,7 +199,7 @@ public class TestUtils {
 
         if (result.exitValue() != 0 || !responseCode.equals("200")) {
           logger.info("callWebApp did not return 200 response code, got {0}, iteration {1} of {2}",
-              responseCode, i, maxIterations);
+                  responseCode, i, maxIterations);
 
           try {
             Thread.sleep(1000);
@@ -252,5 +230,29 @@ public class TestUtils {
     }
 
     return false;
+  }
+
+  /**
+   * Check if the given port number is free.
+   *
+   * @param port port number to check
+   * @return true if the port is free, false otherwise
+   */
+  private static boolean isLocalPortFree(int port) {
+    Socket socket = null;
+    try {
+      socket = new Socket(K8S_NODEPORT_HOST, port);
+      return false;
+    } catch (IOException ignored) {
+      return true;
+    } finally {
+      if (socket != null) {
+        try {
+          socket.close();
+        } catch (IOException ex) {
+          logger.severe("can not close Socket {0}", ex.getMessage());
+        }
+      }
+    }
   }
 }

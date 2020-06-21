@@ -54,12 +54,12 @@ public class Ingress {
           .backend(new ExtensionsV1beta1IngressBackend()
               .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
               .servicePort(new IntOrString(managedServerPort))
-          );
+        );
       ArrayList<ExtensionsV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
-      String ingressHost = domainUid + "." + clusterName + ".org";
+      String ingressHost = domainUid + "." + clusterName + ".test";
       ExtensionsV1beta1IngressRule ingressRule = new ExtensionsV1beta1IngressRule()
           .host(ingressHost)
           .http(new ExtensionsV1beta1HTTPIngressRuleValue()
