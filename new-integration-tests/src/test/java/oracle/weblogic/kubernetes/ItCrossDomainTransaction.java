@@ -85,8 +85,8 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
   private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
-  private static final String WDT_IMAGE_NAME1 = "domain1-cdxaction-wdt-image";
-  private static final String WDT_IMAGE_NAME2 = "domain2-cdxaction-wdt-image";
+  private static final String WDT_IMAGE_NAME1 = REPO_NAME + "domain1-cdxaction-wdt-image";
+  private static final String WDT_IMAGE_NAME2 = REPO_NAME + "domain2-cdxaction-wdt-image";
   private static final String WDT_APP_NAME = "txforward";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
 
@@ -350,6 +350,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount, String domainImage) {
+    logger.info("Image to be used is {0}", domainImage);
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
