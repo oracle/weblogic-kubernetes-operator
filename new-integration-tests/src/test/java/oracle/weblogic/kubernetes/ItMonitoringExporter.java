@@ -278,7 +278,7 @@ class ItMonitoringExporter implements LoggedTest {
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
     ingressHost1List =
-        createIngressForDomainAndVerify(domain1Uid, domain1Namespace, nodeportshttp1,clusterNameMsPortMap, false);
+        createIngressForDomainAndVerify(domain1Uid, domain1Namespace,clusterNameMsPortMap, false);
     ingressHost2List =
             createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp1);
@@ -539,15 +539,15 @@ class ItMonitoringExporter implements LoggedTest {
 
       //wait until it starts dashboard
       String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
-                      + " -X GET http://admin:12345678@%s:%s/api/datasources",
+                      + " -X GET http://admin:12345678@%s:%s/api/dashboards",
               K8S_NODEPORT_HOST, nodeportgrafana);
       withStandardRetryPolicy
               .conditionEvaluationListener(
-                      condition -> logger.info("Check access to grafana dashboard  "
+                condition -> logger.info("Check access to grafana dashboard  "
                                       + "(elapsed time {0}ms, remaining time {1}ms)",
                               condition.getElapsedTimeInMS(),
                               condition.getRemainingTimeInMS()))
-              .until(assertDoesNotThrow(() -> searchForKey(curlCmd, "prometheus"),
+              .until(assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
                       String.format("Check access to grafana dashboard"
                               )));
       logger.info("installing grafana dashboard");

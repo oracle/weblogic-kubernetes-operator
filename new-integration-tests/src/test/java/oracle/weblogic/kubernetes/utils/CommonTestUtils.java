@@ -410,6 +410,23 @@ public class CommonTestUtils {
    * @param domainNamespace WebLogic domain namespace in which the domain exists
    * @param nodeport node port of the ingress controller
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
+   * @return list of ingress hosts
+   */
+  public static List<String> createIngressForDomainAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             int nodeport,
+                                                             Map<String, Integer> clusterNameMSPortMap
+                                                             ) {
+    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap, true);
+  }
+
+  /**
+   * Create an ingress for the domain with domainUid in the specified namespace.
+   *
+   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
+   * @param domainNamespace WebLogic domain namespace in which the domain exists
+   * @param nodeport node port of the ingress controller
+   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @param setIngressHost if false does not set ingress host
    * @return list of ingress hosts
    */
