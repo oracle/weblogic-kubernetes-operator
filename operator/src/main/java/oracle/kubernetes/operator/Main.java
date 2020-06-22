@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -85,7 +86,7 @@ public class Main {
   private static final TuningParameters tuningAndConfig;
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
   private static Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
-  private static Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  private static Map<String, AtomicBoolean> namespaceStoppingMap = new ConcurrentHashMap<>();
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
@@ -104,6 +105,23 @@ public class Main {
   private static final Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
+
+  /* MARKER-2.6.0-ONLY */
+  // This is needed only for 2.6.0 -- do not forward port to 3.x
+  // In 3.0.0, we are switching the CRD to enable the domain status endpoint. This means that all updates to the
+  // domain status must be made against that REST endpoint and that (according to the K8s doc) attempts to
+  // update the domain status through the normal endpoint will be ignored.
+  //
+  // However, for Kubernetes versions less than 1.16, the 2.6.0 CRD needs to remain
+  // unchanged for interoperability with 2.5.0. Therefore, 2.6.0 will detect if a 3.x operator has changed the
+  // CRD and modify its behavior. This provides an upgrade path from 2.x to 3.x, which is that all operators
+  // must be updated to 2.6.0 before a 3.0.0 operator is introduced to the cluster, but if this strategy is used
+  // then 2.5.0 is compatible with 2.6.0 and 2.6.0 is compatible with 3.0.0.
+  //
+  // When running on 1.16 and above, 2.6.0 will also create a CRD with the status endpoint enabled since there is
+  // no need to be compatible with 2.5.0.
+  public static AtomicBoolean useDomainStatusEndpoint = new AtomicBoolean(false);
+  /* END-2.6.0-ONLY */
 
   static {
     try {
@@ -191,11 +209,12 @@ public class Main {
 
       Step strategy = Step.chain(
           new InitializeNamespacesSecurityStep(targetNamespaces),
-          new NamespaceRulesReviewStep(),
-          CrdHelper.createDomainCrdStep(version,
-              new StartNamespacesStep(targetNamespaces)));
+          new NamespaceRulesReviewStep());
       if (!isDedicated()) {
-        strategy = Step.chain(strategy, readExistingNamespaces());
+        strategy = Step.chain(strategy, readExistingNamespaces(targetNamespaces));
+      } else {
+        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(version,
+            new StartNamespacesStep(targetNamespaces, false)));
       }
       runSteps(
           strategy,
@@ -208,7 +227,7 @@ public class Main {
   private static void completeBegin() {
     try {
       // start the REST server
-      startRestServer(principal, isNamespaceStopping.keySet());
+      startRestServer(principal, namespaceStoppingMap.keySet());
 
       // start periodic retry and recheck
       int recheckInterval = tuningAndConfig.getMainTuning().targetNamespaceRecheckIntervalSeconds;
@@ -228,14 +247,23 @@ public class Main {
     }
   }
 
-  private static void stopNamespace(String ns, boolean remove) {
-    processor.stopNamespace(ns);
-    AtomicBoolean stopping =
-        remove ? isNamespaceStopping.remove(ns) : isNamespaceStopping.get(ns);
+  private static void stopNamespace(String ns, boolean inTargetNamespaceList) {
+    AtomicBoolean isNamespaceStopping = isNamespaceStopping(ns);
 
-    if (stopping != null) {
-      stopping.set(true);
+    // Remove if namespace not in targetNamespace list
+    if (!inTargetNamespaceList) {
+      namespaceStoppingMap.remove(ns);
     }
+
+    // stop all Domains for namespace being stopped (not active)
+    if (isNamespaceStopping.get()) {
+      processor.stopNamespace(ns);
+    }
+
+    // set flag to indicate namespace is stopping.
+    isNamespaceStopping.set(true);
+
+    // unsubscribe from resource events for given namespace
     namespaceStatuses.remove(ns);
     domainWatchers.remove(ns);
     eventWatchers.remove(ns);
@@ -248,12 +276,12 @@ public class Main {
   private static void stopNamespaces(Collection<String> targetNamespaces,
                                      Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
-      stopNamespace(ns, (! targetNamespaces.contains(ns)));
+      stopNamespace(ns, targetNamespaces.contains(ns));
     }
   }
 
   private static AtomicBoolean isNamespaceStopping(String ns) {
-    return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+    return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
   private static void runSteps(Step firstStep) {
@@ -275,7 +303,7 @@ public class Main {
 
       // Check for namespaces that are removed from the operator's
       // targetNamespaces list, or that are deleted from the Kubernetes cluster.
-      Set<String> namespacesToStop = new TreeSet<>(isNamespaceStopping.keySet());
+      Set<String> namespacesToStop = new TreeSet<>(namespaceStoppingMap.keySet());
       for (String ns : targetNamespaces) {
         // the active namespaces are the ones that will not be stopped
         if (delegate.isNamespaceRunning(ns)) {
@@ -287,7 +315,10 @@ public class Main {
       Collection<String> namespacesToStart = targetNamespaces;
       int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
       DateTime now = DateTime.now();
+      boolean isFullRecheck = false;
       if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
+        processor.reportSuspendedFibers();
+        isFullRecheck = true;
         lastFullRecheck.set(now);
       } else {
         // check for namespaces that need to be started
@@ -301,7 +332,7 @@ public class Main {
       }
 
       if (!namespacesToStart.isEmpty()) {
-        runSteps(new StartNamespacesStep(namespacesToStart));
+        runSteps(new StartNamespacesStep(namespacesToStart, isFullRecheck));
       }
     };
   }
@@ -340,8 +371,8 @@ public class Main {
         .listPodAsync(ns, new PodListStep(ns));
   }
 
-  private static Step readExistingNamespaces() {
-    return new CallBuilder().listNamespaceAsync(new NamespaceListStep());
+  private static Step readExistingNamespaces(Collection<String> targetNamespaces) {
+    return new CallBuilder().listNamespaceAsync(new NamespaceListStep(targetNamespaces));
   }
 
   private static ConfigMapAfterStep createConfigMapStep(String ns) {
@@ -381,7 +412,7 @@ public class Main {
     return isDedicated()
         ? Collections.singleton(operatorNamespace)
         : getTargetNamespaces(Optional.ofNullable(getHelmVariable.apply("OPERATOR_TARGET_NAMESPACES"))
-            .orElse(tuningAndConfig.get("targetNamespaces")), operatorNamespace);
+        .orElse(tuningAndConfig.get("targetNamespaces")), operatorNamespace);
   }
 
   public static boolean isDedicated() {
@@ -428,7 +459,7 @@ public class Main {
       Thread.currentThread().interrupt();
     }
 
-    isNamespaceStopping.forEach((key, value) -> value.set(true));
+    namespaceStoppingMap.forEach((key, value) -> value.set(true));
   }
 
   private static EventWatcher createEventWatcher(String ns, String initialResourceVersion) {
@@ -506,7 +537,7 @@ public class Main {
             runSteps(Step.chain(
                 ConfigMapHelper.createScriptConfigMapStep(operatorNamespace, ns),
                 createConfigMapStep(ns)));
-            isNamespaceStopping.put(ns, new AtomicBoolean(false));
+            namespaceStoppingMap.put(ns, new AtomicBoolean(false));
           }
           break;
 
@@ -514,7 +545,7 @@ public class Main {
           // Mark the namespace as isStopping, which will cause the namespace be stopped
           // the next time when recheckDomains is triggered
           if (delegate.isNamespaceRunning(ns)) {
-            isNamespaceStopping.put(ns, new AtomicBoolean(true));
+            namespaceStoppingMap.put(ns, new AtomicBoolean(true));
           }
 
           break;
@@ -569,30 +600,35 @@ public class Main {
   }
 
   private static class StartNamespacesStep extends ForEachNamespaceStep {
-    StartNamespacesStep(Collection<String> targetNamespaces) {
+    private final boolean isFullRecheck;
+
+    StartNamespacesStep(Collection<String> targetNamespaces, boolean isFullRecheck) {
       super(targetNamespaces);
+      this.isFullRecheck = isFullRecheck;
     }
 
     @Override
     protected Step action(String ns) {
       return Step.chain(
           new NamespaceRulesReviewStep(ns),
-          new StartNamespaceBeforeStep(ns),
+          new StartNamespaceBeforeStep(ns, isFullRecheck),
           readExistingResources(operatorNamespace, ns));
     }
   }
 
   private static class StartNamespaceBeforeStep extends Step {
     private final String ns;
+    private final boolean isFullRecheck;
 
-    StartNamespaceBeforeStep(String ns) {
+    StartNamespaceBeforeStep(String ns, boolean isFullRecheck) {
       this.ns = ns;
+      this.isFullRecheck = isFullRecheck;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       NamespaceStatus nss = namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
-      if (!nss.isNamespaceStarting().getAndSet(true)) {
+      if (isFullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
         return doNext(packet);
       }
       return doEnd(packet);
@@ -840,6 +876,12 @@ public class Main {
   }
 
   private static class NamespaceListStep extends ResponseStep<V1NamespaceList> {
+    private final Collection<String> targetNamespaces;
+
+    NamespaceListStep(Collection<String> targetNamespaces) {
+      this.targetNamespaces = targetNamespaces;
+    }
+
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
@@ -850,22 +892,68 @@ public class Main {
     @Override
     protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       return isNotAuthorizedOrForbidden(callResponse)
-          ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
+          ? doNext(createDomainCrdAndStartNamespaces(targetNamespaces), packet) :
+          super.onFailureNoRetry(packet, callResponse);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
       V1NamespaceList result = callResponse.getResult();
       // don't bother processing pre-existing events
+      String intialResourceVersion = getInitialResourceVersion(result);
+      List<String> nsList = getExistingNamespaces(result);
 
-      if (namespaceWatcher == null) {
-        namespaceWatcher = createNamespaceWatcher(getInitialResourceVersion(result));
+      Set<String> namespacesToStart = new TreeSet<>(targetNamespaces);
+      for (String ns : targetNamespaces) {
+        if (!nsList.contains(ns)) {
+          LOGGER.warning(MessageKeys.NAMESPACE_IS_MISSING, ns);
+          namespacesToStart.remove(ns);
+        }
       }
-      return doNext(packet);
+      Step strategy = null;
+      if (!namespacesToStart.isEmpty()) {
+        strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
+            new CreateNamespaceWatcherStep(intialResourceVersion));
+      } else {
+        strategy = CrdHelper.createDomainCrdStep(version,
+            new CreateNamespaceWatcherStep(intialResourceVersion));
+      }
+      return doNext(strategy, packet);
+    }
+
+    private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart) {
+      return CrdHelper.createDomainCrdStep(version,
+          new StartNamespacesStep(namespacesToStart, false));
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
       return result != null ? result.getMetadata().getResourceVersion() : "";
+    }
+
+    private List<String> getExistingNamespaces(V1NamespaceList result) {
+      List<String> namespaces = new ArrayList<>();
+      if (result != null) {
+        for (V1Namespace ns:result.getItems()) {
+          namespaces.add(ns.getMetadata().getName());
+        }
+      }
+      return namespaces;
+    }
+  }
+
+  private static class CreateNamespaceWatcherStep extends Step {
+    private final String initialResourceVersion;
+
+    CreateNamespaceWatcherStep(String initialResourceVersion) {
+      this.initialResourceVersion = initialResourceVersion;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (namespaceWatcher == null) {
+        namespaceWatcher = createNamespaceWatcher(initialResourceVersion);
+      }
+      return doNext(packet);
     }
   }
 
@@ -912,7 +1000,7 @@ public class Main {
       // make sure the map entry is initialized the value to "false" if absent
       isNamespaceStopping(namespace);
 
-      return !isNamespaceStopping.get(namespace).get();
+      return !namespaceStoppingMap.get(namespace).get();
     }
 
     @Override

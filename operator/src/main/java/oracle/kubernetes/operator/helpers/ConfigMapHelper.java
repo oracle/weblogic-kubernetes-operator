@@ -76,7 +76,7 @@ public class ConfigMapHelper {
   /**
    * Factory for {@link Step} that deletes introspector config map.
    *
-   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
+   * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
    * @param namespace Namespace
    * @param next Next processing step
    * @return Step for deleting introspector config map
@@ -93,11 +93,11 @@ public class ConfigMapHelper {
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
     Map<String, String> map = new HashMap<>();
+
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
-          // Beginning of file, extract file name
           String filename = extractFilename(line);
           readFile(reader, filename, map, domainUid);
         }
@@ -370,7 +370,7 @@ public class ConfigMapHelper {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
         if (domainTopology == null || !domainTopology.getDomainValid()) {
-          // If introspector determines Domain is invalid then log erros and terminate the fiber
+          // If introspector determines Domain is invalid then log errors and terminate the fiber
           if (domainTopology != null) {
             logValidationErrors(domainTopology.getValidationErrors());
           }
@@ -380,7 +380,12 @@ public class ConfigMapHelper {
         ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
         packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
-        LOGGER.info(
+        String domainRestartVersion = info.getDomain().getRestartVersion();
+        if (domainRestartVersion != null) {
+          packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+          data.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+        }
+        LOGGER.fine(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
             wlsDomainConfig);
@@ -388,7 +393,10 @@ public class ConfigMapHelper {
             new SitConfigMapContext(
                 this, info.getDomainUid(), getOperatorNamespace(), info.getNamespace(), data);
 
-        return doNext(context.verifyConfigMap(getNext()), packet);
+        return doNext(
+            DomainValidationSteps.createValidateDomainTopologyStep(context.verifyConfigMap(getNext())),
+            packet
+        );
       }
 
       // TODO: How do we handle no topology?
@@ -547,7 +555,7 @@ public class ConfigMapHelper {
     }
 
     protected void logConfigMapDeleted() {
-      LOGGER.info(getConfigMapDeletedMessageKey());
+      LOGGER.fine(getConfigMapDeletedMessageKey());
     }
 
     private Step deleteSitConfigMap(Step next) {
@@ -583,8 +591,20 @@ public class ConfigMapHelper {
       V1ConfigMap result = callResponse.getResult();
       if (result != null) {
         Map<String, String> data = result.getData();
-        String topologyYaml = data.get("topology.yaml");
+        final String topologyYaml = data.get("topology.yaml");
+        final String domainRestartVersion = data.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
+
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version (from ino spec) "
+            + info.getDomain().getRestartVersion());
+        LOGGER.finest("ReadSituConfigMapStep.onSuccess restart version from cm result "
+            + domainRestartVersion);
+
         if (topologyYaml != null) {
+
+          if (domainRestartVersion != null) {
+            packet.put(ProcessingConstants.DOMAIN_RESTART_VERSION, domainRestartVersion);
+          }
+
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
           if (domainTopology != null) {
@@ -594,10 +614,11 @@ public class ConfigMapHelper {
                 info.getDomainUid(),
                 new Scan(wlsDomainConfig, new DateTime()));
             packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+            return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
           }
         }
-      }
 
+      }
       return doNext(packet);
     }
   }

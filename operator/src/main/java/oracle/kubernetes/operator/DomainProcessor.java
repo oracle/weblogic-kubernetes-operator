@@ -30,4 +30,6 @@ public interface DomainProcessor {
   public void dispatchEventWatch(Watch.Response<V1Event> item);
 
   public void stopNamespace(String ns);
+
+  public void reportSuspendedFibers();
 }

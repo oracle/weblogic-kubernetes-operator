@@ -20,11 +20,6 @@ public class MainImpl implements Main {
   private String kubernetesVersion;
 
   @Override
-  public void setIncludeDeprecated(boolean includeDeprecated) {
-    generator.setIncludeDeprecated(includeDeprecated);
-  }
-
-  @Override
   public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
     generator.setIncludeAdditionalProperties(includeAdditionalProperties);
   }

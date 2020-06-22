@@ -67,16 +67,19 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
+
   final WlsServerConfig scan;
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
+  private String domainRestartVersion;
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    domainRestartVersion = (String)packet.get(ProcessingConstants.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
@@ -120,6 +123,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String getDomainResourceName() {
     return info.getDomain().getMetadata().getName();
+  }
+
+  private String getDomainHomeSourceType() {
+    return getDomain().getDomainHomeSourceType();
   }
 
   String getPodName() {
@@ -185,34 +192,41 @@ public abstract class PodStepContext extends BasePodStepContext {
       List<V1ContainerPort> ports = new ArrayList<>();
       if (scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+          String napName = nap.getName();
           V1ContainerPort port =
               new V1ContainerPort()
-                  .name(LegalNames.toDns1123LegalName(nap.getName()))
+                  .name(LegalNames.toDns1123LegalName(napName))
                   .containerPort(nap.getListenPort())
                   .protocol("TCP");
           ports.add(port);
         }
       }
-      if (scan.getListenPort() != null) {
-        ports.add(
-            new V1ContainerPort()
-                .name("default")
-                .containerPort(scan.getListenPort())
-                .protocol("TCP"));
-      }
-      if (scan.getSslListenPort() != null) {
-        ports.add(
-            new V1ContainerPort()
-                .name("default-secure")
-                .containerPort(scan.getSslListenPort())
-                .protocol("TCP"));
-      }
-      if (scan.getAdminPort() != null) {
-        ports.add(
-            new V1ContainerPort()
-                .name("default-admin")
-                .containerPort(scan.getAdminPort())
-                .protocol("TCP"));
+      // Istio type is already passed from the introspector output, no need to create it again
+      if (!this.getDomain().isIstioEnabled()) {
+        if (scan.getListenPort() != null) {
+          String napName = "default";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getListenPort())
+                  .protocol("TCP"));
+        }
+        if (scan.getSslListenPort() != null) {
+          String napName = "default-secure";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getSslListenPort())
+                  .protocol("TCP"));
+        }
+        if (scan.getAdminPort() != null) {
+          String napName = "default-admin";
+          ports.add(
+              new V1ContainerPort()
+                  .name(napName)
+                  .containerPort(scan.getAdminPort())
+                  .protocol("TCP"));
+        }
       }
       return ports;
     }
@@ -358,7 +372,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
-      LOGGER.info(
+      LOGGER.fine(
           MessageKeys.POD_DUMP,
           AnnotationHelper.getDebugString(currentPod),
           AnnotationHelper.getDebugString(getPodModel()));
@@ -481,7 +495,12 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected V1ObjectMeta createMetadata() {
-    V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+    final V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
+
+    LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from INIT "
+        + domainRestartVersion);
+    LOGGER.finest("PodStepContext.createMetaData domainRestartVersion from serverspec "
+        + getServerSpec().getDomainRestartVersion());
     metadata
         .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
@@ -508,7 +527,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
-
     return podSpec;
   }
 
@@ -522,6 +540,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
     volumes.addAll(getServerSpec().getAdditionalVolumes());
+
     return volumes;
   }
 
@@ -538,7 +557,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
-
     return v1Container;
   }
 

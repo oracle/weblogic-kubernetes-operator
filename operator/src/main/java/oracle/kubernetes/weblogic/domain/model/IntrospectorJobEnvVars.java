@@ -21,9 +21,24 @@ public class IntrospectorJobEnvVars {
   public static final String INTROSPECT_HOME = "INTROSPECT_HOME";
 
   /**
-   * The credentials used by the introspection job.
+   * The credentials used by the introspection job - weblogic credenitals.
    */
   public static final String CREDENTIALS_SECRET_NAME = "CREDENTIALS_SECRET_NAME";
+
+  /**
+   * The domain source type.
+   */
+  public static final String DOMAIN_SOURCE_TYPE = "DOMAIN_SOURCE_TYPE";
+
+  /**
+   * Istio enabled.
+   */
+  public static final String ISTIO_ENABLED = "ISTIO_ENABLED";
+
+  /**
+   * Istio readiness port.
+   */
+  public static final String ISTIO_READINESS_PORT = "ISTIO_READINESS_PORT";
 
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with

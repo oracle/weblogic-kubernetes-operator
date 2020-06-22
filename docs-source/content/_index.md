@@ -23,8 +23,8 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 ***
 #### Current production release
 
-The [current production release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.5.0.
-This release was published on February 26, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
+The [current production release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.6.0.
+This release was published on June 1, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
 #### Preview of next major release
 
@@ -33,7 +33,7 @@ This release candidate is suitable for use by early adopters who wish to test 3.
 This release candidate was published on May 8, 2020.  There may be additional release candidates before the final 3.0.0 release.
 
 This release candidate introduces _non-backward compatible_ changes.  This release candidate cannot be run in the same
-cluster as another release of the operator.  You can upgrade from 2.5.0 to 3.0.0-rc1 without needing to restart or recreate
+cluster as another release of the operator.  You can upgrade from 2.6.0 to 3.0.0-rc1 without needing to restart or recreate
 any existing domains. However, please note that we _do_ plan to support running the final 3.0.0
 release in the same cluster with at least one 2.x release of the operator to allow for staged migration.
 

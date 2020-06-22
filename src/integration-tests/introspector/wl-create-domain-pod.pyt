@@ -303,6 +303,7 @@ else:
   set('ServerNamePrefix', "${MANAGED_SERVER_NAME_BASE}")
   set('DynamicClusterSize', ${CONFIGURED_MANAGED_SERVER_COUNT})
   set('MaxDynamicClusterSize', ${CONFIGURED_MANAGED_SERVER_COUNT})
+  set('MinDynamicClusterSize', 1)
   set('CalculatedListenPorts', false)
   #set('Id', 1)
 

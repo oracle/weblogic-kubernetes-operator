@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -40,12 +40,16 @@
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
+
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # setup tracing
 
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
+
 
 # Local createFolder method which does an 'exit 1' instead of exitOrLoop for
 # immediate failure during introspection
@@ -74,7 +78,6 @@ exportInstallHomes
 checkEnv -q \
          DOMAIN_UID \
          NAMESPACE \
-         DOMAIN_HOME \
          ORACLE_HOME \
          JAVA_HOME \
          NODEMGR_HOME \
@@ -88,7 +91,7 @@ for script_file in "${SCRIPTPATH}/wlst.sh" \
   [ ! -f "$script_file" ] && trace SEVERE "Missing file '${script_file}'." && exit 1 
 done 
 
-for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
+for dir_var in JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace SEVERE "Missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
@@ -99,7 +102,6 @@ if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
   trace "Creating data home directory: '${DATA_HOME}'"
   createFolder ${DATA_HOME}
 fi
-
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
@@ -116,22 +118,29 @@ traceDirs after
 checkWebLogicVersion || exit 1
 
 # start node manager
+# run instrospector wlst script
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' NM START"
 
+# start node manager -why ??
 trace "Starting node manager"
-
 ${SCRIPTPATH}/startNodeManager.sh || exit 1
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' NM END"
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MD5 START"
 
 # put domain secret's md5 cksum in file '/tmp/DomainSecret.md5'
 # the introspector wlst script and WL server pods will use this value
-
 generateDomainSecretMD5File '/tmp/DomainSecret.md5' || exit 1
 
-# run instrospector wlst script
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' MD5 END"
+
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT START"
 
 trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
-
 ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 
+traceTiming "INTROSPECTOR '${DOMAIN_UID}' INTROSPECT END"
 trace "Domain introspection complete"
 
 exit 0

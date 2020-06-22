@@ -52,7 +52,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private Map<String, AtomicBoolean> isNamespaceStopping;
+  private Map<String, AtomicBoolean> namespaceStoppingMap;
 
   private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
       throws NoSuchFieldException {
@@ -73,12 +73,12 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
     testSupport.addContainerComponent("TF", ThreadFactory.class, this);
 
-    isNamespaceStopping = getStoppingVariable();
-    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
+    namespaceStoppingMap = getStoppingVariable();
+    namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
   }
 
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
-    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStopping");
+    Memento stoppingMemento = StaticStubSupport.preserve(Main.class, "namespaceStoppingMap");
     return stoppingMemento.getOriginalValue();
   }
 
@@ -88,7 +88,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
    */
   @After
   public void tearDown() throws Exception {
-    isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
+    namespaceStoppingMap.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
     shutDownThreads();
 
     for (Memento memento : mementos) {
@@ -233,7 +233,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         new V1PersistentVolumeClaim().metadata(createMetadata(UID, NS, "claim1"));
     testSupport.defineResources(service1, service2, volume, claim);
 
-    isNamespaceStopping.get(NS).set(false);
+    namespaceStoppingMap.get(NS).set(false);
 
     readExistingResources();
 

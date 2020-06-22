@@ -51,7 +51,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
  * logging. Using FINER would cause more detailed logging, which includes what steps are executed in
  * what order and how they behaved.
  */
-public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
+public final class Fiber implements Runnable, Future<Void>, ComponentRegistry, AsyncFiber {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
@@ -72,6 +72,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private final Map<String, Component> components = new ConcurrentHashMap<>();
   /** The next action for this Fiber. */
   private NextAction na;
+  private NextAction last;
   private ClassLoader contextClassLoader;
   private CompletionCallback completionCallback;
   /** The thread on which this Fiber is currently executing, if applicable. */
@@ -88,7 +89,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   Fiber(Engine engine, Fiber parent) {
     this.owner = engine;
     this.parent = parent;
-    id = iotaGen.incrementAndGet();
+    id = (parent == null) ? iotaGen.incrementAndGet() : (parent.children.size() + 1);
 
     // if this is run from another fiber, then we naturally inherit its context
     // classloader,
@@ -120,6 +121,17 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   }
 
   /**
+   * Use this fiber's executor to schedule an operation for some time in the future.
+   * @param timeout the interval before the check should run, in units
+   * @param unit the unit of time that defines the interval
+   * @param runnable the operation to run
+   */
+  @Override
+  public void scheduleOnce(long timeout, TimeUnit unit, Runnable runnable) {
+    this.owner.getExecutor().schedule(runnable, timeout, unit);
+  }
+
+  /**
    * Starts the execution of this fiber asynchronously. This method works like {@link
    * Thread#start()}.
    *
@@ -134,9 +146,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     this.completionCallback = completionCallback;
 
     if (status.get() == NOT_COMPLETE) {
-      if (LOGGER.isFineEnabled()) {
+      LOGGER.finer("{0} started", getName());
+      if (LOGGER.isFinestEnabled()) {
         breadCrumbs = new ArrayList<>();
-        LOGGER.fine("{0} started", getName());
       }
 
       owner.addRunnable(this);
@@ -156,6 +168,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    *
    * @param resumePacket packet used in the resumed processing
    */
+  @Override
   public void resume(Packet resumePacket) {
     resume(resumePacket, null);
   }
@@ -211,13 +224,14 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    * @param t Throwable
    * @param packet Packet
    */
+  @Override
   public void terminate(Throwable t, Packet packet) {
     if (t == null) {
       throw new IllegalArgumentException();
     }
 
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} terminated", getName());
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer("{0} terminated", getName());
     }
 
     lock.lock();
@@ -239,13 +253,14 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
    *
    * @return Child fiber
    */
+  @Override
   public Fiber createChildFiber() {
-    Fiber child = owner.createChildFiber(this);
-
     synchronized (this) {
       if (children == null) {
         children = new ArrayList<>();
       }
+      Fiber child = owner.createChildFiber(this);
+
       children.add(child);
       if (status.get() == NOT_COMPLETE) {
         addBreadCrumb(child);
@@ -253,9 +268,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         // Race condition where child is created after parent is cancelled or done
         child.status.set(CANCELLED);
       }
+      return child;
     }
-
-    return child;
   }
 
   /**
@@ -270,8 +284,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       return false;
     }
 
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", getName());
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer("{0} cancelled", getName());
     }
 
     // synchronized(this) is used as Thread running Fiber will be holding lock
@@ -302,6 +316,22 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   @Override
   public boolean isDone() {
     return status.get() == DONE;
+  }
+
+  /**
+   * The most recently invoked step if the fiber is currently suspended.
+   * @return Last invoked step for suspended fiber.
+   */
+  public Step getSuspendedStep() {
+    lock.lock();
+    try {
+      if (na != null && na.kind == Kind.SUSPEND) {
+        return last.next;
+      }
+      return null;
+    } finally {
+      lock.unlock();
+    }
   }
 
   /**
@@ -389,7 +419,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return null;
   }
 
-  private boolean suspend(Holder<Boolean> isRequireUnlock, Consumer<Fiber> onExit) {
+  private boolean suspend(Holder<Boolean> isRequireUnlock, Consumer<AsyncFiber> onExit) {
     if (LOGGER.isFinerEnabled()) {
       LOGGER.finer("{0} suspending", getName());
     }
@@ -475,8 +505,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       if (s == CANCELLED
           || (s == NOT_COMPLETE
               && (na.throwable != null || (na.next == null && na.kind != Kind.SUSPEND)))) {
-        if (LOGGER.isFineEnabled()) {
-          LOGGER.fine("{0} completed", getName());
+        if (LOGGER.isFinerEnabled()) {
+          LOGGER.finer("{0} completed", getName());
         }
 
         recordBreadCrumb();
@@ -489,7 +519,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
             }
           }
         } catch (Throwable t) {
-          LOGGER.warning(MessageKeys.EXCEPTION, t);
+          LOGGER.fine(MessageKeys.EXCEPTION, t);
         } finally {
           status.compareAndSet(NOT_COMPLETE, DONE);
           condition.signalAll();
@@ -583,7 +613,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         return false;
       }
 
-      LOGGER.fine(CURRENT_STEPS, na.next);
+      LOGGER.finer(CURRENT_STEPS, na.next);
 
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer(
@@ -617,6 +647,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         result.packet = na.packet;
       }
 
+      last = na;
       na = result;
       switch (result.kind) {
         case INVOKE:
@@ -711,8 +742,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     // Mark fiber as cancelled, if not already done
     status.compareAndSet(NOT_COMPLETE, CANCELLED);
 
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine("{0} cancelled", getName());
+    if (LOGGER.isFinerEnabled()) {
+      LOGGER.finer("{0} cancelled", getName());
     }
 
     AtomicInteger count = new AtomicInteger(1); // ensure we don't hit zero before iterating
@@ -778,8 +809,8 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         StringBuilder sb = new StringBuilder();
         writeBreadCrumb(sb);
 
-        if (LOGGER.isFineEnabled()) {
-          LOGGER.fine("{0} bread crumb: {1}", getName(), sb.toString());
+        if (LOGGER.isFinestEnabled()) {
+          LOGGER.finest("{0} bread crumb: {1}", getName(), sb.toString());
         }
         breadCrumbs = null;
       }
