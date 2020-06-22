@@ -39,7 +39,7 @@ public class Configuration {
       + "Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
-  @Description("The Istio service mesh integration settings")
+  @Description("The Istio service mesh integration settings.")
   private Istio istio;
 
   public Model getModel() {
