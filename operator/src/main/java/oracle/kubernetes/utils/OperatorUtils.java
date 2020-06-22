@@ -75,6 +75,8 @@ public class OperatorUtils {
    * as these would munge to "member000002foo" and "member000012foo".
    *
    * <p>Handles up to 20 digits... - otherwise it doesn't zero fill...
+   * @param orig non-normalized value
+   * @return Normalized value ready for sorting
    */
   public static String getSortingString(String orig) {
     String ret = "";
