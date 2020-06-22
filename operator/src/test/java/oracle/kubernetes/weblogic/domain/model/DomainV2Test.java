@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
@@ -705,9 +706,9 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
-    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(domain.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
-        serverSpec.getConfigOverrideSecrets(),
+        domain.getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
@@ -717,14 +718,14 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomainReadFromYamlWithNoSetting_defaultsToDomainHomeInImage() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
-    assertThat(domain.isDomainHomeInImage(), is(true));
+    assertThat(domain.getDomainHomeSourceType(), is(DomainSourceType.Image.toString()));
   }
 
   @Test
   public void whenDomainReadFromYaml_domainHomeInImageIsDisabled() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
 
-    assertThat(domain.isDomainHomeInImage(), is(false));
+    assertThat(domain.getDomainHomeSourceType(), is(DomainSourceType.PersistentVolume.toString()));
   }
 
   @Test
@@ -751,9 +752,9 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(serverSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
-    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(domain.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
-        serverSpec.getConfigOverrideSecrets(),
+        domain.getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
@@ -782,9 +783,9 @@ public class DomainV2Test extends DomainTestBase {
                 "USER_MEM_ARGS",
                 "-Djava.security.egd=file:/dev/./urandom "),
             envVar("var1", "value0")));
-    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(domain.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
-        serverSpec.getConfigOverrideSecrets(),
+        domain.getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
   }
 
@@ -800,9 +801,9 @@ public class DomainV2Test extends DomainTestBase {
             envVar("JAVA_OPTIONS", "-verbose"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
             envVar("var1", "value0")));
-    assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
+    assertThat(domain.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
-        serverSpec.getConfigOverrideSecrets(),
+        domain.getConfigOverrideSecrets(),
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
   }
 
@@ -1410,13 +1411,6 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenDefaultConfiguration_domainHomeInImageIsTrue() {
-    configureDomain(domain);
-
-    assertThat(domain.getSpec().isDomainHomeInImage(), is(true));
-  }
-
-  @Test
   public void whenDomainHomeInImageSpecified_useValue() {
     configureDomain(domain).withDomainHomeInImage(false);
 
@@ -1435,20 +1429,6 @@ public class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withLogHome("/custom/logs/");
 
     assertThat(domain.getLogHome(), equalTo("/custom/logs/"));
-  }
-
-  @Test
-  public void whenDomainHomeInImage_logHomeNotEnabled() {
-    configureDomain(domain).withDomainHomeInImage(true);
-
-    assertThat(domain.getSpec().isLogHomeEnabled(), is(false));
-  }
-
-  @Test
-  public void whenDomainHomeNotInImage_logHomeEnabled() {
-    configureDomain(domain).withDomainHomeInImage(false);
-
-    assertThat(domain.getSpec().isLogHomeEnabled(), is(true));
   }
 
   @Test

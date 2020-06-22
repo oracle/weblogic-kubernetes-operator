@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 #  This script leverages the WebLogic image tool to build a WebLogic docker image with patches
-#  and without internet access. The version is 12.2.1.3.0 with PS4 and interim patch 2915930 and 30386660
+#  and without internet access. The default version is 12.2.1.4.0 with no patches.
 #  
 #  Assumptions:
 #    build_download.sh should be run first
@@ -11,10 +11,9 @@
 #
 #  Expects the following installers to already be installed:
 #    JDK Instaler: jdk-8u202-linux-x64.tar.gz to /scratch/artifacts/imagetool
-#    WebLogic Installer: fmw_12.2.1.3.0_wls_Disk1_1of1.zip to /scratch/artifacts/imagetool
-#    Patch 30386660_12.2.1.3.0 to /scratch/artifacts/imagetool
+#    WebLogic Installer: fmw_12.2.1.4.0_wls_Disk1_1of1.zip to /scratch/artifacts/imagetool
+#    Patch 30386660_12.2.1.4.0 to /scratch/artifacts/imagetool
 #    Patch 28186730_13.9.4.0.0 to /scratch/artifacts/imagetool
-#    Patch 29135930_12.2.1.3.191004 to /scratch/artifacts/imagetool
 #
 #  Environment varibale http_proxy and https_proxy are not required
 #

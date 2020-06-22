@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
@@ -59,6 +59,8 @@ spec:
       value: ""
     - name: ADMIN_PASSWORD
       value: ""
+    - name: DOMAIN_SOURCE_TYPE
+      value: "${DOMAIN_SOURCE_TYPE}"
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     lifecycle:
@@ -115,7 +117,6 @@ spec:
   hostname: ${SERVICE_NAME}
   restartPolicy: Always
   terminationGracePeriodSeconds: 1
-  volumes:
   # WL Pods shouldn't need secrets if the introspector is working:
   #- name: weblogic-credentials-volume
   #  secret:

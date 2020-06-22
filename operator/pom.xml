@@ -7,14 +7,13 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>2.5.0</version>
+    <version>2.6.0</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
 
-  <description>Oracle Weblogic Server Kubernetes Operator</description>
+  <description>Oracle WebLogic Server Kubernetes Operator</description>
   <name>operator-runtime</name>
-  <packaging>jar</packaging>
 
   <url>https://oracle.github.io/weblogic-kubernetes-operator</url>
   <inceptionYear>2017</inceptionYear>
@@ -26,6 +25,7 @@
   </licenses>
 
   <build>
+    <finalName>weblogic-kubernetes-operator</finalName>
     <plugins>
       <plugin>
         <groupId>pl.project13.maven</groupId>
@@ -40,7 +40,7 @@
           </execution>
         </executions>
         <configuration>
-          <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+          <dotGitDirectory>${root.basedir}/.git</dotGitDirectory>
           <prefix>git</prefix>
           <verbose>false</verbose>
           <generateGitPropertiesFile>true</generateGitPropertiesFile>
@@ -88,9 +88,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <argLine>
-            --illegal-access=permit
-          </argLine>
           <skipTests>${skip.unit.tests}</skipTests>
           <includes>
             <exclude>**/*Test.java</exclude>
@@ -123,11 +120,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <configuration>
-          <argLine>
-            --illegal-access=permit
-          </argLine>
-        </configuration>
         <executions>
           <execution>
             <goals>
@@ -222,6 +214,7 @@
           <mainClass>oracle.kubernetes.operator.helpers.CrdHelper</mainClass>
           <arguments>
             <argument>${project.basedir}/../kubernetes/crd/domain-crd.yaml</argument>
+            <argument>${project.basedir}/../kubernetes/crd/domain-v1beta1-crd.yaml</argument>
           </arguments>
         </configuration>
       </plugin>
@@ -243,11 +236,11 @@
     <dependency>
       <groupId>io.swagger</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>${swagger-core-version}</version>
     </dependency>
     <dependency>
       <groupId>com.kjetland</groupId>
       <artifactId>mbknor-jackson-jsonschema_2.12</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <!-- HTTP client: jersey-client -->
@@ -329,10 +322,6 @@
       <artifactId>javaee-web-api</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
@@ -359,6 +348,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>${junit-version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -392,5 +382,10 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <junit-version>4.13</junit-version>
+    <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+  </properties>
 
 </project>

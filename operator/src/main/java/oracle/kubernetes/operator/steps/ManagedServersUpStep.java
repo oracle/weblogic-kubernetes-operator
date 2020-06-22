@@ -100,21 +100,7 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
     }
 
-    Set<String> clusteredServers = new HashSet<>();
-
-    for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
-      factory.logIfReplicasExceedsClusterServersMax(clusterConfig);
-      for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
-        factory.addServerIfNeeded(serverConfig, clusterConfig);
-        clusteredServers.add(serverConfig.getName());
-      }
-    }
-
-    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
-      if (!clusteredServers.contains(serverConfig.getName())) {
-        factory.addServerIfNeeded(serverConfig, null);
-      }
-    }
+    Optional.ofNullable(config).ifPresent(wlsDomainConfig -> addServersToFactory(factory, wlsDomainConfig));
 
     info.setServerStartupInfo(factory.getStartupInfos());
     LOGGER.exiting();
@@ -123,6 +109,30 @@ public class ManagedServersUpStep extends Step {
         NEXT_STEP_FACTORY.createServerStep(
             info, config, factory.servers, factory.createNextStep(getNext())),
         packet);
+  }
+
+  private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig) {
+    Set<String> clusteredServers = new HashSet<>();
+
+    wlsDomainConfig.getClusterConfigs().values()
+        .forEach(wlsClusterConfig -> addClusteredServersToFactory(factory, clusteredServers, wlsClusterConfig));
+
+    wlsDomainConfig.getServerConfigs().values().stream()
+        .filter(wlsServerConfig -> !clusteredServers.contains(wlsServerConfig.getName()))
+        .forEach(wlsServerConfig -> factory.addServerIfNeeded(wlsServerConfig, null));
+  }
+
+  private void addClusteredServersToFactory(@Nonnull ServersUpStepFactory factory, Set<String> clusteredServers,
+                                            @Nonnull WlsClusterConfig wlsClusterConfig) {
+    factory.logIfInvalidReplicaCount(wlsClusterConfig);
+    // We depend on 'getServerConfigs()' returning an ascending 'numero-lexi'
+    // sorted list so that a cluster's "lowest named" servers have precedence
+    // when the  cluster's replica  count is lower than  the WL cluster size.
+    wlsClusterConfig.getServerConfigs()
+        .forEach(wlsServerConfig -> {
+          factory.addServerIfNeeded(wlsServerConfig, wlsClusterConfig);
+          clusteredServers.add(wlsServerConfig.getName());
+        });
   }
 
   // an interface to provide a hook for unit testing.
@@ -158,7 +168,7 @@ public class ManagedServersUpStep extends Step {
       return false;
     }
 
-    void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
+    private void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
       String serverName = serverConfig.getName();
       if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName())) {
         return;
@@ -226,6 +236,38 @@ public class ManagedServersUpStep extends Step {
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
       }
+    }
+
+    private void logIfReplicasLessThanClusterServersMin(WlsClusterConfig clusterConfig) {
+      if (lessThanMinConfiguredClusterSize(clusterConfig)) {
+        String clusterName = clusterConfig.getClusterName();
+        LOGGER.warning(
+                MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
+                domain.getReplicaCount(clusterName),
+                clusterConfig.getMinDynamicClusterSize(),
+                clusterName);
+
+        // Reset current replica count so we don't scale down less than minimum
+        // dynamic cluster size
+        domain.setReplicaCount(clusterName, clusterConfig.getMinDynamicClusterSize());
+      }
+    }
+
+    private boolean lessThanMinConfiguredClusterSize(WlsClusterConfig clusterConfig) {
+      if (clusterConfig != null) {
+        String clusterName = clusterConfig.getClusterName();
+        if (clusterConfig.hasDynamicServers()
+            && !domain.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
+          int configMinClusterSize = clusterConfig.getMinDynamicClusterSize();
+          return domain.getReplicaCount(clusterName) < configMinClusterSize;
+        }
+      }
+      return false;
+    }
+
+    private void logIfInvalidReplicaCount(WlsClusterConfig clusterConfig) {
+      logIfReplicasExceedsClusterServersMax(clusterConfig);
+      logIfReplicasLessThanClusterServersMin(clusterConfig);
     }
   }
 }

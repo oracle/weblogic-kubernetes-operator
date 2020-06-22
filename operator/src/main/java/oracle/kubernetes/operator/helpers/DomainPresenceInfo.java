@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static java.lang.System.lineSeparator;
+
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
  * including the scan and the Pods and Services for servers.
@@ -43,6 +46,8 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
+
+  private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
 
   /**
    * Create presence for a domain.
@@ -60,7 +65,7 @@ public class DomainPresenceInfo {
    * Create presence for a domain.
    *
    * @param namespace Namespace
-   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
+   * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
    */
   public DomainPresenceInfo(String namespace, String domainUid) {
     this.domain = new AtomicReference<>(null);
@@ -82,7 +87,7 @@ public class DomainPresenceInfo {
     return false;
   }
 
-  void setServerService(String serverName, V1Service service) {
+  public void setServerService(String serverName, V1Service service) {
     getSko(serverName).getService().set(service);
   }
 
@@ -465,6 +470,32 @@ public class DomainPresenceInfo {
     sb.append("}");
 
     return sb.toString();
+  }
+
+  /**
+   * Add validation warnings.
+   * @param validationWarning validation warning to be added
+   */
+  public void addValidationWarning(String validationWarning) {
+    validationWarnings.add(validationWarning);
+  }
+
+  /**
+   * Clear all validation warnings.
+   */
+  public void clearValidationWarnings() {
+    validationWarnings.clear();
+  }
+
+  /**
+   * Return all validation warnings as a String.
+   * @return validation warnings as a String, or null if there is no validation warnings
+   */
+  public String getValidationWarningsAsString() {
+    if (validationWarnings.isEmpty()) {
+      return null;
+    }
+    return String.join(lineSeparator(), validationWarnings);
   }
 
   /** Details about a specific managed server that will be started up. */

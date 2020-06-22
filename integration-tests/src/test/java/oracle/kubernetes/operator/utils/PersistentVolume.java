@@ -84,7 +84,7 @@ public class PersistentVolume {
             + userProjectsDir;
     LoggerHelper.getLocal().log(Level.INFO, "Executing cmd " + cmdPvPvc);
 
-    TestUtils.exec(cmdPvPvc, true);
+    TestUtils.execOrAbortProcess(cmdPvPvc, true);
   }
 
   public String getDirPath() {

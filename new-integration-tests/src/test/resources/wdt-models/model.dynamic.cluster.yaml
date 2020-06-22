@@ -1,0 +1,17 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+topology:
+    Cluster:
+        "DynamicCluster":
+            DynamicServers:
+                ServerTemplate:  "DynamicCluster-template"
+                ServerNamePrefix: "dynamic-server"
+                DynamicClusterSize: 4
+                MinDynamicClusterSize: 2
+                MaxDynamicClusterSize: 4
+                CalculatedListenPorts: false
+    ServerTemplate:
+        "DynamicCluster-template":
+            Cluster: "DynamicCluster"
+            ListenPort : 8001

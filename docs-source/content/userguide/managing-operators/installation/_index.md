@@ -92,13 +92,12 @@ the `helm upgrade` command requires that you supply a new Helm chart and image. 
 ```
 $ helm upgrade \
   --reuse-values \
-  --set image=oracle/weblogic-kubernetes-operator:2.5.0 \
+  --set image=oracle/weblogic-kubernetes-operator:2.6.0 \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
 ```
-
 
 #### Remove the operator
 
