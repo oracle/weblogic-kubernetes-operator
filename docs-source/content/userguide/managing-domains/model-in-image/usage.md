@@ -7,7 +7,7 @@ description = "Steps for creating and deploying Model in Image images and their 
 +++
 
 {{% notice info %}}
-This feature is supported only in 3.0.0-RC1.
+This feature is supported only in 3.0.0.
 {{% /notice %}}
 
 This document describes what's needed to create and deploy a typical Model in Image domain.
