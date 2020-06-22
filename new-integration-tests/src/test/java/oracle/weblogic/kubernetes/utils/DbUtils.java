@@ -91,7 +91,7 @@ public class DbUtils {
           OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, dbNamespace);
     }
 
-    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {2}, dbNamespace: {3}",
+    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {3}",
         dbImage, dbPort, dbNamespace);
     startOracleDB(dbImage, dbPort, dbNamespace, isUseSecret);
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, imagePullPolicy: {2}, "
