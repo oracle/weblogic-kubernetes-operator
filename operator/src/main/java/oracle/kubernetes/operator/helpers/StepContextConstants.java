@@ -8,7 +8,7 @@ public interface StepContextConstants {
   static final String SECRETS_VOLUME = "weblogic-credentials-volume";
   static final String SCRIPTS_VOLUME = "weblogic-domain-cm-volume";
   static final String DEBUG_CM_VOLUME = "weblogic-domain-debug-cm-volume";
-  static final String SIT_CONFIG_MAP_VOLUME_SUFFIX = "-weblogic-domain-introspect-cm-volume";
+  static final String SIT_CONFIG_MAP_VOLUME = "weblogic-domain-introspect-cm-volume";
   static final String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";

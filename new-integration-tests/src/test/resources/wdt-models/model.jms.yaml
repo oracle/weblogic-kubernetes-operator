@@ -1,0 +1,31 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+resources:
+    FileStore:
+        TestClusterFileStore:
+           Target: 'cluster-1'
+    JMSServer:
+        TestClusterJmsServer:
+            ProductionPausedAtStartup: false
+            ConsumptionPausedAtStartup: false
+            Target: 'cluster-1'
+            PersistentStore: 'TestClusterFileStore'
+            InsertionPausedAtStartup: false
+            MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+
+    JMSSystemResource:
+        TestClusterJmsModule:
+            Target: 'cluster-1'
+            SubDeployment:
+                TestClusterSubDeployment:
+                    Target: TestClusterJmsServer
+            JmsResource:
+              UniformDistributedQueue:
+                testUniformQueue:
+                   SubDeploymentName: TestClusterSubDeployment
+                   JNDIName: jms/testUniformQueue
+              UniformDistributedTopic:
+                testUniformTopic:
+                   SubDeploymentName: TestClusterSubDeployment
+                   ForwardingPolicy: Partitioned
+                   JNDIName: jms/testUniformTopic

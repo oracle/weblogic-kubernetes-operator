@@ -23,11 +23,11 @@ usage()
 {
   printf "\n"
   echo 1>&2 "1. To install imagetool with the version number specified by env.IMAGE_TOOL_VERSION"
-  echo 1>&2 "Usage: export IMAGE_TOOL_VERSION=1.8.1; $0"
+  echo 1>&2 "Usage: export IMAGE_TOOL_VERSION=1.8.3; $0"
   echo 1>&2 "Or on Jenkins, set the version number in IMAGE_TOOL_VERSION field"
   echo 1>&2 "2. To install imagetool with a specified version number"
   echo 1>&2 "Usage: $0 -v <imagetool version number>"
-  echo 1>&2 "Example: $0 -v 1.8.1"
+  echo 1>&2 "Example: $0 -v 1.8.3"
   echo 1>&2 "3. To install latest imagetool version"
   echo 1>&2 "Usage: $0"
   printf "\n"

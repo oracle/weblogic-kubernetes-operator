@@ -192,14 +192,6 @@ public class JsonSchemaMojoTest {
   }
 
   @Test
-  public void hasIncludeDeprecatedField_withAnnotation() throws NoSuchFieldException {
-    Field includeDeprecatedField = JsonSchemaMojo.class.getDeclaredField("includeDeprecated");
-    assertThat(includeDeprecatedField.getType(), equalTo(boolean.class));
-    assertThat(
-        fieldAnnotations.get(includeDeprecatedField), hasKey(toDescription(Parameter.class)));
-  }
-
-  @Test
   public void hasIncludeAdditionalPropertiesField_withAnnotation() throws NoSuchFieldException {
     Field includeAdditionalPropertiesField =
         JsonSchemaMojo.class.getDeclaredField("includeAdditionalProperties");
@@ -380,15 +372,6 @@ public class JsonSchemaMojoTest {
     mojo.execute();
 
     assertThat(main.getSchemaFile(), equalTo(SPECIFIED_FILE));
-  }
-
-  @Test
-  public void whenIncludeDeprecatedSet_setOnMain() throws Exception {
-    setMojoParameter("includeDeprecated", true);
-
-    mojo.execute();
-
-    assertThat(main.isIncludeDeprecated(), is(true));
   }
 
   @Test

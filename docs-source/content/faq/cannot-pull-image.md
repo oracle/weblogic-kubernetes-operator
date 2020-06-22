@@ -91,7 +91,7 @@ Here is an example of part of a domain custom resource file with the `imagePullS
 specified:
 
 ```
-apiVersion: "weblogic.oracle/v2"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: domain1
@@ -101,7 +101,7 @@ metadata:
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
-  domainHomeSourceType: Image
+  domainHomeInImage: true
   image: "some.registry.com/owner/domain1:1.0"
   imagePullPolicy: "IfNotPresent"
   imagePullSecrets:

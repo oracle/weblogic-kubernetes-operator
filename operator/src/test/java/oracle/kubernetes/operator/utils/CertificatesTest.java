@@ -17,7 +17,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -37,7 +37,7 @@ public class CertificatesTest {
   public void setUp() throws Exception {
     mementos.add(consoleHandlerMemento
           .collectLogMessages(logRecords, NO_INTERNAL_CERTIFICATE, NO_EXTERNAL_CERTIFICATE)
-          .withLogLevel(Level.INFO));
+          .withLogLevel(Level.FINE));
     mementos.add(InMemoryCertificates.installWithoutData());
   }
 
@@ -85,10 +85,10 @@ public class CertificatesTest {
   }
 
   @Test
-  public void whenNoExternalCertificateFile_logInfoMessage() {
+  public void whenNoExternalCertificateFile_logWarningMessage() {
     assertThat(Certificates.getOperatorExternalCertificateData(), nullValue());
 
-    assertThat(logRecords, containsInfo(NO_EXTERNAL_CERTIFICATE));
+    assertThat(logRecords, containsWarning(NO_EXTERNAL_CERTIFICATE));
   }
 
   @Test
@@ -106,10 +106,10 @@ public class CertificatesTest {
   }
 
   @Test
-  public void whenNoInternalCertificateFile_logInfoMessage() {
+  public void whenNoInternalCertificateFile_logWarningMessage() {
     Certificates.getOperatorInternalCertificateData();
 
-    assertThat(logRecords, containsInfo(NO_INTERNAL_CERTIFICATE));
+    assertThat(logRecords, containsWarning(NO_INTERNAL_CERTIFICATE));
   }
 
   @Test

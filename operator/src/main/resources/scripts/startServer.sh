@@ -12,8 +12,11 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
+traceTiming "POD '${SERVICE_NAME}' MAIN START"
+
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
+exportInstallHomes
 
 #
 # Define helper fn to copy a file only if src & tgt differ
@@ -41,17 +44,36 @@ function startWLS() {
   # Start NM
   #
 
+  traceTiming "POD '${SERVICE_NAME}' NM START"
+
   trace "Start node manager"
   # call script to start node manager in same shell
   # $SERVER_OUT_FILE, SERVER_PID_FILE, and SHUTDOWN_MARKER_FILE will be set in startNodeManager.sh
   . ${SCRIPTPATH}/startNodeManager.sh
   [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
 
+  traceTiming "POD '${SERVICE_NAME}' NM RUNNING"
+
   #
   # Verify that the domain secret hasn't changed
   #
 
+  traceTiming "POD '${SERVICE_NAME}' MD5 BEGIN"
+
   checkDomainSecretMD5 || exitOrLoop
+
+  traceTiming "POD '${SERVICE_NAME}' MD5 END"
+
+  #
+  # We "tail" the future WL Server .out file to stdout in background _before_ starting
+  # the WLS Server because we use WLST 'nmStart()' to start the server and nmStart doesn't return
+  # control until WLS reaches the RUNNING state.
+  #
+
+  if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
+    trace "Showing the server out file from ${SERVER_OUT_FILE}"
+    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} ${SERVER_PID_FILE} &
+  fi
 
   #
   # Start WL Server
@@ -59,8 +81,18 @@ function startWLS() {
 
   # TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
 
+  traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
+
   trace "Start WebLogic Server via the nodemanager"
   ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
+
+  traceTiming "POD '${SERVICE_NAME}' WLS STARTED"
+
+  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
+  SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
+  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
+    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
+  fi
 }
 
 function mockWLS() {
@@ -72,22 +104,6 @@ function mockWLS() {
 
   createFolder $STATEFILE_DIR
   echo "RUNNING:Y:N" > $STATEFILE
-}
-
-function waitUntilShutdown() {
-  #
-  # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
-  #
-  if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
-    trace "Showing the server out file from ${SERVER_OUT_FILE}"
-    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} ${SERVER_PID_FILE} &
-  fi
-  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true} 
-  SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
-  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
-    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
-  fi
-  waitForShutdownMarker
 }
 
 # Define helper fn to copy sit cfg xml files from one dir to another
@@ -232,12 +248,18 @@ copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 
-
+#
+# Start WLS
+#
 
 if [ "${MOCK_WLS}" == 'true' ]; then
   mockWLS
-  waitForShutdownMarker
 else
   startWLS
-  waitUntilShutdown
 fi
+
+#
+# Wait forever. Kubernetes will monitor this pod via liveness and readyness probes.
+#
+
+waitForShutdownMarker

@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 ------------
@@ -20,7 +20,6 @@ Usage:
     (Note that this test doesn't depend on Operator image as of 2018/10/16, but may in the future.)
 (2) Optionally specify values for input env vars (see introspectTest.sh for the list).
 (3) Run introspectTest.sh
-
 -------------------
 Internal Test Flow:
 -------------------

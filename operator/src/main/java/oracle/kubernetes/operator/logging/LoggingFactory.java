@@ -21,7 +21,7 @@ public class LoggingFactory {
     // hide implicit public constructor
   }
 
-  static JSON getJson() {
+  public static JSON getJson() {
     return json;
   }
 

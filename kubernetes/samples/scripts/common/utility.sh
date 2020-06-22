@@ -471,10 +471,15 @@ function createFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+
+  if [ "${istioEnabled}" == "true" ]; then
+      exposeAdminNodePortPrefix="${disabledPrefix}"
+  fi
+
+  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
   sed -i -e "s:%ISTIO_PREFIX%:${istioPrefix}:g" ${dcrOutput}
@@ -641,7 +646,7 @@ function checkPodState(){
  kubectl -n ${ns} get po ${pname}
 }
 
-# Checks if a pod is available in a given namesapce 
+# Checks if a pod is available in a given namespace
 function checkPod(){
 
  max=20
@@ -675,4 +680,22 @@ function checkPod(){
   echo "[ERROR] Could not find Pod [$pod] after 120s";
   exit 1
  fi
+}
+
+# Checks if a service is available in a given namespace
+function checkService(){
+ svc=$1
+ ns=$2
+ startSecs=$SECONDS
+ maxWaitSecs=20
+ while [ -z "`kubectl get service -n ${ns} | grep -w ${svc}`" ]; do
+   if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
+     echo "Service [$svc] not found after $((SECONDS - startSecs)) seconds, retrying ..."
+     sleep 5
+   else
+     echo "[Error] Could not find Service [$svc] after $((SECONDS - startSecs)) seconds"
+     exit 1
+   fi
+ done
+ echo "Service [$svc] found"
 }

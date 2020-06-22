@@ -10,6 +10,7 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.ApiextensionsV1beta1Api;
 import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
@@ -17,6 +18,8 @@ import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -108,15 +111,28 @@ public class CallBuilder {
                   requestParams.namespace,
                   (Domain) requestParams.body,
                   callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> createCrd =
+  private final CallFactory<V1CustomResourceDefinition> createCrd =
       (requestParams, usage, cont, callback) ->
           wrap(
               createCustomResourceDefinitionAsync(
+                  usage, (V1CustomResourceDefinition) requestParams.body, callback));
+  private final CallFactory<V1beta1CustomResourceDefinition> createBetaCrd =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createBetaCustomResourceDefinitionAsync(
                   usage, (V1beta1CustomResourceDefinition) requestParams.body, callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> replaceCrd =
+  private final CallFactory<V1CustomResourceDefinition> replaceCrd =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceCustomResourceDefinitionAsync(
+                  usage,
+                  requestParams.name,
+                  (V1CustomResourceDefinition) requestParams.body,
+                  callback));
+  private final CallFactory<V1beta1CustomResourceDefinition> replaceBetaCrd =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceBetaCustomResourceDefinitionAsync(
                   usage,
                   requestParams.name,
                   (V1beta1CustomResourceDefinition) requestParams.body,
@@ -235,14 +251,20 @@ public class CallBuilder {
   private final CallFactory<V1NamespaceList> listNamespace =
       (requestParams, usage, cont, callback) ->
           wrap(listNamespaceAsync(usage, cont, callback));
+  private final CallFactory<V1ConfigMapList> listConfigMaps =
+      (requestParams, usage, cont, callback) ->
+          wrap(listConfigMapsAsync(usage, requestParams.namespace, cont, callback));
   private final Boolean exact = Boolean.FALSE;
   private final Boolean export = Boolean.FALSE;
   private final CallFactory<Domain> readDomain =
       (requestParams, usage, cont, callback) ->
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1beta1CustomResourceDefinition> readCrd =
+  private final CallFactory<V1CustomResourceDefinition> readCrd =
       (requestParams, usage, cont, callback) ->
           wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
+  private final CallFactory<V1beta1CustomResourceDefinition> readBetaCrd =
+      (requestParams, usage, cont, callback) ->
+          wrap(readBetaCustomResourceDefinitionAsync(usage, requestParams.name, callback));
   private final CallFactory<V1ConfigMap> readConfigmap =
       (requestParams, usage, cont, callback) ->
           wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
@@ -696,7 +718,78 @@ public class CallBuilder {
         replaceDomainStatus);
   }
 
+  /* CRD's */
+
   private Call readCustomResourceDefinitionAsync(
+      ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1Api(client)
+        .readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
+  }
+
+  /**
+   * Asynchronous step for reading CRD.
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readCustomResourceDefinitionAsync(
+      String name, ResponseStep<V1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readCRD", null, name, null), readCrd);
+  }
+
+  private Call createCustomResourceDefinitionAsync(
+      ApiClient client,
+      V1CustomResourceDefinition body,
+      ApiCallback<V1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1Api(client)
+        .createCustomResourceDefinitionAsync(body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating CRD.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createCustomResourceDefinitionAsync(
+      V1CustomResourceDefinition body,
+      ResponseStep<V1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("createCRD", null, null, body), createCrd);
+  }
+
+  private Call replaceCustomResourceDefinitionAsync(
+      ApiClient client,
+      String name,
+      V1CustomResourceDefinition body,
+      ApiCallback<V1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1Api(client)
+        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for replacing CRD.
+   *
+   * @param name Name
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceCustomResourceDefinitionAsync(
+      String name,
+      V1CustomResourceDefinition body,
+      ResponseStep<V1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("replaceCRD", null, name, body), replaceCrd);
+  }
+
+  private Call readBetaCustomResourceDefinitionAsync(
       ApiClient client, String name, ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1beta1Api(client)
@@ -710,15 +803,13 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step readCustomResourceDefinitionAsync(
+  public Step readBetaCustomResourceDefinitionAsync(
       String name, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("readCRD", null, name, null), readCrd);
+        responseStep, new RequestParams("readBetaCRD", null, name, null), readBetaCrd);
   }
 
-  /* Services */
-
-  private Call createCustomResourceDefinitionAsync(
+  private Call createBetaCustomResourceDefinitionAsync(
       ApiClient client,
       V1beta1CustomResourceDefinition body,
       ApiCallback<V1beta1CustomResourceDefinition> callback)
@@ -734,14 +825,14 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step createCustomResourceDefinitionAsync(
+  public Step createBetaCustomResourceDefinitionAsync(
       V1beta1CustomResourceDefinition body,
       ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("createCRD", null, null, body), createCrd);
+        responseStep, new RequestParams("createBetaCRD", null, null, body), createBetaCrd);
   }
 
-  private Call replaceCustomResourceDefinitionAsync(
+  private Call replaceBetaCustomResourceDefinitionAsync(
       ApiClient client,
       String name,
       V1beta1CustomResourceDefinition body,
@@ -759,12 +850,44 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step replaceCustomResourceDefinitionAsync(
+  public Step replaceBetaCustomResourceDefinitionAsync(
       String name,
       V1beta1CustomResourceDefinition body,
       ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("replaceCRD", null, name, body), replaceCrd);
+        responseStep, new RequestParams("replaceBetaCRD", null, name, body), replaceBetaCrd);
+  }
+
+  private Call listConfigMapsAsync(
+      ApiClient client, String namespace, String cont, ApiCallback<V1ConfigMapList> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .listNamespacedConfigMapAsync(
+            namespace,
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            timeoutSeconds,
+            watch,
+            callback);
+  }
+
+  /**
+   * Asynchronous step for listing configmaps in a namespace.
+   *
+   * @param namespace the namespace from which to list configmaps
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listConfigMapsAsync(String namespace, ResponseStep<V1ConfigMapList> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("listConfigMap", namespace, null, null),
+          listConfigMaps);
   }
 
   private Call readConfigMapAsync(

@@ -13,7 +13,6 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -27,7 +26,6 @@ import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
 import static oracle.kubernetes.operator.wlsconfig.WlsDomainConfigTest.WlsServerConfigMatcher.withServerConfig;
-import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
@@ -160,6 +158,7 @@ public class WlsDomainConfigTest {
           + "            \"dynamicServers\": {\n"
           + "                \"dynamicClusterSize\": 2,\n"
           + "                \"maxDynamicClusterSize\": 8,\n"
+          + "                \"minDynamicClusterSize\": 1,\n"
           + "                \"serverNamePrefix\": \"dynamic-\",\n"
           + "                \"dynamicServerNames\": [\n"
           + "                    \"dynamic-1\",\n"
@@ -412,6 +411,7 @@ public class WlsDomainConfigTest {
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(8, wlsClusterConfig.getMaxDynamicClusterSize());
+    assertEquals(1, wlsClusterConfig.getMinDynamicClusterSize());
 
     List<WlsServerConfig> serverConfigs = wlsClusterConfig.getServerConfigs();
     assertEquals(7, serverConfigs.size()); // 5 static + 2 dynamic servers
@@ -470,29 +470,12 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifySuggestsUpdateToDynamicClusterIfReplicasTooHigh() {
-    createDomainConfig(JSON_STRING_MIXED_CLUSTER);
-    configureCluster("DockerCluster").withReplicas(3);
-
-    ArrayList<ConfigUpdate> suggestedConfigUpdates = new ArrayList<>();
-    wlsDomainConfig.validate(domain, suggestedConfigUpdates);
-
-    assertEquals(1, suggestedConfigUpdates.size());
-    WlsClusterConfig.DynamicClusterSizeConfigUpdate configUpdate =
-        (WlsClusterConfig.DynamicClusterSizeConfigUpdate) suggestedConfigUpdates.get(0);
-    assertEquals(3, configUpdate.targetClusterSize);
-  }
-
-  private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName);
-  }
-
-  @Test
   public void verifyNetworkAccessPointsInDynamicServersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(8, wlsClusterConfig.getMaxDynamicClusterSize());
+    assertEquals(1, wlsClusterConfig.getMinDynamicClusterSize());
 
     for (WlsServerConfig wlsServerConfig : wlsClusterConfig.getServerConfigs()) {
       if (wlsServerConfig.isDynamicServer()) {
@@ -615,62 +598,6 @@ public class WlsDomainConfigTest {
   @Test
   public void verifyGetMachineConfigsReturnNullIfNotFound() {
     assertNull(wlsDomainConfig.getMachineConfig("noSuchMachine"));
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecWarnsIfReplicasTooLarge() {
-    createDomainConfig(JSON_STRING_1_CLUSTER);
-    configureCluster("DockerCluster").withReplicas(10);
-
-    wlsDomainConfig.validate(domain);
-    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecNoWarningIfReplicasOK() {
-    createDomainConfig(JSON_STRING_1_CLUSTER);
-    configureCluster("DockerCluster").withReplicas(5);
-
-    wlsDomainConfig.validate(domain);
-    assertTrue(logRecords.isEmpty());
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge() {
-    createDomainConfig(JSON_STRING_2_CLUSTERS);
-    configureCluster("DockerCluster2").withReplicas(3);
-
-    wlsDomainConfig.validate(domain);
-    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecWarnsIfClusterStatupReplicasTooLarge_2clusters() {
-    createDomainConfig(JSON_STRING_2_CLUSTERS);
-    configureCluster("DockerCluster").withReplicas(10);
-    configureCluster("DockerCluster2").withReplicas(10);
-
-    wlsDomainConfig.validate(domain);
-    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster"));
-    assertThat(logRecords, containsWarning(REPLICA_MORE_THAN_WLS_SERVERS, "DockerCluster2"));
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecNoWarningIfClusterStatupReplicasOK() {
-    createDomainConfig(JSON_STRING_2_CLUSTERS);
-    configureCluster("DockerCluster2").withReplicas(2);
-
-    wlsDomainConfig.validate(domain);
-    assertTrue(logRecords.isEmpty());
-  }
-
-  @Test
-  public void verifyUpdateDomainSpecNoWarningIfClusterStatupOnDynamicCluster() {
-    createDomainConfig(JSON_STRING_MIXED_CLUSTER);
-    configureCluster("DockerCluster").withReplicas(10);
-
-    wlsDomainConfig.validate(domain);
-    assertTrue(logRecords.isEmpty());
   }
 
   @Test
