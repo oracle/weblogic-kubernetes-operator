@@ -27,6 +27,11 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+
 /** DomainSpec is a description of a domain. */
 @Description("DomainSpec is a description of a domain.")
 public class DomainSpec extends BaseConfiguration {
@@ -77,12 +82,12 @@ public class DomainSpec extends BaseConfiguration {
   private V1SecretReference webLogicCredentialsSecret;
 
   /**
-   * The in-pod name of the directory to store the domain, node manager, server logs, and server
+   * The in-pod name of the directory to store the domain, Node Manager, server logs, and server
    * .out files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, node manager, server logs, "
-          + "and server  *.out files")
+      "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
+          + "and server *.out files.")
   private String logHome;
 
   /**
@@ -108,17 +113,17 @@ public class DomainSpec extends BaseConfiguration {
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), the server .out file will be included in the pod's stdout.")
+  @Description("If true (the default), then the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
 
   /**
    * The WebLogic Docker image.
    *
-   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3
+   * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
       "The WebLogic Docker image; required when domainHomeInImage is true; "
-          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.")
+          + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
   /**
@@ -162,8 +167,13 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "True if this domain's home is defined in the Docker image for the domain. Defaults to true.")
+      "True indicates that the domain home file system is contained in the Docker image"
+          + " specified by the image field. False indicates that the domain home file system is located"
+          + " on a persistent volume.")
   private Boolean domainHomeInImage;
+
+  @Description("Properties affecting the WebLogic domain configuration.")
+  private Configuration configuration;
 
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
@@ -204,10 +214,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Configuration for the clusters.")
   protected final List<Cluster> clusters = new ArrayList<>();
-
-  @SuppressWarnings("unused")
-  @Description("Experimental feature configurations.")
-  private Experimental experimental;
 
   /**
    * Adds a Cluster to the DomainSpec.
@@ -335,9 +341,8 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  @Nullable
   public String getImage() {
-    return image;
+    return Optional.ofNullable(image).orElse(DEFAULT_IMAGE);
   }
 
   public void setImage(@Nullable String image) {
@@ -346,7 +351,15 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   public String getImagePullPolicy() {
-    return imagePullPolicy;
+    return Optional.ofNullable(imagePullPolicy).orElse(getInferredPullPolicy());
+  }
+
+  private String getInferredPullPolicy() {
+    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
+  }
+
+  private boolean useLatestImage() {
+    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
   }
 
   public void setImagePullPolicy(@Nullable String imagePullPolicy) {
@@ -401,7 +414,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @return log home enabled
    */
-  boolean isLogHomeEnabled() {
+  Boolean isLogHomeEnabled() {
     return Optional.ofNullable(logHomeEnabled).orElse(!isDomainHomeInImage());
   }
 
@@ -411,7 +424,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    * @param logHomeEnabled log home enabled
    */
-  public void setLogHomeEnabled(boolean logHomeEnabled) {
+  public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
   }
 
@@ -450,12 +463,24 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Whether to write server HTTP access log files to the directory specified in
+   * {@link #logHome} if {@link #logHomeEnabled} is true.
+   *
+   * @return true if server HTTP access log files should be included in the directory
+   *     specified in {@link #logHome}, false if server HTTP access log files should be written
+   *     to the directory as configured in the WebLogic domain home configuration
+   */
+  boolean getHttpAccessLogInLogHome() {
+    return KubernetesConstants.DEFAULT_HTTP_ACCESS_LOG_IN_LOG_HOME;
+  }
+
+  /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
    *
    * @return true or false
    * @since 2.0
    */
-  boolean isDomainHomeInImage() {
+  Boolean isDomainHomeInImage() {
     return Optional.ofNullable(domainHomeInImage).orElse(true);
   }
 
@@ -506,6 +531,20 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @Nullable
+  Configuration getConfiguration() {
+    return configuration;
+  }
+
+  void setConfiguration(@Nullable Configuration configuration) {
+    this.configuration = configuration;
+  }
+
+  public DomainSpec withConfiguration(@Nullable Configuration configuration) {
+    this.configuration = configuration;
+    return this;
+  }
+
+  @Nullable
   String getConfigOverrides() {
     return configOverrides;
   }
@@ -534,8 +573,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return istioEnabled
    */
   boolean isIstioEnabled() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getEnabled)
         .orElse(false);
   }
@@ -546,8 +585,8 @@ public class DomainSpec extends BaseConfiguration {
    * @return readinessPort
    */
   int getIstioReadinessPort() {
-    return Optional.ofNullable(experimental)
-        .map(Experimental::getIstio)
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
   }
@@ -572,9 +611,9 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
+            .append("configuration", configuration)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
-            .append("experimental", experimental);
+            .append("configOverrideSecrets", configOverrideSecrets);
 
     return builder.toString();
   }
@@ -599,9 +638,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHome)
             .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
+            .append(configuration)
             .append(configOverrides)
-            .append(configOverrideSecrets)
-            .append(experimental);
+            .append(configOverrideSecrets);
 
     return builder.toHashCode();
   }
@@ -624,8 +663,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
-            .append(image, rhs.image)
-            .append(imagePullPolicy, rhs.imagePullPolicy)
+            .append(getImage(), rhs.getImage())
+            .append(getImagePullPolicy(), rhs.getImagePullPolicy())
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)
             .append(managedServers, rhs.managedServers)
@@ -634,10 +673,9 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
+            .append(configuration, rhs.configuration)
             .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets)
-            .append(experimental, rhs.experimental);
-
+            .append(configOverrideSecrets, rhs.configOverrideSecrets);
     return builder.isEquals();
   }
 
@@ -679,6 +717,11 @@ public class DomainSpec extends BaseConfiguration {
 
   private boolean hasMaxUnavailable(Cluster cluster) {
     return cluster != null && cluster.getMaxUnavailable() != null;
+  }
+
+  private boolean isAllowReplicasBelowDynClusterSizeFor(Cluster cluster) {
+    return cluster == null ? DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE :
+        cluster.isAllowReplicasBelowMinDynClusterSize();
   }
 
   public AdminServer getAdminServer() {
@@ -744,6 +787,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public List<String> getAdminServerChannelNames() {
       return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
+    }
+
+    @Override
+    public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+      return isAllowReplicasBelowDynClusterSizeFor(getCluster(clusterName));
     }
 
     private Cluster getOrCreateCluster(String clusterName) {

@@ -1,0 +1,37 @@
+<!-- Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+-->
+
+<project name="clusterview.app" default="build">
+    <description>
+        ant script to build an application to test cluster communication
+    </description>
+    
+    <property environment="env" />
+    <property name="app" value="clusterview"/>
+    <property name="distdir" location="dist"/>
+    <property name="builddir" location="build" />    
+
+    <echo message="ORACLE_HOME=${env.ORACLE_HOME}"/>        
+    <path id="build.classpath">
+        <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+    </path>
+
+    <target name="build">
+        <echo message="building ${app}" />
+        <delete dir="${builddir}" quiet="true" />
+        <mkdir dir="build"/>
+        <copy includeemptydirs="true" todir="${builddir}">
+            <fileset dir="web">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+        <mkdir dir="${builddir}/WEB-INF/classes"/>        
+        <javac debug="${javac.debug}" srcdir="src/java" destdir="${builddir}/WEB-INF/classes">
+            <classpath refid="build.classpath"/>
+        </javac>
+        <delete dir="${distdir}" quiet="true" />
+        <mkdir dir="${distdir}"/>
+        <jar destfile="${distdir}/${app}.war" basedir="${builddir}" />
+    </target>
+</project>

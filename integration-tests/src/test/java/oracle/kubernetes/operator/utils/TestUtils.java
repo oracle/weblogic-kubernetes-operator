@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -31,8 +33,11 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
+import org.junit.jupiter.api.Assertions;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestUtils {
   private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
@@ -42,14 +47,26 @@ public class TestUtils {
    *
    * @param podName  pod name
    * @param domainNS namespace
-   * @throws Exception exception
+   * @throws RuntimeException if pod is not ready and output doesn't contain 1/1
    */
   public static void checkPodReady(String podName, String domainNS) throws Exception {
+    checkPodReady(podName, domainNS, BaseTest.getMaxIterationsPod());    
+  }
+
+  /**
+   * Checks if pod is ready.
+   *
+   * @param podName  pod name
+   * @param domainNS namespace
+   * @param maxIterations  max iterations count
+   * @throws RuntimeException if pod is not ready and output doesn't contain 1/1
+   */
+  public static void checkPodReady(String podName, String domainNS, int maxIterations) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for admin pod
-    checkCmdInLoop(cmd.toString(), "1/1", podName);
+    checkCmdInLoop(cmd.toString(), "1/1", podName, maxIterations);
   }
 
   /**
@@ -74,14 +91,27 @@ public class TestUtils {
    *
    * @param podName  - pod name
    * @param domainNS - domain namespace name
+   * @Exception RuntimeException if pod is not in Running state
    */
   public static void checkPodCreated(String podName, String domainNS) throws Exception {
+    checkPodCreated(podName, domainNS, BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * Checks that pod is created.
+   *
+   * @param podName  - pod name
+   * @param domainNS - domain namespace name
+   * @param maxIterations max iterations count
+   * @throws Exception RuntimeException if pod is not in Running state 
+   */
+  public static void checkPodCreated(String podName, String domainNS, int maxIterations) throws Exception {
 
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for pod to be running
-    checkCmdInLoop(cmd.toString(), "Running", podName);
+    checkCmdInLoop(cmd.toString(), "Running", podName, maxIterations);
   }
 
   /**
@@ -154,15 +184,27 @@ public class TestUtils {
    *
    * @param serviceName service name
    * @param domainNS    namespace
-   * @throws Exception exception
+   * @throws RuntimeException if service is not created
    */
   public static void checkServiceCreated(String serviceName, String domainNS) throws Exception {
+    checkServiceCreated(serviceName, domainNS,BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * Checks that service is created.
+   *
+   * @param serviceName service name
+   * @param domainNS    namespace
+   * @param maxIterations max iterations count
+   * @throws RuntimeException if service is not created
+   */
+  public static void checkServiceCreated(String serviceName, String domainNS, int maxIterations) throws Exception {
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
 
     // check for service
-    while (i < BaseTest.getMaxIterationsPod()) {
+    while (i < maxIterations) {
       ExecResult result = ExecCommand.exec(cmd.toString());
 
       // service might not have been created
@@ -171,14 +213,14 @@ public class TestUtils {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
 
         // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        if (i == (maxIterations - 1)) {
           throw new RuntimeException("FAILURE: service is not created, exiting!");
         }
         LoggerHelper.getLocal().log(Level.INFO,
             "Service is not created Ite ["
                 + i
                 + "/"
-                + BaseTest.getMaxIterationsPod()
+                + maxIterations
                 + "], sleeping "
                 + BaseTest.getWaitTimePod()
                 + " seconds more");
@@ -188,6 +230,52 @@ public class TestUtils {
         LoggerHelper.getLocal().log(Level.INFO, "Service " + serviceName + " is Created");
         break;
       }
+    }
+  }
+
+  /**
+   * Resolve a servive name inside a pod.
+   * @param serviceName service name to resolve
+   * @param podName name of the pod
+   * @param namespace namespace of the pod
+   * @throws Exception if a service name can not be resolved
+   */
+  public static void resolveServiceName(
+      String serviceName, String podName, String namespace, int numberOfRetries)
+      throws Exception {
+
+    String appLocationInPod = BaseTest.getAppLocationInPod();
+    String scriptLocationInPod = appLocationInPod + "/resolveServiceName.py";
+
+    // copy py script to check if managed service name can be resolved in admin pod
+    TestUtils.kubectlexec(podName, namespace," -- mkdir -p " + appLocationInPod);
+
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/resolveServiceName.py",
+        scriptLocationInPod,
+        podName,
+        namespace);
+
+    TestUtils.kubectlexec(podName, namespace, " chmod +x " + scriptLocationInPod);
+    int i = 0;
+    while (i < numberOfRetries) {
+      ExecResult result = TestUtils.kubectlexecNoCheck(podName, namespace,
+          " python " + scriptLocationInPod + " " + serviceName);
+      if (result.exitValue() != 0 && !result.stdout().contains(serviceName)) {
+        LoggerHelper.getLocal().log(Level.INFO,
+            "Could not resolve the service name " + serviceName + " in pod " + podName + " namespace " + namespace);
+        LoggerHelper.getLocal().log(Level.INFO, "Command stdout = " + result.stdout() + " stderr = " + result.stderr());
+        if (i == (numberOfRetries - 1)) {
+          throw new RuntimeException(
+              "FAILURE: Could not resolve service name " + serviceName
+                  + " in pod " + podName + " namespace " + namespace);
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Service name " + serviceName + " resolved");
+        break;
+      }
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
     }
   }
 
@@ -323,16 +411,16 @@ public class TestUtils {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     LoggerHelper.getLocal().log(Level.INFO, "Deleting job " + cmdDelJob);
-    exec(cmdDelJob.toString());
+    execOrAbortProcess(cmdDelJob.toString());
 
     StringBuffer cmdDelPvc = new StringBuffer("kubectl delete pvc ");
     cmdDelPvc.append(pvcName).append(" -n ").append(namespace);
     LoggerHelper.getLocal().log(Level.INFO, "Deleting PVC " + cmdDelPvc);
-    exec(cmdDelPvc.toString());
+    execOrAbortProcess(cmdDelPvc.toString());
   }
 
-  public static ExecResult exec(String cmd) throws Exception {
-    return exec(cmd, false);
+  public static ExecResult execOrAbortProcess(String cmd) throws Exception {
+    return execOrAbortProcess(cmd, false);
   }
 
   /**
@@ -342,7 +430,7 @@ public class TestUtils {
    * @return executor
    * @throws Exception on failure
    */
-  public static ExecResult exec(String cmd, boolean debug) throws Exception {
+  public static ExecResult execOrAbortProcess(String cmd, boolean debug) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0 || debug) {
       LoggerHelper.getLocal().log(Level.INFO,
@@ -930,6 +1018,44 @@ public class TestUtils {
   }
 
   /**
+   * Retrieve pod name based on search expression.
+   *
+   * @param searchExp  Search expression (for example -l app=webhook).
+   * @param namespace  namespace where pod is running
+   * @return name of pod matching search expression
+   * @throws Exception if pod is not found
+   */
+  public static String getPodName(String searchExp, String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append(
+        "kubectl get pod "
+            + searchExp
+            + " --sort-by=.metadata.creationTimestamp "
+            + " -n "
+            + namespace
+            + " -o jsonpath=\"{.items[*].metadata.name}\"");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new Exception(
+          "FAILED: command to get get pods " + cmd.toString() + " failed.");
+    }
+    LoggerHelper.getLocal().log(Level.INFO, " Result output to retrieve pod names : " + result.stdout());
+    String [] podsNames = (result.stdout().trim()).split(" ");
+    assertNotNull(podsNames, "Pod with "
+        + searchExp
+        + "  was not created, can't find the pod ");
+    Assertions.assertFalse((podsNames.length == 0), searchExp + "  was not created, can't find running pod ");
+    if (podsNames.length > 1) {
+      LoggerHelper.getLocal().log(Level.INFO, "Found multiple pods running in the namespace "
+          + getPods(namespace));
+    }
+    //return the last one
+    String podName = podsNames[podsNames.length - 1 ];
+    return podName;
+  }
+
+  /**
    * read GIT branch name.
    * @return branch name
    * @throws Exception on failure
@@ -1318,7 +1444,27 @@ public class TestUtils {
    * @throws Exception exception
    */
   public static void callShellScriptByExecToPod(
-      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName,
+      String[] args)
+      throws Exception {
+    callShellScriptByExecToPod(
+        podName, domainNS, scriptsLocInPod, shScriptName,args, 1);
+  }
+
+  /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName         pod name
+   * @param domainNS        namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName    script name
+   * @param args            script arguments
+   * @param retriesToCallScript number of retries to execute the script if it fails
+   * @throws Exception exception
+   */
+  public static void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName,
+      String[] args, int retriesToCallScript)
       throws Exception {
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
     cmdKubectlSh
@@ -1335,8 +1481,29 @@ public class TestUtils {
         .append(String.join(" ", args).toString())
         .append("'");
 
-    LoggerHelper.getLocal().log(Level.INFO, "Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.exec(cmdKubectlSh.toString());
+    for (int i = 1; i <= retriesToCallScript; i++) {
+      LoggerHelper.getLocal().log(Level.INFO, "Iteration " + i
+          + "/" + retriesToCallScript + ", Command to call kubectl sh file " + cmdKubectlSh);
+      ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+      if (result.exitValue() != 0) {
+        if (i == retriesToCallScript) {
+          new RuntimeException("FAILURE: Command "
+              + cmdKubectlSh
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
+        } else {
+          LoggerHelper.getLocal().log(Level.INFO, "Command failed with stdout = "
+              + result.stdout() + " stderr = " + result.stderr() + ", retrying");
+          Thread.sleep(10 * 1000);
+        }
+      } else {
+        LoggerHelper.getLocal().log(Level.INFO, "Script invoked successfully, stdout = " + result.stdout());
+        break;
+      }
+    }
+
   }
 
   /**
@@ -1509,39 +1676,7 @@ public class TestUtils {
                 "/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh ")
             .append("-d ")
             .append(domainUid);
-    TestUtils.exec(cmd.toString(), true);
-  }
-
-  /**
-   * verify before deletion.
-   * @param domain domain
-   * @throws Exception on failure
-   */
-  public static void verifyBeforeDeletion(Domain domain) throws Exception {
-    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
-    final String domainUid = domain.getDomainUid();
-    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    final String credentialsName =
-        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
-
-    LoggerHelper.getLocal().log(Level.INFO, "Before deletion of domain: " + domainUid);
-
-    k8sTestUtils.verifyDomainCrd();
-    k8sTestUtils.verifyDomain(domainNs, domainUid, true);
-    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
-    k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
-    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
-    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
-    k8sTestUtils.verifyServices(domain1LabelSelector, 5);
-    k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
-    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 2);
-    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
-    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
-    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
-    k8sTestUtils.verifySecrets(credentialsName, 1);
-    k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
-    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
-    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+    TestUtils.execOrAbortProcess(cmd.toString(), true);
   }
 
   /**
@@ -1635,12 +1770,25 @@ public class TestUtils {
    * @param cmd command
    * @param matchStr matcher
    * @param k8sObjName object name
-   * @throws Exception on failure
+   * @throws RuntimeException if pod output does not contain match string defined by caller
    */
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
+    checkCmdInLoop(cmd, matchStr, k8sObjName, BaseTest.getMaxIterationsPod());
+  }
+  
+  /**
+   * check command in loop.
+   * @param cmd command
+   * @param matchStr matcher
+   * @param k8sObjName object name
+   * @param maxIterationsPod pod max iteration count
+   * @throws RuntimeException if pod output does not contain match string defined by caller
+   */
+  public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName, int maxIterationsPod)
+      throws Exception {
     int i = 0;
-    while (i < BaseTest.getMaxIterationsPod()) {
+    while (i < maxIterationsPod) {
       ExecResult result = ExecCommand.exec(cmd);
 
       // loop command till condition
@@ -1648,7 +1796,7 @@ public class TestUtils {
           || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         LoggerHelper.getLocal().log(Level.INFO, "Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        if (i == (maxIterationsPod - 1)) {
           throw new RuntimeException(
               "FAILURE: Timeout - pod " + k8sObjName + " output does not contain '" + matchStr + "'");
         }
@@ -1658,7 +1806,7 @@ public class TestUtils {
                 + "  output does not contain '" + matchStr + "'  Iteration ["
                 + i
                 + "/"
-                + BaseTest.getMaxIterationsPod()
+                + maxIterationsPod
                 + "], sleeping "
                 + BaseTest.getWaitTimePod()
                 + " seconds more");
@@ -1731,6 +1879,7 @@ public class TestUtils {
       }
     }
   }
+  
 
   /**
    * create yaml file with changed property.
@@ -1980,7 +2129,7 @@ public class TestUtils {
             + " -u ****** -p ******* "
             + "\" && docker push "
             + image;
-    ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
+    ExecResult result = TestUtils.execOrAbortProcess(dockerLoginAndPushCmd);
     LoggerHelper.getLocal().log(Level.INFO,
         "cmd "
             + cmdForDebug
@@ -2009,7 +2158,173 @@ public class TestUtils {
             + " -p "
             + patchStr
             + " --type merge";
-    return exec(cmd, true);
+    return execOrAbortProcess(cmd, true);
   }
 
+  /**
+   * create configmap in the given namespace. Also creates label.
+   * @param cmName config map name
+   * @param fileOrDirPath File path
+   * @param namespace namespace
+   * @throws Exception on failure
+   */
+  public static void createConfigMap(String cmName, String fileOrDirPath,
+                                     String namespace, String label) throws Exception {
+    String cmd = "kubectl -n " + namespace
+        + " delete configmap " + cmName
+        + " --ignore-not-found";
+    TestUtils.execOrAbortProcess(cmd);
+
+    cmd = "kubectl -n " + namespace
+        + " create configmap " + cmName
+        + " --from-file=" + fileOrDirPath;
+    TestUtils.execOrAbortProcess(cmd, true);
+
+    // create label for configmap
+    cmd =
+        "kubectl -n "
+            + namespace
+            + " label cm "
+            + cmName
+            + " "
+            + label;
+    TestUtils.execOrAbortProcess(cmd);
+  }
+
+  /**
+   * Utility method to find CreationTimeStamp for a Pod.
+   * @param namespace namespace for the pod
+   * @param pod       name of the pod
+   * @return creationTimestamp of the Pod 
+   * @throws Exception on failure
+   */
+  public static String getCreationTimeStamp(String namespace, String pod) throws Exception {
+    String kcmd = "kubectl get pod "
+              + pod 
+              + " --namespace "
+              + namespace
+              + " -o jsonpath='{.metadata.creationTimestamp}'";
+    ExecResult result = ExecCommand.exec(kcmd);
+    return result.stdout().trim();
+  }
+
+  /**
+   * Utility method to find DeletionTimestamp for a Pod.
+   * @param namespace namespace for the pod
+   * @param pod       name of the pod
+   * @return deletionTimestamp of the Pod 
+   * @throws Exception on failure
+   */
+  public static String getDeletionTimestamp(String namespace, String pod) throws Exception {
+    String kcmd = "kubectl get pod "
+              + pod 
+              + " --namespace "
+              + namespace
+              + " -o jsonpath='{.metadata.deletionTimestamp}'";
+    ExecResult result = ExecCommand.exec(kcmd);
+    return result.stdout().trim();
+  }
+
+  /**
+   * Check the expected status for provided helm chart.
+   *
+   * @param chartName  helm chart name
+   * @param chartNS helm chart namespace
+   * @param status expected status
+   * @throws Exception if expected status not found.
+   */
+  public static void checkHelmChartStatus(String chartName, String chartNS, String status) throws Exception {
+    String cmd = "helm status " + chartName + " --namespace " + chartNS;
+    ExecResult result = ExecCommand.exec(cmd);
+    checkCmdInLoop(cmd, status, chartName);
+  }
+
+  /**
+   * Print the info for provided helm chart.
+   *
+   * @param chartName  helm chart name
+   * @param chartNS helm chart namespace
+   * @throws Exception if chart info can't be retrieved.
+   */
+  public static void printHelmChartInfo(String chartName, String chartNS) throws Exception {
+
+    LoggerHelper.getLocal().log(Level.INFO, " Checking info for Release "
+            + chartName);
+    String cmd = "helm history " + chartName + " --namespace " + chartNS;
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new Exception(
+          "FAILURE: Command "
+              + cmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
+    }
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " history "
+        + result.stdout()
+        + result.stderr()
+    );
+    cmd = "helm test " + chartName + " --namespace " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " info "
+        + result.stdout()
+        + result.stderr()
+    );
+    cmd = "helm status " + chartName + " --namespace " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " status "
+        + result.stdout()
+        + result.stderr()
+    );
+    cmd = "helm get values " + chartName + " --namespace " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Release "
+        + chartName
+        + " values : "
+        + result.stdout()
+        + result.stderr()
+    );
+    cmd = "kubectl get pods " + " -n " + chartNS;
+    result = ExecCommand.exec(cmd);
+    LoggerHelper.getLocal().log(Level.INFO, " Pod for HelmChart Release "
+        + chartName
+        + " info "
+        + result.stdout()
+        + result.stderr()
+    );
+  }
+
+  /**
+   * writes pod describe and logs to a file.
+   * @param logLocation - location where the logs to be written
+   * @param podName - name of the pod
+   * @param podNS - namespace of the pod
+   */
+  public static void writePodLog(String logLocation, String podName, String podNS) throws Exception {
+    //create dir
+    TestUtils.execOrAbortProcess("mkdir -p " + logLocation);
+
+    //write operator pod describe
+    String cmd = "kubectl describe pod " + podName + " -n "
+        + podNS + " >> " + logLocation
+        + "/pod-describe." + podNS + "." + podName;
+    ExecCommand.exec(cmd);
+    Calendar cal = Calendar.getInstance();
+
+    SimpleDateFormat timeOnly = new SimpleDateFormat("HH.mm.ss");
+    String timestamp = timeOnly.format(cal.getTime()).toString();
+
+    //write operator pod logs
+    cmd = "kubectl logs pod/" + podName + " -n "
+        + podNS + " >> " + logLocation
+        + "/pod-log." + podNS + "." + podName + "." + timestamp;
+    ExecCommand.exec(cmd);
+  }
 }

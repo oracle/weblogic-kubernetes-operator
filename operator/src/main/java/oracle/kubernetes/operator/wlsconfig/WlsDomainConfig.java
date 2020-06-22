@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.WlsDomain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -374,6 +373,42 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
+   * Whether the WebLogic domain contains a cluster with the given cluster name.
+   *
+   * @param clusterName cluster name to be checked
+   * @return True if the WebLogic domain contains a cluster with the given cluster name
+   */
+  public synchronized boolean containsCluster(String clusterName) {
+    if (clusterName != null) {
+      for (WlsClusterConfig clusterConfig : configuredClusters) {
+        if (clusterConfig.getClusterName().equals(clusterName)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Whether the WebLogic domain contains a server with the given server name,
+   * not including servers that are part of a dynamic cluster.
+   *
+   * @param serverName server name to be checked
+   * @return True if the WebLogic domain contains a server with the given server name
+   */
+  public synchronized boolean containsServer(String serverName) {
+    if (serverName != null && servers != null) {
+      for (WlsServerConfig serverConfig : servers) {
+        if (serverConfig.getName().equals(serverName)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * Returns the configuration for the WLS machine with the given name.
    *
    * @param machineName name of the WLS machine
@@ -386,53 +421,6 @@ public class WlsDomainConfig implements WlsDomain {
       result = wlsMachineConfigs.get(machineName);
     }
     return result;
-  }
-
-  public boolean validate(Domain domain) {
-    return validate(domain, null);
-  }
-
-  /**
-   * Checks the provided k8s domain spec to see if it is consistent with the configuration of the
-   * WLS domain. The method also logs warning if inconsistent WLS configurations are found.
-   *
-   * @param domain The Domain to be validated against the WLS configuration
-   * @param suggestedConfigUpdates a List of ConfigUpdate objects containing suggested WebLogic
-   *     config updates that are necessary to make the WebLogic domain consistent with the
-   *     DomainSpec. Optional.
-   * @return true if the DomainSpec has been updated, false otherwise
-   */
-  public boolean validate(Domain domain, List<ConfigUpdate> suggestedConfigUpdates) {
-    LOGGER.entering();
-
-    boolean updated = false;
-    for (String clusterName : getClusterNames()) {
-      WlsClusterConfig wlsClusterConfig = getClusterConfig(clusterName);
-      if (wlsClusterConfig.getMaxClusterSize() > 0) {
-        int proposedReplicas = domain.getReplicaCount(clusterName);
-        int replicaLimit = getReplicaLimit(clusterName);
-        if (proposedReplicas > replicaLimit) {
-          LOGGER.warning(
-              MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS,
-              "clusterSpec",
-              clusterName,
-              proposedReplicas,
-              replicaLimit);
-        }
-      }
-    }
-
-    for (WlsClusterConfig clusterConfig : configuredClusters) {
-      String clusterName = clusterConfig.getClusterName();
-      if (clusterConfig.getMaxClusterSize() == 0) {
-        LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, clusterName);
-      } else {
-        clusterConfig.validateCluster(domain.getReplicaCount(clusterName), suggestedConfigUpdates);
-      }
-    }
-
-    LOGGER.exiting(updated);
-    return updated;
   }
 
   @Override
