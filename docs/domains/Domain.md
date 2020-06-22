@@ -20,16 +20,16 @@ DomainSpec is a description of a domain.
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
 | `configOverrides` | string | The name of the config map for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
+| `configuration` | [Configuration](#configuration) | Properties affecting the WebLogic domain configuration. |
 | `dataHome` | string | An optional, in-pod location for data storage of default and custom file stores. If dataHome is not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage directories are determined from the WebLogic domain home configuration. |
 | `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true. |
-| `domainHomeInImage` | Boolean | True if this domain's home is defined in the Docker image for the domain. Defaults to true. |
+| `domainHomeInImage` | Boolean | True indicates that the domain home file system is contained in the Docker image specified by the image field. False indicates that the domain home file system is located on a persistent volume. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
-| `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
-| `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
+| `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
-| `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
-| `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
+| `includeServerOutInPodLog` | Boolean | If true (the default), then the server .out file will be included in the pod's stdout. |
+| `logHome` | string | The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server *.out files. |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
@@ -83,11 +83,11 @@ An element representing a cluster in the domain configuration.
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
-### Experimental
+### Configuration
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `istio` | [Istio](#istio) | Istio service mesh integration configuration. |
+| `istio` | [Istio](#istio) | The Istio service mesh integration settings. |
 
 ### Managed Server
 
@@ -146,8 +146,10 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name. Required. |
 | `maximumReplicas` | number | The maximum number of cluster members. Required. |
+| `minimumReplicas` | number | The minimum number of cluster members. |
 | `readyReplicas` | number | The number of ready cluster members. Required. |
 | `replicas` | number | The number of intended cluster members. Required. |
+| `replicasGoal` | number | The requested number of cluster members from the domain spec. Cluster members will be started by the operator if this value is larger than zero. |
 
 ### Domain Condition
 
@@ -165,6 +167,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | Name | Type | Description |
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name, if the server is part of a cluster. |
+| `desiredState` | string | Desired state of this WebLogic Server. Values are RUNNING, ADMIN, or SHUTDOWN. |
 | `health` | [Server Health](#server-health) | Current status and health of a specific WebLogic Server. |
 | `nodeName` | string | Name of node that is hosting the Pod containing this WebLogic Server. |
 | `serverName` | string | WebLogic Server name. Required. |

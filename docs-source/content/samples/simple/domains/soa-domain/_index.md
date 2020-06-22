@@ -195,8 +195,8 @@ $ cat output/weblogic-domains/soainfra/domain.yaml
 # This is an example of how to define a Domain resource.
 #
 # If you are using 3.0.0-rc1, then the version on the following line
-# should be `v7` not `v6`.
-apiVersion: "weblogic.oracle/v6"
+# should be `v8` not `v7`.
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   name: soainfra

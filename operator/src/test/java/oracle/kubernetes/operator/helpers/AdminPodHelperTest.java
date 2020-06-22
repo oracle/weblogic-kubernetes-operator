@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -17,6 +16,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
@@ -163,7 +163,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminPodDeletionFails_retryOnFailure() {
+  public void whenAdminPodDeletionFails_unrecoverableFailureOnUnauthorized() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
     testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, 401);
@@ -172,20 +172,20 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test
-  public void whenAdminPodReplacementFails_retryOnFailure() {
+  public void whenAdminPodReplacementFails() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 401);
+    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 500);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test

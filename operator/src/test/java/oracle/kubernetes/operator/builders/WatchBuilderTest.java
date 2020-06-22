@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.utils.TestUtils;
@@ -86,6 +87,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(ClientPoolStub.install(getHostPath()));
+    mementos.add(ClientFactoryStub.install());
     validationErrors = new ArrayList<>();
   }
 

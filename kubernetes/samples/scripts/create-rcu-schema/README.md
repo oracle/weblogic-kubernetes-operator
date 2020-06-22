@@ -19,29 +19,34 @@ You can access the Database through the NodePort outside of the Kubernetes clust
 
 This script generates the RCU schema based `schemaPrefix` and `dburl`.
 
-The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
+The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
 ```
 $ ./create-rcu-schema.sh -h
-usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <rcuType> -d <dburl> -i <image> -s <dockerstore> [-h]
+usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -u <imagePullPolicy> -p <docker-store> -n <namespace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]
   -s RCU Schema Prefix (required)
   -t RCU Schema Type (optional)
-      Supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb
+      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb)
   -d RCU Oracle Database URL (optional)
       (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
-  -p Fmw Infrastructure ImagePull Secret (optional)
-      (default: docker-store)
-  -i Fmw Infrastructure Image (optional)
-      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3)
+  -p FMW Infrastructure ImagePullSecret (optional)
+      (default: none)
+  -i FMW Infrastructure Image (optional)
+      (default: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4)
+  -u FMW Infrastructure ImagePullPolicy (optional)
+      (default: IfNotPresent)
+  -n Namespace for RCU pod (optional)
+      (default: default)
+  -q password for database SYSDBA user. (optional)
+      (default: Oradoc_db1)
+  -r password for all schema owner (regular user). (optional)
+      (default: Oradoc_db1)
+  -o Output directory for the generated YAML file. (optional)
+      (default: rcuoutput)
   -h Help
 
 $ ./create-rcu-schema.sh -s domain1
-
-ImagePullSecret[docker-store] Image[container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3] dburl[oracle-db.default.svc.cluster.local:1521/devpdb.k8s]
-[oracle-db-54667dfd5f-76sxf] already initialized ..
-Checking Pod READY column for State [1/1]
-NAME                         READY   STATUS    RESTARTS   AGE
-oracle-db-54667dfd5f-76sxf   1/1     Running   0          5m1s
+ImagePullSecret[none] Image[container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4] dburl[oracle-db.default.svc.cluster.local:1521/devpdb.k8s] rcuType[fmw]
 pod/rcu created
 [rcu] already initialized ..
 Checking Pod READY column for State [1/1]
@@ -50,67 +55,68 @@ NAME   READY   STATUS    RESTARTS   AGE
 rcu    1/1     Running   0          6s
 NAME   READY   STATUS    RESTARTS   AGE
 rcu    1/1     Running   0          11s
-CLASSPATH=/usr/java/jdk1.8.0_211/lib/tools.jar:/u01/oracle/wlserver/modules/features/wlst.wls.classpath.jar:
+CLASSPATH=/u01/jdk/lib/tools.jar:/u01/oracle/wlserver/modules/features/wlst.wls.classpath.jar:
 
-PATH=/u01/oracle/wlserver/server/bin:/u01/oracle/wlserver/../oracle_common/modules/thirdparty/org.apache.ant/1.9.8.0.0/apache-ant-1.9.8/bin:/usr/java/jdk1.8.0_211/jre/bin:/usr/java/jdk1.8.0_211/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/java/default/bin:/u01/oracle/oracle_common/common/bin:/u01/oracle/wlserver/common/bin:/u01/oracle/container-scripts:/u01/oracle/wlserver/../oracle_common/modules/org.apache.maven_3.2.5/bin
+PATH=/u01/oracle/wlserver/server/bin:/u01/oracle/wlserver/../oracle_common/modules/thirdparty/org.apache.ant/1.10.5.0.0/apache-ant-1.10.5/bin:/u01/jdk/jre/bin:/u01/jdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/u01/jdk/bin:/u01/oracle/oracle_common/common/bin:/u01/oracle/wlserver/common/bin:/u01/oracle:/u01/oracle/wlserver/../oracle_common/modules/org.apache.maven_3.2.5/bin
 
 Your environment has been set.
-Check if the DB service is ready to accept requests
-DB Connection URL [oracle-db.default.svc.cluster.local:1521/devpdb.k8s] and schemaPrefix is [domain1] rcuType [fmw]"
+Check if the DB Service is ready to accept request
+DB Connection String [oracle-db.default.svc.cluster.local:1521/devpdb.k8s], schemaPrefix [domain1] rcuType [fmw]
 
 **** Success!!! ****
+
 You can connect to the database in your app using:
+
   java.util.Properties props = new java.util.Properties();
-  props.put("user", "scott")
-  props.put("password", "*****");
+  props.put("user", "sys as sysdba");
+  props.put("password", "Oradoc_db1");
   java.sql.Driver d =
     Class.forName("oracle.jdbc.OracleDriver").newInstance();
   java.sql.Connection conn =
-    Driver.connect("scott", props);
+    Driver.connect("sys as sysdba", props);
+Creating RCU Schema for FMW Domain ...
+Extra RCU Schema Component Choosen[]
 
-Creating RCU Schema for FMW Domain ..
-	RCU Logfile: /tmp/RCU2019-09-03_23-13_1113614917/logs/rcu.log
-Enter the database password(User:sys):
 Processing command line ....
-Repository Creation Utility - Checking Prerequisites
-Checking Global Prerequisites
-The selected Oracle database is not configured to use the AL32UTF8 character set. Oracle strongly recommends using the AL32UTF8 character set for databases that support Oracle Fusion Middleware.
-Enter the schema password. This password will be used for all schema users of following components:MDS,IAU,IAU_APPEND,IAU_VIEWER,OPSS,WLS,STB.
 
 Repository Creation Utility - Checking Prerequisites
 Checking Component Prerequisites
 Repository Creation Utility - Creating Tablespaces
 Validating and Creating Tablespaces
+Create tablespaces in the repository database
 Repository Creation Utility - Create
 Repository Create in progress.
-Percent Complete: 12
-Percent Complete: 30
-.....
-Percent Complete: 97
-Percent Complete: 100
+Executing pre create operations
+        Percent Complete: 20
+        Percent Complete: 20
+        .....
+        Percent Complete: 96
+        Percent Complete: 100
+        .....
+Executing post create operations
 
 Repository Creation Utility: Create - Completion Summary
 
 Database details:
---------------------
-Host Name                         : oracle-db.default.svc.cluster.local
-Port                              : 1521
-Service Name                      : DEVPDB.K8S
-Connected As                      : sys
+-----------------------------
+Host Name                                    : oracle-db.default.svc.cluster.local
+Port                                         : 1521
+Service Name                                 : DEVPDB.K8S
+Connected As                                 : sys
 Prefix for (prefixable) Schema Owners        : DOMAIN1
-RCU Logfile                : /tmp/RCU2019-08-30_21-21_1875987468/logs/rcu.log
+RCU Logfile                                  : /tmp/RCU2020-05-01_14-35_1160633335/logs/rcu.log
 
 Component schemas created:
 -----------------------------
-Component                                    Status         Logfile		
+Component                                    Status         Logfile
 
-Common Infrastructure Services               Success        /tmp/RCU2019-08-30_21-21_1875987468/logs/stb.log
-Oracle Platform Security Services            Success        /tmp/RCU2019-08-30_21-21_1875987468/logs/opss.log
-Audit Services                               Success        /tmp/RCU2019-08-30_21-21_1875987468/logs/iau.log
-Audit Services Append                        Success        /tmp/RCU2019-08-30_21-21_1875987468/logs/iau_append.log
-Audit Services Viewer                        Success        /tmp/RCU2019-08-30_21-21_1875987468/logs/iau_viewer.log
-Metadata Services                            Success        /tmp/RCU2019-08-30_21-21_1875987468/logs/mds.log
-WebLogic Services                            Success        /tmp/RCU2019-08-30_21-21_1875987468/logs/wls.log
+Common Infrastructure Services               Success        /tmp/RCU2020-05-01_14-35_1160633335/logs/stb.log
+Oracle Platform Security Services            Success        /tmp/RCU2020-05-01_14-35_1160633335/logs/opss.log
+Audit Services                               Success        /tmp/RCU2020-05-01_14-35_1160633335/logs/iau.log
+Audit Services Append                        Success        /tmp/RCU2020-05-01_14-35_1160633335/logs/iau_append.log
+Audit Services Viewer                        Success        /tmp/RCU2020-05-01_14-35_1160633335/logs/iau_viewer.log
+Metadata Services                            Success        /tmp/RCU2020-05-01_14-35_1160633335/logs/mds.log
+WebLogic Services                            Success        /tmp/RCU2020-05-01_14-35_1160633335/logs/wls.log
 
 Repository Creation Utility - Create : Operation Completed
 [INFO] Modify the domain.input.yaml to use [oracle-db.default.svc.cluster.local:1521/devpdb.k8s] as rcuDatabaseURL and [domain1] as rcuSchemaPrefix
@@ -122,34 +128,43 @@ Use this script to drop the RCU schema based `schemaPrefix` and `dburl`.
 
 ```
 $ ./drop-rcu-schema.sh -h
-usage: ./drop-rcu-schema.sh -s <schemaPrefix> -d <dburl>  [-h]
+usage: ./drop-rcu-schema.sh -s <schemaPrefix> -d <dburl> -n <namespace> -q <sysPassword> -r <schemaPassword> [-h]
   -s RCU Schema Prefix (required)
-  -d Oracle Database URL
-      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
   -t RCU Schema Type (optional)
-      Supported values: fmw(default),soa,osb,soaosb,soaess,soaessosb
+      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb)
+  -d Oracle Database URL (optional)
+      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
+  -n Namespace where RCU pod is deployed (optional)
+      (default: default)
+  -q password for database SYSDBA user. (optional)
+      (default: Oradoc_db1)
+  -r password for all schema owner (regular user). (optional)
+      (default: Oradoc_db1)
   -h Help
 
 $ ./drop-rcu-schema.sh -s domain1
-CLASSPATH=/usr/java/jdk1.8.0_211/lib/tools.jar:/u01/oracle/wlserver/modules/features/wlst.wls.classpath.jar:
+CLASSPATH=/u01/jdk/lib/tools.jar:/u01/oracle/wlserver/modules/features/wlst.wls.classpath.jar:
+
+PATH=/u01/oracle/wlserver/server/bin:/u01/oracle/wlserver/../oracle_common/modules/thirdparty/org.apache.ant/1.10.5.0.0/apache-ant-1.10.5/bin:/u01/jdk/jre/bin:/u01/jdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/u01/jdk/bin:/u01/oracle/oracle_common/common/bin:/u01/oracle/wlserver/common/bin:/u01/oracle:/u01/oracle/wlserver/../oracle_common/modules/org.apache.maven_3.2.5/bin
 
 Your environment has been set.
-Check if the DB service is ready to accept requests
-DB Connection URL [oracle-db.default.svc.cluster.local:1521/devpdb.k8s] and schemaPrefix is [domain1]
+Check if the DB Service is ready to accept request
+DB Connection String [oracle-db.default.svc.cluster.local:1521/devpdb.k8s] schemaPrefix [domain1] rcuType[fmw]
 
 **** Success!!! ****
+
 You can connect to the database in your app using:
+
   java.util.Properties props = new java.util.Properties();
-  props.put("user", "scott");
-  props.put("password", "****");
+  props.put("user", "sys as sysdba");
+  props.put("password", "Oradoc_db1");
   java.sql.Driver d =
     Class.forName("oracle.jdbc.OracleDriver").newInstance();
   java.sql.Connection conn =
-    Driver.connect("scott", props);
+    Driver.connect("sys as sysdba", props);
+Dropping RCU Schema for FMW Domain ...
+Extra RCU Schema Component(s) Choosen[]
 
-	RCU Logfile: /tmp/RCU2019-08-30_21-29_1679536190/logs/rcu.log
-
-Enter the database password(User:sys):
 Processing command line ....
 Repository Creation Utility - Checking Prerequisites
 Checking Global Prerequisites
@@ -157,34 +172,35 @@ Repository Creation Utility - Checking Prerequisites
 Checking Component Prerequisites
 Repository Creation Utility - Drop
 Repository Drop in progress.
-Percent Complete: 2
-Percent Complete: 14
-....
-Percent Complete: 99
-Percent Complete: 100
+        Percent Complete: 2
+        Percent Complete: 14
+        .....
+        Percent Complete: 99
+        Percent Complete: 100
+        .....
 
 Repository Creation Utility: Drop - Completion Summary
 
 Database details:
-----------------------------
-Host Name                              : oracle-db.default.svc.cluster.local
-Port                                   : 1521
-Service Name                           : DEVPDB.K8S
-Connected As                           : sys
+-----------------------------
+Host Name                                    : oracle-db.default.svc.cluster.local
+Port                                         : 1521
+Service Name                                 : DEVPDB.K8S
+Connected As                                 : sys
 Prefix for (prefixable) Schema Owners        : DOMAIN1
-RCU Logfile                                  : /tmp/RCU2019-08-30_21-29_1679536190/logs/rcu.log
+RCU Logfile                                  : /tmp/RCU2020-05-01_14-42_651700358/logs/rcu.log
 
 Component schemas dropped:
 -----------------------------
-Component                                    Status         Logfile		
+Component                                    Status         Logfile
 
-Common Infrastructure Services               Success        /tmp/RCU2019-08-30_21-29_1679536190/logs/stb.log
-Oracle Platform Security Services            Success        /tmp/RCU2019-08-30_21-29_1679536190/logs/opss.log
-Audit Services                               Success        /tmp/RCU2019-08-30_21-29_1679536190/logs/iau.log
-Audit Services Append                        Success        /tmp/RCU2019-08-30_21-29_1679536190/logs/iau_append.log
-Audit Services Viewer                        Success        /tmp/RCU2019-08-30_21-29_1679536190/logs/iau_viewer.log
-Metadata Services                            Success        /tmp/RCU2019-08-30_21-29_1679536190/logs/mds.log
-WebLogic Services                            Success        /tmp/RCU2019-08-30_21-29_1679536190/logs/wls.log
+Common Infrastructure Services               Success        /tmp/RCU2020-05-01_14-42_651700358/logs/stb.log
+Oracle Platform Security Services            Success        /tmp/RCU2020-05-01_14-42_651700358/logs/opss.log
+Audit Services                               Success        /tmp/RCU2020-05-01_14-42_651700358/logs/iau.log
+Audit Services Append                        Success        /tmp/RCU2020-05-01_14-42_651700358/logs/iau_append.log
+Audit Services Viewer                        Success        /tmp/RCU2020-05-01_14-42_651700358/logs/iau_viewer.log
+Metadata Services                            Success        /tmp/RCU2020-05-01_14-42_651700358/logs/mds.log
+WebLogic Services                            Success        /tmp/RCU2020-05-01_14-42_651700358/logs/wls.log
 
 Repository Creation Utility - Drop : Operation Completed
 pod "rcu" deleted

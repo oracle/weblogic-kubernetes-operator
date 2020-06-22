@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.logging;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.ResourceBundle;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -637,18 +638,33 @@ public class LoggingFacade {
   }
 
   /**
-   * Returns a formatted message.
-   *
-   * @param msg the message to be formatted, which is key to the resource bundle
-   * @param args parameters to the message
-   * @return A formatted message
+   * Accessor for the resource bundle backing this logger.
+   * @return the bundle
    */
-  public String getFormattedMessage(String msg, Object... args) {
-    try {
-      return MessageFormat.format(logger.getResourceBundle().getString(msg), args);
-    } catch (Exception ex) {
-      return msg;
+  public ResourceBundle getResourceBundle() {
+    for (Logger l = getUnderlyingLogger(); l != null; l = l.getParent()) {
+      ResourceBundle rb = l.getResourceBundle();
+      if (rb != null) {
+        return rb;
+      }
     }
+    throw new AssertionError(formatMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND));
+  }
+
+  /**
+   * Formats message based on string loaded from the resource bundle backing this logger.
+   * @param msgId Message id
+   * @param params Parameters to message formatting
+   * @return Formatted message
+   */
+  public String formatMessage(String msgId, Object... params) {
+    if (params == null || params.length == 0) {
+      return getResourceBundle().getString(msgId);
+    }
+
+    String msg = getResourceBundle().getString(msgId);
+    MessageFormat formatter = new MessageFormat(msg);
+    return formatter.format(params);
   }
 
   /**
@@ -679,7 +695,7 @@ public class LoggingFacade {
   }
 
   /** Holds caller details obtained by inference. */
-  class CallerDetails {
+  static class CallerDetails {
     String clazz;
     String method;
   }

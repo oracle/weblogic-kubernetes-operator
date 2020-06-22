@@ -188,7 +188,7 @@ abstract class Watcher<T> {
   }
 
   private void handleRegularUpdate(Watch.Response<T> item) {
-    LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
+    LOGGER.finer(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.type, item.object);
     if (listener != null) {
       listener.receivedResponse(item);

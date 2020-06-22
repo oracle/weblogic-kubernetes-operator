@@ -59,6 +59,13 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Add Istio for the domain resource.
+   *
+   * @return this object
+   */
+  public abstract DomainConfigurator withIstio();
+
+  /**
    * Configure admin server.
    *
    * @return An AdminServerConfigurator object for configuring an admin server

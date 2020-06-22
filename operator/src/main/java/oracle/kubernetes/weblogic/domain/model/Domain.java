@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
@@ -220,6 +221,10 @@ public class Domain {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
+  public String getRestartVersion() {
+    return spec.getRestartVersion();
+  }
+
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
     return spec.getEffectiveConfigurationFactory(apiVersion, getResourceVersion());
   }
@@ -288,6 +293,19 @@ public class Domain {
   }
 
   /**
+   * Returns whether the specified cluster is allowed to have replica count below the minimum
+   * dynamic cluster size configured in WebLogic domain configuration.
+   *
+   * @param clusterName the name of the cluster
+   * @return whether the specified cluster is allowed to have replica count below the minimum
+   *     dynamic cluster size configured in WebLogic domain configuration
+   */
+  public boolean isAllowReplicasBelowMinDynClusterSize(String clusterName) {
+    return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterName);
+  }
+
+
+  /**
    * DomainSpec is a description of a domain.
    *
    * @return Specification
@@ -337,6 +355,18 @@ public class Domain {
   }
 
   /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
+   * @param status Status
+   * @return this instance
+   */
+  public Domain withStatus(DomainStatus status) {
+    this.status = status;
+    return this;
+  }
+
+  /**
    * Name of the secret containing WebLogic startup credentials username and password.
    *
    * @return the secret name
@@ -369,7 +399,8 @@ public class Domain {
   }
 
   boolean isLogHomeEnabled() {
-    return spec.isLogHomeEnabled();
+    return Optional.ofNullable(spec.isLogHomeEnabled())
+        .orElse(DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType()));
   }
 
   public String getDataHome() {
@@ -380,8 +411,17 @@ public class Domain {
     return spec.getIncludeServerOutInPodLog();
   }
 
-  boolean isDomainHomeInImage() {
-    return spec.isDomainHomeInImage();
+  /**
+   * Get domain home source type.
+   * @return source type
+   */
+  public String getDomainHomeSourceType() {
+    return Optional.ofNullable(spec.isDomainHomeInImage())
+            .orElse(true) ? DomainSourceType.Image.toString() : DomainSourceType.PersistentVolume.toString();
+  }
+
+  public boolean isHttpAccessLogInLogHome() {
+    return spec.getHttpAccessLogInLogHome();
   }
 
   public boolean isIstioEnabled() {
@@ -403,10 +443,13 @@ public class Domain {
     if (spec.getDomainHome() != null) {
       return spec.getDomainHome();
     }
-    if (spec.isDomainHomeInImage()) {
+    if (DomainSourceType.Image.toString().equals(getDomainHomeSourceType())) {
       return "/u01/oracle/user_projects/domains";
+    } else if (DomainSourceType.PersistentVolume.toString().equals(getDomainHomeSourceType())) {
+      return "/shared/domains/" + getDomainUid();
+    } else { // FromModel
+      return "/u01/domains/" + getDomainUid();
     }
-    return "/shared/domains/" + getDomainUid();
   }
 
   public boolean isShuttingDown() {
@@ -439,6 +482,7 @@ public class Domain {
   public List<String> getConfigOverrideSecrets() {
     return spec.getConfigOverrideSecrets();
   }
+
 
   @Override
   public String toString() {
@@ -496,6 +540,7 @@ public class Domain {
       addReservedEnvironmentVariables();
       addMissingSecrets(kubernetesResources);
       verifyNoAlternateSecretNamespaceSpecified();
+      verifyIstioExposingDefaultChannel();
 
       return failures;
     }
@@ -573,6 +618,23 @@ public class Domain {
       }
     }
 
+    private void verifyIstioExposingDefaultChannel() {
+      if (spec.isIstioEnabled()) {
+        Optional.ofNullable(spec.getAdminServer())
+            .map(a -> a.getAdminService())
+            .map(service -> service.getChannels())
+            .ifPresent(cs -> cs.stream()
+                .forEach(this::checkForDefaultNameExposed));
+      }
+    }
+
+    private void checkForDefaultNameExposed(Channel channel) {
+      if ("default".equals(channel.getChannelName()) || "default-admin".equals(channel.getChannelName())
+          || "default-secure".equals(channel.getChannelName())) {
+        failures.add(DomainValidationMessages.cannotExposeDefaultChannelIstio(channel.getChannelName()));
+      }
+    }
+
     private void addReservedEnvironmentVariables() {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
@@ -631,13 +693,9 @@ public class Domain {
       return spec.getImagePullSecrets();
     }
 
-    private List<String> getConfigOverrideSecrets() {
-      return spec.getConfigOverrideSecrets();
-    }
-
     @SuppressWarnings("SameParameterValue")
     private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
-      if (!resources.isSecretExists(secretName, getNamespace())) {
+      if (secretName != null && !resources.isSecretExists(secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
       }
     }

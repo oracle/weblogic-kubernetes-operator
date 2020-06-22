@@ -71,6 +71,8 @@ public class ItOperator extends BaseTest {
       domainNS1 = ((ArrayList<String>) operatorMap.get("domainNamespaces")).get(0);
       namespaceList.append((String)operatorMap.get("namespace"));
       namespaceList.append(" ").append(domainNS1);
+    } else {
+      operator1.verifyOperatorReady();
     }
   }
 

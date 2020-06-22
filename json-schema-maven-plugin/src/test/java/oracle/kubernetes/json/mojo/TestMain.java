@@ -15,7 +15,6 @@ public class TestMain implements Main {
   private String className;
   private File schemaFile;
   private String resourceName;
-  private boolean includeDeprecated;
   private Map<URL, URL> schemas = new HashMap<>();
   private String kubernetesVersion;
   private boolean includeAdditionalProperties;
@@ -26,15 +25,6 @@ public class TestMain implements Main {
 
   TestMain() throws MalformedURLException {
     classpathResource = new URL("file:abc");
-  }
-
-  boolean isIncludeDeprecated() {
-    return includeDeprecated;
-  }
-
-  @Override
-  public void setIncludeDeprecated(boolean includeDeprecated) {
-    this.includeDeprecated = includeDeprecated;
   }
 
   URL[] getClasspath() {
