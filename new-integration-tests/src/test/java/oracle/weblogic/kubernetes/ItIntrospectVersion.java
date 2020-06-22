@@ -186,9 +186,9 @@ public class ItIntrospectVersion implements LoggedTest {
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
         "dist", introDomainNamespace);
     assertTrue(Paths.get(distDir.toString(),
-        "u01/application/dist/clusterview.war").toFile().exists(),
+        "dist/clusterview.war").toFile().exists(),
         "Application archive is not available");
-    clusterViewAppPath = Paths.get(distDir.toString(), "u01/application/dist/clusterview.war");
+    clusterViewAppPath = Paths.get(distDir.toString(), "dist/clusterview.war");
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, introDomainNamespace);
