@@ -134,7 +134,7 @@ spec:
     - sample-domain2-rcu-access
 
     # Increase the introspector job active timeout value for JRF use cases
-    introspectorJobActiveDeadlineSeconds: 300
+    introspectorJobActiveDeadlineSeconds: 600
 
     opss:
 

@@ -8,8 +8,8 @@ To remove the resources you have created in these samples:
 
 1. Delete the domain resources.
    ```
-   $ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
-   $ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
+   $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+   $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
    ```
 
    This deletes the domain and any related resources that are labeled with the domain UID `sample-domain1` and `sample-domain2`.
@@ -27,7 +27,7 @@ To remove the resources you have created in these samples:
 
 3. If you set up a database for `JRF`:
    ```
-   $ /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
+   $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
 
 4. Delete the operator and its namespace:

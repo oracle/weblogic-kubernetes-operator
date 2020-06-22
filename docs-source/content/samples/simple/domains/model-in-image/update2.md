@@ -341,7 +341,7 @@ Here are the steps for this use case:
    ```
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
 
-   @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 600 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
+   @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
    @@ [2020-05-13T17:06:00][seconds=1] Info:   ready='true'
    @@ [2020-05-13T17:06:00][seconds=1] Info:   image='model-in-image:WLS-v1'
    @@ [2020-05-13T17:06:00][seconds=1] Info:   domainRestartVersion='1'

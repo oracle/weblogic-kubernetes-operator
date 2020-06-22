@@ -707,7 +707,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
       pod_count = 0   : Wait until there are no running WebLogic Server pods
                         for a domain. The default.
 
-      -t <timeout>    : Timeout in seconds. Defaults to '600'.
+      -t <timeout>    : Timeout in seconds. Defaults to '1000'.
 
       -q              : Quiet mode. Show only a count of wl pods that
                         have reached the desired criteria.
@@ -718,7 +718,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
   {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
   ```
-  @@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 600 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
+  @@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
   @@ [2020-04-30T13:50:42][seconds=0] Info:   ready='true'
   @@ [2020-04-30T13:50:42][seconds=0] Info:   image='model-in-image:WLS-v1'
   @@ [2020-04-30T13:50:42][seconds=0] Info:   domainRestartVersion='1'

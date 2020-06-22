@@ -15,17 +15,16 @@ weight: 1
 
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 
-1. Get the operator source and put it in `/tmp/operator-source`.
+1. Get the operator source and put it in `/tmp/weblogic-kubernetes-operator`.
 
    For example:
 
    ```
-   $ mkdir /tmp/operator-source
-   $ cd /tmp/operator-source
+   $ cd /tmp
    $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
-   > **Note**: We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
+   > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
@@ -34,7 +33,7 @@ weight: 1
 
    ```
    $ mkdir /tmp/mii-sample
-   $ cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
+   $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
 
    > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
@@ -95,25 +94,6 @@ weight: 1
        apiVersion: extensions/v1beta1
        kind: Ingress
        metadata:
-         name: traefik-ingress-sample-domain1-cluster-cluster-2
-         namespace: sample-domain1-ns
-         labels:
-           weblogic.domainUID: sample-domain1
-         annotations:
-           kubernetes.io/ingress.class: traefik
-       spec:
-         rules:
-         - host: sample-domain1-cluster-cluster-2.mii-sample.org
-           http:
-             paths:
-             - path:
-               backend:
-                 serviceName: sample-domain1-cluster-cluster-2
-                 servicePort: 8001
-       ---
-       apiVersion: extensions/v1beta1
-       kind: Ingress
-       metadata:
          name: traefik-ingress-sample-domain2-cluster-cluster-1
          namespace: sample-domain1-ns
          labels:
@@ -137,9 +117,7 @@ weight: 1
        $ cd /tmp/mii-sample/ingresses
        $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
        $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
-       $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-2.yaml
        $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
-       $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-2.yaml
        ```
 
    > **NOTE**: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.
@@ -233,10 +211,10 @@ A JRF domain requires an infrastructure database and requires initializing this 
      - In the local shell, `docker login container-registry.oracle.com`.
      - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
 
-   - Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
+   - Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
 
      ```
-     $ cd /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service
+     $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
      $ start-db-service.sh
      ```
 
@@ -249,12 +227,12 @@ A JRF domain requires an infrastructure database and requires initializing this 
      **WARNING:** The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
 
-2. Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`).
+2. Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`).
 
    Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
    ```
-   $ cd /tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema
+   $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
    $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```

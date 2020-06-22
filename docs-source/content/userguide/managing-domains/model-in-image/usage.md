@@ -156,7 +156,7 @@ Here are the required domain resource and model YAML file settings for Model in 
 
 - Set `configuration.opss.walletFileSecret` to reference a secret that contains your domain's OPSS wallet file in its `walletFile` key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its database information. This is an optional field for JRF domains, but must always be set if you want a restarted or migrated domain to access its database information.
 
-- Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 300 seconds. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's database tables), and because Model in Image creates your domain home for you using the introspection job.
+- Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 600 seconds. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's database tables), and because Model in Image creates your domain home for you using the introspection job.
 
 - Define an `RCUDbInfo` stanza in your model. Access to an database requires defining a `RCUDbInfo` stanza in your model's `domainInfo` stanza with the necessary information for accessing the domain's schema within the database. Usually this information should be supplied using a secret that you deploy and reference in your domain resource's `configuration.secrets` field. Here's an example `RCUDbInfo` stanza:
 
