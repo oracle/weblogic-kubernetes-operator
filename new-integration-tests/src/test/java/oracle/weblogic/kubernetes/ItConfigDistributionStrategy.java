@@ -50,9 +50,11 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -65,6 +67,7 @@ import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -101,7 +104,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -130,43 +132,54 @@ import static org.junit.jupiter.api.Assertions.fail;
 @IntegrationTest
 public class ItConfigDistributionStrategy implements LoggedTest {
 
-  private static String opNamespace = null;
-  private static String introDomainNamespace = null;
-
-  private static String nginxNamespace = null;
-  private static int nodeportshttp;
-  private static HelmParams nginxHelmParams = null;
-
-  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static boolean isUseSecret = true;
-
-  private final String wlSecretName = "weblogic-credentials";
-
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
-
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
   private static final Path CLUSTERVIEW_APP_PATH = Paths.get(PV_ROOT,
       "applications", "clusterview", "dist", "clusterview.war");
-
+  private static String opNamespace = null;
+  private static String introDomainNamespace = null;
+  private static String nginxNamespace = null;
+  private static int nodeportshttp;
+  private static HelmParams nginxHelmParams = null;
+  private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
+  private static boolean isUseSecret = true;
   final String domainUid = "mydomain";
   final String clusterName = "mycluster";
-
   final String adminServerName = "admin-server";
   final String adminServerPodName = domainUid + "-" + adminServerName;
-
   final String managedServerNameBase = "ms-";
-  String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   final int managedServerPort = 8001;
-
-  int replicaCount = 2;
-
   final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
-
   final String pvName = domainUid + "-pv"; // name of the persistent volume
   final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  private final String wlSecretName = "weblogic-credentials";
+  String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+  int replicaCount = 2;
+
+  /**
+   * Create secret for docker credentials.
+   *
+   * @param namespace name of the namespace in which to create secret
+   */
+  private static void createOCRRepoSecret(String namespace) {
+    boolean secretExists = false;
+    V1SecretList listSecrets = listSecrets(namespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+    }
+  }
 
   /**
    * Assigns unique namespaces for operator and domains. Pull WebLogic image if running tests in Kind cluster. Installs
@@ -211,7 +224,165 @@ public class ItConfigDistributionStrategy implements LoggedTest {
       createOCRRepoSecret(introDomainNamespace);
     }
 
+    createDomain();
+
   }
+
+  String overridecm = "configoverride-cm";
+  @AfterEach
+  public void deleteOverrideConfig(){
+    TestActions.deleteConfigMap(overridecm, introDomainNamespace);
+    TestActions.restartDomain(domainUid, introDomainNamespace);
+  }
+
+  /**
+   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
+   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
+   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
+   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
+   */
+  @Order(1)
+  @Test
+  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
+  public void testDefaultOverride() {
+
+    ArrayList<Path> configfiles = new ArrayList<>();
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+    CommonTestUtils.createConfigMapFromFiles(overridecm, configfiles, introDomainNamespace);
+
+    // get the pod creation time stamps
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    }
+
+    // patch the domain to increase the replicas of the cluster and add introspectVersion field
+    String patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
+        + "\"value\": \"configoverride-cm\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+        + "]";
+
+    logger.info("Updating server configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, runs and deleted");
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+
+    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
+      String podName = (String) entry.getKey();
+      DateTime creationTimestamp = (DateTime) entry.getValue();
+      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, introDomainNamespace,
+          creationTimestamp), "Pod is restarted");
+    }
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+            -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    //access application from admin server
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/ConfigServlet?attribute=maxmessagesize";
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+
+  }
+
+  /**
+   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
+   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
+   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
+   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
+   */
+  @Order(1)
+  @Test
+  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
+  public void testDefaultDynamicOverride() {
+
+    ArrayList<Path> configfiles = new ArrayList<>();
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+    String override1cm = "configoverride1-cm";
+    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
+
+    // get the pod creation time stamps
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    }
+
+    // patch the domain to increase the replicas of the cluster and add introspectVersion field
+    String patchStr = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
+        + "\"value\": \"DYNAMIC\"}"
+        + "]";
+
+    TestActions.restartDomain(domainUid, introDomainNamespace);
+
+    // patch the domain to increase the replicas of the cluster and add introspectVersion field
+    patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
+        + "\"value\": \"configoverride-cm\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+        + "]";
+
+
+    logger.info("Updating server configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, runs and deleted");
+    String introspectPodName = domainUid + "-" + "introspect-domain-job";
+    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
+
+    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
+      String podName = (String) entry.getKey();
+      DateTime creationTimestamp = (DateTime) entry.getValue();
+      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, introDomainNamespace,
+          creationTimestamp), "Pod is restarted");
+    }
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(()
+            -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        "Getting admin server node port failed");
+
+    //access application from admin server
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/ConfigServlet?attribute=maxmessagesize";
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+
+  }
+
 
   private void createDomain() {
 
@@ -226,7 +397,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
-        -> File.createTempFile("domain", "properties"),
+            -> File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
@@ -244,7 +415,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
-        -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+            -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
         "Failed to write domain properties file");
 
     // WLST script for creating domain
@@ -263,6 +434,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             .name(domainUid)
             .namespace(introDomainNamespace))
         .spec(new DomainSpec()
+            .configuration(new Configuration().overrideDistributionStrategy("DYNAMIC"))
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
@@ -330,13 +502,16 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
     }
+
+    // deploy application to view server configuration
+    deployApplication();
   }
 
-  private void deployApplication(){
-        // deploy application and verify all servers functions normally
+  private void deployApplication() {
+
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+            -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
         "Getting admin server t3channel node port failed");
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
@@ -346,91 +521,20 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
         introDomainNamespace);
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    //access application from admin server
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/ConfigServlet?attribute=maxmessagesize";
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
-    assertEquals(200,
-        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
-            "Accessing sample application on admin server failed")
-            .statusCode(), "Status code not equals to 200");
-  }
-
-  /**
-   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
-   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
-   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
-   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
-   */
-  @Order(1)
-  @Test
-  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testDefaultDynamicOverride() {
-
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride1-cm";
-    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
-
-    // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
-    }
-
-    // patch the domain to increase the replicas of the cluster and add introspectVersion field
-    String patchStr
-        = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
-        + "\"value\": \"configoverride1-cm\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
-        + "]";
-
-    logger.info("Updating server configuration using patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = domainUid + "-" + "introspect-domain-job";
-    checkPodExists(introspectPodName, domainUid, introDomainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
-
-    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
-      assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, introDomainNamespace,
-          creationTimestamp), "Pod is restarted");
-    }
-
-
-
   }
 
   /**
    * Create a WebLogic domain on a persistent volume by doing the following. Create a configmap containing WLST script
    * and property file. Create a Kubernetes job to create domain on persistent volume.
    *
-   * @param wlstScriptFile python script to create domain
+   * @param wlstScriptFile       python script to create domain
    * @param domainPropertiesFile properties file containing domain configuration
-   * @param pvName name of the persistent volume to create domain in
-   * @param pvcName name of the persistent volume claim
-   * @param namespace name of the domain namespace in which the job is created
+   * @param pvName               name of the persistent volume to create domain in
+   * @param pvcName              name of the persistent volume claim
+   * @param namespace            name of the domain namespace in which the job is created
    */
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-      String pvName, String pvcName, String namespace) {
+                                         String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run create domain job using WLST");
 
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -461,9 +565,9 @@ public class ItConfigDistributionStrategy implements LoggedTest {
    * Create configmap containing domain creation scripts.
    *
    * @param configMapName name of the configmap to create
-   * @param files files to add in configmap
-   * @param namespace name of the namespace in which to create configmap
-   * @throws IOException when reading the domain script files fail
+   * @param files         files to add in configmap
+   * @param namespace     name of the namespace in which to create configmap
+   * @throws IOException  when reading the domain script files fail
    * @throws ApiException if create configmap fails
    */
   private void createConfigMapForDomainCreation(String configMapName, List<Path> files, String namespace)
@@ -497,14 +601,14 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   /**
    * Create a job to create a domain in persistent volume.
    *
-   * @param pvName name of the persistent volume to create domain in
-   * @param pvcName name of the persistent volume claim
+   * @param pvName         name of the persistent volume to create domain in
+   * @param pvcName        name of the persistent volume claim
    * @param domainScriptCM configmap holding domain creation script files
-   * @param namespace name of the domain namespace in which the job is created
-   * @param jobContainer V1Container with job commands to create domain
+   * @param namespace      name of the domain namespace in which the job is created
+   * @param jobContainer   V1Container with job commands to create domain
    */
   private void createDomainJob(String pvName,
-      String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
+                               String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
 
     V1Job jobBody = new V1Job()
@@ -566,7 +670,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                + "(elapsed time {2} ms, remaining time {3} ms)",
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -584,7 +688,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
       if (jobCondition != null) {
         logger.severe("Job {0} failed to create domain", jobName);
         List<V1Pod> pods = assertDoesNotThrow(()
-            -> listPods(namespace, "job-name=" + jobName).getItems(),
+                -> listPods(namespace, "job-name=" + jobName).getItems(),
             "Listing pods failed");
         if (!pods.isEmpty()) {
           String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
@@ -600,7 +704,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   /**
    * Create a persistent volume.
    *
-   * @param pvName name of the persistent volume to create
+   * @param pvName    name of the persistent volume to create
    * @param domainUid domain UID
    * @throws IOException when creating pv path fails
    */
@@ -641,8 +745,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   /**
    * Create a persistent volume claim.
    *
-   * @param pvName name of the persistent volume
-   * @param pvcName name of the persistent volume to create
+   * @param pvName    name of the persistent volume
+   * @param pvcName   name of the persistent volume to create
    * @param domainUid UID of the WebLogic domain
    * @param namespace name of the namespace in which to create the persistent volume claim
    */
@@ -665,28 +769,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
-  }
-
-  /**
-   * Create secret for docker credentials.
-   *
-   * @param namespace name of the namespace in which to create secret
-   */
-  private static void createOCRRepoSecret(String namespace) {
-    boolean secretExists = false;
-    V1SecretList listSecrets = listSecrets(namespace);
-    if (null != listSecrets) {
-      for (V1Secret item : listSecrets.getItems()) {
-        if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
-          secretExists = true;
-          break;
-        }
-      }
-    }
-    if (!secretExists) {
-      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-    }
   }
 
   /**
