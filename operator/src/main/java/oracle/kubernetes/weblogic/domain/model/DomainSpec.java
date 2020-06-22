@@ -87,7 +87,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The in-pod name of the directory in which to store the domain, Node Manager, server logs, "
-          + "and server *.out files")
+          + "and server *.out files.")
   private String logHome;
 
   /**

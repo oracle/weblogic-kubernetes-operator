@@ -9,7 +9,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Configuration {
-  @Description("The Istio service mesh integration settings")
+  @Description("The Istio service mesh integration settings.")
   private Istio istio;
 
   public Istio getIstio() {
