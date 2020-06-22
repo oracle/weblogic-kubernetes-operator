@@ -20,24 +20,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
@@ -54,14 +44,11 @@ import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.GOOGLE_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_EMAIL;
@@ -100,20 +87,19 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
@@ -124,7 +110,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
@@ -149,6 +134,10 @@ public class CommonTestUtils {
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
+
+  private static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
+        .and().with().pollInterval(3, SECONDS)
+        .atMost(12, SECONDS).await();
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -1359,214 +1348,39 @@ public class CommonTestUtils {
   }
 
   /**
-   * Patch the domain resource with a new WebLogic admin credentials secret.
+   * Check that the given credentials are valid to access the WebLogic domain.
    *
-   * @param domainResourceName name of the domain resource
-   * @param namespace Kubernetes namespace that the domain is hosted
-   * @param secretName name of the new WebLogic admin credentials secret
-   * @return restartVersion new restartVersion of the domain resource
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @param expectValid true if the check expects a successful result
    */
-  public static String patchDomainResourceWithNewAdminSecret(
-      String domainResourceName,
-      String namespace,
-      String secretName
-  ) {
-    String patch = String.format(
-        "[\n  {\"op\": \"replace\", \"path\": \"/spec/%s\", \"value\": \"%s\"}\n]\n",
-        "webLogicCredentialsSecret/name", secretName);
-    logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
-        domainResourceName, namespace, patch);
-
-    assertTrue(patchDomainCustomResource(
-        domainResourceName,
-        namespace,
-        new V1Patch(patch),
-        V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource %s in namespace %s with %s: %s",
-            domainResourceName, namespace, "/spec/webLogicCredentialsSecret/name", secretName));
-
-    String oldVersion = assertDoesNotThrow(
-        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
-        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
-    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
-        domainResourceName, namespace, oldVersion, newVersion);
-    patch =
-        String.format("[\n  {\"op\": \"replace\", \"path\": \"/spec/restartVersion\", \"value\": \"%s\"}\n]\n",
-            newVersion);
-
-    logger.info("Patch the domain resource {0} in namespace {1} with: {2}\n",
-        domainResourceName, namespace, patch);
-
-    assertTrue(patchDomainCustomResource(
-        domainResourceName,
-        namespace,
-        new V1Patch(patch),
-        V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource %s in namespace %s with startVersion: %s",
-            domainResourceName, namespace, newVersion));
-
-    String updatedVersion = assertDoesNotThrow(
-        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
-        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    logger.info("Current restartVersion is {0}", updatedVersion);
-    assertTrue(updatedVersion.equals(String.valueOf(newVersion)),
-        String.format("Failed to update the restartVersion of domain %s from %s to %s",
-            domainResourceName,
-            oldVersion,
-            newVersion));
-    return String.valueOf(newVersion);
-  }
-
-  /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
-   *
-   * @param domainResourceName name of the domain resource
-   * @param domNamespace Kubernetes namespace that the domain is hosted
-   * @param adminSecretName name of the new WebLogic admin credentials secret
-   * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret for encryption
-   * @param replicaCount number of managed servers to start
-   * @return domain of the domain resource
-   */
-  public static Domain createDomainResource(
-      String domainResourceName,
-      String domNamespace,
-      String adminSecretName,
-      String repoSecretName,
-      String encryptionSecretName,
-      int replicaCount) {
-    // create the domain CR
-    return new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainResourceName)
-            .namespace(domNamespace))
-        .spec(new oracle.weblogic.domain.DomainSpec()
-            .domainUid(domainResourceName)
-            .domainHomeSourceType("FromModel")
-            .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new oracle.weblogic.domain.AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-
-  }
-
-  /**
-   * Patch domain resource with a new WebLogic domain credentials secret and a new restartVersion,
-   * and verify if the domain spec has been correctly updated.
-   *
-   * @param domainUid name of the domain resource
-   * @param namespace Kubernetes namespace that the domain is hosted
-   * @param adminServerPodName name of the WebLogic admin server
-   * @param managedServerPrefix prefix of the managed servers
-   * @param replicaCount number of managed servers to start
-   * @param secretName name of the secret that is used to patch the domain resource
-   * @return restartVersion of the domain resource
-   */
-  public static String patchDomainWithNewSecretAndVerify(
-      final String domainUid,
-      final String namespace,
-      final String adminServerPodName,
-      final String managedServerPrefix,
-      final int replicaCount,
-      final String secretName
-  ) {
-    logger.info(
-        "Patch domain resource {0} in namespace {1} to use the new secret {2}",
-        domainUid, namespace, secretName);
-
-    String restartVersion = patchDomainResourceWithNewAdminSecret(domainUid, namespace, secretName);
-
-    logger.info(
-        "Check that domain resource {0} in namespace {1} has been patched with new secret {2}",
-        domainUid, namespace, secretName);
-    checkDomainCredentialsSecretPatched(domainUid, namespace, secretName);
-
-    // check and wait for the admin server pod to be patched with the new secret
-    logger.info(
-        "Check that admin server pod for domain resource {0} in namespace {1} has been patched with {2}: {3}",
-        domainUid, namespace, "/spec/webLogicCredentialsSecret/name", secretName);
-
-    return restartVersion;
-  }
-
-  /**
-   * Check that domain resource has been updated with the new WebLogic domain credentials secret.
-   *
-   * @param domainUid name of the domain resource
-   * @param namespace Kubernetes namespace that the domain is hosted
-   * @param newValue new secret name for the WebLogic domain credentials secret
-   */
-  private static void checkDomainCredentialsSecretPatched(
-      String domainUid,
-      String namespace,
-      String newValue
-  ) {
-
-    // check if domain resource has been patched with the new secret
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainResourceCredentialsSecretPatched(domainUid, namespace, newValue),
-            String.format(
-                "Domain %s in namespace %s is not patched with admin credentials secret %s",
-                domainUid, namespace, newValue)));
-
-  }
-
-  /**
-   * Check if the given server pod's domain restart version has been updated.
-   *
-   * @param podName name of the server pod
-   * @param domainUid the domain that the server pod belongs to
-   * @param namespace the Kubernetes namespace that the pod belongs to
-   * @param restartVersion the expected value of the restart version
-   */
-  public static void checkPodRestartVersionUpdated(
+  public static void verifyCredentials(
       String podName,
-      String domainUid,
       String namespace,
-      String restartVersion) {
-    logger.info("Check that weblogic.domainRestartVersion of pod {0} has been updated", podName);
-    boolean restartVersionUpdated = assertDoesNotThrow(
-        () -> podRestartVersionUpdated(podName, domainUid, namespace, restartVersion),
-        String.format("Failed to get weblogic.domainRestartVersion label of pod %s in namespace %s",
-            podName, namespace));
-    assertTrue(restartVersionUpdated,
-        String.format("Label weblogic.domainRestartVersion of pod %s in namespace %s has not been updated",
-            podName, namespace));
+      String username,
+      String password,
+      boolean expectValid) {
+    String msg = expectValid ? "valid" : "invalid";
+    logger.info("Check if the given WebLogic admin credentials are {0}", msg);
+    withQuickRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
+            + "(elapsed time {3}ms, remaining time {4}ms)",
+            username,
+            password,
+            msg,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(
+            expectValid
+            ?
+            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
+            :
+            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
+            String.format(
+               "Failed to validate credentials %s/%s on pod %s in namespace %s",
+               username, password, podName, namespace)));
   }
 }

@@ -7,13 +7,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.CommonPatchTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
@@ -29,23 +28,18 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteOperatorPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -60,7 +54,6 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
   private static ConditionFactory withStandardRetryPolicy = null;
-  private static ConditionFactory withQuickRetryPolicy = null;
 
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
@@ -81,11 +74,6 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
         .and().with().pollInterval(10, SECONDS)
         .atMost(6, MINUTES).await();
 
-    // create quick, reusable retry/backoff policy
-    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-      .and().with().pollInterval(3, SECONDS)
-      .atMost(12, SECONDS).await();
-
     // get namespaces
     assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
     opNamespace = namespaces.get(0);
@@ -101,7 +89,8 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
         domainUid, domainNamespace);
-    createAndVerifyMiiDomain();
+    createMiiDomainAndVerify(
+        domainNamespace, domainUid, adminServerPodName, managedServerPrefix, replicaCount);
   }
 
   /**
@@ -175,7 +164,7 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
     logger.info("Patch domain {0} in namespace {1} with the secret {2}, and verify the result",
         domainUid, domainNamespace, adminSecretName);
 
-    String restartVersion = CommonTestUtils.patchDomainWithNewSecretAndVerify(
+    String restartVersion = CommonPatchTestUtils.patchDomainWithNewSecretAndVerify(
         domainUid,
         domainNamespace,
         adminServerPodName,
@@ -197,7 +186,7 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
       final String podName = managedServerPrefix + i;
       final DateTime lastCreationTime = msLastCreationTime.get(i - 1);
       // check that the managed server pod's label has been updated with the new restartVersion
-      CommonTestUtils.checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
+      checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
     }
 
     // check if the new credentials are valid and the old credentials are not valid any more
@@ -215,7 +204,7 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
 
     // get the creation time of the admin server pod before patching
     DateTime opPodCreationTime =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", opPodName),
+        assertDoesNotThrow(() -> getPodCreationTimestamp(opNamespace, "", opPodName),
             String.format("Failed to get creationTimestamp for pod %s", opPodName));
     assertNotNull(opPodCreationTime, "creationTimestamp of the operator pod is null");
 
@@ -238,102 +227,5 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
             condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
           "operatorIsReady failed with ApiException"));
-  }
-
-
-  /**
-   * Check that the given credentials are valid to access the WebLogic domain.
-   *
-   * @param podName   name of the admin server pod
-   * @param namespace   name of the namespace that the pod is running in
-   * @param username  WebLogic admin username
-   * @param password  WebLogic admin password
-   * @param expectValid true if the check expects a successful result
-   */
-  private void verifyCredentials(
-      String podName,
-      String namespace,
-      String username,
-      String password,
-      boolean expectValid) {
-    String msg = expectValid ? "valid" : "invalid";
-    logger.info("Check if the given WebLogic admin credentials are {0}", msg);
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            username,
-            password,
-            msg,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(
-            expectValid
-                ?
-            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
-                :
-            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
-            String.format(
-                "Failed to validate credentials %s/%s on pod %s in namespace %s",
-                username, password, podName, namespace)));
-  }
-
-  /**
-   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
-   */
-  private static void createAndVerifyMiiDomain() {
-    logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
-    assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
-        String.format("createSecret failed for %s", REPO_SECRET_NAME));
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        adminSecretName,
-        domainNamespace,
-        ADMIN_USERNAME_DEFAULT,
-        ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        encryptionSecretName,
-        domainNamespace,
-        "weblogicenc",
-        "weblogicenc"),
-        String.format("createSecret failed for %s", encryptionSecretName));
-
-    // create the domain custom resource
-    logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
-        domainUid, domainNamespace);
-    Domain domain = CommonTestUtils.createDomainResource(domainUid, domainNamespace, adminSecretName, REPO_SECRET_NAME,
-        encryptionSecretName, replicaCount);
-    createDomainAndVerify(domain, domainNamespace);
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
   }
 }
