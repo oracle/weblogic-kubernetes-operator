@@ -172,7 +172,7 @@
       "type": "object",
       "properties": {
         "istio": {
-          "description": "The Istio service mesh integration settings",
+          "description": "The Istio service mesh integration settings.",
           "$ref": "#/definitions/Istio"
         }
       }
@@ -318,7 +318,7 @@
           "$ref": "#/definitions/ServerPod"
         },
         "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server *.out files",
+          "description": "The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server *.out files.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
