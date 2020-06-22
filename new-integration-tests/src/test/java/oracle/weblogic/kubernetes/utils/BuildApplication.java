@@ -60,10 +60,9 @@ public class BuildApplication {
    * Build application.
    *
    * <p>The appSrcPath, your application source directory is zipped up and copied to a WebLogic server pod for building.
-   * The application is built under /u01/application inside the pod. If your archives are placed under
-   * /u01/application/build after building, use <b>build</b> as the archiveDistDir param value. This method copies the
-   * folder /u01/application/<b>archiveDistDir</b> to local file system under
-   * WORK_DIR/<b>your_application_name</b>/u01/application/<b>archiveDistDir</b>
+   * If your archives are placed under &lt application_source &gt /build after building, use <b>build</b> as the
+   * archiveDistDir param value. This method copies the folder <b>archiveDistDir</b> to local file system and absolute
+   * path of the <b>archiveDistDir</b> directory is returned by this method.
    * <p> Example Usage: </p>
 
    * <pre>{@literal
@@ -74,7 +73,7 @@ public class BuildApplication {
    *         "/scratch/speriyat/weblogic-kubernetes-operator/new-integration-tests/src/test/resources/apps/clusterview",
    *         antParams,
    *         "clean build all" // these targets must be supported by your build file
-   *         "dist" // the directory your build system creates
+   *         "build" // the directory your build system creates
    *         "ns-abcd" // your domain or operator namespace, so that the pods are cleaned up after test is done
    *     );
    *     }
@@ -100,7 +99,8 @@ public class BuildApplication {
     // Path of temp location for application source directory
     Path tempAppPath = Paths.get(WORK_DIR, "j2eeapplications", appSrcPath.getFileName().toString());
     // directory to copy archives built
-    Path destArchiveDir = Paths.get(WORK_DIR, appSrcPath.getFileName().toString());
+    Path destArchiveBaseDir = Paths.get(WORK_DIR, appSrcPath.getFileName().toString());
+    Path destDir = null;
 
     assertDoesNotThrow(() -> {
       // recreate WORK_DIR/j2eeapplications/<application_directory_name>
@@ -109,9 +109,9 @@ public class BuildApplication {
       deleteDirectory(tempAppPath.toFile());
       Files.createDirectories(tempAppPath);
 
-      Files.createDirectories(destArchiveDir);
-      deleteDirectory(destArchiveDir.toFile());
-      Files.createDirectories(destArchiveDir);
+      Files.createDirectories(destArchiveBaseDir);
+      deleteDirectory(destArchiveBaseDir.toFile());
+      Files.createDirectories(destArchiveBaseDir);
 
       // copy the application source to WORK_DIR/j2eeapplications/<application_directory_name> for zipping
       logger.info("Copying {0} to {1}", appSrcPath, tempAppPath);
@@ -169,13 +169,14 @@ public class BuildApplication {
       }
 
       Kubernetes.copyDirectoryFromPod(webLogicPod,
-          Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveDir);
+          Paths.get(APPLICATIONS_PATH, archiveDistDir).toString(), destArchiveBaseDir);
+      destDir = Paths.get(destArchiveBaseDir.toString(), "u01/application", archiveDistDir);
 
     } catch (ApiException | IOException | InterruptedException ioex) {
       logger.info(ioex.getMessage());
     }
 
-    return destArchiveDir;
+    return destDir;
   }
 
 
