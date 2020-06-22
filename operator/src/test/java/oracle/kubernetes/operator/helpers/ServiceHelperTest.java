@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -158,7 +159,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
         consoleHandlerMemento =
             TestUtils.silenceOperatorLogger()
                 .collectLogMessages(logRecords, MESSAGE_KEYS)
-                .withLogLevel(Level.FINE));
+                .withLogLevel(Level.FINE)
+                .ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(UnitTestHash.install());
 
@@ -301,11 +303,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   public void onFailedRun_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, 401);
+    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, 500);
 
     runServiceHelper();
 
-    testSupport.verifyCompletionThrowable(ApiException.class);
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test
@@ -318,7 +320,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     runServiceHelper();
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound", "Test this failure"));
+    assertThat(getDomain(), hasStatus("FieldValueNotFound",
+        "testcall in namespace junit, for testName: Test this failure"));
   }
 
   @Test

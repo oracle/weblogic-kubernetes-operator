@@ -70,7 +70,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Server Pods Restarted by modifying properties on the domain resource| Use Case |
 | --- | --- |
 | Server pods restarted by changing Env property | Verify admin and managed server pods being restarted by property change: `-Dweblogic.StdoutDebugEnabled=false` --> `-Dweblogic.StdoutDebugEnabled=true` |
-| Server pods restarted by changing image | Verify admin and managed server pods being restarted by property change: image: `container-registry.oracle.com/middleware/weblogic:12.2.1.3` --> image: `container-registry.oracle.com/middleware/weblogic:duplicate` |
+| Server pods restarted by changing image | Verify admin and managed server pods being restarted by property change: image: `container-registry.oracle.com/middleware/weblogic:12.2.1.4` --> image: `container-registry.oracle.com/middleware/weblogic:duplicate` |
 | Server pods restarted by changing imagePullPolicy | Verify  admin and managed server pods being restarted by property change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never |
 | Server pods restarted by changing includeServerOutInPodLog | Verify admin and managed server pods being restarted by property change: includeServerOutInPodLog: true --> includeServerOutInPodLog: false |
 | Server pods restarted by changing logHomeEnable | Verify admin and managed server pods being restarted by property change: logHomeEnabled: true --> logHomeEnabled: false |

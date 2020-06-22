@@ -3,8 +3,10 @@
 
 package oracle.kubernetes.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -17,6 +19,11 @@ public class LogMatcher
   private String expectedMessage;
   private Level expectedLevel;
   private Object expectedParameter;
+  private LogMatcher[] logMatchers;
+
+  private LogMatcher(LogMatcher[] logMatchers) {
+    this.logMatchers = logMatchers;
+  }
 
   private LogMatcher(Level expectedLevel, String expectedMessage) {
     this(expectedLevel, expectedMessage, null);
@@ -56,10 +63,47 @@ public class LogMatcher
     return new LogMatcher(Level.FINE, expectedMessage, expectedParameter);
   }
 
+  public static LogMatcher containsInOrder(LogMatcher... logMatchers) {
+    return new LogMatcher(logMatchers);
+  }
+
   @Override
   protected boolean matchesSafely(
       Collection<LogRecord> logRecords, Description mismatchDescription) {
-    return logRecords.removeIf(this::matches) || noLogMessageFound(mismatchDescription);
+    if (logMatchers == null) {
+      return logRecords.removeIf(this::matches) || noLogMessageFound(mismatchDescription);
+    } else {
+      return matchesAll(logRecords, mismatchDescription);
+    }
+  }
+
+  private boolean matchesAll(Collection<LogRecord> logRecords, Description mismatchDescription) {
+    if (logRecords.size() < logMatchers.length) {
+      mismatchDescription.appendText("Expecting " + logMatchers.length
+          + " log messages but only found " + logRecords.size());
+      return false;
+    }
+    ArrayList<LogRecord> matchingRecords = new ArrayList<>();
+
+    Iterator<LogRecord> logRecordIterator = logRecords.iterator();
+    mismatchDescription.appendText("[ ");
+    for (LogMatcher logMatcher: logMatchers) {
+      boolean matched = false;
+      while (logRecordIterator.hasNext() && !matched) {
+        LogRecord logRecord = logRecordIterator.next();
+        appendToDescription(logRecord, mismatchDescription);
+        if (logMatcher.matches(logRecord)) {
+          matchingRecords.add(logRecord);
+          matched = true;
+        }
+      }
+      if (!matched) {
+        mismatchDescription.appendText(" ]");
+        return false;
+      }
+    }
+    logRecords.removeAll(matchingRecords);
+    return true;
   }
 
   private boolean matches(LogRecord item) {
@@ -76,12 +120,32 @@ public class LogMatcher
 
   @Override
   public void describeTo(Description description) {
+    if (logMatchers != null) {
+      description.appendText("[");
+      for (LogMatcher logMatcher: logMatchers) {
+        logMatcher.describeTo(description);
+        description.appendText(" ");
+      }
+      description.appendText("]");
+      return;
+    }
     description
         .appendValue(expectedLevel)
         .appendText(" log message with value ")
         .appendValue(expectedMessage);
     if (expectedParameter != null) {
-      description.appendText(" and includes parameter ").appendValue(expectedParameter);
+      description.appendText(" with parameter(s) ").appendValue(expectedParameter);
+    }
+    description.appendText(" ");
+  }
+
+  private void appendToDescription(LogRecord logRecord, Description description) {
+    description
+        .appendValue(logRecord.getLevel())
+        .appendText(" log message with value ")
+        .appendValue(logRecord.getMessage());
+    if (logRecord.getParameters() != null) {
+      description.appendText(" and includes parameter ").appendValue(logRecord.getParameters());
     }
   }
 }

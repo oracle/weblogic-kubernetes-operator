@@ -212,7 +212,7 @@ public class JobHelperTest {
         .getComponents()
         .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
     DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
-        new DomainIntrospectorJobStepContext(packet);
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
     return domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
   }
 
@@ -672,6 +672,15 @@ public class JobHelperTest {
     assertThat(
         getPodSpec(jobSpec).getTolerations(),
         nullValue());
+  }
+
+  @Test
+  public void whenNotConfigured_introspectorPodSpec_hasTrueAccessLogInLogHomeEnvVar() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "true")
+    );
   }
 
   private DomainPresenceInfo createDomainPresenceInfo() {

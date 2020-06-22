@@ -252,7 +252,7 @@ public class ItSessionMigration extends BaseTest {
     String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption + httpHeaderFile);
     LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
 
-    ExecResult result = TestUtils.exec(curlCmd);
+    ExecResult result = TestUtils.execOrAbortProcess(curlCmd);
 
     return result;
   }

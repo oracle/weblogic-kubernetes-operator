@@ -13,9 +13,13 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
@@ -24,10 +28,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -39,10 +47,12 @@ public class DomainValidationStepTest {
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private TerminalStep terminalStep = new TerminalStep();
   private Step domainValidationSteps;
+  private Step topologyValidationStep;
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
+  private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
 
   /**
    * Setup test.
@@ -50,7 +60,8 @@ public class DomainValidationStepTest {
    */
   @Before
   public void setUp() throws Exception {
-    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED);
+    consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED,
+        NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN);
     mementos.add(consoleControl);
     mementos.add(testSupport.install());
 
@@ -58,6 +69,7 @@ public class DomainValidationStepTest {
     testSupport.addDomainPresenceInfo(info);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(NS, terminalStep);
+    topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
   }
 
   @After
@@ -152,4 +164,37 @@ public class DomainValidationStepTest {
 
     assertThat(terminalStep.wasRun(), is(true));
   }
+
+  @Test
+  public void whenClusterDoesNotExistInDomain_logWarning() {
+    domain.getSpec().withCluster(createCluster("no-such-cluster"));
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runStepsToCompletion(topologyValidationStep);
+
+    assertThat(logRecords, containsWarning(MessageKeys.NO_CLUSTER_IN_DOMAIN));
+    assertThat(info.getValidationWarningsAsString(),
+        stringContainsInOrder("Cluster", "no-such-cluster", "does not exist"));
+  }
+
+  @Test
+  public void whenServerDoesNotExistInDomain_logWarning() {
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runStepsToCompletion(topologyValidationStep);
+
+    assertThat(logRecords, containsWarning(MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN));
+    assertThat(info.getValidationWarningsAsString(),
+        stringContainsInOrder("Managed Server", "no-such-server", "does not exist"));
+  }
+
+  private Cluster createCluster(String clusterName) {
+    Cluster cluster = new Cluster();
+    cluster.setClusterName(clusterName);
+    cluster.setReplicas(1);
+    cluster.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    return cluster;
+  }
+
 }

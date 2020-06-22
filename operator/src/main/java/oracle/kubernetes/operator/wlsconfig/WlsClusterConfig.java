@@ -4,20 +4,18 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WLS cluster. */
 public class WlsClusterConfig {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private String name;
   private List<WlsServerConfig> servers = new ArrayList<>();
@@ -169,6 +167,14 @@ public class WlsClusterConfig {
   }
 
   /**
+   * Returns the minimum size of the cluster.
+   * @return  For static clusters, the minimum size can be 0.  Dynamic servers will return the configured value.
+   */
+  public int getMinClusterSize() {
+    return hasDynamicServers() ? getMinDynamicClusterSize() : 0;
+  }
+
+  /**
    * Returns the name of the cluster that this WlsClusterConfig is created for.
    *
    * @return the name of the cluster that this WlsClusterConfig is created for
@@ -219,21 +225,24 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns a list of server configurations for servers that belong to this cluster, which includes
-   * both statically configured servers and dynamic servers.
+   * Returns a sorted list of server configurations for servers that belong to this cluster,
+   * which includes both statically configured servers and dynamic servers.
    *
-   * @return A list of WlsServerConfig containing configurations of servers that belong to this
-   *     cluster
+   * @return A sorted list of WlsServerConfig containing configurations of servers that belong to
+   *     this cluster
    */
   public synchronized List<WlsServerConfig> getServerConfigs() {
+    int dcsize = dynamicServersConfig == null ? 0 : dynamicServersConfig.getDynamicClusterSize();
+    List<WlsServerConfig> result = new ArrayList<>(dcsize + servers.size());
     if (dynamicServersConfig != null) {
-      List<WlsServerConfig> result =
-          new ArrayList<>(dynamicServersConfig.getDynamicClusterSize() + servers.size());
       result.addAll(dynamicServersConfig.getServerConfigs());
-      result.addAll(servers);
-      return result;
     }
-    return servers;
+    result.addAll(servers);
+    Collections.sort(
+        result,
+        Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName()))
+    );
+    return result;
   }
 
   public List<WlsServerConfig> getServers() {
@@ -284,43 +293,13 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Validate the proposed number of replicas to be applied to this configured WLS cluster. The
-   * method also logs warning if inconsistent WLS configurations are found.
+   * Returns the minimum size of the dynamic cluster.
    *
-   * <p>In the future this method may also attempt to fix the configuration inconsistencies by
-   * updating the replica setting. It is the responsibility of the caller to persist the changes to
-   * kubernetes.
-   *
-   * @param replicas the proposed number of replicas
-   * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be
-   *     filled in by this method. Optional.
+   * @return the minimum size of the dynamic cluster, or -1 if there is no dynamic servers in this
+   *     cluster
    */
-  void validateCluster(int replicas, List<ConfigUpdate> suggestedConfigUpdates) {
-    // log warning if no servers are configured in the cluster
-    if (getMaxClusterSize() == 0) {
-      LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, getClusterName());
-    }
-
-    // make recommendations if config can be updated
-    suggestConfigUpdates(replicas, suggestedConfigUpdates);
-  }
-
-  private void suggestConfigUpdates(Integer replicas, List<ConfigUpdate> suggestedConfigUpdates) {
-    // recommend updating WLS dynamic cluster size and machines if requested to recommend
-    // updates, ie, suggestedConfigUpdates is not null, and if replicas value is larger than
-    // the current dynamic cluster size.
-    //
-    // Note: Never reduce the value of dynamicClusterSize even during scale down
-    if (suggestedConfigUpdates != null && this.hasDynamicServers()) {
-      if (replicas > getDynamicClusterSize()
-          && getDynamicClusterSize() < getMaxDynamicClusterSize()) {
-        // increase dynamic cluster size to satisfy replicas, but only up to the configured max
-        // dynamic cluster size
-        suggestedConfigUpdates.add(
-            new DynamicClusterSizeConfigUpdate(
-                this, Math.min(replicas, getMaxDynamicClusterSize())));
-      }
-    }
+  public int getMinDynamicClusterSize() {
+    return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : -1;
   }
 
   /**
@@ -432,26 +411,4 @@ public class WlsClusterConfig {
     return builder.isEquals();
   }
 
-  /** ConfigUpdate implementation for updating a dynamic cluster size. */
-  static class DynamicClusterSizeConfigUpdate implements ConfigUpdate {
-    final int targetClusterSize;
-    final WlsClusterConfig wlsClusterConfig;
-
-    public DynamicClusterSizeConfigUpdate(
-        WlsClusterConfig wlsClusterConfig, int targetClusterSize) {
-      this.targetClusterSize = targetClusterSize;
-      this.wlsClusterConfig = wlsClusterConfig;
-    }
-
-    /**
-     * Create a Step to update the cluster size of a WebLogic dynamic cluster.
-     *
-     * @param next Next Step to be performed after the WebLogic configuration update
-     * @return Step to update the cluster size of a WebLogic dynamic cluster
-     */
-    @Override
-    public Step createStep(Step next) {
-      return new UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
-    }
-  }
 }
