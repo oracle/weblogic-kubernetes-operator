@@ -13,11 +13,6 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/userguide/experimental/istio/</loc>
-    <lastmod>2019-08-15T13:30:04-04:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/</loc>
     <lastmod>2019-04-18T06:46:23-05:00</lastmod>
   </url>
@@ -393,8 +388,8 @@
   </url>
   
   <url>
-    <loc>/weblogic-kubernetes-operator/userguide/experimental/</loc>
-    <lastmod>2019-08-15T13:29:04-04:00</lastmod>
+    <loc>/weblogic-kubernetes-operator/userguide/istio/istio/</loc>
+    <lastmod>2019-08-15T13:30:04-04:00</lastmod>
   </url>
   
   <url>
@@ -510,6 +505,11 @@
   <url>
     <loc>/weblogic-kubernetes-operator/faq/domain-secret-mismatch/</loc>
     <lastmod>2020-03-02T08:08:19-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/node-heating/</loc>
+    <lastmod>2020-06-03T08:08:19-04:00</lastmod>
   </url>
   
   <url>

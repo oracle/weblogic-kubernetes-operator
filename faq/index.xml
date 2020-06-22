@@ -54,6 +54,15 @@ Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSyst
     </item>
     
     <item>
+      <title>Node heating problem</title>
+      <link>/weblogic-kubernetes-operator/faq/node-heating/</link>
+      <pubDate>Wed, 03 Jun 2020 08:08:19 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/node-heating/</guid>
+      <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary Docker images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
+    </item>
+    
+    <item>
       <title>Disabling Fast Application Notifications</title>
       <link>/weblogic-kubernetes-operator/faq/fan/</link>
       <pubDate>Fri, 11 Oct 2019 17:20:00 -0500</pubDate>

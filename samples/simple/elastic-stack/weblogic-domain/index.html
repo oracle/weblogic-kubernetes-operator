@@ -12,18 +12,18 @@
     <title>WebLogic domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1592334978" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1592334978" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1592859682" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1592859682" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1592859682"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1592334978"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1592334978"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1592859682"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1592859682"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1592334978"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1592859682"></script>
 
     
   </div>
@@ -1317,47 +1317,13 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/experimental/" title="Experimental features" class="dd-item 
-        
-        
-        
-        ">
-      <a href="/weblogic-kubernetes-operator/userguide/experimental/">
-          Experimental features
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-          
-        
-          
-            
-            
-
-
- 
-  
-    
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/experimental/istio/" title="Istio support" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/experimental/istio/">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/istio/istio/" title="Istio support" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/istio/istio/">
         Istio support
         
         </a>
     </li>
      
-  
- 
-
-            
-          
-        
-        </ul>
-              
-    </li>
   
  
 
@@ -2535,6 +2501,25 @@
  
   
     
+      <li data-nav-id="/weblogic-kubernetes-operator/faq/node-heating/" title="Node heating problem" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/faq/node-heating/">
+        Node heating problem
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
       <li data-nav-id="/weblogic-kubernetes-operator/faq/fan/" title="Disabling Fast Application Notifications" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/faq/fan/">
         Disabling Fast Application Notifications
@@ -2990,8 +2975,8 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 </code></pre></div><h4 id="domain-example">Domain example</h4>
 <p>The following is a complete example of a domain custom resource with a <code>fluentd</code> container configured.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># If you are using 3.0.0-rc1, then the version on the following line</span>
-<span style="color:#75715e"># should be `v7` not `v6`.</span>
-<span style="color:#66d9ef">apiVersion</span>: weblogic.oracle/v6
+<span style="color:#75715e"># should be `v8` not `v7`.</span>
+<span style="color:#66d9ef">apiVersion</span>: weblogic.oracle/v7
 <span style="color:#66d9ef">kind</span>: Domain
 <span style="color:#66d9ef">metadata</span>:
   <span style="color:#66d9ef">labels</span>:
@@ -3011,7 +2996,7 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
   - <span style="color:#66d9ef">clusterName</span>: cluster<span style="color:#ae81ff">-1</span>
     <span style="color:#66d9ef">serverPod</span>:
   <span style="color:#66d9ef">domainHome</span>: /u01/oracle/user_projects/domains/bobs-bookstore
-  <span style="color:#66d9ef">domainHomeSourceType</span>: Image
+  <span style="color:#66d9ef">domainHomeInImage</span>: <span style="color:#66d9ef">true</span>
   <span style="color:#66d9ef">domainUID</span>: bobs-bookstore
   <span style="color:#66d9ef">experimental</span>:
     <span style="color:#66d9ef">istio</span>:
@@ -4005,22 +3990,6 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
                     
 
                     
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
             
         
                     
@@ -4782,6 +4751,22 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -4984,19 +4969,19 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1592334978"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1592334978"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1592334978"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1592334978"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1592334978"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1592859682"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1592859682"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1592859682"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1592859682"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1592859682"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1592859682"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1592334978"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1592334978"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1592334978"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1592859682"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1592859682"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1592859682"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1592334978" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1592334978"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1592859682" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1592859682"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

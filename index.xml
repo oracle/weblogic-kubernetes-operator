@@ -22,15 +22,6 @@ This FAQ describes some considerations to be aware of when you manage the namesp
     </item>
     
     <item>
-      <title>Istio support</title>
-      <link>/weblogic-kubernetes-operator/userguide/experimental/istio/</link>
-      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/userguide/experimental/istio/</guid>
-      <description>Overview WebLogic Server Kubernetes Operator version 2.3 and later includes experimental support for Istio 1.2.2 and later. This support allows you to run the operator itself, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. It will allow you to use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, then you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
-    </item>
-    
-    <item>
       <title>Docker image layering</title>
       <link>/weblogic-kubernetes-operator/userguide/cicd/layering/</link>
       <pubDate>Thu, 11 Apr 2019 13:15:32 -0400</pubDate>
@@ -180,8 +171,8 @@ One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogi
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</guid>
-      <description>This document contains details for the current production release 2.5.0 first, and then for the 3.0.0-rc1 release candidate below.
- Use this document to set up and configure your own domain resource which can be used to configure the operation of your WebLogic domain. The domain resource does not replace the traditional configuration of WebLogic domains found in the domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.</description>
+      <description>This document contains details for the current production release 2.6.0 first, and then for the 3.0.0-rc1 release candidate below.
+ Use this document to set up and configure your own domain resource, which can be used to configure the operation of your WebLogic Server domain. The domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.</description>
     </item>
     
     <item>
@@ -314,7 +305,7 @@ The Oracle Database Docker images are only supported for non-production use. For
       <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store, and accept the license agreement for the WebLogic Server image.
   Log in to the Docker store from your Docker client:
 $ docker login   Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.5.0  If you are here because you are following the Model In Image sample, change the image to oracle/weblogic-kubernetes-operator:3.</description>
+$ docker pull oracle/weblogic-kubernetes-operator:2.6.0  If you are here because you are following the Model In Image sample, change the image to oracle/weblogic-kubernetes-operator:3.</description>
     </item>
     
     <item>
@@ -439,6 +430,15 @@ The best practice/recommended approach is to create a &amp;ldquo;primordial doma
 $ kubectl create namespace sample-domain1-ns   Use helm to configure the operator to manage domains in this namespace:
 $ helm upgrade sample-weblogic-operator kubernetes/charts/weblogic-operator \  --namespace sample-weblogic-operator-ns \  --reuse-values \  --set &amp;#34;domainNamespaces={sample-domain1-ns}&amp;#34; \  --wait   Configure Traefik to manage ingresses created in this namespace:
 $ helm upgrade traefik-operator stable/traefik \  --namespace traefik \  --reuse-values \  --set &amp;#34;kubernetes.</description>
+    </item>
+    
+    <item>
+      <title>Istio support</title>
+      <link>/weblogic-kubernetes-operator/userguide/istio/istio/</link>
+      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/userguide/istio/istio/</guid>
+      <description>Overview WebLogic Server Kubernetes Operator version 2.6 and later, includes support for Istio 1.4.2 and later. This support lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, then you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
     </item>
     
     <item>
@@ -596,6 +596,15 @@ Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSyst
     </item>
     
     <item>
+      <title>Node heating problem</title>
+      <link>/weblogic-kubernetes-operator/faq/node-heating/</link>
+      <pubDate>Wed, 03 Jun 2020 08:08:19 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/faq/node-heating/</guid>
+      <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary Docker images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
+    </item>
+    
+    <item>
       <title>Model files</title>
       <link>/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/</link>
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
@@ -704,7 +713,7 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Recent changes    Date Version Introduces backward incompatibilities Change     May 8, 2020 v3.0.0-rc1 yes Adds Model in Image feature. Support for Kubernetes 1.16. Removal of support for Kubernetes 1.13 and earlier. Removal of support for Helm 2.x. This release candidate cannot be run in the same cluster as another release of the operator. You can upgrade from 2.5.0 to 3.0.0-rc1 without needing to restart or recreate any existing domains.</description>
+      <description>Recent changes    Date Version Introduces backward incompatibilities Change     June 22, 2020 v2.6.0 no Kubernetes 1.16, 1.17, and 1.18 support. Removal of support for Kubernetes 1.13 and earlier. This release can be run in the same cluster with operators of either 2.5.0 and below, or with 3.x providing an upgrade path. Certified support of Oracle Linux Cloud Native Environment (OLCNE) 1.1 with Kubernetes 1.17.0.   May 8, 2020 v3.</description>
     </item>
     
   </channel>

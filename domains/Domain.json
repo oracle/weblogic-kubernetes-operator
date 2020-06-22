@@ -137,6 +137,11 @@
     "ClusterStatus": {
       "type": "object",
       "properties": {
+        "minimumReplicas": {
+          "description": "The minimum number of cluster members.",
+          "type": "number",
+          "minimum": 0
+        },
         "maximumReplicas": {
           "description": "The maximum number of cluster members. Required.",
           "type": "number",
@@ -155,6 +160,20 @@
           "description": "The number of ready cluster members. Required.",
           "type": "number",
           "minimum": 0
+        },
+        "replicasGoal": {
+          "description": "The requested number of cluster members from the domain spec. Cluster members will be started by the operator if this value is larger than zero.",
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "Configuration": {
+      "type": "object",
+      "properties": {
+        "istio": {
+          "description": "The Istio service mesh integration settings.",
+          "$ref": "#/definitions/Istio"
         }
       }
     },
@@ -209,7 +228,7 @@
           ]
         },
         "image": {
-          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.",
+          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -220,6 +239,10 @@
             "Never",
             "IfNotPresent"
           ]
+        },
+        "configuration": {
+          "description": "Properties affecting the WebLogic domain configuration.",
+          "$ref": "#/definitions/Configuration"
         },
         "replicas": {
           "description": "The number of managed servers to run in any cluster that does not specify a replica count.",
@@ -241,17 +264,13 @@
           }
         },
         "domainHomeInImage": {
-          "description": "True if this domain\u0027s home is defined in the Docker image for the domain. Defaults to true.",
+          "description": "True indicates that the domain home file system is contained in the Docker image specified by the image field. False indicates that the domain home file system is located on a persistent volume.",
           "type": "boolean"
         },
         "domainUID": {
           "pattern": "^[a-z0-9-.]{1,253}$",
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
           "type": "string"
-        },
-        "experimental": {
-          "description": "Experimental feature configurations.",
-          "$ref": "#/definitions/Experimental"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
@@ -299,11 +318,11 @@
           "$ref": "#/definitions/ServerPod"
         },
         "logHome": {
-          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
+          "description": "The in-pod name of the directory in which to store the domain, Node Manager, server logs, and server *.out files.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
-          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
+          "description": "If true (the default), then the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
         },
         "managedServers": {
@@ -363,15 +382,6 @@
           "items": {
             "$ref": "#/definitions/ClusterStatus"
           }
-        }
-      }
-    },
-    "Experimental": {
-      "type": "object",
-      "properties": {
-        "istio": {
-          "description": "Istio service mesh integration configuration.",
-          "$ref": "#/definitions/Istio"
         }
       }
     },
@@ -444,8 +454,10 @@
       ]
     },
     "Map": {
-      "type": "object",
-      "properties": {}
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
     },
     "ProbeTuning": {
       "type": "object",
@@ -625,6 +637,10 @@
       "properties": {
         "nodeName": {
           "description": "Name of node that is hosting the Pod containing this WebLogic Server.",
+          "type": "string"
+        },
+        "desiredState": {
+          "description": "Desired state of this WebLogic Server. Values are RUNNING, ADMIN, or SHUTDOWN.",
           "type": "string"
         },
         "clusterName": {
