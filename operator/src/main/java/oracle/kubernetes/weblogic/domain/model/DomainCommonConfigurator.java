@@ -328,6 +328,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withIstio() {
+    getOrCreateIstio();
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withDomainType(String type) {
     getOrCreateModel().withDomainType(type);
     return this;
@@ -355,6 +361,14 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       configuration.setOpss(new Opss());
     }
     return configuration.getOpss();   
+  }
+
+  private Istio getOrCreateIstio() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getIstio() == null) {
+      configuration.withIstio(new Istio());
+    }
+    return configuration.getIstio();
   }
 
   @Override
@@ -717,6 +731,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize) {
       cluster.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
+      cluster.setMaxConcurrentStartup(maxConcurrentStartup);
       return this;
     }
 

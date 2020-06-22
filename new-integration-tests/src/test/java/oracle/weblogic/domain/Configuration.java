@@ -34,6 +34,9 @@ public class Configuration {
           + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
   private Long introspectorJobActiveDeadlineSeconds;
 
+  @ApiModelProperty("Istio service mesh integration")
+  private Istio istio;
+
   public Configuration model(Model model) {
     this.model = model;
     return this;
@@ -133,6 +136,23 @@ public class Configuration {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
   }
 
+  public Configuration istio(Istio istio) {
+    this.istio = istio;
+    return this;
+  }
+
+  public Istio istio() {
+    return istio;
+  }
+
+  public Istio getIstio() {
+    return istio;
+  }
+
+  public void setIstio(Istio istio) {
+    this.istio = istio;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -141,7 +161,8 @@ public class Configuration {
             .append("opss", opss)
             .append("secrets", secrets)
             .append("overridesConfigMap", overridesConfigMap)
-            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
+            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
+            .append("istio", istio);
 
     return builder.toString();
   }
@@ -154,7 +175,8 @@ public class Configuration {
             .append(opss)
             .append(secrets)
             .append(overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds);
+            .append(introspectorJobActiveDeadlineSeconds)
+            .append(istio);
 
     return builder.toHashCode();
   }
@@ -175,7 +197,8 @@ public class Configuration {
             .append(opss, rhs.opss)
             .append(secrets, rhs.secrets)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
+            .append(istio, rhs.istio);
 
     return builder.isEquals();
   }

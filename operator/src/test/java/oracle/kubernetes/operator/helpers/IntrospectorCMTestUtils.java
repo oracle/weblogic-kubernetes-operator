@@ -29,6 +29,19 @@ public class IntrospectorCMTestUtils {
           .orElseGet(Collections::emptyMap);
   }
 
+  /**
+   * Returns the metadata of the introspector config map for the test domain.
+   * @param testSupport the instance of KubernetesTestSupport holding the data
+   */
+  public static V1ObjectMeta getIntrospectorConfigMapMetadata(KubernetesTestSupport testSupport) {
+    return testSupport.getResources(KubernetesTestSupport.CONFIG_MAP).stream()
+        .map(V1ConfigMap.class::cast)
+        .filter(IntrospectorCMTestUtils::isIntrospectorConfigMap)
+        .map(V1ConfigMap::getMetadata)
+        .findFirst()
+        .orElse(null);
+  }
+
   private static boolean isIntrospectorConfigMap(V1ConfigMap configMap) {
     return getIntrospectorConfigMapName().equals(getConfigMapName(configMap));
   }
