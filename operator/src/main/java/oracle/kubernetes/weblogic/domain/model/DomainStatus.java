@@ -4,6 +4,8 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -23,6 +25,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -48,11 +51,13 @@ public class DomainStatus {
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
-  private List<ServerStatus> servers = new ArrayList<>();
+  // sorted list of ServerStatus
+  private final List<ServerStatus> servers;
 
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
-  private List<ClusterStatus> clusters = new ArrayList<>();
+  // sorted list of ClusterStatus
+  List<ClusterStatus> clusters = new ArrayList<>();
 
   @Description(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
@@ -68,6 +73,7 @@ public class DomainStatus {
   private Integer replicas;
 
   public DomainStatus() {
+    servers = new ArrayList<>();
   }
 
   /**
@@ -274,10 +280,12 @@ public class DomainStatus {
   /**
    * Status of WebLogic servers in this domain.
    *
-   * @return servers
+   * @return a sorted list of ServerStatus containing status of WebLogic servers in this domain
    */
   public List<ServerStatus> getServers() {
-    return servers;
+    synchronized (servers) {
+      return new ArrayList<>(servers);
+    }
   }
 
   /**
@@ -286,16 +294,43 @@ public class DomainStatus {
    * @param servers servers
    */
   public void setServers(List<ServerStatus> servers) {
-    if (isServersEqualIgnoringOrder(servers, this.servers)) {
-      return;
+    synchronized (this.servers) {
+      if (this.servers.equals(servers)) {
+        return;
+      }
+
+      List<ServerStatus> newServers = servers
+            .stream()
+            .map(ServerStatus::new)
+            .map(this::adjust)
+            .sorted(Comparator.naturalOrder())
+            .collect(Collectors.toList());
+
+      this.servers.clear();
+      this.servers.addAll(newServers);
     }
-
-    this.servers = servers;
   }
 
-  private boolean isServersEqualIgnoringOrder(List<ServerStatus> servers1, List<ServerStatus> servers2) {
-    return new HashSet<>(servers1).equals(new HashSet<>(servers2));
+  private ServerStatus adjust(ServerStatus server) {
+    if (server.getState() == null) {
+      ServerStatus oldServer = getMatchingServer(server);
+      if ((oldServer != null) && (oldServer.getHealth() == null)) {
+        return server;
+      }
+      server.setState(oldServer == null ? SHUTDOWN_STATE : oldServer.getState());
+    }
+    return server;
   }
+
+  private ServerStatus getMatchingServer(ServerStatus server) {
+    return getServers()
+          .stream()
+          .filter(s -> Objects.equals(s.getClusterName(), server.getClusterName()))
+          .filter(s -> Objects.equals(s.getServerName(), server.getServerName()))
+          .findFirst()
+          .orElse(null);
+  }
+
 
   /**
    * Status of WebLogic servers in this domain.
@@ -304,7 +339,7 @@ public class DomainStatus {
    * @return this
    */
   public DomainStatus withServers(List<ServerStatus> servers) {
-    this.servers = servers;
+    setServers(servers);
     return this;
   }
 
@@ -314,18 +349,28 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addServer(ServerStatus server) {
-    for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
-      if (Objects.equals(it.next().getServerName(), server.getServerName())) {
-        it.remove();
+    synchronized (servers) {
+      for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
+        if (Objects.equals(it.next().getServerName(), server.getServerName())) {
+          it.remove();
+        }
       }
-    }
 
-    servers.add(server);
+      servers.add(server);
+      Collections.sort(servers);
+    }
     return this;
   }
 
+  /**
+   * Status of WebLogic clusters in this domain.
+   *
+   * @return a sorted list of ClusterStatus containing status of WebLogic clusters in this domain
+   */
   public List<ClusterStatus> getClusters() {
-    return clusters;
+    synchronized (clusters) {
+      return new ArrayList<>(clusters);
+    }
   }
 
   /**
@@ -333,11 +378,16 @@ public class DomainStatus {
    * @param clusters the list of clusters to use
    */
   public void setClusters(List<ClusterStatus> clusters) {
-    if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
-      return;
-    }
+    synchronized (this.clusters) {
+      if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
+        return;
+      }
 
-    this.clusters = clusters;
+      List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
+      sortedClusters.sort(Comparator.naturalOrder());
+
+      this.clusters = sortedClusters;
+    }
   }
 
   private boolean isClustersEqualIgnoringOrder(List<ClusterStatus> clusters1, List<ClusterStatus> clusters2) {
@@ -350,13 +400,16 @@ public class DomainStatus {
    * @return this object
    */
   public DomainStatus addCluster(ClusterStatus cluster) {
-    for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
-      if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
-        it.remove();
+    synchronized (clusters) {
+      for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
+        if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
+          it.remove();
+        }
       }
-    }
 
-    clusters.add(cluster);
+      clusters.add(cluster);
+      Collections.sort(clusters);
+    }
     return this;
   }
 
@@ -406,7 +459,7 @@ public class DomainStatus {
     return new EqualsBuilder()
         .append(reason, rhs.reason)
         .append(startTime, rhs.startTime)
-        .append(Domain.sortOrNull(servers), Domain.sortOrNull(rhs.servers))
+        .append(servers, rhs.servers)
         .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)

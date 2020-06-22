@@ -310,7 +310,7 @@ public class ItStickySession extends BaseTest {
     // Send a HTTP request
     String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption);
     LoggerHelper.getLocal().log(Level.INFO, "Send a HTTP request: " + curlCmd);
-    ExecResult result = TestUtils.exec(curlCmd);
+    ExecResult result = TestUtils.execOrAbortProcess(curlCmd);
 
     return result;
   }

@@ -51,6 +51,11 @@ class ObjectPatch<T> {
     return this;
   }
 
+  ObjectPatch<T> withBooleanField(String fieldName, Function<T,Boolean> getter) {
+    fields.add(new BooleanField<>(fieldName, getter));
+    return this;
+  }
+
   ObjectPatch<T> withStringField(String fieldName, Function<T,String> getter) {
     fields.add(new StringField<>(fieldName, getter));
     return this;
@@ -196,6 +201,28 @@ class ObjectPatch<T> {
 
     @Override
     void addField(JsonPatchBuilder builder, String path, Integer newValue) {
+      builder.add(path, newValue);
+    }
+  }
+
+  static class BooleanField<T> extends ScalarFieldPatch<T,Boolean> {
+
+    BooleanField(String name, Function<T, Boolean> getter) {
+      super(name, getter);
+    }
+
+    @Override
+    void addToObject(JsonObjectBuilder builder, String name, Boolean value) {
+      builder.add(name, value);
+    }
+
+    @Override
+    void replaceField(JsonPatchBuilder builder, String path, Boolean oldValue, Boolean newValue) {
+      builder.replace(path, newValue);
+    }
+
+    @Override
+    void addField(JsonPatchBuilder builder, String path, Boolean newValue) {
       builder.add(path, newValue);
     }
   }

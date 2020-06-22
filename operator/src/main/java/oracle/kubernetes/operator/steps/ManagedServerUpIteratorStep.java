@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
@@ -88,6 +89,24 @@ public class ManagedServerUpIteratorStep extends Step {
     if (startDetails.isEmpty()) {
       return doNext(packet);
     }
-    return doForkJoin(new ManagedServerUpAfterStep(getNext()), packet, startDetails);
+    return doNext(
+        DomainStatusUpdater.createStatusUpdateStep(
+            new StartManagedServersStep(startDetails, getNext())),
+        packet);
   }
+
+  static class StartManagedServersStep extends Step {
+    final Collection<StepAndPacket> startDetails;
+
+    StartManagedServersStep(Collection<StepAndPacket> startDetails, Step next) {
+      super(next);
+      this.startDetails = startDetails;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doForkJoin(new ManagedServerUpAfterStep(getNext()), packet, startDetails);
+    }
+  }
+
 }

@@ -30,14 +30,6 @@ public interface Main {
   void defineSchemaUrlAndContents(URL schemaUrl, URL cacheUrl) throws IOException;
 
   /**
-   * Specifies that deprecated fields should be included when generating a schema. If false, they
-   * will be ignored.
-   *
-   * @param includeDeprecated true if deprecated fields should be included
-   */
-  void setIncludeDeprecated(boolean includeDeprecated);
-
-  /**
    * Specifies that the "additionalProperties" property will be added to the schema for each object
    * and set to false, to forbid any unspecified properties.
    *

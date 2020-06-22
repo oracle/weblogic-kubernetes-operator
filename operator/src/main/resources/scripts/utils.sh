@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -199,6 +199,14 @@ function tracePipe() {
 }
 
 # 
+# traceTiming
+#   purpose: specially decorated trace statements for timing measurements
+#
+function traceTiming() {
+  [ "${TRACE_TIMING^^}" = "TRUE" ] && trace INFO "TIMING: ""$@"
+}
+
+# 
 # checkEnv [-q] envvar1 envvar2 ...
 #
 #   purpose: Check and trace the values of the provided env vars.
@@ -267,7 +275,8 @@ function traceEnv() {
     MW_HOME \
     NODEMGR_HOME \
     INTROSPECT_HOME \
-    PATH
+    PATH \
+    TRACE_TIMING
   do
     echo "    ${env_var}='${!env_var}'"
   done
@@ -398,7 +407,7 @@ checkDomainSecretMD5()
 
   generateDomainSecretMD5File "$cur_md5_file" || return 1
 
-  diff -B "$cur_md5_file" "$orig_md5_file" > ${cur_md5_file}.diff 2>&1
+  diff -wB "$cur_md5_file" "$orig_md5_file" > ${cur_md5_file}.diff 2>&1
 
   if [ ! "$?" = "0" ]; then
     trace SEVERE "Domain secret mismatch. The domain secret in 'DOMAIN_HOME/security/SerializedSystemIni.dat' where DOMAIN_HOME='$DOMAIN_HOME' does not match the domain secret found by the introspector job. WebLogic requires that all WebLogic servers in the same domain share the same domain secret. See 'Domain Secret Mismatch' in the operator FAQ (https://oracle.github.io/weblogic-kubernetes-operator/faq/domain-secret-mismatch/). MD5 checksum diff:"
@@ -559,7 +568,7 @@ function waitForShutdownMarker() {
     if [ -e ${SHUTDOWN_MARKER_FILE} ] ; then
       exit 0
     fi
-    sleep 3
+    sleep 0.1
   done
 }
 

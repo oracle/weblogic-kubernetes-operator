@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
-import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -25,8 +25,10 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -47,7 +49,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
-import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -81,7 +82,7 @@ public class DomainStatusUpdater {
    * @param next the next step
    * @return the new step
    */
-  static Step createStatusUpdateStep(Step next) {
+  public static Step createStatusUpdateStep(Step next) {
     return new StatusUpdateStep(next);
   }
 
@@ -126,7 +127,14 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createFailedStep(CallResponse<?> callResponse, Step next) {
-    FailureStatusSource failure = UnrecoverableErrorBuilder.fromException(callResponse.getE());
+    FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
+
+    LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
+    ApiException apiException = callResponse.getE();
+    if (apiException != null) {
+      LOGGER.fine(MessageKeys.EXCEPTION, apiException);
+    }
+
     return createFailedStep(failure.getReason(), failure.getMessage(), next);
   }
 
@@ -170,53 +178,127 @@ public class DomainStatusUpdater {
       DomainStatusUpdaterContext context = createContext(packet);
       DomainStatus newStatus = context.getNewStatus();
 
-      return context.isStatusChanged(newStatus)
+      return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
-            : doNext(createDomainStatusPatchStep(context, newStatus), packet);
+            : doNext(createDomainStatusReplaceStep(context, newStatus), packet);
     }
 
-    private Step createDomainStatusPatchStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
-      JsonPatchBuilder builder = Json.createPatchBuilder();
-      newStatus.createPatchFrom(builder, context.getStatus());
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
+    private Step createDomainStatusReplaceStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
+      LOGGER.fine(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
+      if (LOGGER.isFinerEnabled()) {
+        LOGGER.finer("status change: " + createPatchString(context, newStatus));
+      }
+      /* MARKER-2.6.0-ONLY */
+      boolean useDomainStatusEndpoint = Main.useDomainStatusEndpoint.get();
+      /* END-2.6.0-ONLY */
+      Domain oldDomain = context.getDomain();
+      Domain newDomain = new Domain()
+          .withKind(KubernetesConstants.DOMAIN)
+          .withApiVersion(oldDomain.getApiVersion())
+          .withMetadata(oldDomain.getMetadata())
+          /* MARKER-2.6.0-ONLY */
+          // WAS .withSpec(null)
+          .withSpec(useDomainStatusEndpoint ? null : oldDomain.getSpec())
+          /* END-2.6.0-ONLY */
+          .withStatus(newStatus);
 
-      return new CallBuilder().patchDomainAsync(
+      /* MARKER-2.6.0-ONLY */
+      /* WAS
+      return new CallBuilder().replaceDomainStatusAsync(
             context.getDomainName(),
             context.getNamespace(),
-            new V1Patch(builder.build().toString()),
+            newDomain,
             createResponseStep(context, getNext()));
+       */
+      if (useDomainStatusEndpoint) {
+        return new CallBuilder()
+            .replaceDomainStatusAsync(
+                context.getDomainName(),
+                context.getNamespace(),
+                newDomain,
+                createResponseStep(context, newStatus, useDomainStatusEndpoint, getNext()));
+      } else {
+        return new CallBuilder()
+            .replaceDomainAsync(
+                context.getDomainName(),
+                context.getNamespace(),
+                newDomain,
+                createResponseStep(context, newStatus, useDomainStatusEndpoint, getNext()));
+      }
+      /* END-2.6.0-ONLY */
     }
 
-    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context, Step next) {
-      return new PatchResponseStep(this, context, next);
+    private String createPatchString(DomainStatusUpdaterContext context, DomainStatus newStatus) {
+      JsonPatchBuilder builder = Json.createPatchBuilder();
+      newStatus.createPatchFrom(builder, context.getStatus());
+      return builder.build().toString();
+    }
+
+    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context,
+                                                    /* MARKER-2.6.0-ONLY */
+                                                    DomainStatus newStatus, boolean useDomainStatusEndpoint,
+                                                    /* END-2.6.0-ONLY */
+                                                    Step next) {
+      return new StatusReplaceResponseStep(this,
+          /* MARKER-2.6.0-ONLY */
+          newStatus,
+          useDomainStatusEndpoint,
+          /* END-2.6.0-ONLY */
+          context, next);
     }
   }
 
-  static class PatchResponseStep extends DefaultResponseStep<Domain> {
+  static class StatusReplaceResponseStep extends DefaultResponseStep<Domain> {
     private final DomainStatusUpdaterStep updaterStep;
     private final DomainStatusUpdaterContext context;
+    /* MARKER-2.6.0-ONLY */
+    private final DomainStatus newStatus;
+    private final boolean useDomainStatusEndpoint;
+    /* END-2.6.0-ONLY */
 
-    public PatchResponseStep(DomainStatusUpdaterStep updaterStep, DomainStatusUpdaterContext context, Step nextStep) {
+    public StatusReplaceResponseStep(DomainStatusUpdaterStep updaterStep,
+                                     /* MARKER-2.6.0-ONLY */
+                                     DomainStatus newStatus,
+                                     boolean useDomainStatusEndpoint,
+                                     /* END-2.6.0-ONLY */
+                                     DomainStatusUpdaterContext context, Step nextStep) {
       super(nextStep);
       this.updaterStep = updaterStep;
       this.context = context;
+      /* MARKER-2.6.0-ONLY */
+      this.newStatus = newStatus;
+      this.useDomainStatusEndpoint = useDomainStatusEndpoint;
+      /* END-2.6.0-ONLY */
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+      /* MARKER-2.6.0-ONLY */
+      // If the 3.0.0 operator updated the CRD to use status endpoint while this operator is running
+      // then these domain replace calls will succeed, but the proposed domain status will have been
+      // ignored. Check if the status on the returned domain is expected
+      if (!useDomainStatusEndpoint
+          && (callResponse.getResult() == null || !newStatus.equals(callResponse.getResult().getStatus()))) {
+        LOGGER.info(MessageKeys.DOMAIN_STATUS_IGNORED);
+        return doNext(CrdHelper.createDomainCrdStep(packet.getSpi(KubernetesVersion.class),
+            createRetry(context, getNext())), packet);
+      }
+      /* END-2.6.0-ONLY */
+      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      return doNext(packet);
     }
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-      if (!isPatchFailure(callResponse)) {
+      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
         return super.onFailure(packet, callResponse);
+      } else {
+        return onFailure(createRetry(context, getNext()), packet, callResponse);
       }
-
-      return doNext(createRetry(context, getNext()), packet);
     }
 
     public Step createRetry(DomainStatusUpdaterContext context, Step next) {
       return Step.chain(createDomainRefreshStep(context), updaterStep, next);
-    }
-
-    private boolean isPatchFailure(CallResponse<Domain> callResponse) {
-      return callResponse.getStatusCode() == HTTP_INTERNAL_ERROR;
     }
 
     private Step createDomainRefreshStep(DomainStatusUpdaterContext context) {
@@ -244,6 +326,9 @@ public class DomainStatusUpdater {
     DomainStatus getNewStatus() {
       DomainStatus newStatus = cloneStatus();
       modifyStatus(newStatus);
+      if (newStatus.getMessage() == null) {
+        newStatus.setMessage(info.getValidationWarningsAsString());
+      }
       return newStatus;
     }
 
@@ -251,7 +336,7 @@ public class DomainStatusUpdater {
       return getDomain().getDomainUid();
     }
 
-    boolean isStatusChanged(DomainStatus newStatus) {
+    boolean isStatusUnchanged(DomainStatus newStatus) {
       return newStatus.equals(getStatus());
     }
 
@@ -322,9 +407,9 @@ public class DomainStatusUpdater {
         if (getDomain() == null) {
           return;
         }
-        
+
         if (getDomainConfig().isPresent()) {
-          status.setServers(new ArrayList<>(getServerStatuses().values()));
+          status.setServers(new ArrayList<>(getServerStatuses(getDomainConfig().get().getAdminServerName()).values()));
           status.setClusters(new ArrayList<>(getClusterStatuses().values()));
           status.setReplicas(getReplicaSetting());
         }
@@ -337,6 +422,7 @@ public class DomainStatusUpdater {
           status.addCondition(new DomainCondition(Progressing).withStatus(TRUE)
                 .withReason(MANAGED_SERVERS_STARTING_PROGRESS_REASON));
         }
+
       }
 
       private boolean allIntendedServersRunning() {
@@ -380,22 +466,38 @@ public class DomainStatusUpdater {
         return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::getReadyStatus).isPresent();
       }
 
-      Map<String, ServerStatus> getServerStatuses() {
+      Map<String, ServerStatus> getServerStatuses(final String adminServerName) {
         return getServerNames().stream()
-            .collect(Collectors.toMap(Function.identity(), this::createServerStatus));
+            .collect(Collectors.toMap(Function.identity(),
+                s -> createServerStatus(s, Objects.equals(s, adminServerName))));
       }
 
-      private ServerStatus createServerStatus(String serverName) {
+      private ServerStatus createServerStatus(String serverName, boolean isAdminServer) {
+        String clusterName = getClusterName(serverName);
         return new ServerStatus()
             .withServerName(serverName)
             .withState(getRunningState(serverName))
-            .withHealth(serverHealth.get(serverName))
-            .withClusterName(getClusterName(serverName))
-            .withNodeName(getNodeName(serverName));
+            .withDesiredState(getDesiredState(serverName, clusterName, isAdminServer))
+            .withHealth(serverHealth == null ? null : serverHealth.get(serverName))
+            .withClusterName(clusterName)
+            .withNodeName(getNodeName(serverName))
+            .withIsAdminServer(isAdminServer);
       }
 
       private String getRunningState(String serverName) {
-        return serverState.getOrDefault(serverName, SHUTDOWN_STATE);
+        return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
+      }
+
+      private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
+        return isAdminServer | shouldStart(serverName)
+            ? getDomain().getServer(serverName, clusterName).getDesiredState()
+            : SHUTDOWN_STATE;
+      }
+
+      private boolean shouldStart(final String serverName) {
+        return getServerStartupInfos()
+            .filter(s -> Objects.equals(serverName, s.getServerName()))
+            .anyMatch(s -> !s.isServiceOnly());
       }
 
       Integer getReplicaSetting() {
@@ -434,7 +536,9 @@ public class DomainStatusUpdater {
             .withReplicas(Optional.ofNullable(getClusterCounts().get(clusterName)).map(Long::intValue).orElse(null))
             .withReadyReplicas(
                 Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null))
-            .withMaximumReplicas(getClusterMaximumSize(clusterName));
+            .withMaximumReplicas(getClusterMaximumSize(clusterName))
+            .withMinimumReplicas(getClusterMinimumSize(clusterName))
+            .withReplicasGoal(getClusterSizeGoal(clusterName));
       }
 
 
@@ -468,6 +572,8 @@ public class DomainStatusUpdater {
                   Optional.ofNullable(cluster.getDynamicServersConfig())
                         .flatMap(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs()))
                         .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
+                  Optional.ofNullable(cluster.getServerConfigs())
+                      .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
                 }
               });
         return result;
@@ -482,6 +588,15 @@ public class DomainStatusUpdater {
       private Integer getClusterMaximumSize(String clusterName) {
         return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
             .map(cluster -> cluster.map(WlsClusterConfig::getMaxClusterSize).orElse(0)).get();
+      }
+
+      private Integer getClusterMinimumSize(String clusterName) {
+        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
+                .map(cluster -> cluster.map(WlsClusterConfig::getMinClusterSize).orElse(0)).get();
+      }
+
+      private Integer getClusterSizeGoal(String clusterName) {
+        return getDomain().getReplicaCount(clusterName);
       }
     }
   }

@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.Expose;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -29,6 +30,10 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @NotNull
   private String state;
 
+  @Description("Desired state of this WebLogic Server. Values are RUNNING, ADMIN, or SHUTDOWN.")
+  @Expose
+  private String desiredState;
+
   @Description("WebLogic cluster name, if the server is part of a cluster.")
   @Expose
   private String clusterName;
@@ -42,6 +47,9 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Valid
   private ServerHealth health;
 
+  // volatile so it will not be included in the json schema
+  private volatile boolean isAdminServer;
+
   public ServerStatus() {
   }
 
@@ -52,8 +60,10 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   ServerStatus(ServerStatus other) {
     this.serverName = other.serverName;
     this.state = other.state;
+    this.desiredState = other.desiredState;
     this.clusterName = other.clusterName;
     this.nodeName = other.nodeName;
+    this.isAdminServer = other.isAdminServer;
     this.health = Optional.ofNullable(other.health).map(ServerHealth::new).orElse(null);
   }
 
@@ -116,6 +126,35 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   }
 
   /**
+   * Desired state of this WebLogic Server. Required.
+   *
+   * @return requested state
+   */
+  public String getDesiredState() {
+    return desiredState;
+  }
+
+  /**
+   * Desired state of this WebLogic Server. Required.
+   *
+   * @param desiredState Requested state
+   */
+  public void setDesiredState(String desiredState) {
+    this.desiredState = desiredState;
+  }
+
+  /**
+   * Desired state of this WebLogic Server. Required.
+   *
+   * @param stateGoal stateGoal
+   * @return this
+   */
+  public ServerStatus withDesiredState(String stateGoal) {
+    this.desiredState = stateGoal;
+    return this;
+  }
+
+  /**
    * WebLogic cluster name, if the server is part of a cluster.
    *
    * @return cluster name
@@ -169,7 +208,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    *
    * @return health
    */
-  private ServerHealth getHealth() {
+  ServerHealth getHealth() {
     return health;
   }
 
@@ -184,11 +223,28 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     return this;
   }
 
+  private boolean isAdminServer() {
+    return isAdminServer;
+  }
+
+  /**
+   * Boolean indication whether this server is the admin server.
+   *
+   * @param isAdminServer whether this server is the admin server
+   * @return this
+   */
+  public ServerStatus withIsAdminServer(boolean isAdminServer) {
+    this.isAdminServer = isAdminServer;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverName", serverName)
+        .append("isAdminServer", isAdminServer)
         .append("state", state)
+        .append("desiredState", desiredState)
         .append("clusterName", clusterName)
         .append("nodeName", nodeName)
         .append("health", health)
@@ -202,6 +258,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(serverName)
         .append(health)
         .append(state)
+        .append(desiredState)
         .append(clusterName)
         .toHashCode();
   }
@@ -220,13 +277,24 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .append(serverName, rhs.serverName)
         .append(health, rhs.health)
         .append(state, rhs.state)
+        .append(desiredState, rhs.desiredState)
         .append(clusterName, rhs.clusterName)
         .isEquals();
   }
 
   @Override
   public int compareTo(@Nonnull ServerStatus o) {
-    return serverName.compareTo(o.serverName);
+    int clustersCompareTo = OperatorUtils.compareSortingStrings(clusterName, o.clusterName);
+    return clustersCompareTo == 0 ? compareToServer(o) : clustersCompareTo;
+  }
+
+  private int compareToServer(ServerStatus o) {
+    if (!isAdminServer && o.isAdminServer) {
+      return 1;
+    } else if (isAdminServer && !o.isAdminServer) {
+      return -1;
+    }
+    return OperatorUtils.compareSortingStrings(serverName, o.serverName);
   }
 
   @Override
@@ -238,6 +306,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
         .withStringField("serverName", ServerStatus::getServerName)
         .withStringField("clusterName", ServerStatus::getClusterName)
         .withStringField("state", ServerStatus::getState)
+        .withStringField("desiredState", ServerStatus::getDesiredState)
         .withStringField("nodeName", ServerStatus::getNodeName)
         .withObjectField("health", ServerStatus::getHealth, ServerHealth.getObjectPatch());
 

@@ -9,10 +9,13 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -166,10 +169,15 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
+    private final DomainPresenceInfo info;
 
-    DomainIntrospectorJobStepContext(Packet packet) {
+    // domainTopology is null if this is 1st time we're running job for this domain
+    private final WlsDomainConfig domainTopology;
+
+    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
       super(packet);
-
+      this.info = info;
+      this.domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       init();
     }
 
@@ -204,6 +212,26 @@ public class JobHelper {
       return getDomain().getSpec().getAdditionalVolumeMounts();
     }
 
+    private String getAsName() {
+      return domainTopology.getAdminServerName();
+    }
+
+    private Integer getAsPort() {
+      return domainTopology
+          .getServerConfig(getAsName())
+          .getLocalAdminProtocolChannelPort();
+    }
+
+    private boolean isLocalAdminProtocolChannelSecure() {
+      return domainTopology
+          .getServerConfig(getAsName())
+          .isLocalAdminProtocolChannelSecure();
+    }
+
+    private String getAsServiceName() {
+      return LegalNames.toServerServiceName(getDomainUid(), getAsName());
+    }
+
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       // Pod for introspector job would use same environment variables as for admin server
@@ -215,12 +243,34 @@ public class JobHelper {
       addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
       addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
       addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, getIncludeServerOutInPodLog());
+      addEnvVar(vars, ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, getHttpAccessLogInLogHome());
       addEnvVar(vars, IntrospectorJobEnvVars.NAMESPACE, getNamespace());
       addEnvVar(vars, IntrospectorJobEnvVars.INTROSPECT_HOME, getIntrospectHome());
       addEnvVar(vars, IntrospectorJobEnvVars.CREDENTIALS_SECRET_NAME, getWebLogicCredentialsSecretName());
+      addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType());
+      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
+      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
+
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
         addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
+      }
+
+      if (domainTopology != null) {
+        // The domainTopology != null when the job is rerun for the same domain. In which
+        // case we should now know how to contact the admin server, the admin server may
+        // already be running, and the job may want to contact the admin server.
+
+        addEnvVar(vars, "ADMIN_NAME", getAsName());
+        addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+        if (isLocalAdminProtocolChannelSecure()) {
+          addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+        }
+        addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
+
+        // TBD Tom Barnes, Johnny Shum
+        //     Do we need to pass to the jobwhether the admin server (or any pods)
+        //     are already running?
       }
 
       return vars;
@@ -237,7 +287,7 @@ public class JobHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
+        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
 
         packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
@@ -249,7 +299,7 @@ public class JobHelper {
               packet);
       }
 
-      return doNext(getNext(), packet);
+      return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
     }
   }
 
@@ -269,7 +319,7 @@ public class JobHelper {
     }
 
     void logJobDeleted(String domainUid, String namespace, String jobName) {
-      LOGGER.info(getJobDeletedMessageKey(), domainUid, namespace, jobName);
+      LOGGER.fine(getJobDeletedMessageKey(), domainUid, namespace, jobName);
     }
 
     private Step deleteJob(Packet packet, Step next) {
@@ -338,7 +388,25 @@ public class JobHelper {
       V1Job domainIntrospectorJob =
             (V1Job) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (isNotComplete(domainIntrospectorJob)) {
-        return onFailure(packet, callResponse);
+        List<String> jobConditionsReason = new ArrayList<>();
+        if (domainIntrospectorJob != null) {
+          V1JobStatus status = domainIntrospectorJob.getStatus();
+          if (status != null && status.getConditions() != null) {
+            for (V1JobCondition cond : status.getConditions()) {
+              jobConditionsReason.add(cond.getReason());
+            }
+          }
+        }
+        if (jobConditionsReason.size() == 0) {
+          jobConditionsReason.add(DomainStatusPatch.ERR_INTROSPECTOR);
+        }
+        //Introspector job is incomplete, update domain status and terminate processing
+        return doNext(
+            DomainStatusUpdater.createFailedStep(
+                onSeparateLines(jobConditionsReason),
+                onSeparateLines(severeStatuses),
+                null),
+            packet);
       }
 
       return doNext(packet);

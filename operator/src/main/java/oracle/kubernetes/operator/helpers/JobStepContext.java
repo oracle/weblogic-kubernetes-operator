@@ -135,14 +135,21 @@ public abstract class JobStepContext extends BasePodStepContext {
     return NODEMGR_HOME;
   }
 
-
   protected String getDataHome() {
     String dataHome = getDomain().getDataHome();
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
-  private boolean isIstioEnabled() {
+  protected String getDomainHomeSourceType() {
+    return getDomain().getDomainHomeSourceType();
+  }
+
+  public boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
+  }
+
+  public int getIstioReadinessPort() {
+    return getDomain().getIstioReadinessPort();
   }
 
   String getEffectiveLogHome() {
@@ -151,6 +158,10 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   String getIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
+  }
+
+  String getHttpAccessLogInLogHome() {
+    return Boolean.toString(getDomain().isHttpAccessLogInLogHome());
   }
 
   String getIntrospectHome() {
@@ -163,6 +174,10 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   private String getConfigOverrides() {
     return getDomain().getConfigOverrides();
+  }
+
+  private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
+    return podTuning.introspectorJobActiveDeadlineSeconds;
   }
 
   // ---------------------- model methods ------------------------------
@@ -187,7 +202,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
-    return podTuning.introspectorJobActiveDeadlineSeconds
+    return getIntrospectorJobActiveDeadlineSeconds(podTuning)
           + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
   }
 
@@ -234,6 +249,8 @@ public abstract class JobStepContext extends BasePodStepContext {
             .addVolumesItem(
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
 
+    podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
+
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
     }
@@ -251,7 +268,6 @@ public abstract class JobStepContext extends BasePodStepContext {
                   .name(getConfigOverrides() + "-volume")
                   .configMap(getOverridesVolumeSource(getConfigOverrides())));
     }
-
     return podSpec;
   }
 
@@ -275,6 +291,7 @@ public abstract class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(
                   secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
+
     return container;
   }
 

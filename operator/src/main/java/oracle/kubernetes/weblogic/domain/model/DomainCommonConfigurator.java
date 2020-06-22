@@ -117,6 +117,28 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withIstio() {
+    getOrCreateIstio();
+    return this;
+  }
+
+  private Configuration getOrCreateConfiguration() {
+    DomainSpec spec = getDomainSpec();
+    if (spec.getConfiguration() == null) {
+      spec.setConfiguration(new Configuration());
+    }
+    return spec.getConfiguration();
+  }
+
+  private Istio getOrCreateIstio() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getIstio() == null) {
+      configuration.withIstio(new Istio());
+    }
+    return configuration.getIstio();
+  }
+
   /**
    * Sets the WebLogic configuration overrides config map name for the domain.
    *

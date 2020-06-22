@@ -4,7 +4,7 @@
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
 # what updates are needed.
 #
-apiVersion: "weblogic.oracle/v6"
+apiVersion: "weblogic.oracle/v7"
 kind: Domain
 metadata:
   # Update this with the `domainUID` of your domain:
@@ -99,6 +99,21 @@ spec:
   clusters:
   - clusterName: cluster-1
     serverStartState: "RUNNING"
+    serverPod:
+      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
+      # already members of the same cluster.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "weblogic.clusterName"
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: "kubernetes.io/hostname"
     replicas: 2
 
   # The number of managed servers to start for any unlisted clusters
