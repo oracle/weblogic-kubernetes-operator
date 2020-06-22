@@ -94,4 +94,8 @@ class DomainValidationMessages {
   static String illegalSecretNamespace(String namespace) {
     return getMessage(MessageKeys.ILLEGAL_SECRET_NAMESPACE, namespace);
   }
+
+  static String cannotExposeDefaultChannelIstio(String channelName) {
+    return getMessage(MessageKeys.CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO, channelName);
+  }
 }

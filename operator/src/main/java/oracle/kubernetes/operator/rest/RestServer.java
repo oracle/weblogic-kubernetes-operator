@@ -203,7 +203,7 @@ public class RestServer {
                 + getExternalHttpsUri()
                 + "/operator"); // TBD .fine ?
       } else {
-        LOGGER.info(
+        LOGGER.fine(
             "Did not start the external ssl REST server because external ssl has not been configured.");
       }
 
@@ -214,7 +214,7 @@ public class RestServer {
                 + getInternalHttpsUri()
                 + "/operator"); // TBD .fine ?
       } else {
-        LOGGER.info(
+        LOGGER.fine(
             "Did not start the internal ssl REST server because internal ssl has not been configured.");
       }
 
@@ -240,12 +240,12 @@ public class RestServer {
     if (externalHttpsServer != null) {
       externalHttpsServer.shutdownNow();
       externalHttpsServer = null;
-      LOGGER.info("Stopped the external ssl REST server"); // TBD .fine ?
+      LOGGER.fine("Stopped the external ssl REST server");
     }
     if (internalHttpsServer != null) {
       internalHttpsServer.shutdownNow();
       internalHttpsServer = null;
-      LOGGER.info("Stopped the internal ssl REST server"); // TBD .fine ?
+      LOGGER.fine("Stopped the internal ssl REST server");
     }
     LOGGER.exiting();
   }

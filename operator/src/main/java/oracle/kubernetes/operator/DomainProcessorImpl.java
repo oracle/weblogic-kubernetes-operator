@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -30,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -219,6 +221,27 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   /**
+   * Report on currently suspended fibers. This is the first step toward diagnosing if we need special handling
+   * to kill or kick these fibers.
+   */
+  public void reportSuspendedFibers() {
+    if (LOGGER.isFineEnabled()) {
+      BiConsumer<String, FiberGate> consumer =
+          (namespace, gate) -> {
+            gate.getCurrentFibers().forEach(
+                (key, fiber) -> {
+                  Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
+                    LOGGER.fine("Namespace: " + namespace + ", DomainUid: " + key
+                        + ", Fiber: " + fiber.toString() + " is SUSPENDED at " + suspendedStep.getName());
+                  });
+                });
+          };
+      makeRightFiberGates.forEach(consumer);
+      statusFiberGates.forEach(consumer);
+    }
+  }
+
+  /**
    * Dispatch pod watch event.
    * @param item watch event
    */
@@ -389,7 +412,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       case "MODIFIED":
         d = item.object;
         domainUid = d.getDomainUid();
-        LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUid);
+        LOGGER.fine(MessageKeys.WATCH_DOMAIN, domainUid);
         makeRightDomainPresence(new DomainPresenceInfo(d), false, false, true);
         break;
       case "DELETED":
@@ -414,14 +437,15 @@ public class DomainProcessorImpl implements DomainProcessor {
         delegate.scheduleWithFixedDelay(
             () -> {
               try {
-                V1SubjectRulesReviewStatus srrs = delegate.getSubjectRulesReviewStatus(info.getNamespace());
+                V1SubjectRulesReviewStatus srrs =
+                    delegate.getSubjectRulesReviewStatus(info.getNamespace());
                 Packet packet = new Packet();
                 packet
                     .getComponents()
                     .put(
                         ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                        Component.createFor(info, delegate.getVersion(),
-                            V1SubjectRulesReviewStatus.class, srrs));
+                        Component.createFor(
+                            info, delegate.getVersion(), V1SubjectRulesReviewStatus.class, srrs));
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
                     ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -447,7 +471,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
                           @Override
                           public void onThrowable(Packet packet, Throwable throwable) {
-                            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+                            logThrowable(throwable);
                             loggingFilter.setFiltering(true);
                           }
                         });
@@ -458,6 +482,18 @@ public class DomainProcessorImpl implements DomainProcessor {
             main.initialShortDelay,
             main.initialShortDelay,
             TimeUnit.SECONDS));
+  }
+
+  private void logThrowable(Throwable throwable) {
+    if (throwable instanceof Step.MultiThrowable) {
+      for (Throwable t : ((Step.MultiThrowable) throwable).getThrowables()) {
+        logThrowable(t);
+      }
+    } else if (throwable instanceof FailureStatusSourceException) {
+      ((FailureStatusSourceException) throwable).log();
+    } else {
+      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+    }
   }
 
   /**
@@ -473,11 +509,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       boolean isDeleting,
       boolean isWillInterrupt) {
     Domain domain = info.getDomain();
-    DomainSpec spec = null;
-    if (domain != null) {
-      spec = domain.getSpec();
-      DomainPresenceControl.normalizeDomainSpec(spec);
-    }
     String ns = info.getNamespace();
     String domainUid = info.getDomainUid();
 
@@ -492,7 +523,14 @@ public class DomainProcessorImpl implements DomainProcessor {
             LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUid);
             return;
           }
+
+          // TODO, RJE: now that we are switching to updating domain status using the separate
+          // status-specific endpoint, Kubernetes guarantees that changes to the main endpoint
+          // will only be for metadata and spec, so we can know that we have an important
+          // change just by looking at metadata.generation.
+
           // Has the spec actually changed? We will get watch events for status updates
+          DomainSpec spec = domain != null ? domain.getSpec() : null;
           if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
             // nothing in the spec has changed, but status likely did; update current
             existing.setDomain(domain);
@@ -516,7 +554,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     String domainUid = info.getDomainUid();
     Domain dom = info.getDomain();
     if (isDeleting || delegate.isNamespaceRunning(ns)) {
-      LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUid);
+      LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, domainUid);
       Step strategy =
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
@@ -570,7 +608,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
-            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            logThrowable(throwable);
 
             gate.startFiberIfLastFiberMatches(
                 domainUid,
@@ -585,7 +623,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
                   @Override
                   public void onThrowable(Packet packet, Throwable throwable) {
-                    LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+                    logThrowable(throwable);
                   }
                 });
 

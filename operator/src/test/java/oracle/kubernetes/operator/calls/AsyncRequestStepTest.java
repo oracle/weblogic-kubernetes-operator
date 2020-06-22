@@ -13,6 +13,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -55,10 +56,12 @@ public class AsyncRequestStepTest {
 
   /**
    * Setup test.
+   * @throws NoSuchFieldException if StaticStubSupport fails to install
    */
   @Before
-  public void setUp() {
+  public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(ClientFactoryStub.install());
 
     testSupport.runSteps(asyncRequestStep);
   }

@@ -222,7 +222,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     @Override
     protected void logWaiting(String name) {
-      LOGGER.info(MessageKeys.WAITING_FOR_POD_READY, name);
+      LOGGER.fine(MessageKeys.WAITING_FOR_POD_READY, name);
     }
   }
 

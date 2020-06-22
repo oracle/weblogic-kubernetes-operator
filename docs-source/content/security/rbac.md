@@ -112,7 +112,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 | RoleBinding | Mapped to Role | Resource Access | Notes |
 | --- | --- | --- | --- |
 | `weblogic-operator-rolebinding` | `weblogic-operator-role` | **Edit**: secrets, configmaps, events | The RoleBinding is created in the namespace `weblogic-operator-ns` [^1] |
-| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, pods/log | The RoleBinding is created in the namespace `domain1-ns` [^2] |
+| `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, pods/log, pods/exec | The RoleBinding is created in the namespace `domain1-ns` [^2] |
 | | | **Edit**: configmaps, events, pods, services, jobs.batch | |
 | | | **Create**: pods/exec | |
 

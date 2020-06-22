@@ -57,7 +57,7 @@ public class PodHelper {
   public static boolean isReady(V1Pod pod) {
     boolean ready = getReadyStatus(pod);
     if (ready) {
-      LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+      LOGGER.fine(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
     }
     return ready;
   }

@@ -2,29 +2,6 @@
 # Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates. 
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-function setup_shared_cluster {
-  echo "Perform setup for running on shared cluster"
-  echo "Install tiller"
-  kubectl create serviceaccount --namespace kube-system tiller
-  kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-  
-  # Note: helm init --wait would wait until tiller is ready, and requires helm 2.8.2 or above 
-  helm init --service-account=tiller --wait
-  
-  helm version
-  
-  kubectl get po -n kube-system
-  
-  echo "Existing helm charts "
-  helm ls --all
-  echo "Deleting installed helm charts"
-  helm list --short --all | xargs -L1 helm delete --purge
-  echo "After helm delete, list of installed helm charts is: "
-  helm ls
-
-  echo "Completed setup_shared_cluster"
-}
-
 function cleanup {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
@@ -32,31 +9,45 @@ function cleanup {
 function create_image_pull_secret_wl {
 
   set +x 
+
+  if [ "$LOCAL_RUN" = "true" ]; then
+    if [ ! -z "$(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)" ]; then
+      return 0
+    fi
+    docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+    if [ $? -eq 0 ]; then
+      return 0
+    fi
+  fi
+
   if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
-		echo "Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the WebLogic image."
-	  exit 1
-	fi
+    echo "Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the WebLogic image."
+    echo "Alternatively, if this is a local run:"
+    echo " - 'export LOCAL_RUN=true' and:"
+    echo " - 'docker login' to the registry for '$IMAGE_NAME_WEBLOGIC' (if you haven't already done so)"
+    echo "   and/or manually 'docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC'"
+    exit 1
+  fi
   
   if [ -n "$OCR_USERNAME" ] && [ -n "$OCR_PASSWORD" ]; then  
-	  echo "Creating Docker Secret"
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=${OCR_SERVER}/ \
-	    --docker-username=$OCR_USERNAME \
-	    --docker-password=$OCR_PASSWORD \
-	    --docker-email=$OCR_USERNAME@oracle.com \
-            --dry-run -o yaml | kubectl apply -f -
+    echo "Creating Docker Secret"
+    kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+      --docker-server=${OCR_SERVER}/ \
+      --docker-username=$OCR_USERNAME \
+      --docker-password=$OCR_PASSWORD \
+      --docker-email=$OCR_USERNAME@oracle.com \
+      --dry-run -o yaml | kubectl apply -f -
 	  
-	  echo "Checking Secret"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-	    exit 1
-	  fi
+    echo "Checking Secret"
+    SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+    if [ "$SECRET" != "1" ]; then
+      echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+      exit 1
+    fi
 	  
-	  # below docker pull is needed to for domain home in image tests the base image should be in local repo
-	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
-	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
-	  
+    # below docker pull is needed to for domain home in image tests the base image should be in local repo
+    docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
+    docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
 }
@@ -96,13 +87,13 @@ export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
-export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
+export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.4}"
 export SKIP_BUILD_OPERATOR="${SKIP_BUILD_OPERATOR:-false}"
 export OPENSHIFT=${OPENSHIFT:-false}
 
 if [ "$JRF_ENABLED" = true ] ; then
   export FMWINFRA_IMAGE_URI=/middleware/fmw-infrastructure
-  export IMAGE_TAG_FMWINFRA="${IMAGE_TAG_FMWINFRA:-12.2.1.3}"
+  export IMAGE_TAG_FMWINFRA="${IMAGE_TAG_FMWINFRA:-12.2.1.4}"
   export DB_IMAGE_URI=/database/enterprise
   export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${OCR_SERVER}``echo ${DB_IMAGE_URI}`}"
   export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1-slim}"
@@ -178,8 +169,6 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	  	exit 1
 	fi
     	
-  #fi
-  setup_shared_cluster
   docker images
     
 elif [ "$JENKINS" = "true" ]; then

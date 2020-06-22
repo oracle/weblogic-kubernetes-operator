@@ -257,8 +257,8 @@ The following is a complete example of a domain custom resource with a `fluentd`
 
 ```yaml
 # If you are using 3.0.0-rc1, then the version on the following line
-# should be `v7` not `v6`.
-apiVersion: weblogic.oracle/v6
+# should be `v8` not `v7`.
+apiVersion: weblogic.oracle/v7
 kind: Domain
 metadata:
   labels:
@@ -278,7 +278,7 @@ spec:
   - clusterName: cluster-1
     serverPod:
   domainHome: /u01/oracle/user_projects/domains/bobs-bookstore
-  domainHomeSourceType: Image
+  domainHomeInImage: true
   domainUID: bobs-bookstore
   experimental:
     istio:
