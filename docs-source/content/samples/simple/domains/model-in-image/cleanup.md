@@ -48,11 +48,3 @@ To remove the resources you have created in these samples:
    $ docker image rm model-in-image:JRF-v1
    $ docker image rm model-in-image:JRF-v2
    ```
-
-
-### References
-
-For references to the relevant user documentation, see:
- - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
- - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
- - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)

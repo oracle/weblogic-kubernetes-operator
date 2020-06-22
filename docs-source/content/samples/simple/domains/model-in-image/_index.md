@@ -13,6 +13,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
      - [Use cases](#use-cases)
      - [Sample directory structure](#sample-directory-structure)
      - [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images)
+   - [References](#references)
    - [Prerequisites for all domain types]({{< relref "/samples/simple/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
    - [Additional prerequisites for JRF domains]({{< relref "/samples/simple/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
    - [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case: An initial WebLogic domain
@@ -20,7 +21,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
    - [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Deploying an additional domain
    - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application in an image
    - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
-   - [References]({{< relref "/samples/simple/domains/model-in-image/cleanup#references" >}})
+
 
 
 ### Introduction
@@ -124,3 +125,10 @@ For example, if you have permission to put the image in a Docker repository that
 Alternatively, if you have access to the local Docker image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
 
 For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+
+### References
+
+For references to the relevant user documentation, see:
+ - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
+ - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
+ - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
