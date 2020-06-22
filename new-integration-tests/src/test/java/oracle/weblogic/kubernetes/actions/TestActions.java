@@ -1101,8 +1101,8 @@ public class TestActions {
   /**
    * Get the name of the operator pod.
    *
-   * @param release the release name of the operator
-   * @param namespace the Kubernetes namespace that the operator belongs to
+   * @param release release name of the operator
+   * @param namespace Kubernetes namespace that the operator belongs to
    * @throws ApiException if Kubernetes client API call fails
    */
   public static String getOperatorPodName(String release, String namespace) throws ApiException {
