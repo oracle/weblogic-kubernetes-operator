@@ -77,6 +77,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
@@ -111,7 +112,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Tests to create domain in persistent volume using WLST.
  */
-@DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
+@DisplayName("Test to create WebLogic domain in domainhome-on-pv model with istio configuration")
 @IntegrationTest
 public class ItIstioDomainInPV implements LoggedTest {
 
@@ -174,11 +175,10 @@ public class ItIstioDomainInPV implements LoggedTest {
 
   /**
    * Create a WebLogic domain using WLST in a persistent volume.
-   * Add istio Configuration 
-   * Label domain namespace and operator namespace with istio-injection=enabled 
-   * Deploy istio gateways and virtualservices
+   * Add istio configuration. 
+   * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
-   * Verify login to WebLogic console is successful thru ISTIO ingress Port.
+   * Verify login to WebLogic console is successful thru istio ingress Port.
    */
   @Test
   @DisplayName("Create WebLogic domain in PV with Istio")
@@ -318,9 +318,20 @@ public class ItIstioDomainInPV implements LoggedTest {
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
+
+    Path tempDir = Paths.get(RESULTS_ROOT, "tmp", "istio");
+    Path srcFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.service.yaml");
+    Path targetFile = Paths.get(tempDir.toString(), "istio-http-service.yaml");
+
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("NAMESPACE", domainNamespace);
+    templateMap.put("DUID", domainUid);
+    templateMap.put("ADMIN_SERVICE",adminServerPodName);
+    templateMap.put("CLUSTER_SERVICE", clusterService);
+
     boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(domainNamespace, domainUid, adminServerPodName, clusterService));
-    assertTrue(deployRes, "Could not deploy Istio Gateway/Virtual Service");
+        () -> deployHttpIstioGatewayAndVirtualservice(srcFile.toString(), targetFile.toString(),  templateMap));
+    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
 
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio http ingress Port is {0}", istioIngressPort);

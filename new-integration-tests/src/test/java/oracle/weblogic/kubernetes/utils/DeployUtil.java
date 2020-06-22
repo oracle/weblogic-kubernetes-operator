@@ -269,7 +269,7 @@ public class DeployUtil {
   }
 
   /**
-   * Deploy application using REST API.
+   * Deploy application using REST API with curl utility.
    *
    * @param host name of the admin server host
    * @param port node port of admin server

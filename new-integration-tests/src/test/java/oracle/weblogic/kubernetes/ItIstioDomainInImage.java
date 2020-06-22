@@ -43,14 +43,15 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
@@ -66,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create domain in image domain using wdt and start the domain")
+@DisplayName("Test to create WebLogic domain in domainhome-in-image model with istio configuration")
 @IntegrationTest
 class ItIstioDomainInImage implements LoggedTest {
 
@@ -76,9 +77,9 @@ class ItIstioDomainInImage implements LoggedTest {
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String dockerConfigJson = "";
-  private String domainUid = "istio-dii-wdt";
-  private String clusterName = "cluster-1"; // do not modify 
-  private String adminServerName = "admin-server"; // do not modify
+  private final String domainUid = "istio-dii-wdt";
+  private final String clusterName = "cluster-1"; // do not modify 
+  private final String adminServerName = "admin-server"; // do not modify
   private final String adminServerPodName = domainUid + "-" + adminServerName;
 
   private static Map<String, Object> secretNameMap;
@@ -120,13 +121,12 @@ class ItIstioDomainInImage implements LoggedTest {
   }
 
   /**
-   * Create a domain in domain-home-in-image model.
-   * Add istio Configuration with default readinessPort 
+   * Create a domain using domainhome-in-image model.
+   * Add istio configuration with default readinessPort 
    * Do not add any AdminService under AdminServer configuration
-   * Label domain namespace and operator namespace with istio-injection=enabled 
-   * Deploy istio gateways and virtualservices 
+   * Deploy istio gateways and virtual service 
    * Verify domain pods runs in ready state and services are created.
-   * Login to WebLogic console is successful thru istio http ingress port.
+   * Verify login to WebLogic console is successful thru istio ingress http port.
    * Deploy a web application thru istio http ingress port using REST api  
    * Access web application thru istio http ingress port using curl
    */
@@ -140,7 +140,6 @@ class ItIstioDomainInImage implements LoggedTest {
 
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
-
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -162,18 +161,6 @@ class ItIstioDomainInImage implements LoggedTest {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
-
-    // check admin server pod exists
-    logger.info("Check for adminserver pod {0} existence in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managedserver pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
@@ -198,14 +185,26 @@ class ItIstioDomainInImage implements LoggedTest {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
+    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.service.yaml");
+    Path tempDir = Paths.get(RESULTS_ROOT, "tmp", "istio");
+    Path targetHttpFile = Paths.get(tempDir.toString(), "istio-http-service.yaml");
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-    boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(domainNamespace, domainUid,  adminServerPodName, clusterService));
-    assertTrue(deployRes, "Could not deploy Http Istio Gateway/VirtualService");
 
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("NAMESPACE", domainNamespace);
+    templateMap.put("DUID", domainUid);
+    templateMap.put("ADMIN_SERVICE",adminServerPodName);
+    templateMap.put("CLUSTER_SERVICE", clusterService);
+
+    boolean deployRes = assertDoesNotThrow(
+        () -> deployHttpIstioGatewayAndVirtualservice(srcHttpFile.toString(), targetHttpFile.toString(),  templateMap));
+    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+
+    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
+    Path targetDrFile = Paths.get(tempDir.toString(), "istio-dr.yaml");
     deployRes = assertDoesNotThrow(
-        () -> deployIstioDestinationRule(domainNamespace, domainUid));
-    assertTrue(deployRes, "Could not deploy Istio DestinationRule");
+        () -> deployIstioDestinationRule(srcDrFile.toString(), targetDrFile.toString(),  templateMap));
+    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
 
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);

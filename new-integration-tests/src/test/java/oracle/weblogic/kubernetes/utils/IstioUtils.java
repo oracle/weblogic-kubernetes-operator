@@ -8,18 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,7 +65,7 @@ public class IstioUtils {
 
   /**
    * Get the http ingress port of istio installation.
-   * @returns ingress port for istio-ingressgateway
+   * @return ingress port for istio-ingressgateway
   */
   public static int getIstioHttpIngressPort() {
     ExecResult result = null;
@@ -90,7 +89,7 @@ public class IstioUtils {
 
   /**
    * Get the secure https ingress port of istio installation.
-   * @returns secure ingress https port for istio-ingressgateway
+   * @return secure ingress https port for istio-ingressgateway
   */
   public static int getIstioSecureIngressPort() {
     ExecResult result = null;
@@ -114,7 +113,7 @@ public class IstioUtils {
 
   /**
    * Get the tcp ingress port of istio installation.
-   * @returns tcp ingress port for istio-ingressgateway
+   * @return tcp ingress port for istio-ingressgateway
    */
   public static int getIstioTcpIngressPort() {
     ExecResult result = null;
@@ -137,32 +136,31 @@ public class IstioUtils {
   }
 
   /**
-   * Deploy the Http Istio Gateway and Istio Virtualservice.
-   * @param domainNamespace name of the domain namespace
-   * @param domainUid name of the domain identifier
-   * @param clusterServiceName  name of WebLogic cluster
-   * @param adminServiceName name of the admin service
-   * @returns true if deployment is success otherwise false
+   * Deploy the Http Istio Gateway and Istio virtual service.
+   * @param inputTemplateFile input template file 
+   * @param outputTemplateFile output template file 
+   * @param templateMap map containing template variable(s) to be replaced
+   * @return true if deployment is success otherwise false
   */
   public static boolean deployHttpIstioGatewayAndVirtualservice(
-       String domainNamespace, String domainUid, 
-       String adminServiceName, String clusterServiceName) throws IOException {
+       String inputTemplateFile, String outputTemplateFile, 
+       Map<String, String> templateMap) throws IOException {
 
-    logger.info("Create a staging location for istio configuration objects");
-    Path fileTemp = Paths.get(RESULTS_ROOT, "tmp", "istio");
-    deleteDirectory(fileTemp.toFile());
-    Files.createDirectories(fileTemp);
+    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile,outputTemplateFile);
 
-    logger.info("Copy istio-http-template.service.yaml to staging location");
-    Path srcFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.service.yaml");
-    Path targetFile = Paths.get(fileTemp.toString(), "istio-http-service.yaml");
+    Path srcFile = Paths.get(inputTemplateFile);
+    Path targetFile = Paths.get(outputTemplateFile);
+    // Add the parent directory for the target file
+    Path parentDir = targetFile.getParent();
+    Files.createDirectories(parentDir);
+
     Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-
     String out = targetFile.toString();
-    replaceStringInFile(out, "NAMESPACE", domainNamespace); 
-    replaceStringInFile(out, "DUID", domainUid); 
-    replaceStringInFile(out, "ADMIN_SERVICE", adminServiceName); 
-    replaceStringInFile(out, "CLUSTER_SERVICE", clusterServiceName); 
+    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
+      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
+      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
+    }
+
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
@@ -175,38 +173,34 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioHttpGateway: kubectl returned {0}", result.toString());
-    if (result.stdout().contains("istio-http-gateway created")) {
-      return true;
-    } else {
-      return false;
-    }
+    return result.stdout().contains("istio-http-gateway created"); 
   }
-  
+
   /**
-   * Deploy the tcp Istio Gateway and Istio Virtualservice.
-   * @param domainNamespace name of the domain namespace
-   * @param domainUid name of the domain identifier
-   * @param adminServiceName name of the admin service
-   * @returns true if deployment is success otherwise false
+   * Deploy the tcp Istio Gateway and Istio virtual service.
+   * @param inputTemplateFile input template file
+   * @param outputTemplateFile output template file
+   * @param templateMap map containing template variable(s) to be replaced
+   * @return true if deployment is success otherwise false
   */
   public static boolean deployTcpIstioGatewayAndVirtualservice(
-        String domainNamespace, String domainUid, String adminServiceName) throws IOException  {
+       String inputTemplateFile, String outputTemplateFile, 
+       Map<String, String> templateMap) throws IOException {
 
-    logger.info("Create a staging location for istio configuration objects");
-    Path fileTemp = Paths.get(RESULTS_ROOT, "tmp", "istio");
-    deleteDirectory(fileTemp.toFile());
-    Files.createDirectories(fileTemp);
+    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile,outputTemplateFile);
 
-    logger.info("Copy istio-tcp-template.service.yaml to staging location");
-    Path srcFile = Paths.get(RESOURCE_DIR, "istio", "istio-tcp-template.service.yaml");
-    Path targetFile = Paths.get(fileTemp.toString(), "istio-tcp-service.yaml");
+    Path srcFile = Paths.get(inputTemplateFile);
+    Path targetFile = Paths.get(outputTemplateFile);
+    // Add the parent directory for the target file
+    Path parentDir = targetFile.getParent();
+    Files.createDirectories(parentDir);
+
     Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-
     String out = targetFile.toString();
-    String adminService = adminServiceName + ".svc.cluster.local";
-    replaceStringInFile(out, "NAMESPACE", domainNamespace); 
-    replaceStringInFile(out, "DUID", domainUid); 
-    replaceStringInFile(out, "ADMIN_SERVICE", adminServiceName); 
+    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
+      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
+      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
+    }
 
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
@@ -220,35 +214,34 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioTcpGateway: kubectl returned {0}", result.toString());
-    if (result.stdout().contains("istio-tcp-gateway created")) {
-      return true;
-    } else {
-      return false;
-    }
+    return result.stdout().contains("istio-tcp-gateway created"); 
   }
 
   /**
    * Deploy the Istio DestinationRule. 
-   * @param domainNamespace name of the domain namespace
-   * @param domainUid name of the domain identifier
-   * @returns true if deployment is success otherwise false
+   * @param inputTemplateFile input template file
+   * @param outputTemplateFile output template file
+   * @param templateMap map containing template variable(s) to be replaced
+   * @return true if deployment is success otherwise false
   */
   public static boolean deployIstioDestinationRule(
-        String domainNamespace, String domainUid) throws IOException  {
+       String inputTemplateFile, String outputTemplateFile, 
+       Map<String, String> templateMap) throws IOException {
 
-    logger.info("Create a staging location for istio configuration objects");
-    Path fileTemp = Paths.get(RESULTS_ROOT, "tmp", "istio");
-    deleteDirectory(fileTemp.toFile());
-    Files.createDirectories(fileTemp);
+    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile,outputTemplateFile);
 
-    logger.info("Copy istio-dr-template.yaml to staging location");
-    Path srcFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
-    Path targetFile = Paths.get(fileTemp.toString(), "istio-dr.yaml");
+    Path srcFile = Paths.get(inputTemplateFile);
+    Path targetFile = Paths.get(outputTemplateFile);
+    // Add the parent directory for the target file
+    Path parentDir = targetFile.getParent();
+    Files.createDirectories(parentDir);
+
     Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-
     String out = targetFile.toString();
-    replaceStringInFile(out, "NAMESPACE", domainNamespace); 
-    replaceStringInFile(out, "DUID", domainUid); 
+    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
+      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
+      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
+    }
 
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
@@ -262,10 +255,8 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioDestinationRule: kubectl returned {0}", result.toString());
-    if (result.stdout().contains("destination-rule created")) {
-      return true;
-    } else {
-      return false;
-    }
+    return result.stdout().contains("destination-rule created"); 
   }
+
+  
 }
