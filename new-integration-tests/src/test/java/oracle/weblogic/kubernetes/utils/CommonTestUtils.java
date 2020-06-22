@@ -28,7 +28,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -84,9 +83,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
@@ -95,7 +96,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
@@ -119,7 +119,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -148,9 +147,8 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(
-      String opNamespace,
-      String... domainNamespace) {
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String... domainNamespace) {
 
     return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, domainNamespace);
   }
@@ -165,25 +163,22 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(
-      String opNamespace,
-      String opServiceAccount,
-      boolean withRestAPI,
-      int externalRestHttpsPort,
-      String... domainNamespace) {
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    String opServiceAccount,
+                                                    boolean withRestAPI,
+                                                    int externalRestHttpsPort,
+                                                    String... domainNamespace) {
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
-    assertDoesNotThrow(() -> {
-      TestActions.createServiceAccount(new V1ServiceAccount()
-          .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
-              .namespace(opNamespace)
-              .name(opServiceAccount)));
-    });
+    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
+        .metadata(new V1ObjectMeta()
+            .namespace(opNamespace)
+            .name(opServiceAccount))));
     logger.info("Created service account: {0}", opServiceAccount);
 
     // get operator image name
-    String operatorImage = TestActions.getOperatorImageName();
+    String operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
 
@@ -256,9 +251,8 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return true if successful
    */
-  public static boolean upgradeAndVerifyOperator(
-      String opNamespace,
-      String... domainNamespace) {
+  public static boolean upgradeAndVerifyOperator(String opNamespace,
+                                                    String... domainNamespace) {
     // Helm upgrade parameters
     HelmParams opHelmParams = new HelmParams()
         .releaseName(OPERATOR_RELEASE_NAME)
@@ -301,10 +295,9 @@ public class CommonTestUtils {
    * @param nodeportshttps the https nodeport of NGINX
    * @return the NGINX Helm installation parameters
    */
-  public static HelmParams installAndVerifyNginx(
-      String nginxNamespace,
-      int nodeportshttp,
-      int nodeportshttps) {
+  public static HelmParams installAndVerifyNginx(String nginxNamespace,
+                                                 int nodeportshttp,
+                                                 int nodeportshttps) {
 
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
@@ -390,26 +383,8 @@ public class CommonTestUtils {
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @return list of ingress hosts
    */
-  public static List<String> createIngressForDomainAndVerify(
-      String domainUid,
-      String domainNamespace,
-      Map<String, Integer> clusterNameMSPortMap) {
-
-    return createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMSPortMap);
-  }
-
-  /**
-   * Create an ingress for the domain with domainUid in the specified namespace.
-   *
-   * @param domainUid WebLogic domainUid which is backend to the ingress to be created
-   * @param domainNamespace WebLogic domain namespace in which the domain exists
-   * @param nodeport node port of the ingress controller
-   * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
-   * @return list of ingress hosts
-   */
   public static List<String> createIngressForDomainAndVerify(String domainUid,
                                                              String domainNamespace,
-                                                             int nodeport,
                                                              Map<String, Integer> clusterNameMSPortMap) {
 
     // create an ingress in domain namespace
@@ -428,18 +403,6 @@ public class CommonTestUtils {
 
     logger.info("ingress {0} for domain {1} was created in namespace {2}",
         ingressName, domainUid, domainNamespace);
-
-    // check the ingress is ready to route the app to the server pod
-    if (nodeport != 0) {
-      for (String ingressHost : ingressHostList) {
-        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
-            + "/weblogic/ready --write-out %{http_code} -o /dev/null";
-
-        logger.info("Executing curl command {0}", curlCmd);
-        assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
-      }
-    }
 
     return ingressHostList;
   }
@@ -483,7 +446,7 @@ public class CommonTestUtils {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
             String.format("podReady failed with ApiException for pod %s in namespace %s",
-                podName, domainNamespace)));
+               podName, domainNamespace)));
   }
 
   /**
@@ -503,11 +466,11 @@ public class CommonTestUtils {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            podName,
+            domNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> isPodRestarted(podName, domNamespace, lastCreationTime),
             String.format(
                 "pod %s has not been restarted in namespace %s", podName, domNamespace)));
@@ -582,10 +545,9 @@ public class CommonTestUtils {
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @return image name with tag
    */
-  public static String createMiiImageAndVerify(
-      String miiImageNameBase,
-      String wdtModelFile,
-      String appName) {
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                String wdtModelFile,
+                                                String appName) {
     return createMiiImageAndVerify(miiImageNameBase, wdtModelFile, appName,
         WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
   }
@@ -601,19 +563,18 @@ public class CommonTestUtils {
    * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
    * @return image name with tag
    */
-  public static String createMiiImageAndVerify(
-      String miiImageNameBase,
-      String wdtModelFile,
-      String appName,
-      String baseImageName,
-      String baseImageTag,
-      String domainType) {
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                String wdtModelFile,
+                                                String appName,
+                                                String baseImageName,
+                                                String baseImageTag,
+                                                String domainType) {
     // build the model file list
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + wdtModelFile);
     final List<String> appSrcDirList = Collections.singletonList(appName);
 
     return createMiiImageAndVerify(
-        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType, true);
+        miiImageNameBase, modelList, appSrcDirList, baseImageName, baseImageTag, domainType);
   }
 
   /**
@@ -624,12 +585,11 @@ public class CommonTestUtils {
    * @param appSrcDirList list of the sample application source directories used to build sample app ear files
    * @return image name with tag
    */
-  public static String createMiiImageAndVerify(
-      String miiImageNameBase,
-      List<String> wdtModelList,
-      List<String> appSrcDirList) {
+  public static  String createMiiImageAndVerify(String miiImageNameBase,
+                                                List<String> wdtModelList,
+                                                List<String> appSrcDirList) {
     return createMiiImageAndVerify(
-        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS, true);
+        miiImageNameBase, wdtModelList, appSrcDirList, WLS_BASE_IMAGE_NAME, WLS_BASE_IMAGE_TAG, WLS);
 
   }
 
@@ -642,7 +602,6 @@ public class CommonTestUtils {
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
    * @param domainType the type of the WebLogic domain, valid values are "WLS, "JRF", and "Restricted JRF"
-   * @param oneArchiveContainsMultiApps whether one archive contains multiple apps
    * @return image name with tag
    */
   public static String createMiiImageAndVerify(String miiImageNameBase,
@@ -650,8 +609,7 @@ public class CommonTestUtils {
                                                List<String> appSrcDirList,
                                                String baseImageName,
                                                String baseImageTag,
-                                               String domainType,
-                                               boolean oneArchiveContainsMultiApps) {
+                                               String domainType) {
 
     // create unique image name with date
     DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -660,11 +618,11 @@ public class CommonTestUtils {
     // Add repository name in image name for Jenkins runs
     final String imageName = REPO_NAME + miiImageNameBase;
     final String image = imageName + ":" + imageTag;
+    List<String> archiveList = new ArrayList<String>();
 
-    List<String> archiveList = new ArrayList<>();
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
-      List<String> archiveAppsList = new ArrayList<>();
-      List<String> buildAppDirList = new ArrayList<>(appSrcDirList);
+      List<String> archiveAppsList = new ArrayList<String>();
+      List<String> buildAppDirList = new ArrayList<String>(appSrcDirList);
 
       for (String appSrcDir : appSrcDirList) {
         if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
@@ -676,40 +634,28 @@ public class CommonTestUtils {
 
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
-            .srcDirList(archiveAppsList)));
+                .srcDirList(archiveAppsList)));
         //archive provided ear or war file
         String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
-            appSrcDirList.get(0).lastIndexOf("."));
+                appSrcDirList.get(0).lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
         archiveList.add(zipAppFile);
 
       }
-
       if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
         // build an application archive using what is in resources/apps/APP_NAME
-        String zipFile = "";
-        if (oneArchiveContainsMultiApps) {
-          assertTrue(buildAppArchive(defaultAppParams()
-                  .srcDirList(buildAppDirList)),
-              String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
-          zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
-          // build the archive list
-          archiveList.add(zipFile);
-        } else {
-          for (String appName : buildAppDirList) {
-            assertTrue(buildAppArchive(defaultAppParams()
-                    .srcDirList(Collections.singletonList(appName))
-                    .appName(appName)),
-                String.format("Failed to create app archive for %s", appName));
-            zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
-            // build the archive list
-            archiveList.add(zipFile);
-          }
-        }
+        assertTrue(buildAppArchive(defaultAppParams()
+                        .srcDirList(buildAppDirList)),
+                String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
+
+        // build the archive list
+        String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+        archiveList.add(zipFile);
       }
     }
+
 
     // Set additional environment variables for WIT
     checkDirectory(WIT_BUILD_DIR);
@@ -774,7 +720,6 @@ public class CommonTestUtils {
 
   /**
    * Create docker registry secret with given parameters.
-   *
    * @param userName repository user name
    * @param password repository password
    * @param email repository email
@@ -782,8 +727,7 @@ public class CommonTestUtils {
    * @param secretName name of the secret to create
    * @param namespace namespace in which to create the secret
    */
-  public static void createDockerRegistrySecret(
-      String userName, String password,
+  public static void createDockerRegistrySecret(String userName, String password,
       String email, String registry, String secretName, String namespace) {
 
     // Create registry secret in the namespace to pull the image from repository
@@ -832,11 +776,10 @@ public class CommonTestUtils {
    * @param username username in the secret
    * @param password passowrd in the secret
    */
-  public static void createSecretWithUsernamePassword(
-      String secretName,
-      String namespace,
-      String username,
-      String password) {
+  public static void createSecretWithUsernamePassword(String secretName,
+                                                      String namespace,
+                                                      String username,
+                                                      String password) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
@@ -849,9 +792,8 @@ public class CommonTestUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
 
-  /**
-   * Scale the WebLogic cluster to specified number of servers.
-   * Verify the sample app can be accessed through NGINX if curlCmd is not null.
+  /** Scale the WebLogic cluster to specified number of servers.
+   *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
    *
    * @param clusterName the WebLogic cluster name in the domain to be scaled
    * @param domainUid the domain to which the cluster belongs
@@ -865,19 +807,17 @@ public class CommonTestUtils {
    * @param expectedServerNames list of managed servers in the cluster before scale, if curlCmd is null,
    *                            set expectedServerNames to null too
    */
-  public static void scaleAndVerifyCluster(
-      String clusterName,
-      String domainUid,
-      String domainNamespace,
-      String manageServerPodNamePrefix,
-      int replicasBeforeScale,
-      int replicasAfterScale,
-      String curlCmd,
-      List<String> expectedServerNames) {
+  public static void scaleAndVerifyCluster(String clusterName,
+                                           String domainUid,
+                                           String domainNamespace,
+                                           String manageServerPodNamePrefix,
+                                           int replicasBeforeScale,
+                                           int replicasAfterScale,
+                                           String curlCmd,
+                                           List<String> expectedServerNames) {
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, manageServerPodNamePrefix, replicasBeforeScale,
-        replicasAfterScale, false, 0, "", "",
-        false, "", "", 0, "", "", curlCmd, expectedServerNames);
+        replicasAfterScale, false, 0, "", "", curlCmd, expectedServerNames);
   }
 
   /**
@@ -894,12 +834,6 @@ public class CommonTestUtils {
    * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
    * @param opNamespace the namespace of WebLogic operator
    * @param opServiceAccount the service account for operator
-   * @param withWLDF whether to use WLDF to scale cluster
-   * @param domainHomeLocation the domain home location of the domain
-   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
-   * @param scalingSize the number of servers to scale up or scale down
-   * @param myWebAppName the web app name deployed to the domain
-   * @param curlCmdForWLDFApp the curl command to call the web app used in the WLDF script
    * @param curlCmd the curl command to verify ingress controller can access the sample apps from all managed servers
    *                in the cluster, if curlCmd is null, the method will not verify the accessibility of the sample app
    *                through ingress controller
@@ -916,12 +850,6 @@ public class CommonTestUtils {
                                            int externalRestHttpsPort,
                                            String opNamespace,
                                            String opServiceAccount,
-                                           boolean withWLDF,
-                                           String domainHomeLocation,
-                                           String scalingAction,
-                                           int scalingSize,
-                                           String myWebAppName,
-                                           String curlCmdForWLDFApp,
                                            String curlCmd,
                                            List<String> expectedServerNames) {
 
@@ -945,16 +873,6 @@ public class CommonTestUtils {
           .as("Verify scaling cluster {0} of domain {1} in namespace {2} with REST API succeeds",
               clusterName, domainUid, domainNamespace)
           .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with REST API failed",
-              clusterName, domainUid, domainNamespace)
-          .isTrue();
-    } else if (withWLDF) {
-      // scale the cluster using WLDF policy
-      assertThat(assertDoesNotThrow(() -> scaleClusterWithWLDF(clusterName, domainUid, domainNamespace,
-          domainHomeLocation, scalingAction, scalingSize, opNamespace, opServiceAccount, myWebAppName,
-          curlCmdForWLDFApp)))
-          .as("Verify scaling cluster {0} of domain {1} in namespace {2} with WLDF policy succeeds",
-              clusterName, domainUid, domainNamespace)
-          .withFailMessage("Scaling cluster {0} of domain {1} in namespace {2} with WLDF policy failed",
               clusterName, domainUid, domainNamespace)
           .isTrue();
     } else {
@@ -1059,13 +977,12 @@ public class CommonTestUtils {
    * @param alertManagerNodePort nodePort value for alertmanager
    * @return the prometheus Helm installation parameters
    */
-  public static HelmParams installAndVerifyPrometheus(
-      String promReleaseName,
-      String promNamespace,
-      String promValueFile,
-      String promVersion,
-      int promServerNodePort,
-      int alertManagerNodePort) {
+  public static HelmParams installAndVerifyPrometheus(String promReleaseName,
+                                                      String promNamespace,
+                                                      String promValueFile,
+                                                      String promVersion,
+                                                      int promServerNodePort,
+                                                      int alertManagerNodePort) {
 
     // Helm install parameters
     HelmParams promHelmParams = new HelmParams()
@@ -1124,12 +1041,11 @@ public class CommonTestUtils {
    * @param grafanaNodePort nodePort value for grafana server
    * @return the grafana Helm installation parameters
    */
-  public static HelmParams installAndVerifyGrafana(
-      String grafanaReleaseName,
-      String grafanaNamespace,
-      String grafanaValueFile,
-      String grafanaVersion,
-      int grafanaNodePort) {
+  public static HelmParams installAndVerifyGrafana(String grafanaReleaseName,
+                                                      String grafanaNamespace,
+                                                      String grafanaValueFile,
+                                                      String grafanaVersion,
+                                                      int grafanaNodePort) {
 
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
@@ -1186,12 +1102,12 @@ public class CommonTestUtils {
    * @param v1pvc V1PersistentVolumeClaim object to create the persistent volume claim
    * @param labelSelector String containing the labels the PV is decorated with
    * @param namespace the namespace in which the persistence volume claim to be created
+   *
    **/
-  public static void createPVPVCAndVerify(
-      V1PersistentVolume v1pv,
-      V1PersistentVolumeClaim v1pvc,
-      String labelSelector,
-      String namespace) {
+  public static void createPVPVCAndVerify(V1PersistentVolume v1pv,
+                                          V1PersistentVolumeClaim v1pvc,
+                                          String labelSelector,
+                                          String namespace) {
 
     assertNotNull(v1pv, "v1pv is null");
     assertNotNull(v1pvc, "v1pvc is null");
@@ -1235,15 +1151,13 @@ public class CommonTestUtils {
 
   /**
    * Create ConfigMap from the specified files.
-   *
    * @param configMapName name of the ConfigMap to create
    * @param files files to be added in ConfigMap
    * @param namespace the namespace in which the ConfigMap to be created
    */
-  public static void createConfigMapFromFiles(
-      String configMapName,
-      List<Path> files,
-      String namespace) {
+  public static void createConfigMapFromFiles(String configMapName,
+                                              List<Path> files,
+                                              String namespace) {
 
     // create a ConfigMap of the domain
     Map<String, String> data = new HashMap<>();
@@ -1354,7 +1268,7 @@ public class CommonTestUtils {
    * @throws java.io.IOException when copying files from source location to staging area fails
    */
   public static void replaceStringInFile(String filePath, String oldValue, String newValue)
-      throws IOException {
+          throws IOException {
     Path src = Paths.get(filePath);
     logger.info("Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
@@ -1449,4 +1363,5 @@ public class CommonTestUtils {
                "Failed to validate credentials %s/%s on pod %s in namespace %s",
                username, password, podName, namespace)));
   }
+
 }
