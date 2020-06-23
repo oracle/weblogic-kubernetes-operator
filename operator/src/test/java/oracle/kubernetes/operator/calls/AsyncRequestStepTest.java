@@ -171,7 +171,7 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterMultipleTimeoutsAndSuccessfulCallback_fiberTerminatesWithException() {
+  public void afterMultipleTimeoutsAndRetriesExhausted_fiberTerminatesWithException() {
     sendMultipleFailedCallbackWithSetTime(504, 3);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
