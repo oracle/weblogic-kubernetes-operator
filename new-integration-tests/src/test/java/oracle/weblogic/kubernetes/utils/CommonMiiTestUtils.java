@@ -26,6 +26,11 @@ public class CommonMiiTestUtils {
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
    *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param adminServerPodName name of the admin server pod
+   * @param managedServerPrefix prefix of the managed server pods
+   * @param replicaCount number of managed servers to start
    */
   public static void createMiiDomainAndVerify(
       String domainNamespace,
@@ -102,7 +107,7 @@ public class CommonMiiTestUtils {
    * @param domNamespace Kubernetes namespace that the domain is hosted
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
-   * @param encryptionSecretName name of the secret for encryption
+   * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount number of managed servers to start
    * @return domain object of the domain resource
    */

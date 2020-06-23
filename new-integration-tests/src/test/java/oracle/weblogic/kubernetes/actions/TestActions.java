@@ -911,13 +911,13 @@ public class TestActions {
   }
 
   /**
-   * Delete the operator pod.
+   * Delete a pod in a given namespace.
    *
-   * @param podName the name of the operator pod
-   * @param namespace the Kubernetes namespace that the operator belongs to
+   * @param podName name of the pod to be deleted
+   * @param namespace Kubernetes namespace that the pod is running in
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static void deleteOperatorPod(String podName, String namespace) throws ApiException {
+  public static void deletePod(String podName, String namespace) throws ApiException {
     Kubernetes.deletePod(podName, namespace);
   }
 

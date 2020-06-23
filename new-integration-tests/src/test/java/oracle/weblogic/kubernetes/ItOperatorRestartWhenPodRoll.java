@@ -29,7 +29,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteOperatorPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
@@ -42,14 +42,16 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Test to change the WebLogic credentials secret of a domain custom resource that uses model-in-image.
+// Test to restart the operator when the server pods roll after changing the WebLogic credentials secret of a
+// domain custom resource that uses model-in-image.
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
-class ItOperatorRestartWhenPodRoll implements LoggedTest {
+public class ItOperatorRestartWhenPodRoll implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
@@ -211,7 +213,7 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
     assertNotNull(opPodCreationTime, "creationTimestamp of the operator pod is null");
 
     assertDoesNotThrow(
-        () -> deleteOperatorPod(opPodName, opNamespace),
+        () -> deletePod(opPodName, opNamespace),
         "Got exception in deleting the Operator pod");
 
     // wait for the operator to be ready
@@ -229,6 +231,9 @@ class ItOperatorRestartWhenPodRoll implements LoggedTest {
     String opPodNameNew = 
         assertDoesNotThrow(() -> getOperatorPodName(TestConstants.OPERATOR_RELEASE_NAME, opNamespace),
         "Failed to get the name of the operator pod");
+
+    assertFalse(opPodNameNew.equals(opPodName),
+        "The operator names before and after a restart should be different");
 
     assertTrue(assertDoesNotThrow(() -> isPodRestarted(opPodNameNew, opNamespace, opPodCreationTime),
         "Failed to check the operator for its new creation time with ApiException"),

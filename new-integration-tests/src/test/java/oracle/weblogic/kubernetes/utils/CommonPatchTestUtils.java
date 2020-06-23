@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import io.kubernetes.client.custom.V1Patch;
+
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -46,8 +48,8 @@ public class CommonPatchTestUtils {
     assertTrue(patchDomainCustomResource(
         domainResourceName,
         namespace,
-        new io.kubernetes.client.custom.V1Patch(patch),
-        io.kubernetes.client.custom.V1Patch.PATCH_FORMAT_JSON_PATCH),
+        new V1Patch(patch),
+        V1Patch.PATCH_FORMAT_JSON_PATCH),
         String.format("Failed to patch the domain resource %s in namespace %s with %s: %s",
             domainResourceName, namespace, "/spec/webLogicCredentialsSecret/name", secretName));
 
@@ -67,8 +69,8 @@ public class CommonPatchTestUtils {
     assertTrue(patchDomainCustomResource(
         domainResourceName,
         namespace,
-        new io.kubernetes.client.custom.V1Patch(patch),
-        io.kubernetes.client.custom.V1Patch.PATCH_FORMAT_JSON_PATCH),
+        new V1Patch(patch),
+        V1Patch.PATCH_FORMAT_JSON_PATCH),
         String.format("Failed to patch the domain resource %s in namespace %s with startVersion: %s",
             domainResourceName, namespace, newVersion));
 
@@ -90,7 +92,7 @@ public class CommonPatchTestUtils {
    *
    * @param domainUid name of the domain resource
    * @param namespace Kubernetes namespace that the domain is hosted
-   * @param adminServerPodName name of the WebLogic admin server
+   * @param adminServerPodName name of the WebLogic admin server pod
    * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
    * @param secretName name of the secret that is used to patch the domain resource
