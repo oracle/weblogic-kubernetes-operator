@@ -305,7 +305,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("10000000")));
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
@@ -319,7 +319,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
    * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
    * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
    */
-  @Order(1)
+  @Order(2)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDynamicOverride() {
@@ -327,7 +327,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     ArrayList<Path> configfiles = new ArrayList<>();
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride1-cm";
+    String override1cm = "configoverride-cm";
     CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
 
     // get the pod creation time stamps
@@ -402,7 +402,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
    * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
    * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
    */
-  @Order(1)
+  @Order(3)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testOverrideOnRestart() {
@@ -410,7 +410,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     ArrayList<Path> configfiles = new ArrayList<>();
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride1-cm";
+    String override1cm = "configoverride-cm";
     CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
 
     // get the pod creation time stamps
@@ -471,7 +471,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("60000000")));
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("10000000")));
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
@@ -500,7 +500,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
    * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
    * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
    */
-  @Order(1)
+  @Order(4)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testOverrideNegative() {
@@ -508,7 +508,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     ArrayList<Path> configfiles = new ArrayList<>();
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride1-cm";
+    String override1cm = "configoverride-cm";
     CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
 
     // get the pod creation time stamps
@@ -574,7 +574,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("60000000")));
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("10000000")));
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
