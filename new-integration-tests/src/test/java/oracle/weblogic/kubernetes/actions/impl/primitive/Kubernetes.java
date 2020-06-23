@@ -2355,7 +2355,7 @@ public class Kubernetes implements LoggedTest {
    * Get the name of the operator pod.
    *
    * @param release release name of the operator
-   * @param namespace Kubernetes namespace that the operator belongs to
+   * @param namespace Kubernetes namespace that the operator is running in
    * @return name of the operator pod
    * @throws ApiException if Kubernetes client API call fails
    */
