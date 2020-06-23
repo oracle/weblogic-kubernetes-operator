@@ -4,9 +4,7 @@
 package oracle.kubernetes.operator.work;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,6 +14,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -40,12 +39,13 @@ import static oracle.kubernetes.operator.logging.LoggingContext.LOGGING_CONTEXT_
  */
 @SuppressWarnings("UnusedReturnValue")
 public class FiberTestSupport {
-  private static Container container = new Container();
-  private CompletionCallbackStub completionCallback = new CompletionCallbackStub();
-  private ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
-  private Engine engine = new Engine(schedule);
+  private static final Container container = new Container();
+  private final CompletionCallbackStub completionCallback = new CompletionCallbackStub();
+  private final ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
+  private final Engine engine = new Engine(schedule);
+  private final Packet packet = new Packet();
+
   private Fiber fiber = engine.createFiber();
-  private Packet packet = new Packet();
 
   /** Creates a single-threaded FiberGate instance. */
   public FiberGate createFiberGate() {
@@ -60,6 +60,17 @@ public class FiberTestSupport {
    */
   public void schedule(Runnable runnable) {
     schedule.execute(runnable);
+  }
+
+  /**
+   * Schedules a runnable to run at some time in the future. See {@link #schedule(Runnable)}.
+   *
+   * @param command a runnable to be executed by the scheduler.
+   * @param delay the number of time units in the future to run.
+   * @param unit the time unit used for the above parameters
+   */
+  public ScheduledFuture<?> schedule(@Nonnull Runnable command, long delay, @Nonnull TimeUnit unit) {
+    return schedule.schedule(command, delay, unit);
   }
 
   /**
@@ -233,8 +244,8 @@ public class FiberTestSupport {
     /* current time in milliseconds. */
     private long currentTime = 0;
 
-    private SortedSet<ScheduledItem> scheduledItems = new TreeSet<>();
-    private Queue<Runnable> queue = new ArrayDeque<>();
+    private final SortedSet<ScheduledItem> scheduledItems = new TreeSet<>();
+    private final Queue<Runnable> queue = new ArrayDeque<>();
     private Runnable current;
 
     public static ScheduledExecutorStub create() {
@@ -296,19 +307,17 @@ public class FiberTestSupport {
             "Attempt to move clock backwards from " + currentTime + " to " + newTime);
       }
 
-      List<ScheduledItem> rescheduledItems = new ArrayList<>();
-      for (Iterator<ScheduledItem> it = scheduledItems.iterator(); it.hasNext(); ) {
-        ScheduledItem item = it.next();
-        if (item.atTime > newTime) {
-          break;
-        }
-        it.remove();
-        Optional.ofNullable(item.rescheduled()).ifPresent(rescheduledItems::add);
-        execute(item.runnable);
-      }
-      scheduledItems.addAll(rescheduledItems);
+      List<ScheduledItem> itemsToRun = getItemsToRunByMsec(newTime);
+      scheduledItems.removeAll(itemsToRun);
+      itemsToRun.forEach(item -> execute(item.runnable));
+      itemsToRun.stream().filter(ScheduledItem::isReschedulable).forEach(scheduledItems::add);
 
       currentTime = newTime;
+    }
+
+    @Nonnull
+    private List<ScheduledItem> getItemsToRunByMsec(long newTime) {
+      return scheduledItems.stream().filter(item -> item.shouldRunBy(newTime)).collect(Collectors.toList());
     }
 
     /**
@@ -328,12 +337,22 @@ public class FiberTestSupport {
     }
 
     private static class ScheduledItem implements Comparable<ScheduledItem> {
-      private long atTime;
-      private Runnable runnable;
+      private final long atTime;
+      private final Runnable runnable;
 
       ScheduledItem(long atTime, Runnable runnable) {
         this.atTime = atTime;
         this.runnable = runnable;
+      }
+
+      // Return true if the item should be rescheduled after it is run.
+      private boolean isReschedulable() {
+        return rescheduled() != null;
+      }
+
+      // Return true if the item is intended to run at or before the specified time in msec.
+      private boolean shouldRunBy(long newTime) {
+        return atTime <= newTime;
       }
 
       @Override
