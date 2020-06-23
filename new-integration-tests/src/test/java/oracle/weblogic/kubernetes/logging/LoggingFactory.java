@@ -44,11 +44,12 @@ public class LoggingFactory {
    */
   public static synchronized LoggingFacade getLogger(String name, String resourceBundleName) {
 
-    LoggingFacade lf = facade.get(resourceBundleName);
+    // LoggingFacade lf = facade.get(resourceBundleName);
+    LoggingFacade lf = facade.get(name);
     if (lf == null) {
       Logger logger = Logger.getLogger(name, resourceBundleName);
       lf = new LoggingFacade(logger);
-      facade.put(resourceBundleName, lf);
+      facade.put(name, lf);
     }
 
     return lf;
@@ -65,12 +66,13 @@ public class LoggingFactory {
   public static synchronized LoggingFacade getLogger(
       String name, String resourceBundleName, Handler handler) {
 
-    LoggingFacade lf = facade.get(resourceBundleName);
+    //LoggingFacade lf = facade.get(resourceBundleName);
+    LoggingFacade lf = facade.get(name);
     if (lf == null) {
       Logger logger = Logger.getLogger(name, resourceBundleName);
       lf = new LoggingFacade(logger);
       logger.addHandler(handler);
-      facade.put(resourceBundleName, lf);
+      facade.put(name, lf);
     }
 
     return lf;

@@ -114,9 +114,9 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -164,20 +164,20 @@ public class CommonTestUtils {
                                                     String... domainNamespace) {
 
     // Create a service account for the unique opNamespace
-    logger.info("Creating service account");
+    getLogger().info("Creating service account");
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
         .metadata(new V1ObjectMeta()
             .namespace(opNamespace)
             .name(opServiceAccount))));
-    logger.info("Created service account: {0}", opServiceAccount);
+    getLogger().info("Created service account: {0}", opServiceAccount);
 
     // get operator image name
     String operatorImage = getOperatorImageName();
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
-    logger.info("operator image name {0}", operatorImage);
+    getLogger().info("operator image name {0}", operatorImage);
 
     // Create Docker registry secret in the operator namespace to pull the image from repository
-    logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
+    getLogger().info("Creating Docker registry secret in namespace {0}", opNamespace);
     createDockerRegistrySecret(opNamespace);
 
     // map with secret
@@ -209,25 +209,25 @@ public class CommonTestUtils {
     }
 
     // install operator
-    logger.info("Installing operator in namespace {0}", opNamespace);
+    getLogger().info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
         String.format("Failed to install operator in namespace %s", opNamespace));
-    logger.info("Operator installed in namespace {0}", opNamespace);
+    getLogger().info("Operator installed in namespace {0}", opNamespace);
 
     // list Helm releases matching operator release name in operator namespace
-    logger.info("Checking operator release {0} status in namespace {1}",
+    getLogger().info("Checking operator release {0} status in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
     assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
         String.format("Operator release %s is not in deployed status in namespace %s",
             OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("Operator release {0} status is deployed in namespace {1}",
+    getLogger().info("Operator release {0} status is deployed in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
 
     // wait for the operator to be ready
-    logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
+    getLogger().info("Wait for the operator pod is ready in namespace {0}", opNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for operator to be running in namespace {0} "
+            condition -> getLogger().info("Waiting for operator to be running in namespace {0} "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 opNamespace,
                 condition.getElapsedTimeInMS(),
@@ -259,22 +259,22 @@ public class CommonTestUtils {
         .domainNamespaces(Arrays.asList(domainNamespace));
 
     // upgrade operator
-    logger.info("Upgrading operator in namespace {0}", opNamespace);
+    getLogger().info("Upgrading operator in namespace {0}", opNamespace);
     if (!upgradeOperator(opParams)) {
-      logger.info("Failed to upgrade operator in namespace {0}", opNamespace);
+      getLogger().info("Failed to upgrade operator in namespace {0}", opNamespace);
       return false;
     }
-    logger.info("Operator upgraded in namespace {0}", opNamespace);
+    getLogger().info("Operator upgraded in namespace {0}", opNamespace);
 
     // list Helm releases matching operator release name in operator namespace
-    logger.info("Checking operator release {0} status in namespace {1}",
+    getLogger().info("Checking operator release {0} status in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
     if (!isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace)) {
-      logger.info("Operator release {0} is not in deployed status in namespace {1}",
+      getLogger().info("Operator release {0} is not in deployed status in namespace {1}",
           OPERATOR_RELEASE_NAME, opNamespace);
       return false;
     }
-    logger.info("Operator release {0} status is deployed in namespace {1}",
+    getLogger().info("Operator release {0} status is deployed in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
 
     return true;
@@ -314,18 +314,18 @@ public class CommonTestUtils {
         .isTrue();
 
     // verify that NGINX is installed
-    logger.info("Checking NGINX release {0} status in namespace {1}",
+    getLogger().info("Checking NGINX release {0} status in namespace {1}",
         NGINX_RELEASE_NAME, nginxNamespace);
     assertTrue(isHelmReleaseDeployed(NGINX_RELEASE_NAME, nginxNamespace),
         String.format("NGINX release %s is not in deployed status in namespace %s",
             NGINX_RELEASE_NAME, nginxNamespace));
-    logger.info("NGINX release {0} status is deployed in namespace {1}",
+    getLogger().info("NGINX release {0} status is deployed in namespace {1}",
         NGINX_RELEASE_NAME, nginxNamespace);
 
     // wait until the NGINX pod is ready.
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info(
+            condition -> getLogger().info(
                 "Waiting for NGINX to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
                 nginxNamespace,
                 condition.getElapsedTimeInMS(),
@@ -348,7 +348,7 @@ public class CommonTestUtils {
     assertNotNull(domain.getSpec(), "domain spec is null");
     String domainUid = domain.getSpec().getDomainUid();
 
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+    getLogger().info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
@@ -357,10 +357,10 @@ public class CommonTestUtils {
             domainUid, domainNamespace));
 
     // wait for the domain to exist
-    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+    getLogger().info("Checking for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+            condition -> getLogger().info("Waiting for domain {0} to be created in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 domainUid,
                 domainNamespace,
@@ -395,7 +395,7 @@ public class CommonTestUtils {
         .withFailMessage("Ingress {0} was not found in namespace {1}", ingressName, domainNamespace)
         .contains(ingressName);
 
-    logger.info("ingress {0} for domain {1} was created in namespace {2}",
+    getLogger().info("ingress {0} for domain {1} was created in namespace {2}",
         ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
@@ -411,7 +411,7 @@ public class CommonTestUtils {
   public static void checkPodExists(String podName, String domainUid, String domainNamespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
+            condition -> getLogger().info("Waiting for pod {0} to be created in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 podName,
                 domainNamespace,
@@ -432,7 +432,7 @@ public class CommonTestUtils {
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
+            condition -> getLogger().info("Waiting for pod {0} to be ready in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 podName,
                 domainNamespace,
@@ -459,7 +459,7 @@ public class CommonTestUtils {
   ) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
+            condition -> getLogger().info("Waiting for pod {0} to be restarted in namespace {1} "
             + "(elapsed time {2}ms, remaining time {3}ms)",
             podName,
             domNamespace,
@@ -479,7 +479,7 @@ public class CommonTestUtils {
   public static void checkServiceExists(String serviceName, String namespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
+            condition -> getLogger().info("Waiting for service {0} to exist in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 serviceName,
                 namespace,
@@ -500,7 +500,7 @@ public class CommonTestUtils {
   public static void checkPodDoesNotExist(String podName, String domainUid, String namespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+            condition -> getLogger().info("Waiting for pod {0} to be deleted in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 podName,
                 namespace,
@@ -520,7 +520,7 @@ public class CommonTestUtils {
   public static void checkServiceDoesNotExist(String serviceName, String namespace) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
+            condition -> getLogger().info("Waiting for service {0} to be deleted in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 serviceName,
                 namespace,
@@ -665,7 +665,7 @@ public class CommonTestUtils {
     }
 
     // build an image using WebLogic Image Tool
-    logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
+    getLogger().info("Creating image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = createImage(
         new WitParams()
             .baseImageName(baseImageName)
@@ -686,7 +686,7 @@ public class CommonTestUtils {
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s does not exist", image));
 
-    logger.info("Image {0} are created successfully", image);
+    getLogger().info("Image {0} are created successfully", image);
     return image;
   }
 
@@ -697,7 +697,7 @@ public class CommonTestUtils {
    */
   public static void createOCRRepoSecret(String namespace) {
 
-    logger.info("Creating image pull secret in namespace {0}", namespace);
+    getLogger().info("Creating image pull secret in namespace {0}", namespace);
     createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD, OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
   }
 
@@ -753,11 +753,11 @@ public class CommonTestUtils {
     if (!REPO_NAME.isEmpty() && dockerImage.contains(REPO_NAME)) {
       // docker login, if necessary
       if (!REPO_USERNAME.equals(REPO_DUMMY_VALUE)) {
-        logger.info("docker login");
+        getLogger().info("docker login");
         assertTrue(dockerLogin(REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD), "docker login failed");
       }
 
-      logger.info("docker push image {0} to {1}", dockerImage, REPO_NAME);
+      getLogger().info("docker push image {0} to {1}", dockerImage, REPO_NAME);
       assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
     }
   }
@@ -859,7 +859,7 @@ public class CommonTestUtils {
     }
 
     // scale the cluster in the domain
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
+    getLogger().info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers",
         clusterName, domainUid, domainNamespace, replicasAfterScale);
     if (withRestApi) {
       assertThat(assertDoesNotThrow(() -> scaleClusterWithRestApi(domainUid, clusterName,
@@ -886,16 +886,16 @@ public class CommonTestUtils {
         String manageServerPodName = manageServerPodNamePrefix + i;
 
         // check the original managed server pod state is not changed
-        logger.info("Checking that the state of manged server pod {0} is not changed in namespace {1}",
+        getLogger().info("Checking that the state of manged server pod {0} is not changed in namespace {1}",
             manageServerPodName, domainNamespace);
         podStateNotChanged(manageServerPodName, domainUid, domainNamespace, listOfPodCreationTimestamp.get(i - 1));
       }
 
       if (curlCmd != null && expectedServerNames != null) {
         // check that NGINX can access the sample apps from the original managed servers in the domain
-        logger.info("Checking that NGINX can access the sample app from the original managed servers in the domain "
-            + "while the domain is scaling up.");
-        logger.info("expected server name list which should be in the sample app response: {0} before scale",
+        getLogger().info("Checking that NGINX can access the sample app from the original managed "
+            + "servers in the domain  while the domain is scaling up.");
+        getLogger().info("expected server name list which should be in the sample app response: {0} before scale",
             expectedServerNames);
 
         assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
@@ -909,17 +909,17 @@ public class CommonTestUtils {
         String manageServerPodName = manageServerPodNamePrefix + i;
 
         // check new managed server pod exists in the namespace
-        logger.info("Checking that the new managed server pod {0} exists in namespace {1}",
+        getLogger().info("Checking that the new managed server pod {0} exists in namespace {1}",
             manageServerPodName, domainNamespace);
         checkPodExists(manageServerPodName, domainUid, domainNamespace);
 
         // check new managed server pod is ready
-        logger.info("Checking that the new managed server pod {0} is ready in namespace {1}",
+        getLogger().info("Checking that the new managed server pod {0} is ready in namespace {1}",
             manageServerPodName, domainNamespace);
         checkPodReady(manageServerPodName, domainUid, domainNamespace);
 
         // check new managed server service exists in the namespace
-        logger.info("Checking that the new managed server service {0} exists in namespace {1}",
+        getLogger().info("Checking that the new managed server service {0} exists in namespace {1}",
             manageServerPodName, domainNamespace);
         checkServiceExists(manageServerPodName, domainNamespace);
 
@@ -931,7 +931,7 @@ public class CommonTestUtils {
 
       if (curlCmd != null && expectedServerNames != null) {
         // check that NGINX can access the sample apps from new and original managed servers
-        logger.info("Checking that NGINX can access the sample app from the new and original managed servers "
+        getLogger().info("Checking that NGINX can access the sample app from the new and original managed servers "
             + "in the domain after the cluster is scaled up.");
         assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
             .as("Verify NGINX can access the sample app from all managed servers in the domain")
@@ -942,7 +942,7 @@ public class CommonTestUtils {
       // scale down
       // wait and check the pods are deleted
       for (int i = replicasBeforeScale; i > replicasAfterScale; i--) {
-        logger.info("Checking that managed server pod {0} was deleted from namespace {1}",
+        getLogger().info("Checking that managed server pod {0} was deleted from namespace {1}",
             manageServerPodNamePrefix + i, domainNamespace);
         checkPodDoesNotExist(manageServerPodNamePrefix + i, domainUid, domainNamespace);
         expectedServerNames.remove(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
@@ -950,8 +950,8 @@ public class CommonTestUtils {
 
       if (curlCmd != null && expectedServerNames != null) {
         // check that NGINX can access the app from the remaining managed servers in the domain
-        logger.info("Checking that NGINX can access the sample app from the remaining managed servers in the domain "
-            + "after the cluster is scaled down.");
+        getLogger().info("Checking that NGINX can access the sample app from the remaining managed "
+            + "servers in the domain after the cluster is scaled down.");
         assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, expectedServerNames, 50))
             .as("Verify NGINX can access the sample app from the remaining managed server in the domain")
             .withFailMessage("NGINX can not access the sample app from the remaining managed server")
@@ -996,25 +996,25 @@ public class CommonTestUtils {
         .nodePortAlertManager(alertManagerNodePort);
 
     // install prometheus
-    logger.info("Installing prometheus in namespace {0}", promNamespace);
+    getLogger().info("Installing prometheus in namespace {0}", promNamespace);
     assertTrue(installPrometheus(prometheusParams),
         String.format("Failed to install prometheus in namespace %s", promNamespace));
-    logger.info("Prometheus installed in namespace {0}", promNamespace);
+    getLogger().info("Prometheus installed in namespace {0}", promNamespace);
 
     // list Helm releases matching operator release name in operator namespace
-    logger.info("Checking prometheus release {0} status in namespace {1}",
+    getLogger().info("Checking prometheus release {0} status in namespace {1}",
         promReleaseName, promNamespace);
     assertTrue(isHelmReleaseDeployed(promReleaseName, promNamespace),
         String.format("Prometheus release %s is not in deployed status in namespace %s",
             promReleaseName, promNamespace));
-    logger.info("Prometheus release {0} status is deployed in namespace {1}",
+    getLogger().info("Prometheus release {0} status is deployed in namespace {1}",
         promReleaseName, promNamespace);
 
     // wait for the promethues pods to be ready
-    logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
+    getLogger().info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+            condition -> getLogger().info("Waiting for prometheus to be running in namespace {0} "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 promNamespace,
                 condition.getElapsedTimeInMS(),
@@ -1059,25 +1059,25 @@ public class CommonTestUtils {
     //create grafana secret
     createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
     // install grafana
-    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    getLogger().info("Installing grafana in namespace {0}", grafanaNamespace);
     assertTrue(installGrafana(grafanaParams),
         String.format("Failed to install grafana in namespace %s", grafanaNamespace));
-    logger.info("Grafana installed in namespace {0}", grafanaNamespace);
+    getLogger().info("Grafana installed in namespace {0}", grafanaNamespace);
 
     // list Helm releases matching grafana release name in  namespace
-    logger.info("Checking grafana release {0} status in namespace {1}",
+    getLogger().info("Checking grafana release {0} status in namespace {1}",
         grafanaReleaseName, grafanaNamespace);
     assertTrue(isHelmReleaseDeployed(grafanaReleaseName, grafanaNamespace),
         String.format("Grafana release %s is not in deployed status in namespace %s",
             grafanaReleaseName, grafanaNamespace));
-    logger.info("Grafana release {0} status is deployed in namespace {1}",
+    getLogger().info("Grafana release {0} status is deployed in namespace {1}",
         grafanaReleaseName, grafanaNamespace);
 
     // wait for the grafana pod to be ready
-    logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
+    getLogger().info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+            condition -> getLogger().info("Waiting for prometheus to be running in namespace {0} "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 grafanaNamespace,
                 condition.getElapsedTimeInMS(),
@@ -1109,12 +1109,12 @@ public class CommonTestUtils {
     String pvName = v1pv.getMetadata().getName();
     String pvcName = v1pvc.getMetadata().getName();
 
-    logger.info("Creating persistent volume {0}", pvName);
+    getLogger().info("Creating persistent volume {0}", pvName);
     assertTrue(assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Persistent volume creation failed with ApiException "),
         "PersistentVolume creation failed");
 
-    logger.info("Creating persistent volume claim {0}", pvcName);
+    getLogger().info("Creating persistent volume claim {0}", pvcName);
     assertTrue(assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Persistent volume claim creation failed with ApiException"),
         "PersistentVolumeClaim creation failed");
@@ -1122,7 +1122,7 @@ public class CommonTestUtils {
     // check the persistent volume and persistent volume claim exist
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume {0} exists "
+            condition -> getLogger().info("Waiting for persistent volume {0} exists "
                     + "(elapsed time {1}ms, remaining time {2}ms)",
                 pvName,
                 condition.getElapsedTimeInMS(),
@@ -1132,7 +1132,7 @@ public class CommonTestUtils {
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume claim {0} exists in namespace {1} "
+            condition -> getLogger().info("Waiting for persistent volume claim {0} exists in namespace {1} "
                     + "(elapsed time {2}ms, remaining time {3}ms)",
                 pvcName,
                 namespace,
@@ -1182,10 +1182,10 @@ public class CommonTestUtils {
 
     String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
 
-    logger.info("Checking if the job {0} completed in namespace {1}", jobName, namespace);
+    getLogger().info("Checking if the job {0} completed in namespace {1}", jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+            condition -> getLogger().info("Waiting for job {0} to be completed in namespace {1} "
                     + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
@@ -1206,7 +1206,7 @@ public class CommonTestUtils {
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
     assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
-    logger.info("PodCreationTimestamp for pod {0} in namespace {1} is {2}",
+    getLogger().info("PodCreationTimestamp for pod {0} in namespace {1} is {2}",
         podName,
         namespace,
         podCreationTime);
@@ -1234,7 +1234,7 @@ public class CommonTestUtils {
 
     assertNotNull(configMapName, "ConfigMap name cannot be null");
 
-    logger.info("Create ConfigMap {0} that contains model files {1}",
+    getLogger().info("Create ConfigMap {0} that contains model files {1}",
         configMapName, modelFiles);
 
     Map<String, String> data = new HashMap<>();
@@ -1264,11 +1264,11 @@ public class CommonTestUtils {
   public static void replaceStringInFile(String filePath, String oldValue, String newValue)
           throws IOException {
     Path src = Paths.get(filePath);
-    logger.info("Copying {0}", src.toString());
+    getLogger().info("Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
     content = content.replaceAll(oldValue, newValue);
-    logger.info("to {0}", src.toString());
+    getLogger().info("to {0}", src.toString());
     Files.write(src, content.getBytes(charset));
   }
 
@@ -1276,7 +1276,7 @@ public class CommonTestUtils {
    * Read the content of a model file as a String and add it to a map.
    */
   private static void addModelFile(Map<String, String> data, String modelFileName) {
-    logger.info("Add model file {0}", modelFileName);
+    getLogger().info("Add model file {0}", modelFileName);
     String dsModelFile = String.format("%s/%s", MODEL_DIR, modelFileName);
 
     String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),

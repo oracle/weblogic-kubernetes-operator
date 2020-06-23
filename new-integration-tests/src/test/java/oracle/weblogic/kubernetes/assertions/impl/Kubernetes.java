@@ -34,7 +34,7 @@ import org.joda.time.DateTime;
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Kubernetes {
 
@@ -95,7 +95,7 @@ public class Kubernetes {
     if (pod == null) {
       podDeleted = true;
     } else {
-      logger.info("[" + pod.getMetadata().getName() + "] still exist");
+      getLogger().info("[" + pod.getMetadata().getName() + "] still exist");
     }
     return podDeleted;
   }
@@ -118,7 +118,7 @@ public class Kubernetes {
     if (pod != null) {
       status = pod.getStatus().getPhase().equals(RUNNING);
     } else {
-      logger.info("Pod doesn't exist");
+      getLogger().info("Pod doesn't exist");
     }
     return status;
   }
@@ -154,11 +154,11 @@ public class Kubernetes {
       if (v1PodReadyCondition != null) {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
         if (status) {
-          logger.info("Pod {0} is READY in namespace {1}", podName, namespace);
+          getLogger().info("Pod {0} is READY in namespace {1}", podName, namespace);
         }
       }
     } else {
-      logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);
+      getLogger().info("Pod {0} does not exist in namespace {1}", podName, namespace);
     }
     return status;
   }
@@ -198,11 +198,11 @@ public class Kubernetes {
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (null == pod) {
-      logger.severe("pod does not exist");
+      getLogger().severe("pod does not exist");
       return false;
     } else if (pod.getMetadata().getDeletionTimestamp() != null) {
       terminating = true;
-      logger.info("{0} : !!!Terminating!!!, DeletionTimeStamp : {1}",
+      getLogger().info("{0} : !!!Terminating!!!, DeletionTimeStamp : {1}",
           pod.getMetadata().getName(), pod.getMetadata().getDeletionTimestamp());
     }
     return terminating;
@@ -228,11 +228,11 @@ public class Kubernetes {
     String restartVersion = getPodRestartVersion(namespace, "", podName);
 
     if (restartVersion != null && restartVersion.equals(expectedRestartVersion)) {
-      logger.info("Pod {0}: domainRestartVersion has been updated to expected value {1}",
+      getLogger().info("Pod {0}: domainRestartVersion has been updated to expected value {1}",
           podName, expectedRestartVersion);
       return true;
     }
-    logger.info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
+    getLogger().info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
         podName, restartVersion, expectedRestartVersion);
     return false;
   }
@@ -297,7 +297,7 @@ public class Kubernetes {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
       }
     } else {
-      logger.info("Pod doesn't exist");
+      getLogger().info("Pod doesn't exist");
     }
     return status;
   }
@@ -352,7 +352,7 @@ public class Kubernetes {
         );
     for (V1Pod item : v1PodList.getItems()) {
       if (item.getMetadata().getName().contains(podName.trim())) {
-        logger.info("Name: {0}, Namespace: {1}, Phase: {2}",
+        getLogger().info("Name: {0}, Namespace: {1}, Phase: {2}",
             item.getMetadata().getName(), namespace, item.getStatus().getPhase());
         return item;
       }
@@ -395,7 +395,7 @@ public class Kubernetes {
       String key = label.keySet().iterator().next().toString();
       String value = label.get(key).toString();
       labelSelector = String.format("%s in (%s)", key, value);
-      logger.info(labelSelector);
+      getLogger().info(labelSelector);
     }
     V1ServiceList v1ServiceList
         = coreV1Api.listServiceForAllNamespaces(
@@ -412,12 +412,12 @@ public class Kubernetes {
     for (V1Service service : v1ServiceList.getItems()) {
       if (service.getMetadata().getName().equals(serviceName.trim())
           && service.getMetadata().getNamespace().equals(namespace.trim())) {
-        logger.info("Service Name : " + service.getMetadata().getName());
-        logger.info("Service Namespace : " + service.getMetadata().getNamespace());
+        getLogger().info("Service Name : " + service.getMetadata().getName());
+        getLogger().info("Service Namespace : " + service.getMetadata().getNamespace());
         Map<String, String> labels = service.getMetadata().getLabels();
         if (labels != null) {
           for (Map.Entry<String, String> entry : labels.entrySet()) {
-            logger.log(Level.INFO, "Label Key: {0} Label Value: {1}",
+            getLogger().log(Level.INFO, "Label Key: {0} Label Value: {1}",
                 new Object[]{entry.getKey(), entry.getValue()});
           }
         }
@@ -473,22 +473,22 @@ public class Kubernetes {
         Boolean.FALSE // Watch for changes to the described resources.
         );
     List<V1Service> items = v1ServiceList.getItems();
-    logger.info(Arrays.toString(items.toArray()));
+    getLogger().info(Arrays.toString(items.toArray()));
     for (V1Service service : items) {
-      logger.info("Service Name : " + service.getMetadata().getName());
-      logger.info("Service Namespace : " + service.getMetadata().getNamespace());
-      logger.info("Service ResourceVersion : " + service.getMetadata().getResourceVersion());
-      logger.info("Service SelfLink : " + service.getMetadata().getSelfLink());
-      logger.info("Service Uid :" + service.getMetadata().getUid());
-      logger.info("Service Spec Cluster IP : " + service.getSpec().getClusterIP());
-      logger.info("Service Spec getExternalIPs : " + service.getSpec().getExternalIPs());
-      logger.info("Service Spec getExternalName : " + service.getSpec().getExternalName());
-      logger.info("Service Spec getPorts : " + service.getSpec().getPorts());
-      logger.info("Service Spec getType : " + service.getSpec().getType());
+      getLogger().info("Service Name : " + service.getMetadata().getName());
+      getLogger().info("Service Namespace : " + service.getMetadata().getNamespace());
+      getLogger().info("Service ResourceVersion : " + service.getMetadata().getResourceVersion());
+      getLogger().info("Service SelfLink : " + service.getMetadata().getSelfLink());
+      getLogger().info("Service Uid :" + service.getMetadata().getUid());
+      getLogger().info("Service Spec Cluster IP : " + service.getSpec().getClusterIP());
+      getLogger().info("Service Spec getExternalIPs : " + service.getSpec().getExternalIPs());
+      getLogger().info("Service Spec getExternalName : " + service.getSpec().getExternalName());
+      getLogger().info("Service Spec getPorts : " + service.getSpec().getPorts());
+      getLogger().info("Service Spec getType : " + service.getSpec().getType());
       Map<String, String> labels = service.getMetadata().getLabels();
       if (labels != null) {
         for (Map.Entry<String, String> entry : labels.entrySet()) {
-          logger.log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}",
+          getLogger().log(Level.INFO, "LABEL KEY: {0} LABEL VALUE: {1}",
               new Object[]{entry.getKey(), entry.getValue()});
         }
       }
@@ -521,7 +521,7 @@ public class Kubernetes {
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return list;
@@ -561,7 +561,7 @@ public class Kubernetes {
 
     V1Job job = getJob(namespace, labelSelectors, jobName);
     if (job != null && job.getStatus() != null) {
-      logger.info("\n" + dump(job.getStatus()));
+      getLogger().info("\n" + dump(job.getStatus()));
       if (job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
             v1JobCondition
@@ -572,14 +572,14 @@ public class Kubernetes {
         if (jobCondition != null) {
           completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
           if (jobCondition.getType().equalsIgnoreCase("failed")) {
-            logger.severe("Job {0} failed", jobName);
+            getLogger().severe("Job {0} failed", jobName);
           } else if (jobCondition.getType().equalsIgnoreCase("complete")) {
-            logger.info("Job {0} completed successfully ", jobName);
+            getLogger().info("Job {0} completed successfully ", jobName);
           }
         }
       }
     } else {
-      logger.warning("Job doesn't exist");
+      getLogger().warning("Job doesn't exist");
     }
     return completionStatus;
   }
@@ -609,11 +609,11 @@ public class Kubernetes {
 
     if (newCreationTime != null
         && newCreationTime.isAfter(timestamp)) {
-      logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
+      getLogger().info("Pod {0}: new creation time {1} is later than the last creation time {2}",
           podName, newCreationTime, timestamp);
       return true;
     }
-    logger.info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
+    getLogger().info("Pod {0}: new creation time {1} is NOT later than the last creation time {2}",
         podName, newCreationTime, timestamp);
     return false;
   }
@@ -640,7 +640,7 @@ public class Kubernetes {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
     return listPersistentVolume;
@@ -668,7 +668,7 @@ public class Kubernetes {
           false // Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 

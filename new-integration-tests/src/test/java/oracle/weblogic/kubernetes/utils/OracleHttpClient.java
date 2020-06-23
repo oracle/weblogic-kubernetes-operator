@@ -12,7 +12,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * A simple Http client.
@@ -47,13 +47,13 @@ public class OracleHttpClient {
       }
     }
     HttpRequest request = requestBuilder.build();
-    logger.info("Sending http request {0}", url);
+    getLogger().info("Sending http request {0}", url);
 
     HttpResponse<String> response = httpClient.send(request,
         HttpResponse.BodyHandlers.ofString());
     if (debug) {
-      logger.info("HTTP_STATUS: {0}", response.statusCode());
-      logger.info("Response Body: {0}", response.body());
+      getLogger().info("HTTP_STATUS: {0}", response.statusCode());
+      getLogger().info("Response Body: {0}", response.body());
     }
     return response;
   }

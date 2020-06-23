@@ -55,7 +55,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -997,7 +997,7 @@ public class TestActions {
         () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
     int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
-    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+    getLogger().info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
         domainResourceName, namespace, oldVersion, newVersion);
 
     StringBuffer patchStr = new StringBuffer("[{");
@@ -1008,7 +1008,7 @@ public class TestActions {
         .append("\"")
         .append(" }]");
 
-    logger.info("Restart version patch string: {0}", patchStr);
+    getLogger().info("Restart version patch string: {0}", patchStr);
     V1Patch patch = new V1Patch(new String(patchStr));
     boolean rvPatched = assertDoesNotThrow(() ->
             patchDomainCustomResource(domainResourceName, namespace, patch, "application/json-patch+json"),

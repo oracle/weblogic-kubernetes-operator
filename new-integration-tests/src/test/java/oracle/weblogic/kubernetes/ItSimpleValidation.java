@@ -30,7 +30,8 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -61,18 +62,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+//import oracle.weblogic.kubernetes.extensions.LoggedTest;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Simple validation of integration tests")
 // Every test class needs to tagged with this annotation for
 // diagnostic log collection in case of failures and for test cleanup.
 @IntegrationTest
-class ItSimpleValidation implements LoggedTest {
+class ItSimpleValidation {
 
   private String opNamespace = null;
   private String domainNamespace1 = null;
 
   final String domainUid = "domain1";
   String serviceAccountName;
+
+  public static LoggingFacade logger = null;
 
   /**
    * Setup for test suite. Creates service account, persistent volume
@@ -81,7 +86,7 @@ class ItSimpleValidation implements LoggedTest {
    */
   @BeforeAll
   public void setup(@Namespaces(2) List<String> namespaces) {
-
+    logger = ThreadSafeLogger.getLogger();
     logger.info("Assigning unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);

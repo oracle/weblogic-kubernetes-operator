@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * The utility class for tests.
@@ -39,7 +39,7 @@ public class TestUtils {
         managedServers.put(managedServerName, false)
     );
 
-    logger.info("Calling webapp at most {0} times using command: {1}", maxIterations, curlCmd);
+    getLogger().info("Calling webapp at most {0} times using command: {1}", maxIterations, curlCmd);
 
     // check the response contains managed server name
     ExecResult result = null;
@@ -57,7 +57,7 @@ public class TestUtils {
           result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
-          logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+          getLogger().info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
               i, result.exitValue(), response, result.stderr());
           managedServers.keySet().forEach(key -> {
             if (response.contains(key)) {
@@ -65,11 +65,11 @@ public class TestUtils {
             }
           });
         } catch (Exception e) {
-          logger.info("Got exception while running command: {0}", curlCmd);
-          logger.info(e.toString());
+          getLogger().info("Got exception while running command: {0}", curlCmd);
+          getLogger().info(e.toString());
           if (result != null) {
-            logger.info("result.stdout: \n{0}", result.stdout());
-            logger.info("result.stderr: \n{0}", result.stderr());
+            getLogger().info("result.stdout: \n{0}", result.stdout());
+            getLogger().info("result.stderr: \n{0}", result.stderr());
           }
           return false;
         }
@@ -82,9 +82,9 @@ public class TestUtils {
     // log the sample app accessibility information and return false
     managedServers.forEach((key, value) -> {
       if (value) {
-        logger.info("The sample app can be accessed from the server {0}", key);
+        getLogger().info("The sample app can be accessed from the server {0}", key);
       } else {
-        logger.info("FAILURE: The sample app can not be accessed from the server {0}", key);
+        getLogger().info("FAILURE: The sample app can not be accessed from the server {0}", key);
       }
     });
 
@@ -110,7 +110,7 @@ public class TestUtils {
         -> managedServers.put(managedServerName, false)
     );
 
-    logger.info("Calling clusterview at most {0} times using command: {1}", maxIterations, curlCmd);
+    getLogger().info("Calling clusterview at most {0} times using command: {1}", maxIterations, curlCmd);
 
     // check the response contains managed server name
     ExecResult result = null;
@@ -132,7 +132,7 @@ public class TestUtils {
             }
           }
         } catch (IOException | InterruptedException e) {
-          logger.info(e.toString());
+          getLogger().info(e.toString());
           return false;
         }
       } else {
@@ -142,9 +142,9 @@ public class TestUtils {
     // after the max iterations, if hit here, one or more servers cannot see other
     managedServers.forEach((key, value) -> {
       if (value) {
-        logger.info("The server {0} can see other cluster members", key);
+        getLogger().info("The server {0} can see other cluster members", key);
       } else {
-        logger.info("The server {0} is not bound in JNDI server "
+        getLogger().info("The server {0} is not bound in JNDI server "
             + "or is generating an unexpected curl response", key);
       }
     });
@@ -163,11 +163,11 @@ public class TestUtils {
     int port;
     for (port = from; port < to; port++) {
       if (isLocalPortFree(port)) {
-        logger.info("next free port is: {0}", port);
+        getLogger().info("next free port is: {0}", port);
         return port;
       }
     }
-    logger.info("Can not find free port between {0} and {1}", from, to);
+    getLogger().info("Can not find free port between {0} and {1}", from, to);
     return port;
   }
 
@@ -199,7 +199,7 @@ public class TestUtils {
         try {
           socket.close();
         } catch (IOException ex) {
-          logger.severe("can not close Socket {0}", ex.getMessage());
+          getLogger().severe("can not close Socket {0}", ex.getMessage());
         }
       }
     }

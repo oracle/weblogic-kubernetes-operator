@@ -19,8 +19,10 @@ import java.util.logging.Handler;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
 //import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -67,7 +69,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+//import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -85,13 +87,15 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
-  //private LoggingFacade logger = ThreadSafeLogger.globalLogger;
+  public LoggingFacade logger = null;
 
   @Override
   public void beforeAll(ExtensionContext context) {
+    logger = ThreadSafeLogger.getLogger();
     // initialize logger for each test
-    ThreadSafeLogger.init(context.getRequiredTestClass().getSimpleName());
-
+    /* ThreadSafeLogger.init(context.getRequiredTestClass().getSimpleName());
+    logger = ThreadSafeLogger.getLogger();
+    logger.info("First log message"); */
     /* The pattern is that we have initialization code that we want to run once to completion
      * before any tests are executed. This method will be called before every test method. Therefore, the
      * very first time this method is called we will do the initialization. Since we assume that the tests

@@ -53,7 +53,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -106,7 +106,7 @@ public class DeployUtil {
     // WLST py script for deploying application
     Path deployScript = Paths.get(RESOURCE_DIR, "python-scripts", DEPLOY_SCRIPT);
 
-    logger.info("Creating a config map to hold deployment files");
+    getLogger().info("Creating a config map to hold deployment files");
     String uniqueName = Namespace.uniqueName();
     String deployScriptConfigMapName = "wlst-deploy-scripts-cm-" + uniqueName;
 
@@ -141,7 +141,7 @@ public class DeployUtil {
    * @param deployScriptConfigMapName configmap containing deployment scripts
    */
   private static void deploy(String namespace, String deployScriptConfigMapName) {
-    logger.info("Preparing to run deploy job using WLST");
+    getLogger().info("Preparing to run deploy job using WLST");
     // create a V1Container with specific scripts and properties for creating domain
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
@@ -151,7 +151,7 @@ public class DeployUtil {
         .addArgsItem("-loadProperties")
         .addArgsItem(MOUNT_POINT + "/" + DOMAIN_PROPERTIES); //domain property file
 
-    logger.info("Running a Kubernetes job to deploy");
+    getLogger().info("Running a Kubernetes job to deploy");
     assertDoesNotThrow(()
         -> createDeployJob(deployScriptConfigMapName, namespace, jobCreationContainer),
         "Deployment failed");
@@ -167,7 +167,7 @@ public class DeployUtil {
    */
   private static void createDeployJob(String deployScriptConfigMap, String namespace,
       V1Container jobContainer) throws ApiException {
-    logger.info("Running Kubernetes job to deploy application");
+    getLogger().info("Running Kubernetes job to deploy application");
     String uniqueName = Namespace.uniqueName();
     String name = "wlst-deploy-job-" + uniqueName;
 
@@ -201,11 +201,11 @@ public class DeployUtil {
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create deploy Job");
 
-    logger.info("Checking if the deploy job {0} completed in namespace {1}",
+    getLogger().info("Checking if the deploy job {0} completed in namespace {1}",
         jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+            condition -> getLogger().info("Waiting for job {0} to be completed in namespace {1} "
                 + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
@@ -221,10 +221,10 @@ public class DeployUtil {
           .findAny()
           .orElse(null);
       if (jobCondition != null) {
-        logger.severe("Job {0} failed to do deployment", jobName);
+        getLogger().severe("Job {0} failed to do deployment", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
         if (!pods.isEmpty()) {
-          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          getLogger().severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
           fail("Deployment job failed");
         }
       }
@@ -263,7 +263,7 @@ public class DeployUtil {
       }
       isUseSecret = true;
     }
-    logger.info("Using image {0}", image);
+    getLogger().info("Using image {0}", image);
   }
 
 }

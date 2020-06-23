@@ -30,7 +30,7 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 
 /**
@@ -53,7 +53,7 @@ public class CleanupUtil {
     try {
       // If namespace list is empty or null return
       if (namespaces == null || namespaces.isEmpty()) {
-        logger.info("Nothing to cleanup");
+        getLogger().info("Nothing to cleanup");
         return;
       }
       // delete domains if any exists
@@ -85,20 +85,20 @@ public class CleanupUtil {
           .atMost(10, MINUTES).await();
 
       for (var namespace : namespaces) {
-        logger.info("Check for artifacts in namespace {0}", namespace);
+        getLogger().info("Check for artifacts in namespace {0}", namespace);
         withStandardRetryPolicy
             .conditionEvaluationListener(
-                condition -> logger.info("Waiting for artifacts to be deleted in namespace {0}, "
+                condition -> getLogger().info("Waiting for artifacts to be deleted in namespace {0}, "
                     + "(elapsed time {1} , remaining time {2}",
                     namespace,
                     condition.getElapsedTimeInMS(),
                     condition.getRemainingTimeInMS()))
             .until(nothingFoundInNamespace(namespace));
 
-        logger.info("Check for namespace {0} existence", namespace);
+        getLogger().info("Check for namespace {0} existence", namespace);
         withStandardRetryPolicy
             .conditionEvaluationListener(
-                condition -> logger.info("Waiting for namespace to be deleted {0}, "
+                condition -> getLogger().info("Waiting for namespace to be deleted {0}, "
                     + "(elapsed time {1} , remaining time {2}",
                     namespace,
                     condition.getElapsedTimeInMS(),
@@ -106,8 +106,8 @@ public class CleanupUtil {
             .until(namespaceNotFound(namespace));
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Cleanup failed");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Cleanup failed");
     }
   }
 
@@ -123,8 +123,8 @@ public class CleanupUtil {
         Kubernetes.deleteDomainCustomResource(domainUid, namespace);
       }
     } catch (Exception ex) {
-      logger.severe(ex.getMessage());
-      logger.severe("Failed to delete domain or the {0} is not a domain namespace", namespace);
+      getLogger().severe(ex.getMessage());
+      getLogger().severe("Failed to delete domain or the {0} is not a domain namespace", namespace);
     }
   }
 
@@ -149,7 +149,7 @@ public class CleanupUtil {
   public static Callable<Boolean> nothingFoundInNamespace(String namespace) {
     return () -> {
       boolean nothingFound = true;
-      logger.info("Checking for "
+      getLogger().info("Checking for "
           + "domains, "
           + "replica sets, "
           + "jobs, "
@@ -167,91 +167,91 @@ public class CleanupUtil {
       // Check if any domains exist
       try {
         if (!Kubernetes.listDomains(namespace).getItems().isEmpty()) {
-          logger.info("Domain still exists !!!");
+          getLogger().info("Domain still exists !!!");
           List<Domain> items = Kubernetes.listDomains(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list domains");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list domains");
       }
 
       // Check if any replica sets exist
       try {
         if (!Kubernetes.listReplicaSets(namespace).getItems().isEmpty()) {
-          logger.info("ReplicaSets still exists!!!");
+          getLogger().info("ReplicaSets still exists!!!");
           List<V1ReplicaSet> items = Kubernetes.listReplicaSets(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list replica sets");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list replica sets");
       }
 
       // check if any jobs exist
       try {
         if (!Kubernetes.listJobs(namespace).getItems().isEmpty()) {
-          logger.info("Jobs still exists!!!");
+          getLogger().info("Jobs still exists!!!");
           List<V1Job> items = Kubernetes.listJobs(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list jobs");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list jobs");
       }
 
       // check if any configmaps exist
       try {
         if (!Kubernetes.listConfigMaps(namespace).getItems().isEmpty()) {
-          logger.info("Config Maps still exists!!!");
+          getLogger().info("Config Maps still exists!!!");
           List<V1ConfigMap> items = Kubernetes.listConfigMaps(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list config maps");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list config maps");
       }
 
       // check if any secrets exist
       try {
         if (!Kubernetes.listSecrets(namespace).getItems().isEmpty()) {
-          logger.info("Secrets still exists!!!");
+          getLogger().info("Secrets still exists!!!");
           List<V1Secret> items = Kubernetes.listSecrets(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list secrets");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list secrets");
       }
 
       // check if any persistent volume claims exist
       try {
         if (!Kubernetes.listPersistentVolumeClaims(namespace).getItems().isEmpty()) {
-          logger.info("Persistent Volumes Claims still exists!!!");
+          getLogger().info("Persistent Volumes Claims still exists!!!");
           List<V1PersistentVolumeClaim> items = Kubernetes.listPersistentVolumeClaims(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list persistent volume claims");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list persistent volume claims");
       }
 
       // check if any persistent volumes exist
@@ -265,109 +265,109 @@ public class CleanupUtil {
           if (!Kubernetes.listPersistentVolumes(
               String.format("weblogic.domainUid = %s", label))
               .getItems().isEmpty()) {
-            logger.info("Persistent Volumes still exists!!!");
+            getLogger().info("Persistent Volumes still exists!!!");
             List<V1PersistentVolume> pvs = Kubernetes.listPersistentVolumes(
                 String.format("weblogic.domainUid = %s", label))
                 .getItems();
             for (var pv : pvs) {
-              logger.info(pv.getMetadata().getName());
+              getLogger().info(pv.getMetadata().getName());
             }
             nothingFound = false;
           }
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list persistent volumes");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list persistent volumes");
       }
 
       // check if any deployments exist
       try {
         if (!Kubernetes.listDeployments(namespace).getItems().isEmpty()) {
-          logger.info("Deployments still exists!!!");
+          getLogger().info("Deployments still exists!!!");
           List<V1Deployment> items = Kubernetes.listDeployments(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list deployments");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list deployments");
       }
 
       // check if any services exist
       try {
         if (!Kubernetes.listServices(namespace).getItems().isEmpty()) {
-          logger.info("Services still exists!!!");
+          getLogger().info("Services still exists!!!");
           List<V1Service> items = Kubernetes.listServices(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list services");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list services");
       }
 
       // check if any service accounts exist
       try {
         if (!Kubernetes.listServiceAccounts(namespace).getItems().isEmpty()) {
-          logger.info("Service Accounts still exists!!!");
+          getLogger().info("Service Accounts still exists!!!");
           List<V1ServiceAccount> items = Kubernetes.listServiceAccounts(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list service accounts");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list service accounts");
       }
 
       // check if any ingress exist
       try {
         if (!Kubernetes.listNamespacedIngresses(namespace).getItems().isEmpty()) {
-          logger.info("Ingresses still exists!!!");
+          getLogger().info("Ingresses still exists!!!");
           List<ExtensionsV1beta1Ingress> items = Kubernetes.listNamespacedIngresses(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list Ingresses");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list Ingresses");
       }
 
       // check if any namespaced roles exist
       try {
         if (!Kubernetes.listNamespacedRoles(namespace).getItems().isEmpty()) {
-          logger.info("Namespaced roles still exists!!!");
+          getLogger().info("Namespaced roles still exists!!!");
           List<V1Role> items = Kubernetes.listNamespacedRoles(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list namespaced roles");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list namespaced roles");
       }
 
       // check if any namespaced role bindings exist
       try {
         if (!Kubernetes.listNamespacedRoleBinding(namespace).getItems().isEmpty()) {
-          logger.info("Namespaced role bindings still exists!!!");
+          getLogger().info("Namespaced role bindings still exists!!!");
           List<V1RoleBinding> items = Kubernetes.listNamespacedRoleBinding(namespace).getItems();
           for (var item : items) {
-            logger.info(item.getMetadata().getName());
+            getLogger().info(item.getMetadata().getName());
           }
           nothingFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list namespaced role bindings");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list namespaced role bindings");
       }
 
       return nothingFound;
@@ -388,13 +388,13 @@ public class CleanupUtil {
       try {
         List<String> namespaceList = Kubernetes.listNamespaces();
         if (namespaceList.contains(namespace)) {
-          logger.info("Namespace still exists!!!");
-          logger.info(namespace);
+          getLogger().info("Namespace still exists!!!");
+          getLogger().info(namespace);
           notFound = false;
         }
       } catch (Exception ex) {
-        logger.warning(ex.getMessage());
-        logger.warning("Failed to list namespaces");
+        getLogger().warning(ex.getMessage());
+        getLogger().warning("Failed to list namespaces");
       }
       return notFound;
     };
@@ -406,7 +406,7 @@ public class CleanupUtil {
    * @param namespace name of the namespace
    */
   public static void deleteNamespacedArtifacts(String namespace) {
-    logger.info("Deleting artifacts in namespace {0}", namespace);
+    getLogger().info("Deleting artifacts in namespace {0}", namespace);
 
     // Delete all Domain objects in the given namespace
     try {
@@ -414,8 +414,8 @@ public class CleanupUtil {
         Kubernetes.deleteDomainCustomResource(item.getMetadata().getName(), namespace);
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete domains");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete domains");
     }
 
     // Delete deployments
@@ -424,8 +424,8 @@ public class CleanupUtil {
         Kubernetes.deleteDeployment(namespace, item.getMetadata().getName());
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete deployments");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete deployments");
     }
 
     // Delete replicasets
@@ -434,8 +434,8 @@ public class CleanupUtil {
         Kubernetes.deleteReplicaSet(namespace, item.getMetadata().getName());
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete replica sets");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete replica sets");
     }
 
     // Delete jobs
@@ -444,8 +444,8 @@ public class CleanupUtil {
         Kubernetes.deleteJob(namespace, item.getMetadata().getName());
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete jobs");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete jobs");
     }
 
     // Delete configmaps
@@ -454,8 +454,8 @@ public class CleanupUtil {
         Kubernetes.deleteConfigMap(item.getMetadata().getName(), namespace);
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete config maps");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete config maps");
     }
 
     // Delete secrets
@@ -464,8 +464,8 @@ public class CleanupUtil {
         Kubernetes.deleteSecret(item.getMetadata().getName(), namespace);
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete secrets");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete secrets");
     }
 
     // Delete pvc
@@ -486,7 +486,7 @@ public class CleanupUtil {
         // delete the pvc
         Kubernetes.deletePvc(pvc.getMetadata().getName(), namespace);
       } catch (ApiException ex) {
-        logger.warning(ex.getResponseBody());
+        getLogger().warning(ex.getResponseBody());
       }
     }
 
@@ -494,10 +494,10 @@ public class CleanupUtil {
     if (!pvs.isEmpty()) {
       for (var item : pvs) {
         try {
-          logger.info("Deleting persistent volume {0}", item.getMetadata().getName());
+          getLogger().info("Deleting persistent volume {0}", item.getMetadata().getName());
           Kubernetes.deletePv(item.getMetadata().getName());
         } catch (Exception ex) {
-          logger.warning("Failed to delete persistent volumes");
+          getLogger().warning("Failed to delete persistent volumes");
         }
       }
     }
@@ -508,8 +508,8 @@ public class CleanupUtil {
         Kubernetes.deleteService(item.getMetadata().getName(), namespace);
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete services");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete services");
     }
 
     // Delete namespaced roles
@@ -518,8 +518,8 @@ public class CleanupUtil {
         Kubernetes.deleteNamespacedRole(namespace, item.getMetadata().getName());
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete namespaced roles");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete namespaced roles");
     }
 
     // Delete namespaced role bindings
@@ -528,8 +528,8 @@ public class CleanupUtil {
         Kubernetes.deleteNamespacedRoleBinding(namespace, item.getMetadata().getName());
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete namespaced rolebindings");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete namespaced rolebindings");
     }
 
     // Delete service accounts
@@ -538,8 +538,8 @@ public class CleanupUtil {
         Kubernetes.deleteServiceAccount(item.getMetadata().getName(), namespace);
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete service accounts");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete service accounts");
     }
 
   }
@@ -553,8 +553,8 @@ public class CleanupUtil {
     try {
       Kubernetes.deleteNamespace(namespace);
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete namespace");
+      getLogger().warning(ex.getMessage());
+      getLogger().warning("Failed to delete namespace");
     }
   }
 

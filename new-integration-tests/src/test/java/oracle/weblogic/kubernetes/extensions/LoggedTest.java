@@ -4,11 +4,13 @@
 package oracle.weblogic.kubernetes.extensions;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-//import oracle.weblogic.kubernetes.logging.LoggingFactory;
+import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import org.junit.jupiter.api.TestInstance;
+
+//import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public interface LoggedTest {
-  //LoggingFacade logger = LoggingFactory.getLogger(LoggedTest.class);
-  LoggingFacade logger = ThreadSafeLogger.get();
+  LoggingFacade logger = LoggingFactory.getLogger(LoggedTest.class);
+  //LoggingFacade logger = ThreadSafeLogger.get();
 }

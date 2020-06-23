@@ -16,7 +16,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Domain {
 
@@ -57,7 +57,7 @@ public class Domain {
         .append("\"value\": \"NEVER\"")
         .append("}]");
 
-    logger.info("Shutting down domain {0} in namespace {1} using patch string: {2}",
+    getLogger().info("Shutting down domain {0} in namespace {1} using patch string: {2}",
         domainUid, namespace, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
@@ -82,7 +82,7 @@ public class Domain {
         .append("\"value\": \"IF_NEEDED\"")
         .append("}]");
 
-    logger.info("Restarting domain {0} in namespace {1} using patch string: {2}",
+    getLogger().info("Restarting domain {0} in namespace {1} using patch string: {2}",
         domainUid, namespace, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
@@ -161,8 +161,8 @@ public class Domain {
           .append("\"}]");
     }
 
-    logger.info("Patch String \n{0}", patchStr);
-    logger.info("Adding/updating introspectVersion in domain {0} in namespace {1} using patch string: {2}",
+    getLogger().info("Patch String \n{0}", patchStr);
+    getLogger().info("Adding/updating introspectVersion in domain {0} in namespace {1} using patch string: {2}",
         domainUid, namespace, patchStr.toString());
 
     // patch the domain
@@ -211,7 +211,7 @@ public class Domain {
         .append(numOfServers)
         .append("}]");
 
-    logger.info("Scaling cluster {0} in domain {1} using patch string: {2}",
+    getLogger().info("Scaling cluster {0} in domain {1} using patch string: {2}",
         clusterName, domainUid, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
@@ -237,29 +237,29 @@ public class Domain {
                                                 String opNamespace,
                                                 String opServiceAccount) {
 
-    logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+    getLogger().info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
     if (secretName.isEmpty()) {
-      logger.info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
+      getLogger().info("Did not find secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
       return false;
     }
-    logger.info("Got secret {0} of service account {1} in namespace {2}",
+    getLogger().info("Got secret {0} of service account {1} in namespace {2}",
         secretName, opServiceAccount, opNamespace);
 
-    logger.info("Getting service account token stored in secret {0} to authenticate as service account {1}"
+    getLogger().info("Getting service account token stored in secret {0} to authenticate as service account {1}"
         + " in namespace {2}", secretName, opServiceAccount, opNamespace);
     String secretToken = Secret.getSecretEncodedToken(opNamespace, secretName);
     if (secretToken.isEmpty()) {
-      logger.info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
+      getLogger().info("Did not get encoded token for secret {0} associated with service account {1} in namespace {2}",
           secretName, opServiceAccount, opNamespace);
       return false;
     }
-    logger.info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+    getLogger().info("Got encoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, secretToken);
 
     // decode the secret encoded token
     String decodedToken = new String(Base64.getDecoder().decode(secretToken));
-    logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
+    getLogger().info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, decodedToken);
 
     // build the curl command to scale the cluster

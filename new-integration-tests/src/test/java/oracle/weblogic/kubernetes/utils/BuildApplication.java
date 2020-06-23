@@ -60,7 +60,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
@@ -101,7 +101,7 @@ public class BuildApplication {
     // Copy the application source directory to PV_ROOT/applications/<application_directory_name>
     // This location is mounted in the build pod under /application
     Path targetPath = Paths.get(PV_ROOT, "applications", application.getFileName().toString());
-    logger.info("Copy the application {0} to PV hostpath {1}", application, targetPath);
+    getLogger().info("Copy the application {0} to PV hostpath {1}", application, targetPath);
     assertDoesNotThrow(() -> {
       Files.createDirectories(targetPath);
       deleteDirectory(targetPath.toFile());
@@ -133,7 +133,7 @@ public class BuildApplication {
    */
   private static void build(Map<String, String> parameters, String targets,
       String pvName, String pvcName, String namespace) {
-    logger.info("Preparing to run build job");
+    getLogger().info("Preparing to run build job");
 
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
@@ -155,11 +155,11 @@ public class BuildApplication {
           .addEnvItem(new V1EnvVar().name("targets").value(targets));
     }
 
-    logger.info("Running a Kubernetes job to build application");
+    getLogger().info("Running a Kubernetes job to build application");
     try {
       createBuildJob(pvName, pvcName, namespace, jobCreationContainer);
     } catch (ApiException ex) {
-      logger.severe("Building application failed");
+      getLogger().severe("Building application failed");
       fail("Halting test since build failed");
     }
 
@@ -178,7 +178,7 @@ public class BuildApplication {
   private static void createBuildJob(String pvName,
       String pvcName, String namespace, V1Container jobContainer)
       throws ApiException {
-    logger.info("Running Kubernetes job to build application");
+    getLogger().info("Running Kubernetes job to build application");
     String uniqueName = Namespace.uniqueName();
     String name = namespace + "-build-job-" + uniqueName;
 
@@ -225,11 +225,11 @@ public class BuildApplication {
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 
-    logger.info("Checking if the build job {0} completed in namespace {1}",
+    getLogger().info("Checking if the build job {0} completed in namespace {1}",
         jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+            condition -> getLogger().info("Waiting for job {0} to be completed in namespace {1} "
                 + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
@@ -245,10 +245,10 @@ public class BuildApplication {
           .findAny()
           .orElse(null);
       if (jobCondition != null) {
-        logger.severe("Job {0} failed to finish build", jobName);
+        getLogger().severe("Job {0} failed to finish build", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
         if (!pods.isEmpty()) {
-          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          getLogger().severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
           fail("Build job failed");
         }
       }
@@ -257,7 +257,7 @@ public class BuildApplication {
   }
 
   private static void createPV(Path hostPath, String pvName) throws IOException {
-    logger.info("creating persistent volume");
+    getLogger().info("creating persistent volume");
     // a dummy label is added so that cleanup can delete all pvs
     HashMap<String, String> label = new HashMap<String, String>();
     label.put("weblogic.domainUid", "buildjobs");
@@ -282,7 +282,7 @@ public class BuildApplication {
   }
 
   private static void createPVC(String pvName, String pvcName, String namespace) {
-    logger.info("creating persistent volume claim");
+    getLogger().info("creating persistent volume claim");
     // a dummy label is added so that cleanup can delete all pvs
     HashMap<String, String> label = new HashMap<String, String>();
     label.put("weblogic.domainUid", "buildjobs");
@@ -335,6 +335,6 @@ public class BuildApplication {
       }
       isUseSecret = true;
     }
-    logger.info("Using image {0}", image);
+    getLogger().info("Using image {0}", image);
   }
 }

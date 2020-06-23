@@ -42,8 +42,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -76,7 +76,7 @@ public class WLSTUtils {
     String wlstScriptFileName = wlstScript.getFileName().toString();
     String wlstPropertiesFile = domainProperties.getFileName().toString();
 
-    logger.info("Creating a config map to hold WLST script files");
+    getLogger().info("Creating a config map to hold WLST script files");
     String uniqueName = Namespace.uniqueName();
     String wlstScriptConfigMapName = "wlst-scripts-cm-" + uniqueName;
     String wlstJobName = "wlst-job-" + uniqueName;
@@ -84,7 +84,7 @@ public class WLSTUtils {
     createConfigMapFromFiles(wlstScriptConfigMapName,
         Arrays.asList(wlstScript, domainProperties), namespace);
 
-    logger.info("Preparing to run WLST job");
+    getLogger().info("Preparing to run WLST job");
     // create a V1Container with specific scripts and properties for running WLST script
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
@@ -110,7 +110,7 @@ public class WLSTUtils {
    */
   public static void createWLSTJob(String wlstJobName, String wlstScriptConfigMapName, String namespace,
       V1Container jobContainer) throws ApiException {
-    logger.info("Running Kubernetes job to execute WLST script");
+    getLogger().info("Running Kubernetes job to execute WLST script");
 
     V1Job jobBody = new V1Job()
         .metadata(
@@ -141,11 +141,11 @@ public class WLSTUtils {
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create WLST execution Job");
 
-    logger.info("Checking if the WLST job {0} completed in namespace {1}",
+    getLogger().info("Checking if the WLST job {0} completed in namespace {1}",
         jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+            condition -> getLogger().info("Waiting for job {0} to be completed in namespace {1} "
                 + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
@@ -161,16 +161,16 @@ public class WLSTUtils {
           .findAny()
           .orElse(null);
       if (jobCondition != null) {
-        logger.severe("Job {0} failed to execute WLST script", jobName);
+        getLogger().severe("Job {0} failed to execute WLST script", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
         if (!pods.isEmpty()) {
-          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          getLogger().severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
           fail("WLST execute job failed");
         }
       }
       List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
       if (!pods.isEmpty()) {
-        logger.info(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+        getLogger().info(getPodLog(pods.get(0).getMetadata().getName(), namespace));
       }
     }
   }
@@ -206,7 +206,7 @@ public class WLSTUtils {
       }
       isUseSecret = true;
     }
-    logger.info("Using image {0}", image);
+    getLogger().info("Using image {0}", image);
   }
 
 }

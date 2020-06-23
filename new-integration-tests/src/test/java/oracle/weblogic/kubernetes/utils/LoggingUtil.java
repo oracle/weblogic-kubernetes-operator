@@ -37,7 +37,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 
 /**
@@ -55,7 +55,7 @@ public class LoggingUtil {
    * @param namespaces list of namespaces used by the test instance
    */
   public static void generateLog(Object itInstance, List namespaces) {
-    logger.info("Generating logs...");
+    getLogger().info("Generating logs...");
     String resultDirExt = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
     try {
       Path resultDir = Files.createDirectories(
@@ -65,7 +65,7 @@ public class LoggingUtil {
         LoggingUtil.collectLogs((String) namespace, resultDir.toString());
       }
     } catch (IOException ex) {
-      logger.severe(ex.getMessage());
+      getLogger().severe(ex.getMessage());
     }
   }
 
@@ -76,13 +76,13 @@ public class LoggingUtil {
    * @param resultDir existing directory to write log files
    */
   public static void collectLogs(String namespace, String resultDir) {
-    logger.info("Collecting logs in namespace : {0}", namespace);
+    getLogger().info("Collecting logs in namespace : {0}", namespace);
 
     // get events
     try {
       writeToFile(Kubernetes.listNamespacedEvents(namespace), resultDir, namespace + ".list.events.log");
     } catch (Exception ex) {
-      logger.warning("Listing events failed, not collecting any data for events");
+      getLogger().warning("Listing events failed, not collecting any data for events");
     }
 
     // get service accounts
@@ -90,7 +90,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listServiceAccounts(namespace), resultDir,
           namespace + ".list.service-accounts.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get services
@@ -98,7 +98,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listServices(namespace), resultDir,
           namespace + ".list.services.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get namespaces
@@ -109,7 +109,7 @@ public class LoggingUtil {
         }
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get pvc
@@ -117,7 +117,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listPersistentVolumeClaims(namespace), resultDir,
           namespace + ".list.persistent-volume-claims.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // archive persistent volume contents
@@ -138,9 +138,9 @@ public class LoggingUtil {
                       Paths.get(resultDir, pvcName, pvName)));
             }
           } catch (ApiException ex) {
-            logger.warning(ex.getResponseBody());
+            getLogger().warning(ex.getResponseBody());
           } catch (IOException ex) {
-            logger.warning(ex.getMessage());
+            getLogger().warning(ex.getMessage());
           }
         }
       }
@@ -149,7 +149,7 @@ public class LoggingUtil {
     try {
       writeToFile(pvList, resultDir, "list.persistent-volumes.log");
     } catch (IOException ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get secrets
@@ -157,7 +157,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listSecrets(namespace), resultDir,
           namespace + ".list.secrets.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get configmaps
@@ -165,21 +165,21 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listConfigMaps(namespace), resultDir,
           namespace + ".list.configmaps.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get jobs
     try {
       writeToFile(Kubernetes.listJobs(namespace), resultDir, namespace + ".list.jobs.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get deployments
     try {
       writeToFile(Kubernetes.listDeployments(namespace), resultDir, namespace + ".list.deploy.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get replicasets
@@ -187,7 +187,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listReplicaSets(namespace), resultDir,
           namespace + ".list.replica-sets.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get cluster roles
@@ -195,7 +195,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listClusterRoles(null), resultDir,
           "list.cluster-roles.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get cluster role bindings
@@ -203,7 +203,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listClusterRoleBindings(null), resultDir,
           "list.cluster-rolebindings.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get namespaced roles
@@ -211,7 +211,7 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listNamespacedRoles(namespace), resultDir,
           namespace + ".list.roles.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get namespaced rolebindings
@@ -219,20 +219,20 @@ public class LoggingUtil {
       writeToFile(Kubernetes.listNamespacedRoleBinding(namespace), resultDir,
           namespace + ".list.rolebindings.log");
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
 
     // get domain objects in the given namespace
     try {
       writeToFile(Kubernetes.listDomains(namespace), resultDir, namespace + ".list.domains.log");
     } catch (Exception ex) {
-      logger.warning("Listing domain failed, not collecting any data for domain");
+      getLogger().warning("Listing domain failed, not collecting any data for domain");
     }
     // get pods
     try {
       writeToFile(Kubernetes.listPods(namespace, null), resultDir, namespace + ".list.pods.log");
     } catch (Exception ex) {
-      logger.warning("Listing pods failed, not collecting any data for pod configuration");
+      getLogger().warning("Listing pods failed, not collecting any data for pod configuration");
     }
 
     // get domain/operator pods
@@ -245,7 +245,7 @@ public class LoggingUtil {
         }
       }
     } catch (Exception ex) {
-      logger.warning(ex.getMessage());
+      getLogger().warning(ex.getMessage());
     }
   }
 
@@ -259,13 +259,13 @@ public class LoggingUtil {
    */
   private static void writeToFile(Object obj, String resultDir, String fileName)
       throws IOException {
-    logger.info("Generating {0}", Paths.get(resultDir, fileName));
+    getLogger().info("Generating {0}", Paths.get(resultDir, fileName));
     if (obj != null) {
       Files.write(Paths.get(resultDir, fileName),
           dump(obj).getBytes(StandardCharsets.UTF_8)
       );
     } else {
-      logger.info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
+      getLogger().info("Nothing to write in {0} list is empty", Paths.get(resultDir, fileName));
     }
   }
 
@@ -342,7 +342,7 @@ public class LoggingUtil {
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
+            condition -> getLogger().info("Waiting for {0} to be ready in namespace {1}, "
                 + "(elapsed time {2} , remaining time {3}",
                 podName,
                 namespace,
@@ -371,7 +371,7 @@ public class LoggingUtil {
     // Wait for the pod to be deleted
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
+            condition -> getLogger().info("Waiting for {0} to be deleted in namespace {1}, "
                 + "(elapsed time {2} , remaining time {3}",
                 podName,
                 namespace,
@@ -399,24 +399,24 @@ public class LoggingUtil {
     try {
       Runnable copy = () -> {
         try {
-          logger.info("Copying the contents of PV to {0}", destinationPath.toString());
+          getLogger().info("Copying the contents of PV to {0}", destinationPath.toString());
           Kubernetes.copyDirectoryFromPod(pvPod, "/shared", destinationPath);
         } catch (IOException | ApiException ex) {
-          logger.warning(ex.getMessage());
+          getLogger().warning(ex.getMessage());
         }
       };
       ExecutorService executorService = Executors.newSingleThreadExecutor();
       copyJob = executorService.submit(copy, "Done copying");
       copyJob.get(1, MINUTES);
     } catch (ExecutionException ex) {
-      logger.warning("Exception in copy");
+      getLogger().warning("Exception in copy");
     } catch (TimeoutException ex) {
-      logger.warning("Copy timed out");
+      getLogger().warning("Copy timed out");
     } catch (InterruptedException ex) {
-      logger.warning("Copy interrupted");
+      getLogger().warning("Copy interrupted");
     } finally {
       if (copyJob != null && !copyJob.isDone()) {
-        logger.info("Cancelling the copy job");
+        getLogger().info("Cancelling the copy job");
         copyJob.cancel(true);
       }
     }
