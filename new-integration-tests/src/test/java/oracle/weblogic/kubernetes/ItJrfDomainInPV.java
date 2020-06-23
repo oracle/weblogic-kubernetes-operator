@@ -161,8 +161,8 @@ public class ItJrfDomainInPV implements LoggedTest {
   public void testJrfDomainInPvUsingWlst() {
 
     //TODO temporarily being here.  Will be moved to BeforeAll when JRF domain is added
-    logger.info("Start DB and create RCU schema for namespace: {0} RCU prefix: {1} dbPort: {2} "
-        + "dbUrl: {3} dbImage: {4} fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
+    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2} "
+        + "dbUrl: {3} dbImage: {4},  fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
         dbImage, fmwImage, isUseSecret);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
         dbPort, dbUrl, isUseSecret), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
