@@ -760,9 +760,9 @@ public class ItConfigDistributionStrategy implements LoggedTest {
       checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
     TestActions.startDomain(domainUid, introDomainNamespace);
-    CommonTestUtils.checkPodExists(adminServerPodName, domainUid, introDomainNamespace);
+    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodExists(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
   }
 
