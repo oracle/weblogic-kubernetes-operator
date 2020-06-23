@@ -28,8 +28,9 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -68,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
-class ItSessionMigration implements LoggedTest {
+class ItSessionMigration {
 
   // constants for creating domain image using model in image
   private static final String SESSMIGR_MODEL_FILE = "model.sessmigr.yaml";
@@ -90,6 +91,7 @@ class ItSessionMigration implements LoggedTest {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
+  private static LoggingFacade logger = null;
 
   /**
    * Install operator, create a custom image using model in image with model files
@@ -100,6 +102,7 @@ class ItSessionMigration implements LoggedTest {
    */
   @BeforeAll
   public static void init(@Namespaces(2) List<String> namespaces) {
+    logger = ThreadSafeLogger.getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)

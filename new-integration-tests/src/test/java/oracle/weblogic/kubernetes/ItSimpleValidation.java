@@ -77,7 +77,7 @@ class ItSimpleValidation {
   final String domainUid = "domain1";
   String serviceAccountName;
 
-  public static LoggingFacade logger = null;
+  private static LoggingFacade logger = null;
 
   /**
    * Setup for test suite. Creates service account, persistent volume

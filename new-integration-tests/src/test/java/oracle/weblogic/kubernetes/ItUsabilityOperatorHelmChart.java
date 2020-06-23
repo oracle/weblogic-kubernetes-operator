@@ -24,7 +24,8 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -71,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test operator usability using Helm chart installation")
 @IntegrationTest
-class ItUsabilityOperatorHelmChart implements LoggedTest {
+class ItUsabilityOperatorHelmChart {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -88,6 +89,7 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
 
   // ingress host list
   private List<String> ingressHostList;
+  private static LoggingFacade logger = null;
 
   /**
    * Get namespaces for operator, domain1 and NGINX.
@@ -98,7 +100,7 @@ class ItUsabilityOperatorHelmChart implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
-
+    logger = ThreadSafeLogger.getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");

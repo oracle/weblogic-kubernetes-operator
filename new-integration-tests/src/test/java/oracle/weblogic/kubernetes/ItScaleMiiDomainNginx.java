@@ -22,7 +22,8 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -61,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify scaling multiple clusters domain and the sample application can be accessed via NGINX")
 @IntegrationTest
-class ItScaleMiiDomainNginx implements LoggedTest {
+class ItScaleMiiDomainNginx {
 
   // mii constants
   private static final String WDT_MODEL_FILE = "model-multiclusterdomain-sampleapp-wls.yaml";
@@ -82,6 +83,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
   private static int externalRestHttpsPort = 0;
 
   private String curlCmd = null;
+  private static LoggingFacade logger = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -92,7 +94,7 @@ class ItScaleMiiDomainNginx implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
-
+    logger = ThreadSafeLogger.getLogger();
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");

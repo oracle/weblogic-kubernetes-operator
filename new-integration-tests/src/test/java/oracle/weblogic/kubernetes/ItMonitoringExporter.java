@@ -63,8 +63,9 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.TestUtils;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -136,7 +137,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter via Prometheus and Grafana")
 @IntegrationTest
-class ItMonitoringExporter implements LoggedTest {
+class ItMonitoringExporter {
 
 
   // domain constants
@@ -174,6 +175,7 @@ class ItMonitoringExporter implements LoggedTest {
   private static String  coordinatorImage = null;
   private static int managedServerPort = 8001;
   private static int nodeportserver;
+  private static LoggingFacade logger = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -184,7 +186,7 @@ class ItMonitoringExporter implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(6) List<String> namespaces) {
-
+    logger = ThreadSafeLogger.getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)

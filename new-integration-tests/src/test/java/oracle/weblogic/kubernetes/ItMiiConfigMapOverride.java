@@ -35,8 +35,9 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
@@ -92,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to update a model in image domain with a configmap")
 @IntegrationTest
-class ItMiiConfigMapOverride implements LoggedTest {
+class ItMiiConfigMapOverride {
 
   private static HelmParams opHelmParams = null;
   private static V1ServiceAccount serviceAccount = null;
@@ -110,6 +111,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
   private static Map<String, Object> secretNameMap;
   final String adminServerPodName =  String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   final String managedServerPrefix =  String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+  private static LoggingFacade logger = null;
 
   /**
    * Install Operator.
@@ -118,6 +120,7 @@ class ItMiiConfigMapOverride implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
+    logger = ThreadSafeLogger.getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)

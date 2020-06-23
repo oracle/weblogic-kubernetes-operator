@@ -124,7 +124,7 @@ class ItMiiDomain {
   private String miiImagePatchAppV2 = null;
   private String miiImageAddSecondApp = null;
   private String miiImage = null;
-  public static LoggingFacade logger = null;
+  private static LoggingFacade logger = null;
 
   private static Map<String, Object> secretNameMap;
 

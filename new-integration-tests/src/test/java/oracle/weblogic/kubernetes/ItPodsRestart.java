@@ -25,7 +25,8 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -61,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
-class ItPodsRestart implements LoggedTest {
+class ItPodsRestart {
 
   private static String domainNamespace = null;
 
@@ -71,6 +72,7 @@ class ItPodsRestart implements LoggedTest {
   private static final int replicaCount = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+  private static LoggingFacade logger = null;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -80,7 +82,7 @@ class ItPodsRestart implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
-
+    logger = ThreadSafeLogger.getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
