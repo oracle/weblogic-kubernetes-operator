@@ -352,6 +352,17 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         "Failed to patch domain");
     restartDomain();
 
+    // get the pod creation time stamps
+    // get the creation time of the admin server pod before patching
+    adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    }
+
+
     // patch the domain to add overridesConfigMap field and update introspectVersion field
     patchStr
         = "["
@@ -754,13 +765,16 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   private void restartDomain() {
     logger.info("Restarting domain {0}", introDomainNamespace);
     TestActions.shutdownDomain(domainUid, introDomainNamespace);
+
+    logger.info("Checking for admin server pod restart");
     CommonTestUtils.checkPodDoesNotExist(adminServerPodName, domainUid, introDomainNamespace);
+    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+
     logger.info("Checking managed server pods in domain1 were shutdown");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
     TestActions.startDomain(domainUid, introDomainNamespace);
-    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
