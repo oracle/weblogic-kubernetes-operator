@@ -128,7 +128,7 @@ Here are the steps for this use case:
         The final result will look something like this:
 
           ```
-          apiVersion: "weblogic.oracle/v7"
+          apiVersion: "weblogic.oracle/v8"
           kind: Domain
           metadata:
             name: sample-domain2
