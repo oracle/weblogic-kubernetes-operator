@@ -295,7 +295,7 @@ public class CommonTestUtils {
 
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
-        .releaseName(NGINX_RELEASE_NAME)
+        .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
         .namespace(nginxNamespace)
         .repoUrl(GOOGLE_REPO_URL)
         .repoName(STABLE_REPO_NAME)
@@ -303,9 +303,13 @@ public class CommonTestUtils {
 
     // NGINX chart values to override
     NginxParams nginxParams = new NginxParams()
-        .helmParams(nginxHelmParams)
-        .nodePortsHttp(nodeportshttp)
-        .nodePortsHttps(nodeportshttps);
+        .helmParams(nginxHelmParams);
+
+    if (nodeportshttp != 0 && nodeportshttps != 0) {
+      nginxParams
+          .nodePortsHttp(nodeportshttp)
+          .nodePortsHttps(nodeportshttps);
+    }
 
     // install NGINX
     assertThat(installNginx(nginxParams))

@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -60,7 +61,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -116,13 +116,14 @@ class ItUsabilityOperatorHelmChart {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     String nginxNamespace = namespaces.get(2);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
     // install and verify NGINX
     logger.info("Installing and verifying NGINX");
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    logger.info("NGINX http node port: {0}", nodeportshttp);
   }
 
   /**
