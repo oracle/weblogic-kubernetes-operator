@@ -49,4 +49,4 @@ export INTROSPECTOR_DEADLINE_SECONDS=${INTROSPECTOR_DEADLINE_SECONDS:-600}
 # default max amount of time to wait for all of a domain's pods to start
 # NOTE: this _includes_ waiting for the introspector job and so should
 #       be higher than INTROSPECTOR_DEADLINE_SECONDS
-export POD_WAIT_TIMEOUT_SECS=${POD_WAIT_TIMEOUT_SECS:-900}
+export POD_WAIT_TIMEOUT_SECS=${POD_WAIT_TIMEOUT_SECS:-1000}
