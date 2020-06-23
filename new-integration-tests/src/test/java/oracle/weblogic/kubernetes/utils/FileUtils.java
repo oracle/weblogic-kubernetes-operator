@@ -102,12 +102,24 @@ public class FileUtils {
   public static void copyFolder(String srcDir, String destDir) throws IOException {
     Path srcPath = Paths.get(srcDir);
     Path destPath = Paths.get(destDir);
+
+    copyFolder(srcPath, destPath);
+  }
+
+  /**
+   * Copy files from source directory to destination directory.
+   *
+   * @param srcPath - source directory
+   * @param destPath - target directory
+   * @throws IOException - throws IOException on error
+   */
+  public static void copyFolder(Path srcPath, Path destPath) throws IOException {
     try (Stream<Path> stream = Files.walk(srcPath)) {
       stream.forEach(source -> {
         try {
           copy(source, destPath.resolve(srcPath.relativize(source)));
         } catch (IOException e) {
-          String msg = String.format("Failed to copy file %s to %s", source, destDir);
+          String msg = String.format("Failed to copy file %s to %s", srcPath.toString(), destPath.toString());
           logger.severe(msg, e);
           // cannot throw non runtime exception. the caller checks throwable
           throw new RuntimeException(msg);

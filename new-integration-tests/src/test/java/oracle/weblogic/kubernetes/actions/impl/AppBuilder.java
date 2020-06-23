@@ -16,7 +16,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFactory;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
@@ -124,10 +123,15 @@ public class AppBuilder {
    * @param zipPath zip file path for the resulting archive
    * @param srcDir source directory
    */
-  private boolean buildZipArchive(
+  public boolean buildZipArchive(
       String zipPath, 
       String srcDir
   ) {
+
+    // make sure that we always have an app name
+    if (params.appName() == null) {
+      params.appName(params.srcDirList().get(0));
+    }
 
     String cmd = String.format(
         "cd %s ; zip %s wlsdeploy/applications/%s.ear ", 
