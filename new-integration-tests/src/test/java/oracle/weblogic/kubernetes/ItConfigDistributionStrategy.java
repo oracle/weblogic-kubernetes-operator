@@ -347,6 +347,9 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "\"value\": \"DYNAMIC\"}"
         + "]";
 
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
     restartDomain();
 
     // patch the domain to add overridesConfigMap field and update introspectVersion field
@@ -358,7 +361,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "]";
 
     logger.info("Updating server configuration using patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
+    patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
@@ -749,6 +752,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   }
 
   private void restartDomain() {
+    logger.info("Restarting domain {0}", introDomainNamespace);
     TestActions.shutdownDomain(domainUid, introDomainNamespace);
     CommonTestUtils.checkPodDoesNotExist(adminServerPodName, domainUid, introDomainNamespace);
     logger.info("Checking managed server pods in domain1 were shutdown");
