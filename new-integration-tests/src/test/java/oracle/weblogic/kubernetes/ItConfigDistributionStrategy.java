@@ -348,6 +348,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "]";
 
     TestActions.restartDomain(domainUid, introDomainNamespace);
+    TestAssertions.verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
 
     // patch the domain to add overridesConfigMap field and update introspectVersion field
     patchStr

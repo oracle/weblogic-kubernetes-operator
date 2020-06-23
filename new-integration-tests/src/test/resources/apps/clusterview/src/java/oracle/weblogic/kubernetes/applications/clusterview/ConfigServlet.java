@@ -88,6 +88,7 @@ public class ConfigServlet extends HttpServlet {
         case "maxmessagesize":
           int size = getMaxMessageSize(serverConfiguration);
           out.println("MaxMessageSize=" + size);
+          break;
         default:
           out.println("supported attributes are<br>");
           out.println("MaxMessageSize");
