@@ -766,15 +766,18 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     logger.info("Restarting domain {0}", introDomainNamespace);
     TestActions.shutdownDomain(domainUid, introDomainNamespace);
 
-    logger.info("Checking for admin server pod restart");
+    logger.info("Checking for admin server pod shutdown");
     CommonTestUtils.checkPodDoesNotExist(adminServerPodName, domainUid, introDomainNamespace);
-    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
-
-    logger.info("Checking managed server pods in domain1 were shutdown");
+    logger.info("Checking managed server pods were shutdown");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
+
+
     TestActions.startDomain(domainUid, introDomainNamespace);
+    logger.info("Checking for admin server pod readiness");
+    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+    logger.info("Checking for managed servers pod readiness");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
