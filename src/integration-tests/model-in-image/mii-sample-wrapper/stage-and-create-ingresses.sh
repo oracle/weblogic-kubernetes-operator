@@ -96,8 +96,7 @@ function get_help() {
 mkdir -p $WORKDIR/ingresses
 
 for service_name in $DOMAIN_UID-admin-server \
-                    $DOMAIN_UID-cluster-cluster-1 \
-                    $DOMAIN_UID-cluster-cluster-2
+                    $DOMAIN_UID-cluster-cluster-1
 do
 
   target_yaml="$(get_service_yaml $service_name)"
