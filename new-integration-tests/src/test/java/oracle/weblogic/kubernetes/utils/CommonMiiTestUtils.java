@@ -104,7 +104,7 @@ public class CommonMiiTestUtils {
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret for encryption
    * @param replicaCount number of managed servers to start
-   * @return domain of the domain resource
+   * @return domain object of the domain resource
    */
   public static oracle.weblogic.domain.Domain createDomainResource(
       String domainResourceName,
