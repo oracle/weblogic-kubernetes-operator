@@ -97,7 +97,6 @@ metadata:
   name: domain1
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1

@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -27,10 +26,8 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -233,15 +230,7 @@ public class Domain {
   }
 
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
-    return spec.getEffectiveConfigurationFactory(apiVersion, getResourceVersion());
-  }
-
-  private String getResourceVersion() {
-    Map<String, String> labels = metadata.getLabels();
-    if (labels == null) {
-      return VersionConstants.DEFAULT_DOMAIN_VERSION;
-    }
-    return labels.get(LabelConstants.RESOURCE_VERSION_LABEL);
+    return spec.getEffectiveConfigurationFactory(apiVersion);
   }
 
   /**

@@ -395,7 +395,6 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       name: sample-domain1
       namespace: sample-domain1-ns
       labels:
-        weblogic.resourceVersion: domain-v2
         weblogic.domainUID: sample-domain1
 
     spec:
@@ -518,7 +517,6 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     name: sample-domain1
     namespace: sample-domain1-ns
     labels:
-      weblogic.resourceVersion: domain-v2
       weblogic.domainUID: sample-domain1
 
   spec:

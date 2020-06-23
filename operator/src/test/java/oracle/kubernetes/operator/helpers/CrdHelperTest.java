@@ -38,7 +38,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.BETA_CRD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
@@ -91,7 +90,7 @@ public class CrdHelperTest {
   private V1ObjectMeta createMetadata(String operatorVersion) {
     return new V1ObjectMeta()
         .name(KubernetesConstants.CRD_NAME)
-        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, operatorVersion);
+        .putLabelsItem(LabelConstants.OPERATOR_VERISON, operatorVersion);
   }
 
   private V1CustomResourceDefinitionSpec createSpec(String version) {
@@ -205,7 +204,7 @@ public class CrdHelperTest {
 
   @Test
   public void whenExistingCrdHasOldVersion_replaceIt() {
-    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineBetaCrd("v1", "2.4.0"));
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null));
 
@@ -248,7 +247,7 @@ public class CrdHelperTest {
   @Test
   public void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineCrd("v1", "2.4.0"));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
 
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
@@ -261,7 +260,7 @@ public class CrdHelperTest {
   @Test
   public void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineCrd("v1", "2.4.0"));
     testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
 
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
@@ -274,7 +273,7 @@ public class CrdHelperTest {
   @Test
   public void whenBetaCrdReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineBetaCrd("v1", "2.4.0"));
     testSupport.failOnReplace(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
 
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
@@ -287,7 +286,7 @@ public class CrdHelperTest {
   @Test
   public void whenBetaCrdReplaceThrowsStreamResetException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.defineResources(defineBetaCrd("v1", "2.4.0"));
     testSupport.failOnReplaceWithStreamResetException(BETA_CRD, KubernetesConstants.CRD_NAME, null);
 
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);

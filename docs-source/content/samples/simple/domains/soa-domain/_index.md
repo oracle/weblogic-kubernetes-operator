@@ -200,7 +200,6 @@ metadata:
   name: soainfra
   namespace: soans
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: soainfra
 spec:
   # The WebLogic Domain Home
@@ -313,7 +312,6 @@ $ kubectl describe domain soainfra -n soans
 Name:         soainfra
 Namespace:    soans
 Labels:       weblogic.domainUID=soainfra
-              weblogic.resourceVersion=domain-v2
 Annotations:  <none>
 API Version:  weblogic.oracle/v8
 Kind:         Domain

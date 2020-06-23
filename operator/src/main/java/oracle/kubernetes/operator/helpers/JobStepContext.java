@@ -27,7 +27,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -221,7 +220,6 @@ public abstract class JobStepContext extends BasePodStepContext {
         new V1ObjectMeta()
           .name(getJobName())
           .namespace(getNamespace())
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }

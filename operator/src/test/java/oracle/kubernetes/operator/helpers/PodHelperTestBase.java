@@ -52,7 +52,6 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
@@ -82,7 +81,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
@@ -656,8 +654,6 @@ public abstract class PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         allOf(
-            hasEntry(
-                LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION),
             hasEntry(LabelConstants.DOMAINUID_LABEL, UID),
             hasEntry(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME),
             hasEntry(LabelConstants.SERVERNAME_LABEL, getServerName()),
@@ -1020,7 +1016,6 @@ public abstract class PodHelperTestBase {
   V1ObjectMeta createPodMetadata() {
     V1ObjectMeta meta =
         new V1ObjectMeta()
-            .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
             .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
             .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
             .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/u01/oracle/user_projects/domains")
