@@ -218,7 +218,7 @@ Here are the steps:
          pod_count = 0   : Wait until there are no running WebLogic Server pods
                            for a domain. The default.
 
-         -t <timeout>    : Timeout in seconds. Defaults to '600'.
+         -t <timeout>    : Timeout in seconds. Defaults to '1000'.
 
          -q              : Quiet mode. Show only a count of wl pods that
                            have reached the desired criteria.
@@ -229,7 +229,7 @@ Here are the steps:
 
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```
-     @@ [2020-04-30T13:53:19][seconds=0] Info: Waiting up to 600 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
+     @@ [2020-04-30T13:53:19][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
      @@ [2020-04-30T13:53:19][seconds=0] Info:   ready='true'
      @@ [2020-04-30T13:53:19][seconds=0] Info:   image='model-in-image:WLS-v1'
      @@ [2020-04-30T13:53:19][seconds=0] Info:   domainRestartVersion='2'

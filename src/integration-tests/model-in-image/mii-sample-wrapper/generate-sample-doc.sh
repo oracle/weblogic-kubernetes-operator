@@ -120,7 +120,7 @@ for phase in initial update1 update2 update3; do
   export INCLUDE_MODEL_CONFIGMAP=$configmap
   export CUSTOM_DOMAIN_NAME=domain$domain_num
   export MODEL_IMAGE_NAME=model-in-image
-  export INTROSPECTOR_DEADLINE_SECONDS=300
+  export INTROSPECTOR_DEADLINE_SECONDS=600
   export IMAGE_PULL_SECRET_NAME=""
 
   # setup ingress yaml files
