@@ -1,0 +1,102 @@
+<!-- Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+          https://oss.oracle.com/licenses/upl.-->
+
+<project name="txforward.app" default="build">
+	<description>
+		ant script to build an application to test cross domain transaction
+	</description>
+
+	<dirname file="${ant.file.txforward.app}"
+		property="txforward.app.dir" />
+
+	<property environment="env" />
+	<property name="tempdir" location="temp" />
+	<property name="builddir" location="build" />
+
+       <path id="build.classpath">
+           <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+        </path>
+
+	<path id="remotesync.classpath">
+		<pathelement location="remotesync/bin"/>
+		<pathelement location="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+		<!--path refid="EAR Libraries.libraryclasspath"/-->
+	</path>
+
+	<path id="TxForward.classpath">
+		<pathelement location="build/classes"/>
+		<!--path refid="Web App Libraries.libraryclasspath"/>
+		<path refid="EAR Libraries.libraryclasspath"/-->
+		<path refid="remotesync.classpath"/>
+		<pathelement location="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+	</path>
+	<echo message="ORACLE_HOME=${env.ORACLE_HOME}"/>
+
+	<!-- Following application needs to be built one after the another -->
+	<target name="build">
+		<delete dir="${builddir}" quiet="true" />
+		<sleep seconds="2"/>
+		<mkdir dir="${builddir}" />
+		<delete dir="${tempdir}" quiet="true" />
+		<mkdir dir="${tempdir}" />
+		<antcall target="build-remotesync">
+			<param name="app.dir" value="${txforward.app.dir}/remotesync" />
+		</antcall>
+		<antcall target="build-TxForward">
+			<param name="app.dir" value="${txforward.app.dir}/TxForward" />
+			<param name="app" value="TxForward" />
+		</antcall>
+		<antcall target="build-ear">
+			<!--param name="app.dir" value="${txforward.app.dir}/TxForward" /-->
+			<param name="app" value="txforward" />
+			<param name="resource.dir" value="${txforward.app.dir}/ear/WEB-INF" />
+		</antcall>
+		<delete dir="${tempdir}" quiet="true" />
+		<delete dir="remotesync/bin" quiet="true" />
+		<delete dir="TxForward/build" quiet="true" />
+	</target>
+
+	<target name="build-remotesync">
+		<mkdir dir="remotesync/bin"/>
+		<copy includeemptydirs="false" todir="remotesync/bin">
+			<fileset dir="remotesync/src">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+		<echo message="${test.src.dir}" />
+		<echo message="building remotesync" />
+		<javac debug="${javac.debug}" srcdir="remotesync/src"
+			destdir="remotesync/bin">
+			<classpath refid="remotesync.classpath"/>
+		</javac>
+		<mkdir dir="${tempdir}/lib"/>
+		<jar destfile="${tempdir}/lib/remotesync.jar" basedir="remotesync/bin" />
+	</target>
+
+	<target name="build-TxForward">
+		<mkdir dir="TxForward/build"/>
+		<copy includeemptydirs="true" todir="TxForward/build/">
+			<fileset dir="TxForward/WebContent">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+		<mkdir dir="TxForward/build/WEB-INF/classes"/>
+		<echo message="building ${app}" />
+		<javac debug="${javac.debug}" srcdir="TxForward/src"
+			destdir="TxForward/build/WEB-INF/classes">
+			<classpath refid="TxForward.classpath"/>
+		</javac>
+		<jar destfile="${tempdir}/${app}.war" basedir="TxForward/build" />
+	</target>
+
+	<target name="build-ear">
+		<copy includeemptydirs="false" todir="${tempdir}">
+			<fileset dir="TxForward/WebContent">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+		<echo message="building ${app}" />
+		<jar destfile="${builddir}/${app}.ear" basedir="${tempdir}" />
+	</target>
+</project>
