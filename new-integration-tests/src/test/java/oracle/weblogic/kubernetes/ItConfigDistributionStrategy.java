@@ -313,7 +313,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testDefaultDynamicOverride() {
+  public void testDynamicOverride() {
 
     ArrayList<Path> configfiles = new ArrayList<>();
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
@@ -345,7 +345,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
         + "\"value\": \"configoverride-cm\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
         + "]";
 
 
