@@ -69,6 +69,7 @@ public class CommonMiiTestUtils {
     Domain domain = createDomainResource(
         domainUid,
         domainNamespace,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName,
         REPO_SECRET_NAME,
         encryptionSecretName,
@@ -105,21 +106,23 @@ public class CommonMiiTestUtils {
    *
    * @param domainResourceName name of the domain resource
    * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
    * @param adminSecretName name of the new WebLogic admin credentials secret
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount number of managed servers to start
    * @return domain object of the domain resource
    */
-  public static oracle.weblogic.domain.Domain createDomainResource(
+  private static Domain createDomainResource(
       String domainResourceName,
       String domNamespace,
+      String imageName,
       String adminSecretName,
       String repoSecretName,
       String encryptionSecretName,
       int replicaCount) {
     // create the domain CR
-    return new oracle.weblogic.domain.Domain()
+    return new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
@@ -128,7 +131,7 @@ public class CommonMiiTestUtils {
         .spec(new oracle.weblogic.domain.DomainSpec()
             .domainUid(domainResourceName)
             .domainHomeSourceType("FromModel")
-            .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+            .image(imageName)
             .addImagePullSecretsItem(new io.kubernetes.client.openapi.models.V1LocalObjectReference()
                 .name(repoSecretName))
             .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
