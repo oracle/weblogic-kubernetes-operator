@@ -104,6 +104,7 @@ public interface TestConstants {
   public static final String WDT_BASIC_IMAGE_NAME = REPO_NAME + "wdt-basic-image";
   public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
+  public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
 

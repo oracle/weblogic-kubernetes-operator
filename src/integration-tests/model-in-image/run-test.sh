@@ -45,7 +45,7 @@ function usage() {
 
   Commonly tuned env vars and their defaults:
 
-    POD_WAIT_TIMEOUT_SECS : 900 (total time for a domain to start)
+    POD_WAIT_TIMEOUT_SECS : 1000 (max wait time for a domain to start)
     INTROSPECTOR_DEADLINE_SECONDS: 600  (for JRF runs)
     WORKDIR               : /tmp/\$USER/mii-sample-work-dir
     DOMAIN_NAMESPACE      : sample-domain1-ns
