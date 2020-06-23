@@ -91,7 +91,7 @@ public class CommonPatchTestUtils {
    * @param domainUid name of the domain resource
    * @param namespace Kubernetes namespace that the domain is hosted
    * @param adminServerPodName name of the WebLogic admin server
-   * @param managedServerPrefix prefix of the managed servers
+   * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
    * @param secretName name of the secret that is used to patch the domain resource
    * @return restartVersion of the domain resource
