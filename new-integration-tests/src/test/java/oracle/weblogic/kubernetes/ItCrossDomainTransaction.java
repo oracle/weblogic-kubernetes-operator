@@ -125,8 +125,8 @@ public class ItCrossDomainTransaction implements LoggedTest {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
-    // Now that we got the namespaces for both the domains,w e need to update the model properties
-    // file with the namespaces. for cross domain transaction to work, we need to have the externalDNSName
+    // Now that we got the namespaces for both the domains, we need to update the model properties
+    // file with the namespaces. For cross domain transaction to work, we need to have the externalDNSName
     // set in the config file. Cannot set this after the domain is up since a server restart is
     // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
     // property file
@@ -209,9 +209,6 @@ public class ItCrossDomainTransaction implements LoggedTest {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         domain2AdminSecretName, domain2Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
-
-    //createImageVerify expects the location of the ear file
-    //String appSource = PV_ROOT + "/applications/" + WDT_APP_NAME + "/" + WDT_APP_NAME + ".ear";
 
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
