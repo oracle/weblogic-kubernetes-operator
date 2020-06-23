@@ -3,12 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.Map;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 
@@ -17,7 +13,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -137,34 +132,14 @@ public class IstioUtils {
 
   /**
    * Deploy the Http Istio Gateway and Istio virtual service.
-   * @param inputTemplateFile input template file 
-   * @param outputTemplateFile output template file 
-   * @param templateMap map containing template variable(s) to be replaced
+   * @param configPath path to k8s configuration file 
    * @return true if deployment is success otherwise false
   */
-  public static boolean deployHttpIstioGatewayAndVirtualservice(
-       String inputTemplateFile, String outputTemplateFile, 
-       Map<String, String> templateMap) throws IOException {
-
-    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile,outputTemplateFile);
-
-    Path srcFile = Paths.get(inputTemplateFile);
-    Path targetFile = Paths.get(outputTemplateFile);
-    // Add the parent directory for the target file
-    Path parentDir = targetFile.getParent();
-    Files.createDirectories(parentDir);
-
-    Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-    String out = targetFile.toString();
-    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
-      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
-      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
-    }
-
+  public static boolean deployHttpIstioGatewayAndVirtualservice(Path configPath) {
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
-    deployIstioGateway.append(targetFile);
+    deployIstioGateway.append(configPath);
     logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
     try {
       result = exec(new String(deployIstioGateway), true);
@@ -178,34 +153,16 @@ public class IstioUtils {
 
   /**
    * Deploy the tcp Istio Gateway and Istio virtual service.
-   * @param inputTemplateFile input template file
-   * @param outputTemplateFile output template file
-   * @param templateMap map containing template variable(s) to be replaced
+   * @param configPath path to k8s configuration file 
    * @return true if deployment is success otherwise false
   */
   public static boolean deployTcpIstioGatewayAndVirtualservice(
-       String inputTemplateFile, String outputTemplateFile, 
-       Map<String, String> templateMap) throws IOException {
-
-    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile,outputTemplateFile);
-
-    Path srcFile = Paths.get(inputTemplateFile);
-    Path targetFile = Paths.get(outputTemplateFile);
-    // Add the parent directory for the target file
-    Path parentDir = targetFile.getParent();
-    Files.createDirectories(parentDir);
-
-    Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-    String out = targetFile.toString();
-    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
-      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
-      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
-    }
+      Path configPath)  {
 
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
-    deployIstioGateway.append(targetFile.toString());
+    deployIstioGateway.append(configPath);
     logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
     try {
       result = exec(new String(deployIstioGateway), true);
@@ -219,34 +176,16 @@ public class IstioUtils {
 
   /**
    * Deploy the Istio DestinationRule. 
-   * @param inputTemplateFile input template file
-   * @param outputTemplateFile output template file
-   * @param templateMap map containing template variable(s) to be replaced
+   * @param configPath path to k8s configuration file 
    * @return true if deployment is success otherwise false
   */
   public static boolean deployIstioDestinationRule(
-       String inputTemplateFile, String outputTemplateFile, 
-       Map<String, String> templateMap) throws IOException {
-
-    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile,outputTemplateFile);
-
-    Path srcFile = Paths.get(inputTemplateFile);
-    Path targetFile = Paths.get(outputTemplateFile);
-    // Add the parent directory for the target file
-    Path parentDir = targetFile.getParent();
-    Files.createDirectories(parentDir);
-
-    Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-    String out = targetFile.toString();
-    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
-      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
-      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
-    }
+       Path configPath) {
 
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
-    deployIstioGateway.append(targetFile.toString());
+    deployIstioGateway.append(configPath);
     logger.info("deployIstioDestinationRule: kubectl command {0}", new String(deployIstioGateway));
     try {
       result = exec(new String(deployIstioGateway), true);
@@ -257,6 +196,5 @@ public class IstioUtils {
     logger.info("deployIstioDestinationRule: kubectl returned {0}", result.toString());
     return result.stdout().contains("destination-rule created"); 
   }
-
   
 }
