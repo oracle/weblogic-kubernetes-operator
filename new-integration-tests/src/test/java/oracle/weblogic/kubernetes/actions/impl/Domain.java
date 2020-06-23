@@ -104,7 +104,7 @@ public class Domain {
    * @param namespace the namespace in which the domain exists
    * @return true if patching domain resource succeeded, false otherwise
    */
-  public static boolean restart(String domainUid, String namespace) {
+  public static boolean start(String domainUid, String namespace) {
 
     // change the /spec/serverStartPolicy to IF_NEEDED to start all servers in the domain
     // create patch string to start the domain

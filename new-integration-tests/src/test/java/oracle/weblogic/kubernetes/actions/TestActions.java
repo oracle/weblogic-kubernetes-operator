@@ -176,8 +176,8 @@ public class TestActions {
    * @param namespace name of namespace
    * @return true on success, false otherwise
    */
-  public static boolean restartDomain(String domainUid, String namespace) {
-    return Domain.restart(domainUid, namespace);
+  public static boolean startDomain(String domainUid, String namespace) {
+    return Domain.start(domainUid, namespace);
   }
 
   /**

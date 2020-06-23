@@ -238,7 +238,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   @AfterEach
   public void deleteOverrideConfig() {
     TestActions.deleteConfigMap(overridecm, introDomainNamespace);
-    TestActions.restartDomain(domainUid, introDomainNamespace);
+    TestActions.startDomain(domainUid, introDomainNamespace);
   }
 
   /**
@@ -347,8 +347,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "\"value\": \"DYNAMIC\"}"
         + "]";
 
-    TestActions.restartDomain(domainUid, introDomainNamespace);
-    TestAssertions.verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+    restartDomain();
 
     // patch the domain to add overridesConfigMap field and update introspectVersion field
     patchStr
@@ -431,7 +430,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "\"value\": \"ON_RESTART\"}"
         + "]";
 
-    TestActions.restartDomain(domainUid, introDomainNamespace);
+    restartDomain();
 
     // patch the domain to add overridesConfigMap field and update introspectVersion field
     patchStr
@@ -478,7 +477,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
 
-    TestActions.restartDomain(domainUid, introDomainNamespace);
+    TestActions.startDomain(domainUid, introDomainNamespace);
 
     logger.info("Getting node port for default channel");
     serviceNodePort = assertDoesNotThrow(()
@@ -547,7 +546,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    TestActions.restartDomain(domainUid, introDomainNamespace);
+    restartDomain();
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
@@ -592,7 +591,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    TestActions.restartDomain(domainUid, introDomainNamespace);
+    TestActions.startDomain(domainUid, introDomainNamespace);
 
     logger.info("Getting node port for default channel");
     serviceNodePort = assertDoesNotThrow(()
@@ -747,6 +746,20 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, clusterViewAppPath,
         introDomainNamespace);
+  }
+
+  private void restartDomain(){
+    TestActions.shutdownDomain(domainUid, introDomainNamespace);
+    CommonTestUtils.checkPodDoesNotExist(adminServerPodName, domainUid, introDomainNamespace);
+    logger.info("Checking managed server pods in domain1 were shutdown");
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+    TestActions.startDomain(domainUid, introDomainNamespace);
+    CommonTestUtils.checkPodExists(adminServerPodName, domainUid, introDomainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodExists(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
   }
 
   /**

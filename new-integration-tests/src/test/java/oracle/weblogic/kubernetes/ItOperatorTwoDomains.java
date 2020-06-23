@@ -67,7 +67,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.restartDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -529,7 +529,7 @@ public class ItOperatorTwoDomains implements LoggedTest {
 
     // restart domain1
     logger.info("Restarting domain1");
-    assertTrue(restartDomain(domain1Uid, domain1Namespace),
+    assertTrue(startDomain(domain1Uid, domain1Namespace),
         String.format("restart domain %s in namespace %s failed", domain1Uid, domain1Namespace));
 
     // verify domain1 is restarted
