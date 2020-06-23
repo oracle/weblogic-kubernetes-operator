@@ -26,8 +26,14 @@ fi
 echo "Setting up build environment"
 source ${WL_HOME}/server/bin/setWLSEnv.sh
 
-# call ant all to build
-cd /application
-ant ${sysprops} ${targets}
+# create /u01/application
+mkdir /u01/application
+cd /u01/application
+#unzip the source application archive
+unzip /u01/$ZIP_FILE
 
-chmod -R 777 *
+# call ant to build
+pwd
+ls
+echo "ant ${sysprops} ${targets}"
+ant ${sysprops} ${targets}
