@@ -452,6 +452,21 @@ public class DomainValidationTest {
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
+  @Test
+  public void whenExposingDefaultChannelIfIstio_Enabled() {
+    configureDomain(domain)
+        .withDomainHomeSourceType(Image)
+        .withIstio()
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    assertThat(domain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+        "Istio is enabled and the domain resource specified to expose channel",
+        "default")));
+  }
+
   private DomainConfigurator configureDomain(Domain domain) {
     return new DomainCommonConfigurator(domain);
   }

@@ -17,7 +17,6 @@ Here are some suggestions for debugging problems with Model in Image after your 
  - [Check the FAQ](#check-the-faq)
 
 
-
 #### Check the domain resource status
 
 To check the domain resource status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.

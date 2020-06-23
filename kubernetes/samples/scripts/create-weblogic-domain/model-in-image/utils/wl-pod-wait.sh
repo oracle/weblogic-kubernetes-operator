@@ -13,7 +13,7 @@
 set -eu
 set -o pipefail
 
-timeout_secs_def=600
+timeout_secs_def=1000
 
 function usage() {
 
