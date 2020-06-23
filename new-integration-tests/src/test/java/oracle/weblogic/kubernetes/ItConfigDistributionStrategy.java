@@ -714,10 +714,9 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
     //deploy application
-    Path archivePath = Paths.get(RESOURCE_DIR, "apps/clusterview.war");
-    logger.info("Deploying webapp to domain {0}", archivePath);
+    logger.info("Deploying webapp to domain {0}", clusterViewAppPath);
     deployUsingWlst(K8S_NODEPORT_HOST, Integer.toString(t3channelNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, archivePath,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + adminServerName, clusterViewAppPath,
         introDomainNamespace);
   }
 
