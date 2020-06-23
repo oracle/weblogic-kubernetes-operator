@@ -19,6 +19,7 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -40,10 +41,22 @@ public class AsyncRequestStepTest {
   private RequestParams requestParams = new RequestParams("testcall", "junit", "testName", "body");
   private CallFactoryStub callFactory = new CallFactoryStub();
   private TestStep nextStep = new TestStep();
+  private TestStep conflictStep = new TestStep(new ConflictStep());
   private ClientPool helper = ClientPool.getInstance();
   private final AsyncRequestStep<Integer> asyncRequestStep =
       new AsyncRequestStep<>(
           nextStep,
+          requestParams,
+          callFactory,
+          helper,
+          TIMEOUT_SECONDS,
+          MAX_RETRY_COUNT,
+          null,
+          null,
+          null);
+  private final AsyncRequestStep<Integer> asyncRequestStepWithConflict =
+      new AsyncRequestStep<>(
+          conflictStep,
           requestParams,
           callFactory,
           helper,
@@ -156,6 +169,39 @@ public class AsyncRequestStepTest {
     assertThat(nextStep.result, equalTo(null));
   }
 
+  @Test
+  public void handleTimeoutRetriesLeft_nextStepAppliedWithValue() {
+    testSupport.schedule(
+            () -> callFactory.sendFailedCallback(new ApiException("test failure"), 504));
+    testSupport.setTime(10, TimeUnit.SECONDS);
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
+    assertThat(nextStep.result, equalTo(17));
+  }
+
+  @Test
+  public void conflictStatus_verifyCompletionThrowable() {
+    testSupport.runSteps(asyncRequestStepWithConflict);
+    testSupport.schedule(
+        () -> callFactory.sendFailedCallback(new ApiException("test failure"), 409));
+    testSupport.setTime(100, TimeUnit.SECONDS);
+    testSupport.schedule(
+        () -> callFactory.sendFailedCallback(new ApiException("test failure"), 409));
+    testSupport.setTime(200, TimeUnit.SECONDS);
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    assertThat(nextStep.result, equalTo(null));
+  }
+
+  @Test
+  public void conflictStatus_retryConflictStep() {
+    testSupport.runSteps(asyncRequestStepWithConflict);
+    testSupport.schedule(
+        () -> callFactory.sendFailedCallback(new ApiException("test failure"), 409));
+    testSupport.setTime(100, TimeUnit.SECONDS);
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
+    assertThat(nextStep.result, equalTo(17));
+  }
+
   // todo tests
   // can new request clear timeout action?
   // what is accessContinue?
@@ -167,6 +213,24 @@ public class AsyncRequestStepTest {
     private Integer result;
 
     TestStep() {
+      super(null);
+    }
+
+    TestStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<Integer> callResponse) {
+      result = callResponse.getResult();
+      return doNext(packet);
+    }
+  }
+
+  static class ConflictStep extends ResponseStep<Integer> {
+    private Integer result;
+
+    ConflictStep() {
       super(null);
     }
 

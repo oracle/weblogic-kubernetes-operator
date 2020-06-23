@@ -386,7 +386,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
           na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
         }
         return na;
-      } else if (retriesLeft() && isRestartableConflict(conflictStep, statusCode)) {
+      } else if (isRestartableConflict(conflictStep, statusCode)) {
 
         // exponential back-off
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
