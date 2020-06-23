@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.actions.impl.Domain;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.Ingress;
 import oracle.weblogic.kubernetes.actions.impl.Job;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Nginx;
@@ -47,6 +48,8 @@ import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.Secret;
 import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
+import oracle.weblogic.kubernetes.actions.impl.Voyager;
+import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -301,18 +304,14 @@ public class TestActions {
   }
 
   /**
-   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
-   * The ingress host is set to 'domainUid.clusterName.test'.
+   * Install Voyager ingress controller.
    *
-   * @param ingressName the name of the ingress to be created
-   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
-   * @param domainUid WebLogic domainUid which is backend to the ingress
-   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
-   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
+   *               repo name and chart name
+   * @return true on success, false otherwise
    */
-  public static List<String> createIngress(String ingressName, String domainNamespace, String domainUid,
-                                           Map<String, Integer> clusterNameMsPortMap) {
-    return Nginx.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap);
+  public static boolean installVoyager(VoyagerParams params) {
+    return Voyager.install(params);
   }
 
   /**
@@ -326,6 +325,16 @@ public class TestActions {
   }
 
   /**
+   * Upgrade Voyager release.
+   *
+   * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
+   * @return true on success, false otherwise
+   */
+  public static boolean upgradeVoyager(VoyagerParams params) {
+    return Voyager.upgrade(params);
+  }
+
+  /**
    * Uninstall the NGINX release.
    *
    * @param params the parameters to Helm uninstall command, such as release name and namespace
@@ -336,6 +345,35 @@ public class TestActions {
   }
 
   /**
+   * Uninstall the Voyager release.
+   *
+   * @param params the parameters to Helm uninstall command, such as release name and namespace
+   * @return true on success, false otherwise
+   */
+  public static boolean uninstallVoyager(HelmParams params) {
+    return Voyager.uninstall(params);
+  }
+
+  /**
+   * Create an ingress for the WebLogic domain with domainUid in the specified domain namespace.
+   * The ingress host is set to 'domainUid.clusterName.test'.
+   *
+   * @param ingressName the name of the ingress to be created
+   * @param domainNamespace the WebLogic domain namespace in which to create the ingress
+   * @param domainUid WebLogic domainUid which is backend to the ingress
+   * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
+   * @param annotations annotations to create ingress resource
+   * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
+   */
+  public static List<String> createIngress(String ingressName,
+                                           String domainNamespace,
+                                           String domainUid,
+                                           Map<String, Integer> clusterNameMsPortMap,
+                                           Map<String, String> annotations) {
+    return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap, annotations);
+  }
+
+  /**
    * Get a list of ingresses in the specified namespace.
    *
    * @param namespace in which to list all the ingresses
@@ -343,7 +381,7 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static List<String> listIngresses(String namespace) throws ApiException {
-    return Nginx.listIngresses(namespace);
+    return Ingress.listIngresses(namespace);
   }
 
   // -------------------------  namespaces -------------------------------
