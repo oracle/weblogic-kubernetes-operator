@@ -1121,14 +1121,12 @@ class SitConfigGenerator(Generator):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
 
     nap_name=nap.getName()
-    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0 and not (nap_name.startswith('istio-')):
+    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
         self.writeln("<d:network-access-point>")
         self.indent()
         self.writeln("<d:name>" + nap_name + "</d:name>")
         if istio_enabled == 'true':
           self.writeListenAddress("force a replace", '127.0.0.1')
-          replace_action = 'f:combine-mode="replace"'
-          self.writeln('<d:public-address %s>%s</d:public-address>' % (replace_action, listen_address))
         else:
           self.writeListenAddress("force a replace",listen_address)
 
@@ -1169,7 +1167,8 @@ class SitConfigGenerator(Generator):
 
     self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
     self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
-    self.writeln('<d:public-address %s>%s</d:public-address>' % (action, listen_address))
+    self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
+                                                          self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
     self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
                  (action, http_enabled))
