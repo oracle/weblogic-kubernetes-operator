@@ -95,7 +95,7 @@ An element representing a cluster in the domain configuration.
 | Name | Type | Description |
 | --- | --- | --- |
 | `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value. |
-| `istio` | [Istio](#istio) | The Istio service mesh integration settings |
+| `istio` | [Istio](#istio) | The Istio service mesh integration settings. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Configuration for OPSS security. |
 | `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion. |
