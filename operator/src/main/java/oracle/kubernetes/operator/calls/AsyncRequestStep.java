@@ -377,17 +377,16 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         }
 
         NextAction na = new NextAction();
-        if (statusCode == 0 && retryCount <= maxRetryCount) {
-          na.invoke(Optional.ofNullable(conflictStep).orElse(retryStep), packet);
+        if (!retriesLeft()) {
+          return null;
+        } else if (statusCode == 0) {
+          na.invoke(retryStep, packet);
         } else {
           LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime));
           na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
         }
         return na;
-      } else if (statusCode == 409 /* Conflict */ && conflictStep != null) {
-        // Conflict is an optimistic locking failure.  Therefore, we can't
-        // simply retry the request.  Instead, application code needs to rebuild
-        // the request based on latest contents.  If provided, a conflict step will do that.
+      } else if (isRestartableConflict(conflictStep, statusCode)) {
 
         // exponential back-off
         long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
@@ -400,6 +399,17 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
       // otherwise, we will not retry
       return null;
+    }
+
+    // Conflict is an optimistic locking failure.  Therefore, we can't
+    // simply retry the request.  Instead, application code needs to rebuild
+    // the request based on latest contents.  If provided, a conflict step will do that.
+    private boolean isRestartableConflict(Step conflictStep, int statusCode) {
+      return statusCode == 409 /* Conflict */ && conflictStep != null;
+    }
+
+    private boolean retriesLeft() {
+      return retryCount <= maxRetryCount;
     }
 
     @Override
