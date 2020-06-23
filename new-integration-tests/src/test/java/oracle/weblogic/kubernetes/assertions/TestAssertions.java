@@ -9,8 +9,11 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
+import oracle.weblogic.kubernetes.assertions.impl.Grafana;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
 import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
@@ -19,7 +22,9 @@ import oracle.weblogic.kubernetes.assertions.impl.Operator;
 import oracle.weblogic.kubernetes.assertions.impl.PersistentVolume;
 import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
+import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
+import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
 
@@ -56,6 +61,28 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if Voyager pod is running.
+   *
+   * @param namespace in which to check if Voyager pod is running
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
+   * @return true if Voyager pod is running, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerRunning(String namespace, String podName) {
+    return Voyager.isRunning(namespace, podName);
+  }
+
+  /**
+   * Check if Voyager pods is in the ready state in a given namespace.
+   *
+   * @param namespace in which to check if Voyager pod is in the ready state
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
+   * @return true if Voyager pod is in the ready state, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerReady(String namespace, String podName) {
+    return Voyager.isReady(namespace, podName);
   }
 
   /**
@@ -450,6 +477,26 @@ public class TestAssertions {
   }
 
   /**
+   * Check if Prometheus is running.
+   *
+   * @param namespace in which is prometheus is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> isPrometheusReady(String namespace) {
+    return Prometheus.isReady(namespace);
+  }
+
+  /**
+   * Check if Grafana is running.
+   *
+   * @param namespace in which is grafana is running
+   * @return true if running false otherwise
+   */
+  public static Callable<Boolean> isGrafanaReady(String namespace) {
+    return Grafana.isReady(namespace);
+  }
+
+  /*
    * Check whether persistent volume with pvName exists.
    *
    * @param pvName persistent volume to check
@@ -469,5 +516,27 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvcExists(String pvcName, String namespace) {
     return PersistentVolumeClaim.pvcExists(pvcName, namespace);
+  }
+
+  /**
+   * Check whether the cluster role exists.
+   *
+   * @param clusterRoleName name of the cluster role
+   * @return true if cluster role exists, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean clusterRoleExists(String clusterRoleName) throws ApiException {
+    return ClusterRole.clusterRoleExists(clusterRoleName);
+  }
+
+  /**
+   * Check whether the cluster role binding exists.
+   *
+   * @param clusterRoleBindingName name of the cluster role binding
+   * @return true if cluster role binding exists, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean clusterRoleBindingExists(String clusterRoleBindingName) throws ApiException {
+    return ClusterRoleBinding.clusterRoleBindingExists(clusterRoleBindingName);
   }
 }

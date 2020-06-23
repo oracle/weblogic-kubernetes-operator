@@ -91,7 +91,7 @@ Here is an example of part of a domain custom resource file with the `imagePullS
 specified:
 
 ```
-apiVersion: "weblogic.oracle/v2"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: domain1

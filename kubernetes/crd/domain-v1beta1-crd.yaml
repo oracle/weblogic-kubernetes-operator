@@ -32,6 +32,17 @@ spec:
               type: object
               description: Models and overrides affecting the WebLogic domain configuration.
               properties:
+                overrideDistributionStrategy:
+                  type: string
+                  description: Determines how updated configuration overrides are
+                    distributed to already running WebLogic servers following introspection
+                    when the domainHomeSourceType is PersistentVolume or Image.  Configuration
+                    overrides are generated during introspection from secrets, the
+                    overrideConfigMap field, and WebLogic domain topology. Legal values
+                    are DYNAMIC (the default) and ON_RESTART. See also introspectVersion.
+                  enum:
+                  - DYNAMIC
+                  - ON_RESTART
                 opss:
                   type: object
                   description: Configuration for OPSS security.
@@ -68,6 +79,19 @@ spec:
                     value of spec.configOverrideSecrets.
                   items:
                     type: string
+                istio:
+                  type: object
+                  description: The Istio service mesh integration settings.
+                  properties:
+                    readinessPort:
+                      type: number
+                      description: The WebLogic readiness port for Istio. Defaults
+                        to 8888. Not required.
+                    enabled:
+                      type: boolean
+                      description: True, if this domain is deployed under an Istio
+                        service mesh. Defaults to true when the 'istio' element is
+                        included. Not required.
                 overridesConfigMap:
                   type: string
                   description: The name of the config map for WebLogic configuration
@@ -101,23 +125,6 @@ spec:
               description: Domain unique identifier. Must be unique across the Kubernetes
                 cluster. Not required. Defaults to the value of metadata.name.
               pattern: ^[a-z0-9-.]{1,253}$
-            experimental:
-              type: object
-              description: Experimental feature configurations.
-              properties:
-                istio:
-                  type: object
-                  description: Istio service mesh integration configuration.
-                  properties:
-                    readinessPort:
-                      type: number
-                      description: The WebLogic readiness port for Istio. Defaults
-                        to 8888. Not required.
-                    enabled:
-                      type: boolean
-                      description: True, if this domain is deployed under an Istio
-                        service mesh. Defaults to true when the 'istio' element is
-                        included. Not required.
             serverService:
               type: object
               description: Customization affecting ClusterIP Kubernetes services for
@@ -10591,6 +10598,16 @@ spec:
                     enum:
                     - NEVER
                     - IF_NEEDED
+                  maxConcurrentStartup:
+                    description: The maximum number of Managed Servers that the operator
+                      will start in parallel for the cluster in response to a change
+                      in replicas count for the cluster. If more Managed Servers need
+                      to be started, the operator will wait until a Managed Server
+                      pod is in the `Ready` and `Running` state before starting the
+                      next Managed Server. A value of 0 (the default) means all Managed
+                      Servers will start in parallel.
+                    type: number
+                    minimum: 0.0
                   restartVersion:
                     description: If present, every time this value is updated the
                       operator will restart the required servers.
@@ -10617,6 +10634,13 @@ spec:
               - Always
               - Never
               - IfNotPresent
+            maxClusterConcurrentStartup:
+              type: number
+              description: The maximum number of Managed Servers that the operator
+                will start in parallel for a cluster, if `maxConcurrentStartup` is
+                not specified at the cluster level. A value of 0 (the default) means
+                there is no configured limit.
+              minimum: 0.0
             replicas:
               type: number
               description: The number of managed servers to run in any cluster that
@@ -10643,8 +10667,9 @@ spec:
                 will restart the required servers.
             introspectVersion:
               type: string
-              description: If present, every time this value is updated, the operator
-                will start introspect domain job
+              description: If the domain is running, the operator will restart its
+                introspector job when this value is changed. This field is ignored
+                when the domainHomeSourceType is FromModel. See also overridesConfigurationStrategy.
             dataHome:
               type: string
               description: 'An optional, in-pod location for data storage of default
@@ -10661,6 +10686,12 @@ spec:
               description: Specified whether the log home folder is enabled. Not required.
                 Defaults to true if domainHomeSourceType is PersistentVolume; false,
                 otherwise.
+            allowReplicasBelowMinDynClusterSize:
+              type: boolean
+              description: Whether to allow the number of replicas to drop below the
+                minimum dynamic cluster size configured in the WebLogic domain home
+                configuration, if this is not specified at the cluster level. Defaults
+                to true.
             serverPod:
               type: object
               description: Configuration affecting server pods.
@@ -20920,21 +20951,9 @@ spec:
                     type: number
                     minimum: 0.0
   versions:
-  - name: v7
+  - name: v8
     served: true
     storage: true
-  - name: v2
-    served: true
-    storage: false
-  - name: v3
-    served: true
-    storage: false
-  - name: v4
-    served: true
-    storage: false
-  - name: v5
-    served: true
-    storage: false
-  - name: v6
+  - name: v7
     served: true
     storage: false

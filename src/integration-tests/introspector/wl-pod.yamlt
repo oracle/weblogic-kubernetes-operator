@@ -110,7 +110,7 @@ spec:
   #    name: weblogic-credentials-volume
   #    readOnly: true
     - mountPath: /weblogic-operator/scripts
-      name: weblogic-domain-cm-volume
+      name: weblogic-script-cm-volume
       readOnly: true
     - mountPath: /weblogic-operator/introspector
       name: introspect-domain-cm-volume
@@ -134,8 +134,8 @@ spec:
   #    secretName: ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
   - configMap:
       defaultMode: 365
-      name: weblogic-domain-cm
-    name: weblogic-domain-cm-volume
+      name: weblogic-script-cm
+    name: weblogic-script-cm-volume
   - configMap:
       defaultMode: 365
       name: ${DOMAIN_UID}-weblogic-domain-introspect-cm

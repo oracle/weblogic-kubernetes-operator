@@ -23,7 +23,6 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
    - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
 
 
-
 ### Introduction
 
 

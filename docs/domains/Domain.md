@@ -17,6 +17,7 @@ DomainSpec is a description of a domain.
 | Name | Type | Description |
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Configuration for the Administration Server. |
+| `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of replicas to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration, if this is not specified at the cluster level. Defaults to true. |
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
 | `configOverrides` | string | Deprecated. Use configuration.overridesConfigMap instead. Ignored if configuration.overridesConfigMap is specified. The name of the config map for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | Deprecated. Use configuration.secrets instead. Ignored if configuration.secrets is specified. A list of names of the secrets for optional WebLogic configuration overrides. |
@@ -26,16 +27,16 @@ DomainSpec is a description of a domain.
 | `domainHomeInImage` | Boolean | Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified. True indicates that the domain home file system is contained in the Docker image specified by the image field. False indicates that the domain home file system is located on a persistent volume. |
 | `domainHomeSourceType` | string | Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is contained in the Docker image specified by the image field. PersistentVolume indicates that the domain home file system is located on a persistent volume.  FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. If this field is specified it overrides the value of domainHomeInImage. If both fields are unspecified then domainHomeSourceType defaults to Image. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
-| `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
 | `httpAccessLogInLogHome` | Boolean | If true (the default), then server HTTP access log files will be written to the same directory specified in `logHome`. Otherwise, server HTTP access log files will be written to the directory configured in the WebLogic domain home configuration. |
 | `image` | string | The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), then the server .out file will be included in the pod's stdout. |
-| `introspectVersion` | string | If present, every time this value is updated, the operator will start introspect domain job |
+| `introspectVersion` | string | If the domain is running, the operator will restart its introspector job when this value is changed. This field is ignored when the domainHomeSourceType is FromModel. See also overridesConfigurationStrategy. |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, Node Manager, server logs, server  *.out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if logHomeEnabled is false. |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise. |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
+| `maxClusterConcurrentStartup` | number | The maximum number of Managed Servers that the operator will start in parallel for a cluster, if `maxConcurrentStartup` is not specified at the cluster level. A value of 0 (the default) means there is no configured limit. |
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods. |
@@ -80,6 +81,7 @@ An element representing a cluster in the domain configuration.
 | `allowReplicasBelowMinDynClusterSize` | Boolean | If true (the default), then the number of replicas is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain home configuration. Otherwise, the operator will ensure that the number of replicas is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. |
 | `clusterName` | string | The name of this cluster. Required |
 | `clusterService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for the WebLogic cluster. |
+| `maxConcurrentStartup` | number | The maximum number of Managed Servers that the operator will start in parallel for the cluster in response to a change in replicas count for the cluster. If more Managed Servers need to be started, the operator will wait until a Managed Server pod is in the `Ready` and `Running` state before starting the next Managed Server. A value of 0 (the default) means all Managed Servers will start in parallel. |
 | `maxUnavailable` | number | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
 | `replicas` | number | The number of cluster members to run. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
@@ -93,16 +95,12 @@ An element representing a cluster in the domain configuration.
 | Name | Type | Description |
 | --- | --- | --- |
 | `introspectorJobActiveDeadlineSeconds` | number | The introspector job timeout value in seconds. If this field is specified it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value. |
+| `istio` | [Istio](#istio) | The Istio service mesh integration settings. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Configuration for OPSS security. |
+| `overrideDistributionStrategy` | string | Determines how updated configuration overrides are distributed to already running WebLogic servers following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. Legal values are DYNAMIC (the default) and ON_RESTART. See also introspectVersion. |
 | `overridesConfigMap` | string | The name of the config map for WebLogic configuration overrides. If this field is specified it overrides the value of spec.configOverrides. |
 | `secrets` | array of string | A list of names of the secrets for WebLogic configuration overrides or model. If this field is specified it overrides the value of spec.configOverrideSecrets. |
-
-### Experimental
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `istio` | [Istio](#istio) | Istio service mesh integration configuration. |
 
 ### Managed Server
 
@@ -203,6 +201,13 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `annotations` | Map | The annotations to be attached to generated resources. |
 | `labels` | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 
+### Istio
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the 'istio' element is included. Not required. |
+| `readinessPort` | number | The WebLogic readiness port for Istio. Defaults to 8888. Not required. |
+
 ### Model
 
 | Name | Type | Description |
@@ -217,13 +222,6 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `walletFileSecret` | string | Secret containing the OPSS key wallet file. |
 | `walletPasswordSecret` | string | Secret containing OPSS key passphrase. |
-
-### Istio
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the 'istio' element is included. Not required. |
-| `readinessPort` | number | The WebLogic readiness port for Istio. Defaults to 8888. Not required. |
 
 ### Probe Tuning
 

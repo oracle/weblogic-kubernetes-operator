@@ -4,11 +4,15 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
+import io.kubernetes.client.Copy;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -122,29 +126,32 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod is ready in a given namespace.
-   *
-   * @param namespace in which to check if the pod is ready
-   * @param domainUid the label the pod is decorated with
-   * @param podName name of the pod to check for
-   * @return true if the pod is in the ready condition, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
+
+   Checks if a pod is ready in a given namespace.
+   @param namespace in which to check if the pod is ready
+   @param labels map of labels as key value pairs
+   @param podName name of the pod to check for
+   @return true if the pod is in the ready condition, false otherwise
+   @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean isPodReady(String namespace, Map<String, String> labels, String podName) throws ApiException {
     boolean status = false;
     String labelSelector = null;
-    if (domainUid != null) {
-      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    if (labels != null && !labels.isEmpty()) {
+      labelSelector = labels.entrySet()
+              .stream()
+              .map(e -> e.getKey() + "="
+              + e.getValue())
+              .collect(Collectors.joining(","));
     }
-
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
 
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
+              .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
+              .findAny()
+              .orElse(null);
 
       if (v1PodReadyCondition != null) {
         status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
@@ -156,6 +163,24 @@ public class Kubernetes {
       logger.info("Pod {0} does not exist in namespace {1}", podName, namespace);
     }
     return status;
+  }
+
+  /**
+   * Checks if a pod is ready in a given namespace.
+   *
+   * @param namespace in which to check if the pod is ready
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if the pod is in the ready condition, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean isPodReady(String namespace, String domainUid, String podName) throws ApiException {
+
+    Map<String,String> labelMap = new HashMap<>();
+    if (domainUid != null) {
+      labelMap.put("weblogic.domainUID", domainUid);
+    }
+    return isPodReady(namespace, labelMap, podName);
   }
 
   /**
@@ -301,8 +326,8 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean isNginxPodReady(String namespace) throws ApiException {
-
-    return isPodReady(namespace, null, "nginx-ingress-controller");
+    String labelSelector = null;
+    return isPodReady(namespace, labelSelector, "nginx-ingress-controller");
   }
 
   /**
@@ -551,7 +576,7 @@ public class Kubernetes {
           if (jobCondition.getType().equalsIgnoreCase("failed")) {
             logger.severe("Job {0} failed", jobName);
           } else if (jobCondition.getType().equalsIgnoreCase("complete")) {
-            logger.severe("Job {0} completed successfully ", jobName);
+            logger.info("Job {0} completed successfully ", jobName);
           }
         }
       }
@@ -650,5 +675,25 @@ public class Kubernetes {
     }
 
     return v1PersistentVolumeClaimList;
+  }
+
+  /**
+   * Copy a file to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the file
+   * @param destPath destination location of the file
+   * @throws ApiException if Kubernetes API client call fails
+   * @throws IOException if copy fails
+   */
+  public static void copyFileToPod(String namespace,
+                                   String pod,
+                                   String container,
+                                   Path srcPath,
+                                   Path destPath)
+      throws ApiException, IOException {
+    Copy copy = new Copy(apiClient);
+    copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 }

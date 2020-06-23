@@ -22,6 +22,7 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.LATEST_IMAGE_SUFFIX;
 import static org.hamcrest.Matchers.both;
@@ -329,15 +330,74 @@ public abstract class DomainTestBase {
   @Test
   public void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
     configureCluster("cluster1");
+    configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(null);
 
     assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"),
         equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
   }
 
   @Test
+  public void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeFromDomain() {
+    configureCluster("cluster1");
+    configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(false);
+
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"),
+        equalTo(false));
+  }
+
+  @Test
   public void whenNoClusterSpec_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
     assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster-with-no-spec"),
         equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
+  }
+
+  @Test
+  public void whenBothClusterAndDomainSpecified_allowReplicasBelowMinDynamicClusterSizeFromCluster() {
+    configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
+    configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(true);
+
+    assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"),
+        equalTo(false));
+  }
+
+  @Test
+  public void afterMaxConcurrentStartupSetForCluster_canReadIt() {
+    configureCluster("cluster1").withMaxConcurrentStartup(3);
+
+    assertThat(domain.getMaxConcurrentStartup("cluster1"), equalTo(3));
+  }
+
+  @Test
+  public void whenNotSpecified_maxConcurrentStartupHasDefault() {
+    configureCluster("cluster1");
+    configureDomain(domain).withMaxConcurrentStartup(null);
+
+    assertThat(domain.getMaxConcurrentStartup("cluster1"),
+        equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
+  }
+
+  @Test
+  public void whenNotSpecified_maxConcurrentStartupFromDomain() {
+    configureCluster("cluster1");
+    configureDomain(domain).withMaxConcurrentStartup(2);
+
+    assertThat(domain.getMaxConcurrentStartup("cluster1"),
+        equalTo(2));
+  }
+
+  @Test
+  public void whenNoClusterSpec_maxConcurrentStartupHasDefault() {
+    assertThat(domain.getMaxConcurrentStartup("cluster-with-no-spec"),
+        equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
+  }
+
+  @Test
+  public void whenBothClusterAndDomainSpecified_maxConcurrentStartupFromCluster() {
+    configureCluster("cluster1").withMaxConcurrentStartup(1);
+    configureDomain(domain).withMaxConcurrentStartup(0);
+
+    assertThat(domain.getMaxConcurrentStartup("cluster1"),
+        equalTo(1));
   }
 
   @Test

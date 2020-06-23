@@ -82,6 +82,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   private static String getNamespace(Domain domain) {
     return domain.getMetadata().getNamespace();
   }
+  
+  @Override
+  public String getNamespace() {
+    return namespace;
+  }
 
   /**
    * Creates a new JobWatcher and caches it by namespace.
