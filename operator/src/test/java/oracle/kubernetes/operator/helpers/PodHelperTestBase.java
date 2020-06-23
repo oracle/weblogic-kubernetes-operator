@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1Lifecycle;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinity;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
@@ -46,6 +47,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -127,6 +129,7 @@ public abstract class PodHelperTestBase {
   static final Integer ADMIN_PORT = 7001;
   protected static final String DOMAIN_NAME = "domain1";
   protected static final String UID = "uid1";
+  protected static final String KUBERNETES_UID = "12345";
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
@@ -258,7 +261,11 @@ public abstract class PodHelperTestBase {
   abstract void setServerPort(int port);
 
   private Domain createDomain() {
-    return new Domain().withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME)).withSpec(createDomainSpec());
+    return new Domain()
+        .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
+        .withKind(KubernetesConstants.DOMAIN)
+        .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
+        .withSpec(createDomainSpec());
   }
 
   private DomainSpec createDomainSpec() {
@@ -1367,6 +1374,18 @@ public abstract class PodHelperTestBase {
 
     containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
     containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
+  }
+
+  @Test
+  public void whenPodCreated_createPodWithOwnerReference() {
+    V1OwnerReference expectedReference = new V1OwnerReference()
+        .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
+        .kind(KubernetesConstants.DOMAIN)
+        .name(DOMAIN_NAME)
+        .uid(KUBERNETES_UID)
+        .controller(true);
+
+    assertThat(getCreatedPod().getMetadata().getOwnerReferences(), contains(expectedReference));
   }
 
   interface PodMutator {

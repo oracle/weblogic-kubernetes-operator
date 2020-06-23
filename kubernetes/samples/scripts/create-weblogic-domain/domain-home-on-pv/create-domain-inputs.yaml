@@ -158,10 +158,11 @@ createDomainFilesDir: wlst
 # serverPodMemoryLimit: "1Gi"
 # serverPodCpuLimit: "1000m"
 
-# Istio service mesh support is experimental.
 # istioEnabled specifies whether or not it is deployed under Istio.
 istioEnabled: false
 
-# Istio service mesh support is experimental.
 # istioReadinessPort specifies the WebLogic NAP port for use by the readiness probe
 istioReadinessPort: 8888
+
+
+

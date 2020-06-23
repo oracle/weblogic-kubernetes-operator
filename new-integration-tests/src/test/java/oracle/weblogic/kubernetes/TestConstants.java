@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public interface TestConstants {
 
   // domain constants
-  public static final String DOMAIN_VERSION = "v7";
+  public static final String DOMAIN_VERSION = "v8";
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
@@ -76,6 +76,13 @@ public interface TestConstants {
   public static final String NGINX_RELEASE_NAME = "nginx-release" + BUILD_ID;
   public static final String STABLE_REPO_NAME = "stable";
   public static final String NGINX_CHART_NAME = "nginx-ingress";
+
+  // Voyager constants
+  public static final String APPSCODE_REPO_URL = "https://charts.appscode.com/stable/";
+  public static final String VOYAGER_RELEASE_NAME = "voyager-release";
+  public static final String APPSCODE_REPO_NAME = "appscode";
+  public static final String VOYAGER_CHART_NAME = "voyager";
+  public static final String VOYAGER_CHART_VERSION = "12.0.0";
 
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";

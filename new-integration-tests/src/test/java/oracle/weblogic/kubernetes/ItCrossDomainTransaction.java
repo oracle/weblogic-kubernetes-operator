@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -51,14 +50,11 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-//import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -190,9 +186,15 @@ public class ItCrossDomainTransaction implements LoggedTest {
   public void testCrossDomainTransaction() {
 
     //build application archive
-    //Path application = Paths.get(RESOURCE_DIR, "apps", "txpropagate");
-    Path application = Paths.get(RESOURCE_DIR, "apps", "txforward");
-    BuildApplication.buildApplication(application, null, "build", domain1Namespace);
+
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "txforward.ear").toFile().exists(),
+        "Application archive is not available");
+    String appSource = distDir.toString() + "/txforward.ear";
+    logger.info("Application is in {0}", appSource);
 
     // create admin credential secret for domain1
     logger.info("Create admin credential secret for domain1");
@@ -209,7 +211,7 @@ public class ItCrossDomainTransaction implements LoggedTest {
         String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
 
     //createImageVerify expects the location of the ear file
-    String appSource = PV_ROOT + "/applications/" + WDT_APP_NAME + "/" + WDT_APP_NAME + ".ear";
+    //String appSource = PV_ROOT + "/applications/" + WDT_APP_NAME + "/" + WDT_APP_NAME + ".ear";
 
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
@@ -252,24 +254,6 @@ public class ItCrossDomainTransaction implements LoggedTest {
       logger.info("curl command returned {0}", result.toString());
       assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
     }
-
-  }
-
-  // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
-  @AfterAll
-  void tearDown() {
-
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domain1Namespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domain1Namespace);
-
-    logger.info("Delete domain custom resource in namespace {0}", domain2Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid2, domain2Namespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid2 + " from " + domain2Namespace);
 
   }
 

@@ -58,6 +58,48 @@ public class DomainSpecTest {
         spec1.getImage(), not(equalTo(spec2.getImage())));
   }
 
+  @Test
+  public void verifyThatDomainSpecWithoutAllowMinDynClusterSize_equalsToDomainSpecWithDefaultValue() {
+    DomainSpec spec1 = new DomainSpec();
+    DomainSpec spec2 = new DomainSpec();
+    spec2.setAllowReplicasBelowMinDynClusterSize(KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+    assertThat("Expected null allowReplicasBelowMinDynClusterSize equal to explicit set to "
+        + KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE,
+        spec1.equals(spec2), equalTo(true));
+  }
+
+  @Test
+  public void verifyThatDomainSpecWithoutAllowMinDynClusterSize_notEqualsToDomainSpecWithFalse() {
+    DomainSpec spec1 = new DomainSpec();
+    DomainSpec spec2 = new DomainSpec();
+    spec2.setAllowReplicasBelowMinDynClusterSize(
+        !KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
+    assertThat("Expected null allowReplicasBelowMinDynClusterSize not equal to explicit set to "
+        + !KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE,
+        spec1.equals(spec2), equalTo(false));
+  }
+
+  @Test
+  public void verifyThatDomainSpecWithoutMaxClusterConcurrentStartup_equalsToDomainSpecWithDefaultValue() {
+    DomainSpec spec1 = new DomainSpec();
+    DomainSpec spec2 = new DomainSpec();
+    spec2.setMaxClusterConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
+    assertThat("Expected null maxClusterConcurrentStartup equal to explicit set to "
+        + KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP,
+        spec1.equals(spec2), equalTo(true));
+  }
+
+  @Test
+  public void verifyThatDomainSpecWithoutMaxClusterConcurrentStartup_notEqualsToDomainSpecWithFalse() {
+    DomainSpec spec1 = new DomainSpec();
+    DomainSpec spec2 = new DomainSpec();
+    spec2.setMaxClusterConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP
+        + 1);
+    assertThat("Expected null maxClusterConcurrentStartup not equal to explicit set to "
+            + (KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP + 1),
+        spec1.equals(spec2), equalTo(false));
+  }
+
   private String getLatestDefaultImage() {
     String defaultImageName = KubernetesConstants.DEFAULT_IMAGE
         .substring(0, KubernetesConstants.DEFAULT_IMAGE.indexOf(':'));

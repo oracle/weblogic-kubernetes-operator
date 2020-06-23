@@ -11,8 +11,8 @@
 		property="txforward.app.dir" />
 
 	<property environment="env" />
-	<property name="tempdir" location="tempdir" />
-	<property name="builddir" location="builddir" />
+	<property name="tempdir" location="temp" />
+	<property name="builddir" location="build" />
 
        <path id="build.classpath">
            <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
@@ -52,9 +52,9 @@
 			<param name="app" value="txforward" />
 			<param name="resource.dir" value="${txforward.app.dir}/ear/WEB-INF" />
 		</antcall>
-		<!--delete dir="${tempdir}" quiet="true" />
+		<delete dir="${tempdir}" quiet="true" />
 		<delete dir="remotesync/bin" quiet="true" />
-		<delete dir="TxForward/build" quiet="true" /-->
+		<delete dir="TxForward/build" quiet="true" />
 	</target>
 
 	<target name="build-remotesync">
@@ -97,6 +97,6 @@
 			</fileset>
 		</copy>
 		<echo message="building ${app}" />
-		<jar destfile="${app}.ear" basedir="${tempdir}" />
+		<jar destfile="${builddir}/${app}.ear" basedir="${tempdir}" />
 	</target>
 </project>

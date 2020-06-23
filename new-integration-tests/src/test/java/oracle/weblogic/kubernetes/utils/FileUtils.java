@@ -5,17 +5,24 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.apache.commons.io.FileUtils.cleanDirectory;
 
 /**
@@ -52,7 +59,7 @@ public class FileUtils {
       throw new FileNotFoundException("The expected file " + fileName + " was not found.");
     }
   }
-  
+
   /**
    * Check if the required file exists.
    *
@@ -66,7 +73,7 @@ public class FileUtils {
     }
     return false;
   }
-  
+
   /**
    * Remove the contents of the given directory.
    *
@@ -84,7 +91,7 @@ public class FileUtils {
     cleanDirectory(file);
 
   }
-  
+
   /**
    * Copy files from source directory to destination directory.
    *
@@ -120,11 +127,63 @@ public class FileUtils {
       });
     }
   }
-  
+
+  /**
+   * Copy a file to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the file
+   * @param destPath destination location of the file
+   * @throws ApiException if Kubernetes API client call fails
+   * @throws IOException if copy fails
+   */
+  public static void copyFileToPod(String namespace,
+                                   String pod,
+                                   String container,
+                                   Path srcPath,
+                                   Path destPath) throws ApiException, IOException {
+    Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+  }
+
   private static void copy(Path source, Path dest) throws IOException {
     logger.finest("Copying {0} to {1} source.fileName = {2}", source, dest, source.getFileName());
     if (!dest.toFile().isDirectory()) {
       Files.copy(source, dest, REPLACE_EXISTING);
     }
   }
+
+  /**
+   * Create a zip file from a folder.
+   *
+   * @param dirPath folder to zip
+   * @return path of the zipfile
+   */
+  public static String createZipFile(Path dirPath) {
+    String zipFileName = dirPath.toString().concat(".zip");
+    try {
+      final ZipOutputStream outputStream = new ZipOutputStream(new FileOutputStream(zipFileName));
+      Files.walkFileTree(dirPath, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+          try {
+            Path targetFile = dirPath.relativize(file);
+            outputStream.putNextEntry(new ZipEntry(Paths.get(targetFile.toString()).toString()));
+            byte[] bytes = Files.readAllBytes(file);
+            outputStream.write(bytes, 0, bytes.length);
+            outputStream.closeEntry();
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+          return FileVisitResult.CONTINUE;
+        }
+      });
+      outputStream.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
+    }
+    return zipFileName;
+  }
+
 }
