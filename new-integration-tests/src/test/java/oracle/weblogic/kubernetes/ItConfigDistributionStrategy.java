@@ -748,7 +748,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         introDomainNamespace);
   }
 
-  private void restartDomain(){
+  private void restartDomain() {
     TestActions.shutdownDomain(domainUid, introDomainNamespace);
     CommonTestUtils.checkPodDoesNotExist(adminServerPodName, domainUid, introDomainNamespace);
     logger.info("Checking managed server pods in domain1 were shutdown");
