@@ -21,22 +21,18 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 {{% /notice %}}
 
 ***
-#### Current release
+#### Current production release
 
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.5.0.
-This release was published on February 26, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
+The [current production release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.0.0.
+This release was published on July 1, 2020. See the operator prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction#operator-prerequisites" >}}).
 
-##### Preview of next planned release
+This release introduces _non-backward compatible_ changes; however, this release can be run in the same
+cluster as the 2.6.0 version of the operator allowing for staged migration.  You can also upgrade from 2.6.0 to 3.0.0 without needing to restart or recreate
+any existing domains.
 
-The next planned release is 3.0.0-rc1 (release candidate).  This release candidate will
-be suitable for use by early adopters who wish to test 3.0.0 features and provide
-feedback.  
+The feature changes in 3.0.0 are:
 
-This release is planned for April 2020, subject to change.
-
-The planned feature changes in 3.0.0 are:
-
-* Introduction of a new "Model In Image" feature which allows you to have a domain
+* Introduction of a new ["Model In Image"]({{% relref "/userguide/managing-domains/model-in-image" %}}) feature which allows you to have a domain
   created at pod startup time from a WebLogic Deploy Tool model and archive.
   This supports user-requested use cases like creating multiple domains from
   the same model and automated updating of the domain based on model changes.

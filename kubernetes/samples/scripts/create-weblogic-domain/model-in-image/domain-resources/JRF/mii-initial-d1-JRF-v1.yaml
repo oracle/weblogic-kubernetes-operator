@@ -3,7 +3,7 @@
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v7"
+apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
   name: sample-domain1
@@ -134,7 +134,7 @@ spec:
     - sample-domain1-rcu-access
 
     # Increase the introspector job active timeout value for JRF use cases
-    introspectorJobActiveDeadlineSeconds: 300
+    introspectorJobActiveDeadlineSeconds: 600
 
     opss:
 

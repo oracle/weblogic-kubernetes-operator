@@ -12,7 +12,10 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+
 
 /**
  * A simple Http client.
@@ -37,6 +40,7 @@ public class OracleHttpClient {
    */
   public static HttpResponse<String> get(String url, Map<String, String> headers, boolean debug)
       throws IOException, InterruptedException {
+    LoggingFacade logger = getLogger();
     HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
     requestBuilder
         .GET()
@@ -47,13 +51,13 @@ public class OracleHttpClient {
       }
     }
     HttpRequest request = requestBuilder.build();
-    getLogger().info("Sending http request {0}", url);
+    logger.info("Sending http request {0}", url);
 
     HttpResponse<String> response = httpClient.send(request,
         HttpResponse.BodyHandlers.ofString());
     if (debug) {
-      getLogger().info("HTTP_STATUS: {0}", response.statusCode());
-      getLogger().info("Response Body: {0}", response.body());
+      logger.info("HTTP_STATUS: {0}", response.statusCode());
+      logger.info("Response Body: {0}", response.body());
     }
     return response;
   }

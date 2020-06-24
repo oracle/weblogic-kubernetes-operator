@@ -58,7 +58,6 @@ import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -111,6 +110,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -144,13 +144,13 @@ public class ItDomainInPV {
   private boolean previousTestSuccessful = false;
   private String wdtCurlRequest = null;
   private List<String> wdtDomainManagedServers = new ArrayList<>();
-  private static LoggingFacade logger = null;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
+  private static LoggingFacade logger = null;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -161,7 +161,7 @@ public class ItDomainInPV {
    */
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
-    logger = ThreadSafeLogger.getLogger();
+    logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);

@@ -19,8 +19,10 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.calls.unprocessable.UnprocessableEntityBuilder;
@@ -72,6 +74,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REP
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -199,6 +202,19 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   private DomainConfigurator configureDomain() {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
+  }
+
+  @Test
+  public void whenCreated_createWithOwnerReference() {
+    V1OwnerReference expectedReference = new V1OwnerReference()
+        .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
+        .kind(KubernetesConstants.DOMAIN)
+        .name(DOMAIN_NAME)
+        .uid(KUBERNETES_UID)
+        .controller(true);
+
+    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    assertThat(model.getMetadata().getOwnerReferences(), contains(expectedReference));
   }
 
   @Test
