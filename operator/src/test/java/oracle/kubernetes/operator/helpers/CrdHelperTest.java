@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -44,9 +45,11 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 public class CrdHelperTest {
   private static final KubernetesVersion KUBERNETES_VERSION_15 = new KubernetesVersion(1, 15);
@@ -222,6 +225,18 @@ public class CrdHelperTest {
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
+    List<V1CustomResourceDefinition> crds = testSupport.getResources(CUSTOM_RESOURCE_DEFINITION);
+    V1CustomResourceDefinition crd = crds.stream().findFirst().orElse(null);
+    assertNotNull(crd);
+    assertThat(getProductVersionFromMetadata(crd.getMetadata()), equalTo(PRODUCT_VERSION_FUTURE));
+  }
+
+  private SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
+    return Optional.ofNullable(metadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(labels -> labels.get(LabelConstants.OPERATOR_VERISON))
+            .map(SemanticVersion::new)
+            .orElse(null);
   }
 
   @Test
