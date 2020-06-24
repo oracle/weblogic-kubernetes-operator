@@ -163,8 +163,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   String overridecm = "configoverride-cm";
   LinkedHashMap<String, DateTime> podTimestamps;
 
-  final int mysqlDBPort1 = getNextFreePort(30000, 32767);
-  final int mysqlDBPort2 = getNextFreePort(30000, 32767);
+  static int mysqlDBPort1;
+  static int mysqlDBPort2;
 
   String dsName = "JdbcTestDataSource-0";
 
@@ -218,7 +218,9 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
 
     createDomain();
+    mysqlDBPort1 = getNextFreePort(30000, 32767);
     MySQLDBUtils.createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, introDomainNamespace);
+    mysqlDBPort2 = getNextFreePort(30000, 32767);
     MySQLDBUtils.createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, introDomainNamespace);
     createJdbcDataSource("root", "root123", mysqlDBPort1);
     deployApplication();
