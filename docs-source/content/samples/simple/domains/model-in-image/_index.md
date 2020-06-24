@@ -98,18 +98,18 @@ Location | Description |
 
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 
-1. Get the operator source from the `release/3.0.0-rc1` branch and put it in `/tmp/operator-source`.
+1. Get the operator source from the `release/3.0.0-rc1` branch and put it in `/tmp/weblogic-kubernetes-operator`.
 
    For example:
 
    ```
-   $ mkdir /tmp/operator-source
-   $ cd /tmp/operator-source
+   $ cd /tmp
    $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ cd weblogic-kubernetes-operator
    $ git checkout release/3.0.0-rc1
    ```
 
-   > **Note**: We will refer to the top directory of the operator source tree as `/tmp/operator-source`; however, you can use a different location.
+   > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
@@ -118,7 +118,7 @@ Location | Description |
 
    ```
    $ mkdir /tmp/mii-sample
-   $ cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
+   $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
 
    > **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
@@ -319,10 +319,10 @@ A JRF domain requires an infrastructure database and also requires initializing 
      - In the local shell, `docker login container-registry.oracle.com`.
      - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
 
-   - Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
+   - Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
 
      ```
-     $ cd /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service
+     $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
      $ start-db-service.sh
      ```
 
@@ -333,12 +333,12 @@ A JRF domain requires an infrastructure database and also requires initializing 
      **WARNING:** The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
 
-2. Use the sample script in `/tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with the schema prefix `FMW1`.
+2. Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create the RCU schema with the schema prefix `FMW1`.
 
    Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
    ```
-   $ cd /tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema
+   $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
    $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
@@ -1732,8 +1732,8 @@ To remove the resources you have created in these samples:
 
 1. Delete the domain resources.
    ```
-   $ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
-   $ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
+   $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+   $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
    ```
 
    This deletes the domain and any related resources that are labeled with the domain UID `sample-domain1` and `sample-domain2`.
@@ -1751,7 +1751,7 @@ To remove the resources you have created in these samples:
 
 3. If you set up a database for `JRF`:
    ```
-   $ /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
+   $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
 
 4. Delete the operator and its namespace:
