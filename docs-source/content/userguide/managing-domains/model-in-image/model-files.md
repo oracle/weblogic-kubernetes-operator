@@ -7,7 +7,7 @@ description = "Model file requirements, macros, and loading order."
 +++
 
 {{% notice info %}}
-This feature is supported only in 3.0.0-RC1.
+This feature is supported only in 3.0.0.
 {{% /notice %}}
 
 #### Contents
