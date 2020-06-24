@@ -41,7 +41,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -65,7 +64,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -84,8 +83,8 @@ public class BuildApplication {
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
 
   /**
    * Build application.
@@ -96,9 +95,8 @@ public class BuildApplication {
    * @param namespace name of the namespace in which server pods running
    */
   public static void buildApplication(Path application, Map<String,String> parameters,
-                                      String targets, String namespace) {
+      String targets, String namespace) {
 
-    LoggingFacade logger = getLogger();
     setImage(namespace);
 
     // Copy the application source directory to PV_ROOT/applications/<application_directory_name>
@@ -149,9 +147,8 @@ public class BuildApplication {
    * @param buildScriptConfigMapName configmap containing build scripts
    */
   public static void build(Map<String, String> parameters,
-                           String targets, String pvName, String pvcName,
-                           String namespace, String buildScriptConfigMapName) {
-    LoggingFacade logger = getLogger();
+      String targets, String pvName, String pvcName,
+      String namespace, String buildScriptConfigMapName) {
     logger.info("Preparing to run build job");
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
@@ -190,10 +187,8 @@ public class BuildApplication {
    * @throws ApiException when Kubernetes cluster query fails
    */
   private static void createBuildJob(String pvName,
-                                     String pvcName, String buildScriptConfigMapName,
-                                     String namespace, V1Container jobContainer)
+      String pvcName, String buildScriptConfigMapName, String namespace, V1Container jobContainer)
       throws ApiException {
-    LoggingFacade logger = getLogger();
     logger.info("Running Kubernetes job to build application");
 
     V1Job jobBody = new V1Job()
@@ -218,10 +213,10 @@ public class BuildApplication {
                                 .name(pvName)
                                 .mountPath(APPLICATIONS_MOUNT_PATH))))) // application source directory
                     .volumes(Arrays.asList(new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName)),
+                        .name(pvName)
+                        .persistentVolumeClaim(
+                            new V1PersistentVolumeClaimVolumeSource()
+                                .claimName(pvcName)),
                         new V1Volume()
                             .name("build-job-cm-volume")
                             .configMap(new V1ConfigMapVolumeSource()
@@ -238,7 +233,7 @@ public class BuildApplication {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                    + "(elapsed time {2} ms, remaining time {3} ms)",
+                + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -265,7 +260,6 @@ public class BuildApplication {
   }
 
   private static void createPV(Path hostPath, String pvName) throws IOException {
-    LoggingFacade logger = getLogger();
     logger.info("creating persistent volume");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
@@ -286,7 +280,6 @@ public class BuildApplication {
   }
 
   private static void createPVC(String pvName, String pvcName, String namespace) {
-    LoggingFacade logger = getLogger();
     logger.info("creating persistent volume claim");
 
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
@@ -307,7 +300,6 @@ public class BuildApplication {
 
   private static void createConfigMapFromFiles(String configMapName, List<Path> files, String namespace)
       throws ApiException, IOException {
-    LoggingFacade logger = getLogger();
     logger.info("Creating configmap {0}", configMapName);
 
     // add domain creation scripts and properties files to the configmap
@@ -334,7 +326,6 @@ public class BuildApplication {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
-    LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;

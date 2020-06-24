@@ -11,10 +11,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
  * The utility class for tests.
@@ -30,11 +28,9 @@ public class TestUtils {
    * @return true if the web app can hit all managed servers, false otherwise
    */
   public static boolean callWebAppAndCheckForServerNameInResponse(
-      String curlCmd,
-      List<String> managedServerNames,
-      int maxIterations) {
-
-    LoggingFacade logger = getLogger();
+                          String curlCmd,
+                          List<String> managedServerNames,
+                          int maxIterations) {
 
     // first map all server names with false
     HashMap<String, Boolean> managedServers = new HashMap<>();
@@ -100,7 +96,6 @@ public class TestUtils {
    * @return the next free port number, if there is no free port between the range, return the ending point
    */
   public static int getNextFreePort(int from, int to) {
-    LoggingFacade logger = getLogger();
     int port;
     for (port = from; port < to; port++) {
       if (isLocalPortFree(port)) {
@@ -129,7 +124,6 @@ public class TestUtils {
    * @return true if the port is free, false otherwise
    */
   private static boolean isLocalPortFree(int port) {
-    LoggingFacade logger = getLogger();
     Socket socket = null;
     try {
       socket = new Socket(K8S_NODEPORT_HOST, port);

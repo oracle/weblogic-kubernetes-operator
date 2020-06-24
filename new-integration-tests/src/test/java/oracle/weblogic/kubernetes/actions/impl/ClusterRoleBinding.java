@@ -17,7 +17,7 @@ public class ClusterRoleBinding {
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createClusterRoleBinding(V1ClusterRoleBinding clusterRoleBinding) throws ApiException {
+  public static boolean create(V1ClusterRoleBinding clusterRoleBinding) throws ApiException {
     return Kubernetes.createClusterRoleBinding(clusterRoleBinding);
   }
 
@@ -27,8 +27,7 @@ public class ClusterRoleBinding {
    * @param name name of cluster role binding
    * @return true if successful, false otherwise
    */
-  public static boolean deleteClusterRoleBinding(String name) {
+  public static boolean delete(String name) {
     return Kubernetes.deleteClusterRoleBinding(name);
   }
-
 }

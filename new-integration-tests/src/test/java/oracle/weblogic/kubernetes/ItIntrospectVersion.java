@@ -55,7 +55,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.apache.commons.io.FileUtils;
@@ -104,7 +104,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-
+import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -118,7 +118,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -135,7 +134,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
-public class ItIntrospectVersion {
+public class ItIntrospectVersion implements LoggedTest {
 
   private static String opNamespace = null;
   private static String introDomainNamespace = null;
@@ -152,9 +151,8 @@ public class ItIntrospectVersion {
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
-  private static LoggingFacade logger = null;
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -165,7 +163,7 @@ public class ItIntrospectVersion {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
-    logger = getLogger();
+
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
@@ -243,7 +241,7 @@ public class ItIntrospectVersion {
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(() ->
-            File.createTempFile("domain", "properties"),
+        File.createTempFile("domain", "properties"),
         "Failed to create domain properties file");
     Properties p = new Properties();
     p.setProperty("domain_path", "/shared/domains");
@@ -261,7 +259,7 @@ public class ItIntrospectVersion {
     p.setProperty("domain_logs", "/shared/logs");
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(() ->
-            p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
+        p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
         "Failed to write domain properties file");
 
     // WLST script for creating domain
@@ -380,10 +378,10 @@ public class ItIntrospectVersion {
 
     // patch the domain to increase the replicas of the cluster and add introspectVersion field
     String patchStr =
-        "["
+          "["
             + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
             + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"2\"}"
-            + "]";
+        + "]";
 
     logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
     V1Patch patch = new V1Patch(patchStr);
@@ -398,16 +396,16 @@ public class ItIntrospectVersion {
 
     //verify the maximum cluster size is updated to expected value
     withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
-      @Override
-      public void conditionEvaluated(EvaluatedCondition condition) {
-        logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
-            clusterName, 3);
-      }
-    })
+        @Override
+        public void conditionEvaluated(EvaluatedCondition condition) {
+          logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
+              clusterName, 3);
+        }
+      })
         .until((Callable<Boolean>) () -> {
-              Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
-              return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
-            }
+          Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
+          return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
+        }
         );
 
     // verify the 3rd server pod comes up
@@ -444,7 +442,7 @@ public class ItIntrospectVersion {
     // deploy application and verify all servers functions normally
     logger.info("Getting node port for T3 channel");
     int t3channelNodePort = assertDoesNotThrow(()
-            -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
         "Getting admin server t3channel node port failed");
     assertNotEquals(-1, t3ChannelPort, "admin server t3channelport is not valid");
 
@@ -457,7 +455,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
-            -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
     //access application from admin server
@@ -470,7 +468,7 @@ public class ItIntrospectVersion {
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
+        + "-H 'host: %s' http://%s:%s/testwebapp/index.jsp",
         domainUid + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     List<String> managedServers = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -522,7 +520,7 @@ public class ItIntrospectVersion {
 
     logger.info("Getting node port for default channel");
     int adminServerT3Port = assertDoesNotThrow(()
-            -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "t3channel"),
         "Getting admin server node port failed");
 
     // create a temporary WebLogic WLST property file
@@ -545,7 +543,7 @@ public class ItIntrospectVersion {
 
     assertTrue(assertDoesNotThrow(() ->
             patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace),
-        "Patch domain with new IntrospectVersion threw ApiException"),
+            "Patch domain with new IntrospectVersion threw ApiException"),
         "Failed to patch domain with new IntrospectVersion");
 
     //verify the introspector pod is created and runs
@@ -559,13 +557,13 @@ public class ItIntrospectVersion {
 
     // verify the admin port is changed to newAdminPort
     assertEquals(newAdminPort, assertDoesNotThrow(()
-            -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServicePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server port failed"),
         "Updated admin server port is not equal to expected value");
 
     logger.info("Getting node port for default channel");
     int adminServerNodePort = assertDoesNotThrow(()
-            -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
+        -> getServiceNodePort(introDomainNamespace, adminServerPodName + "-external", "default"),
         "Getting admin server node port failed");
 
     //access application from admin server to validate the new port
@@ -589,7 +587,7 @@ public class ItIntrospectVersion {
    * @param namespace name of the domain namespace in which the job is created
    */
   private void createDomainOnPVUsingWlst(Path wlstScriptFile, Path domainPropertiesFile,
-                                         String pvName, String pvcName, String namespace) {
+      String pvName, String pvcName, String namespace) {
     logger.info("Preparing to run create domain job using WLST");
 
     List<Path> domainScriptFiles = new ArrayList<>();
@@ -630,7 +628,7 @@ public class ItIntrospectVersion {
     logger.info("Creating configmap {0}", configMapName);
 
     Path domainScriptsDir = Files.createDirectories(
-        Paths.get(TestConstants.LOGS_DIR, this.getClass().getSimpleName(), namespace));
+          Paths.get(TestConstants.LOGS_DIR, this.getClass().getSimpleName(), namespace));
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
@@ -663,7 +661,7 @@ public class ItIntrospectVersion {
    * @param jobContainer V1Container with job commands to create domain
    */
   private void createDomainJob(String pvName,
-                               String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
+      String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
 
     V1Job jobBody = new V1Job()
@@ -725,7 +723,7 @@ public class ItIntrospectVersion {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                    + "(elapsed time {2} ms, remaining time {3} ms)",
+                + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -743,7 +741,7 @@ public class ItIntrospectVersion {
       if (jobCondition != null) {
         logger.severe("Job {0} failed to create domain", jobName);
         List<V1Pod> pods = assertDoesNotThrow(()
-                -> listPods(namespace, "job-name=" + jobName).getItems(),
+            -> listPods(namespace, "job-name=" + jobName).getItems(),
             "Listing pods failed");
         if (!pods.isEmpty()) {
           String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
