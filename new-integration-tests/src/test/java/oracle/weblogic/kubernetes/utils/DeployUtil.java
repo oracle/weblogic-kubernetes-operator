@@ -32,7 +32,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.actions.impl.Namespace;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -71,8 +71,8 @@ public class DeployUtil {
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
 
   /**
    * Deploy application.
@@ -86,8 +86,9 @@ public class DeployUtil {
    * @param namespace name of the namespace in which WebLogic server pods running
    */
   public static void deployUsingWlst(String host, String port, String userName,
-      String password, String targets, Path archivePath, String namespace) {
+                                     String password, String targets, Path archivePath, String namespace) {
 
+    final LoggingFacade logger = getLogger();
     setImage(namespace);
 
     // create a temporary WebLogic domain property file
@@ -106,9 +107,8 @@ public class DeployUtil {
     // WLST py script for deploying application
     Path deployScript = Paths.get(RESOURCE_DIR, "python-scripts", DEPLOY_SCRIPT);
 
-    getLogger().info("Creating a config map to hold deployment files");
-    String uniqueName = Namespace.uniqueName();
-    String deployScriptConfigMapName = "wlst-deploy-scripts-cm-" + uniqueName;
+    logger.info("Creating a config map to hold deployment files");
+    String deployScriptConfigMapName = "create-deploy-scripts-cm";
 
     Map<String, String> data = new HashMap<>();
     Map<String, byte[]> binaryData = new HashMap<>();
@@ -141,7 +141,8 @@ public class DeployUtil {
    * @param deployScriptConfigMapName configmap containing deployment scripts
    */
   private static void deploy(String namespace, String deployScriptConfigMapName) {
-    getLogger().info("Preparing to run deploy job using WLST");
+    LoggingFacade logger = getLogger();
+    logger.info("Preparing to run deploy job using WLST");
     // create a V1Container with specific scripts and properties for creating domain
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
@@ -151,9 +152,9 @@ public class DeployUtil {
         .addArgsItem("-loadProperties")
         .addArgsItem(MOUNT_POINT + "/" + DOMAIN_PROPERTIES); //domain property file
 
-    getLogger().info("Running a Kubernetes job to deploy");
+    logger.info("Running a Kubernetes job to deploy");
     assertDoesNotThrow(()
-        -> createDeployJob(deployScriptConfigMapName, namespace, jobCreationContainer),
+            -> createDeployJob(deployScriptConfigMapName, namespace, jobCreationContainer),
         "Deployment failed");
   }
 
@@ -166,15 +167,14 @@ public class DeployUtil {
    * @throws ApiException when Kubernetes cluster query fails
    */
   private static void createDeployJob(String deployScriptConfigMap, String namespace,
-      V1Container jobContainer) throws ApiException {
-    getLogger().info("Running Kubernetes job to deploy application");
-    String uniqueName = Namespace.uniqueName();
-    String name = "wlst-deploy-job-" + uniqueName;
+                                      V1Container jobContainer) throws ApiException {
+    LoggingFacade logger = getLogger();
+    logger.info("Running Kubernetes job to deploy application");
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(name)
+                .name(namespace + "-deploy-job")
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
@@ -201,12 +201,12 @@ public class DeployUtil {
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create deploy Job");
 
-    getLogger().info("Checking if the deploy job {0} completed in namespace {1}",
+    logger.info("Checking if the deploy job {0} completed in namespace {1}",
         jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for job {0} to be completed in namespace {1} "
-                + "(elapsed time {2} ms, remaining time {3} ms)",
+            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -221,10 +221,10 @@ public class DeployUtil {
           .findAny()
           .orElse(null);
       if (jobCondition != null) {
-        getLogger().severe("Job {0} failed to do deployment", jobName);
+        logger.severe("Job {0} failed to do deployment", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
         if (!pods.isEmpty()) {
-          getLogger().severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
           fail("Deployment job failed");
         }
       }
@@ -238,6 +238,7 @@ public class DeployUtil {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
+    LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
@@ -263,7 +264,7 @@ public class DeployUtil {
       }
       isUseSecret = true;
     }
-    getLogger().info("Using image {0}", image);
+    logger.info("Using image {0}", image);
   }
 
 }

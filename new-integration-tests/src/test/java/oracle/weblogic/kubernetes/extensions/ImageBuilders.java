@@ -10,19 +10,21 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
-//import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.ThreadSafeLogger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -69,12 +71,15 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-//import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
+
+//import oracle.weblogic.kubernetes.logging.LoggingFacade;
+//import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 
 /**
  * Class to build the required images for the tests.
@@ -87,11 +92,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static String wdtBasicImage;
 
   private static Collection<String> pushedImages = new ArrayList<>();
-  public LoggingFacade logger = null;
+
 
   @Override
   public void beforeAll(ExtensionContext context) {
-    logger = ThreadSafeLogger.getLogger();
+    LoggingFacade logger = getLogger();
     // initialize logger for each test
     /* ThreadSafeLogger.init(context.getRequiredTestClass().getSimpleName());
     logger = ThreadSafeLogger.getLogger();
@@ -217,6 +222,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   @Override
   public void close() {
+    LoggingFacade logger = getLogger();
     logger.info("Cleanup images after all test suites are run");
 
     // delete all the images from local repo
@@ -240,6 +246,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   }
 
   private String getOcirToken() {
+    LoggingFacade logger = getLogger();
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     String cmd = scriptPath.toFile().getAbsolutePath();
     ExecResult result = null;
@@ -258,6 +265,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   }
 
   private void deleteImageOcir(String token, String imageName) {
+    LoggingFacade logger = getLogger();
     int firstSlashIdx = imageName.indexOf('/');
     String registry = imageName.substring(0, firstSlashIdx);
     int secondSlashIdx = imageName.indexOf('/', firstSlashIdx + 1);
@@ -276,7 +284,65 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
     if (result != null) {
       logger.info("result.stdout: \n{0}", result.stdout());
+      String stdout = result.stdout();
+      logger.info("result.stdout: \n{0}", stdout);
       logger.info("result.stderr: \n{0}", result.stderr());
+
+      // check if delete was successful and respond if tag couldn't be deleted because there is only one image
+      if (!stdout.isEmpty()) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+          JsonNode root = mapper.readTree(stdout);
+          JsonNode errors = root.path("errors");
+          if (errors != null) {
+            Iterator<JsonNode> it = errors.elements();
+            while (it.hasNext()) {
+              JsonNode entry = it.next();
+              if (entry != null) {
+                JsonNode code = entry.path("code");
+                if (code != null) {
+                  if ("SEMANTIC_VALIDATION_ERROR".equals(code.asText())) {
+                    // The delete of the tag failed because there is only one tag remaining in the
+                    // repository
+                    // Note: there are probably other semantic validation errors, but I don't think
+                    // it's worth
+                    // checking now because our use cases are fairly simple
+
+                    int colonIdx = imageAndTag.indexOf(':');
+                    String repo = imageAndTag.substring(0, colonIdx);
+
+                    // Delete the repository
+                    curlCmd =
+                        "curl -skL -X \"DELETE\" -H \"Authorization: Bearer "
+                            + token
+                            + "\" \"https://"
+                            + registry
+                            + "/20180419/docker/repos/"
+                            + tenancy
+                            + "/"
+                            + repo
+                            + "\"";
+                    logger.info("About to invoke: " + curlCmd);
+                    result = null;
+                    try {
+                      result = ExecCommand.exec(curlCmd, true);
+                    } catch (Exception e) {
+                      logger.info("Got exception while running command: {0}", curlCmd);
+                      logger.info(e.toString());
+                    }
+                    if (result != null) {
+                      logger.info("result.stdout: \n{0}", result.stdout());
+                      logger.info("result.stderr: \n{0}", result.stderr());
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (JsonProcessingException e) {
+          logger.info("Got exception, parsing failed with errors " + e.getMessage());
+        }
+      }
     }
   }
 
@@ -292,7 +358,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
    */
   private boolean createBasicImage(String imageName, String imageTag, String modelFile, String varFile,
                                    String appName, String domainType) {
-
+    LoggingFacade logger = getLogger();
     final String image = imageName + ":" + imageTag;
 
     // build the model file list

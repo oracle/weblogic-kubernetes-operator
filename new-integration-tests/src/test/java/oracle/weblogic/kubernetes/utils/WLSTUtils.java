@@ -24,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -59,8 +60,8 @@ public class WLSTUtils {
 
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
 
   /**
    * Execute WLST script.
@@ -70,13 +71,13 @@ public class WLSTUtils {
    * @param namespace namespace in which to run the job
    */
   public static void executeWLSTScript(Path wlstScript, Path domainProperties, String namespace) {
-
+    LoggingFacade logger = getLogger();
     setImage(namespace);
 
     String wlstScriptFileName = wlstScript.getFileName().toString();
     String wlstPropertiesFile = domainProperties.getFileName().toString();
 
-    getLogger().info("Creating a config map to hold WLST script files");
+    logger.info("Creating a config map to hold WLST script files");
     String uniqueName = Namespace.uniqueName();
     String wlstScriptConfigMapName = "wlst-scripts-cm-" + uniqueName;
     String wlstJobName = "wlst-job-" + uniqueName;
@@ -84,7 +85,7 @@ public class WLSTUtils {
     createConfigMapFromFiles(wlstScriptConfigMapName,
         Arrays.asList(wlstScript, domainProperties), namespace);
 
-    getLogger().info("Preparing to run WLST job");
+    logger.info("Preparing to run WLST job");
     // create a V1Container with specific scripts and properties for running WLST script
     V1Container jobCreationContainer = new V1Container()
         .addCommandItem("/bin/sh")
@@ -95,27 +96,28 @@ public class WLSTUtils {
         .addArgsItem(MOUNT_POINT + "/" + wlstPropertiesFile); //WLST property file
 
     assertDoesNotThrow(()
-        -> createWLSTJob(wlstJobName, wlstScriptConfigMapName, namespace, jobCreationContainer),
+            -> createWLSTJob(wlstJobName, wlstScriptConfigMapName, namespace, jobCreationContainer),
         "Online WLST execution failed");
   }
 
   /**
    * Create a job to execute WLST script.
    *
-   * @param wlstJobName a unique job name
+   * @param uniqueName a unique job name
    * @param wlstScriptConfigMapName configmap holding WLST script file
    * @param namespace name of the namespace in which the job is created
    * @param jobContainer V1Container with job commands to execute WLST script
    * @throws ApiException when Kubernetes cluster query fails
    */
-  public static void createWLSTJob(String wlstJobName, String wlstScriptConfigMapName, String namespace,
-      V1Container jobContainer) throws ApiException {
-    getLogger().info("Running Kubernetes job to execute WLST script");
+  public static void createWLSTJob(String uniqueName, String wlstScriptConfigMapName, String namespace,
+                                   V1Container jobContainer) throws ApiException {
+    LoggingFacade logger = getLogger();
+    logger.info("Running Kubernetes job to execute WLST script");
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(wlstJobName)
+                .name(uniqueName)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
@@ -141,12 +143,12 @@ public class WLSTUtils {
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create WLST execution Job");
 
-    getLogger().info("Checking if the WLST job {0} completed in namespace {1}",
+    logger.info("Checking if the WLST job {0} completed in namespace {1}",
         jobName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for job {0} to be completed in namespace {1} "
-                + "(elapsed time {2} ms, remaining time {3} ms)",
+            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
+                    + "(elapsed time {2} ms, remaining time {3} ms)",
                 jobName,
                 namespace,
                 condition.getElapsedTimeInMS(),
@@ -161,16 +163,16 @@ public class WLSTUtils {
           .findAny()
           .orElse(null);
       if (jobCondition != null) {
-        getLogger().severe("Job {0} failed to execute WLST script", jobName);
+        logger.severe("Job {0} failed to execute WLST script", jobName);
         List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
         if (!pods.isEmpty()) {
-          getLogger().severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+          logger.severe(getPodLog(pods.get(0).getMetadata().getName(), namespace));
           fail("WLST execute job failed");
         }
       }
       List<V1Pod> pods = listPods(namespace, "job-name=" + jobName).getItems();
       if (!pods.isEmpty()) {
-        getLogger().info(getPodLog(pods.get(0).getMetadata().getName(), namespace));
+        logger.info(getPodLog(pods.get(0).getMetadata().getName(), namespace));
       }
     }
   }
@@ -181,6 +183,7 @@ public class WLSTUtils {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
+    final LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
@@ -206,7 +209,7 @@ public class WLSTUtils {
       }
       isUseSecret = true;
     }
-    getLogger().info("Using image {0}", image);
+    logger.info("Using image {0}", image);
   }
 
 }

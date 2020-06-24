@@ -72,7 +72,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String READINESS_PATH = "/weblogic/ready";
 
   final WlsServerConfig scan;
-  private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
@@ -81,8 +80,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final String domainRestartVersion;
 
   PodStepContext(Step conflictStep, Packet packet) {
+    super(packet.getSpi(DomainPresenceInfo.class));
     this.conflictStep = conflictStep;
-    info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
     miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
@@ -435,6 +434,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
 
+    updateForOwnerReference(metadata);
     return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 
@@ -831,6 +831,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private class CreateResponseStep extends BaseResponseStep {
+
     CreateResponseStep(Step next) {
       super(next);
     }
@@ -841,6 +842,14 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (callResponse.getResult() != null) {
         info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
         setRecordedPod(callResponse.getResult());
+      }
+
+      boolean waitForPodReady =
+          (boolean) Optional.ofNullable(packet.get(ProcessingConstants.WAIT_FOR_POD_READY)).orElse(false);
+
+      if (waitForPodReady) {
+        PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+        return doNext(pw.waitForReady(callResponse.getResult(), getNext()), packet);
       }
       return doNext(packet);
     }

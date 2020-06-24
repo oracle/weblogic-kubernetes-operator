@@ -12,14 +12,11 @@ public class LoggingExtension implements TestInstancePostProcessor {
   @Override
   public void postProcessTestInstance(
       Object testInstance, ExtensionContext extensionContext) throws Exception {
+
     ThreadSafeLogger.globalLogger.info("Initializing logger in postProcessTestInstance for {0}",
         testInstance.getClass().getSimpleName());
     // initialize logger for each test
     ThreadSafeLogger.init(testInstance.getClass().getSimpleName());
-    /* LoggingFacade logger = ThreadSafeLogger.getLogger();
-    logger.info("First log message");
-    testInstance.getClass().getMethod("setLogger", LoggingFacade.class)
-        .invoke(testInstance, logger);*/
 
   }
 

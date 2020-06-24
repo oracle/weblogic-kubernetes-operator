@@ -15,4 +15,4 @@ the domain directory, which occurs during the "introspection" phase, and when th
 
 Check that the user name and password credentials stored in the Kubernetes Secret referenced by `weblogicCredentialsSecret` contain the expected values for an account with administrative privilege for the WebLogic domain.
 Then [stop all WebLogic Server instances](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers)
-in the domain before restarting so that the operator will repeat its introspection and generate the corrected `boot.properites` files.
+in the domain before restarting so that the operator will repeat its introspection and generate the corrected `boot.properties` files.
