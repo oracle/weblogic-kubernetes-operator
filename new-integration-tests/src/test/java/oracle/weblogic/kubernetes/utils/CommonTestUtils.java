@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -67,6 +68,7 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.STABLE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
@@ -1634,5 +1636,32 @@ public class CommonTestUtils {
         .redirect(true);
 
     return Command.withParams(params).execute();
+  }
+
+  /**
+   * Generate a text file in RESULTS_ROOT directory by replacing template value.
+   * @param inputTemplateFile input template file 
+   * @param outputFile output file to be generated
+   * @param templateMap map containing template variable(s) to be replaced
+   * @return path of the generated file
+  */
+  public static Path generateFileFromTemplate(
+       String inputTemplateFile, String outputFile, 
+       Map<String, String> templateMap) throws IOException {
+ 
+    Path srcFile = Paths.get(inputTemplateFile);
+    Path targetFile = Paths.get(RESULTS_ROOT,outputFile);
+    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile, targetFile.toString());
+
+    // Add the parent directory for the target file
+    Path parentDir = targetFile.getParent();
+    Files.createDirectories(parentDir);
+    Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+    String out = targetFile.toString();
+    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
+      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
+      replaceStringInFile(out, entry.getKey(), entry.getValue()); 
+    }
+    return targetFile;
   }
 }
