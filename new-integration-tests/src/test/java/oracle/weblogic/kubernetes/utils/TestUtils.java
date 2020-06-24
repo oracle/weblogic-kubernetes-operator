@@ -10,9 +10,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * The utility class for tests.
@@ -28,10 +31,10 @@ public class TestUtils {
    * @return true if the web app can hit all managed servers, false otherwise
    */
   public static boolean callWebAppAndCheckForServerNameInResponse(
-                          String curlCmd,
-                          List<String> managedServerNames,
-                          int maxIterations) {
-
+      String curlCmd,
+      List<String> managedServerNames,
+      int maxIterations) {
+    LoggingFacade logger = getLogger();
     // first map all server names with false
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName ->
@@ -47,7 +50,7 @@ public class TestUtils {
       if (managedServers.containsValue(false)) {
         try {
           // sometimes the pod is not ready even the condition check is ready, sleep a little bit
-          Thread.sleep(100);
+          Thread.sleep(1000);
         } catch (InterruptedException ignore) {
           // ignore
         }
@@ -56,6 +59,8 @@ public class TestUtils {
           result = ExecCommand.exec(curlCmd, true);
 
           String response = result.stdout().trim();
+          logger.info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+              i, result.exitValue(), response, result.stderr());
           managedServers.keySet().forEach(key -> {
             if (response.contains(key)) {
               managedServers.put(key, true);
@@ -89,6 +94,67 @@ public class TestUtils {
   }
 
   /**
+   * Call the curl command and check the managed servers can see each other.
+   *
+   * @param curlCmd curl command to call the clusterview app
+   * @param managedServerNames managed server names part of the cluster
+   * @param maxIterations max iterations to call the curl command
+   * @return true if the managed servers can see each other, false otherwise
+   */
+  public static boolean verifyClusterMemberCommunication(
+      String curlCmd,
+      List<String> managedServerNames,
+      int maxIterations) {
+    LoggingFacade logger = getLogger();
+    // first map all server names with false
+    HashMap<String, Boolean> managedServers = new HashMap<>();
+    managedServerNames.forEach(managedServerName
+        -> managedServers.put(managedServerName, false)
+    );
+
+    logger.info("Calling clusterview at most {0} times using command: {1}", maxIterations, curlCmd);
+
+    // check the response contains managed server name
+    ExecResult result = null;
+    for (int i = 0; i < maxIterations; i++) {
+      if (managedServers.containsValue(false)) {
+        try {
+          TimeUnit.MILLISECONDS.sleep(100);
+          result = ExecCommand.exec(curlCmd, true);
+          String response = result.stdout().trim();
+          for (var entry : managedServers.entrySet()) {
+            if (response.contains("ServerName:" + entry.getKey())) {
+              boolean bound = true;
+              for (String managedServerName : managedServerNames) {
+                bound = bound && response.contains("Bound:" + managedServerName);
+              }
+              if (bound) {
+                managedServers.put(entry.getKey(), true);
+              }
+            }
+          }
+        } catch (IOException | InterruptedException e) {
+          logger.info(e.toString());
+          return false;
+        }
+      } else {
+        return true;
+      }
+    }
+    // after the max iterations, if hit here, one or more servers cannot see other
+    managedServers.forEach((key, value) -> {
+      if (value) {
+        logger.info("The server {0} can see other cluster members", key);
+      } else {
+        logger.info("The server {0} is not bound in JNDI server "
+            + "or is generating an unexpected curl response", key);
+      }
+    });
+
+    return false;
+  }
+
+  /**
    * Get the next free port between from and to.
    *
    * @param from range starting point
@@ -96,6 +162,7 @@ public class TestUtils {
    * @return the next free port number, if there is no free port between the range, return the ending point
    */
   public static int getNextFreePort(int from, int to) {
+    LoggingFacade logger = getLogger();
     int port;
     for (port = from; port < to; port++) {
       if (isLocalPortFree(port)) {
@@ -118,12 +185,64 @@ public class TestUtils {
   }
 
   /**
+   * Call a web app and wait for the response code 200.
+   * @param curlCmd curl command to call the web app
+   * @param maxIterations max iterations to call the curl command
+   * @return true if 200 response code is returned, false otherwise
+   */
+  public static boolean callWebAppAndWaitTillReady(String curlCmd, int maxIterations)  {
+    LoggingFacade logger = getLogger();
+    ExecResult result = null;
+    String responseCode = "";
+
+    for (int i = 0; i < maxIterations; i++) {
+      try {
+        result = ExecCommand.exec(curlCmd);
+        responseCode = result.stdout().trim();
+
+        if (result.exitValue() != 0 || !responseCode.equals("200")) {
+          logger.info("callWebApp did not return 200 response code, got {0}, iteration {1} of {2}",
+              responseCode, i, maxIterations);
+
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException ignore) {
+            // ignore
+          }
+        } else if (responseCode.equals("200")) {
+          logger.info("callWebApp returned 200 response code, iteration {0}", i);
+          return true;
+        }
+      } catch (Exception e) {
+        logger.info("Got exception while running command: {0}", curlCmd);
+        logger.info(e.toString());
+        if (result != null) {
+          logger.info("result.stdout: \n{0}", result.stdout());
+          logger.info("result.stderr: \n{0}", result.stderr());
+          logger.info("result.exitValue: \n{0}", result.exitValue());
+        }
+        return false;
+      }
+    }
+
+    logger.info("FAILURE: callWebApp did not return 200 response code, got {0}", responseCode);
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
+      logger.info("result.exitValue: \n{0}", result.exitValue());
+    }
+
+    return false;
+  }
+
+  /**
    * Check if the given port number is free.
    *
    * @param port port number to check
    * @return true if the port is free, false otherwise
    */
   private static boolean isLocalPortFree(int port) {
+    LoggingFacade logger = getLogger();
     Socket socket = null;
     try {
       socket = new Socket(K8S_NODEPORT_HOST, port);

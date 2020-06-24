@@ -52,7 +52,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
@@ -92,7 +92,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -102,6 +101,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -116,7 +116,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
-public class ItDomainInPV implements LoggedTest {
+public class ItDomainInPV {
 
   private static String opNamespace = null;
   private static String wlstDomainNamespace = null;
@@ -136,6 +136,7 @@ public class ItDomainInPV implements LoggedTest {
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
           .atMost(5, MINUTES).await();
+  private static LoggingFacade logger = null;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -146,7 +147,7 @@ public class ItDomainInPV implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
-
+    logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);

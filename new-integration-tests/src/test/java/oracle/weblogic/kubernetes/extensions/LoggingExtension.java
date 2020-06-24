@@ -15,6 +15,7 @@ public class LoggingExtension implements TestInstancePostProcessor {
 
     ThreadSafeLogger.globalLogger.info("Initializing logger in postProcessTestInstance for {0}",
         testInstance.getClass().getSimpleName());
+
     // initialize logger for each test
     ThreadSafeLogger.init(testInstance.getClass().getSimpleName());
 

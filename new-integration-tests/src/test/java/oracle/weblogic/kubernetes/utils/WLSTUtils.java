@@ -96,7 +96,7 @@ public class WLSTUtils {
         .addArgsItem(MOUNT_POINT + "/" + wlstPropertiesFile); //WLST property file
 
     assertDoesNotThrow(()
-            -> createWLSTJob(wlstJobName, wlstScriptConfigMapName, namespace, jobCreationContainer),
+        -> createWLSTJob(wlstJobName, wlstScriptConfigMapName, namespace, jobCreationContainer),
         "Online WLST execution failed");
   }
 

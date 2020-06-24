@@ -1861,7 +1861,7 @@ public class Kubernetes {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1910,7 +1910,7 @@ public class Kubernetes {
           null // fieldManager is a name associated with the actor
       );
     } catch (ApiException apex) {
-      logger.severe(apex.getResponseBody());
+      getLogger().severe(apex.getResponseBody());
       throw apex;
     }
 
@@ -1992,7 +1992,7 @@ public class Kubernetes {
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
     } catch (ApiException apex) {
-      logger.warning(apex.getResponseBody());
+      getLogger().warning(apex.getResponseBody());
       throw apex;
     }
     return clusterRoleBindingList;

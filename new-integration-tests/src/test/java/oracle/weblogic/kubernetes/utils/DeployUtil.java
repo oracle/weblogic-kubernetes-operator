@@ -154,7 +154,7 @@ public class DeployUtil {
 
     logger.info("Running a Kubernetes job to deploy");
     assertDoesNotThrow(()
-            -> createDeployJob(deployScriptConfigMapName, namespace, jobCreationContainer),
+        -> createDeployJob(deployScriptConfigMapName, namespace, jobCreationContainer),
         "Deployment failed");
   }
 
