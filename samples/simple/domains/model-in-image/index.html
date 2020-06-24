@@ -12,18 +12,18 @@
     <title>Model in image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1592861782" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1592861782" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1593017479" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1593017479" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1592861782"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1593017479"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1592861782"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1592861782"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1593017479"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1593017479"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1592861782"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1593017479"></script>
 
     
   </div>
@@ -2923,21 +2923,21 @@
 <p>The <code>JAVA_HOME</code> environment variable must be set and must reference a valid JDK 8 or 11 installation.</p>
 </li>
 <li>
-<p>Get the operator source from the <code>release/3.0.0-rc1</code> branch and put it in <code>/tmp/operator-source</code>.</p>
+<p>Get the operator source from the <code>release/3.0.0-rc1</code> branch and put it in <code>/tmp/weblogic-kubernetes-operator</code>.</p>
 <p>For example:</p>
-<pre><code>$ mkdir /tmp/operator-source
-$ cd /tmp/operator-source
+<pre><code>$ cd /tmp
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+$ cd weblogic-kubernetes-operator
 $ git checkout release/3.0.0-rc1
 </code></pre><blockquote>
-<p><strong>Note</strong>: We will refer to the top directory of the operator source tree as <code>/tmp/operator-source</code>; however, you can use a different location.</p>
+<p><strong>Note</strong>: We will refer to the top directory of the operator source tree as <code>/tmp/weblogic-kubernetes-operator</code>; however, you can use a different location.</p>
 </blockquote>
 <p>For additional information about obtaining the operator source, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/">Developer Guide Requirements</a>.</p>
 </li>
 <li>
 <p>Copy the sample to a new directory; for example, use directory <code>/tmp/mii-sample</code>.</p>
 <pre><code>$ mkdir /tmp/mii-sample
-$ cp -r /tmp/operator-source/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
+$ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
 </code></pre><blockquote>
 <p><strong>Note</strong>: We will refer to this working copy of the sample as <code>/tmp/mii-sample</code>; however, you can use a different location.
 
@@ -3157,8 +3157,8 @@ $ ./imagetool/bin/imagetool.sh cache addInstaller \
 </ul>
 </li>
 <li>
-<p>Use the sample script in <code>/tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service</code> to create an Oracle database running in the pod, <code>oracle-db</code>.</p>
-<pre><code>$ cd /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service
+<p>Use the sample script in <code>/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service</code> to create an Oracle database running in the pod, <code>oracle-db</code>.</p>
+<pre><code>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
 $ start-db-service.sh
 </code></pre><p>This script will deploy a database in the <code>default</code> namespace with the connect string <code>oracle-db.default.svc.cluster.local:1521/devpdb.k8s</code>, and administration password <code>Oradoc_db1</code>.</p>
 <p>This step is based on the steps documented in <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/">Run a Database</a>.</p>
@@ -3167,9 +3167,9 @@ $ start-db-service.sh
 </ul>
 </li>
 <li>
-<p>Use the sample script in <code>/tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema</code> to create the RCU schema with the schema prefix <code>FMW1</code>.</p>
+<p>Use the sample script in <code>/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema</code> to create the RCU schema with the schema prefix <code>FMW1</code>.</p>
 <p>Note that this script assumes <code>Oradoc_db1</code> is the DBA password, <code>Oradoc_db1</code> is the schema password, and that the database URL is <code>oracle-db.default.svc.cluster.local:1521/devpdb.k8s</code>.</p>
-<pre><code>$ cd /tmp/operator-source/kubernetes/samples/scripts/create-rcu-schema
+<pre><code>$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
 $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 </code></pre><p><strong>NOTE</strong>:  If you need to drop the repository, use this command:</p>
 <pre><code>$ drop-rcu-schema.sh -s FMW1
@@ -4598,8 +4598,8 @@ Found 1 local data source:
 <ol>
 <li>
 <p>Delete the domain resources.</p>
-<pre><code>$ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
-$ /tmp/operator-source/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
+<pre><code>$ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+$ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
 </code></pre><p>This deletes the domain and any related resources that are labeled with the domain UID <code>sample-domain1</code> and <code>sample-domain2</code>.</p>
 <p>It leaves the namespace intact, the operator running, the load balancer running (if installed), and the database running (if installed).</p>
 <blockquote>
@@ -4613,7 +4613,7 @@ $ kubectl delete namespace traefik
 </code></pre></li>
 <li>
 <p>If you set up a database for <code>JRF</code>:</p>
-<pre><code>$ /tmp/operator-source/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
+<pre><code>$ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
 </code></pre></li>
 <li>
 <p>Delete the operator and its namespace:</p>
@@ -6524,19 +6524,19 @@ $ docker image rm model-in-image:JRF-v2
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1592861782"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1592861782"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1592861782"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1592861782"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1592861782"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1592861782"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1593017479"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1593017479"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1593017479"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1593017479"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1593017479"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1593017479"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1592861782"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1592861782"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1592861782"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1593017479"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1593017479"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1593017479"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1592861782" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1592861782"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1593017479" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1593017479"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
