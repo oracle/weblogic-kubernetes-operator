@@ -23,6 +23,7 @@ import weblogic.management.configuration.ServerMBean;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
+import weblogic.management.runtime.JDBCDataSourceRuntimeMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
 
 /**
@@ -82,16 +83,35 @@ public class ConfigServlet extends HttpServlet {
       String serverType = request.getParameter("serverType");
       String serverName = request.getParameter("serverName");
       String attribute = request.getParameter("attribute");
-      ServerMBean serverConfiguration = getServerMBean(serverType, serverName);
 
-      switch (attribute) {
-        case "maxmessagesize":
-          int size = getMaxMessageSize(serverConfiguration);
-          out.println("MaxMessageSize=" + size);
-          break;
-        default:
-          out.println("supported attributes are<br>");
-          out.println("MaxMessageSize");
+      // check attributes of server configurations
+      if (attribute != null) {
+        ServerMBean serverConfiguration = getServerMBean(serverType, serverName);
+        switch (attribute) {
+          case "maxmessagesize":
+            int size = getMaxMessageSize(serverConfiguration);
+            out.println("MaxMessageSize=" + size);
+            break;
+          default:
+            out.println("supported attributes are<br>");
+            out.println("MaxMessageSize");
+        }
+      }
+
+      // test jdbc connection pool
+      String dsTest = request.getParameter("dsTest");
+      String dsName = request.getParameter("dsName");
+      if (dsTest != null) {
+        ServerRuntimeMBean serverRuntime = getServerRuntime(serverName);
+        JDBCDataSourceRuntimeMBean[] jdbcDataSourceRuntimeMBeans = serverRuntime.getJDBCServiceRuntime().getJDBCDataSourceRuntimeMBeans();
+        for (JDBCDataSourceRuntimeMBean jdbcDataSourceRuntimeMBean : jdbcDataSourceRuntimeMBeans) {
+          if (jdbcDataSourceRuntimeMBean.getName().equals(dsName)) {
+            String testPool = jdbcDataSourceRuntimeMBean.testPool();
+            if (testPool == null) {
+              out.println("Connection successful");
+            }
+          }
+        }
       }
     }
   }
@@ -106,6 +126,16 @@ public class ConfigServlet extends HttpServlet {
     } else {
       return domainRuntimeServiceMbean.findServerConfiguration(serverName);
     }
+  }
+
+  private ServerRuntimeMBean getServerRuntime(String serverName) {
+    ServerRuntimeMBean[] serverRuntimes = domainRuntimeServiceMbean.getServerRuntimes();
+    for (ServerRuntimeMBean serverRuntime : serverRuntimes) {
+      if (serverRuntime.getName().equals(serverName)) {
+        return serverRuntime;
+      }
+    }
+    return null;
   }
 
   /**

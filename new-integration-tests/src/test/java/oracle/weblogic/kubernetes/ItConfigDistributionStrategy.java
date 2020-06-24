@@ -62,7 +62,9 @@ import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.MySQLDBUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
+import oracle.weblogic.kubernetes.utils.WLSTUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -159,32 +161,17 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   int replicaCount = 2;
 
   String overridecm = "configoverride-cm";
+  LinkedHashMap<String, DateTime> podTimestamps;
+
+  final int mysqlDBPort1 = getNextFreePort(30000, 32767);
+  final int mysqlDBPort2 = getNextFreePort(30000, 32767);
+
+  String dsName = "JdbcTestDataSource-0";
 
   /**
-   * Create secret for docker credentials.
-   *
-   * @param namespace name of the namespace in which to create secret
-   */
-  private static void createOCRRepoSecret(String namespace) {
-    boolean secretExists = false;
-    V1SecretList listSecrets = listSecrets(namespace);
-    if (null != listSecrets) {
-      for (V1Secret item : listSecrets.getItems()) {
-        if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
-          secretExists = true;
-          break;
-        }
-      }
-    }
-    if (!secretExists) {
-      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
-          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
-    }
-  }
-
-  /**
-   * Assigns unique namespaces for operator and domains. Pull WebLogic image if running tests in Kind cluster. Installs
-   * operator.
+   * Assigns unique namespaces for operator and domains.
+   * Pull WebLogic image if running tests in Kind cluster.
+   * Installs operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -231,6 +218,9 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
 
     createDomain();
+    MySQLDBUtils.createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, introDomainNamespace);
+    MySQLDBUtils.createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, introDomainNamespace);
+    createJdbcDataSource("root", "root123", mysqlDBPort1);
     deployApplication();
 
   }
@@ -324,55 +314,28 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDynamicOverride() {
 
-    logger.info("Creating config overrides with config.xml {0}", Paths.get(RESOURCE_DIR, "configfiles"
-        + "/configoverridesset1/config.xml"));
-    ArrayList<Path> configfiles = new ArrayList<>();
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
-    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String configoverridecm = "configoverride-cm";
-    CommonTestUtils.createConfigMapFromFiles(configoverridecm, configfiles, introDomainNamespace);
+    createCustomConfigOverridesCM();
+    storePodCreationTimestamps();
 
-    // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
-    }
-
-    logger.info("patch the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC field");
+    logger.info("patching the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC field");
     String patchStr = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
         + "\"value\": \"DYNAMIC\"}"
         + "]";
-
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+
+    //workaround for bug - setting overrideDistributionStrategy needs restart of server pods
     restartDomain();
 
-    // get the pod creation time stamps
-    // get the creation time of the admin server pod before patching
-    adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
-    }
-
-
-    logger.info("Patch the domain to add overridesConfigMap field and update introspectVersion field");
+    logger.info("Patching the domain to add overridesConfigMap field and update introspectVersion field");
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
         + "\"value\": \"configoverride-cm\"},"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
         + "]";
-
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -385,15 +348,17 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
     logger.info("Verifying the pod states are not changed");
-    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
+    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
       String podName = (String) entry.getKey();
       DateTime creationTimestamp = (DateTime) entry.getValue();
       assertTrue(TestAssertions.podStateNotChanged(podName, domainUid, introDomainNamespace,
           creationTimestamp), "Pod is restarted");
     }
 
+    //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
     restartDomain();
 
+    //verify the WebLogic server configuration is updated
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(introDomainNamespace, adminServerPodName
@@ -401,7 +366,6 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             "default"),
         "Getting admin server node port failed");
 
-    //access application from admin server
     String appURI = "/clusterview/ConfigServlet?"
         + "attribute=maxmessagesize&"
         + "serverType=adminserver&"
@@ -413,6 +377,40 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             "Accessing sample application on admin server failed")
             .statusCode(), "Status code not equals to 200");
 
+    appURI = "/clusterview/ConfigServlet?"
+        + "dsTest=true&"
+        + "dsName=" + dsName + "&"
+        + "serverName=" + managedServerNameBase + 1;
+    String dsurl = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(dsurl, true).body().contains("Connection successful")));
+    assertEquals(200,
+        assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
+            "Accessing sample application on admin server failed")
+            .statusCode(), "Status code not equals to 200");
+
+  }
+
+  private void storePodCreationTimestamps() {
+    // get the pod creation time stamps
+    podTimestamps = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    podTimestamps.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      podTimestamps.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    }
+  }
+
+  private void createCustomConfigOverridesCM() {
+    logger.info("Creating config overrides with config.xml {0}", Paths.get(RESOURCE_DIR, "configfiles"
+        + "/configoverridesset1/config.xml"));
+    ArrayList<Path> configfiles = new ArrayList<>();
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+    configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
+    String configoverridecm = "configoverride-cm";
+    CommonTestUtils.createConfigMapFromFiles(configoverridecm, configfiles, introDomainNamespace);
   }
 
   /**
@@ -788,6 +786,34 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
   }
 
+  private void createJdbcDataSource(String user, String password, int mySQLNodePort) {
+
+    try {
+      String jdbcDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mySQLNodePort;
+
+      // create a temporary WebLogic domain property file
+      File domainPropertiesFile = File.createTempFile("domain", "properties");
+      Properties p = new Properties();
+      p.setProperty("admin_host", K8S_NODEPORT_HOST);
+      p.setProperty("admin_port", Integer.toString(t3ChannelPort));
+      p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+      p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+      p.setProperty("dsName", dsName);
+      p.setProperty("dsUrl", jdbcDsUrl);
+      p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+      p.setProperty("dsUser", user);
+      p.setProperty("dsPassword", password);
+      p.setProperty("dsTarget", clusterName);
+      p.store(new FileOutputStream(domainPropertiesFile), "domain properties file");
+
+      // WLST script for creating jdbc data source
+      Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "create-jdbc-resource.py");
+      WLSTUtils.executeWLSTScript(wlstScript, domainPropertiesFile.toPath(), introDomainNamespace);
+    } catch (IOException ex) {
+      logger.severe(ex.getMessage());
+    }
+  }
+
   /**
    * Create a WebLogic domain on a persistent volume by doing the following. Create a configmap containing WLST script
    * and property file. Create a Kubernetes job to create domain on persistent volume.
@@ -1062,5 +1088,29 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           .isTrue();
     }
   }
+
+
+  /**
+   * Create secret for docker credentials.
+   *
+   * @param namespace name of the namespace in which to create secret
+   */
+  private static void createOCRRepoSecret(String namespace) {
+    boolean secretExists = false;
+    V1SecretList listSecrets = listSecrets(namespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals(OCR_SECRET_NAME)) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      CommonTestUtils.createDockerRegistrySecret(OCR_USERNAME, OCR_PASSWORD,
+          OCR_EMAIL, OCR_REGISTRY, OCR_SECRET_NAME, namespace);
+    }
+  }
+
 
 }
