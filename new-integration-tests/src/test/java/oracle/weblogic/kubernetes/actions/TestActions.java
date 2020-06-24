@@ -372,7 +372,11 @@ public class TestActions {
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations,
                                            boolean setIngressHost) {
-    return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap, annotations, setIngressHost);
+    return Ingress.createIngress(ingressName,
+            domainNamespace,
+            domainUid,
+            clusterNameMsPortMap,
+            annotations, setIngressHost);
   }
 
   /**
