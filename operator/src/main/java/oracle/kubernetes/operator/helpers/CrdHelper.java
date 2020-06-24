@@ -679,8 +679,8 @@ public class CrdHelper {
 
       // Check product version label
       if (productVersion != null) {
-        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) > 0) {
-          return true;
+        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) < 0) {
+          return false;
         }
       }
 
@@ -702,8 +702,8 @@ public class CrdHelper {
 
       // Check product version label
       if (productVersion != null) {
-        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) > 0) {
-          return true;
+        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) < 0) {
+          return false;
         }
       }
 
