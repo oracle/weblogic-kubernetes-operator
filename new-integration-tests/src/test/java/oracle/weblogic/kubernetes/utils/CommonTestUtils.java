@@ -1687,7 +1687,7 @@ public class CommonTestUtils {
 
     return Command.withParams(params).execute();
   }
-  
+
   /**
    * Generate a text file in RESULTS_ROOT directory by replacing template value.
    * @param inputTemplateFile input template file
@@ -1721,12 +1721,10 @@ public class CommonTestUtils {
    * @param pvName name of the persistent volume to create
    * @param domainUid domain UID
    * @param className name of the class to call this method
-   * @throws IOException when creating pv path fails
    */
   public static void createPV(String pvName, String domainUid, String className) {
     logger.info("creating persistent volume for pvName {0}, domainUid: {1}, className: {2}",
         pvName, domainUid, className);
-
     Path pvHostPath = null;
     try {
       pvHostPath = Files.createDirectories(Paths.get(
@@ -1758,19 +1756,17 @@ public class CommonTestUtils {
     assertTrue(success, "PersistentVolume creation failed");
   }
 
-
   /**
    * Create a persistent volume claim.
    *
    * @param pvName name of the persistent volume
-   * @param pvcName name of the persistent volume to create
+   * @param pvcName name of the persistent volume claim to create
    * @param domainUid UID of the WebLogic domain
    * @param namespace name of the namespace in which to create the persistent volume claim
    */
   public static void createPVC(String pvName, String pvcName, String domainUid, String namespace) {
     logger.info("creating persistent volume claim for pvName {0}, pvcName {1}, "
         + "domainUid: {2}, namespace: {3}", pvName, pvcName, domainUid, namespace);
-
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
@@ -1795,7 +1791,7 @@ public class CommonTestUtils {
    * @param configMapName name of the configmap to create
    * @param files files to add in configmap
    * @param namespace name of the namespace in which to create configmap
-   * @param className of the class to call this method
+   * @param className name of the class to call this method
    * @throws IOException when reading the domain script files fail
    * @throws ApiException if create configmap fails
    */
@@ -1844,7 +1840,6 @@ public class CommonTestUtils {
     logger.info("Running Kubernetes job to create domain for image: {1}, isUserSecret: {2} "
         + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image, isUseSecret,
         pvName, pvcName, domainScriptCM, namespace);
-
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()

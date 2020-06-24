@@ -152,23 +152,21 @@ public class ItJrfDomainInPV implements LoggedTest {
    * Create a JRF domain using WLST in a persistent volume.
    * Create a domain custom resource with domainHomeSourceType as PersistentVolume.
    * Verify domain pods runs in ready state and services are created.
-   * Verify login to WebLogic console is successful.
    */
   @Test
   @DisplayName("Create JRF domain in PV using WLST script")
   public void testJrfDomainInPvUsingWlst() {
-    
     final String clusterName = "cluster-jrfdomain-inpv";
     final String adminServerName = "wlst-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "wlst-ms-";
     final int managedServerPort = 8001;
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
+    final int t3ChannelPort = getNextFreePort(30000, 32767);
 
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+    final String pvName = domainUid + "-pv";
+    final String pvcName = domainUid + "-pvc";
 
     // create pull secrets for jrfDomainNamespace when running in non Kind Kubernetes cluster
     if (isUseSecret) {
@@ -185,7 +183,6 @@ public class ItJrfDomainInPV implements LoggedTest {
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
     // create persistent volume and persistent volume claim for domain
-    // these resources should be labeled with domainUid for cleanup after testing
     CommonTestUtils.createPV(pvName, domainUid, this.getClass().getSimpleName());
     CommonTestUtils.createPVC(pvName, pvcName, domainUid, jrfDomainNamespace);
 
@@ -309,7 +306,7 @@ public class ItJrfDomainInPV implements LoggedTest {
    * Create a configmap containing WLST script and property file.
    * Create a Kubernetes job to create domain on persistent volume.
    *
-   * @param wlstScriptFile python script to create domain
+   * @param wlstScriptFile python script file to create domain
    * @param domainPropertiesFile properties file containing domain configuration
    * @param pvName name of the persistent volume to create domain in
    * @param pvcName name of the persistent volume claim
