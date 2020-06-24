@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_BINDING_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_NAME;
@@ -136,12 +137,13 @@ class ItScaleMiiDomainNginx {
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, externalRestHttpsPort, domainNamespace);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
     createMiiDomainWithMultiClusters();

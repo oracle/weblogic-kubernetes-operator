@@ -178,12 +178,12 @@ public class ItIntrospectVersion {
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    logger.info("NGINX http node port: {0}", nodeportshttp);
 
     //determine if the tests are running in Kind cluster. if true use images from Kind registry
     if (KIND_REPO != null) {

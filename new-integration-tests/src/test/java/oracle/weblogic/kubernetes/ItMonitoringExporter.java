@@ -99,6 +99,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
@@ -234,12 +235,13 @@ class ItMonitoringExporter {
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(imageName, domain1Uid);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    logger.info("NGINX http node port: {0}", nodeportshttp);
+
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
