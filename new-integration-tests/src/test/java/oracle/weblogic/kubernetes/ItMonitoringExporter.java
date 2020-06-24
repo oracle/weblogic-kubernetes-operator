@@ -1271,15 +1271,15 @@ class ItMonitoringExporter implements LoggedTest {
             namespace, domainHomeSource, replicaCount);
     String adminServerPodName = domainUid + "-admin-server";
 
+    // check that admin service exists in the domain namespace
+    logger.info("Checking that admin service {0} exists in namespace {1}",
+            adminServerPodName, namespace);
+    checkServiceExists(adminServerPodName, namespace);
+
     // check that admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, namespace);
     checkPodReady(adminServerPodName, domainUid, namespace);
-
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, namespace);
-    checkServiceExists(adminServerPodName, namespace);
 
     String managedServerPrefix = domainUid + "-managed-server";
     // check for managed server pods existence in the domain namespace
