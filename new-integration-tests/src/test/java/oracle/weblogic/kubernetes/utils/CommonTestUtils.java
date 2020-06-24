@@ -1641,17 +1641,24 @@ public class CommonTestUtils {
   /**
    * Generate a text file in RESULTS_ROOT directory by replacing template value.
    * @param inputTemplateFile input template file 
-   * @param outputFile output file to be generated
+   * @param outputFile output file to be generated. This file will be copied to RESULTS_ROOT. If outputFile contains
+   *                   a directory, then the directory will created if it does not exist.
+   *                   example - crossdomxaction/istio-cdt-http-srvice.yaml
    * @param templateMap map containing template variable(s) to be replaced
-   * @return path of the generated file
+   * @return path of the generated file - will be under RESULTS_ROOT
   */
   public static Path generateFileFromTemplate(
        String inputTemplateFile, String outputFile, 
        Map<String, String> templateMap) throws IOException {
- 
+
+    Path targetFileParent = Paths.get(outputFile).getParent();
+    if (targetFileParent != null) {
+      checkDirectory(targetFileParent.toString());
+    }
+
     Path srcFile = Paths.get(inputTemplateFile);
-    Path targetFile = Paths.get(RESULTS_ROOT,outputFile);
-    logger.info("Copying  source file {0} to target file {1}",inputTemplateFile, targetFile.toString());
+    Path targetFile = Paths.get(RESULTS_ROOT, outputFile);
+    logger.info("Copying  source file {0} to target file {1}", inputTemplateFile, targetFile.toString());
 
     // Add the parent directory for the target file
     Path parentDir = targetFile.getParent();

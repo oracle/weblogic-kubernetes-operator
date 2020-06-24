@@ -148,7 +148,7 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioHttpGateway: kubectl returned {0}", result.toString());
-    return result.stdout().contains("istio-http-gateway created"); 
+    return !(result.stdout().contains("Error"));
   }
 
   /**
