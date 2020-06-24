@@ -5,11 +5,17 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
@@ -53,7 +59,7 @@ public class FileUtils {
       throw new FileNotFoundException("The expected file " + fileName + " was not found.");
     }
   }
-  
+
   /**
    * Check if the required file exists.
    *
@@ -67,7 +73,7 @@ public class FileUtils {
     }
     return false;
   }
-  
+
   /**
    * Remove the contents of the given directory.
    *
@@ -85,7 +91,7 @@ public class FileUtils {
     cleanDirectory(file);
 
   }
-  
+
   /**
    * Copy files from source directory to destination directory.
    *
@@ -96,12 +102,24 @@ public class FileUtils {
   public static void copyFolder(String srcDir, String destDir) throws IOException {
     Path srcPath = Paths.get(srcDir);
     Path destPath = Paths.get(destDir);
+
+    copyFolder(srcPath, destPath);
+  }
+
+  /**
+   * Copy files from source directory to destination directory.
+   *
+   * @param srcPath - source directory
+   * @param destPath - target directory
+   * @throws IOException - throws IOException on error
+   */
+  public static void copyFolder(Path srcPath, Path destPath) throws IOException {
     try (Stream<Path> stream = Files.walk(srcPath)) {
       stream.forEach(source -> {
         try {
           copy(source, destPath.resolve(srcPath.relativize(source)));
         } catch (IOException e) {
-          String msg = String.format("Failed to copy file %s to %s", source, destDir);
+          String msg = String.format("Failed to copy file %s to %s", srcPath.toString(), destPath.toString());
           logger.severe(msg, e);
           // cannot throw non runtime exception. the caller checks throwable
           throw new RuntimeException(msg);
@@ -134,4 +152,38 @@ public class FileUtils {
       Files.copy(source, dest, REPLACE_EXISTING);
     }
   }
+
+  /**
+   * Create a zip file from a folder.
+   *
+   * @param dirPath folder to zip
+   * @return path of the zipfile
+   */
+  public static String createZipFile(Path dirPath) {
+    String zipFileName = dirPath.toString().concat(".zip");
+    try {
+      final ZipOutputStream outputStream = new ZipOutputStream(new FileOutputStream(zipFileName));
+      Files.walkFileTree(dirPath, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+          try {
+            Path targetFile = dirPath.relativize(file);
+            outputStream.putNextEntry(new ZipEntry(Paths.get(targetFile.toString()).toString()));
+            byte[] bytes = Files.readAllBytes(file);
+            outputStream.write(bytes, 0, bytes.length);
+            outputStream.closeEntry();
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
+          return FileVisitResult.CONTINUE;
+        }
+      });
+      outputStream.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
+    }
+    return zipFileName;
+  }
+
 }

@@ -24,6 +24,7 @@ import oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim;
 import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
+import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
 
@@ -60,6 +61,28 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isNginxReady(String namespace) {
     return Nginx.isReady(namespace);
+  }
+
+  /**
+   * Check if Voyager pod is running.
+   *
+   * @param namespace in which to check if Voyager pod is running
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
+   * @return true if Voyager pod is running, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerRunning(String namespace, String podName) {
+    return Voyager.isRunning(namespace, podName);
+  }
+
+  /**
+   * Check if Voyager pods is in the ready state in a given namespace.
+   *
+   * @param namespace in which to check if Voyager pod is in the ready state
+   * @param podName name of Voyager ingress controller pod or ingress resource pod
+   * @return true if Voyager pod is in the ready state, false otherwise
+   */
+  public static Callable<Boolean> isVoyagerReady(String namespace, String podName) {
+    return Voyager.isReady(namespace, podName);
   }
 
   /**

@@ -134,12 +134,54 @@ public class AsyncRequestStepTest {
     assertTrue(callFactory.invokedWith(requestParams));
   }
 
+  @Test
+  public void afterMultipleRetriesAndSuccessfulCallback_nextStepAppliedWithValue() {
+    sendMultipleFailedCallback(0, 2);
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
+    assertThat(nextStep.result, equalTo(17));
+  }
+
+  private void sendMultipleFailedCallback(int statusCode, int maxRetries) {
+    for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
+      testSupport.schedule(
+          () -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
+    }
+  }
+
+  @Test
+  public void afterRetriesExhausted_fiberTerminatesWithException() {
+    sendMultipleFailedCallback(0, 3);
+
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+  }
+
+  @Test
+  public void afterMultipleTimeoutsAndSuccessfulCallback_nextStepAppliedWithValue() {
+    sendMultipleFailedCallbackWithSetTime(504, 2);
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(17));
+    assertThat(nextStep.result, equalTo(17));
+  }
+
+  private void sendMultipleFailedCallbackWithSetTime(int statusCode, int maxRetries) {
+    for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
+      testSupport.schedule(
+          () -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
+      testSupport.setTime(10 + retryCount * 10, TimeUnit.SECONDS);
+    }
+  }
+
+  @Test
+  public void afterMultipleTimeoutsAndRetriesExhausted_fiberTerminatesWithException() {
+    sendMultipleFailedCallbackWithSetTime(504, 3);
+
+    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+  }
+
   // todo tests
   // can new request clear timeout action?
   // what is accessContinue?
   // test CONFLICT (409) status
   // no retry if status not handled
-  // test exceeded retry count
 
   static class TestStep extends ResponseStep<Integer> {
     private Integer result;
