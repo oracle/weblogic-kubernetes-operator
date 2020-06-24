@@ -273,7 +273,7 @@ public class DbUtils {
 
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
-        .atMost(5, MINUTES).await();
+        .atMost(10, MINUTES).await();
 
     Map labels = new HashMap<String, String>();
     labels.put("ruc", "rcu");
