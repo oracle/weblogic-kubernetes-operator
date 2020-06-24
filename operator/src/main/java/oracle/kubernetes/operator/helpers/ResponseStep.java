@@ -151,8 +151,11 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public NextAction onFailure(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
-    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse))
-        .orElse(onFailureNoRetry(packet, callResponse));
+    Optional<NextAction> optionalNextAction =
+        Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse));
+    return optionalNextAction
+        .filter(na -> optionalNextAction.isPresent())
+        .orElseGet(() -> onFailureNoRetry(packet, callResponse));
   }
 
   protected NextAction onFailureNoRetry(Packet packet, CallResponse<T> callResponse) {

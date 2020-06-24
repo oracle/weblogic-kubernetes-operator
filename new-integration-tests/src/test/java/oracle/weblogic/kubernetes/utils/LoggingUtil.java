@@ -240,8 +240,13 @@ public class LoggingUtil {
       for (var pod : Kubernetes.listPods(namespace, null).getItems()) {
         if (pod.getMetadata() != null) {
           String podName = pod.getMetadata().getName();
-          writeToFile(Kubernetes.getPodLog(podName, namespace), resultDir,
-              namespace + ".pod." + podName + ".log");
+          List<V1Container> containers = pod.getSpec().getContainers();
+          logger.info("Found {0} container(s) in the pod {1}", containers.size(), podName);
+          for (var container : containers) {
+            String containerName = container.getName();
+            writeToFile(Kubernetes.getPodLog(podName, namespace, containerName), resultDir,
+                namespace + ".pod." + podName + ".container." + containerName + ".log");
+          }
         }
       }
     } catch (Exception ex) {

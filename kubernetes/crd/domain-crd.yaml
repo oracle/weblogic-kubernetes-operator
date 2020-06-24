@@ -78,7 +78,7 @@ spec:
                       type: string
                   istio:
                     type: object
-                    description: The Istio service mesh integration settings
+                    description: The Istio service mesh integration settings.
                     properties:
                       readinessPort:
                         type: number

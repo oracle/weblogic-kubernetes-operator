@@ -41,3 +41,8 @@ appDeployments:
             SourcePath: "wlsdeploy/applications/sample-app.ear"
             ModuleType: ear
             Target: 'cluster-1,cluster-2'
+
+        opensessionapp:
+            SourcePath: "wlsdeploy/applications/opensessionapp.ear"
+            ModuleType: ear
+            Target: 'cluster-1,cluster-2'
