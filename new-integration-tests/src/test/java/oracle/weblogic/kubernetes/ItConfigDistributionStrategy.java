@@ -392,6 +392,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           creationTimestamp), "Pod is restarted");
     }
 
+    restartDomain();
+
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(introDomainNamespace, adminServerPodName
@@ -405,7 +407,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
     String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("78787878")));
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
@@ -503,7 +505,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         "Getting admin server node port failed");
 
     //access application from admin server
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("78787878")));
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
@@ -617,7 +619,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         "Getting admin server node port failed");
 
     //access application from admin server
-    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("79797979")));
+    assertTrue(assertDoesNotThrow(() -> OracleHttpClient.get(url, true).body().contains("78787878")));
     assertEquals(200,
         assertDoesNotThrow(() -> OracleHttpClient.get(url, true),
             "Accessing sample application on admin server failed")
