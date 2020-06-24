@@ -324,11 +324,13 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
   public void testDynamicOverride() {
 
+    logger.info("Creating config overrides with config.xml {0}", Paths.get(RESOURCE_DIR, "configfiles"
+        + "/configoverridesset1/config.xml"));
     ArrayList<Path> configfiles = new ArrayList<>();
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
-    String override1cm = "configoverride-cm";
-    CommonTestUtils.createConfigMapFromFiles(override1cm, configfiles, introDomainNamespace);
+    String configoverridecm = "configoverride-cm";
+    CommonTestUtils.createConfigMapFromFiles(configoverridecm, configfiles, introDomainNamespace);
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -341,7 +343,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    // patch the domain to increase the replicas of the cluster and add introspectVersion field
+    logger.info("patch the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC field");
     String patchStr = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overrideDistributionStrategy\", "
         + "\"value\": \"DYNAMIC\"}"
@@ -363,7 +365,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
 
 
-    // patch the domain to add overridesConfigMap field and update introspectVersion field
+    logger.info("Patch the domain to add overridesConfigMap field and update introspectVersion field");
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
@@ -371,7 +373,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
         + "]";
 
-    logger.info("Updating server configuration using patch string: {0}", patchStr);
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
@@ -382,6 +384,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
+    logger.info("Verifying the pod states are not changed");
     for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
       String podName = (String) entry.getKey();
       DateTime creationTimestamp = (DateTime) entry.getValue();
