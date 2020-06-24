@@ -16,7 +16,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 public class ThreadSafeLogger {
-  private static ThreadLocal<LoggingFacade> localLogger = new ThreadLocal<LoggingFacade>();
+  private static InheritableThreadLocal<LoggingFacade> localLogger = new InheritableThreadLocal<LoggingFacade>();
   public static final LoggingFacade globalLogger = LoggingFactory.getLogger("GLOBAL", "OperatorIntegrationTests");
 
   /**
