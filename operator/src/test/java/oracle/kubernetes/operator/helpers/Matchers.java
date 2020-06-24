@@ -39,6 +39,11 @@ public class Matchers {
     return hasItem(envVarWithName(name));
   }
 
+  public static Matcher<Iterable<? super V1EnvVar>> hasEnvVarContains(String name, String val) {
+    // env.getValue() will match if it contains 'val' (assumes ',' is the delimiter)
+    return hasItem(envVarWithName(name,"(^|.*,)" + val + "($|,.*)"));
+  }
+
   static Matcher<Map<? extends String, ? extends Quantity>> hasResourceQuantity(
       String resource, String quantity) {
     return hasEntry(resource, Quantity.fromString(quantity));
@@ -165,29 +170,63 @@ public class Matchers {
   }
 
   static class EnvVarMatcher extends TypeSafeDiagnosingMatcher<V1EnvVar> {
+    private static final String DONTCARE = "SENTINEL_DONT_CARE";
     private final String expectedName;
+    private final String expectedValueRegEx;
 
     private EnvVarMatcher(String expectedName) {
       this.expectedName = expectedName;
+      this.expectedValueRegEx = DONTCARE;
+    }
+
+    private EnvVarMatcher(String expectedName, String expectedValueRegEx) {
+      this.expectedName = expectedName;
+      this.expectedValueRegEx = expectedValueRegEx;
     }
 
     static EnvVarMatcher envVarWithName(@Nonnull String name) {
       return new EnvVarMatcher(name);
     }
 
+    static EnvVarMatcher envVarWithName(@Nonnull String name, String value) {
+      return new EnvVarMatcher(name, value);
+    }
+
     @Override
     protected boolean matchesSafely(V1EnvVar item, Description mismatchDescription) {
-      if (expectedName.equals(item.getName())) {
-        return true;
-      } else {
+      if (expectedValueRegEx == DONTCARE) {
+        if (expectedName.equals(item.getName())) {
+          return true;
+        }
         mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
         return false;
       }
+      if (expectedValueRegEx == null) {
+        if (expectedName.equals(item.getName()) && item.getValue() == null) {
+          return true;
+        }
+        mismatchDescription.appendText("EnvVar with name ").appendValue(item.getName());
+        return false;
+      }
+      if (expectedName.equals(item.getName()) 
+          && item.getValue() != null 
+          && item.getValue().matches(expectedValueRegEx)) {
+        return true;
+      }
+      mismatchDescription
+          .appendText("EnvVar with name=")
+          .appendValue(item.getName())
+          .appendText(" value=")
+          .appendValue(item.getValue());
+      return false;
     }
 
     @Override
     public void describeTo(Description description) {
-      description.appendText("EnvVar with name").appendValue(expectedName);
+      description.appendText("EnvVar with name=").appendValue(expectedName);
+      if (expectedValueRegEx != DONTCARE) {
+        description.appendText(" value=").appendValue(expectedValueRegEx);
+      }
     }
   }
 }

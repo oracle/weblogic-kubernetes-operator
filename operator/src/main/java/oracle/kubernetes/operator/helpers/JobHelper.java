@@ -279,6 +279,16 @@ public class JobHelper {
         addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
       }
 
+      // Populate env var list used by the MII introspector job's 'short circuit' MD5
+      // check. To prevent a false trip of the circuit breaker, the list must be the
+      // same regardless of whether domainTopology == null.
+      StringBuffer sb = new StringBuffer(vars.size() * 32);
+      for (V1EnvVar var : vars) {
+        sb.append(var.getName()).append(',');
+      }
+      sb.deleteCharAt(sb.length() - 1);
+      addEnvVar(vars, "OPERATOR_SUPPLIED_ENV_VARS", sb.toString());
+
       if (domainTopology != null) {
         // The domainTopology != null when the job is rerun for the same domain. In which
         // case we should now know how to contact the admin server, the admin server may
@@ -290,10 +300,6 @@ public class JobHelper {
           addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
         }
         addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
-
-        // TBD Tom Barnes, Johnny Shum
-        //     Do we need to pass to the jobwhether the admin server (or any pods)
-        //     are already running?
       }
 
       return vars;
