@@ -125,14 +125,12 @@ public class ItJrfDomainInPV implements LoggedTest {
     assertNotNull(namespaces.get(2), "Namespace is null");
     jrfDomainNamespace = namespaces.get(2);
 
-    //TODO in the final version when JRF domain is added setupDBandRCUschema should be here
-    //start DB and create RCU schema
-    /*logger.info("Start DB and create RCU schema for namespace: {0} RCU prefix: {1} dbPort: {2} "
-        + "dbUrl: {3} dbImage: {4} fmwImage: {5}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl, dbImage, fmwImage);
+    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2} "
+        + "dbUrl: {3} dbImage: {4},  fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
+        dbImage, fmwImage, isUseSecret);
     assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
-        dbPort, dbUrl), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl));*/
-
+        dbPort, dbUrl, isUseSecret), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
+        + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl, isUseSecret));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
@@ -159,15 +157,7 @@ public class ItJrfDomainInPV implements LoggedTest {
   @Test
   @DisplayName("Create JRF domain in PV using WLST script")
   public void testJrfDomainInPvUsingWlst() {
-
-    //TODO temporarily being here.  Will be moved to BeforeAll when JRF domain is added
-    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, dbPort: {2} "
-        + "dbUrl: {3} dbImage: {4},  fmwImage: {5} isUseSecret: {6}", dbNamespace, RCUSCHEMAPREFIX, dbPort, dbUrl,
-        dbImage, fmwImage, isUseSecret);
-    assertDoesNotThrow(() -> DbUtils.setupDBandRCUschema(dbImage, fmwImage, RCUSCHEMAPREFIX, dbNamespace,
-        dbPort, dbUrl, isUseSecret), String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbPort %s and dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl, isUseSecret));
-
+    
     final String clusterName = "cluster-jrfdomain-inpv";
     final String adminServerName = "wlst-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
