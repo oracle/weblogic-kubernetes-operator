@@ -1,3 +1,6 @@
+# analytics
+googleAnalytics = "UA-129126578-2"
+
 baseURL = "/weblogic-kubernetes-operator/"
 languageCode = "en-us"
 title = "WebLogic Kubernetes Operator"
@@ -9,9 +12,6 @@ theme = "hugo-theme-learn"
 disableInlineCopyToClipBoard = true
 
 publishDir = "docs"
-
-# analytics
-googleAnalytics = "UA-129126578-2"
 
 # For search functionality
 [outputs]

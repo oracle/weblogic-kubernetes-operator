@@ -460,6 +460,10 @@ public class Domain {
     return spec.getDomainHomeSourceType();
   }
 
+  public boolean isNewIntrospectionRequiredForNewServers() {
+    return getDomainHomeSourceType() == DomainSourceType.FromModel;
+  }
+
   public Model getModel() {
     return spec.getModel();
   }

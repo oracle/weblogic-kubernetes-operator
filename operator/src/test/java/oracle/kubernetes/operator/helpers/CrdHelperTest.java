@@ -41,7 +41,9 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.BETA_CRD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
+import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
+import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.sameInstance;
@@ -120,7 +122,7 @@ public class CrdHelperTest {
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
-            .collectLogMessages(logRecords, CREATING_CRD)
+            .collectLogMessages(logRecords, CREATING_CRD, REPLACE_CRD_FAILED, CREATE_CRD_FAILED)
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
@@ -173,14 +175,24 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenNoCrd_retryOnFailure() {
+  public void whenNoBetaCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
 
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
     testSupport.runSteps(scriptCrdStep);
+    assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
+  }
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+  @Test
+  public void whenNoCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
+    testSupport.runSteps(scriptCrdStep);
+    assertThat(logRecords, containsInfo(CREATE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
@@ -234,7 +246,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenReplaceFails_scheduleRetry() {
+  public void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, 401);
@@ -242,10 +254,48 @@ public class CrdHelperTest {
     Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
     testSupport.runSteps(scriptCrdStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
+  @Test
+  public void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.defineResources(defineCrd("v1", OPERATOR_V1));
+    testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, null);
+    testSupport.runSteps(scriptCrdStep);
+
+    assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
+  }
+
+  @Test
+  public void whenBetaCrdReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.failOnReplace(BETA_CRD, KubernetesConstants.CRD_NAME, null, 401);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
+    testSupport.runSteps(scriptCrdStep);
+
+    assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
+  }
+
+  @Test
+  public void whenBetaCrdReplaceThrowsStreamResetException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.defineResources(defineBetaCrd("v1", OPERATOR_V1));
+    testSupport.failOnReplaceWithStreamResetException(BETA_CRD, KubernetesConstants.CRD_NAME, null);
+
+    Step scriptCrdStep = CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_15, null);
+    testSupport.runSteps(scriptCrdStep);
+
+    assertThat(logRecords, containsInfo(REPLACE_CRD_FAILED));
+    assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
+  }
 
   class V1CustomResourceDefinitionMatcher implements BodyMatcher {
     private V1CustomResourceDefinition expected;

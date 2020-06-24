@@ -11,6 +11,7 @@ public interface ProcessingConstants {
   String FIBER_COMPONENT_NAME = "fiber";
   String PODWATCHER_COMPONENT_NAME = "podWatcher";
 
+  /** key to an object of type WlsServerConfig. */
   String SERVER_SCAN = "serverScan";
   String ENVVARS = "envVars";
 
@@ -34,4 +35,7 @@ public interface ProcessingConstants {
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
 
   String WAIT_FOR_POD_READY = "waitForPodReady";
+
+  /** Key to an object of type MakeRightDomainOperation. */
+  String MAKE_RIGHT_DOMAIN_OPERATION = "makeRightOp";
 }
