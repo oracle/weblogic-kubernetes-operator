@@ -135,7 +135,7 @@ public class ConfigMapHelper {
    * @param imageName image name
    * @return int hash value of the fields
    */
-  static int getModelInImageSpecHash(String imageName) {
+  public static int getModelInImageSpecHash(String imageName) {
     return new HashCodeBuilder(17, 37)
         .append(imageName)
         .toHashCode();

@@ -19,8 +19,10 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -82,7 +84,7 @@ public class JobHelper {
     return topology == null
           || isBringingUpNewDomain(info)
           || introspectionRequested(packet)
-          || isModelInImageUpdate(info);
+          || isModelInImageUpdate(packet, info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
@@ -93,8 +95,20 @@ public class JobHelper {
     return packet.containsKey(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED);
   }
 
-  private static boolean isModelInImageUpdate(DomainPresenceInfo info) {
+  private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
+    return isModelInImage(info) && !getCurrentImageSpecHash(info).equals(getIntrospectionImageSpecHash(packet));
+  }
+
+  private static boolean isModelInImage(DomainPresenceInfo info) {
     return info.getDomain().getDomainHomeSourceType() == FromModel;
+  }
+
+  private static String getCurrentImageSpecHash(DomainPresenceInfo info) {
+    return String.valueOf(ConfigMapHelper.getModelInImageSpecHash(info.getDomain().getSpec().getImage()));
+  }
+
+  private static String getIntrospectionImageSpecHash(Packet packet) {
+    return (String) packet.get(IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH);
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
@@ -407,6 +421,7 @@ public class JobHelper {
           updateStatus(packet.getSpi(DomainPresenceInfo.class));
         }
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
+        MakeRightDomainOperation.recordInspection(packet);
       }
 
       V1Job domainIntrospectorJob =
