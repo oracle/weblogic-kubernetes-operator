@@ -8,8 +8,6 @@ import oracle.weblogic.domain.Domain;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -28,6 +26,7 @@ public class CommonMiiTestUtils {
    *
    * @param domainNamespace Kubernetes namespace that the pod is running in
    * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
    * @param adminServerPodName name of the admin server pod
    * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
@@ -35,6 +34,7 @@ public class CommonMiiTestUtils {
   public static void createMiiDomainAndVerify(
       String domainNamespace,
       String domainUid,
+      String imageName,
       String adminServerPodName,
       String managedServerPrefix,
       int replicaCount
@@ -69,7 +69,7 @@ public class CommonMiiTestUtils {
     Domain domain = createDomainResource(
         domainUid,
         domainNamespace,
-        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+        imageName,
         adminSecretName,
         REPO_SECRET_NAME,
         encryptionSecretName,

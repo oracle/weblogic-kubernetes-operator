@@ -29,6 +29,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
@@ -92,7 +94,12 @@ public class ItOperatorRestartWhenPodRoll implements LoggedTest {
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
         domainUid, domainNamespace);
     createMiiDomainAndVerify(
-        domainNamespace, domainUid, adminServerPodName, managedServerPrefix, replicaCount);
+        domainNamespace,
+        domainUid,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+        adminServerPodName,
+        managedServerPrefix,
+        replicaCount);
   }
 
   /**
