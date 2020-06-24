@@ -50,12 +50,10 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.extensions.LoggedTest;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -84,11 +82,8 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
@@ -120,14 +115,17 @@ class ItParameterizedDomainType implements LoggedTest {
   // domain constants
   private static final String domainUid = "domain1";
   private static final String clusterName = "cluster-1";
-  private static final int replicaCount = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+  private static final String wlSecretName = "weblogic-credentials";
+  private static final String pvName = domainUid + "-pv";
+  private static final String pvcName = domainUid + "-pvc";
+  private static final int replicaCount = 2;
 
   private static String image = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
-  private static boolean isUseSecret = true;
   private static String domainNamespace = null;
   private static String opNamespace = null;
+  private static boolean isUseSecret = true;
 
   private int t3ChannelPort = 0;
 
@@ -173,23 +171,30 @@ class ItParameterizedDomainType implements LoggedTest {
         String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
     logger.info("creating domain with domain type {0} in namespace {1}", domainType, domainNamespace);
-    if (domainType.equalsIgnoreCase("ModelInImage")) {
-      createAndVerifyMiiDomain();
-    } else if (domainType.equalsIgnoreCase("DomainInPV")) {
-      // create domain in PV using WLST
-      createDomainsInPVUsingWlstAndVerify();
-    } else if (domainType.equalsIgnoreCase("DomainInImage")) {
-      // create domain in image
-      createDomainInImageWdt();
-    } else {
-      fail("wrong domain type, accepted domain type: ModelInImage, DomainInPV or DomainInImage");
-    }
+    createAndVerifyDomain(domainType);
 
     // Add/Modify server pod resources by patching the domain custom resource
     // verify all pods are restarted and back to ready state
     testServerPodsRestartByChangingResource();
   }
 
+  /**
+   * Create a WebLogic domain based on the specified domain type.
+   * @param domainType the type of the domain, accepted value: ModelInImage, DomainInPV or DomainInImage
+   */
+  private void createAndVerifyDomain(String domainType) {
+    if (domainType.equalsIgnoreCase("ModelInImage")) {
+      createAndVerifyMiiDomain();
+    } else if (domainType.equalsIgnoreCase("DomainInPV")) {
+      // create domain in PV using WLST
+      createAndVerifyDomainInPVUsingWlst();
+    } else if (domainType.equalsIgnoreCase("DomainInImage")) {
+      // create domain in image
+      createAndVerifyDomainInImageUsingWdt();
+    } else {
+      fail("wrong domain type, got " + domainType + ", expect: ModelInImage, DomainInPV or DomainInImage");
+    }
+  }
 
   /**
    * Add/Modify server pod resources by patching the domain custom resource.
@@ -330,8 +335,7 @@ class ItParameterizedDomainType implements LoggedTest {
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
@@ -352,7 +356,7 @@ class ItParameterizedDomainType implements LoggedTest {
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
+                .name(wlSecretName)
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
@@ -382,63 +386,28 @@ class ItParameterizedDomainType implements LoggedTest {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
-    // check that admin server pod exists in the domain namespace
+    // check that admin server pod ready and service exists in the domain namespace
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check for managed server pods existence in the domain namespace
+    // check that managed server pods ready and service exists in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
-
       // check that the managed server pod exists in the domain namespace
       checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
   }
 
   /**
-   * Add server pod compute resources.
-   *
-   * @param cpuLimit cpu limit to be added to domain spec serverPod resources limits
-   * @param cpuRequest cpu request to be added to domain spec serverPod resources requests
-   * @return true if patching domain custom resource is successful, false otherwise
+   * Create domain in PV using WLST and verify the domain was created.
    */
-  private boolean addServerPodResources(BigDecimal cpuLimit, BigDecimal cpuRequest) {
-    // construct the patch string for adding server pod resources
-    StringBuffer patchStr = new StringBuffer("[{")
-        .append("\"op\": \"add\", ")
-        .append("\"path\": \"/spec/serverPod/resources/limits/cpu\", ")
-        .append("\"value\": \"")
-        .append(cpuLimit)
-        .append("\"}, {")
-        .append("\"op\": \"add\", ")
-        .append("\"path\": \"/spec/serverPod/resources/requests/cpu\", ")
-        .append("\"value\": \"")
-        .append(cpuRequest)
-        .append("\"}]");
-
-    logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
-        domainUid, domainNamespace, patchStr.toString());
-
-    V1Patch patch = new V1Patch(new String(patchStr));
-
-    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
-  }
-
-  /**
-   * Create two domains in PV using WLST.
-   */
-  private void createDomainsInPVUsingWlstAndVerify() {
-
-    String wlSecretName = "weblogic-credentials";
-    String domainUid = "domain1";
-    String pvName = domainUid + "-pv";
-    String pvcName = domainUid + "-pvc";
+  private void createAndVerifyDomainInPVUsingWlst() {
 
     if (isUseSecret) {
       // create pull secrets for WebLogic image
       createOCRRepoSecret(domainNamespace);
     }
 
-    t3ChannelPort = getNextFreePort(32001, 32700);
+    t3ChannelPort = getNextFreePort(32101, 32700);
     logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
 
     // create WebLogic credentials secret
@@ -486,10 +455,10 @@ class ItParameterizedDomainType implements LoggedTest {
     String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
     createPVPVCAndVerify(v1pv, v1pvc, labelSelector, domainNamespace);
 
-    // run create a domain on PV job using WLST
-    runCreateDomainOnPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace);
+    // run a job to create a domain in PV using WLST
+    runCreateDomainInPVJobUsingWlst(pvName, pvcName, domainUid, domainNamespace);
 
-    // create the domain custom resource configuration object
+    // create the domain custom resource object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -535,9 +504,6 @@ class ItParameterizedDomainType implements LoggedTest {
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster()
@@ -557,20 +523,10 @@ class ItParameterizedDomainType implements LoggedTest {
       String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
       checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
-
-    logger.info("Getting admin service node port");
-    int serviceNodePort =
-        getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    assertTrue(assertDoesNotThrow(
-        () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        "Access to admin server node port failed"), "Console login validation failed");
-
   }
 
   /**
-   * Run a job to create a WebLogic domain on a persistent volume by doing the following.
+   * Run a job to create a WebLogic domain in a persistent volume by doing the following.
    * Copies the WLST domain script to a temp location.
    * Creates a domain properties in the temp location.
    * Creates a configmap containing domain scripts and property files.
@@ -581,7 +537,7 @@ class ItParameterizedDomainType implements LoggedTest {
    * @param domainUid the Uid of the domain to create
    * @param domainNamespace the namespace in which the domain will be created
    */
-  private void runCreateDomainOnPVJobUsingWlst(String pvName,
+  private void runCreateDomainInPVJobUsingWlst(String pvName,
                                                String pvcName,
                                                String domainUid,
                                                String domainNamespace) {
@@ -708,21 +664,15 @@ class ItParameterizedDomainType implements LoggedTest {
   /**
    * Create a WebLogic domain in image using WDT.
    */
-  private void createDomainInImageWdt() {
-    // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = 2;
+  private void createAndVerifyDomainInImageUsingWdt() {
 
     // Create the repo secret to pull the image
     createDockerRegistrySecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    // create the domain CR
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -737,7 +687,7 @@ class ItParameterizedDomainType implements LoggedTest {
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
+                .name(wlSecretName)
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
@@ -752,68 +702,29 @@ class ItParameterizedDomainType implements LoggedTest {
                     .limits(new HashMap<>())
                     .requests(new HashMap<>())))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
+                .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
+                .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
-                    .domainType("WLS"))
+                    .domainType(WLS_DOMAIN_TYPE))
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
     createDomainAndVerify(domain, domainNamespace);
 
-    // check admin server pod exists
-    logger.info("Check for admin server pod {0} existence in namespace {1}",
+    // check admin server pod ready and service exists in the domain namespace
+    logger.info("Check for admin server pod {0} ready and service exists in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check managed server pods exist
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check for managed server pod {0} existence in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods are ready
+    // check managed server pods are ready and service exists in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-    logger.info("Getting node port");
-    int serviceNodePort =
-        assertDoesNotThrow(() -> getServiceNodePort(domainNamespace, adminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
   }
 
   /**
@@ -830,5 +741,34 @@ class ItParameterizedDomainType implements LoggedTest {
     logger.info("Check service {0} exists in namespace {1}", podName, namespace);
     checkServiceExists(podName, namespace);
 
+  }
+
+  /**
+   * Add server pod compute resources.
+   *
+   * @param cpuLimit cpu limit to be added to domain spec serverPod resources limits
+   * @param cpuRequest cpu request to be added to domain spec serverPod resources requests
+   * @return true if patching domain custom resource is successful, false otherwise
+   */
+  private boolean addServerPodResources(BigDecimal cpuLimit, BigDecimal cpuRequest) {
+    // construct the patch string for adding server pod resources
+    StringBuffer patchStr = new StringBuffer("[{")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/serverPod/resources/limits/cpu\", ")
+        .append("\"value\": \"")
+        .append(cpuLimit)
+        .append("\"}, {")
+        .append("\"op\": \"add\", ")
+        .append("\"path\": \"/spec/serverPod/resources/requests/cpu\", ")
+        .append("\"value\": \"")
+        .append(cpuRequest)
+        .append("\"}]");
+
+    logger.info("Adding server pod compute resources for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, domainNamespace, patchStr.toString());
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+
+    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 }
