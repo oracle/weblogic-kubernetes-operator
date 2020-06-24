@@ -1,0 +1,35 @@
+# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+  AdminUserName: '@@PROP:ADMIN_USERNAME@@'
+  AdminPassword: '@@PROP:ADMIN_PASSWORD@@'
+  ServerStartMode: 'prod'
+
+topology:
+  Name: '@@PROP:DOMAIN_NAME@@'
+  AdminServerName: "admin-server"
+  Cluster:
+    "cluster-1":
+      DynamicServers:
+        ServerTemplate:  "cluster-1-template"
+        ServerNamePrefix: "managed-server"
+        DynamicClusterSize: 5
+        MaxDynamicClusterSize: 5
+        CalculatedListenPorts: false
+  Server:
+    "admin-server":
+      ListenPort: 7001
+      ExternalDNSName: '@@PROP:DOMAIN_NAME@@-admin-server.@@PROP:NAMESPACE@@'
+  ServerTemplate:
+    "cluster-1-template":
+      Cluster: "cluster-1"
+      ListenPort : 8001
+      ExternalDNSName: '@@PROP:DOMAIN_NAME@@-managed-server${id}.@@PROP:NAMESPACE@@'
+
+appDeployments:
+  Application:
+    txforward:
+      SourcePath: "wlsdeploy/applications/txforward.ear"
+      ModuleType: ear
+      Target: 'admin-server,cluster-1'

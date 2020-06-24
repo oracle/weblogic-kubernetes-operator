@@ -68,6 +68,11 @@ public class IntrospectorJobEnvVars {
   public static final String ISTIO_READINESS_PORT = "ISTIO_READINESS_PORT";
 
   /**
+   * Istio pod namespace.
+   */
+  public static final String ISTIO_POD_NAMESPACE = "ISTIO_POD_NAMESPACE";
+
+  /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with
    * the introspection job.
    * @param name an environment variable name
