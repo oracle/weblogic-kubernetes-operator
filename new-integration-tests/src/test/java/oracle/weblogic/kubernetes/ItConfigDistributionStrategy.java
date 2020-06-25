@@ -155,7 +155,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   final String adminServerPodName = domainUid + "-" + adminServerName;
   final String managedServerNameBase = "ms-";
   final int managedServerPort = 8001;
-  final int t3ChannelPort = getNextFreePort(30000, 32767);  // the port range has to be between 30,000 to 32,767
+  int t3ChannelPort;
   final String pvName = domainUid + "-pv"; // name of the persistent volume
   final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
   final String wlSecretName = "weblogic-credentials";
@@ -753,6 +753,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     createPV(pvName, domainUid);
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
+    t3ChannelPort = getNextFreePort(30000, 32767);
+
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
         -> File.createTempFile("domain", "properties"),
@@ -842,24 +844,24 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
     // verify the admin server service created
     checkServiceExists(adminServerPodName, domainNamespace);
 
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-    }
+    // verify admin server pod is ready
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
+    }
+
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
   }
 
