@@ -510,6 +510,20 @@ public class DomainProcessorTest {
     assertThat(introspectionRunBeforeUpdates, hasEntry(getAdminPodName(), true));
   }
 
+  @Test
+  public void afterChangeTriggersIntrospection_doesNotRunIntrospectionOnNextExplicitMakeRight() throws Exception {
+    establishPreviousIntrospection(this::configureForModelInImage);
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    configureDomain(newDomain).configureAdminServer().withAdditionalVolume("newVol", "/path");
+    makeRightOperation.execute();
+    job = null;
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
+
+    assertThat(job, nullValue());
+  }
+
   // todo after external service created, if adminService deleted, delete service
 
   // problem - ServiceType doesn't know what this is, so does not
