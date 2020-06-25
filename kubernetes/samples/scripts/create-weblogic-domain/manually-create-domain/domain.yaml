@@ -12,7 +12,6 @@ metadata:
   # Update this with the namespace your domain will run in:
   namespace: weblogic
   labels:
-    weblogic.resourceVersion: domain-v2
     # Update this with the `domainUID` of your domain:
     weblogic.domainUID: domain1
 

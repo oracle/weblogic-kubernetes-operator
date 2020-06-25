@@ -9,7 +9,6 @@ metadata:
   name: sample-domain1
   namespace: sample-domain1-ns
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: sample-domain1
 
 spec:
