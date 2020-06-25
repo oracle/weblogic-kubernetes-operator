@@ -77,6 +77,7 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -1127,6 +1128,7 @@ public class Kubernetes {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static boolean replaceConfigMap(V1ConfigMap configMap) throws ApiException {
+    LoggingFacade logger = getLogger();
     if (configMap == null) {
       throw new IllegalArgumentException(
               "Parameter 'configMap' cannot be null when calling patchConfigMap()");
