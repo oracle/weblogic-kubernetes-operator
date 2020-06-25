@@ -5,7 +5,7 @@ package oracle.kubernetes.operator;
 
 public interface LabelConstants {
 
-  String RESOURCE_VERSION_LABEL = "weblogic.resourceVersion";
+  String OPERATOR_VERISON = "weblogic.operatorVersion";
   String DOMAINUID_LABEL = "weblogic.domainUID";
   String DOMAINNAME_LABEL = "weblogic.domainName";
   String DOMAINHOME_LABEL = "weblogic.domainHome";

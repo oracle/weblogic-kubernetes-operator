@@ -8,8 +8,6 @@ kind: Ingress
 metadata:
   name: {{ .Values.wlsDomain.domainUID }}-traefik
   namespace: {{ .Release.Namespace }}
-  labels:
-    weblogic.resourceVersion: domain-v2
 spec:
   annotations:
     kubernetes.io/ingress.class: traefik

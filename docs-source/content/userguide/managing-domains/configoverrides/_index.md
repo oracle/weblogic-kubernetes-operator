@@ -333,7 +333,6 @@ metadata:
   name: domain1
   namespace: default
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   [ ... ]

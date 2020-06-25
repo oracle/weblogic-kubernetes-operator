@@ -217,7 +217,7 @@ public class Domain {
     // if the pod was restarted, return false
     logger.info("Checking that pod {0} is not restarted in namespace {1}", podName, domainNamespace);
     if (assertDoesNotThrow(() ->
-        isPodRestarted(podName, domainUid, domainNamespace, podOriginalCreationTimestamp),
+        isPodRestarted(podName, domainNamespace, podOriginalCreationTimestamp),
         String.format("isPodRestarted failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace))) {
       logger.info("pod {0} is restarted in namespace {1}", podName, domainNamespace);

@@ -942,7 +942,6 @@ public class ItDomainInPV implements LoggedTest {
                 .path(pvHostPath.toString())))
         .metadata(new V1ObjectMeta()
             .name(pvName)
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
@@ -970,7 +969,6 @@ public class ItDomainInPV implements LoggedTest {
         .metadata(new V1ObjectMeta()
             .name(pvcName)
             .namespace(namespace)
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
 
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),

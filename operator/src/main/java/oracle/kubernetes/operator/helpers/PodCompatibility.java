@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import io.kubernetes.client.custom.Quantity;
@@ -21,12 +20,10 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import oracle.kubernetes.operator.LabelConstants;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
 
 /** A class which defines the compatibility rules for existing vs. specified pods. */
@@ -52,37 +49,6 @@ class PodCompatibility extends CollectiveCompatibility {
   static class PodMetadataCompatibility extends CollectiveCompatibility {
     PodMetadataCompatibility(V1ObjectMeta expected, V1ObjectMeta actual) {
       add(new RestartVersion(expected, actual));
-      add(new DomainVersion(actual));
-    }
-  }
-
-  static class DomainVersion implements CompatibilityCheck {
-    private final V1ObjectMeta actual;
-
-    DomainVersion(V1ObjectMeta actual) {
-      this.actual = actual;
-    }
-
-    @Override
-    public boolean isCompatible() {
-      return VersionHelper.matchesResourceVersion(actual, DEFAULT_DOMAIN_VERSION);
-    }
-
-    @Override
-    public String getIncompatibility() {
-      return String.format(
-          "Domain version should be %s but was %s", DEFAULT_DOMAIN_VERSION, getDomainVersion());
-    }
-
-    private String getDomainVersion() {
-      if (actual == null) {
-        return "unspecified";
-      }
-      if (actual.getLabels() == null) {
-        return "unspecified";
-      }
-      return Optional.ofNullable(actual.getLabels().get(LabelConstants.RESOURCE_VERSION_LABEL))
-          .orElse("unspecified");
     }
   }
 

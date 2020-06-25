@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
@@ -779,14 +778,10 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenPodHasCustomLabelConflictWithInternal_createManagedPodWithInternal() {
     getConfigurator()
-        .withPodLabel(LabelConstants.RESOURCE_VERSION_LABEL, "domain-label-value1")
         .configureServer((SERVER_NAME))
         .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1");
 
     Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
-    assertThat(
-        podLabels,
-        hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION));
     assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
 

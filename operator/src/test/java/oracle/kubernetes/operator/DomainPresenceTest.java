@@ -37,7 +37,6 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -147,7 +146,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private V1ObjectMeta createMetadata(String uid) {
     return new V1ObjectMeta()
-        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, uid)
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }

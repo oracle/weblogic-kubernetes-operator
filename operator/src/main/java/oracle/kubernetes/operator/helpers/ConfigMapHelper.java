@@ -49,7 +49,6 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 public class ConfigMapHelper {
 
@@ -212,7 +211,6 @@ public class ConfigMapHelper {
       this.namespace = namespace;
       this.contents = contents;
 
-      addLabel(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION);
       addLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
@@ -272,10 +270,8 @@ public class ConfigMapHelper {
           .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean isCompatibleMap(V1ConfigMap existingMap) {
-      return VersionHelper.matchesResourceVersion(existingMap.getMetadata(), DEFAULT_DOMAIN_VERSION)
-          && COMPARATOR.containsAll(existingMap, getModel());
+      return COMPARATOR.containsAll(existingMap, getModel());
     }
 
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
@@ -299,6 +295,11 @@ public class ConfigMapHelper {
           recordCurrentMap(packet, existingMap);
           return doNext(packet);
         }
+      }
+
+      private Step createConfigMap(Step next) {
+        return new CallBuilder()
+            .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
       }
 
       private void logConfigMapExists() {

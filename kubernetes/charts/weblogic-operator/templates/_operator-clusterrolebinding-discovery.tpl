@@ -12,7 +12,6 @@ kind: "ClusterRoleBinding"
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
-    weblogic.resourceVersion: "operator-v2"
   {{- if .dedicated }}
   name: "weblogic-operator-rolebinding-discovery"
   namespace: {{ .Release.Namespace | quote }}
