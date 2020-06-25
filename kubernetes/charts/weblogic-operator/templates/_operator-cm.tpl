@@ -22,7 +22,6 @@ kind: "ConfigMap"
 metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
-    weblogic.resourceVersion: "operator-v2"
   name: "weblogic-operator-cm"
   namespace: {{ .Release.Namespace | quote }}
 {{- end }}

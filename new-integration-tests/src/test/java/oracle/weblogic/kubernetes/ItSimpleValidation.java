@@ -115,7 +115,6 @@ class ItSimpleValidation implements LoggedTest {
             .withName(pvName)
             .withNamespace(domainNamespace1)
             .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
     boolean success = assertDoesNotThrow(
         () -> TestActions.createPersistentVolume(v1pv),
@@ -135,7 +134,6 @@ class ItSimpleValidation implements LoggedTest {
             .withName(pvcName)
             .withNamespace(domainNamespace1)
             .build()
-            .putLabelsItem("weblogic.resourceVersion", "domain-v2")
             .putLabelsItem("weblogic.domainUid", domainUid));
 
     success = assertDoesNotThrow(

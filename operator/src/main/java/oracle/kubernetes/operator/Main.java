@@ -50,6 +50,7 @@ import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -106,6 +107,7 @@ public class Main {
   private static final Engine engine = new Engine(wrappedExecutorService);
   private static String principal;
   private static KubernetesVersion version = null;
+  private static SemanticVersion productVersion = null;
 
   static {
     try {
@@ -150,6 +152,9 @@ public class Main {
       buildProps.load(stream);
 
       String operatorVersion = buildProps.getProperty("git.build.version");
+      if (operatorVersion != null) {
+        productVersion = new SemanticVersion(operatorVersion);
+      }
       String operatorImpl =
           buildProps.getProperty("git.branch")
               + "."
@@ -197,7 +202,8 @@ public class Main {
       if (!isDedicated()) {
         strategy = Step.chain(strategy, readExistingNamespaces(targetNamespaces));
       } else {
-        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(version,
+        strategy = Step.chain(strategy, CrdHelper.createDomainCrdStep(
+                version, productVersion,
                 new StartNamespacesStep(targetNamespaces, false)));
       }
       runSteps(
@@ -926,17 +932,19 @@ public class Main {
       Step strategy = null;
       if (!namespacesToStart.isEmpty()) {
         strategy = Step.chain(createDomainCrdAndStartNamespaces(namespacesToStart),
-              new CreateNamespaceWatcherStep(intialResourceVersion));
+          new CreateNamespaceWatcherStep(intialResourceVersion));
       } else {
-        strategy = CrdHelper.createDomainCrdStep(version,
-              new CreateNamespaceWatcherStep(intialResourceVersion));
+        strategy = CrdHelper.createDomainCrdStep(
+          version, productVersion,
+            new CreateNamespaceWatcherStep(intialResourceVersion));
       }
       return doNext(strategy, packet);
     }
     
     private Step createDomainCrdAndStartNamespaces(Collection<String> namespacesToStart) {
-      return CrdHelper.createDomainCrdStep(version,
-                new StartNamespacesStep(namespacesToStart, false));
+      return CrdHelper.createDomainCrdStep(
+          version, productVersion,
+            new StartNamespacesStep(namespacesToStart, false));
     }
 
     private String getInitialResourceVersion(V1NamespaceList result) {
@@ -1019,6 +1027,11 @@ public class Main {
     @Override
     public KubernetesVersion getVersion() {
       return version;
+    }
+
+    @Override
+    public SemanticVersion getProductVersion() {
+      return productVersion;
     }
 
     @Override

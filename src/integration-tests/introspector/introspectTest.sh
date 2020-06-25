@@ -240,7 +240,6 @@ createConfigMapFromDir() {
   kubectl -n $NAMESPACE label cm ${cm_name} \
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
-    weblogic.resourceVersion=domain-v2 \
     weblogic.domainUID=$DOMAIN_UID \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }

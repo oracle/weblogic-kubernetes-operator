@@ -298,7 +298,7 @@ public class DomainSpec extends BaseConfiguration {
 
   @SuppressWarnings("unused")
   EffectiveConfigurationFactory getEffectiveConfigurationFactory(
-      String apiVersion, String resourceVersionLabel) {
+      String apiVersion) {
     return new CommonEffectiveConfigurationFactory();
   }
 

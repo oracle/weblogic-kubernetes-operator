@@ -147,7 +147,6 @@ metadata:
   name: domain1
   namespace: domains23
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   serverPod:
@@ -174,7 +173,6 @@ Customer provided labels and annotations may not begin with "weblogic" and the o
 * `weblogic.domainUID: <uid>`, where `<uid>` is the domain UID from the domain resource
 * `weblogic.serverName: <server-name>`, where `<server-name>` is the name of the WebLogic Server instance
 * `weblogic.clusterName: <cluster-name>`, where `<cluster-name>` is the name of the cluster of which this instance is a member, if any
-* `weblogic.resourceVersion: <version>`, where `<version>` is the value of the `resourceVersion` field from the domain resource
 
 Prior to creating a Pod, the operator replaces variable references allowing the Pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where `VARIABLE_NAME` is one of the variable names available in the container for the WebLogic Server instance. The default set of environment variables includes:
 
@@ -197,7 +195,6 @@ metadata:
   name: domain1
   namespace: domains23
   labels:
-    weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1
 spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
