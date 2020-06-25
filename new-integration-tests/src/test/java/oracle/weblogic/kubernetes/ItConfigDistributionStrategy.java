@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -94,10 +95,12 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS_BASE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -165,6 +168,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
 
   static int mysqlDBPort1;
   static int mysqlDBPort2;
+  static String newDsUrl;
 
   String dsName = "JdbcTestDataSource-0";
 
@@ -222,6 +226,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     MySQLDBUtils.createMySQLDB("mysqldb-1", "root", "root123", mysqlDBPort1, introDomainNamespace);
     mysqlDBPort2 = getNextFreePort(31000, 32767);
     MySQLDBUtils.createMySQLDB("mysqldb-2", "root", "root456", mysqlDBPort2, introDomainNamespace);
+    newDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
     createJdbcDataSource("root", "root123", mysqlDBPort1);
     deployApplication();
 
@@ -317,7 +322,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   public void testDynamicOverride() {
 
     createCustomConfigOverridesCM();
-    storePodCreationTimestamps();
+    //storePodCreationTimestamps();
 
     logger.info("patching the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC field");
     String patchStr = "["
@@ -329,7 +334,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
         "Failed to patch domain");
 
     //workaround for bug - setting overrideDistributionStrategy needs restart of server pods
-    restartDomain();
+    restartDomain(); // remove after the above bug is fixed
+    storePodCreationTimestamps(); // remove after the above bug is fixed
 
     logger.info("Patching the domain to add overridesConfigMap field and update introspectVersion field");
     patchStr
@@ -349,7 +355,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     checkPodExists(introspectPodName, domainUid, introDomainNamespace);
     checkPodDoesNotExist(introspectPodName, domainUid, introDomainNamespace);
 
-    logger.info("Verifying the pod states are not changed");
+    logger.info("Verifying the WebLogic server pod states are not changed");
     for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
       String podName = (String) entry.getKey();
       DateTime creationTimestamp = (DateTime) entry.getValue();
@@ -358,7 +364,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     }
 
     //workaround for bug - setting overridesConfigMap doesn't apply overrides dynamically, needs restart of server pods
-    restartDomain();
+    restartDomain(); // remove after the above bug is fixed
 
     //verify the WebLogic server configuration is updated
     logger.info("Getting node port for default channel");
@@ -406,13 +412,35 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   }
 
   private void createCustomConfigOverridesCM() {
-    logger.info("Creating config overrides with config.xml {0}", Paths.get(RESOURCE_DIR, "configfiles"
-        + "/configoverridesset1/config.xml"));
+
+    logger.info("Creating config overrides with config.xml {0}",
+        Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
+
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("dbusername", "root");
+    secretMap.put("dbpassword", "root456");
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name("mydomain-mysql-secrets")
+            .namespace(introDomainNamespace))
+        .stringData(secretMap)), "Create secret failed.");
+    assertTrue(secretCreated, String.format("create secret failed for %s", "mydomain-mysql-secrets"));
+
+    Path srcDsOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-0.xml");
+    Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-0.xml");
+    String tempString = assertDoesNotThrow(()
+        -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", newDsUrl));
+    assertDoesNotThrow(()
+        -> Files.write(dstDsOverrideFile, tempString.getBytes(), StandardOpenOption.TRUNCATE_EXISTING));
+
     ArrayList<Path> configfiles = new ArrayList<>();
+    configfiles.add(dstDsOverrideFile);
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config.xml"));
     configfiles.add(Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/version.txt"));
     String configoverridecm = "configoverride-cm";
     CommonTestUtils.createConfigMapFromFiles(configoverridecm, configfiles, introDomainNamespace);
+
   }
 
   /**

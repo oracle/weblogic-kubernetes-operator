@@ -20,6 +20,6 @@
                 <jdbc:value jdbcf:combine-mode="replace">${secret:mydomain-mysql-secrets.dbusername}</jdbc:value>
             </jdbc:property>
         </jdbc:properties>
-        <jdbc:password-encrypted jdbcf:combine-mode="replace">${secret:customsitconfigdomain-mysql-secrets.dbpassword:encrypt}</jdbc:password-encrypted>
+        <jdbc:password-encrypted jdbcf:combine-mode="replace">${secret:mydomain-mysql-secrets.dbpassword:encrypt}</jdbc:password-encrypted>
     </jdbc:jdbc-driver-params>
 </jdbc:jdbc-data-source>
