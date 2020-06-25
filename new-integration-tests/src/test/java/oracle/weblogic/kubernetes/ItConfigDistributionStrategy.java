@@ -342,7 +342,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     patchStr
         = "["
         + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"configoverride-cm\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets/0\", \"value\": " + dsSecret + "  },"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets\", \"value\": [\"" + dsSecret + "\"]  },"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
