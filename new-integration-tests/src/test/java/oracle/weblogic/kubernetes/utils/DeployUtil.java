@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
@@ -88,7 +89,6 @@ public class DeployUtil {
    */
   public static void deployUsingWlst(String host, String port, String userName,
                                      String password, String targets, Path archivePath, String namespace) {
-
     final LoggingFacade logger = getLogger();
     setImage(namespace);
 
@@ -109,7 +109,8 @@ public class DeployUtil {
     Path deployScript = Paths.get(RESOURCE_DIR, "python-scripts", DEPLOY_SCRIPT);
 
     logger.info("Creating a config map to hold deployment files");
-    String deployScriptConfigMapName = "create-deploy-scripts-cm";
+    String uniqueName = Namespace.uniqueName();
+    String deployScriptConfigMapName = "wlst-deploy-scripts-cm-" + uniqueName;
 
     Map<String, String> data = new HashMap<>();
     Map<String, byte[]> binaryData = new HashMap<>();
@@ -171,11 +172,13 @@ public class DeployUtil {
                                       V1Container jobContainer) throws ApiException {
     LoggingFacade logger = getLogger();
     logger.info("Running Kubernetes job to deploy application");
+    String uniqueName = Namespace.uniqueName();
+    String name = "wlst-deploy-job-" + uniqueName;
 
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
-                .name(namespace + "-deploy-job")
+                .name(name)
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
@@ -239,7 +242,7 @@ public class DeployUtil {
    * @param namespace namespace in which secrets needs to be created
    */
   private static void setImage(String namespace) {
-    LoggingFacade logger = getLogger();
+    final LoggingFacade logger = getLogger();
     //determine if the tests are running in Kind cluster.
     //if true use images from Kind registry
     String ocrImage = WLS_BASE_IMAGE_NAME + ":" + WLS_BASE_IMAGE_TAG;
@@ -278,25 +281,25 @@ public class DeployUtil {
    * @param cluster name of the cluster to deploy application
    * @param archivePath local path of the application archive
    */
-  public static ExecResult deployUsingRest(String host, String port, 
-      String userName, String password, String cluster, Path archivePath) {
-    LoggingFacade logger = getLogger();
+  public static ExecResult deployUsingRest(String host, String port,
+                                           String userName, String password, String cluster, Path archivePath) {
+    final LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer curlString = new StringBuffer("status=$(curl --noproxy '*' ");
     curlString.append(" --user " + userName + ":" + password);
     curlString.append(" -w %{http_code} --show-error -o /dev/null ")
-             .append("-H X-Requested-By:MyClient ")
-             .append("-H Accept:application/json  ")
-             .append("-H Content-Type:multipart/form-data ")
-             .append("-H Prefer:respond-async ")
-             .append("-F \"model={ name: 'testwebapp', targets: [ { identity: [ clusters, '")
-             .append(cluster + "' ] } ] }\" ")
-             .append(" -F \"sourcePath=@")
-             .append(archivePath.toString() + "\" ")
-             .append("-X POST http://" + host + ":" + port)
-             .append("/management/weblogic/latest/edit/appDeployments); ")
-             .append("echo ${status}");
-    
+        .append("-H X-Requested-By:MyClient ")
+        .append("-H Accept:application/json  ")
+        .append("-H Content-Type:multipart/form-data ")
+        .append("-H Prefer:respond-async ")
+        .append("-F \"model={ name: 'testwebapp', targets: [ { identity: [ clusters, '")
+        .append(cluster + "' ] } ] }\" ")
+        .append(" -F \"sourcePath=@")
+        .append(archivePath.toString() + "\" ")
+        .append("-X POST http://" + host + ":" + port)
+        .append("/management/weblogic/latest/edit/appDeployments); ")
+        .append("echo ${status}");
+
     logger.info("deployUsingRest: curl command {0}", new String(curlString));
     try {
       result = exec(new String(curlString), true);
