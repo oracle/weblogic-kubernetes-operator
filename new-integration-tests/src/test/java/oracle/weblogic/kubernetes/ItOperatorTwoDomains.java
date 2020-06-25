@@ -245,7 +245,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
           .metadata(new V1ObjectMetaBuilder()
               .withName(pvName)
               .build()
-              .putLabelsItem("weblogic.resourceVersion", "domain-v2")
               .putLabelsItem("weblogic.domainUid", domainUid));
 
       V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
@@ -259,7 +258,6 @@ public class ItOperatorTwoDomains implements LoggedTest {
               .withName(pvcName)
               .withNamespace(domainNamespace)
               .build()
-              .putLabelsItem("weblogic.resourceVersion", "domain-v2")
               .putLabelsItem("weblogic.domainUid", domainUid));
 
       String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);

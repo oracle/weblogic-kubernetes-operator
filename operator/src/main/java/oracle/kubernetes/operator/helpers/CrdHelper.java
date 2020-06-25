@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
@@ -40,6 +41,7 @@ import io.kubernetes.client.util.Yaml;
 import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -72,7 +74,7 @@ public class CrdHelper {
       throw new IllegalArgumentException();
     }
 
-    CrdContext context = new CrdContext(null, null);
+    CrdContext context = new CrdContext(null, null, null);
 
     String outputFileName = args[0];
     Path outputFilePath = Paths.get(outputFileName);
@@ -105,11 +107,12 @@ public class CrdHelper {
    * Factory for {@link Step} that creates Domain CRD.
    *
    * @param version Version of the Kubernetes API Server
+   * @param productVersion Version of the operator
    * @param next Next step
    * @return Step for creating Domain custom resource definition
    */
-  public static Step createDomainCrdStep(KubernetesVersion version, Step next) {
-    return new CrdStep(version, next);
+  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion, Step next) {
+    return new CrdStep(version, productVersion, next);
   }
 
   private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
@@ -138,18 +141,19 @@ public class CrdHelper {
 
   interface CrdComparator {
     boolean isOutdatedCrd(
-        V1CustomResourceDefinition actual, V1CustomResourceDefinition expected);
+        SemanticVersion productVersion, V1CustomResourceDefinition actual, V1CustomResourceDefinition expected);
 
     boolean isOutdatedBetaCrd(
+        SemanticVersion productVersion,
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
   }
 
   static class CrdStep extends Step {
     final CrdContext context;
 
-    CrdStep(KubernetesVersion version, Step next) {
+    CrdStep(KubernetesVersion version, SemanticVersion productVersion, Step next) {
       super(next);
-      context = new CrdContext(version, this);
+      context = new CrdContext(version, productVersion, this);
     }
 
     @Override
@@ -167,33 +171,40 @@ public class CrdHelper {
     private final V1CustomResourceDefinition model;
     private final V1beta1CustomResourceDefinition betaModel;
     private final KubernetesVersion version;
+    private final SemanticVersion productVersion;
 
-    CrdContext(KubernetesVersion version, Step conflictStep) {
+    CrdContext(KubernetesVersion version, SemanticVersion productVersion, Step conflictStep) {
       this.version = version;
+      this.productVersion = productVersion;
       this.conflictStep = conflictStep;
-      this.model = createModel(version);
-      this.betaModel = createBetaModel(version);
+      this.model = createModel(version, productVersion);
+      this.betaModel = createBetaModel(version, productVersion);
     }
 
-    static V1CustomResourceDefinition createModel(KubernetesVersion version) {
+    static V1CustomResourceDefinition createModel(KubernetesVersion version, SemanticVersion productVersion) {
       return new V1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1")
           .kind("CustomResourceDefinition")
-          .metadata(createMetadata())
+          .metadata(createMetadata(productVersion))
           .spec(createSpec(version));
     }
 
-    static V1beta1CustomResourceDefinition createBetaModel(KubernetesVersion version) {
+    static V1beta1CustomResourceDefinition createBetaModel(KubernetesVersion version, SemanticVersion productVersion) {
       return new V1beta1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1beta1")
           .kind("CustomResourceDefinition")
-          .metadata(createMetadata())
+          .metadata(createMetadata(productVersion))
           .spec(createBetaSpec(version));
     }
 
-    static V1ObjectMeta createMetadata() {
-      return new V1ObjectMeta()
+    static V1ObjectMeta createMetadata(SemanticVersion productVersion) {
+      V1ObjectMeta metadata = new V1ObjectMeta()
           .name(KubernetesConstants.CRD_NAME);
+
+      if (productVersion != null) {
+        metadata.putLabelsItem(LabelConstants.OPERATOR_VERISON, productVersion.toString());
+      }
+      return metadata;
     }
 
     static V1CustomResourceDefinitionSpec createSpec(KubernetesVersion version) {
@@ -390,7 +401,7 @@ public class CrdHelper {
     }
 
     private boolean isOutdatedCrd(V1CustomResourceDefinition existingCrd) {
-      return COMPARATOR.isOutdatedCrd(existingCrd, this.model);
+      return COMPARATOR.isOutdatedCrd(productVersion, existingCrd, this.model);
     }
 
     private boolean existingCrdContainsVersion(V1CustomResourceDefinition existingCrd) {
@@ -409,7 +420,7 @@ public class CrdHelper {
     }
 
     private boolean isOutdatedBetaCrd(V1beta1CustomResourceDefinition existingCrd) {
-      return COMPARATOR.isOutdatedBetaCrd(existingCrd, this.betaModel);
+      return COMPARATOR.isOutdatedBetaCrd(productVersion, existingCrd, this.betaModel);
     }
 
     private boolean existingBetaCrdContainsVersion(V1beta1CustomResourceDefinition existingCrd) {
@@ -655,7 +666,7 @@ public class CrdHelper {
 
   static class CrdComparatorImpl implements CrdComparator {
     @Override
-    public boolean isOutdatedCrd(
+    public boolean isOutdatedCrd(SemanticVersion productVersion,
         V1CustomResourceDefinition actual, V1CustomResourceDefinition expected) {
       ResourceVersion current = new ResourceVersion(KubernetesConstants.DOMAIN_VERSION);
       List<ResourceVersion> actualVersions = getVersions(actual);
@@ -666,12 +677,19 @@ public class CrdHelper {
         }
       }
 
+      // Check product version label
+      if (productVersion != null) {
+        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) < 0) {
+          return false;
+        }
+      }
+
       return getSchemaValidation(actual) == null
           || !getSchemaValidation(expected).equals(getSchemaValidation(actual));
     }
 
     @Override
-    public boolean isOutdatedBetaCrd(
+    public boolean isOutdatedBetaCrd(SemanticVersion productVersion,
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected) {
       ResourceVersion current = new ResourceVersion(KubernetesConstants.DOMAIN_VERSION);
       List<ResourceVersion> actualVersions = getBetaVersions(actual);
@@ -682,8 +700,23 @@ public class CrdHelper {
         }
       }
 
+      // Check product version label
+      if (productVersion != null) {
+        if (productVersion.compareTo(getProductVersionFromMetadata(actual.getMetadata())) < 0) {
+          return false;
+        }
+      }
+
       return getBetaSchemaValidation(actual) == null
           || !getBetaSchemaValidation(expected).equals(getBetaSchemaValidation(actual));
+    }
+
+    private SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
+      return Optional.ofNullable(metadata)
+              .map(V1ObjectMeta::getLabels)
+              .map(labels -> labels.get(LabelConstants.OPERATOR_VERISON))
+              .map(SemanticVersion::new)
+              .orElse(null);
     }
 
     // true, if version is later than base
