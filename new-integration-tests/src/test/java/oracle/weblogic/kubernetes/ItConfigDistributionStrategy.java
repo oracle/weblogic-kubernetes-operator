@@ -171,6 +171,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
   static String newDsUrl;
 
   String dsName = "JdbcTestDataSource-0";
+  String dsSecret = domainUid.concat("-mysql-secrets");
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -340,8 +341,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
     logger.info("Patching the domain to add overridesConfigMap field and update introspectVersion field");
     patchStr
         = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", "
-        + "\"value\": \"configoverride-cm\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/overridesConfigMap\", \"value\": \"configoverride-cm\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/configuration/secrets/0\", \"value\": " + dsSecret + "  },"
         + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"3\"}"
         + "]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
@@ -705,7 +706,8 @@ public class ItConfigDistributionStrategy implements LoggedTest {
             .name(domainUid)
             .namespace(introDomainNamespace))
         .spec(new DomainSpec()
-            .configuration(new Configuration().overrideDistributionStrategy("DYNAMIC"))
+            .configuration(new Configuration()
+                .overrideDistributionStrategy("DYNAMIC"))
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
