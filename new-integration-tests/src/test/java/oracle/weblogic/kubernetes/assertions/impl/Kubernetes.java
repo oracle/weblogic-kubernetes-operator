@@ -598,15 +598,15 @@ public class Kubernetes {
    * Check if a pod is restarted based on podCreationTimestamp.
    *
    * @param podName the name of the pod to check for
-   * @param domainUid the label the pod is decorated with
    * @param namespace in which the pod is running
    * @param timestamp the initial podCreationTimestamp
    * @return true if the pod's creation timestamp is later than the initial PodCreationTimestamp
    * @throws ApiException when query fails
    */
   public static boolean isPodRestarted(
-      String podName, String domainUid,
-      String namespace, DateTime timestamp) throws ApiException {
+      String podName,
+      String namespace,
+      org.joda.time.DateTime timestamp) throws ApiException {
     DateTime newCreationTime = getPodCreationTimestamp(namespace, "", podName);
 
     if (newCreationTime != null
