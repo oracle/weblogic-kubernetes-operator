@@ -134,7 +134,6 @@ Here are the steps for this use case:
             name: sample-domain2
             namespace: sample-domain1-ns
             labels:
-              weblogic.resourceVersion: domain-v2
               weblogic.domainUID: sample-domain2
           ```
 

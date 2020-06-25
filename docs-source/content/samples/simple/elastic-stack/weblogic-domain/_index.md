@@ -89,7 +89,6 @@ kind: ConfigMap
 metadata:
   labels:
     weblogic.domainUID: bobs-bookstore
-    weblogic.resourceVersion: domain-v2
   name: fluentd-config
   namespace: bob
 data:
@@ -261,7 +260,6 @@ kind: Domain
 metadata:
   labels:
     weblogic.domainUID: bobs-bookstore
-    weblogic.resourceVersion: domain-v2
   name: bobs-bookstore
   namespace: bob
 spec:
