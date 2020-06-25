@@ -1013,7 +1013,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, false, callback);
+        .patchNamespacedConfigMapAsync(name, namespace, patch, pretty, null, null, null, callback);
   }
 
   /**
