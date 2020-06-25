@@ -38,6 +38,7 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
@@ -110,6 +111,7 @@ public class DomainIntrospectorJobTest {
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
+    testSupport.defineResources(new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
   }
 
   private String[] getMessageKeys() {
@@ -309,7 +311,7 @@ public class DomainIntrospectorJobTest {
   @Test
   public void whenJobLogContainsSevereError_logJobInfos() {
     new DomainProcessorTestSetup(testSupport).defineKubernetesResources(SEVERE_MESSAGE_1);
-
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
     assertThat(logRecords, containsInfo(getJobFailedMessageKey()));
