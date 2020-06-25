@@ -66,7 +66,6 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.MySQLDBUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import oracle.weblogic.kubernetes.utils.WLSTUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
@@ -109,6 +108,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
@@ -124,6 +124,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -769,7 +770,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
 
   private void restartDomain() {
     logger.info("Restarting domain {0}", domainNamespace);
-    TestActions.shutdownDomain(domainUid, domainNamespace);
+    shutdownDomain(domainUid, domainNamespace);
 
     logger.info("Checking for admin server pod shutdown");
     CommonTestUtils.checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
@@ -780,7 +781,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
 
     TestActions.startDomain(domainUid, domainNamespace);
     logger.info("Checking for admin server pod readiness");
-    CommonTestUtils.checkPodReady(adminServerPodName, domainUid, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
     logger.info("Checking for managed servers pod readiness");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
@@ -809,7 +810,7 @@ public class ItConfigDistributionStrategy implements LoggedTest {
 
       // WLST script for creating jdbc data source
       Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "create-jdbc-resource.py");
-      WLSTUtils.executeWLSTScript(wlstScript, domainPropertiesFile.toPath(), domainNamespace);
+      executeWLSTScript(wlstScript, domainPropertiesFile.toPath(), domainNamespace);
     } catch (IOException ex) {
       logger.severe(ex.getMessage());
     }
