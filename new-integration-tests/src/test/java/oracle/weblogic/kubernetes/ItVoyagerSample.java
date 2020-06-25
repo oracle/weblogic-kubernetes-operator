@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -90,6 +91,7 @@ class ItVoyagerSample {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)

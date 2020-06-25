@@ -27,11 +27,6 @@ public class ThreadSafeLogger {
       // create file handler
       Path resultDir = Files.createDirectories(Paths.get(TestConstants.LOGS_DIR,
           loggerName));
-      /* File logFile = new File(Paths.get(resultDir.toString(), loggerName + ".out").toString());
-      if (logFile.exists()) {
-        logFile.delete();
-      }
-      Files.createFile(logFile.toPath()); */
       FileHandler fileHandler = new FileHandler(
           Paths.get(resultDir.toString(), loggerName + ".out").toString(), true);
       SimpleFormatter formatter = new SimpleFormatter();
@@ -51,10 +46,8 @@ public class ThreadSafeLogger {
    */
   public static LoggingFacade getLogger() {
     if (localLogger.get() != null) {
-      //globalLogger.info("Returning local logger {0}", localLogger.get().getName());
       return localLogger.get();
     } else {
-      //globalLogger.info("Returning global logger");
       return globalLogger;
     }
   }
