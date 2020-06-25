@@ -63,7 +63,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
@@ -98,6 +98,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
@@ -121,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -136,7 +138,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter via Prometheus and Grafana")
 @IntegrationTest
-class ItMonitoringExporter implements LoggedTest {
+class ItMonitoringExporter {
 
 
   // domain constants
@@ -174,6 +176,7 @@ class ItMonitoringExporter implements LoggedTest {
   private static String  coordinatorImage = null;
   private static int managedServerPort = 8001;
   private static int nodeportserver;
+  private static LoggingFacade logger = null;
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -184,7 +187,7 @@ class ItMonitoringExporter implements LoggedTest {
    */
   @BeforeAll
   public static void initAll(@Namespaces(6) List<String> namespaces) {
-
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -232,12 +235,13 @@ class ItMonitoringExporter implements LoggedTest {
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(imageName, domain1Uid);
 
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30305, 30405);
-    int nodeportshttps = getNextFreePort(30443, 30543);
-
     // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    String nginxServiceName = nginxHelmParams.getReleaseName() + "-nginx-ingress-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+    logger.info("NGINX http node port: {0}", nodeportshttp);
+
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();

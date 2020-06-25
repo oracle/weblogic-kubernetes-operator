@@ -4,17 +4,18 @@
 package oracle.weblogic.kubernetes.utils;
 
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
@@ -39,6 +40,7 @@ public class CommonMiiTestUtils {
       String managedServerPrefix,
       int replicaCount
   ) {
+    LoggingFacade logger = getLogger();
     logger.info("Create the repo secret {0} to pull the image", REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createDockerRegistrySecret(domainNamespace),
             String.format("createSecret failed for %s", REPO_SECRET_NAME));

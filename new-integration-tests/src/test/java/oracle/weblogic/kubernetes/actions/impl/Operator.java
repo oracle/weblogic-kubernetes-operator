@@ -9,8 +9,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static oracle.weblogic.kubernetes.TestConstants.BRANCH_NAME_FROM_JENKINS;
 import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
@@ -22,7 +20,6 @@ import static oracle.weblogic.kubernetes.TestConstants.REPO_NAME;
  * Action class with implementation methods for Operator.
  */
 public class Operator {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(Operator.class);
 
   /**
    * install helm chart.

@@ -10,8 +10,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -19,14 +17,13 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultC
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  *  Implementation of actions that build an application archive file.
  */
 
 public class AppBuilder {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(AppBuilder.class);
-
   private static final String ARCHIVE_SRC_DIR = ARCHIVE_DIR + "/wlsdeploy/applications";
   
   private AppParams params;
@@ -77,7 +74,7 @@ public class AppBuilder {
             ARCHIVE_SRC_DIR);
       }
     } catch (IOException ioe) {    
-      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
 
@@ -162,14 +159,14 @@ public class AppBuilder {
       checkDirectory(appDir);
       for (String appSrcFile : srcFiles) {
         if (appSrcFile.length() > 0) {
-          logger.info("copy {0]} to {1} ", appSrcFile, appDir);
+          getLogger().info("copy {0]} to {1} ", appSrcFile, appDir);
           String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
           Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
                   StandardCopyOption.REPLACE_EXISTING);
         }
       }
     } catch (IOException ioe) {
-      logger.severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
 
