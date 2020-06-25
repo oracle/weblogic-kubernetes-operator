@@ -29,7 +29,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
-import oracle.weblogic.kubernetes.extensions.LoggedTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -73,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test that Voyager is installed and the Voyager ingress is created successfully")
 @IntegrationTest
-class ItStickySession implements LoggedTest {
+class ItStickySession {
 
   // constants for creating domain image using model in image
   private static final String SESSMIGR_MODEL_FILE = "model.stickysess.yaml";
@@ -100,6 +101,7 @@ class ItStickySession implements LoggedTest {
   private static String cloudProvider = "baremetal";
   private static boolean enableValidatingWebhook = false;
   private static HelmParams voyagerHelmParams = null;
+  private static LoggingFacade logger = null;
 
   /**
    * Install Voyager and operator, create a custom image using model in image with model files
@@ -110,10 +112,11 @@ class ItStickySession implements LoggedTest {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(5, MINUTES).await();
 
     // get a unique Voyager namespace
     logger.info("Get a unique namespace for Voyager");
@@ -132,7 +135,7 @@ class ItStickySession implements LoggedTest {
 
     // install and verify Voyager
     voyagerHelmParams =
-      installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+        installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -192,7 +195,7 @@ class ItStickySession implements LoggedTest {
     // get ingress service Nodeport
     int ingressServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domainNamespace, ingressServiceName, channelName),
-            "Getting admin server node port failed");
+        "Getting admin server node port failed");
     logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
@@ -203,12 +206,12 @@ class ItStickySession implements LoggedTest {
     String serverName1 = httpDataInfo.get(serverNameAttr);
     String sessionId1 = httpDataInfo.get(sessionIdAttr);
     logger.info("Got the server {0} and session ID {1} from the first HTTP connection",
-            serverName1, sessionId1);
+        serverName1, sessionId1);
 
     // send a HTTP request again to get server and session info
     httpDataInfo =
-      getServerAndSessionInfoAndVerify(hostNames.get(0),
-          ingressServiceNodePort, webServiceGetUrl, " -b ");
+        getServerAndSessionInfoAndVerify(hostNames.get(0),
+            ingressServiceNodePort, webServiceGetUrl, " -b ");
     // get server and session info from web service deployed on the cluster
     String serverName2 = httpDataInfo.get(serverNameAttr);
     String sessionId2 = httpDataInfo.get(sessionIdAttr);

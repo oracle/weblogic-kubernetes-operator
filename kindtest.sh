@@ -45,6 +45,8 @@ function usage {
   echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
   echo "  -t Test filter (optional) "
   echo "      (default: **/It*) "
+  echo "  -p Run It classes in parallel"
+  echo "      (default: false) "
   echo "  -h Help"
   exit $1
 }
@@ -57,8 +59,9 @@ else
   outdir="${WORKSPACE}/logdir/${BUILD_TAG}"
 fi
 test_filter="**/It*"
+parallel_classes="false"
 
-while getopts ":h:n:o:t:v:" opt; do
+while getopts ":h:n:o:t:v:p:" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -67,6 +70,8 @@ while getopts ":h:n:o:t:v:" opt; do
     o) outdir="${OPTARG}"
     ;;
     t) test_filter="${OPTARG}"
+    ;;
+    p) parallel_classes="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -184,4 +189,5 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo 'Run tests...'
-time mvn -Dit.test="${test_filter}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+echo 'Running mvn -Dit.test=\"${test_filter}\" -DPARALLEL_CLASSES=\"${parallel_classes}\" -pl new-integration-tests -P integration-tests verify'
+time mvn -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_classes}" -pl new-integration-tests -P integration-tests verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"

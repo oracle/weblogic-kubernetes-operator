@@ -12,8 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.extensions.LoggedTest.logger;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * The utility class for tests.
@@ -29,10 +31,10 @@ public class TestUtils {
    * @return true if the web app can hit all managed servers, false otherwise
    */
   public static boolean callWebAppAndCheckForServerNameInResponse(
-                          String curlCmd,
-                          List<String> managedServerNames,
-                          int maxIterations) {
-
+      String curlCmd,
+      List<String> managedServerNames,
+      int maxIterations) {
+    LoggingFacade logger = getLogger();
     // first map all server names with false
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName ->
@@ -103,7 +105,7 @@ public class TestUtils {
       String curlCmd,
       List<String> managedServerNames,
       int maxIterations) {
-
+    LoggingFacade logger = getLogger();
     // first map all server names with false
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName
@@ -160,6 +162,7 @@ public class TestUtils {
    * @return the next free port number, if there is no free port between the range, return the ending point
    */
   public static int getNextFreePort(int from, int to) {
+    LoggingFacade logger = getLogger();
     int port;
     for (port = from; port < to; port++) {
       if (isLocalPortFree(port)) {
@@ -188,7 +191,7 @@ public class TestUtils {
    * @return true if 200 response code is returned, false otherwise
    */
   public static boolean callWebAppAndWaitTillReady(String curlCmd, int maxIterations)  {
-
+    LoggingFacade logger = getLogger();
     ExecResult result = null;
     String responseCode = "";
 
@@ -199,7 +202,7 @@ public class TestUtils {
 
         if (result.exitValue() != 0 || !responseCode.equals("200")) {
           logger.info("callWebApp did not return 200 response code, got {0}, iteration {1} of {2}",
-                  responseCode, i, maxIterations);
+              responseCode, i, maxIterations);
 
           try {
             Thread.sleep(1000);
@@ -239,6 +242,7 @@ public class TestUtils {
    * @return true if the port is free, false otherwise
    */
   private static boolean isLocalPortFree(int port) {
+    LoggingFacade logger = getLogger();
     Socket socket = null;
     try {
       socket = new Socket(K8S_NODEPORT_HOST, port);

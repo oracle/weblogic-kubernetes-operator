@@ -5,9 +5,6 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.List;
 
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.logging.LoggingFactory;
-
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
@@ -19,7 +16,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaul
  */
 
 public class WebLogicImageTool {
-  private static final LoggingFacade logger = LoggingFactory.getLogger(WebLogicImageTool.class);
 
   private WitParams params;
 
