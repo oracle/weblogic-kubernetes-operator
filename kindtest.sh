@@ -59,7 +59,7 @@ else
   outdir="${WORKSPACE}/logdir/${BUILD_TAG}"
 fi
 test_filter="**/It*"
-parallel_classes="true"
+parallel_classes="false"
 
 while getopts ":h:n:o:t:v:p:" opt; do
   case $opt in
