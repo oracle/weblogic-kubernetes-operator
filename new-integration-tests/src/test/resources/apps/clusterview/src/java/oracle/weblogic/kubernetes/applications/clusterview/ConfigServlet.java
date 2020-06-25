@@ -202,10 +202,7 @@ public class ConfigServlet extends HttpServlet {
   }
 
   private JDBCSystemResourceMBean getJDBCSystemResource(String jdbcResourceName) {
-    JDBCSystemResourceMBean res = domainRuntimeServiceMbean.getDomainConfiguration().lookupJDBCSystemResource(jdbcResourceName);
-    JDBCConnectionPoolParamsBean jdbcConnectionPoolParams = res.getJDBCResource().getJDBCConnectionPoolParams();
-
-    return res;
+    return runtimeService.getDomainConfiguration().lookupJDBCSystemResource(jdbcResourceName);
   }
 
   /**
